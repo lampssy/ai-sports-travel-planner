@@ -143,16 +143,24 @@ green while the stale five-test E2E suite was red as described above.
   terrain-trust Blocker and the responsive current-trip, selected-candidate,
   modal-containment, and dossier-return High findings; `6f677bd` resolved the
   controlled-drawer focus-reset High and scoring-detail trust-label Medium;
-  `a1f4d65` recorded the follow-up evidence. The final advisory re-review is
-  APPROVED under the gate (Blocker: 0, High: 0). Two Medium residuals are
-  tracked in `docs/product-backlog.md`: bounded weather-evidence outcome
-  metrics with an OTLP smoke check, and scope-aware `pass_terrain_value`
-  wording/assertions. Fresh final verification passed `uv run pytest -q`
-  (1,419 passed in 355.81 s), `uv run ruff check .`, `npm --prefix frontend
-  test` (12 files, 83 tests), `npm --prefix frontend run build`, `npm --prefix
-  frontend run test:e2e` (40 Chromium journeys), and `git diff --check`.
-  WebKit remains unavailable because its configured Playwright executable is
-  not installed; no browser dependency was installed to alter that limitation.
+  `a1f4d65` recorded the follow-up evidence. `670d4a7` then closed the final
+  whole-branch findings by preserving refinement-owned objectives, saving only
+  the applied travel window, centralizing trust-aware terrain-source selection,
+  enforcing frontend and Darwin visual checks in CI, making no-op refinement
+  behavior truthful, correcting weather fixtures, and removing local process
+  reports from tracked output. `e11f423` restored deliberate focus after a
+  no-op refinement. The final advisory review and whole-branch code re-review
+  are APPROVED (Blocker/Critical: 0, High/Important: 0, Minor: 0). Two Medium
+  residuals are tracked in `docs/product-backlog.md`: bounded weather-evidence
+  outcome metrics with an OTLP smoke check, and scope-aware
+  `pass_terrain_value` wording/assertions. Fresh verification passed `uv run
+  pytest -q` (1,422 tests), Ruff lint and format checks, `npm --prefix frontend
+  test` (12 files, 90 tests), `npm --prefix frontend run build`, and `npm
+  --prefix frontend run test:e2e` (43 Chromium journeys). The final frontend-
+  only focus follow-up additionally passed 25 focused unit tests and six
+  repeated Chromium journeys. WebKit and native assistive-technology checks
+  remain unavailable; no WebKit dependency was installed to alter that
+  limitation.
 
 ---
 
