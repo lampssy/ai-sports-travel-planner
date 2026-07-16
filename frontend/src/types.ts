@@ -179,12 +179,24 @@ export interface SearchV4RecommendationGroup {
   alternative_configurations: SearchV4Configuration[];
 }
 
+export interface RefinementRankChange {
+  ski_region_id: string;
+  previous_rank: number | null;
+  preview_rank: number | null;
+}
+
+export interface RefinementPreview {
+  top_rank_changes: RefinementRankChange[];
+  eligible_candidate_count_delta: number;
+}
+
 export interface RefinementOption {
   label: string;
   description: string;
   group_priority_patches: GroupPriorityPatch[];
   factor_preference_patches: FactorPreferencePatch[];
   objective_patches: SearchObjective[];
+  preview?: RefinementPreview | null;
 }
 
 export interface RefinementProposal {

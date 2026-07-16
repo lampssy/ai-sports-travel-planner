@@ -22,6 +22,14 @@ from app.domain.models import (
     ResortConditionSnapshot,
     snow_confidence_label_for_score,
 )
+from app.domain.search_v4_models import GroupPriorityPatch, SearchIntent
+from app.domain.search_v4_service import (
+    SearchV4RefinementOption,
+    SearchV4RefinementPreview,
+    SearchV4RefinementProposal,
+    SearchV4RefinementRankChange,
+    SearchV4Response,
+)
 from app.main import app, create_app
 
 client = TestClient(app)
@@ -109,6 +117,84 @@ def _sign_in(
     assert response.status_code == 200
     payload = response.json()
     return {"Authorization": f"Bearer {payload['access_token']}"}, payload
+
+
+def test_search_serializes_refinement_previews_and_preserves_patch_fields(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    refinement = SearchV4RefinementProposal(
+        question_id="terrain-vs-access",
+        question="Which tradeoff should lead the ranking?",
+        reason="The leading regions trade terrain scale against base access.",
+        options=(
+            SearchV4RefinementOption(
+                label="Terrain",
+                description="Prioritize ski-area scale.",
+                group_priority_patches=(
+                    GroupPriorityPatch(
+                        group_id="ski_experience",
+                        importance="very_high",
+                    ),
+                ),
+                preview=SearchV4RefinementPreview(
+                    top_rank_changes=(
+                        SearchV4RefinementRankChange(
+                            ski_region_id="region-c",
+                            previous_rank=3,
+                            preview_rank=2,
+                        ),
+                    ),
+                    eligible_candidate_count_delta=-1,
+                ),
+            ),
+            SearchV4RefinementOption(
+                label="Access",
+                description="Prioritize stay-base access.",
+                group_priority_patches=(
+                    GroupPriorityPatch(
+                        group_id="stay_practicality",
+                        importance="very_high",
+                    ),
+                ),
+                preview=None,
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        "app.api.routes.search_trip_configurations",
+        lambda **_kwargs: SearchV4Response(
+            search_model_version="search-v4",
+            ranking_policy_version="search-v4-policy-1",
+            ranking_status="ranked",
+            applied_intent=SearchIntent(),
+            eligible_candidate_count=0,
+            excluded_candidate_count=0,
+            results=(),
+            refinements=(refinement,),
+        ),
+    )
+
+    response = client.post(
+        "/api/search",
+        json={"intent": {}, "generate_refinements": False},
+    )
+
+    assert response.status_code == 200
+    options = response.json()["refinements"][0]["options"]
+    assert options[0]["preview"] == {
+        "top_rank_changes": [
+            {
+                "ski_region_id": "region-c",
+                "previous_rank": 3,
+                "preview_rank": 2,
+            }
+        ],
+        "eligible_candidate_count_delta": -1,
+    }
+    assert options[1]["preview"] is None
+    assert options[0]["group_priority_patches"] == [
+        {"group_id": "ski_experience", "importance": "very_high"}
+    ]
 
 
 def _raw_weather_observation(

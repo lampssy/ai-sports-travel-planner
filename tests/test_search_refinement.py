@@ -119,6 +119,20 @@ def test_material_group_question_passes_deterministic_impact_gate() -> None:
     assert result.impact.material is True
 
 
+def test_validated_refinement_preserves_each_variant_ranking() -> None:
+    validated = validate_refinement_proposal(
+        proposal=_material_proposal(),
+        intent=SearchIntent(),
+        candidates=_candidates(),
+        policy=load_search_policy(),
+    )
+
+    assert len(validated.variant_outcomes) == len(validated.proposal.options)
+    assert validated.variant_outcomes[0].ordered_candidate_ids[0] == "large-far"
+    assert validated.variant_outcomes[1].ordered_candidate_ids[0] == "small-near"
+    assert not hasattr(validated.variant_outcomes[0], "scores")
+
+
 def test_apply_option_upserts_typed_patches_without_mutating_original() -> None:
     original = SearchIntent(
         group_priorities=(

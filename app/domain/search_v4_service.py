@@ -68,9 +68,16 @@ from app.domain.search_ranking import (
 )
 from app.domain.search_refinement import (
     RefinementCandidateState,
-    RefinementProposal,
+    RefinementVariantOutcome,
+    ValidatedRefinementProposal,
 )
-from app.domain.search_v4_models import SearchIdentifier, SearchIntent
+from app.domain.search_v4_models import (
+    FactorPreferencePatch,
+    GroupPriorityPatch,
+    SearchIdentifier,
+    SearchIntent,
+    SearchObjective,
+)
 from app.domain.travel import assess_deterministic_travel_effort
 from app.domain.weather_forecast import (
     ServedWeatherForecastDaily,
@@ -169,6 +176,33 @@ class SearchV4RecommendationGroup(_SearchV4Model):
     alternative_configurations: tuple[SearchV4Configuration, ...] = ()
 
 
+class SearchV4RefinementRankChange(_SearchV4Model):
+    ski_region_id: str
+    previous_rank: int | None = Field(default=None, gt=0)
+    preview_rank: int | None = Field(default=None, gt=0)
+
+
+class SearchV4RefinementPreview(_SearchV4Model):
+    top_rank_changes: tuple[SearchV4RefinementRankChange, ...] = Field(max_length=3)
+    eligible_candidate_count_delta: int
+
+
+class SearchV4RefinementOption(_SearchV4Model):
+    label: str
+    description: str
+    group_priority_patches: tuple[GroupPriorityPatch, ...] = ()
+    factor_preference_patches: tuple[FactorPreferencePatch, ...] = ()
+    objective_patches: tuple[SearchObjective, ...] = ()
+    preview: SearchV4RefinementPreview | None = None
+
+
+class SearchV4RefinementProposal(_SearchV4Model):
+    question_id: str
+    question: str
+    reason: str
+    options: tuple[SearchV4RefinementOption, ...]
+
+
 class SearchV4Response(_SearchV4Model):
     search_model_version: Literal["search-v4"]
     ranking_policy_version: str
@@ -178,7 +212,7 @@ class SearchV4Response(_SearchV4Model):
     eligible_candidate_count: int = Field(ge=0)
     excluded_candidate_count: int = Field(ge=0)
     results: tuple[SearchV4RecommendationGroup, ...]
-    refinements: tuple[RefinementProposal, ...] = ()
+    refinements: tuple[SearchV4RefinementProposal, ...] = ()
 
 
 class SearchV4Request(_SearchV4Model):
@@ -1102,7 +1136,7 @@ def _refinements(
     policy: SearchPolicy,
     client: LLMClient | None,
     already_answered_question_ids: frozenset[str],
-) -> tuple[RefinementProposal, ...]:
+) -> tuple[SearchV4RefinementProposal, ...]:
     if not include or client is None:
         return ()
     states = tuple(
@@ -1120,14 +1154,110 @@ def _refinements(
         )
         for item in ordered[: policy.refinement.max_candidate_summaries]
     )
-    return tuple(
-        item.proposal
-        for item in generate_refinement_proposals(
-            brief=brief,
-            intent=intent,
-            candidates=states,
-            policy=policy,
-            client=client,
-            already_answered_question_ids=already_answered_question_ids,
-        )
+    validated = generate_refinement_proposals(
+        brief=brief,
+        intent=intent,
+        candidates=states,
+        policy=policy,
+        client=client,
+        already_answered_question_ids=already_answered_question_ids,
     )
+    baseline_ordered_candidate_ids = tuple(state.candidate_id for state in states)
+    candidate_region_ids = {
+        item.record.candidate_id: item.record.region.ski_region_id
+        for item in ordered[: policy.refinement.max_candidate_summaries]
+    }
+    return tuple(
+        _response_refinement_proposal(
+            item,
+            baseline_ordered_candidate_ids=baseline_ordered_candidate_ids,
+            candidate_region_ids=candidate_region_ids,
+        )
+        for item in validated
+    )
+
+
+def _response_refinement_proposal(
+    validated: ValidatedRefinementProposal,
+    *,
+    baseline_ordered_candidate_ids: tuple[str, ...],
+    candidate_region_ids: Mapping[str, str],
+) -> SearchV4RefinementProposal:
+    proposal = validated.proposal
+    return SearchV4RefinementProposal(
+        question_id=proposal.question_id,
+        question=proposal.question,
+        reason=proposal.reason,
+        options=tuple(
+            SearchV4RefinementOption(
+                **option.model_dump(mode="python"),
+                preview=_refinement_preview(
+                    baseline_ordered_candidate_ids=baseline_ordered_candidate_ids,
+                    candidate_region_ids=candidate_region_ids,
+                    variant_outcome=variant_outcome,
+                ),
+            )
+            for option, variant_outcome in zip(
+                proposal.options,
+                validated.variant_outcomes,
+                strict=True,
+            )
+        ),
+    )
+
+
+def _refinement_preview(
+    *,
+    baseline_ordered_candidate_ids: Sequence[str],
+    candidate_region_ids: Mapping[str, str],
+    variant_outcome: RefinementVariantOutcome,
+) -> SearchV4RefinementPreview:
+    baseline_region_ids = _ordered_region_ids(
+        baseline_ordered_candidate_ids,
+        candidate_region_ids,
+    )
+    preview_region_ids = _ordered_region_ids(
+        variant_outcome.ordered_candidate_ids,
+        candidate_region_ids,
+    )
+    baseline_ranks = {
+        ski_region_id: rank
+        for rank, ski_region_id in enumerate(baseline_region_ids[:3], start=1)
+    }
+    preview_ranks = {
+        ski_region_id: rank
+        for rank, ski_region_id in enumerate(preview_region_ids[:3], start=1)
+    }
+    changed_region_ids = _deduplicated(
+        (*preview_region_ids[:3], *baseline_region_ids[:3])
+    )
+    changes = tuple(
+        SearchV4RefinementRankChange(
+            ski_region_id=ski_region_id,
+            previous_rank=baseline_ranks.get(ski_region_id),
+            preview_rank=preview_ranks.get(ski_region_id),
+        )
+        for ski_region_id in changed_region_ids
+        if baseline_ranks.get(ski_region_id) != preview_ranks.get(ski_region_id)
+    )[:3]
+    return SearchV4RefinementPreview(
+        top_rank_changes=changes,
+        eligible_candidate_count_delta=(
+            len(variant_outcome.eligible_candidate_ids)
+            - len(set(baseline_ordered_candidate_ids))
+        ),
+    )
+
+
+def _ordered_region_ids(
+    ordered_candidate_ids: Sequence[str],
+    candidate_region_ids: Mapping[str, str],
+) -> tuple[str, ...]:
+    region_ids: list[str] = []
+    for candidate_id in ordered_candidate_ids:
+        region_ids.append(candidate_region_ids[candidate_id])
+    return _deduplicated(region_ids)
+
+
+def _deduplicated(values: Sequence[str]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(values))

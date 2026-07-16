@@ -119,9 +119,15 @@ class RefinementImpact(_RefinementModel):
     top_five_score_changed: bool
 
 
+class RefinementVariantOutcome(_RefinementModel):
+    ordered_candidate_ids: tuple[str, ...]
+    eligible_candidate_ids: frozenset[str]
+
+
 class ValidatedRefinementProposal(_RefinementModel):
     proposal: RefinementProposal
     impact: RefinementImpact
+    variant_outcomes: tuple[RefinementVariantOutcome, ...]
 
 
 @dataclass(frozen=True)
@@ -222,7 +228,17 @@ def validate_refinement_proposal(
         raise RefinementValidationError(
             "refinement answer variants do not have material impact"
         )
-    return ValidatedRefinementProposal(proposal=proposal, impact=impact)
+    return ValidatedRefinementProposal(
+        proposal=proposal,
+        impact=impact,
+        variant_outcomes=tuple(
+            RefinementVariantOutcome(
+                ordered_candidate_ids=variant.ordered_ids,
+                eligible_candidate_ids=variant.eligible_ids,
+            )
+            for variant in variants
+        ),
+    )
 
 
 def _validate_text_and_option_bounds(
