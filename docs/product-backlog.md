@@ -822,15 +822,13 @@ Candidate inventory:
   — replace the umbrella access edge only after the child owners and exact
   transport modes are approved.
 - `stay_base:cortina-dampezzo-pocol` and
-  `ski_area_access:cortina-dampezzo-pocol--cortina-tofane` — assess Pocol's
-  source-backed lodging and slope access as a separate base after the Tofane
-  owner is settled.
+  `ski_area_access:cortina-dampezzo-pocol--cortina-tofane` and
+  `ski_area_access:cortina-dampezzo-pocol--cortina-5-torri-lagazuoi` — assess
+  Pocol's source-backed lodging and direct slope access as a separate base
+  after the Tofane and 5 Torri-Lagazuoi owners are settled.
 - `terrain_domain:cortina-tofane-5-torri-lagazuoi` — assess the Skyline-linked
   connected terrain and whole-domain map without pulling ski-bus-only Faloria
   into the domain.
-- `lift_pass_product:cortina-local-area-products` — inventory exact local
-  products and their child coverage; retain the represented Valle Skipass and
-  Dolomiti Superski network context separately.
 
 Why it was deferred from the source PR:
 

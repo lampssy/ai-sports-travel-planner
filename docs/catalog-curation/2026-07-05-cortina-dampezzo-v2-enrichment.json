@@ -122,6 +122,66 @@
         "field_statuses",
         "notes"
       ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id",
+        "name"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "auronzo-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id",
+        "name"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id",
+        "name"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-cortina-valle-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "name",
+        "available_from_stay_destination_ids",
+        "external_validity_summary"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "name",
+        "available_from_stay_destination_ids",
+        "external_validity_summary"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "name",
+        "available_from_stay_destination_ids",
+        "external_validity_summary"
+      ]
     }
   ],
   "changes": [
@@ -768,6 +828,132 @@
       "field_path": "notes",
       "status": "changed",
       "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass scope was matched to this existing normalized destination without changing its boundary."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass scope was matched to this existing normalized destination without changing its boundary."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "auronzo-di-cadore",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass scope was matched to this existing normalized destination without changing its boundary."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "auronzo-di-cadore",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass scope was matched to this existing normalized destination without changing its boundary."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass scope was matched to this existing normalized destination without changing its boundary."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass scope was matched to this existing normalized destination without changing its boundary."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-cortina-valle-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-cortina-valle-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-cortina-valle-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-cortina-valle-skipass",
+      "field_path": "external_validity_summary",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "field_path": "external_validity_summary",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "field_path": "external_validity_summary",
+      "status": "reviewed-no-change",
+      "notes": "The official Valle Skipass coverage was matched to this existing destination-scoped catalog entry without changing product semantics."
     }
   ],
   "evidence": [
@@ -941,6 +1127,26 @@
       "source_value": "Pocol",
       "evidence_summary": "Official tourism lists substantial lodging in Pocol with ski-in/ski-out access to the Tofane and Cinque Torri areas.",
       "normalization_note": "Pocol is deferred as a stay-base candidate because its exact child-area access depends on the owner decision."
+    },
+    {
+      "evidence_id": "v2-scope-008-valle-skipass-linked-catalog",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "cortina-valle-skipass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+      "source_title": "Cortina official lifts and pass guide",
+      "source_value": {
+        "product": "Valle Skipass",
+        "validity": [
+          "Cortina d’Ampezzo",
+          "San Vito di Cadore",
+          "Auronzo-Misurina"
+        ]
+      },
+      "evidence_summary": "Official tourism states that the Valle Skipass covers the full Cortina area, San Vito di Cadore, and Auronzo-Misurina.",
+      "normalization_note": "The official combined Auronzo-Misurina label maps to the existing separate Auronzo di Cadore and Misurina destinations; the single commercial product is represented by destination-scoped catalog entries."
     }
   ],
   "destination_boundary_assessments": [],
@@ -1277,7 +1483,8 @@
         "full_local_pass"
       ],
       "evidence_refs": [
-        "v2-scope-005-cortina-pass-products"
+        "v2-scope-005-cortina-pass-products",
+        "v2-scope-008-valle-skipass-linked-catalog"
       ],
       "target_refs": [
         {
@@ -1287,23 +1494,6 @@
       ],
       "backlog_ref": null,
       "rationale": "The existing product represents the published valley pass; child and domain coverage remains unresolved."
-    },
-    {
-      "candidate_id": "cortina-local-area-products",
-      "candidate_name": "Cortina local area products",
-      "candidate_kind": "lift_pass_product",
-      "disposition": "unresolved",
-      "signals": [
-        "official_product_identity",
-        "limited_area_ticket"
-      ],
-      "evidence_refs": [
-        "v2-scope-003-cortina-operator-inventory",
-        "v2-scope-005-cortina-pass-products"
-      ],
-      "target_refs": [],
-      "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Exact local products and child coverage require a bounded tariff and owner review."
     },
     {
       "candidate_id": "dolomiti-superski-cortina-context",
@@ -1319,6 +1509,129 @@
       "target_refs": [],
       "backlog_ref": null,
       "rationale": "The wider 12-valley product is relevant network context and is not added as a Cortina-local product in this fix."
+    },
+    {
+      "candidate_id": "cortina-dampezzo-pocol--cortina-5-torri-lagazuoi",
+      "candidate_name": "Pocol to 5 Torri-Lagazuoi access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v2-scope-007-pocol-lodging-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
+      "rationale": "Official accommodation evidence establishes direct slope access from Pocol to Cinque Torri, but the target owner does not yet exist."
+    },
+    {
+      "candidate_id": "san-vito-di-cadore",
+      "candidate_name": "San Vito di Cadore Valle Skipass destination context",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "v2-scope-008-valle-skipass-linked-catalog"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official Valle Skipass scope explicitly names San Vito di Cadore, matching the existing modeled destination; this linked inventory does not revisit its boundary."
+    },
+    {
+      "candidate_id": "auronzo-misurina-valle-skipass-context",
+      "candidate_name": "Auronzo-Misurina Valle Skipass destination context",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "v2-scope-008-valle-skipass-linked-catalog"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "auronzo-di-cadore"
+        },
+        {
+          "target_type": "stay_destination",
+          "target_id": "misurina"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official combined Auronzo-Misurina coverage label maps to the existing separate Auronzo di Cadore and Misurina destinations; this inventory neither merges nor redefines them."
+    },
+    {
+      "candidate_id": "san-vito-cortina-valle-skipass",
+      "candidate_name": "Valle Skipass Cortina from San Vito di Cadore",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity",
+        "full_local_pass"
+      ],
+      "evidence_refs": [
+        "v2-scope-008-valle-skipass-linked-catalog"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "san-vito-cortina-valle-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official Valle Skipass validity includes San Vito di Cadore; the existing destination-scoped catalog entry represents that commercial coverage without implying ski connectivity."
+    },
+    {
+      "candidate_id": "auronzo-cortina-valle-skipass",
+      "candidate_name": "Valle Skipass Cortina from Auronzo di Cadore",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity",
+        "full_local_pass"
+      ],
+      "evidence_refs": [
+        "v2-scope-008-valle-skipass-linked-catalog"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "auronzo-cortina-valle-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official Valle Skipass validity includes Auronzo di Cadore; the existing destination-scoped catalog entry represents that commercial coverage without implying ski connectivity."
+    },
+    {
+      "candidate_id": "misurina-cortina-valle-skipass",
+      "candidate_name": "Valle Skipass Cortina from Misurina",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity",
+        "full_local_pass"
+      ],
+      "evidence_refs": [
+        "v2-scope-008-valle-skipass-linked-catalog"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "misurina-cortina-valle-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official Valle Skipass validity includes Misurina; the existing destination-scoped catalog entry represents that commercial coverage without implying ski connectivity."
     }
   ]
 }
