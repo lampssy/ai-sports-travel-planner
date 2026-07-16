@@ -774,6 +774,85 @@ Discovery progression:
   update this item after every merged slice; never create one terrain domain
   from Snow-Deal validity alone.
 
+### Cortina d'Ampezzo Catalog Owner Completion
+
+Status: candidate
+Area: Data Trust
+Source: Cortina d'Ampezzo catalog review; PR #34
+
+Next bounded slice:
+
+- Prepare one decision-bearing proposal that either preserves the retained
+  Cortina ski-area/weather identity with a defensible scope or replaces it with
+  reviewed child owners. Include exact access edges, connected-domain and map
+  ownership, pass coverage, historical-weather handling, migration order,
+  backfill commands, and rollback. Do not choose the owner model implicitly.
+
+Why it matters:
+
+- Official Cortina tourism presents Faloria-Cristallo, Tofane, and 5
+  Torri-Lagazuoi as distinct ski areas and identifies multiple lift operators.
+  The current catalog retains one umbrella weather owner without a reviewed
+  preserve/split decision.
+- The official map spans all three Cortina areas and neighboring connections.
+  Skyline provides a ski-on link from Tofane through 5 Torri to Lagazuoi, while
+  Faloria is reached by ski bus, so the document cannot safely be assigned to
+  the unresolved umbrella owner or a guessed child.
+
+Candidate inventory:
+
+- `ski_area:cortina-dampezzo-ski-area` — decide whether the retained umbrella
+  ID remains a defensible weather owner or becomes a migration source identity.
+- `ski_area:cortina-faloria-cristallo`, `ski_area:cortina-tofane`, and
+  `ski_area:cortina-5-torri-lagazuoi` — review the official area labels,
+  independent operators, child terrain inventories, schedules, weather
+  presentations, and stable weather-owner boundaries.
+- `ski_area:cortina-tofane-ista`,
+  `ski_area:cortina-tofane-freccia-nel-cielo`,
+  `ski_area:cortina-5-torri-averau-giau`,
+  `ski_area:cortina-col-gallina`, and `ski_area:cortina-lagazuoi` — resolve
+  whether the finer operator presentations remain inside the three reviewed
+  area owners or merit still narrower operational/weather identities.
+- `ski_area_access:cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area`
+  — retain or retire the current umbrella edge consistently with the owner
+  decision.
+- `ski_area_access:cortina-dampezzo-cortina-dampezzo--cortina-faloria-cristallo`,
+  `ski_area_access:cortina-dampezzo-cortina-dampezzo--cortina-tofane`, and
+  `ski_area_access:cortina-dampezzo-cortina-dampezzo--cortina-5-torri-lagazuoi`
+  — replace the umbrella access edge only after the child owners and exact
+  transport modes are approved.
+- `stay_base:cortina-dampezzo-pocol` and
+  `ski_area_access:cortina-dampezzo-pocol--cortina-tofane` — assess Pocol's
+  source-backed lodging and slope access as a separate base after the Tofane
+  owner is settled.
+- `terrain_domain:cortina-tofane-5-torri-lagazuoi` — assess the Skyline-linked
+  connected terrain and whole-domain map without pulling ski-bus-only Faloria
+  into the domain.
+- `lift_pass_product:cortina-local-area-products` — inventory exact local
+  products and their child coverage; retain the represented Valle Skipass and
+  Dolomiti Superski network context separately.
+
+Why it was deferred from the source PR:
+
+- Completing the graph requires an owner checkpoint and may re-key the current
+  weather identity, redistribute access and pass relationships, introduce a
+  connected domain, and hand off historical weather migration/backfill work.
+  That is a decision-bearing catalog migration, not a fact-enrichment fix.
+
+Not now:
+
+- Do not re-key the retained Cortina ski area, move weather history, copy the
+  aggregate 120 km pass inventory onto a child, assign the whole Cortina map to
+  one child, or infer Faloria connectivity from the ski-bus link.
+- Automation may prepare the decision-bearing proposal, but it must remain
+  owner-gated until the stable-ID, weather-history, graph, and map-ownership
+  decisions are explicit.
+
+Discovery progression:
+
+- Close this item after the owner decision and complete graph migration merge,
+  or retain only exact source-backed candidates still unresolved afterward.
+
 ## Current Backlog
 
 ### Destination Coverage Registry

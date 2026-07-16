@@ -6552,13 +6552,13 @@
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "verified_with_adjustment",
+          "snowmaking": "needs_source",
           "glacier_terrain": "needs_source",
           "snow_park": "needs_source",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "verified_with_adjustment",
-          "official_documents": "verified"
+          "ski_day_apres": "needs_source",
+          "official_documents": "needs_source"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -6593,27 +6593,19 @@
             "https://www.openstreetmap.org/relation/47235",
             "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
           ],
-          "snowmaking": [
-            "https://cortina.dolomiti.org/fr/hiver/quoi-faire/activites/ski-et-snowboard/"
-          ],
+          "snowmaking": [],
           "glacier_terrain": [],
           "snow_park": [],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [
-            "https://cortina.dolomiti.org/en/winter/alpine-lifestyle/"
-          ],
-          "official_documents": [
-            "https://www.dolomitisuperski.com/en/live-info/ski-map"
-          ]
+          "ski_day_apres": [],
+          "official_documents": []
         },
         "notes": [
           "Full destination recuration replaced the internal sprint-note source with official, open-data, and reviewed-editorial source refs.",
           "San Vito di Cadore, Auronzo di Cadore, and Misurina are modeled as separate destinations; the 120 km Cortina valley pass scope remains pass context and is not copied onto the Cortina child ski-area terrain metrics.",
           "Cortina child ski-area elevations, operating months, future season window, and representative pass price are normalized from reviewed ski-area data; child piste/lift totals remain omitted until accepted Cortina-only scope evidence is available.",
-          "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy.",
-          "Source-aware v2 enrichment reviewed official Cortina and Dolomiti Superski material on 2026-07-05.",
-          "Named freeride itineraries are not treated as marked routes without explicit marking evidence."
+          "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
         ]
       },
       "jakobshorn": {

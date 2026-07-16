@@ -3081,9 +3081,9 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "available",
-        "coverage_pct": 30,
-        "coverage_basis": "publisher_unspecified",
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
@@ -3103,12 +3103,10 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": {
-        "url": "https://www.dolomitisuperski.com/en/live-info/ski-map"
-      },
+      "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "available",
-        "intensity": "lively",
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     },
