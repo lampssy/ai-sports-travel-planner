@@ -48,7 +48,7 @@ class HistoricalWeatherSource(_WeatherEvidenceModel):
     baseline_end_year: int
     evidence_seasons: int = Field(ge=0)
     latest_archive_year: int | None = None
-    elevation_m: int
+    elevation_m: int | None
     row_count: int = Field(gt=0)
     profile_dates: tuple[str, ...] = Field(max_length=_PROFILE_LIMIT)
 
@@ -123,7 +123,7 @@ class SearchWeatherEvidence(_WeatherEvidenceModel):
     window_label: str
     elevation_band: Literal["mid_mountain"] = "mid_mountain"
     elevation_m: int | None = None
-    elevation_status: Literal["exact", "mixed"] = "exact"
+    elevation_status: Literal["exact", "mixed", "unavailable"] = "exact"
     interpretation: str
     limitations: tuple[str, ...] = ()
     historical: HistoricalWeatherEvidence
@@ -174,6 +174,8 @@ def build_search_weather_evidence(
     *,
     context: WeatherEvaluationContext,
     candidate: WeatherFactorCandidate,
+    accepted_forecast_rows: tuple[tuple[date, ServedWeatherForecastDaily, float], ...]
+    | None = None,
 ) -> SearchWeatherEvidence | None:
     window = context.intent.constraints.travel_window
     if window is None:
@@ -193,11 +195,12 @@ def build_search_weather_evidence(
             window,
         )
     )
-    forecast = (
-        _forecast_evidence(context, candidate, window)
-        if window.mode == "exact_dates"
-        else None
+    presented_forecast_rows = (
+        select_weather_evidence_forecast_rows(context, candidate, window)
+        if accepted_forecast_rows is None
+        else accepted_forecast_rows
     )
+    forecast = _forecast_evidence(context, presented_forecast_rows, window)
     if window.mode == "exact_dates":
         limitations.extend(
             _forecast_limitations(
@@ -213,9 +216,7 @@ def build_search_weather_evidence(
     )
     elevation_m, elevation_status = _elevation_provenance(
         selected_historical,
-        context,
-        candidate,
-        include_forecast=forecast is not None,
+        presented_forecast_rows if forecast is not None else (),
     )
     return SearchWeatherEvidence(
         mode=mode,
@@ -390,11 +391,13 @@ def _historical_point(row: SnowClimatologyDaily) -> WeatherEvidencePoint:
     )
 
 
-def _forecast_evidence(
+def select_weather_evidence_forecast_rows(
     context: WeatherEvaluationContext,
     candidate: WeatherFactorCandidate,
     window: TravelWindow,
-) -> ForecastWeatherEvidence | None:
+) -> tuple[tuple[date, ServedWeatherForecastDaily, float], ...]:
+    if window.mode != "exact_dates":
+        return ()
     requested_dates = _requested_dates(window)
     selected = select_usable_forecast_rows_by_date(context, candidate)
     usable: list[tuple[date, ServedWeatherForecastDaily, float]] = []
@@ -405,11 +408,19 @@ def _forecast_evidence(
         share = forecast_share_for_lead_days(row.lead_days, context.policy.weather)
         if share > 0:
             usable.append((valid_date, row, share))
-    if not usable:
+    return tuple(usable)
+
+
+def _forecast_evidence(
+    context: WeatherEvaluationContext,
+    accepted_rows: tuple[tuple[date, ServedWeatherForecastDaily, float], ...],
+    window: TravelWindow,
+) -> ForecastWeatherEvidence | None:
+    if not accepted_rows:
         return None
 
-    profile_rows = tuple(usable[:_PROFILE_LIMIT])
-    sources = _forecast_sources(tuple(usable), profile_rows)
+    profile_rows = tuple(accepted_rows[:_PROFILE_LIMIT])
+    sources = _forecast_sources(accepted_rows, profile_rows)
     homogeneous = len(sources) == 1
     exact_source = sources[0] if homogeneous else None
     return ForecastWeatherEvidence(
@@ -423,12 +434,15 @@ def _forecast_evidence(
         provenance_status="homogeneous" if homogeneous else "mixed",
         sources=sources,
         coverage_status=(
-            "complete" if len(usable) == len(requested_dates) else "partial"
+            "complete"
+            if len(accepted_rows) == len(_requested_dates(window))
+            else "partial"
         ),
-        usable_date_count=len(usable),
-        requested_date_count=len(requested_dates),
+        usable_date_count=len(accepted_rows),
+        requested_date_count=len(_requested_dates(window)),
         average_forecast_share=(
-            sum(share for _valid_date, _row, share in usable) / len(usable)
+            sum(share for _valid_date, _row, share in accepted_rows)
+            / len(accepted_rows)
         ),
         daily_profile=tuple(
             _forecast_point(valid_date, row, context)
@@ -598,29 +612,18 @@ def _requested_dates(window: TravelWindow) -> tuple[date, ...]:
 
 def _elevation_provenance(
     historical_rows: Sequence[SnowClimatologyDaily],
-    context: WeatherEvaluationContext,
-    candidate: WeatherFactorCandidate,
-    *,
-    include_forecast: bool,
-) -> tuple[int | None, Literal["exact", "mixed"]]:
+    forecast_rows: Sequence[tuple[date, ServedWeatherForecastDaily, float]],
+) -> tuple[int | None, Literal["exact", "mixed", "unavailable"]]:
     elevations = {row.elevation_m for row in historical_rows}
-    if include_forecast:
-        window = context.intent.constraints.travel_window
-        assert window is not None and window.start_date is not None
-        for valid_date, row in select_usable_forecast_rows_by_date(
-            context,
-            candidate,
-        ).items():
-            if (
-                forecast_share_for_lead_days(
-                    (valid_date - window.start_date).days + 1,
-                    context.policy.weather,
-                )
-                > 0
-            ):
-                elevations.add(row.daily.representative_elevation_m)
-    if len(elevations) == 1:
-        return next(iter(elevations)), "exact"
+    elevations.update(
+        row.daily.representative_elevation_m
+        for _valid_date, row, _share in forecast_rows
+    )
+    known_elevations = {elevation for elevation in elevations if elevation is not None}
+    if not known_elevations:
+        return None, "unavailable"
+    if None not in elevations and len(known_elevations) == 1:
+        return next(iter(known_elevations)), "exact"
     return None, "mixed"
 
 

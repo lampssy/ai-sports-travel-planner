@@ -56,8 +56,6 @@ from app.domain.search_factors.weather import (
     WeatherEvaluationContext,
     WeatherFactorCandidate,
     build_weather_factor_registry,
-    forecast_share_for_lead_days,
-    select_usable_forecast_rows_by_date,
 )
 from app.domain.search_intent_policy import (
     validate_search_intent,
@@ -88,6 +86,7 @@ from app.domain.search_weather_evidence import (
     SearchWeatherEvidenceResponse,
     SearchWeatherEvidenceUnavailableResponse,
     build_search_weather_evidence,
+    select_weather_evidence_forecast_rows,
 )
 from app.domain.travel import assess_deterministic_travel_effort
 from app.domain.weather_forecast import (
@@ -366,7 +365,16 @@ def get_search_weather_evidence(
         climatology_rows=climate_by_area.get(ski_area_id, ()),
         forecast_rows=forecast_by_area.get(ski_area_id, ()),
     )
-    evidence = build_search_weather_evidence(context=context, candidate=candidate)
+    accepted_forecast_rows = select_weather_evidence_forecast_rows(
+        context,
+        candidate,
+        window,
+    )
+    evidence = build_search_weather_evidence(
+        context=context,
+        candidate=candidate,
+        accepted_forecast_rows=accepted_forecast_rows,
+    )
     if evidence is None:
         return SearchWeatherEvidenceUnavailableResponse(
             weather_evidence_version="search-weather-evidence-v1",
@@ -380,22 +388,10 @@ def get_search_weather_evidence(
         )
 
     if evidence.forecast is not None:
-        assert window.start_date is not None
-        usable_rows = tuple(
-            row
-            for valid_date, row in select_usable_forecast_rows_by_date(
-                context,
-                candidate,
-            ).items()
-            if forecast_share_for_lead_days(
-                (valid_date - window.start_date).days + 1,
-                selected_policy.weather,
-            )
-            > 0
-        )
-        if usable_rows:
+        if accepted_forecast_rows:
             cache_valid_until = min(
-                forecast_run_valid_until(row.run) for row in usable_rows
+                forecast_run_valid_until(row.run)
+                for _valid_date, row, _share in accepted_forecast_rows
             )
     return SearchWeatherEvidenceAvailableResponse(
         weather_evidence_version="search-weather-evidence-v1",

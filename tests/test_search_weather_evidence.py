@@ -47,7 +47,7 @@ def _climatology(
     computed_at: str = "2026-07-01T00:00:00+00:00",
     source_model: str = "snowcast_empirical_v1",
     snow_depth_cm_p50: float | None = 80,
-    elevation_m: int = 2000,
+    elevation_m: int | None = 2000,
 ) -> SnowClimatologyDaily:
     return SnowClimatologyDaily(
         ski_area_id=ski_area_id,
@@ -306,6 +306,29 @@ def test_mixed_elevations_are_exposed_without_synthetic_top_level_value() -> Non
     assert {source.elevation_m for source in summary.historical.sources} == {
         1800,
         2200,
+    }
+
+
+def test_known_and_unknown_elevations_are_mixed() -> None:
+    first_day = date(2027, 1, 2)
+    second_day = first_day + timedelta(days=1)
+
+    summary = build_search_weather_evidence(
+        context=_context(TravelWindow(month=1)),
+        candidate=_candidate(
+            climatology_rows=(
+                _climatology(first_day, elevation_m=1800),
+                _climatology(second_day, elevation_m=None),
+            ),
+        ),
+    )
+
+    assert summary is not None
+    assert summary.elevation_status == "mixed"
+    assert summary.elevation_m is None
+    assert {source.elevation_m for source in summary.historical.sources} == {
+        1800,
+        None,
     }
 
 

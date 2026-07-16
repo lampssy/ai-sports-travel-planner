@@ -161,7 +161,7 @@ export interface HistoricalWeatherSource {
   baseline_end_year: number;
   evidence_seasons: number;
   latest_archive_year: number | null;
-  elevation_m: number;
+  elevation_m: number | null;
   row_count: number;
   profile_dates: string[];
 }
@@ -214,7 +214,7 @@ export interface SearchWeatherEvidence {
   window_label: string;
   elevation_band: "mid_mountain";
   elevation_m: number | null;
-  elevation_status: "exact" | "mixed";
+  elevation_status: "exact" | "mixed" | "unavailable";
   interpretation: string;
   limitations: string[];
   historical: HistoricalWeatherEvidence;

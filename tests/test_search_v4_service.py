@@ -153,12 +153,13 @@ def _climatology_row(
     baseline_period: str = "normal_30y",
     source_model: str = "snowcast_empirical_v1",
     computed_at: str = "2026-07-01T00:00:00+00:00",
+    elevation_m: int | None = 2000,
 ) -> SnowClimatologyDaily:
     return SnowClimatologyDaily(
         ski_area_id=ski_area_id,
         resort_name=ski_area_id,
         elevation_band="mid",
-        elevation_m=2000,
+        elevation_m=elevation_m,
         month=day.month,
         day=day.day,
         baseline_period=baseline_period,
@@ -1004,6 +1005,95 @@ def test_one_area_dossier_forecast_validity_uses_earliest_selected_run_expiry() 
     assert expired.evidence.mode == "climatology"
     assert len(climatology.calls) == 2
     assert len(forecast.calls) == 2
+
+
+def test_one_area_dossier_uses_presented_forecast_rows_for_validity_and_elevation() -> (
+    None
+):
+    snapshot, manifest = _catalog_and_trust()
+    ski_area_id = snapshot.ski_areas[0].ski_area_id
+    forecast_dates = tuple(
+        date(2027, 1, 9) + timedelta(days=offset) for offset in range(4)
+    )
+    climatology = _ClimatologyRepository(
+        tuple(
+            _climatology_row(
+                ski_area_id=ski_area_id,
+                day=valid_date,
+                snow_depth_cm_p50=70,
+            )
+            for valid_date in forecast_dates
+        )
+    )
+    forecast_rows = tuple(
+        row.model_copy(
+            update={
+                "daily": row.daily.model_copy(
+                    update={"representative_elevation_m": 2200}
+                )
+            }
+        )
+        for row in _forecast_rows(
+            ski_area_ids=(ski_area_id,),
+            requested_dates=forecast_dates,
+        )
+    )
+    forecast = _ForecastRepository(forecast_rows)
+    intent = SearchIntent(
+        constraints=SearchConstraints(
+            travel_window=TravelWindow(
+                start_date=date(2026, 12, 1),
+                end_date=forecast_dates[-1],
+            )
+        )
+    )
+
+    result = get_search_weather_evidence(
+        intent=intent,
+        ski_area_id=ski_area_id,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=climatology,
+        forecast_repository=forecast,
+        reference_time=datetime(2027, 1, 9, 12, tzinfo=UTC),
+    )
+
+    assert result.status == "available"
+    assert result.evidence.mode == "forecast_assisted"
+    assert result.evidence.forecast is not None
+    assert result.evidence.forecast.usable_date_count == 4
+    assert result.cache_valid_until == "2027-01-09T13:10:00+00:00"
+    assert result.evidence.elevation_status == "mixed"
+    assert result.evidence.elevation_m is None
+    assert {source.elevation_m for source in result.evidence.forecast.sources} == {2200}
+
+
+def test_one_area_dossier_preserves_nullable_historical_elevation() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    ski_area_id = snapshot.ski_areas[0].ski_area_id
+    row = _climatology_row(
+        ski_area_id=ski_area_id,
+        day=date(2027, 1, 2),
+        snow_depth_cm_p50=70,
+        elevation_m=None,
+    )
+
+    result = get_search_weather_evidence(
+        intent=SearchIntent(
+            constraints=SearchConstraints(travel_window=TravelWindow(month=1)),
+        ),
+        ski_area_id=ski_area_id,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository((row,)),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+    )
+
+    assert result.status == "available"
+    assert result.evidence.elevation_status == "unavailable"
+    assert result.evidence.elevation_m is None
+    assert result.evidence.historical.sources[0].elevation_m is None
 
 
 def test_month_search_keeps_grouped_response_compact_without_loading_forecasts() -> (
