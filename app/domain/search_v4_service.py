@@ -68,6 +68,7 @@ from app.domain.search_ranking import (
 )
 from app.domain.search_refinement import (
     RefinementCandidateState,
+    RefinementOption,
     RefinementVariantOutcome,
     ValidatedRefinementProposal,
 )
@@ -1152,7 +1153,7 @@ def _refinements(
                 )
             ),
         )
-        for item in ordered[: policy.refinement.max_candidate_summaries]
+        for item in ordered
     )
     validated = generate_refinement_proposals(
         brief=brief,
@@ -1163,14 +1164,20 @@ def _refinements(
         already_answered_question_ids=already_answered_question_ids,
     )
     baseline_ordered_candidate_ids = tuple(state.candidate_id for state in states)
+    baseline_unscored_candidate_ids = frozenset(
+        item.record.candidate_id
+        for item in ordered
+        if isinstance(item.ranking, UnscoredAllocation)
+    )
     candidate_region_ids = {
-        item.record.candidate_id: item.record.region.ski_region_id
-        for item in ordered[: policy.refinement.max_candidate_summaries]
+        item.record.candidate_id: item.record.region.ski_region_id for item in ordered
     }
     return tuple(
         _response_refinement_proposal(
             item,
+            intent=intent,
             baseline_ordered_candidate_ids=baseline_ordered_candidate_ids,
+            baseline_unscored_candidate_ids=baseline_unscored_candidate_ids,
             candidate_region_ids=candidate_region_ids,
         )
         for item in validated
@@ -1180,7 +1187,9 @@ def _refinements(
 def _response_refinement_proposal(
     validated: ValidatedRefinementProposal,
     *,
+    intent: SearchIntent,
     baseline_ordered_candidate_ids: tuple[str, ...],
+    baseline_unscored_candidate_ids: frozenset[str],
     candidate_region_ids: Mapping[str, str],
 ) -> SearchV4RefinementProposal:
     proposal = validated.proposal
@@ -1192,7 +1201,10 @@ def _response_refinement_proposal(
             SearchV4RefinementOption(
                 **option.model_dump(mode="python"),
                 preview=_refinement_preview(
+                    intent=intent,
+                    option=option,
                     baseline_ordered_candidate_ids=baseline_ordered_candidate_ids,
+                    baseline_unscored_candidate_ids=baseline_unscored_candidate_ids,
                     candidate_region_ids=candidate_region_ids,
                     variant_outcome=variant_outcome,
                 ),
@@ -1211,13 +1223,44 @@ def _refinement_preview(
     baseline_ordered_candidate_ids: Sequence[str],
     candidate_region_ids: Mapping[str, str],
     variant_outcome: RefinementVariantOutcome,
-) -> SearchV4RefinementPreview:
+    baseline_unscored_candidate_ids: frozenset[str] = frozenset(),
+    intent: SearchIntent | None = None,
+    option: RefinementOption | None = None,
+) -> SearchV4RefinementPreview | None:
+    if (
+        intent is not None
+        and option is not None
+        and _option_can_expand_existing_require(intent, option)
+    ):
+        return None
+    if _visible_top_three_has_unscored_candidate(
+        baseline_ordered_candidate_ids,
+        candidate_region_ids,
+        baseline_unscored_candidate_ids,
+    ):
+        return None
+
+    variant_scored_ids = set(variant_outcome.ordered_candidate_ids)
+    variant_unscored_candidate_ids = (
+        variant_outcome.eligible_candidate_ids - variant_scored_ids
+    )
+    variant_ordered_candidate_ids = (
+        *variant_outcome.ordered_candidate_ids,
+        *sorted(variant_unscored_candidate_ids),
+    )
+    if _visible_top_three_has_unscored_candidate(
+        variant_ordered_candidate_ids,
+        candidate_region_ids,
+        variant_unscored_candidate_ids,
+    ):
+        return None
+
     baseline_region_ids = _ordered_region_ids(
         baseline_ordered_candidate_ids,
         candidate_region_ids,
     )
     preview_region_ids = _ordered_region_ids(
-        variant_outcome.ordered_candidate_ids,
+        variant_ordered_candidate_ids,
         candidate_region_ids,
     )
     baseline_ranks = {
@@ -1247,6 +1290,64 @@ def _refinement_preview(
             - len(set(baseline_ordered_candidate_ids))
         ),
     )
+
+
+def _option_can_expand_existing_require(
+    intent: SearchIntent,
+    option: RefinementOption,
+) -> bool:
+    explicit_requirement_ids = {
+        requirement.factor_id for requirement in intent.constraints.factor_requirements
+    }
+    existing_requires = {
+        preference.factor_id: preference
+        for preference in intent.factor_preferences
+        if preference.mode == "require"
+        and preference.factor_id not in explicit_requirement_ids
+    }
+    if any(
+        objective.factor_id in existing_requires
+        for objective in option.objective_patches
+    ):
+        return True
+    for patch in option.factor_preference_patches:
+        existing = existing_requires.get(patch.factor_id)
+        if existing is None:
+            continue
+        if patch.mode != "require":
+            return True
+        if _require_values_can_expand(existing.values, patch.values):
+            return True
+    return False
+
+
+def _require_values_can_expand(
+    existing_values: Sequence[str],
+    proposed_values: Sequence[str],
+) -> bool:
+    if not existing_values:
+        return False
+    if not proposed_values:
+        return True
+    return not set(proposed_values).issubset(existing_values)
+
+
+def _visible_top_three_has_unscored_candidate(
+    ordered_candidate_ids: Sequence[str],
+    candidate_region_ids: Mapping[str, str],
+    unscored_candidate_ids: frozenset[str],
+) -> bool:
+    visible_region_ids: set[str] = set()
+    for candidate_id in ordered_candidate_ids:
+        ski_region_id = candidate_region_ids[candidate_id]
+        if ski_region_id in visible_region_ids:
+            continue
+        visible_region_ids.add(ski_region_id)
+        if candidate_id in unscored_candidate_ids:
+            return True
+        if len(visible_region_ids) == 3:
+            return False
+    return False
 
 
 def _ordered_region_ids(

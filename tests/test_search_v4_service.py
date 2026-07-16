@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
@@ -11,7 +12,9 @@ from app.domain import search_v4_service
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.search_policy import load_search_policy
+from app.domain.search_ranking import UnscoredAllocation
 from app.domain.search_refinement import (
+    RefinementCandidateState,
     RefinementImpact,
     RefinementOption,
     RefinementProposal,
@@ -135,7 +138,12 @@ def _validated_refinement(
     )
 
 
-def _ordered_candidate(candidate_id: str, ski_region_id: str) -> SimpleNamespace:
+def _ordered_candidate(
+    candidate_id: str,
+    ski_region_id: str,
+    *,
+    ranking: object | None = None,
+) -> SimpleNamespace:
     return SimpleNamespace(
         record=SimpleNamespace(
             candidate_id=candidate_id,
@@ -143,6 +151,7 @@ def _ordered_candidate(candidate_id: str, ski_region_id: str) -> SimpleNamespace
             constraint_facts=object(),
         ),
         evaluations=(),
+        ranking=ranking if ranking is not None else SimpleNamespace(),
     )
 
 
@@ -210,6 +219,244 @@ def test_refinement_previews_group_candidate_ranks_and_preserve_patches(
             preview_rank=None,
         ),
     )
+
+
+def test_refinements_use_full_eligible_set_beyond_llm_summary_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    policy = load_search_policy()
+    ordered = tuple(
+        _ordered_candidate(f"candidate-{index:02d}", f"region-{index:02d}")
+        for index in range(policy.refinement.max_candidate_summaries + 1)
+    )
+    baseline_ids = tuple(item.record.candidate_id for item in ordered)
+    outside_summary_id = baseline_ids[-1]
+    validated = _validated_refinement(
+        (
+            (outside_summary_id, *baseline_ids[:-1]),
+            frozenset(baseline_ids),
+        ),
+        (baseline_ids, frozenset(baseline_ids)),
+    )
+    captured_candidate_ids: list[str] = []
+
+    def generate(**kwargs: object) -> tuple[ValidatedRefinementProposal, ...]:
+        candidates = cast(
+            tuple[RefinementCandidateState, ...],
+            kwargs["candidates"],
+        )
+        captured_candidate_ids.extend(item.candidate_id for item in candidates)
+        return (validated,)
+
+    monkeypatch.setattr(search_v4_service, "generate_refinement_proposals", generate)
+
+    refinements = search_v4_service._refinements(
+        include=True,
+        brief=None,
+        intent=SearchIntent(),
+        ordered=ordered,
+        policy=policy,
+        client=object(),
+        already_answered_question_ids=frozenset(),
+    )
+
+    assert captured_candidate_ids == list(baseline_ids)
+    preview = refinements[0].options[0].preview
+    assert preview is not None
+    assert preview.top_rank_changes[0] == (
+        search_v4_service.SearchV4RefinementRankChange(
+            ski_region_id=f"region-{policy.refinement.max_candidate_summaries:02d}",
+            previous_rank=None,
+            preview_rank=1,
+        )
+    )
+
+
+def test_refinement_previews_are_omitted_for_unscored_visible_baseline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ordered = (
+        _ordered_candidate("candidate-a", "region-a"),
+        _ordered_candidate("candidate-b", "region-b"),
+        _ordered_candidate(
+            "candidate-c",
+            "region-c",
+            ranking=UnscoredAllocation(
+                reason="infeasible_group_caps",
+                active_group_ids=("ski_experience",),
+            ),
+        ),
+    )
+    validated = _validated_refinement(
+        (
+            ("candidate-a", "candidate-b"),
+            frozenset({"candidate-a", "candidate-b", "candidate-c"}),
+        ),
+        (
+            ("candidate-b", "candidate-a"),
+            frozenset({"candidate-a", "candidate-b", "candidate-c"}),
+        ),
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "generate_refinement_proposals",
+        lambda **_kwargs: (validated,),
+    )
+
+    refinements = search_v4_service._refinements(
+        include=True,
+        brief=None,
+        intent=SearchIntent(),
+        ordered=ordered,
+        policy=load_search_policy(),
+        client=object(),
+        already_answered_question_ids=frozenset(),
+    )
+
+    assert all(option.preview is None for option in refinements[0].options)
+
+
+def test_refinement_preview_is_omitted_for_unscored_option_top_three(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    candidate_ids = ("candidate-a", "candidate-b", "candidate-c")
+    validated = _validated_refinement(
+        (
+            ("candidate-a", "candidate-b"),
+            frozenset(candidate_ids),
+        ),
+        (
+            ("candidate-b", "candidate-a", "candidate-c"),
+            frozenset(candidate_ids),
+        ),
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "generate_refinement_proposals",
+        lambda **_kwargs: (validated,),
+    )
+
+    refinements = search_v4_service._refinements(
+        include=True,
+        brief=None,
+        intent=SearchIntent(),
+        ordered=tuple(
+            _ordered_candidate(candidate_id, f"region-{candidate_id[-1]}")
+            for candidate_id in candidate_ids
+        ),
+        policy=load_search_policy(),
+        client=object(),
+        already_answered_question_ids=frozenset(),
+    )
+
+    assert refinements[0].options[0].preview is None
+    assert refinements[0].options[1].preview is not None
+
+
+def test_refinement_previews_omit_expanding_require_changes_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    proposal = RefinementProposal(
+        question_id="pace-requirement",
+        question="How strict should the local pace requirement be?",
+        reason="The current requirement can be narrowed or relaxed.",
+        options=(
+            RefinementOption(
+                label="Relax pace",
+                description="Prefer rather than require the selected local pace.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(factor_id="local_pace", mode="prefer"),
+                ),
+            ),
+            RefinementOption(
+                label="Allow lively bases",
+                description="Widen the accepted local pace values.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="local_pace",
+                        mode="require",
+                        values=("quiet", "balanced", "lively"),
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="Quiet only",
+                description="Narrow the accepted local pace values.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="local_pace",
+                        mode="require",
+                        values=("quiet",),
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="More terrain",
+                description="Give ski experience more ranking influence.",
+                group_priority_patches=(
+                    GroupPriorityPatch(
+                        group_id="ski_experience",
+                        importance="very_high",
+                    ),
+                ),
+            ),
+        ),
+    )
+    candidate_ids = ("candidate-a", "candidate-b", "candidate-c")
+    validated = ValidatedRefinementProposal(
+        proposal=proposal,
+        impact=RefinementImpact(
+            material=True,
+            eligibility_changed=True,
+            winner_changed=True,
+            top_three_membership_changed=False,
+            top_three_order_changed=True,
+            top_five_score_changed=True,
+        ),
+        variant_outcomes=tuple(
+            RefinementVariantOutcome(
+                ordered_candidate_ids=(
+                    candidate_ids[index % 3],
+                    *candidate_ids[: index % 3],
+                    *candidate_ids[index % 3 + 1 :],
+                ),
+                eligible_candidate_ids=frozenset(candidate_ids),
+            )
+            for index in range(4)
+        ),
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "generate_refinement_proposals",
+        lambda **_kwargs: (validated,),
+    )
+
+    refinements = search_v4_service._refinements(
+        include=True,
+        brief=None,
+        intent=SearchIntent(
+            factor_preferences=(
+                FactorPreferencePatch(
+                    factor_id="local_pace",
+                    mode="require",
+                    values=("quiet", "balanced"),
+                ),
+            )
+        ),
+        ordered=tuple(
+            _ordered_candidate(candidate_id, f"region-{candidate_id[-1]}")
+            for candidate_id in candidate_ids
+        ),
+        policy=load_search_policy(),
+        client=object(),
+        already_answered_question_ids=frozenset(),
+    )
+
+    options = refinements[0].options
+    assert options[0].preview is None
+    assert options[1].preview is None
+    assert options[2].preview is not None
+    assert options[3].preview is not None
 
 
 def test_refinement_preview_caps_changes_and_deduplicates_regions() -> None:
