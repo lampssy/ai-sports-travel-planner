@@ -146,6 +146,17 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport);
 }
 
+async function scrollYAfterLayout(page: Page) {
+  return page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => resolve(window.scrollY));
+        });
+      }),
+  );
+}
+
 async function submitHomepageBrief(page: Page, brief: string) {
   await page.getByLabel("Describe your ski trip").fill(brief);
   await page.getByRole("button", { name: "Find resorts" }).click();
@@ -277,7 +288,7 @@ test("desktop board compares, selects alternatives, and reranks in place", async
   ).toBeVisible();
   await expect(page.getByText("Replacement refinement?")).toBeVisible();
   await expect(page.getByText("Which stay style fits?")).toBeHidden();
-  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBeforeRerank);
+  await expect.poll(() => scrollYAfterLayout(page)).toBe(scrollBeforeRerank);
   await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
   expect(searchRequests).toHaveLength(2);
   await page.getByRole("button", { name: "Undo" }).click();

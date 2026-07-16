@@ -63,6 +63,11 @@ interface PreviousSearchState {
   answeredQuestionIds: string[];
 }
 
+interface PendingRerankScrollRestore {
+  scrollY: number;
+  response: SearchSession["response"] | null;
+}
+
 function App() {
   const [route, setRoute] = useState<AppRoute>(() => parseAppRoute(window.location));
   const [filters, setFilters] = useState<SearchFilters>(defaultSearchFilters);
@@ -91,6 +96,9 @@ function App() {
     useState<CurrentTripSummary | null>(null);
   const adjustFiltersRef = useRef<HTMLButtonElement>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const pendingRerankScrollRestoreRef =
+    useRef<PendingRerankScrollRestore | null>(null);
+  const [rerankRestoreRequest, setRerankRestoreRequest] = useState(0);
 
   useEffect(() => {
     const syncRoute = () => {
@@ -132,6 +140,17 @@ function App() {
       resultsHeadingRef.current?.focus();
     }
   }, [focusRequest]);
+
+  useEffect(() => {
+    const pending = pendingRerankScrollRestoreRef.current;
+    if (!pending || pending.response !== session?.response) return;
+    const frame = window.requestAnimationFrame(() => {
+      if (pendingRerankScrollRestoreRef.current !== pending) return;
+      window.scrollTo(0, pending.scrollY);
+      pendingRerankScrollRestoreRef.current = null;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [session, rerankRestoreRequest]);
 
   const appliedIntent = useMemo(
     () =>
@@ -257,7 +276,11 @@ function App() {
       answeredQuestionIds,
     };
     const previousResponse = session?.response;
-    const scrollY = window.scrollY;
+    const pendingScrollRestore: PendingRerankScrollRestore = {
+      scrollY: window.scrollY,
+      response: null,
+    };
+    pendingRerankScrollRestoreRef.current = pendingScrollRestore;
     setLoading(true);
     setRefinementError(null);
     try {
@@ -271,7 +294,14 @@ function App() {
         brief,
         false,
       );
-      if (!nextResponse) return;
+      if (!nextResponse) {
+        if (pendingRerankScrollRestoreRef.current === pendingScrollRestore) {
+          pendingRerankScrollRestoreRef.current = null;
+        }
+        return;
+      }
+      pendingScrollRestore.response = nextResponse;
+      setRerankRestoreRequest((current) => current + 1);
       setPreferences(nextPreferences);
       setObjectives(nextObjectives);
       setGroupPriorities(nextGroups);
@@ -283,10 +313,10 @@ function App() {
         setChangedRankGroupIds(summary.changedGroupIds);
         window.setTimeout(() => setChangedRankGroupIds(new Set()), 2400);
       }
-      if (window.scrollY !== scrollY) {
-        window.requestAnimationFrame(() => window.scrollTo({ top: scrollY }));
-      }
     } catch (caught) {
+      if (pendingRerankScrollRestoreRef.current === pendingScrollRestore) {
+        pendingRerankScrollRestoreRef.current = null;
+      }
       setRefinementError(
         caught instanceof Error ? caught.message : "Could not rerank these results.",
       );
