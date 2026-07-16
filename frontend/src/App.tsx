@@ -106,6 +106,9 @@ function App() {
       if (nextRoute.name === "search" && window.location.pathname !== "/") {
         window.history.replaceState(null, "", "/");
       }
+      if (nextRoute.name !== "search") {
+        pendingRerankScrollRestoreRef.current = null;
+      }
       setRoute(nextRoute);
     };
     window.addEventListener(APP_NAVIGATION_EVENT, syncRoute);
@@ -143,14 +146,25 @@ function App() {
 
   useEffect(() => {
     const pending = pendingRerankScrollRestoreRef.current;
-    if (!pending || pending.response !== session?.response) return;
+    if (
+      route.name !== "search" ||
+      !pending ||
+      pending.response !== session?.response
+    ) {
+      return;
+    }
     const frame = window.requestAnimationFrame(() => {
-      if (pendingRerankScrollRestoreRef.current !== pending) return;
+      if (
+        route.name !== "search" ||
+        pendingRerankScrollRestoreRef.current !== pending
+      ) {
+        return;
+      }
       window.scrollTo(0, pending.scrollY);
       pendingRerankScrollRestoreRef.current = null;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [session, rerankRestoreRequest]);
+  }, [route.name, session, rerankRestoreRequest]);
 
   const appliedIntent = useMemo(
     () =>
@@ -357,6 +371,7 @@ function App() {
   }
 
   async function removeChip(chip: ParsedChip) {
+    if (loading) return;
     let nextFilters = filters;
     let nextPreferences = preferences;
     let nextGroups = groupPriorities;
@@ -405,7 +420,7 @@ function App() {
     setPreferences(nextPreferences);
     setGroupPriorities(nextGroups);
     setObjectives(nextObjectives);
-    if (!session || loading) return;
+    if (!session) return;
     setLoading(true);
     try {
       await fetchSearch(
@@ -455,6 +470,10 @@ function App() {
 
   const goToSearch = () => navigate("/");
   const goToCurrentTrip = () => navigate("/current-trip");
+  const openFilters = () => {
+    if (loading) return;
+    setDrawerOpen(true);
+  };
 
   if (route.name === "currentTrip") {
     return (
@@ -478,12 +497,19 @@ function App() {
   const drawer = (
     <SearchFiltersDrawer
       open={drawerOpen}
+      disabled={loading}
       filters={filters}
       preferences={preferences}
       returnFocusRef={adjustFiltersRef}
-      onFiltersChange={setFilters}
-      onPreferencesChange={setPreferences}
-      onObjectivesChange={setObjectives}
+      onFiltersChange={(nextFilters) => {
+        if (!loading) setFilters(nextFilters);
+      }}
+      onPreferencesChange={(nextPreferences) => {
+        if (!loading) setPreferences(nextPreferences);
+      }}
+      onObjectivesChange={(nextObjectives) => {
+        if (!loading) setObjectives(nextObjectives);
+      }}
       onClose={() => setDrawerOpen(false)}
     />
   );
@@ -515,7 +541,7 @@ function App() {
           canUndo={undoState !== null}
           headingRef={resultsHeadingRef}
           adjustFiltersRef={adjustFiltersRef}
-          onOpenFilters={() => setDrawerOpen(true)}
+          onOpenFilters={openFilters}
           onRemoveChip={(chip) => void removeChip(chip)}
           onApplyRefinement={(questionId, option) =>
             void applyRefinement(questionId, option)
@@ -568,7 +594,7 @@ function App() {
         adjustFiltersRef={adjustFiltersRef}
         onBriefChange={setBrief}
         onSubmit={handleSubmit}
-        onOpenFilters={() => setDrawerOpen(true)}
+        onOpenFilters={openFilters}
         onRemoveChip={(chip) => void removeChip(chip)}
       />
       {drawer}

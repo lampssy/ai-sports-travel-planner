@@ -144,6 +144,7 @@ let requests: Array<{ url: string; init?: RequestInit }>;
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
+  vi.stubGlobal("scrollTo", vi.fn());
   searchResponses = [response()];
   requests = [];
   vi.stubGlobal(
@@ -498,6 +499,69 @@ test("previews a validated dynamic refinement before applying it", async () => {
   ]);
   expect(body.already_answered_question_ids).toEqual(["evening-style"]);
   expect(screen.getByText(/prefer stay-base après: lively/i)).toBeInTheDocument();
+});
+
+test("guards open-drawer and chip mutations during a delayed rerank", async () => {
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "snow-priority",
+          question: "How important is trip-window snow confidence?",
+          reason: "The answer changes the result order.",
+          options: [
+            {
+              label: "Very important",
+              description: "Give trip viability very high importance.",
+              group_priority_patches: [
+                { group_id: "trip_viability", importance: "very_high" },
+              ],
+              factor_preference_patches: [],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(await screen.findByRole("radio", { name: /very important/i }));
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+
+  let resolveRerank: ((value: Response) => void) | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/search") {
+        return new Promise<Response>((resolve) => {
+          resolveRerank = resolve;
+        });
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ detail: "Not found" }), { status: 404 }),
+      );
+    }),
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  expect(await screen.findByText(/reranking these recommendations/i)).toBeVisible();
+  const country = screen.getByLabelText("Country");
+  expect(country).toBeDisabled();
+  fireEvent.change(country, { target: { value: "Austria" } });
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  expect(screen.getByRole("button", { name: "Remove France" })).toBeDisabled();
+
+  resolveRerank?.(new Response(JSON.stringify(response()), { status: 200 }));
+  await waitFor(() => {
+    expect(screen.queryByText(/reranking these recommendations/i)).not.toBeInTheDocument();
+  });
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Country")).toHaveValue("France");
+  expect(screen.getByRole("button", { name: "Remove France" })).toBeInTheDocument();
 });
 
 test("lets users remove selected objectives and refinement group priorities", async () => {

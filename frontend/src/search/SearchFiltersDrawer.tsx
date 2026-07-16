@@ -27,6 +27,7 @@ function Field({
 
 export function SearchFiltersDrawer({
   open,
+  disabled,
   filters,
   preferences,
   returnFocusRef,
@@ -36,6 +37,7 @@ export function SearchFiltersDrawer({
   onClose,
 }: {
   open: boolean;
+  disabled: boolean;
   filters: SearchFilters;
   preferences: FactorPreferencePatch[];
   returnFocusRef: RefObject<HTMLButtonElement>;
@@ -65,6 +67,25 @@ export function SearchFiltersDrawer({
   const closeAndReturnFocus = () => {
     onClose();
     window.setTimeout(() => returnFocusRef.current?.focus(), 0);
+  };
+
+  const changeFilters = (nextFilters: SearchFilters) => {
+    if (disabled) return;
+    onFiltersChange(nextFilters);
+  };
+
+  const changeValueObjective = (
+    nextFilters: SearchFilters,
+    nextObjectives: SearchObjective[],
+  ) => {
+    if (disabled) return;
+    onFiltersChange(nextFilters);
+    onObjectivesChange(nextObjectives);
+  };
+
+  const changePreferences = (nextPreferences: FactorPreferencePatch[]) => {
+    if (disabled) return;
+    onPreferencesChange(nextPreferences);
   };
 
   return (
@@ -102,8 +123,9 @@ export function SearchFiltersDrawer({
             <Field label="Country">
               <input
                 value={filters.location}
+                disabled={disabled}
                 onChange={(event) =>
-                  onFiltersChange({ ...filters, location: event.target.value })
+                  changeFilters({ ...filters, location: event.target.value })
                 }
                 className="control"
               />
@@ -111,8 +133,9 @@ export function SearchFiltersDrawer({
             <Field label="Skill">
               <select
                 value={filters.skillLevel}
+                disabled={disabled}
                 onChange={(event) =>
-                  onFiltersChange({
+                  changeFilters({
                     ...filters,
                     skillLevel: event.target.value as SearchFilters["skillLevel"],
                   })
@@ -131,8 +154,9 @@ export function SearchFiltersDrawer({
                 min="0.01"
                 step="0.01"
                 value={filters.maxPrice}
+                disabled={disabled}
                 onChange={(event) =>
-                  onFiltersChange({ ...filters, maxPrice: event.target.value })
+                  changeFilters({ ...filters, maxPrice: event.target.value })
                 }
                 className="control"
               />
@@ -140,8 +164,9 @@ export function SearchFiltersDrawer({
             <Field label="Minimum stay tier">
               <select
                 value={filters.stars}
+                disabled={disabled}
                 onChange={(event) =>
-                  onFiltersChange({
+                  changeFilters({
                     ...filters,
                     stars: event.target.value as SearchFilters["stars"],
                   })
@@ -159,8 +184,9 @@ export function SearchFiltersDrawer({
           <Field label="Travel window">
             <select
               value={filters.travelWindowMode}
+              disabled={disabled}
               onChange={(event) =>
-                onFiltersChange({
+                changeFilters({
                   ...filters,
                   travelWindowMode: event.target.value as SearchFilters["travelWindowMode"],
                 })
@@ -176,8 +202,9 @@ export function SearchFiltersDrawer({
             <Field label="Travel month">
               <select
                 value={filters.travelMonth}
+                disabled={disabled}
                 onChange={(event) =>
-                  onFiltersChange({
+                  changeFilters({
                     ...filters,
                     travelMonth: Number(event.target.value) as TravelMonth,
                   })
@@ -198,8 +225,9 @@ export function SearchFiltersDrawer({
                 <input
                   type="date"
                   value={filters.tripStartDate}
+                  disabled={disabled}
                   onChange={(event) =>
-                    onFiltersChange({ ...filters, tripStartDate: event.target.value })
+                    changeFilters({ ...filters, tripStartDate: event.target.value })
                   }
                   className="control"
                 />
@@ -208,8 +236,9 @@ export function SearchFiltersDrawer({
                 <input
                   type="date"
                   value={filters.tripEndDate}
+                  disabled={disabled}
                   onChange={(event) =>
-                    onFiltersChange({ ...filters, tripEndDate: event.target.value })
+                    changeFilters({ ...filters, tripEndDate: event.target.value })
                   }
                   className="control"
                 />
@@ -221,8 +250,9 @@ export function SearchFiltersDrawer({
             <Field label="Origin">
               <input
                 value={filters.originText}
+                disabled={disabled}
                 onChange={(event) =>
-                  onFiltersChange({ ...filters, originText: event.target.value })
+                  changeFilters({ ...filters, originText: event.target.value })
                 }
                 placeholder="Berlin"
                 className="control"
@@ -234,8 +264,9 @@ export function SearchFiltersDrawer({
                 min="0.1"
                 step="0.1"
                 value={filters.maxDriveHours}
+                disabled={disabled}
                 onChange={(event) =>
-                  onFiltersChange({ ...filters, maxDriveHours: event.target.value })
+                  changeFilters({ ...filters, maxDriveHours: event.target.value })
                 }
                 placeholder="hours"
                 className="control"
@@ -246,10 +277,11 @@ export function SearchFiltersDrawer({
           <Field label="Value objective">
             <select
               value={filters.valueObjective}
+              disabled={disabled}
               onChange={(event) => {
                 const factorId = event.target.value as SearchFilters["valueObjective"];
-                onFiltersChange({ ...filters, valueObjective: factorId });
-                onObjectivesChange(
+                changeValueObjective(
+                  { ...filters, valueObjective: factorId },
                   factorId ? [{ factor_id: factorId, importance: "normal" }] : [],
                 );
               }}
@@ -273,8 +305,9 @@ export function SearchFiltersDrawer({
                     type="button"
                     key={factorId}
                     aria-pressed={active}
+                    disabled={disabled}
                     onClick={() =>
-                      onPreferencesChange(
+                      changePreferences(
                         active
                           ? preferences.filter((item) => item.factor_id !== factorId)
                           : upsertBy(

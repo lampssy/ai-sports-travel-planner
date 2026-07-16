@@ -12,6 +12,7 @@ async function mockSearchV4Api(
   page: Page,
   response: SearchResponse | MockSearchResult[],
   searchRequests: SearchV4Request[],
+  responseGates: Array<Promise<void> | undefined> = [],
 ) {
   const responses = Array.isArray(response) ? response : [response];
   let responseIndex = 0;
@@ -42,8 +43,10 @@ async function mockSearchV4Api(
 
   await page.route("**/api/search", async (route) => {
     searchRequests.push(route.request().postDataJSON() as SearchV4Request);
-    const next = responses[Math.min(responseIndex, responses.length - 1)];
+    const currentResponseIndex = responseIndex;
+    const next = responses[Math.min(currentResponseIndex, responses.length - 1)];
     responseIndex += 1;
+    await responseGates[currentResponseIndex];
     if ("status" in next) {
       await route.fulfill({
         status: next.status,
@@ -300,6 +303,91 @@ test("desktop board compares, selects alternatives, and reranks in place", async
     { factor_id: "pass_terrain_value", importance: "normal" },
   ]);
   await expectNoHorizontalOverflow(page);
+});
+
+test("a delayed rerank cannot restore results scroll on Current trip", async ({
+  page,
+}) => {
+  let releaseRerank: (() => void) | undefined;
+  const rerankGate = new Promise<void>((resolve) => {
+    releaseRerank = resolve;
+  });
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(
+    page,
+    [refinementResponse(), rerankedResponse()],
+    searchRequests,
+    [undefined, rerankGate],
+  );
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+  await page.getByRole("radio", { name: /snow reliability/i }).click();
+  await page.evaluate(() => window.scrollTo(0, 260));
+  await page.getByRole("button", { name: "Apply and rerank" }).click();
+  await expect.poll(() => searchRequests.length).toBe(2);
+
+  await page.getByRole("button", { name: "Current trip", exact: true }).click();
+  await expect(page.getByText("Trip companion", { exact: true })).toBeVisible();
+  await page.evaluate(() => {
+    document.body.style.minHeight = "2000px";
+    window.scrollTo(0, 40);
+  });
+  const rerankResponse = page.waitForResponse(
+    (response) => response.url().includes("/api/search") && response.request().method() === "POST",
+  );
+  releaseRerank?.();
+  await rerankResponse;
+  await scrollYAfterLayout(page);
+  await scrollYAfterLayout(page);
+
+  expect(await page.evaluate(() => window.scrollY)).toBe(40);
+});
+
+test("a delayed rerank blocks chip and open-drawer edits", async ({ page }) => {
+  let releaseRerank: (() => void) | undefined;
+  const rerankGate = new Promise<void>((resolve) => {
+    releaseRerank = resolve;
+  });
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(
+    page,
+    [refinementResponse(), rerankedResponse()],
+    searchRequests,
+    [undefined, rerankGate],
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+  await page.getByRole("radio", { name: /snow reliability/i }).click();
+  await page.getByRole("button", { name: "Adjust" }).click();
+  await page.getByRole("button", { name: "Apply and rerank" }).dispatchEvent("click");
+  await expect.poll(() => searchRequests.length).toBe(2);
+
+  const dialog = page.getByRole("dialog", { name: "Adjust filters" });
+  const country = dialog.getByLabel("Country");
+  await expect(country).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: "Close filters" })).toBeEnabled();
+  await country.evaluate((element) => {
+    const input = element as HTMLInputElement;
+    const valueSetter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    valueSetter?.call(input, "Austria");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await dialog.getByRole("button", { name: "Close filters" }).click();
+
+  const franceChip = page.getByRole("button", { name: "Remove France" });
+  await expect(franceChip).toBeDisabled();
+  await franceChip.dispatchEvent("click");
+  releaseRerank?.();
+  await expect(page.getByText("Replacement refinement?")).toBeVisible();
+
+  expect(searchRequests[1].intent.constraints.location).toEqual({ country: "France" });
+  await expect(page.getByRole("button", { name: "Remove France" })).toBeEnabled();
+  await page.getByRole("button", { name: "Adjust" }).click();
+  await expect(page.getByLabel("Country")).toHaveValue("France");
 });
 
 test("failed refinement apply preserves results and the selected option", async ({

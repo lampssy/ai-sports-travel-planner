@@ -15,10 +15,12 @@ import { RefinementCard } from "./RefinementCard";
 function ContextGroup({
   label,
   chips,
+  disabled,
   onRemove,
 }: {
   label: string;
   chips: ParsedChip[];
+  disabled: boolean;
   onRemove: (chip: ParsedChip) => void;
 }) {
   if (!chips.length) return null;
@@ -32,6 +34,7 @@ function ContextGroup({
             key={chip.id}
             className="context-chip"
             aria-label={`Remove ${chip.label}`}
+            disabled={disabled}
             onClick={() => onRemove(chip)}
           >
             {chip.label}
@@ -82,16 +85,23 @@ export function SearchContextRail({
           type="button"
           ref={adjustFiltersRef}
           className="text-action search-context__adjust"
+          disabled={loading}
           onClick={onOpenFilters}
         >
           <SlidersHorizontal aria-hidden="true" size={17} />
           Adjust
         </button>
       </div>
-      <ContextGroup label="Hard constraints" chips={hard} onRemove={onRemoveChip} />
+      <ContextGroup
+        label="Hard constraints"
+        chips={hard}
+        disabled={loading}
+        onRemove={onRemoveChip}
+      />
       <ContextGroup
         label="Preferences"
         chips={preferences}
+        disabled={loading}
         onRemove={onRemoveChip}
       />
       {refinement ? (

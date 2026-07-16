@@ -73,3 +73,28 @@ test("separates hard constraints from preferences and renders one refinement", (
   expect(screen.getByRole("button", { name: "Adjust" })).toBeVisible();
   expect(screen.getAllByText("What should break the tie?")).toHaveLength(1);
 });
+
+test("disables context mutations while recommendations are loading", () => {
+  const onOpenFilters = vi.fn();
+  const onRemoveChip = vi.fn();
+  render(
+    <SearchContextRail
+      intent={intent}
+      refinement={refinement}
+      loading
+      refinementError={null}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={onOpenFilters}
+      onRemoveChip={onRemoveChip}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByRole("button", { name: "Adjust" })).toBeDisabled();
+  for (const chip of screen.getAllByRole("button", { name: /^Remove / })) {
+    expect(chip).toBeDisabled();
+  }
+  expect(onOpenFilters).not.toHaveBeenCalled();
+  expect(onRemoveChip).not.toHaveBeenCalled();
+});
