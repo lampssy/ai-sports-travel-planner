@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: accepted visual design; written spec pending owner review
+- Status: accepted by owner; implementation planning next
 - Owner: solo-builder
 - Accepted visual pack:
   `docs/ui-concepts/2026-07-16-search-v4-web-experience/`
