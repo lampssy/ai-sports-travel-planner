@@ -164,6 +164,19 @@ function forecastWeatherResponse(
             thaw_risk: 0.1,
             wind_gust_kmh: 35,
           },
+          {
+            date_or_month_day: "2026-07-22",
+            snow_depth_cm: 120,
+            snow_depth_cm_p25: null,
+            snow_depth_cm_p50: null,
+            snow_depth_cm_p75: null,
+            snowfall_cm: 0,
+            temperature_min_c: -6,
+            temperature_max_c: -1,
+            rain_risk: 0,
+            thaw_risk: 0,
+            wind_gust_kmh: 10,
+          },
         ],
       },
     },
@@ -804,7 +817,8 @@ test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alt
     page.getByRole("img", { name: "Forecast snow profile" }),
   ).toBeVisible();
   await expect(page.getByText(/dashed line: forecast depth/i)).toBeVisible();
-  await expect(page.getByText(/diamond: rain, thaw, or wind risk/i)).toBeVisible();
+  await expect(page.getByText(/diamond: rain or thaw risk/i)).toBeVisible();
+  await expect(page.locator(".snow-chart__risk")).toHaveCount(2);
   expect(weatherRequests[0].intent.constraints.travel_window).toEqual({
     start_date: "2026-07-20",
     end_date: "2026-07-22",
