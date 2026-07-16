@@ -346,6 +346,30 @@ def test_month_summary_uses_recent_rows_only_when_normal_is_absent() -> None:
     assert summary.historical.daily_profile[0].snow_depth_cm_p50 == 70
 
 
+def test_exact_dates_weight_repeated_calendar_dates_in_historical_evidence() -> None:
+    start = date(2027, 1, 1)
+    requested_dates = tuple(start + timedelta(days=offset) for offset in range(366))
+    rows = tuple(
+        _climatology(
+            day,
+            snow_depth_cm_p50=373.5 if day == start else 282,
+        )
+        for day in requested_dates
+    )
+
+    summary = build_search_weather_evidence(
+        context=_context(
+            TravelWindow(start_date=start, end_date=date(2028, 1, 1)),
+        ),
+        candidate=_candidate(climatology_rows=rows),
+    )
+
+    assert summary is not None
+    assert summary.historical.snow_depth_cm_p50 == pytest.approx(282.5)
+    assert summary.historical.sources[0].row_count == 366
+    assert not any("365 of 366" in limitation for limitation in summary.limitations)
+
+
 def test_exact_dates_use_fresh_complete_preferred_source_forecasts() -> None:
     requested = tuple(date(2027, 1, 2) + timedelta(days=offset) for offset in range(3))
     forecasts = (

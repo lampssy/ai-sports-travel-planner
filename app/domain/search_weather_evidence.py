@@ -251,11 +251,7 @@ def _select_historical_rows(
         )
 
     selected: list[SnowClimatologyDaily] = []
-    seen: set[tuple[int, int]] = set()
     for month_day in requested_month_days:
-        if month_day in seen:
-            continue
-        seen.add(month_day)
         matching = rows_by_month_day.get(month_day, ())
         normal = _latest_historical_row(matching, "normal_30y")
         recent = _latest_historical_row(matching, "recent_15y")
