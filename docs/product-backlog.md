@@ -1479,6 +1479,68 @@ Promotion trigger:
 - Promote when background acquisition or push/alert workflows become critical
   enough that failure cannot be diagnosed from current logs and metrics.
 
+### Search V4 Weather-Evidence Outcome Metrics
+
+Status: candidate
+Area: Ops / Observability
+Source: Search V4 advisory feature review
+
+Why it matters:
+
+- `POST /api/search/weather-evidence` intentionally returns typed
+  HTTP-200 `unavailable` responses for expected evidence gaps. Generic HTTP
+  success telemetry cannot distinguish those responses from usable evidence,
+  so a widespread data-coverage loss can appear healthy.
+
+First scope:
+
+- Add low-cardinality outcome metrics with `status=available|unavailable|error`,
+  a bounded unavailable reason, travel-window type, and endpoint duration.
+- Use an OTLP smoke check as the promotion and acceptance signal: exercise the
+  endpoint with OTEL enabled and confirm the bounded series reaches the
+  configured exporter.
+
+Not now:
+
+- Do not label metrics with ski area, dates, IDs, raw intent or brief content,
+  or raw weather values.
+- Do not add a server cache, provider call, or new readiness failure policy.
+
+Promotion trigger:
+
+- Promote before relying on dossier weather evidence for operational monitoring
+  or alerting.
+
+### Scope-Aware `pass_terrain_value` Wording
+
+Status: candidate
+Area: Data Trust; Web UX
+Source: Search V4 advisory feature review
+
+Why it matters:
+
+- The raw scoring factor can use pass terrain, a connected terrain-domain
+  aggregate, or a selected ski-area fallback as its numerator. A generic
+  `Terrain per pass price` label can therefore imply pass-wide coverage when
+  the evidence is narrower.
+
+First scope:
+
+- Make `pass_terrain_value` labels disclose pass, terrain-domain, or selected
+  ski-area numerator scope while preserving the existing `Estimated` and
+  `Needs source` wording.
+- Add scope assertions for all three numerator sources in the scoring-details
+  presentation tests.
+
+Not now:
+
+- Do not change ranking weights, factor formulas, factor eligibility, or the
+  ownership of terrain evidence.
+
+Promotion trigger:
+
+- Promote before the next scoring-details or pass-value presentation change.
+
 ### Client Maintainability Refactors
 
 Status: candidate

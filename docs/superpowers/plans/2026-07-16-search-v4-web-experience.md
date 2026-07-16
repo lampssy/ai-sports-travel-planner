@@ -138,6 +138,21 @@ green while the stale five-test E2E suite was red as described above.
   Chromium E2E journeys. WebKit remains unavailable because its configured
   Playwright executable is not installed; no dependency was installed. The
   feature spec remains pre-completion pending independent advisory review.
+- 2026-07-16 Task 8 advisory and verification close-out: `7854842` added the
+  deterministic Chromium visual/acceptance evidence; `8637c94` resolved the
+  terrain-trust Blocker and the responsive current-trip, selected-candidate,
+  modal-containment, and dossier-return High findings; `6f677bd` resolved the
+  controlled-drawer focus-reset High and scoring-detail trust-label Medium;
+  `a1f4d65` recorded the follow-up evidence. The final advisory re-review is
+  APPROVED under the gate (Blocker: 0, High: 0). Two Medium residuals are
+  tracked in `docs/product-backlog.md`: bounded weather-evidence outcome
+  metrics with an OTLP smoke check, and scope-aware `pass_terrain_value`
+  wording/assertions. Fresh final verification passed `uv run pytest -q`
+  (1,419 passed in 355.81 s), `uv run ruff check .`, `npm --prefix frontend
+  test` (12 files, 83 tests), `npm --prefix frontend run build`, `npm --prefix
+  frontend run test:e2e` (40 Chromium journeys), and `git diff --check`.
+  WebKit remains unavailable because its configured Playwright executable is
+  not installed; no browser dependency was installed to alter that limitation.
 
 ---
 
@@ -1253,7 +1268,7 @@ git commit -m "feat: add dossier snow evidence and stay handoff"
 - Modify: `docs/superpowers/specs/2026-07-16-search-v4-hybrid-results-design.md`
 - Modify: this plan's execution notes while work is in progress
 
-- [ ] **Step 1: Add deterministic visual states and screenshot tests**
+- [x] **Step 1: Add deterministic visual states and screenshot tests**
 
 In `visual.spec.ts`, mock stable font/data/time inputs and capture:
 
@@ -1266,7 +1281,7 @@ In `visual.spec.ts`, mock stable font/data/time inputs and capture:
 Use `expect(page).toHaveScreenshot(...)` after waiting for fonts and the main
 heading. Store snapshots in Playwright's standard snapshot folder.
 
-- [ ] **Step 2: Compare each state with the accepted visual pack**
+- [x] **Step 2: Compare each state with the accepted visual pack**
 
 Use:
 
@@ -1281,7 +1296,7 @@ content density, hierarchy, colors, borders, type scale, stable metric tracks,
 control overflow, and mobile reflow. Do not copy illustrative values into
 product fixtures solely to make pixels match.
 
-- [ ] **Step 3: Run manual accessibility and resilience checks**
+- [x] **Step 3: Run manual accessibility and resilience checks**
 
 At desktop and mobile widths verify:
 
@@ -1297,7 +1312,7 @@ At desktop and mobile widths verify:
   missing metrics, stale forecast, and missing evidence;
 - no raw brief or weather values added to logging/telemetry.
 
-- [ ] **Step 4: Run the complete automated verification suite**
+- [x] **Step 4: Run the complete automated verification suite**
 
 Run:
 
@@ -1311,7 +1326,7 @@ npm --prefix frontend run test:e2e
 
 Expected: all backend, lint, frontend unit, build, E2E, and visual checks pass.
 
-- [ ] **Step 5: Run Snowcast advisory feature review**
+- [x] **Step 5: Run Snowcast advisory feature review**
 
 Use `snowcast-advisory-review` in `feature-review` mode for:
 
@@ -1330,7 +1345,7 @@ Resolve every Blocker and High finding, rerun affected checks, and record Medium
 or Low follow-ups in `docs/product-backlog.md` only when they are concrete and
 worth preserving.
 
-- [ ] **Step 6: Update durable documentation**
+- [x] **Step 6: Update durable documentation**
 
 In `docs/engineering-notes.md`, record:
 
@@ -1344,7 +1359,7 @@ Mark the feature spec implemented only after feature review and all checks are
 green. Update this plan's progress/outcome notes with exact verification and
 residual limitations.
 
-- [ ] **Step 7: Commit close-out changes**
+- [x] **Step 7: Commit close-out changes**
 
 ```bash
 git add frontend/tests/e2e/visual.spec.ts \

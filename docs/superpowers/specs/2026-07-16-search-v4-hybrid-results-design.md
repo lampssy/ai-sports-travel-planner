@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: accepted by owner; implementation plan prepared
+- Status: implemented; advisory feature-review complete
 - Owner: solo-builder
 - Accepted visual pack:
   `docs/ui-concepts/2026-07-16-search-v4-web-experience/`
@@ -206,7 +206,10 @@ Invariants:
   - reviewers: Product / Strategy, Backend / API, Data Trust & Source
     Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
     Performance, Monetization / Partnerships
-  - status: planned
+  - status: completed on 2026-07-16; approved with Blocker: 0 and High: 0.
+    The two worthwhile Medium residuals are tracked in `docs/product-backlog.md`:
+    weather-evidence outcome metrics and scope-aware `pass_terrain_value`
+    wording.
 
 ## Developer Decision Checkpoints
 
@@ -1095,7 +1098,10 @@ Visual and manual checks:
   Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
   Performance, Monetization / Partnerships.
 - Design-review status: completed on 2026-07-16.
-- Outcome: proceed to implementation planning after owner review of this spec.
+- Feature-review status: completed on 2026-07-16 and approved under the
+  advisory gate (Blocker: 0, High: 0).
+- Outcome: implemented after owner review, exact-head remediation, and final
+  verification recorded in the implementation plan.
 - Consolidated-flow findings resolved in this revision:
   - [High] Backend / API: session-long weather caching could outlive forecast
     freshness. Every response now carries server-owned evaluation and validity
@@ -1149,12 +1155,25 @@ Visual and manual checks:
 - No defensible design finding remains for Security & Privacy, Observability /
   Ops, or Monetization / Partnerships after the telemetry,
   no-extra-request-work, and estimate-only accommodation constraints.
+- Feature-review findings resolved during implementation:
+  - [Blocker] terrain evidence now preserves its owning pass, terrain-domain, or
+    selected-ski-area scope and its field-level trust status rather than
+    presenting an estimated ski-area value as unqualified pass terrain.
+  - [High] the responsive post-search header retains `Current trip`; dossier
+    routing preserves the displayed selected alternative; filter-drawer focus
+    remains contained and stable through controlled edits; and dossier return
+    restores a deliberate results focus target.
+  - [Medium] mixed elevation and forecast-coverage wording, scoring-detail
+    `Estimated` / `Needs source` labels, and the remaining focused review
+    findings are resolved.
+- Tracked feature-review residuals:
+  - [Medium] add bounded weather-evidence outcome metrics and an OTLP smoke
+    check so typed HTTP-200 unavailable responses are visible to operators;
+  - [Medium] make `pass_terrain_value` wording scope-aware and assert pass,
+    terrain-domain, and selected-ski-area numerators while retaining the trust
+    qualifier.
 - Known residual risks:
   - expanded cards can produce long pages when many results are opened;
   - practical metrics depend on uneven catalog and provider coverage;
   - exact refinement previews require a new structured response field;
   - browser-session return-state preservation needs careful history handling;
-  - the one-area weather endpoint still needs exact-head payload, construction,
-    repository-call, and browser-cache verification;
-  - the final dossier responsive behavior still needs Playwright verification at
-    narrow mobile and 200% zoom during implementation.
