@@ -67,6 +67,9 @@ test("creates an in-memory session with the winner expanded and selected", () =>
   expect(session.brief).toBe("A March trip in France");
   expect(session.intent).toBe(intent);
   expect(session.expandedGroupIds).toEqual(new Set(["region-a"]));
+  expect(session.resultsScrollY).toBe(0);
+  expect(session.dossierNavigatorCollapsed).toBe(false);
+  expect(session.dossierGroupId).toBeNull();
   expect(session.selectedCandidateIdByGroup).toEqual({
     "region-a": "candidate-a",
     "region-b": "candidate-b",

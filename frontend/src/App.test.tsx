@@ -317,6 +317,83 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
   expect(screen.getByText("Unknown")).toBeInTheDocument();
 });
 
+test("opens the selected candidate dossier without rerunning search and saves it", async () => {
+  const alternative = {
+    ...tignesConfiguration,
+    candidate_id: "tignes-access--local-pass",
+    selected_pass: {
+      ...tignesConfiguration.selected_pass,
+      lift_pass_product_id: "local-pass",
+      name: "Tignes local pass",
+    },
+  };
+  searchResponses = [
+    response({
+      results: [
+        {
+          ...response().results[0],
+          alternative_configurations: [alternative],
+        },
+      ],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    screen.getByRole("button", { name: /select le lac with tignes local pass/i }),
+  );
+  await user.click(screen.getByRole("link", { name: "View dossier" }));
+
+  expect(window.location.pathname).toBe("/recommendations/tignes-val-disere");
+  expect(window.location.search).toBe("?candidate=tignes-access--local-pass");
+  expect(
+    await screen.findByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
+  ).toBeInTheDocument();
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+
+  await user.click(screen.getByRole("button", { name: "Save as current trip" }));
+  const saveRequest = requests.find(
+    (item) => item.url === "/api/current-trip" && item.init?.method === "PUT",
+  );
+  expect(JSON.parse(String(saveRequest?.init?.body)).lift_pass_product_id).toBe(
+    "local-pass",
+  );
+});
+
+test("restores result state and scroll after returning from a dossier", async () => {
+  const user = userEvent.setup();
+  Object.defineProperty(window, "scrollY", { configurable: true, value: 428 });
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("link", { name: "View dossier" }));
+  await screen.findByRole("heading", { name: /tignes - val d'isere - le lac/i });
+  await user.click(screen.getByRole("button", { name: "All results" }));
+
+  expect(await screen.findByRole("heading", { name: /recommended ski trips/i })).toBeVisible();
+  await waitFor(() => expect(window.scrollTo).toHaveBeenCalledWith(0, 428));
+  expect(
+    screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
+  ).toHaveAttribute("aria-expanded", "true");
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+});
+
+test("recovers a direct dossier route without browser-session search state", async () => {
+  window.history.replaceState(
+    null,
+    "",
+    "/recommendations/tignes-val-disere?candidate=missing",
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Run a search first" })).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Return to search" }));
+  expect(window.location.pathname).toBe("/");
+  expect(screen.getByLabelText("Describe your ski trip")).toBeVisible();
+  expect(requests.some((item) => item.url === "/api/search")).toBe(false);
+});
+
 test("exact dates take precedence in the POST intent", async () => {
   const user = userEvent.setup();
   render(<App />);

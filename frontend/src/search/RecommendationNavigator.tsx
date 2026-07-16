@@ -1,0 +1,165 @@
+import {
+  ArrowLeft,
+  ChevronDown,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
+import { useState } from "react";
+
+import type { SearchV4RecommendationGroup } from "../types";
+import { snowWindowLabel } from "./searchPresentation";
+import { findSelectedCandidate, type SearchSession } from "./searchSession";
+
+export function boundedNavigatorGroups(
+  groups: SearchV4RecommendationGroup[],
+  currentGroupId: string,
+): SearchV4RecommendationGroup[] {
+  const current = groups.find((group) => group.ski_region_id === currentGroupId);
+  const topThree = groups.slice(0, 3);
+  if (!current || topThree.some((group) => group.ski_region_id === currentGroupId)) {
+    return topThree;
+  }
+  return [...groups.slice(0, 2), current];
+}
+
+export function RecommendationNavigator({
+  session,
+  currentGroup,
+  onSwitch,
+  onReturn,
+  onToggle,
+}: {
+  session: SearchSession;
+  currentGroup: SearchV4RecommendationGroup;
+  onSwitch: (skiRegionId: string, candidateId: string) => void;
+  onReturn: () => void;
+  onToggle: () => void;
+}) {
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const groups = boundedNavigatorGroups(
+    session.response.results,
+    currentGroup.ski_region_id,
+  );
+  const collapsed = session.dossierNavigatorCollapsed;
+  const recommendationCount = session.response.results.length;
+
+  return (
+    <>
+      <nav
+        className={`dossier-navigator${collapsed ? " dossier-navigator--collapsed" : ""}`}
+        aria-label="Recommendation results"
+        data-collapsed={collapsed || undefined}
+      >
+        <div className="dossier-navigator__heading">
+          <div>
+            <span>Search results</span>
+            <strong>{recommendationCount} recommendations</strong>
+          </div>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={`${collapsed ? "Expand" : "Collapse"} recommendation navigator`}
+            aria-expanded={!collapsed}
+            title={`${collapsed ? "Expand" : "Collapse"} recommendation navigator`}
+            onClick={onToggle}
+          >
+            {collapsed ? (
+              <PanelLeftOpen aria-hidden="true" size={18} />
+            ) : (
+              <PanelLeftClose aria-hidden="true" size={18} />
+            )}
+          </button>
+        </div>
+        <button type="button" className="dossier-navigator__all" onClick={onReturn}>
+          <ArrowLeft aria-hidden="true" size={16} />
+          <span>All results</span>
+        </button>
+        <div className="dossier-navigator__rows">
+          {groups.map((group) => {
+            const selected = group.ski_region_id === currentGroup.ski_region_id;
+            const configuration = findSelectedCandidate(
+              group,
+              session.selectedCandidateIdByGroup[group.ski_region_id],
+            );
+            return (
+              <button
+                type="button"
+                className="dossier-navigator__row"
+                key={group.ski_region_id}
+                aria-current={selected ? "page" : undefined}
+                aria-label={`${group.ski_region_name}, rank ${group.rank}, ${
+                  selected ? "viewing" : "open recommendation"
+                }`}
+                onClick={() =>
+                  onSwitch(
+                    group.ski_region_id,
+                    group.top_configuration.candidate_id,
+                  )
+                }
+              >
+                <span className="dossier-navigator__rank">#{group.rank}</span>
+                <span className="dossier-navigator__copy">
+                  <strong>{group.ski_region_name}</strong>
+                  <small>{configuration.stay_base_name}</small>
+                  <small>
+                    {configuration.fit_score?.toFixed(0) ?? "Unscored"} trip fit ·{" "}
+                    {snowWindowLabel(configuration)} snow
+                  </small>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="dossier-navigator__note">
+          Your result order and filters stay preserved.
+        </p>
+      </nav>
+
+      <section className="dossier-switcher" aria-label="Recommendation switcher">
+        <button
+          type="button"
+          className="dossier-switcher__trigger"
+          aria-expanded={switcherOpen}
+          aria-controls="dossier-switcher-options"
+          onClick={() => setSwitcherOpen((current) => !current)}
+        >
+          <span>
+            Recommendation {currentGroup.rank} of {recommendationCount}
+            <strong>{currentGroup.ski_region_name}</strong>
+          </span>
+          <ChevronDown aria-hidden="true" size={19} />
+        </button>
+        {switcherOpen ? (
+          <div id="dossier-switcher-options" className="dossier-switcher__options">
+            {groups.map((group) => (
+              <button
+                type="button"
+                key={group.ski_region_id}
+                aria-current={
+                  group.ski_region_id === currentGroup.ski_region_id
+                    ? "page"
+                    : undefined
+                }
+                aria-label={`Switch to ${group.ski_region_name}`}
+                onClick={() => {
+                  setSwitcherOpen(false);
+                  onSwitch(
+                    group.ski_region_id,
+                    group.top_configuration.candidate_id,
+                  );
+                }}
+              >
+                <span>#{group.rank}</span>
+                <strong>{group.ski_region_name}</strong>
+              </button>
+            ))}
+            <button type="button" onClick={onReturn}>
+              <ArrowLeft aria-hidden="true" size={16} />
+              All results
+            </button>
+          </div>
+        ) : null}
+      </section>
+    </>
+  );
+}

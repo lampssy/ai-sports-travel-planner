@@ -442,3 +442,217 @@ test("mobile board advances refinements in document flow without overflow", asyn
     fullPage: true,
   });
 });
+
+test("desktop dossier switches without search and collapses to the compact rail", async ({
+  page,
+}) => {
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(page, monthSearchResponse, searchRequests);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View dossier",
+  }).click();
+  await expect(page).toHaveURL(
+    /\/recommendations\/tignes-val-disere\?candidate=tignes-access--tignes-val-disere-pass$/,
+  );
+  const firstHeading = page.getByRole("heading", {
+    name: "Tignes - Val d'Isere - Le Lac",
+  });
+  await expect(firstHeading).toBeFocused();
+  expect(searchRequests).toHaveLength(1);
+
+  const navigator = page.getByRole("navigation", {
+    name: "Recommendation results",
+  });
+  await expect(navigator).toHaveCSS("width", "260px");
+  await scrollYAfterLayout(page);
+  await page.screenshot({
+    path: "../.superpowers/sdd/task-6-dossier-desktop-expanded.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", {
+    name: "Collapse recommendation navigator",
+  }).click();
+  await expect(navigator).toHaveCSS("width", "64px");
+  await expect(firstHeading).toBeVisible();
+  await scrollYAfterLayout(page);
+  await page.screenshot({
+    path: "../.superpowers/sdd/task-6-dossier-desktop-collapsed.png",
+    fullPage: false,
+  });
+
+  await page.evaluate(() => window.scrollTo(0, 500));
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await page.getByRole("button", {
+    name: /les arcs - peisey vallandry, rank 2/i,
+  }).click();
+  const secondHeading = page.getByRole("heading", {
+    name: "Les Arcs - Peisey Vallandry - Arc 1800",
+  });
+  await expect(secondHeading).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(page.getByText(/showing les arcs - peisey vallandry/i)).toBeAttached();
+  expect(searchRequests).toHaveLength(1);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("All results restores selected candidates, expansion state, and exact scroll", async ({
+  page,
+}) => {
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(page, monthSearchResponse, searchRequests);
+  await page.setViewportSize({ width: 1440, height: 650 });
+  await page.goto("/");
+  const brief = "March in France with reliable snow and lift access";
+  await submitHomepageBrief(page, brief);
+
+  const firstCard = page.locator("article.recommendation-card").first();
+  await firstCard.getByRole("button", {
+    name: /select le lac with tignes local pass/i,
+  }).click();
+  await page.getByRole("button", {
+    name: /expand les arcs - peisey vallandry/i,
+  }).click();
+  await page.evaluate(() => window.scrollTo(0, 360));
+  const expectedScroll = await page.evaluate(() => window.scrollY);
+  expect(expectedScroll).toBeGreaterThan(0);
+  await firstCard.getByRole("link", { name: "View dossier" }).dispatchEvent("click");
+  await expect(page).toHaveURL(/candidate=tignes-access--tignes-local-pass$/);
+
+  await page.getByRole("button", { name: "All results" }).click();
+  await expect(page.getByLabel("Trip brief")).toHaveValue(brief);
+  await expect(
+    page.getByRole("button", { name: /select le lac with tignes local pass/i }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("button", { name: /collapse les arcs - peisey vallandry/i }),
+  ).toHaveAttribute("aria-expanded", "true");
+  await expect.poll(() => scrollYAfterLayout(page)).toBe(expectedScroll);
+  expect(searchRequests).toHaveLength(1);
+});
+
+test("browser Back restores the exact results scroll without rerunning search", async ({
+  page,
+}) => {
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(page, monthSearchResponse, searchRequests);
+  await page.setViewportSize({ width: 1440, height: 650 });
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+  const firstCard = page.locator("article.recommendation-card").first();
+  await firstCard.getByRole("button", {
+    name: /select le lac with tignes local pass/i,
+  }).click();
+  await page.getByRole("button", {
+    name: /expand les arcs - peisey vallandry/i,
+  }).click();
+  await page.evaluate(() => window.scrollTo(0, 320));
+  const expectedScroll = await page.evaluate(() => window.scrollY);
+  await firstCard.getByRole("link", { name: "View dossier" }).dispatchEvent("click");
+
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Recommended ski trips" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /select le lac with tignes local pass/i }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("button", { name: /collapse les arcs - peisey vallandry/i }),
+  ).toHaveAttribute("aria-expanded", "true");
+  await expect.poll(() => scrollYAfterLayout(page)).toBe(expectedScroll);
+  expect(searchRequests).toHaveLength(1);
+});
+
+test("invalid dossier routes recover to a canonical top configuration", async ({
+  page,
+}) => {
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(page, monthSearchResponse, searchRequests);
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+
+  await page.evaluate(() => {
+    window.history.pushState(
+      null,
+      "",
+      "/recommendations/not-a-region?candidate=not-a-candidate",
+    );
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(
+    /\/recommendations\/tignes-val-disere\?candidate=tignes-access--tignes-val-disere-pass$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
+  ).toBeVisible();
+
+  await page.evaluate(() => {
+    window.history.pushState(
+      null,
+      "",
+      "/recommendations/paradiski?candidate=not-a-candidate",
+    );
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(
+    /\/recommendations\/paradiski\?candidate=les-arcs-access--paradiski-pass$/,
+  );
+  await expect(
+    page.getByRole("heading", {
+      name: "Les Arcs - Peisey Vallandry - Arc 1800",
+    }),
+  ).toBeVisible();
+  expect(searchRequests).toHaveLength(1);
+});
+
+test("mobile dossier uses a keyboard-operable bounded switcher", async ({ page }) => {
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(page, monthSearchResponse, searchRequests);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with easy lift access");
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View dossier",
+  }).click();
+
+  await expect(
+    page.getByRole("navigation", { name: "Recommendation results" }),
+  ).toBeHidden();
+  const switcher = page.getByRole("button", { name: /recommendation 1 of 2/i });
+  await expect(switcher).toBeVisible();
+  await switcher.focus();
+  await page.keyboard.press("Enter");
+  await expect(switcher).toHaveAttribute("aria-expanded", "true");
+  const second = page.getByRole("button", {
+    name: "Switch to Les Arcs - Peisey Vallandry",
+  });
+  await second.click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Les Arcs - Peisey Vallandry - Arc 1800",
+    }),
+  ).toBeFocused();
+  expect(searchRequests).toHaveLength(1);
+  await expectNoHorizontalOverflow(page);
+  await scrollYAfterLayout(page);
+  await page.screenshot({
+    path: "../.superpowers/sdd/task-6-dossier-mobile-390.png",
+    fullPage: true,
+  });
+});
+
+test("direct dossier load without search state offers recovery", async ({ page }) => {
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(page, monthSearchResponse, searchRequests);
+  await page.goto(
+    "/recommendations/tignes-val-disere?candidate=tignes-access--tignes-val-disere-pass",
+  );
+
+  await expect(page.getByRole("heading", { name: "Run a search first" })).toBeVisible();
+  await page.getByRole("button", { name: "Return to search" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByLabel("Describe your ski trip")).toBeVisible();
+  expect(searchRequests).toHaveLength(0);
+});

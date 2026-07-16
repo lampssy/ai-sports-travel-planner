@@ -19,6 +19,8 @@ export interface SearchSession {
   selectedCandidateIdByGroup: Record<string, string>;
   refinementQueue: RefinementProposal[];
   resultsScrollY: number;
+  dossierNavigatorCollapsed: boolean;
+  dossierGroupId: string | null;
 }
 
 export const defaultSearchFilters: SearchFilters = {
@@ -211,6 +213,8 @@ export function createSearchSession(
     selectedCandidateIdByGroup: defaultSelections(response),
     refinementQueue: response.refinements,
     resultsScrollY: 0,
+    dossierNavigatorCollapsed: false,
+    dossierGroupId: null,
   };
 }
 

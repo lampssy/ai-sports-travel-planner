@@ -16,11 +16,13 @@ import {
 } from "./api";
 import {
   APP_NAVIGATION_EVENT,
+  buildDossierHref,
   navigate,
   parseAppRoute,
   type AppRoute,
 } from "./navigation";
 import { Homepage } from "./search/Homepage";
+import { RecommendationDossier } from "./search/RecommendationDossier";
 import {
   SearchCommandHeader,
 } from "./search/SearchCommandHeader";
@@ -35,6 +37,7 @@ import {
   createSearchSession,
   defaultSearchFilters,
   dismissRefinement,
+  findSelectedCandidate,
   mergeParsedFilters,
   rankChangeSummary,
   reconcileSearchSession,
@@ -98,6 +101,8 @@ function App() {
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const pendingRerankScrollRestoreRef =
     useRef<PendingRerankScrollRestore | null>(null);
+  const routeRef = useRef(route);
+  const pendingDossierScrollRestoreRef = useRef(false);
   const [rerankRestoreRequest, setRerankRestoreRequest] = useState(0);
 
   useEffect(() => {
@@ -109,6 +114,10 @@ function App() {
       if (nextRoute.name !== "search") {
         pendingRerankScrollRestoreRef.current = null;
       }
+      if (nextRoute.name === "search" && routeRef.current.name === "dossier") {
+        pendingDossierScrollRestoreRef.current = true;
+      }
+      routeRef.current = nextRoute;
       setRoute(nextRoute);
     };
     window.addEventListener(APP_NAVIGATION_EVENT, syncRoute);
@@ -119,6 +128,48 @@ function App() {
       window.removeEventListener("popstate", syncRoute);
     };
   }, []);
+
+  useEffect(() => {
+    const handleDossierLinkClick = (event: MouseEvent) => {
+      if (
+        route.name !== "search" ||
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        !(event.target instanceof Element)
+      ) {
+        return;
+      }
+      const anchor = event.target.closest<HTMLAnchorElement>(
+        'a[href^="/recommendations/"]',
+      );
+      if (!anchor || anchor.target === "_blank") return;
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+
+      event.preventDefault();
+      const resultsScrollY = window.scrollY;
+      const nextRoute = parseAppRoute(destination as unknown as Location);
+      setSession((current) =>
+        current
+          ? {
+              ...current,
+              resultsScrollY,
+              dossierGroupId:
+                nextRoute.name === "dossier" ? nextRoute.skiRegionId : null,
+            }
+          : current,
+      );
+      navigate(`${destination.pathname}${destination.search}`);
+      window.scrollTo(0, 0);
+    };
+
+    document.addEventListener("click", handleDossierLinkClick);
+    return () => document.removeEventListener("click", handleDossierLinkClick);
+  }, [route.name]);
 
   useEffect(() => {
     void getCurrentTrip()
@@ -143,6 +194,22 @@ function App() {
       resultsHeadingRef.current?.focus();
     }
   }, [focusRequest]);
+
+  useEffect(() => {
+    if (route.name !== "search" || !pendingDossierScrollRestoreRef.current) {
+      return;
+    }
+    if (!session) {
+      pendingDossierScrollRestoreRef.current = false;
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      if (routeRef.current.name !== "search") return;
+      window.scrollTo(0, session.resultsScrollY);
+      pendingDossierScrollRestoreRef.current = false;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [route.name, session]);
 
   useEffect(() => {
     const pending = pendingRerankScrollRestoreRef.current;
@@ -177,6 +244,55 @@ function App() {
       ),
     [filters, assumptions, preferences, groupPriorities, objectives],
   );
+
+  const dossierSelection = useMemo(() => {
+    if (route.name !== "dossier" || !session) return null;
+    const group =
+      session.response.results.find(
+        (item) => item.ski_region_id === route.skiRegionId,
+      ) ?? session.response.results[0];
+    if (!group) return null;
+    const configuration = findSelectedCandidate(
+      group,
+      group.ski_region_id === route.skiRegionId
+        ? route.candidateId ?? undefined
+        : undefined,
+    );
+    return { group, configuration };
+  }, [route, session]);
+
+  useEffect(() => {
+    if (route.name !== "dossier" || !dossierSelection) return;
+    const { group, configuration } = dossierSelection;
+    const canonicalHref = buildDossierHref(
+      group.ski_region_id,
+      configuration.candidate_id,
+    );
+    if (`${window.location.pathname}${window.location.search}` !== canonicalHref) {
+      window.history.replaceState(null, "", canonicalHref);
+      const canonicalRoute = parseAppRoute(window.location);
+      routeRef.current = canonicalRoute;
+      setRoute(canonicalRoute);
+    }
+    setSession((current) => {
+      if (
+        !current ||
+        (current.dossierGroupId === group.ski_region_id &&
+          current.selectedCandidateIdByGroup[group.ski_region_id] ===
+            configuration.candidate_id)
+      ) {
+        return current;
+      }
+      return {
+        ...current,
+        dossierGroupId: group.ski_region_id,
+        selectedCandidateIdByGroup: {
+          ...current.selectedCandidateIdByGroup,
+          [group.ski_region_id]: configuration.candidate_id,
+        },
+      };
+    });
+  }, [route, dossierSelection]);
 
   async function fetchSearch(
     nextFilters: SearchFilters,
@@ -470,6 +586,22 @@ function App() {
 
   const goToSearch = () => navigate("/");
   const goToCurrentTrip = () => navigate("/current-trip");
+  const switchDossier = (skiRegionId: string, candidateId: string) => {
+    setSession((current) =>
+      current
+        ? {
+            ...current,
+            dossierGroupId: skiRegionId,
+            selectedCandidateIdByGroup: {
+              ...current.selectedCandidateIdByGroup,
+              [skiRegionId]: candidateId,
+            },
+          }
+        : current,
+    );
+    navigate(buildDossierHref(skiRegionId, candidateId));
+    window.scrollTo(0, 0);
+  };
   const openFilters = () => {
     if (loading) return;
     setDrawerOpen(true);
@@ -489,6 +621,68 @@ function App() {
           onClear={() => {
             void clearCurrentTrip().then(() => setCurrentTrip(null));
           }}
+        />
+      </AppShell>
+    );
+  }
+
+  if (route.name === "dossier") {
+    if (!session || !dossierSelection) {
+      return (
+        <AppShell
+          active="search"
+          onSearch={goToSearch}
+          onCurrentTrip={goToCurrentTrip}
+        >
+          <main className="app-canvas dossier-recovery">
+            <p className="eyebrow">Recommendation context unavailable</p>
+            <h1>Run a search first</h1>
+            <p>
+              This recommendation needs the ranked results from your current browser
+              session.
+            </p>
+            <button type="button" className="primary-command" onClick={goToSearch}>
+              Return to search
+            </button>
+          </main>
+        </AppShell>
+      );
+    }
+    return (
+      <AppShell
+        active="search"
+        onSearch={goToSearch}
+        onCurrentTrip={goToCurrentTrip}
+        header={
+          <SearchCommandHeader
+            brief={brief}
+            loading={loading}
+            onBriefChange={setBrief}
+            onSubmit={handleSubmit}
+            onSearch={goToSearch}
+            onCurrentTrip={goToCurrentTrip}
+          />
+        }
+      >
+        <RecommendationDossier
+          session={session}
+          skiRegionId={dossierSelection.group.ski_region_id}
+          candidateId={dossierSelection.configuration.candidate_id}
+          onSwitch={switchDossier}
+          onReturn={goToSearch}
+          onSave={(configuration) => void saveConfiguration(configuration)}
+          onSelectCandidate={switchDossier}
+          onToggleNavigator={() =>
+            setSession((current) =>
+              current
+                ? {
+                    ...current,
+                    dossierNavigatorCollapsed:
+                      !current.dossierNavigatorCollapsed,
+                  }
+                : current,
+            )
+          }
         />
       </AppShell>
     );
