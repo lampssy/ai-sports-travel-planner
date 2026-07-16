@@ -11,11 +11,13 @@ dossier while preserving deterministic Search V4 ranking and honest weather
 and accommodation evidence.
 
 **Architecture:** Keep `POST /api/search` as the only search and rerank
-boundary. Add two optional, typed server-owned presentation contracts for
-refinement previews and weather evidence, then decompose the React client into
-a thin application orchestrator, pure search/session helpers, and focused page
-components. Use browser history and in-memory session state for dossier
-navigation; do not add a router or persistence layer.
+boundary. Add typed server-owned refinement previews to that response and load
+one selected ski area's detailed weather evidence through the bounded
+`POST /api/search/weather-evidence` dossier endpoint. Decompose the React
+client into a thin application orchestrator, pure search/session helpers, and
+focused page components. Use browser history and in-memory session state for
+dossier navigation and weather-response caching; do not add a router or
+persistence layer.
 
 **Tech Stack:** Python 3.11, FastAPI, Pydantic v2, React 18, TypeScript 5,
 Vite 6, Tailwind 3, Vitest, Testing Library, Playwright, and the approved
@@ -31,19 +33,21 @@ Vite 6, Tailwind 3, Vitest, Testing Library, Playwright, and the approved
   design in
   `docs/superpowers/specs/2026-07-16-search-v4-hybrid-results-design.md`,
   including the dedicated dossier route, typed refinement/weather summaries,
-  browser-session return state, and `lucide-react` as the sole new frontend
-  dependency.
-- ADR status: no new ADR is required under the accepted design. Stop for a new
-  owner checkpoint and reassess ADR need before adding a router, persistent
-  search state, an on-demand evidence endpoint, a new provider request, or a
-  new evidence-aggregation ownership boundary.
+  browser-session return state, `lucide-react` as the sole new frontend
+  dependency, and on 2026-07-16 the on-demand dossier weather endpoint after
+  the full-response benchmark failed.
+- ADR status: accepted ADR 0014 owns the on-demand weather-evidence boundary.
+  Stop for a new owner checkpoint and reassess ADR need before adding a router,
+  persistent cross-session search state, a provider request, a server cache, or
+  a frozen server-side search-result snapshot.
 - Advisory design review: completed on 2026-07-16 for the accepted spec and
   this plan. The plan review's current-trip test, response-cost gate, and
   task-local accessibility gaps are resolved below; no Blocker or High finding
   remains open. Advisory feature review is required before final handoff.
 - Preserve Search V4 ranking weights, eligibility, factor semantics, forecast
-  blending, and catalog acquisition. Presentation adapters may summarize only
-  evidence already loaded for the ranking request.
+  blending, and catalog acquisition. The dossier endpoint may read the same
+  stored evidence through the same policy after search; it must not acquire
+  provider data, invoke an LLM, or rerun ranking.
 - Do not parse `FactorScoreBreakdown.raw_value` or `explanation_inputs` in the
   browser. User-facing weather charts consume only the new typed summary.
 - Do not add provider-backed hotels, invented properties, live availability,
@@ -80,6 +84,18 @@ green while the stale five-test E2E suite was red as described above.
   by making its repaired E2E smoke mandatory in Task 1 and every routing
   verification; resolved Medium findings by adding a maximum-shape response
   budget and task-local keyboard/focus assertions.
+- 2026-07-16 Task 3 owner checkpoint: the real current-catalog response produced
+  25 groups, 60 configurations, and 39 summaries; detailed weather added
+  1,092,264 bytes, grew the response to 2.133007x baseline, and took 32.510 ms
+  p95 to construct. The owner approved moving detailed evidence to one bounded
+  dossier request under ADR 0014. Search cards retain existing decision
+  summaries and ranking behavior.
+- 2026-07-16 revised Task 3 design review: resolved the High cache-validity
+  finding through server-owned evaluation/expiry timestamps and owner-approved
+  expiry-aware caching. Resolved Medium findings with discriminated unavailable
+  responses, independent coverage naming, exact/mixed elevation provenance,
+  bounded source collections, route serialization/metrics verification, and
+  polite asynchronous status announcements.
 
 ---
 
@@ -224,6 +240,7 @@ git commit -m "test: establish Search V4 web contract baseline"
 - Modify: `tests/test_search_refinement.py`
 - Modify: `tests/test_search_v4_service.py`
 - Modify: `tests/test_api.py`
+- Modify: `tests/test_observability.py`
 
 - [ ] **Step 1: Write failing domain tests for per-option variant outcomes**
 
@@ -350,19 +367,29 @@ git add app/domain/search_refinement.py app/domain/search_v4_service.py \
 git commit -m "feat: expose deterministic refinement previews"
 ```
 
-### Task 3: Add Typed Weather Evidence Without Changing Ranking
+### Task 3: Serve Typed Weather Evidence On Demand Without Changing Ranking
 
 **Files:**
 
 - Create: `app/domain/search_weather_evidence.py`
 - Modify: `app/domain/search_factors/weather.py`
 - Modify: `app/domain/search_v4_service.py`
+- Modify: `app/api/routes.py`
 - Modify: `frontend/src/types.ts`
 - Create: `tests/test_search_weather_evidence.py`
 - Modify: `tests/test_search_v4_service.py`
 - Modify: `tests/test_api.py`
 
-- [ ] **Step 1: Write failing mapper tests for every evidence mode**
+**Interfaces:**
+
+- Consumes: `SearchIntent`, catalog `ski_area_id`, the existing Search V4
+  weather policy, stored climatology repositories, and latest complete forecast
+  heads.
+- Produces: `POST /api/search/weather-evidence` with
+  `SearchWeatherEvidenceRequest` and versioned `SearchWeatherEvidenceResponse`;
+  the grouped `SearchV4Response` no longer contains detailed profiles.
+
+- [ ] **Step 1: Write failing mapper and endpoint tests**
 
 Create `tests/test_search_weather_evidence.py` with fixtures for:
 
@@ -373,6 +400,14 @@ Create `tests/test_search_weather_evidence.py` with fixtures for:
 - incomplete forecast rows;
 - missing climatology and forecast evidence;
 - null snow depth and bounded 31-point profiles.
+- homogeneous and mixed historical/forecast provenance;
+- exact and mixed elevation provenance;
+- complete and partial requested-date coverage named independently from
+  freshness;
+- a valid one-area endpoint response and a typed unavailable response;
+- an unknown ski-area ID rejected with `422` before repository access;
+- invalid intent rejected with the existing Search V4 policy error contract;
+- grouped `/api/search` responses contain no `weather_evidence` field.
 
 Assert the accepted rules directly:
 
@@ -393,7 +428,7 @@ Run:
 uv run pytest tests/test_search_weather_evidence.py -q
 ```
 
-Expected: fail because the module does not exist.
+Expected: the new endpoint and compact grouped-response assertions fail.
 
 - [ ] **Step 2: Share the forecast-row selection used by ranking**
 
@@ -405,7 +440,7 @@ public helper from `_trip_window_snow_fit`,
 `_trip_window_snowpack_outlook`, and the new presentation mapper. Add focused
 weather-factor regression tests if the rename exposes an untested branch.
 
-- [ ] **Step 3: Implement frozen weather presentation models and mapper**
+- [ ] **Step 3: Implement frozen weather presentation models and honest provenance**
 
 In `app/domain/search_weather_evidence.py`, define the exact accepted response
 types:
@@ -449,86 +484,168 @@ Implement `build_search_weather_evidence(...)` with these rules:
 - emit deterministic interpretation and limitation strings from finite helper
   functions;
 - order profiles chronologically and cap both profiles at 31 points;
-- return `None` only when no trustworthy historical summary can be built.
+- return `None` only when no trustworthy historical summary can be built;
+- preserve exact scalar provenance for homogeneous rows;
+- for mixed rows, set top-level source scalars to `None`, mark
+  `provenance_status="mixed"`, and expose typed source records with their exact
+  profile dates rather than synthesizing one baseline, issue time, or model;
+- add exact `elevation_m` to every source record, cap source collections at 31,
+  and expose an exact top-level elevation only when every selected source uses
+  one value; otherwise return `elevation_status="mixed"` and
+  `elevation_m=None`;
+- name forecast date completeness `coverage_status="complete" | "partial"`;
+  do not label partial coverage as partial freshness.
 
-- [ ] **Step 4: Build each ski-area summary once per request**
+- [ ] **Step 4: Add the bounded one-area domain service contract**
 
-In `search_trip_configurations`, bind one timezone-aware
-`search_reference_time`, preload weather as today, and construct
-`weather_evidence_by_area` immediately afterward. Add
-`weather_evidence: SearchWeatherEvidence | None` to
-`_FactorEvaluatedCandidate`, `_EvaluatedCandidate`, and the optional
-`SearchV4Configuration.weather_evidence` field. Pass the same immutable summary
-through grouping; do not rebuild it per configuration and do not query a
-repository from `_configuration`.
+Define the request and response envelope in
+`app/domain/search_weather_evidence.py`:
 
-- [ ] **Step 5: Mirror the weather contract in TypeScript**
+```python
+class SearchWeatherEvidenceRequest(_WeatherEvidenceModel):
+    intent: SearchIntent
+    ski_area_id: SearchIdentifier
 
-Add the accepted `WeatherEvidencePoint`, `HistoricalWeatherEvidence`,
-`ForecastWeatherEvidence`, and `SearchWeatherEvidence` interfaces to
-`frontend/src/types.ts`, and add:
 
-```ts
-weather_evidence?: SearchWeatherEvidence | null;
+class SearchWeatherEvidenceResponseBase(_WeatherEvidenceModel):
+    weather_evidence_version: Literal["search-weather-evidence-v1"]
+    ski_area_id: SearchIdentifier
+    evaluated_at: str
+    cache_valid_until: str
+
+
+class SearchWeatherEvidenceAvailableResponse(SearchWeatherEvidenceResponseBase):
+    status: Literal["available"] = "available"
+    evidence: SearchWeatherEvidence
+
+
+class SearchWeatherEvidenceUnavailableResponse(SearchWeatherEvidenceResponseBase):
+    status: Literal["unavailable"] = "unavailable"
+    unavailable_reason: Literal[
+        "travel_window_missing",
+        "historical_evidence_unavailable",
+    ]
+    limitations: tuple[str, ...] = Field(min_length=1, max_length=5)
+
+
+SearchWeatherEvidenceResponse = Annotated[
+    SearchWeatherEvidenceAvailableResponse
+    | SearchWeatherEvidenceUnavailableResponse,
+    Field(discriminator="status"),
+]
 ```
 
-to `SearchV4Configuration`.
+Add `UnknownSearchWeatherAreaError` and
+`get_search_weather_evidence(...) -> SearchWeatherEvidenceResponse` in
+`app/domain/search_v4_service.py`. The function must:
 
-- [ ] **Step 6: Add service/API tests and measure response cost**
+- validate the intent through the existing Search V4 policy;
+- load and validate the canonical catalog/trust manifest;
+- reject an unknown `ski_area_id` before repository access;
+- bind one timezone-aware reference time;
+- reuse `_load_weather_evidence` for exactly one area and the same forecast
+  freshness/source policy used by ranking;
+- construct one `WeatherEvaluationContext` and one immutable summary;
+- return the available response or a typed unavailable response with one
+  bounded reason and limitations;
+- expose `evaluated_at` and server-owned `cache_valid_until` on every response;
+- for forecast-assisted evidence, compute validity from the earliest selected
+  run expiry using the same provider update interval and consistency delay as
+  `forecast_run_is_fresh`;
+- use `evaluated_at + 5 minutes` when no usable forecast is present, including
+  month-only and unavailable responses;
+- never rank candidates, generate refinements, call a provider, or invoke an
+  LLM.
+
+Remove `SearchV4Configuration.weather_evidence`, the summary fields on internal
+candidate records, and all summary construction from
+`search_trip_configurations`. Search weather rows still load once in bulk for
+ranking, but detailed presentation mapping is dossier-only.
+
+- [ ] **Step 5: Expose the FastAPI endpoint and mirror the contract in TypeScript**
+
+Add this route:
+
+```python
+@router.post(
+    "/search/weather-evidence",
+    response_model=SearchWeatherEvidenceResponse,
+)
+def search_weather_evidence(
+    payload: SearchWeatherEvidenceRequest,
+) -> SearchWeatherEvidenceResponse:
+    ...
+```
+
+Map `SearchIntentPolicyError` and `UnknownSearchWeatherAreaError` to `422` with
+bounded messages. Mirror all evidence, source, request, and response types in
+`frontend/src/types.ts`. Do not add `weather_evidence` to
+`SearchV4Configuration`.
+
+- [ ] **Step 6: Add service/API tests and enforce one-area cost bounds**
 
 Extend service and API tests to prove:
 
 - month requests serialize climatology only;
 - exact-date requests use only fresh usable forecasts;
 - stale forecasts produce a climatology fallback and explicit limitation;
-- one ski area's summary cannot leak into another configuration;
-- omitted summaries remain schema-valid;
-- repositories are still called once in bulk and no provider/LLM call is
-  added.
+- the response identifier matches the requested catalog area;
+- each repository is called at most once and only with that area;
+- no provider, ranking, refinement, or LLM path is called;
+- `/api/search` ranking order, scores, groups, factors, and repository call
+  shape remain unchanged after removing profiles;
+- Python and TypeScript discriminated response types match;
+- expiry-boundary behavior changes a cached fresh forecast into a refetch;
+- a refetch after expiry may return a newer forecast-head identity;
+- the standard HTTP duration metric records the bounded
+  `/api/search/weather-evidence` route label.
 
-Add one representative test that constructs a complete grouped response with
-four configurations in each of three regions, 31 historical points per
-configuration, and 14 forecast points where applicable. Print the serialized
-byte count and mapper duration under `pytest -s`. Measure the no-summary
-response with the same configuration fixture, then enforce both guardrails:
+Add one maximum-cardinality test that uses the current catalog snapshot, one
+valid ski area, 31 historical points, 31 forecast points, 31 source records per
+section, mixed provenance, and 100 warm in-memory service iterations. Serialize
+the response through the actual FastAPI route, print route-envelope bytes and
+p95 domain-service construction time under `pytest -s`, then enforce:
 
-- p95 summary-construction time over 100 warm-process iterations is at most
-  `25 ms` for the maximum-shape response;
-- the additive serialized weather payload is at most `512 KiB` and the complete
-  response is at most twice the no-summary baseline size.
+- the complete one-area envelope is at most `128 KiB` (`131,072` uncompressed
+  serialized JSON bytes);
+- p95 in-memory service construction is at most `25 ms` over 100 warm-process
+  iterations;
+- both profiles and both source collections contain at most 31 items.
 
-Also assert the contract's hard profile bounds and absence of additional
-acquisitions. Record the baseline bytes, complete bytes, additive bytes, and p95
-duration in this plan's execution notes. If either guardrail fails, do not
-enable the summary by default; stop for the accepted owner checkpoint instead
-of weakening the evidence or adding an on-demand endpoint automatically.
+Record the exact bytes and p95 duration in the execution notes. The benchmark
+uses injected in-memory repositories and therefore excludes database latency;
+route serialization is included and runtime endpoint latency remains observable
+through the existing HTTP metric. If either guardrail fails, stop for an owner
+checkpoint rather than truncating evidence below the accepted bounds or adding
+a server cache automatically.
 
 Run:
 
 ```bash
 uv run pytest tests/test_search_weather_evidence.py \
   tests/test_search_weather_factors.py tests/test_search_v4_service.py \
-  tests/test_api.py -q
+  tests/test_api.py tests/test_observability.py -q
 uv run pytest tests/test_search_weather_evidence.py -q -s \
-  -k representative_grouped_response_cost
+  -k one_area_endpoint_cost
 uv run ruff check app/domain/search_weather_evidence.py \
   app/domain/search_factors/weather.py app/domain/search_v4_service.py \
+  app/api/routes.py \
   tests/test_search_weather_evidence.py tests/test_search_weather_factors.py \
-  tests/test_search_v4_service.py tests/test_api.py
+  tests/test_search_v4_service.py tests/test_api.py tests/test_observability.py
 npm --prefix frontend run build
 ```
 
-Expected: all focused tests pass; the benchmark prints one byte count and one
-mapping duration; Ruff and TypeScript pass.
+Expected: all focused tests pass; the benchmark prints one envelope byte count
+and p95 service duration below the accepted bounds; Ruff and TypeScript pass.
 
 - [ ] **Step 7: Commit the weather contract**
 
 ```bash
 git add app/domain/search_weather_evidence.py app/domain/search_factors/weather.py \
-  app/domain/search_v4_service.py frontend/src/types.ts \
+  app/domain/search_v4_service.py app/api/routes.py frontend/src/types.ts \
   tests/test_search_weather_evidence.py tests/test_search_weather_factors.py \
-  tests/test_search_v4_service.py tests/test_api.py
-git commit -m "feat: expose typed Search V4 weather evidence"
+  tests/test_search_v4_service.py tests/test_api.py tests/test_observability.py
+git commit -m "feat: serve dossier weather evidence on demand"
 ```
 
 ### Task 4: Build The Application Shell, Session Model, And Homepage
@@ -947,6 +1064,8 @@ git commit -m "feat: restore recommendation dossier navigation"
 - Create: `frontend/src/search/SnowEvidence.tsx`
 - Create: `frontend/src/search/SnowEvidence.test.tsx`
 - Create: `frontend/src/search/SnowEvidenceChart.tsx`
+- Create: `frontend/src/search/weatherEvidenceCache.ts`
+- Create: `frontend/src/search/weatherEvidenceCache.test.ts`
 - Create: `frontend/src/search/AccommodationHandoff.tsx`
 - Create: `frontend/src/search/AccommodationHandoff.test.tsx`
 - Create: `frontend/src/search/DecisionEvidenceLedger.tsx`
@@ -966,11 +1085,27 @@ Cover:
   mid-mountain elevation, evidence seasons, supported depth/snowfall/
   temperature metrics, and no forecast tab;
 - exact-date usable forecast renders `Forecast-assisted`, issue time,
-  freshness, usable-date coverage, and separate `Forecast` / `Historical
+  fresh-at evaluation time, complete/partial date coverage, and separate `Forecast` / `Historical
   context` controls;
 - stale or missing forecast renders climatology and the server limitation;
 - missing weather summary renders a bounded unavailable state and never reads
   generic factor JSON;
+- opening a dossier requests `/api/search/weather-evidence` with the applied
+  typed intent and selected configuration's `ski_area_id`;
+- the dossier shows local loading, retryable failure, and typed unavailable
+  states without replacing the verdict or navigator;
+- available and unavailable responses are cached for the browser session by a
+  deterministic key containing the applied travel window and ski-area ID;
+- revisiting the same unexpired key does not refetch, while expiry, changing ski
+  area, or changing applied travel window does;
+- forecast-assisted entries expire at the server-declared selected-run
+  freshness boundary; month-only, fallback, and unavailable entries expire
+  after the server-declared five-minute interval;
+- an expired refetch can replace an older forecast-head identity;
+- an older in-flight response cannot replace evidence after the selected
+  configuration changes;
+- loading completion, typed unavailability, retryable failure, and successful
+  retry are announced through a polite status region without moving focus;
 - chart has a textual interpretation and structured value disclosure;
 - color is not the only distinction between range, median, forecast, and risk;
 - stay copy says `Stay-base estimate, not live hotel inventory`;
@@ -982,6 +1117,7 @@ Run:
 
 ```bash
 npm --prefix frontend test -- src/search/SnowEvidence.test.tsx \
+  src/search/weatherEvidenceCache.test.ts \
   src/search/AccommodationHandoff.test.tsx src/App.test.tsx
 ```
 
@@ -989,11 +1125,24 @@ Expected: fail because the components do not exist.
 
 - [ ] **Step 2: Implement accessible conditional evidence views**
 
-`SnowEvidence` trusts `weather_evidence.mode` and does not infer it. Use a
-labelled tab pattern only when forecast and historical views both exist.
+Add a typed API helper for `POST /api/search/weather-evidence`. Build the cache
+key from only `ski_area_id` and the canonical applied `TravelWindow`; other
+intent fields do not change weather selection. Cache available and unavailable
+responses only while `Date.now() < cache_valid_until`, not transport failures.
+Use `AbortController` or an equivalent request identity guard so a late response
+cannot cross ski-area context. Refetch expired entries and replace them only
+after the new response succeeds.
+
+`SnowEvidence` branches on the response `status`. It renders the server's
+bounded reason/limitations for `unavailable`; for `available`, it trusts
+`response.evidence.mode` and does not infer it. Use a labelled tab pattern only
+when forecast and historical views both exist.
 `SnowEvidenceChart` renders a responsive bounded SVG with shapes/strokes plus
 an adjacent interpretation and a disclosed semantic list/table containing all
 plotted values and units. Empty numeric values are omitted, not zero-filled.
+Use a stable `role="status"` region for concise asynchronous evidence state
+announcements; retry remains a labelled button and focus stays on the invoking
+control.
 
 - [ ] **Step 3: Implement trip details and accommodation handoff**
 
@@ -1010,11 +1159,14 @@ collapsed `ScoringDetails`; do not duplicate the snow chart.
 
 - [ ] **Step 4: Add all dossier evidence variants to E2E**
 
-Create month, forecast-assisted, stale-fallback, and missing-evidence fixture
-variants. Verify tabs/keyboard behavior, chart alternative, estimate wording,
-outbound URL, no horizontal overflow, and no provider claims. The focused test
-must prove arrow-key or tab/activation behavior for the chosen tab semantics and
-must keep focus on a valid control when a forecast view is unavailable.
+Create month, forecast-assisted, stale-fallback, missing-evidence, and endpoint
+failure fixture variants. Mock `/api/search/weather-evidence` separately from
+`/api/search`. Verify one fetch per unexpired cache key, expiry refetch and
+new-head replacement, retry after transport failure, live-region announcements,
+tabs/keyboard behavior, chart alternative, estimate wording, outbound URL, no
+horizontal overflow, and no provider claims. The focused test must prove
+arrow-key or tab/activation behavior for the chosen tab semantics and must keep
+focus on a valid control when a forecast view is unavailable.
 
 - [ ] **Step 5: Verify and commit the complete dossier**
 
@@ -1032,6 +1184,8 @@ Expected: all frontend checks pass across evidence variants.
 git add frontend/src/search/SnowEvidence.tsx \
   frontend/src/search/SnowEvidence.test.tsx \
   frontend/src/search/SnowEvidenceChart.tsx \
+  frontend/src/search/weatherEvidenceCache.ts \
+  frontend/src/search/weatherEvidenceCache.test.ts \
   frontend/src/search/AccommodationHandoff.tsx \
   frontend/src/search/AccommodationHandoff.test.tsx \
   frontend/src/search/DecisionEvidenceLedger.tsx \

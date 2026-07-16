@@ -182,18 +182,20 @@ Invariants:
     subordinate to the ski-trip recommendation;
   - resolved: deterministic per-option impact metadata supports the approved
     pre-apply ranking preview without exposing score deltas;
+  - resolved: detailed weather profiles load on demand for the selected dossier
+    after the uncapped grouped-response benchmark exceeded every response-cost
+    guardrail;
   - resolved: use `lucide-react` as the presentation-only icon system instead
     of maintaining local icon SVGs;
   - accepted assumption: implementation does not add a routing dependency,
     persist search state beyond the browser session, or introduce provider
     inventory unless a new owner checkpoint approves it.
   - unresolved: none.
-- ADR status: no new ADR required. This spec changes presentation and extends
-  the existing Search V4 response with typed presentation summaries. If
-  implementation adopts a router library, persists search state beyond the
-  browser session, adds a new backend evidence aggregation boundary, or moves
-  ranking/evidence interpretation to the client, pause for a new decision and
-  reassess ADR need.
+- ADR status: accepted ADR 0014 owns the on-demand dossier weather-evidence
+  boundary. If implementation adopts a router library, persists search state
+  beyond the browser session, adds a provider request or server cache, freezes
+  result snapshots server-side, or moves ranking/evidence interpretation to
+  the client, pause for a new decision and reassess ADR need.
 - Advisory design-review:
   - reviewers: Product / Strategy, Backend / API, Data Trust & Source
     Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
@@ -220,7 +222,7 @@ Invariants:
 | Technical | Icon system | Repeated local SVGs would drift visually and add accessibility boilerplate across the new surfaces | Continue local SVGs; add `lucide-react` | Add `lucide-react` as the only new frontend dependency | Gives the accepted UI a consistent icon vocabulary while icons remain decorative or explicitly labelled by their controls | This spec and implementation plan |
 | Mixed | Dossier result switching | Users need comparison context without turning the detail view into another full results board | Back-only navigation; persistent full results; compact master-detail navigator | Collapsible desktop navigator plus compact mobile switcher | Preserves orientation and quick switching without duplicating card content | This spec and implementation plan |
 | Product / Domain | Weather evidence mode | Forecast and climate evidence answer different questions and must not be blended opaquely | Raw weather table; always-on forecast; conditional evidence mode | Month-only climatology; exact-date forecast-assisted evidence with historical context when usable | Matches Search V4 semantics and keeps uncertainty legible | This spec and `docs/planning-model.md` |
-| Mixed | Weather evidence contract | Generic factor payloads are flexible but unsafe for a user-facing chart and evidence labels | Parse generic factor internals in the client; typed API view model | Additive typed weather-evidence summary built server-side | Keeps interpretation deterministic, testable, and aligned with ranking evidence | This spec and implementation plan |
+| Mixed | Weather evidence delivery | Generic factor payloads are unsafe for charts, while full profiles on every result exceeded all real-cardinality response-cost limits | Parse factor internals; attach every profile; top-results-only profiles; one on-demand dossier endpoint | Versioned typed one-area endpoint using stored Search V4 evidence | Keeps interpretation deterministic and complete for every dossier without making each search transfer every profile | ADR 0014, this spec, and implementation plan |
 | Product / Domain | Accommodation depth | Property inventory would make the flow appear more complete but is not available yet | Hide lodging; simulate hotels; estimate and provider-agnostic handoff | Honest stay-base estimate and accommodation-search handoff | Supports booking intent without fake marketplace completeness | This spec |
 
 ## Architecture Decisions
@@ -230,17 +232,18 @@ Invariants:
   only.
 - Search V4 remains the ranking and reranking boundary. Dossier navigation uses
   the ranked response already present in browser-session state.
+- `POST /api/search/weather-evidence` is a separate read-only dossier boundary
+  for one selected ski area and applied travel window. It shares Search V4
+  weather policy and stored repositories but does not rank, acquire provider
+  data, or invoke an LLM.
 - `lucide-react` is the approved presentation-only icon dependency. Icon choice
   must not encode status without adjacent text, and no other UI or chart
   dependency is introduced by this implementation.
-- The typed weather summary is an additive configuration field. Implementation
-  must benchmark complete grouped responses; if the payload or mapping cost is
-  not acceptable, pause for an owner checkpoint on a bounded on-demand dossier
-  endpoint rather than silently dropping evidence or parsing factor internals.
-- No new ADR is required for the accepted presentation and additive contract.
-  Reassess if implementation adds a router dependency, persistent search state,
-  an on-demand evidence endpoint, or a new evidence-aggregation ownership
-  boundary.
+- Detailed weather profiles are not part of `SearchV4Configuration`. Result
+  cards retain Search V4's bounded decision summaries; the dossier loads one
+  typed profile envelope and caches it until its server-declared validity time
+  within the browser session.
+- ADR 0014 records the accepted evidence boundary and its alternatives.
 
 ## Experience Architecture
 
@@ -620,9 +623,8 @@ Required response extension:
 - preview construction reuses the current candidate evaluations and variant
   simulation; it must not add another LLM call or repeat catalog/database
   acquisition;
-- each ranked `SearchV4Configuration` may include a typed, display-ready
-  `weather_evidence` summary derived from the same weather evidence used by its
-  `trip_window_snow_fit` evaluation;
+- the dossier may request one typed, display-ready weather summary for the
+  selected configuration's ski area and the current applied intent;
 - the client never recomputes scores or eligibility.
 
 Proposed client contract:
@@ -651,40 +653,61 @@ Rules:
 - the optional additive field does not break clients that ignore it;
 - the response remains usable when refinement generation fails or is disabled.
 
-Proposed weather contract:
+Accepted weather endpoint contract:
 
 ```text
-SearchV4Configuration.weather_evidence?:
-  mode: climatology | forecast_assisted
-  window_label: string
-  elevation_band: mid_mountain
-  elevation_m: integer or null
-  interpretation: string
-  limitations: string[]
-  historical:
-    source_label: string
-    source_model: string
-    computed_at: ISO timestamp
-    baseline_start_year: integer
-    baseline_end_year: integer
-    evidence_seasons: integer
-    latest_archive_year: integer or null
-    snow_depth_cm_p25: number or null
-    snow_depth_cm_p50: number or null
-    snow_depth_cm_p75: number or null
-    probability_snow_depth_ge_30cm: number or null
-    average_daily_snowfall_cm: number or null
-    average_max_temperature_c: number or null
-    daily_profile: WeatherEvidencePoint[]
-  forecast: null or
-    source_label: string
-    source_model: string
-    issued_at: ISO timestamp
-    freshness: fresh | partial
-    usable_date_count: integer
-    requested_date_count: integer
-    average_forecast_share: number
-    daily_profile: WeatherEvidencePoint[]
+POST /api/search/weather-evidence
+
+request:
+  intent: SearchIntent
+  ski_area_id: string
+
+response:
+  weather_evidence_version: search-weather-evidence-v1
+  status: available | unavailable
+  ski_area_id: string
+  evaluated_at: ISO timestamp
+  cache_valid_until: ISO timestamp
+  when status=unavailable:
+    unavailable_reason: travel_window_missing | historical_evidence_unavailable
+    limitations: string[]
+  when status=available:
+    evidence:
+    mode: climatology | forecast_assisted
+    window_label: string
+    elevation_band: mid_mountain
+    elevation_status: exact | mixed | unavailable
+    elevation_m: integer or null
+    interpretation: string
+    limitations: string[]
+    historical:
+      source_label: string
+      source_model: string or null
+      computed_at: ISO timestamp or null
+      baseline_start_year: integer or null
+      baseline_end_year: integer or null
+      evidence_seasons: integer or null
+      latest_archive_year: integer or null
+      provenance_status: homogeneous | mixed
+      sources: HistoricalWeatherSource[]
+      snow_depth_cm_p25: number or null
+      snow_depth_cm_p50: number or null
+      snow_depth_cm_p75: number or null
+      probability_snow_depth_ge_30cm: number or null
+      average_daily_snowfall_cm: number or null
+      average_max_temperature_c: number or null
+      daily_profile: WeatherEvidencePoint[]
+    forecast: null or
+      source_label: string
+      source_model: string or null
+      issued_at: ISO timestamp or null
+      provenance_status: homogeneous | mixed
+      sources: ForecastWeatherSource[]
+      coverage_status: complete | partial
+      usable_date_count: integer
+      requested_date_count: integer
+      average_forecast_share: number
+      daily_profile: WeatherEvidencePoint[]
 
 WeatherEvidencePoint:
   date_or_month_day: string
@@ -702,7 +725,10 @@ WeatherEvidencePoint:
 
 Weather contract rules:
 
-- the summary is additive and optional so older clients continue to work;
+- detailed profiles are absent from `SearchV4Configuration` and therefore do
+  not scale the grouped search response;
+- the endpoint accepts the exact applied typed intent plus one canonical
+  catalog ski-area ID and rejects unknown IDs before repository access;
 - the backend maps existing typed climatology and forecast records into the
   summary; the client must not parse `raw_value` or `explanation_inputs` to
   infer the evidence mode or chart values;
@@ -714,19 +740,38 @@ Weather contract rules:
   `limitations` while the summary falls back to climatology;
 - daily profiles are bounded to the requested window or one calendar month and
   are ordered chronologically, with no more than 31 points per profile;
+- each historical and forecast source collection contains at most 31 records;
+- top-level elevation is exact only when all selected historical and forecast
+  source records use one elevation; mixed elevations produce
+  `elevation_status=mixed` and `elevation_m=null`, and every source record keeps
+  its exact elevation;
+- `coverage_status` describes requested-date coverage, not source freshness;
+  every selected forecast row is fresh at `evaluated_at` by construction;
 - `average_forecast_share` is a model blend input, not user confidence, and the
   UI labels it `Forecast coverage in this assessment` rather than `Confidence`;
 - missing numeric values remain `null`; the backend does not manufacture zeros;
+- homogeneous rows retain exact top-level source metadata; mixed rows expose
+  typed per-source records and nullable top-level source scalars rather than a
+  synthetic baseline, model, computed time, or forecast issue time;
 - interpretation and limitation strings are selected from deterministic
   templates and do not include raw provider errors or policy internals;
-- summary construction reuses weather rows already acquired for Search V4 and
-  adds no provider call or LLM call to the request path;
-- implementation must measure serialized response size and summary-construction
-  time against representative full grouped responses before enabling the field
-  by default;
-- if implementation cannot build a trustworthy summary, omission is valid and
-  the dossier shows a bounded unavailable state without scraping generic factor
-  internals.
+- summary construction reuses the same stored repositories, freshness test,
+  source selection, and versioned weather policy as Search V4; it adds no
+  provider call, LLM call, or ranking pass;
+- maximum-cardinality one-area route envelopes are bounded to 128 KiB
+  uncompressed JSON and 25 ms p95 in-memory service construction over 100 warm
+  iterations;
+- if implementation cannot build a trustworthy summary, `status=unavailable`
+  carries a bounded reason and limitations; the dossier does not scrape generic
+  factor internals;
+- available and unavailable responses are cached only in the current browser
+  session by canonical travel window and ski-area ID and only while
+  `now < cache_valid_until`; transport failures are retryable and are not
+  cached;
+- forecast-assisted validity ends at the earliest selected forecast run's
+  freshness expiry; responses without usable forecast evidence use a five-
+  minute revalidation interval;
+- the existing bounded-route HTTP duration metric records endpoint latency.
 
 Client state includes:
 
@@ -738,7 +783,9 @@ Client state includes:
 - results scroll position and dossier return state;
 - dossier navigator collapsed state and current recommendation-group ID;
 - selected weather evidence view (`forecast` or `historical`) for the current
-  dossier only.
+  dossier only;
+- unexpired dossier weather responses keyed by canonical travel window and ski
+  area for the current browser session only.
 
 No new routing library is assumed. The implementation plan must either use the
 existing history-based navigation or raise a new owner checkpoint before adding
@@ -814,11 +861,14 @@ or is disabled.
 - A failed refinement apply preserves the selected option and current results,
   announces the error, and permits retry or clear.
 - A failed dossier load offers return to the preserved search state.
-- Missing typed weather evidence shows `Snow evidence is not available for this
-  configuration` plus known coverage limitations. It never falls back to
-  parsing debug fields in the browser.
+- A typed unavailable weather response shows `Snow evidence is not available
+  for this configuration` plus the server's bounded reason and limitations. It
+  never falls back to parsing debug fields in the browser.
 - Forecast-unavailable and forecast-stale states retain historical context and
   explain why the forecast view is absent or limited.
+- Dossier evidence loading completion, typed unavailability, retryable failure,
+  and successful retry are announced through one polite status region without
+  moving focus or replacing the dossier verdict.
 - A failed recommendation switch leaves the current dossier intact and offers
   retry or `All results`.
 
@@ -971,8 +1021,8 @@ Unit tests:
 - deterministic `Trip essentials` selection, ordering, omission, and estimate
   labels;
 - refinement preview formatting for movement, entry, exit, and absent preview;
-- typed weather-evidence mapping for climatology, forecast-assisted, partial,
-  stale, and unavailable cases;
+- typed weather-evidence mapping for climatology, forecast-assisted, partial
+  coverage, stale exclusion, and unavailable cases;
 - null preservation and chronological bounding of weather profile points;
 - deterministic weather interpretation and limitation templates;
 - expansion-set preservation across reranks;
@@ -984,12 +1034,15 @@ API and integration tests:
 - preview omits score and policy internals;
 - refinement response without preview remains schema-valid;
 - applying the same option produces ranking movement consistent with preview;
-- month-only response produces climatology-only weather evidence;
-- exact-date response includes forecast evidence only for usable dates and
+- month-only weather endpoint response produces climatology-only evidence;
+- exact-date weather endpoint response includes forecast evidence only for usable dates and
   retains historical context;
-- weather summary uses the selected ski area/elevation band and omits unsupported
+- weather endpoint rejects unknown ski-area IDs before repository access;
+- weather summary uses the requested ski area/elevation band and omits unsupported
   numeric values;
-- clients that ignore the additive weather field remain compatible;
+- grouped Search V4 responses contain no detailed weather profiles;
+- the weather endpoint invokes neither ranking, provider acquisition, nor an
+  LLM and remains within its one-area payload/construction bounds;
 - Search V4 succeeds when refinement generation fails.
 
 UI tests:
@@ -1036,15 +1089,25 @@ Visual and manual checks:
 - Design-review status: completed on 2026-07-16.
 - Outcome: proceed to implementation planning after owner review of this spec.
 - Consolidated-flow findings resolved in this revision:
+  - [High] Backend / API: session-long weather caching could outlive forecast
+    freshness. Every response now carries server-owned evaluation and validity
+    timestamps; forecast-assisted validity follows selected run expiry and all
+    other responses revalidate after five minutes.
+  - [Medium] Backend / API, Data Trust, Performance, and Accessibility: typed
+    unavailability, coverage naming, elevation provenance, source cardinality,
+    route-level verification, and async announcements were incomplete. The
+    status-discriminated contract and implementation plan now define each
+    requirement explicitly.
   - [Medium] Backend / API and Data Trust & Source Integrity: the initial weather
     contract allowed a stale forecast inside `forecast_assisted` mode and omitted
     climatology provenance. Stale runs are now excluded from that mode, fallback
     limitations are explicit, and historical/forecast source metadata is typed.
-  - [Medium] Performance: daily weather profiles on a complete grouped Search V4
-    response could increase response size and mapping cost. Profiles are capped
-    at 31 points, construction reuses loaded rows, and representative full-
-    response size/time measurement is required before default enablement. An
-    on-demand endpoint requires a new owner checkpoint if the benchmark fails.
+  - [Medium] Performance: the real uncapped grouped-response benchmark failed
+    every accepted profile-cost guardrail: 1,092,264 additive bytes, 2.133007x
+    baseline size, and 32.510 ms p95 construction across 39 summaries. The owner
+    approved the ADR 0014 one-area dossier endpoint. Profiles remain capped at
+    31 points and the revised endpoint has explicit one-area payload and
+    construction budgets.
   - [Medium] UI / UX: an unbounded dossier navigator could become a duplicate
     scrollable results board. It now contains at most the top three groups, or
     the top two plus the current out-of-band group, and retains `All results`.
@@ -1083,7 +1146,7 @@ Visual and manual checks:
   - practical metrics depend on uneven catalog and provider coverage;
   - exact refinement previews require a new structured response field;
   - browser-session return-state preservation needs careful history handling;
-  - weather-summary response cost still needs measurement against the real
-    catalog and may trigger the documented on-demand-endpoint checkpoint;
+  - the one-area weather endpoint still needs exact-head payload, construction,
+    repository-call, and browser-cache verification;
   - the final dossier responsive behavior still needs Playwright verification at
     narrow mobile and 200% zoom during implementation.

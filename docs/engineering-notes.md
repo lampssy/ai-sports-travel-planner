@@ -478,6 +478,25 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - User-facing percentages should be labeled `Trip fit` or `Match score`, not primary `Confidence`. Explanation and evidence quality should carry trust before the score does.
 - Trust language should use one evidence-quality framework: Archive-backed, Forecast-assisted, and Fallback-heavy. Use `Snow reliability` for archive-backed/history views and `Snow outlook` for current/forecast views.
 
+### On-demand dossier weather evidence
+
+- Detailed historical and target-date weather profiles belong to the selected
+  recommendation dossier, not to every configuration in the grouped Search V4
+  response. The full-catalog response duplicated ski-area profiles and exceeded
+  the accepted payload and construction guardrails without changing ranking.
+- `POST /api/search/weather-evidence` accepts the applied typed intent and one
+  canonical ski-area ID. It reuses Search V4's stored climatology and latest
+  complete forecast-head policy, but it does not rerun ranking, call a provider,
+  or invoke an LLM.
+- The dossier caches available and typed unavailable responses only for the
+  current browser session by travel window and ski area and only until the
+  server-declared validity time. Forecast-assisted validity follows the earliest
+  selected run expiry; responses without usable forecast evidence revalidate
+  after five minutes. Transport failures remain retryable. Evidence loaded
+  later may be fresher than the original ranking request, so issue times and
+  provenance stay visible.
+- ADR 0014 owns this API and request-path boundary.
+
 ### Direct Gemini API vs LangChain / LangGraph
 - Direct Gemini API behind a small local `LLMClient` seam is the current choice
   because the LLM workflow is narrow query parsing.
