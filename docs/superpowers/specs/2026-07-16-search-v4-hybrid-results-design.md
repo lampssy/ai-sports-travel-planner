@@ -1,74 +1,95 @@
-# Feature Spec: Search V4 Hybrid Results Experience
+# Feature Spec: Search V4 Web Experience
 
 ## Status
 
-- Status: accepted design; implementation pending
+- Status: accepted visual design; written spec pending owner review
 - Owner: solo-builder
-- Accepted visual:
-  `docs/ui-concepts/2026-07-16-search-v4-hybrid-results/01-hybrid-results-expanded-desktop.jpg`
-- Interactive visual:
-  <https://p.superdesign.dev/draft/fd59ea10-da9e-4260-a72a-e75dbe5d4e2e>
+- Accepted visual pack:
+  `docs/ui-concepts/2026-07-16-search-v4-web-experience/`
+- Interactive visuals:
+  - homepage:
+    <https://p.superdesign.dev/draft/0db8c1de-23d7-496a-9a00-9b55b1d58a31>
+  - results:
+    <https://p.superdesign.dev/draft/fd59ea10-da9e-4260-a72a-e75dbe5d4e2e>
+  - dossier:
+    <https://p.superdesign.dev/draft/6338f0ff-0694-49f3-9abc-57a782d7b50a>
 - Related product UI spec:
   `docs/superpowers/specs/2026-05-08-web-ui-ux-redesign-design.md`
 - Related Search V4 spec:
   `docs/superpowers/specs/2026-07-10-search-v4-factor-registry-and-dynamic-refinement-design.md`
 - Related model docs: `docs/search-ranking-model.md`,
-  `docs/domain-language.md`
+  `docs/planning-model.md`, `docs/domain-language.md`
 - Related plan: pending
 - Related ADRs:
   `docs/architecture/adr/0012-versioned-search-factor-registry-and-ranking-policy.md`
 
-This spec refines and supersedes the post-search results-board guidance in the
-May 2026 UI/UX redesign for the Search V4 contract. The homepage, current-trip
-experience, public resort guide, and detailed dossier content remain governed
-by the earlier UI/UX spec unless this document says otherwise.
+This spec consolidates the accepted homepage, results board, and recommendation
+dossier into one Search V4 web experience. It supersedes the homepage,
+post-search, and selected-resort guidance in the May 2026 UI/UX redesign where
+the two documents differ. The May spec still governs the current-trip
+experience, public resort guide, and general accommodation principles.
 
 ## User Outcome
 
-After a search, a skier can understand the interpreted trip request, compare
-complete trip configurations, inspect the evidence and practical metrics for
-more than one result, answer a refinement that can materially change the
-ranking, and open a destination dossier without losing search context.
+From the first viewport through deep recommendation evidence, a skier can state
+a trip intent, see the structured request Snowcast understood, compare complete
+trip configurations, refine only decisions that can materially change the
+ranking, and inspect the leading destination without losing search context.
 
-The user should be able to answer these questions from the results page:
+The full flow must let the user answer:
 
+- What does Snowcast produce from a natural-language trip brief?
 - Why does this ski region lead?
 - Which stay base and pass make up the recommended trip configuration?
 - What are the practical scale, cost, and access metrics?
-- What evidence supports the result and what is the main watchout?
+- Is the snow conclusion based on climatology, a forecast, or both?
+- What snow-depth, snowfall, and temperature evidence supports it?
 - How would a refinement change the leading recommendations?
 - What additional configurations exist inside the same ski region?
+- Can I inspect another result without reconstructing or losing the search?
+- What accommodation handoff is available, and is it an estimate or live
+  provider inventory?
 
 ## Scope
 
 In scope:
 
+- initial homepage command stage and search-to-results transition;
 - Search V4 post-search command header;
 - interpreted search context and manual-adjustment entry point;
 - contextual refinement selection, impact preview, apply, and rerank feedback;
 - grouped ski-region recommendation cards;
 - deterministic `Trip essentials` selection and presentation;
 - independent expansion of multiple recommendation groups;
-- separate dossier navigation and return-to-results behavior;
-- Search V4 results-page visual system, responsive behavior, loading, empty,
-  missing-data, and accessibility states;
-- the minimum structured refinement-impact response needed by the approved UI.
+- dedicated dossier hierarchy, collapsible desktop results navigator, compact
+  mobile result switcher, and return-to-results behavior;
+- conditional month-only climatology and exact-date forecast-assisted snow
+  evidence presentation;
+- selected stay-base estimate and provider-agnostic accommodation handoff;
+- Search V4 visual system across homepage, results, and dossier, including
+  responsive, loading, empty, missing-data, and accessibility states;
+- the minimum structured refinement-impact response needed by the approved UI;
+- the minimum typed weather-evidence response needed by the approved dossier.
 
 Out of scope:
 
 - changes to ranking weights, factor definitions, or candidate eligibility;
 - new catalog, pass, lodging, travel, climate, or forecast data acquisition;
 - provider-backed hotel inventory or Booking.com-style result units;
-- redesigning the homepage, current trip, public resort guide, or full dossier;
+- current-trip, mobile companion, or public resort-guide redesign;
 - authentication, booking, affiliate, or payment behavior;
+- changing forecast/climatology ranking semantics or evidence thresholds;
+- persistent saved searches or reloadable dossier links without search state;
 - generic chat or unbounded LLM-generated UI content.
 
 ## Product Fit
 
-The results experience must feel like a snow-aware decision board rather than a
-filter-heavy internal tool or accommodation marketplace. It leads with a
-recommended trip configuration and its evidence, then lets the user inspect
-alternatives and technical detail progressively.
+The experience must feel like a snow-aware decision workspace rather than a
+filter-heavy internal tool, generic AI prompt, or accommodation marketplace.
+The homepage demonstrates Snowcast's output before asking for commitment. The
+results board leads with a recommended trip configuration and its evidence.
+The dossier preserves the comparison context while progressively exposing snow,
+trip, and accommodation detail.
 
 The UI keeps uncertainty visible through:
 
@@ -76,6 +97,8 @@ The UI keeps uncertainty visible through:
 - `Snow window` as a planning conclusion for the requested period;
 - `Evidence quality` as archive-backed, forecast-assisted, or fallback-heavy;
 - explicit labels for estimates, unavailable values, and watchouts;
+- an explicit `Historical pattern` or `Forecast-assisted` evidence mode;
+- forecast issue time, coverage, and freshness when forecast data is shown;
 - a deterministic preview of material refinement effects when available.
 
 The display unit remains a recommendation group. Hotels and accommodation
@@ -84,29 +107,35 @@ search results.
 
 ## Domain Model
 
-- Bounded contexts touched: Planning, AI Assistance, Booking Handoff.
+- Bounded contexts touched: Planning, Conditions And Weather Evidence, AI
+  Assistance, Booking Handoff.
 - Existing terms used: recommendation group, trip configuration, trip fit,
   evidence quality, refinement, dossier, ski region, ski area, stay base,
-  selected pass.
+  selected pass, climatological snow reliability, forecast run, forecast head.
 - Presentation-only term: `Trip essentials`. This is not a new scoring group or
   domain entity.
-- New client-facing value object: refinement option preview.
+- New client-facing view models: refinement option preview and weather evidence
+  summary. They expose existing Planning and Weather evidence; they do not
+  create new ranking factors or domain entities.
 - Domain-language changes: none required; all durable terms already exist in
   `docs/domain-language.md`.
 
 Important state transitions:
 
-1. Search results load with the leading recommendation expanded.
-2. The user may expand or collapse any recommendation independently.
-3. The user selects a refinement option and sees its deterministic impact
+1. The homepage parses a trip brief and transitions into Search V4 results.
+2. Search results load with the leading recommendation expanded.
+3. The user may expand or collapse any recommendation independently.
+4. The user selects a refinement option and sees its deterministic impact
    preview when the API provides one.
-4. The user applies the option, Search V4 reruns, and changed positions are
+5. The user applies the option, Search V4 reruns, and changed positions are
    announced without moving the viewport unexpectedly.
-5. The user may select an alternative trip configuration inside a ski-region
+6. The user may select an alternative trip configuration inside a ski-region
    group without changing the group's rank.
-6. The user opens a dossier for the selected configuration and can return to
-   the same search, scroll, and
-   expansion context during the current browser session.
+7. The user opens a dossier for the selected configuration, switches among
+   recommendation dossiers from the navigator, and can return to the same
+   search, scroll, and expansion context during the current browser session.
+8. The dossier presents climatology for month-only searches. For exact dates it
+   presents forecast-assisted evidence only when a usable forecast exists.
 
 Invariants:
 
@@ -115,13 +144,20 @@ Invariants:
   alternative configurations;
 - `Trip essentials` never changes ranking and never implies ranking weight;
 - missing or estimated data is never presented as live or exact;
+- month-only searches never present current conditions or a forecast as target-
+  date evidence;
+- exact-date searches never imply forecast coverage beyond usable forecast
+  dates, and historical evidence remains separately identifiable;
 - raw factor IDs, group budgets, contribution points, search-model versions,
   and ranking-policy versions stay behind `Show scoring details` or out of the
   user-facing web UI;
 - expanding a card never navigates to the dossier;
 - opening the dossier never doubles as an expansion control;
 - selecting an alternative configuration changes card details, dossier context,
-  and save context, but not the recommendation group's rank.
+  and save context, but not the recommendation group's rank;
+- every weather value remains scoped to the selected ski area and representative
+  elevation band;
+- all values in design visualizations are illustrative, not product fixtures.
 
 ## Decision And Review Gate
 
@@ -129,42 +165,115 @@ Invariants:
 - High-risk domains touched: planning/ranking explainability, evidence and
   estimate trust, shared API contract, and product-facing navigation.
 - Developer Decision Checkpoints:
+  - resolved: one first-viewport homepage command stage with a concrete example
+    recommendation instead of generic process cards;
   - resolved: hybrid decision-board structure;
   - resolved: no more than three intent-aware `Trip essentials` metrics;
   - resolved: midnight shell with restrained alpenglow and powder atmosphere;
   - resolved: independent multi-card expansion;
   - resolved: dossier as a separate deep-inspection route;
+  - resolved: collapsible desktop results navigator and compact mobile result
+    switcher inside the dossier;
+  - resolved: conditional weather evidence where month-only searches use
+    climatology and exact-date searches use forecast-assisted evidence only
+    when usable forecast rows exist;
+  - resolved: stay-base estimates and accommodation-search handoff remain
+    subordinate to the ski-trip recommendation;
   - resolved: deterministic per-option impact metadata supports the approved
-    pre-apply ranking preview without exposing score deltas.
-  - accepted assumptions: dossier content continues to follow the May 2026
-    UI/UX spec; implementation does not add a routing dependency unless a new
-    owner checkpoint approves it.
+    pre-apply ranking preview without exposing score deltas;
+  - accepted assumption: implementation does not add a routing dependency,
+    persist search state beyond the browser session, or introduce provider
+    inventory unless a new owner checkpoint approves it.
   - unresolved: none.
 - ADR status: no new ADR required. This spec changes presentation and extends
-  the existing Search V4 response. If implementation adopts a router library,
-  persists search state beyond the browser session, or moves ranking simulation
-  ownership to the client, pause for a new decision and reassess ADR need.
+  the existing Search V4 response with typed presentation summaries. If
+  implementation adopts a router library, persists search state beyond the
+  browser session, adds a new backend evidence aggregation boundary, or moves
+  ranking/evidence interpretation to the client, pause for a new decision and
+  reassess ADR need.
 - Advisory design-review:
   - reviewers: Product / Strategy, Backend / API, Data Trust & Source
-    Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility
-  - status: completed on 2026-07-16; no Blocker or High finding remains open
+    Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
+    Performance, Monetization / Partnerships
+  - status: completed on 2026-07-16 for the consolidated full-flow revision; no
+    Blocker or High finding remains open
 - Advisory feature-review before final handoff:
   - reviewers: Product / Strategy, Backend / API, Data Trust & Source
-    Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility
+    Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
+    Performance, Monetization / Partnerships
   - status: planned
 
 ## Developer Decision Checkpoints
 
 | Type | Decision | Why it matters | Options and tradeoffs | Owner choice | Agent review after choice | Follow-up doc |
 | --- | --- | --- | --- | --- | --- | --- |
+| Product / Domain | Homepage value demonstration | The first screen must explain Snowcast through its product output, not a generic AI process | Process steps; marketing hero; actionable command stage with sample result | Actionable command stage with a concrete example recommendation | Demonstrates snow-aware decision support while preserving immediate search access | This spec |
 | Product / Domain | Results-page structure | Determines whether Search V4 feels like a trip decision tool or a filter dashboard | Flat form and list; strict step flow; hybrid decision board | Hybrid decision board with contextual rail and grouped recommendations | Preserves Search V4 flexibility while restoring Snowcast's decision hierarchy | This spec |
 | Product / Domain | Practical card metrics | Too few facts feel abstract; too many create a dashboard and obscure evidence | Fixed metrics; all available metrics; maximum three intent-aware metrics | Maximum three intent-aware `Trip essentials` metrics | Gives concrete scale and cost without implying that every metric drives ranking | This spec |
 | Product / Domain | Result disclosure | Dossier-only inspection interrupts comparison; permanently expanded results create excessive density | Dossier-only; accordion; independent expansion | Independent expansion, with result 1 open by default | Supports direct comparison while preserving progressive disclosure | This spec |
 | Mixed | Refinement impact preview | Exact movement claims require deterministic server evidence and a stable API contract | Generic copy; apply immediately; structured per-option preview | Structured per-option preview with rank changes, no score deltas | Matches the approved UI and keeps calculation authority on the server | This spec and implementation plan |
 | Product / Domain | Visual identity | The current white/blue V4 UI is clear but generic; a saturated pink theme would weaken evidence semantics | Minimal white/blue; light watercolor; midnight shell with restrained color | Midnight shell, neutral cards, soft alpenglow/powder atmosphere | Restores brand distinction while preserving semantic green and amber | This spec |
 | Technical | Dossier navigation | A missing route removed a key explanation surface | Modal; inline-only; dedicated route | Dedicated dossier route with return-state preservation | Keeps results scannable and lets the dossier own deep evidence | Implementation plan |
+| Mixed | Dossier result switching | Users need comparison context without turning the detail view into another full results board | Back-only navigation; persistent full results; compact master-detail navigator | Collapsible desktop navigator plus compact mobile switcher | Preserves orientation and quick switching without duplicating card content | This spec and implementation plan |
+| Product / Domain | Weather evidence mode | Forecast and climate evidence answer different questions and must not be blended opaquely | Raw weather table; always-on forecast; conditional evidence mode | Month-only climatology; exact-date forecast-assisted evidence with historical context when usable | Matches Search V4 semantics and keeps uncertainty legible | This spec and `docs/planning-model.md` |
+| Mixed | Weather evidence contract | Generic factor payloads are flexible but unsafe for a user-facing chart and evidence labels | Parse generic factor internals in the client; typed API view model | Additive typed weather-evidence summary built server-side | Keeps interpretation deterministic, testable, and aligned with ranking evidence | This spec and implementation plan |
+| Product / Domain | Accommodation depth | Property inventory would make the flow appear more complete but is not available yet | Hide lodging; simulate hotels; estimate and provider-agnostic handoff | Honest stay-base estimate and accommodation-search handoff | Supports booking intent without fake marketplace completeness | This spec |
+
+## Architecture Decisions
+
+- The backend owns user-facing weather-evidence mode selection and typed
+  summary construction. The client owns presentation and local disclosure state
+  only.
+- Search V4 remains the ranking and reranking boundary. Dossier navigation uses
+  the ranked response already present in browser-session state.
+- The typed weather summary is an additive configuration field. Implementation
+  must benchmark complete grouped responses; if the payload or mapping cost is
+  not acceptable, pause for an owner checkpoint on a bounded on-demand dossier
+  endpoint rather than silently dropping evidence or parsing factor internals.
+- No new ADR is required for the accepted presentation and additive contract.
+  Reassess if implementation adds a router dependency, persistent search state,
+  an on-demand evidence endpoint, or a new evidence-aggregation ownership
+  boundary.
 
 ## Experience Architecture
+
+### Homepage Command Stage
+
+The homepage is the planning product, not a landing page. One full-width
+midnight command stage owns the first viewport and contains:
+
+- Snowcast identity and `Search` / `Current trip` navigation;
+- the literal product offer: conditions-aware ski-trip planning;
+- one natural-language trip brief input and `Find resorts` action;
+- editable parsed-state chips after a brief has been interpreted;
+- a compact planning signal that demonstrates snow-window expertise;
+- one concrete example recommendation using the same concepts as real results:
+  ski region, recommended stay base, snow window, evidence quality, trip fit,
+  leading reason, and watchout.
+
+The example recommendation is clearly labelled as an example and uses
+illustrative values. It is not fetched as a live recommendation, does not imply
+availability, and does not reuse a real user's search. It replaces the generic
+`Describe / Review / Compare` process cards because it demonstrates the
+distinctive product outcome.
+
+Use one `Example recommendation` label; do not add a second `Proof of result`
+label. Primary action copy should remain on one line at supported desktop widths
+and reflow as a full-width button on mobile rather than wrapping awkwardly.
+
+The input, parsed chips, and example result form one visual unit that overlaps
+or closely follows the command stage on desktop. Their content edges align to a
+shared maximum-width grid. The page must not read as a wide hero followed by an
+unrelated narrow prototype card.
+
+Initial behavior:
+
+1. The user enters a brief and submits.
+2. Parse/search loading keeps the command stage visible and names the work.
+3. When Search V4 succeeds, the interface transitions to the results board and
+   preserves the editable brief and parsed intent in the compact header.
+4. Parse ambiguity may produce bounded clarification, but the initial viewport
+   never becomes a permanent filter form or chat transcript.
 
 ### Compact Search Command Header
 
@@ -176,8 +285,10 @@ The post-search header is a compact midnight band containing:
 - `Current trip` navigation.
 
 It does not contain a hero, a full filter form, model versions, or a planning
-signal card. On small screens, the query occupies its own row and the header may
-stop being sticky when a sticky state would consume too much viewport height.
+signal card. This visual contraction makes the transition from planning entry
+to comparison explicit. On small screens, the query occupies its own row and
+the header may stop being sticky when a sticky state would consume too much
+viewport height.
 
 ### Search Context And Refinement Rail
 
@@ -325,16 +436,126 @@ lodging estimate with no provider inventory never appears as a live hotel rate.
 preserves the recommendation-group identity; the candidate query identifies the
 currently selected trip configuration.
 
-The dossier continues to follow the hierarchy in the May 2026 UI/UX spec:
+The dossier uses this hierarchy:
 
-1. verdict and selected trip configuration;
-2. why the configuration leads;
-3. planning signal;
-4. selected stay base and pass;
-5. alternative configurations;
-6. suggested stays only when provider-backed data exists;
-7. evidence ledger;
-8. highlights, risks, save, and booking handoff.
+1. compact editable search command;
+2. results navigator or compact recommendation switcher;
+3. verdict and selected trip configuration;
+4. `Why it leads` and principal watchout;
+5. conditional snow evidence for the requested window;
+6. selected configuration, pass, and practical trip essentials;
+7. alternative configurations within the recommendation group;
+8. stay-base estimate and accommodation handoff;
+9. decision evidence ledger and collapsed scoring details;
+10. save-current-trip action.
+
+The dossier is an evidence-led decision surface, not a collection of equal
+cards. It uses full-width bands and unframed content groups for major sections,
+with cards reserved for repeated result rows, metric cells, and bounded
+sub-options.
+
+### Dossier Results Navigator
+
+At wide desktop widths the dossier uses a master-detail shell:
+
+- a `260px` recommendation navigator;
+- a `24px` gutter;
+- a flexible dossier column;
+- a control that collapses the navigator to an icon/rank rail of approximately
+  `64px` without removing the dossier from view.
+
+Each row shows only rank, ski-region name, selected stay base, `Trip fit`, and a
+short snow-window label. The current dossier is visibly and programmatically
+selected. Rows navigate directly to the corresponding top configuration's
+dossier; they do not expand into result cards or duplicate full evidence.
+
+The compact navigator shows the top three recommendation groups. If the current
+dossier is outside that set, it shows the top two plus the current group. The
+rail therefore contains at most three result rows plus `All results`; it never
+becomes a second scrollable results board.
+
+`All results` returns to the board. At widths below the desktop master-detail
+breakpoint, the rail is replaced with a compact `Recommendation N of M`
+switcher above the dossier. Opening it reveals the same bounded result list in
+normal document flow. The mobile switcher must be operable without hover and
+must not create a nested viewport scroll.
+
+Switching results:
+
+- updates route, selected group, and candidate;
+- keeps the original query and ranked response;
+- resets dossier scroll to the top;
+- announces the new recommendation title;
+- never reruns search unless the underlying result state is unavailable.
+
+### Dossier Verdict And Configuration
+
+The dossier header names the ski region and recommended stay base first. It
+shows `Trip fit`, `Snow window`, and evidence quality as secondary decision
+signals. `Why it leads` follows immediately and contains one supported strength
+and one material watchout where present.
+
+Destination, ski area, stay base, selected pass, and access remain explicitly
+labelled. The interface does not collapse these entities into a generic
+`resort` label when they differ.
+
+### Conditional Snow Evidence
+
+Snow evidence is tied to the requested window and selected ski area. It is a
+decision summary, not a raw weather dashboard.
+
+Month-only searches:
+
+- title the section `Snow evidence for <Month>`;
+- show the badge `Historical pattern`;
+- state that month searches use climatology rather than a live forecast;
+- identify the representative elevation band and evidence-season coverage;
+- show a compact distribution/profile chart and up to five decision metrics:
+  median snow depth, interquartile depth range, average daily snowfall,
+  probability of depth above the policy-relevant threshold, and average maximum
+  temperature;
+- keep the daily climatology profile behind a disclosure when it would add
+  substantial density.
+
+Exact-date searches with usable forecast evidence:
+
+- title the section `Snow evidence for your dates`;
+- show `Forecast-assisted` and the forecast issue/freshness state;
+- provide a segmented `Forecast` / `Historical context` control;
+- show a compact daily strip or chart for forecast snow depth, snowfall, and
+  temperature, with rain/thaw or wind warnings only when materially relevant;
+- state usable-date coverage and forecast share without describing the share as
+  recommendation confidence;
+- preserve historical context as a separate view rather than blending values
+  into an unexplained synthetic forecast.
+
+Exact-date searches without usable forecast evidence fall back to the
+month/window climatology state and explicitly say why forecast evidence is not
+being used. Stale, incomplete, or missing forecast rows never appear as fresh.
+
+Chart accessibility requirements:
+
+- provide a concise textual interpretation before or beside the chart;
+- expose the underlying summary values in accessible text;
+- do not require color to distinguish historical range, median, and forecast;
+- provide a table or structured list inside the detail disclosure for users who
+  cannot interpret the chart;
+- use units in every metric and explain the elevation band.
+
+### Accommodation Handoff
+
+The dossier keeps accommodation under the selected stay base. Until
+provider-backed inventory exists, the section shows:
+
+- `Stay-base estimate, not live hotel inventory`;
+- honest nightly or trip estimate with currency and trust label;
+- lift-access and rental context when supported;
+- `Open accommodation search` or equivalent provider-agnostic handoff.
+
+It never renders invented hotel names, availability, ratings, amenities, or
+provider freshness. When provider-backed suggested stays are introduced later,
+they remain subordinate to the selected stay base and follow the May 2026
+accommodation evidence rules.
 
 Returning from the dossier restores the current query, applied intent, ranked
 response, selected candidate per group, scroll position, and expanded-card set
@@ -385,6 +606,9 @@ Required response extension:
 - preview construction reuses the current candidate evaluations and variant
   simulation; it must not add another LLM call or repeat catalog/database
   acquisition;
+- each ranked `SearchV4Configuration` may include a typed, display-ready
+  `weather_evidence` summary derived from the same weather evidence used by its
+  `trip_window_snow_fit` evaluation;
 - the client never recomputes scores or eligibility.
 
 Proposed client contract:
@@ -413,6 +637,83 @@ Rules:
 - the optional additive field does not break clients that ignore it;
 - the response remains usable when refinement generation fails or is disabled.
 
+Proposed weather contract:
+
+```text
+SearchV4Configuration.weather_evidence?:
+  mode: climatology | forecast_assisted
+  window_label: string
+  elevation_band: mid_mountain
+  elevation_m: integer or null
+  interpretation: string
+  limitations: string[]
+  historical:
+    source_label: string
+    source_model: string
+    computed_at: ISO timestamp
+    baseline_start_year: integer
+    baseline_end_year: integer
+    evidence_seasons: integer
+    latest_archive_year: integer or null
+    snow_depth_cm_p25: number or null
+    snow_depth_cm_p50: number or null
+    snow_depth_cm_p75: number or null
+    probability_snow_depth_ge_30cm: number or null
+    average_daily_snowfall_cm: number or null
+    average_max_temperature_c: number or null
+    daily_profile: WeatherEvidencePoint[]
+  forecast: null or
+    source_label: string
+    source_model: string
+    issued_at: ISO timestamp
+    freshness: fresh | partial
+    usable_date_count: integer
+    requested_date_count: integer
+    average_forecast_share: number
+    daily_profile: WeatherEvidencePoint[]
+
+WeatherEvidencePoint:
+  date_or_month_day: string
+  snow_depth_cm: number or null
+  snow_depth_cm_p25: number or null
+  snow_depth_cm_p50: number or null
+  snow_depth_cm_p75: number or null
+  snowfall_cm: number or null
+  temperature_min_c: number or null
+  temperature_max_c: number or null
+  rain_risk: number or null
+  thaw_risk: number or null
+  wind_gust_kmh: number or null
+```
+
+Weather contract rules:
+
+- the summary is additive and optional so older clients continue to work;
+- the backend maps existing typed climatology and forecast records into the
+  summary; the client must not parse `raw_value` or `explanation_inputs` to
+  infer the evidence mode or chart values;
+- `mode=climatology` requires `forecast=null`;
+- `mode=forecast_assisted` requires at least one usable forecast date and keeps
+  the historical section present;
+- stale forecast runs are not usable target-date evidence, so they cannot
+  produce `mode=forecast_assisted`; their exclusion is described in
+  `limitations` while the summary falls back to climatology;
+- daily profiles are bounded to the requested window or one calendar month and
+  are ordered chronologically, with no more than 31 points per profile;
+- `average_forecast_share` is a model blend input, not user confidence, and the
+  UI labels it `Forecast coverage in this assessment` rather than `Confidence`;
+- missing numeric values remain `null`; the backend does not manufacture zeros;
+- interpretation and limitation strings are selected from deterministic
+  templates and do not include raw provider errors or policy internals;
+- summary construction reuses weather rows already acquired for Search V4 and
+  adds no provider call or LLM call to the request path;
+- implementation must measure serialized response size and summary-construction
+  time against representative full grouped responses before enabling the field
+  by default;
+- if implementation cannot build a trustworthy summary, omission is valid and
+  the dossier shows a bounded unavailable state without scraping generic factor
+  internals.
+
 Client state includes:
 
 - current query and applied typed intent;
@@ -420,7 +721,10 @@ Client state includes:
 - optional preview metadata;
 - `expandedRecommendationGroupIds`;
 - `selectedCandidateIdByRecommendationGroup`;
-- results scroll position and dossier return state.
+- results scroll position and dossier return state;
+- dossier navigator collapsed state and current recommendation-group ID;
+- selected weather evidence view (`forecast` or `historical`) for the current
+  dossier only.
 
 No new routing library is assumed. The implementation plan must either use the
 existing history-based navigation or raise a new owner checkpoint before adding
@@ -442,6 +746,21 @@ a dependency.
 - Travel effort remains approximate when derived from fallback routing.
 - Evidence quality continues to distinguish archive-backed,
   forecast-assisted, and fallback-heavy recommendations.
+- Month-only evidence comes from `SnowClimatologyDaily` rows for the selected
+  ski area and representative mid-mountain band. The baseline years, evidence
+  seasons, and latest archive year remain visible or available in the detail
+  disclosure.
+- Exact-date forecast evidence comes only from the selected eligible forecast
+  head and usable valid dates. It must not mix providers into an opaque average
+  or substitute the latest current-condition snapshot for target-date evidence.
+- Snow depth is modelled depth at the representative elevation band. It is not
+  open-piste percentage, lift status, skiable-terrain coverage, or an official
+  resort report.
+- Temperature, rain, thaw, and wind values are evidence/context. They do not
+  imply additional ranking weight beyond `docs/planning-model.md` and the
+  versioned policy.
+- Forecast issue time, usable-date coverage, and stale/partial status are shown
+  when the forecast view is available.
 - Missing data reduces visible metric count; it does not create fabricated
   values or generic `Not available` tiles.
 
@@ -454,6 +773,8 @@ Deterministic code owns:
 - refinement option validation;
 - per-option rank preview simulation;
 - impact-copy templates;
+- weather-evidence mode selection, aggregation, interpretation templates, and
+  limitation labels;
 - evidence and estimate labels.
 
 The LLM may continue to propose bounded refinement question wording, option
@@ -466,6 +787,9 @@ or is disabled.
 
 ## Loading, Empty, And Failure States
 
+- Homepage parsing/search loading keeps the command stage stable, disables
+  duplicate submission, and uses one concise status line rather than a blank
+  page or indeterminate chat animation.
 - Initial loading copy names the work in product language: evaluating snow
   window, stay fit, travel effort, pass value, and evidence.
 - Reranking keeps existing results visible with a local busy state where safe;
@@ -476,34 +800,63 @@ or is disabled.
 - A failed refinement apply preserves the selected option and current results,
   announces the error, and permits retry or clear.
 - A failed dossier load offers return to the preserved search state.
+- Missing typed weather evidence shows `Snow evidence is not available for this
+  configuration` plus known coverage limitations. It never falls back to
+  parsing debug fields in the browser.
+- Forecast-unavailable and forecast-stale states retain historical context and
+  explain why the forecast view is absent or limited.
+- A failed recommendation switch leaves the current dossier intact and offers
+  retry or `All results`.
 
 ## Responsive And Accessibility Behavior
 
 Desktop:
 
 - maximum content width remains approximately `92rem`;
+- homepage command content and search workspace share the same grid edges;
 - decision rail is approximately `20rem` and the board uses remaining width;
 - two expanded cards create natural page height, never nested viewport scroll;
-- metric tiles use stable equal-width tracks.
+- metric tiles use stable equal-width tracks;
+- dossier uses a `260px` navigator, `24px` gutter, and flexible detail column at
+  the wide master-detail breakpoint;
+- collapsed dossier navigation is approximately `64px` and cannot overlap the
+  dossier content.
 
 Mobile:
 
 - command header, context, refinement, and results stack in document order;
+- homepage headline, planning signal, input, chips, and example result reflow
+  without detached floating panels or clipped text;
 - the query and update action occupy separate rows when necessary;
 - card scores and expansion control remain visible in the collapsed header;
 - actions stack full width;
 - `Trip essentials` uses one column on the narrowest viewport and up to three
   equal columns when content fits;
+- dossier navigation becomes a compact recommendation switcher above the
+  dossier; the desktop rail is not rendered as an off-canvas overlay;
+- weather metrics use two columns when they fit and one column at the narrowest
+  viewport; charts use the content width and never require horizontal scroll;
 - no horizontal scrolling is required.
 
 Accessibility:
 
 - card toggles are keyboard-operable buttons with `aria-expanded` and
   `aria-controls`;
+- the homepage trip brief has a persistent label, and removable parsed-state
+  chips are buttons with names such as `Remove France`;
+- after homepage search completes, focus moves to the results heading unless
+  an error or clarification requires focus first;
 - rank movement is announced through a polite live region after rerank;
 - focus remains on the triggering control after expand/collapse;
 - dossier navigation has a clear accessible name and is not nested inside the
   expansion button;
+- desktop navigator collapse and mobile recommendation switcher expose their
+  expanded/selected state and preserve a predictable focus order;
+- changing dossier result moves focus to the new dossier heading or announces
+  it through a polite live region;
+- forecast/historical controls use a labelled tab or segmented-control pattern,
+  with keyboard operation matching the chosen semantic role;
+- charts have equivalent accessible text or structured values;
 - semantic status never relies on color alone;
 - body text meets 4.5:1 contrast and control boundaries meet 3:1;
 - reduced-motion mode removes card-reorder and expansion animation while
@@ -524,20 +877,32 @@ Accessibility:
 
 Useful aggregate events:
 
+- homepage search submitted and bounded clarification shown;
 - recommendation expanded/collapsed by rank;
 - dossier opened by rank;
+- dossier recommendation switched by source rank and destination rank;
+- dossier navigator collapsed/expanded;
+- weather evidence view changed between forecast and historical context;
 - refinement preview selected, applied, cleared, failed;
 - missing `Trip essentials` category;
+- missing weather-evidence summary or forecast-unavailable state;
 - dossier return-state restoration failed.
 
 Do not attach raw search briefs, factor IDs, metric values, candidate IDs, or
-unbounded error payloads to metric labels. Result identifiers may appear only
-in a bounded structured event when separately approved. UI failures must not
-block deterministic search results.
+weather dates/values to metric labels. Result identifiers may appear only in a
+bounded structured event when separately approved. UI failures must not block
+deterministic search results.
 
 ## Acceptance Criteria
 
-- The post-search screen matches the accepted hybrid visual hierarchy.
+- Homepage, results, and dossier match the accepted visual hierarchy and share
+  one Snowcast design system.
+- The homepage first viewport contains the actionable trip brief, planning
+  signal, and a clearly labelled example recommendation using real Snowcast
+  concepts rather than generic process cards.
+- Homepage command content and search workspace align to a coherent page grid.
+- Submitting the homepage brief transitions to results without losing the brief
+  or parsed intent.
 - The compact midnight command header replaces the permanent Search V4 form.
 - Hard constraints and preferences are visible in user language and editable
   through the manual-adjustment entry point.
@@ -554,7 +919,27 @@ block deterministic search results.
   current-trip save target without changing the group's rank.
 - Dossier and save actions never toggle expansion.
 - `View dossier` opens the dedicated recommendation dossier.
+- The dossier begins with the selected trip verdict and keeps deep evidence in
+  progressive sections rather than equal-weight dashboard cards.
+- Wide desktop shows the collapsible result navigator; narrower layouts show a
+  compact recommendation switcher.
+- Every result in the navigator/switcher can open its corresponding dossier
+  without rerunning search.
+- Switching dossier resets detail scroll, announces the new result, and retains
+  query/ranking context.
 - Returning from the dossier restores the current browser-session search state.
+- Month-only dossiers show `Historical pattern`, climatology coverage, selected
+  elevation band, and supported snow-depth/snowfall/temperature metrics; they do
+  not show a target-date forecast.
+- Exact-date dossiers show `Forecast-assisted` only with usable forecast rows,
+  expose freshness and coverage, and keep historical context separate.
+- Missing or stale forecast evidence falls back honestly without fabricating
+  current conditions or forecast certainty.
+- The frontend consumes a typed weather-evidence summary and does not infer
+  chart values or evidence mode from generic factor internals.
+- Weather charts have equivalent accessible text or structured values.
+- Accommodation remains an explicitly labelled stay-base estimate and handoff
+  until provider-backed inventory exists.
 - A selected refinement option shows exact rank movement only when structured
   preview metadata supports it.
 - Applying a refinement reranks in place and announces changed positions.
@@ -572,6 +957,10 @@ Unit tests:
 - deterministic `Trip essentials` selection, ordering, omission, and estimate
   labels;
 - refinement preview formatting for movement, entry, exit, and absent preview;
+- typed weather-evidence mapping for climatology, forecast-assisted, partial,
+  stale, and unavailable cases;
+- null preservation and chronological bounding of weather profile points;
+- deterministic weather interpretation and limitation templates;
 - expansion-set preservation across reranks;
 - dossier return-state serialization/restoration.
 
@@ -581,10 +970,17 @@ API and integration tests:
 - preview omits score and policy internals;
 - refinement response without preview remains schema-valid;
 - applying the same option produces ranking movement consistent with preview;
+- month-only response produces climatology-only weather evidence;
+- exact-date response includes forecast evidence only for usable dates and
+  retains historical context;
+- weather summary uses the selected ski area/elevation band and omits unsupported
+  numeric values;
+- clients that ignore the additive weather field remain compatible;
 - Search V4 succeeds when refinement generation fails.
 
 UI tests:
 
+- homepage search preserves brief and parsed intent through navigation;
 - result 1 is open initially;
 - results 1 and 2 can remain open simultaneously;
 - nested dossier/save actions do not toggle expansion;
@@ -592,14 +988,25 @@ UI tests:
   group;
 - collapsed and expanded accessible states are correct;
 - missing metrics do not leave broken or empty tiles;
+- desktop dossier navigator collapses, expands, and switches results;
+- mobile recommendation switcher is keyboard/touch operable;
+- switching dossier retains ranked state and resets detail scroll;
+- month-only, exact-date forecast, forecast-unavailable, and missing-evidence
+  dossier variants render the correct labels and controls;
+- forecast/historical controls and chart alternatives are accessible;
+- estimate-only accommodation copy never renders provider-backed claims;
 - loading, no-results, apply-failure, and dossier-failure paths remain usable.
 
 Visual and manual checks:
 
-- Playwright screenshots at desktop, tablet, and narrow mobile viewports;
+- Playwright screenshots for homepage, results, and dossier at desktop, tablet,
+  and narrow mobile viewports;
 - no horizontal overflow at supported widths;
 - card content and controls do not overlap at 200% zoom;
 - reduced-motion behavior;
+- homepage/result/dossier visual-grid consistency;
+- dossier rail collapse and mobile switcher behavior;
+- chart text alternative and keyboard operation;
 - return from dossier restores query, scroll, and expansion state;
 - color semantics remain understandable in grayscale and common color-vision
   deficiency simulations.
@@ -607,12 +1014,33 @@ Visual and manual checks:
 ## Advisory Review
 
 - Design reviewers: Product / Strategy, Backend / API, Data Trust & Source
-  Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility.
+  Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
+  Performance, Monetization / Partnerships.
 - Feature reviewers: Product / Strategy, Backend / API, Data Trust & Source
-  Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility.
+  Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
+  Performance, Monetization / Partnerships.
 - Design-review status: completed on 2026-07-16.
 - Outcome: proceed to implementation planning after owner review of this spec.
-- Findings resolved in this revision:
+- Consolidated-flow findings resolved in this revision:
+  - [Medium] Backend / API and Data Trust & Source Integrity: the initial weather
+    contract allowed a stale forecast inside `forecast_assisted` mode and omitted
+    climatology provenance. Stale runs are now excluded from that mode, fallback
+    limitations are explicit, and historical/forecast source metadata is typed.
+  - [Medium] Performance: daily weather profiles on a complete grouped Search V4
+    response could increase response size and mapping cost. Profiles are capped
+    at 31 points, construction reuses loaded rows, and representative full-
+    response size/time measurement is required before default enablement. An
+    on-demand endpoint requires a new owner checkpoint if the benchmark fails.
+  - [Medium] UI / UX: an unbounded dossier navigator could become a duplicate
+    scrollable results board. It now contains at most the top three groups, or
+    the top two plus the current out-of-band group, and retains `All results`.
+  - [Medium] Accessibility: homepage-to-results focus, removable-chip naming,
+    route-change announcement, weather-control semantics, and chart alternatives
+    were not all explicit. They are now acceptance and verification requirements.
+  - [Low] Product / Strategy: a homepage example can look like a live resort
+    claim. It is explicitly labelled as illustrative and does not imply live
+    availability or current recommendation data.
+- Earlier results-board findings that remain resolved:
   - [High] Backend / API: dossier navigation originally identified only the ski
     region and could not reliably preserve the selected trip configuration.
     The route now carries `candidate_id`, and the state contract names selected
@@ -633,10 +1061,15 @@ Visual and manual checks:
   - [Low] Accessibility: allowing the whole card header to be an expansion
     button could create nested interactive controls. The expansion target is
     now limited to the non-action header area or explicit chevron.
-- No defensible design finding remains for Security & Privacy or Observability
-  / Ops after the telemetry and no-extra-request-work constraints.
+- No defensible design finding remains for Security & Privacy, Observability /
+  Ops, or Monetization / Partnerships after the telemetry,
+  no-extra-request-work, and estimate-only accommodation constraints.
 - Known residual risks:
   - expanded cards can produce long pages when many results are opened;
   - practical metrics depend on uneven catalog and provider coverage;
   - exact refinement previews require a new structured response field;
-  - browser-session return-state preservation needs careful history handling.
+  - browser-session return-state preservation needs careful history handling;
+  - weather-summary response cost still needs measurement against the real
+    catalog and may trigger the documented on-demand-endpoint checkpoint;
+  - the final dossier responsive behavior still needs Playwright verification at
+    narrow mobile and 200% zoom during implementation.
