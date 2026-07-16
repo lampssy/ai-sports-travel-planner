@@ -111,6 +111,11 @@ green while the stale five-test E2E suite was red as described above.
   route-departure, and in-flight context state. Final evidence passed 49 unit
   tests, nine Chromium E2E journeys, and 60/60 serialized delayed-response
   repetitions; the definitive exact-head review reported no findings.
+- 2026-07-16 Task 6 implementation gate: completed at `fa2f5e3`; 56 unit
+  tests, production build, and 15 Chromium E2E journeys passed, including
+  no-search dossier switching, invalid-route recovery, and exact results-scroll
+  return. Expanded, collapsed, and 390 px dossier states were inspected, and
+  exact-head review reported no findings.
 
 ---
 
