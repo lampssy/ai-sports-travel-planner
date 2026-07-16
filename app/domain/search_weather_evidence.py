@@ -3,11 +3,11 @@ from __future__ import annotations
 import calendar
 from collections.abc import Sequence
 from datetime import date, timedelta
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.domain.models import SnowClimatologyDaily
+from app.domain.models import SnowClimatologyBaselinePeriod, SnowClimatologyDaily
 from app.domain.search_factors.weather import (
     WeatherEvaluationContext,
     WeatherFactorCandidate,
@@ -15,7 +15,7 @@ from app.domain.search_factors.weather import (
     select_usable_forecast_rows_by_date,
     snowpack_outlook,
 )
-from app.domain.search_v4_models import TravelWindow
+from app.domain.search_v4_models import SearchIdentifier, SearchIntent, TravelWindow
 from app.domain.weather_forecast import ServedWeatherForecastDaily
 
 _MODEL_CONFIG = ConfigDict(frozen=True, extra="forbid")
@@ -40,14 +40,32 @@ class WeatherEvidencePoint(_WeatherEvidenceModel):
     wind_gust_kmh: float | None = None
 
 
-class HistoricalWeatherEvidence(_WeatherEvidenceModel):
-    source_label: str
+class HistoricalWeatherSource(_WeatherEvidenceModel):
     source_model: str
     computed_at: str
+    baseline_period: SnowClimatologyBaselinePeriod
     baseline_start_year: int
     baseline_end_year: int
     evidence_seasons: int = Field(ge=0)
     latest_archive_year: int | None = None
+    elevation_m: int
+    row_count: int = Field(gt=0)
+    profile_dates: tuple[str, ...] = Field(max_length=_PROFILE_LIMIT)
+
+
+class HistoricalWeatherEvidence(_WeatherEvidenceModel):
+    source_label: str
+    source_model: str | None
+    computed_at: str | None
+    baseline_start_year: int | None
+    baseline_end_year: int | None
+    evidence_seasons: int | None = Field(default=None, ge=0)
+    latest_archive_year: int | None = None
+    provenance_status: Literal["homogeneous", "mixed"]
+    sources: tuple[HistoricalWeatherSource, ...] = Field(
+        min_length=1,
+        max_length=_PROFILE_LIMIT,
+    )
     snow_depth_cm_p25: float | None = Field(default=None, ge=0)
     snow_depth_cm_p50: float | None = Field(default=None, ge=0)
     snow_depth_cm_p75: float | None = Field(default=None, ge=0)
@@ -64,11 +82,27 @@ class HistoricalWeatherEvidence(_WeatherEvidenceModel):
     )
 
 
-class ForecastWeatherEvidence(_WeatherEvidenceModel):
+class ForecastWeatherSource(_WeatherEvidenceModel):
+    forecast_run_id: str
+    forecast_source_key: str
     source_label: str
     source_model: str
     issued_at: str
-    freshness: Literal["fresh", "partial"]
+    elevation_m: int
+    row_count: int = Field(gt=0)
+    profile_dates: tuple[str, ...] = Field(max_length=_PROFILE_LIMIT)
+
+
+class ForecastWeatherEvidence(_WeatherEvidenceModel):
+    source_label: str
+    source_model: str | None
+    issued_at: str | None
+    provenance_status: Literal["homogeneous", "mixed"]
+    sources: tuple[ForecastWeatherSource, ...] = Field(
+        min_length=1,
+        max_length=_PROFILE_LIMIT,
+    )
+    coverage_status: Literal["complete", "partial"]
     usable_date_count: int = Field(gt=0)
     requested_date_count: int = Field(gt=0)
     average_forecast_share: float = Field(gt=0, le=1)
@@ -89,6 +123,7 @@ class SearchWeatherEvidence(_WeatherEvidenceModel):
     window_label: str
     elevation_band: Literal["mid_mountain"] = "mid_mountain"
     elevation_m: int | None = None
+    elevation_status: Literal["exact", "mixed"] = "exact"
     interpretation: str
     limitations: tuple[str, ...] = ()
     historical: HistoricalWeatherEvidence
@@ -101,6 +136,38 @@ class SearchWeatherEvidence(_WeatherEvidenceModel):
         if self.mode == "forecast_assisted" and self.forecast is None:
             raise ValueError("forecast-assisted mode requires forecast evidence")
         return self
+
+
+class SearchWeatherEvidenceRequest(_WeatherEvidenceModel):
+    intent: SearchIntent
+    ski_area_id: SearchIdentifier
+
+
+class SearchWeatherEvidenceResponseBase(_WeatherEvidenceModel):
+    weather_evidence_version: Literal["search-weather-evidence-v1"]
+    ski_area_id: SearchIdentifier
+    evaluated_at: str
+    cache_valid_until: str
+
+
+class SearchWeatherEvidenceAvailableResponse(SearchWeatherEvidenceResponseBase):
+    status: Literal["available"] = "available"
+    evidence: SearchWeatherEvidence
+
+
+class SearchWeatherEvidenceUnavailableResponse(SearchWeatherEvidenceResponseBase):
+    status: Literal["unavailable"] = "unavailable"
+    unavailable_reason: Literal[
+        "travel_window_missing",
+        "historical_evidence_unavailable",
+    ]
+    limitations: tuple[str, ...] = Field(min_length=1, max_length=5)
+
+
+SearchWeatherEvidenceResponse = Annotated[
+    SearchWeatherEvidenceAvailableResponse | SearchWeatherEvidenceUnavailableResponse,
+    Field(discriminator="status"),
+]
 
 
 def build_search_weather_evidence(
@@ -144,10 +211,17 @@ def build_search_weather_evidence(
     mode: Literal["climatology", "forecast_assisted"] = (
         "forecast_assisted" if forecast is not None else "climatology"
     )
+    elevation_m, elevation_status = _elevation_provenance(
+        selected_historical,
+        context,
+        candidate,
+        include_forecast=forecast is not None,
+    )
     return SearchWeatherEvidence(
         mode=mode,
         window_label=_window_label(window),
-        elevation_m=_representative_elevation(selected_historical),
+        elevation_m=elevation_m,
+        elevation_status=elevation_status,
         interpretation=_interpretation(mode, forecast),
         limitations=tuple(dict.fromkeys(limitations)),
         historical=historical,
@@ -213,16 +287,31 @@ def _historical_evidence(
     rows: tuple[SnowClimatologyDaily, ...],
 ) -> HistoricalWeatherEvidence:
     profile_rows = rows[:_PROFILE_LIMIT]
+    sources = _historical_sources(rows, profile_rows)
+    homogeneous = len(sources) == 1
+    exact_source = sources[0] if homogeneous else None
     return HistoricalWeatherEvidence(
-        source_label=_historical_source_label(rows),
-        source_model=", ".join(sorted({row.source_model for row in rows})),
-        computed_at=max(row.computed_at for row in rows),
-        baseline_start_year=min(row.baseline_start_year for row in rows),
-        baseline_end_year=max(row.baseline_end_year for row in rows),
-        evidence_seasons=min(row.evidence_seasons for row in rows),
-        latest_archive_year=_maximum_optional(
-            tuple(row.latest_archive_year for row in rows)
+        source_label=(
+            _historical_source_label(rows)
+            if homogeneous
+            else "Mixed historical climatology sources"
         ),
+        source_model=exact_source.source_model if exact_source is not None else None,
+        computed_at=exact_source.computed_at if exact_source is not None else None,
+        baseline_start_year=(
+            exact_source.baseline_start_year if exact_source is not None else None
+        ),
+        baseline_end_year=(
+            exact_source.baseline_end_year if exact_source is not None else None
+        ),
+        evidence_seasons=(
+            exact_source.evidence_seasons if exact_source is not None else None
+        ),
+        latest_archive_year=(
+            exact_source.latest_archive_year if exact_source is not None else None
+        ),
+        provenance_status="homogeneous" if homogeneous else "mixed",
+        sources=sources,
         snow_depth_cm_p25=_average_optional(
             tuple(row.snow_depth_cm_p25 for row in rows)
         ),
@@ -242,6 +331,48 @@ def _historical_evidence(
             sum(row.avg_max_temperature_c for row in rows) / len(rows)
         ),
         daily_profile=tuple(_historical_point(row) for row in profile_rows),
+    )
+
+
+def _historical_sources(
+    rows: tuple[SnowClimatologyDaily, ...],
+    profile_rows: tuple[SnowClimatologyDaily, ...],
+) -> tuple[HistoricalWeatherSource, ...]:
+    grouped: dict[tuple[object, ...], list[SnowClimatologyDaily]] = {}
+    for row in rows:
+        grouped.setdefault(_historical_source_key(row), []).append(row)
+    profile_dates_by_source: dict[tuple[object, ...], list[str]] = {}
+    for row in profile_rows:
+        profile_dates_by_source.setdefault(_historical_source_key(row), []).append(
+            f"{row.month:02d}-{row.day:02d}"
+        )
+    return tuple(
+        HistoricalWeatherSource(
+            source_model=source_rows[0].source_model,
+            computed_at=source_rows[0].computed_at,
+            baseline_period=source_rows[0].baseline_period,
+            baseline_start_year=source_rows[0].baseline_start_year,
+            baseline_end_year=source_rows[0].baseline_end_year,
+            evidence_seasons=source_rows[0].evidence_seasons,
+            latest_archive_year=source_rows[0].latest_archive_year,
+            elevation_m=source_rows[0].elevation_m,
+            row_count=len(source_rows),
+            profile_dates=tuple(profile_dates_by_source.get(source_key, ())),
+        )
+        for source_key, source_rows in tuple(grouped.items())[:_PROFILE_LIMIT]
+    )
+
+
+def _historical_source_key(row: SnowClimatologyDaily) -> tuple[object, ...]:
+    return (
+        row.source_model,
+        row.computed_at,
+        row.baseline_period,
+        row.baseline_start_year,
+        row.baseline_end_year,
+        row.evidence_seasons,
+        row.latest_archive_year,
+        row.elevation_m,
     )
 
 
@@ -277,12 +408,23 @@ def _forecast_evidence(
     if not usable:
         return None
 
-    rows = tuple(row for _valid_date, row, _share in usable)
+    profile_rows = tuple(usable[:_PROFILE_LIMIT])
+    sources = _forecast_sources(tuple(usable), profile_rows)
+    homogeneous = len(sources) == 1
+    exact_source = sources[0] if homogeneous else None
     return ForecastWeatherEvidence(
-        source_label=", ".join(sorted({row.run.producer for row in rows})),
-        source_model=", ".join(sorted({row.run.provider_model_id for row in rows})),
-        issued_at=max(row.run.model_initialization_time for row in rows).isoformat(),
-        freshness=("fresh" if len(usable) == len(requested_dates) else "partial"),
+        source_label=(
+            exact_source.source_label
+            if exact_source is not None
+            else "Mixed forecast sources"
+        ),
+        source_model=exact_source.source_model if exact_source is not None else None,
+        issued_at=exact_source.issued_at if exact_source is not None else None,
+        provenance_status="homogeneous" if homogeneous else "mixed",
+        sources=sources,
+        coverage_status=(
+            "complete" if len(usable) == len(requested_dates) else "partial"
+        ),
         usable_date_count=len(usable),
         requested_date_count=len(requested_dates),
         average_forecast_share=(
@@ -290,8 +432,49 @@ def _forecast_evidence(
         ),
         daily_profile=tuple(
             _forecast_point(valid_date, row, context)
-            for valid_date, row, _share in usable[:_PROFILE_LIMIT]
+            for valid_date, row, _share in profile_rows
         ),
+    )
+
+
+def _forecast_sources(
+    rows: tuple[tuple[date, ServedWeatherForecastDaily, float], ...],
+    profile_rows: tuple[tuple[date, ServedWeatherForecastDaily, float], ...],
+) -> tuple[ForecastWeatherSource, ...]:
+    grouped: dict[
+        tuple[object, ...],
+        list[tuple[date, ServedWeatherForecastDaily, float]],
+    ] = {}
+    for item in rows:
+        grouped.setdefault(_forecast_source_key(item[1]), []).append(item)
+    profile_dates_by_source: dict[tuple[object, ...], list[str]] = {}
+    for valid_date, row, _share in profile_rows:
+        profile_dates_by_source.setdefault(_forecast_source_key(row), []).append(
+            valid_date.isoformat()
+        )
+    return tuple(
+        ForecastWeatherSource(
+            forecast_run_id=source_rows[0][1].run.forecast_run_id,
+            forecast_source_key=source_rows[0][1].run.forecast_source_key,
+            source_label=source_rows[0][1].run.producer,
+            source_model=source_rows[0][1].run.provider_model_id,
+            issued_at=source_rows[0][1].run.model_initialization_time.isoformat(),
+            elevation_m=source_rows[0][1].daily.representative_elevation_m,
+            row_count=len(source_rows),
+            profile_dates=tuple(profile_dates_by_source.get(source_key, ())),
+        )
+        for source_key, source_rows in tuple(grouped.items())[:_PROFILE_LIMIT]
+    )
+
+
+def _forecast_source_key(row: ServedWeatherForecastDaily) -> tuple[object, ...]:
+    return (
+        row.run.forecast_run_id,
+        row.run.forecast_source_key,
+        row.run.producer,
+        row.run.provider_model_id,
+        row.run.model_initialization_time,
+        row.daily.representative_elevation_m,
     )
 
 
@@ -413,18 +596,34 @@ def _requested_dates(window: TravelWindow) -> tuple[date, ...]:
     )
 
 
-def _representative_elevation(
-    rows: Sequence[SnowClimatologyDaily],
-) -> int | None:
-    values = tuple(row.elevation_m for row in rows if row.elevation_m is not None)
-    return round(sum(values) / len(values)) if values else None
+def _elevation_provenance(
+    historical_rows: Sequence[SnowClimatologyDaily],
+    context: WeatherEvaluationContext,
+    candidate: WeatherFactorCandidate,
+    *,
+    include_forecast: bool,
+) -> tuple[int | None, Literal["exact", "mixed"]]:
+    elevations = {row.elevation_m for row in historical_rows}
+    if include_forecast:
+        window = context.intent.constraints.travel_window
+        assert window is not None and window.start_date is not None
+        for valid_date, row in select_usable_forecast_rows_by_date(
+            context,
+            candidate,
+        ).items():
+            if (
+                forecast_share_for_lead_days(
+                    (valid_date - window.start_date).days + 1,
+                    context.policy.weather,
+                )
+                > 0
+            ):
+                elevations.add(row.daily.representative_elevation_m)
+    if len(elevations) == 1:
+        return next(iter(elevations)), "exact"
+    return None, "mixed"
 
 
 def _average_optional(values: Sequence[float | None]) -> float | None:
     present = tuple(value for value in values if value is not None)
     return sum(present) / len(present) if present else None
-
-
-def _maximum_optional(values: Sequence[int | None]) -> int | None:
-    present = tuple(value for value in values if value is not None)
-    return max(present) if present else None

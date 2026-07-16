@@ -56,8 +56,12 @@ from app.domain.search_factors.weather import (
     WeatherEvaluationContext,
     WeatherFactorCandidate,
     build_weather_factor_registry,
+    forecast_share_for_lead_days,
+    select_usable_forecast_rows_by_date,
 )
-from app.domain.search_intent_policy import validate_search_intent
+from app.domain.search_intent_policy import (
+    validate_search_intent,
+)
 from app.domain.search_policy import SearchPolicy, load_search_policy
 from app.domain.search_ranking import (
     FactorScoreBreakdown,
@@ -80,7 +84,9 @@ from app.domain.search_v4_models import (
     SearchObjective,
 )
 from app.domain.search_weather_evidence import (
-    SearchWeatherEvidence,
+    SearchWeatherEvidenceAvailableResponse,
+    SearchWeatherEvidenceResponse,
+    SearchWeatherEvidenceUnavailableResponse,
     build_search_weather_evidence,
 )
 from app.domain.travel import assess_deterministic_travel_effort
@@ -170,7 +176,6 @@ class SearchV4Configuration(_SearchV4Model):
     groups: tuple[GroupScoreBreakdown, ...] = ()
     factors: tuple[FactorScoreBreakdown, ...] = ()
     constraint_warnings: tuple[ConstraintIssue, ...] = ()
-    weather_evidence: SearchWeatherEvidence | None = None
 
 
 class SearchV4RecommendationGroup(_SearchV4Model):
@@ -259,7 +264,6 @@ class _EvaluatedCandidate:
     constraint_decision: ConstraintDecision
     evaluations: tuple[FactorEvaluation, ...]
     ranking: RankedScore | UnscoredAllocation
-    weather_evidence: SearchWeatherEvidence | None
 
 
 @dataclass(frozen=True)
@@ -267,7 +271,12 @@ class _FactorEvaluatedCandidate:
     record: V4CandidateRecord
     constraint_decision: ConstraintDecision
     evaluations: tuple[FactorEvaluation, ...]
-    weather_evidence: SearchWeatherEvidence | None
+
+
+class UnknownSearchWeatherAreaError(ValueError):
+    def __init__(self, ski_area_id: str) -> None:
+        super().__init__(f"unknown ski area ID: {ski_area_id}")
+        self.ski_area_id = ski_area_id
 
 
 def forecast_run_is_fresh(
@@ -285,12 +294,116 @@ def forecast_run_is_fresh(
         return False
     if reference_time.tzinfo is None or reference_time.utcoffset() is None:
         raise ValueError("reference_time must be timezone-aware")
-    expires_at = (
+    return reference_time <= forecast_run_valid_until(run)
+
+
+def forecast_run_valid_until(run: WeatherForecastRun) -> datetime:
+    update_interval = run.provider_metadata.get("update_interval_seconds")
+    if (
+        not isinstance(update_interval, (int, float))
+        or isinstance(update_interval, bool)
+        or update_interval <= 0
+    ):
+        raise ValueError("forecast run has no positive update interval")
+    return (
         run.provider_availability_time
         + timedelta(seconds=float(update_interval))
         + _FORECAST_CONSISTENCY_DELAY
     )
-    return reference_time <= expires_at
+
+
+def get_search_weather_evidence(
+    *,
+    intent: SearchIntent,
+    ski_area_id: SearchIdentifier,
+    catalog_snapshot: CatalogSnapshot | None = None,
+    trust_manifest: CatalogTrustManifest | None = None,
+    climatology_repository: _ClimatologyRepository | None = None,
+    forecast_repository: _ForecastRepository | None = None,
+    policy: SearchPolicy | None = None,
+    reference_time: datetime | None = None,
+) -> SearchWeatherEvidenceResponse:
+    selected_policy = policy or load_search_policy()
+    validate_search_intent(intent, selected_policy)
+    snapshot = catalog_snapshot or CatalogRepository().get_snapshot()
+    manifest = trust_manifest or _load_trust_manifest(DEFAULT_TRUST_MANIFEST_PATH)
+    manifest.validate_against_catalog(snapshot)
+    if ski_area_id not in {area.ski_area_id for area in snapshot.ski_areas}:
+        raise UnknownSearchWeatherAreaError(ski_area_id)
+
+    evaluated_at = reference_time or datetime.now(UTC)
+    if evaluated_at.tzinfo is None or evaluated_at.utcoffset() is None:
+        raise ValueError("reference_time must be timezone-aware")
+    cache_valid_until = evaluated_at + timedelta(minutes=5)
+    window = intent.constraints.travel_window
+    if window is None:
+        return SearchWeatherEvidenceUnavailableResponse(
+            weather_evidence_version="search-weather-evidence-v1",
+            ski_area_id=ski_area_id,
+            evaluated_at=evaluated_at.isoformat(),
+            cache_valid_until=cache_valid_until.isoformat(),
+            unavailable_reason="travel_window_missing",
+            limitations=("A travel month or exact travel dates are required.",),
+        )
+
+    climate_by_area, forecast_by_area, stale_run_ids = _load_weather_evidence(
+        intent=intent,
+        area_ids=(ski_area_id,),
+        policy=selected_policy,
+        climatology_repository=(
+            climatology_repository or get_snow_climatology_repository()
+        ),
+        forecast_repository=forecast_repository or WeatherForecastRepository(),
+        reference_time=evaluated_at,
+    )
+    context = WeatherEvaluationContext(
+        intent=intent,
+        policy=selected_policy,
+        stale_run_ids=stale_run_ids,
+    )
+    candidate = WeatherFactorCandidate(
+        ski_area_id=ski_area_id,
+        climatology_rows=climate_by_area.get(ski_area_id, ()),
+        forecast_rows=forecast_by_area.get(ski_area_id, ()),
+    )
+    evidence = build_search_weather_evidence(context=context, candidate=candidate)
+    if evidence is None:
+        return SearchWeatherEvidenceUnavailableResponse(
+            weather_evidence_version="search-weather-evidence-v1",
+            ski_area_id=ski_area_id,
+            evaluated_at=evaluated_at.isoformat(),
+            cache_valid_until=cache_valid_until.isoformat(),
+            unavailable_reason="historical_evidence_unavailable",
+            limitations=(
+                "No trustworthy mid-mountain historical evidence is available.",
+            ),
+        )
+
+    if evidence.forecast is not None:
+        assert window.start_date is not None
+        usable_rows = tuple(
+            row
+            for valid_date, row in select_usable_forecast_rows_by_date(
+                context,
+                candidate,
+            ).items()
+            if forecast_share_for_lead_days(
+                (valid_date - window.start_date).days + 1,
+                selected_policy.weather,
+            )
+            > 0
+        )
+        if usable_rows:
+            cache_valid_until = min(
+                forecast_run_valid_until(row.run) for row in usable_rows
+            )
+    return SearchWeatherEvidenceAvailableResponse(
+        weather_evidence_version="search-weather-evidence-v1",
+        ski_area_id=ski_area_id,
+        evaluated_at=evaluated_at.isoformat(),
+        cache_valid_until=cache_valid_until.isoformat(),
+        evidence=evidence,
+    )
 
 
 def generate_v4_candidate_records(
@@ -503,17 +616,6 @@ def search_trip_configurations(
         policy=selected_policy,
         stale_run_ids=stale_run_ids,
     )
-    weather_evidence_by_area = {
-        area_id: build_search_weather_evidence(
-            context=weather_context,
-            candidate=WeatherFactorCandidate(
-                ski_area_id=area_id,
-                climatology_rows=climate_by_area.get(area_id, ()),
-                forecast_rows=forecast_by_area.get(area_id, ()),
-            ),
-        )
-        for area_id in area_ids
-    }
     weather_registry = build_weather_factor_registry()
     with search_phase(phase="weather_factor_evaluation", intent=intent):
         factor_evaluated: list[_FactorEvaluatedCandidate] = []
@@ -552,9 +654,6 @@ def search_trip_configurations(
                     record=record,
                     constraint_decision=decisions[record.candidate_id],
                     evaluations=evaluations,
-                    weather_evidence=weather_evidence_by_area[
-                        record.ski_area.ski_area_id
-                    ],
                 )
             )
     with search_phase(phase="ranking", intent=intent):
@@ -568,7 +667,6 @@ def search_trip_configurations(
                     intent=intent,
                     policy=selected_policy,
                 ),
-                weather_evidence=item.weather_evidence,
             )
             for item in factor_evaluated
         )
@@ -1100,7 +1198,6 @@ def _configuration(
         groups=ranking.groups if isinstance(ranking, RankedScore) else (),
         factors=ranking.factors if isinstance(ranking, RankedScore) else (),
         constraint_warnings=item.constraint_decision.warnings,
-        weather_evidence=item.weather_evidence,
     )
 
 

@@ -46,8 +46,14 @@ from app.domain.search_policy import load_search_policy
 from app.domain.search_v4_service import (
     SearchV4Request,
     SearchV4Response,
+    UnknownSearchWeatherAreaError,
     forecast_run_is_fresh,
+    get_search_weather_evidence,
     search_trip_configurations,
+)
+from app.domain.search_weather_evidence import (
+    SearchWeatherEvidenceRequest,
+    SearchWeatherEvidenceResponse,
 )
 from app.domain.trip_companion import (
     build_current_trip_summary,
@@ -101,6 +107,24 @@ def search(payload: SearchV4Request) -> SearchV4Response:
         )
     except SearchIntentPolicyError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.post(
+    "/search/weather-evidence",
+    response_model=SearchWeatherEvidenceResponse,
+)
+def search_weather_evidence(
+    payload: SearchWeatherEvidenceRequest,
+) -> SearchWeatherEvidenceResponse:
+    try:
+        return get_search_weather_evidence(
+            intent=payload.intent,
+            ski_area_id=payload.ski_area_id,
+        )
+    except SearchIntentPolicyError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except UnknownSearchWeatherAreaError as error:
+        raise HTTPException(status_code=422, detail="Unknown ski area ID.") from error
 
 
 @router.get("/healthz", response_model=HealthResponse)

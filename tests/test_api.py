@@ -22,6 +22,7 @@ from app.domain.models import (
     ResortConditionSnapshot,
     snow_confidence_label_for_score,
 )
+from app.domain.search_intent_policy import SearchIntentPolicyError
 from app.domain.search_v4_models import GroupPriorityPatch, SearchIntent
 from app.domain.search_v4_service import (
     SearchV4AccessSummary,
@@ -33,14 +34,24 @@ from app.domain.search_v4_service import (
     SearchV4RefinementProposal,
     SearchV4RefinementRankChange,
     SearchV4Response,
+    UnknownSearchWeatherAreaError,
 )
 from app.domain.search_weather_evidence import (
     ForecastWeatherEvidence,
+    ForecastWeatherSource,
     HistoricalWeatherEvidence,
+    HistoricalWeatherSource,
     SearchWeatherEvidence,
+    SearchWeatherEvidenceAvailableResponse,
+    SearchWeatherEvidenceUnavailableResponse,
     WeatherEvidencePoint,
 )
 from app.main import app, create_app
+from app.observability.metrics import (
+    InMemoryMetricsRecorder,
+    reset_metrics_recorder_for_tests,
+    set_metrics_recorder_for_tests,
+)
 
 client = TestClient(app)
 
@@ -210,7 +221,6 @@ def test_search_serializes_refinement_previews_and_preserves_patch_fields(
 def _weather_api_configuration(
     *,
     candidate_id: str,
-    weather_evidence: SearchWeatherEvidence | None,
 ) -> SearchV4Configuration:
     return SearchV4Configuration(
         candidate_id=candidate_id,
@@ -242,11 +252,10 @@ def _weather_api_configuration(
         lodging_estimate=None,
         ranking_status="ranked",
         fit_score=88,
-        weather_evidence=weather_evidence,
     )
 
 
-def test_search_serializes_typed_weather_evidence_and_optional_omission(
+def test_search_weather_evidence_endpoint_serializes_typed_available_response(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     historical_point = WeatherEvidencePoint(
@@ -272,6 +281,7 @@ def test_search_serializes_typed_weather_evidence_and_optional_omission(
         mode="forecast_assisted",
         window_label="2027-01-10 to 2027-01-12",
         elevation_m=2000,
+        elevation_status="exact",
         interpretation=(
             "Fresh forecast evidence supplements the historical climatology for "
             "3 of 3 requested days."
@@ -284,6 +294,21 @@ def test_search_serializes_typed_weather_evidence_and_optional_omission(
             baseline_end_year=2020,
             evidence_seasons=25,
             latest_archive_year=2025,
+            provenance_status="homogeneous",
+            sources=(
+                HistoricalWeatherSource(
+                    source_model="snowcast_empirical_v1",
+                    computed_at="2026-07-01T00:00:00+00:00",
+                    baseline_period="normal_30y",
+                    baseline_start_year=1991,
+                    baseline_end_year=2020,
+                    evidence_seasons=25,
+                    latest_archive_year=2025,
+                    elevation_m=2000,
+                    row_count=1,
+                    profile_dates=("01-10",),
+                ),
+            ),
             snow_depth_cm_p25=60,
             snow_depth_cm_p50=80,
             snow_depth_cm_p75=100,
@@ -296,21 +321,92 @@ def test_search_serializes_typed_weather_evidence_and_optional_omission(
             source_label="ecmwf",
             source_model="ifs025",
             issued_at="2027-01-09T00:00:00+00:00",
-            freshness="fresh",
+            provenance_status="homogeneous",
+            sources=(
+                ForecastWeatherSource(
+                    forecast_run_id="run-ecmwf",
+                    forecast_source_key="ecmwf_ifs025_ensemble_mean",
+                    source_label="ecmwf",
+                    source_model="ifs025",
+                    issued_at="2027-01-09T00:00:00+00:00",
+                    elevation_m=2000,
+                    row_count=3,
+                    profile_dates=("2027-01-10",),
+                ),
+            ),
+            coverage_status="complete",
             usable_date_count=3,
             requested_date_count=3,
             average_forecast_share=0.8,
             daily_profile=(forecast_point,),
         ),
     )
-    top = _weather_api_configuration(
-        candidate_id="candidate-with-weather",
-        weather_evidence=weather,
+    monkeypatch.setattr(
+        "app.api.routes.get_search_weather_evidence",
+        lambda **_kwargs: SearchWeatherEvidenceAvailableResponse(
+            weather_evidence_version="search-weather-evidence-v1",
+            ski_area_id="area",
+            evaluated_at="2027-01-09T12:00:00+00:00",
+            cache_valid_until="2027-01-09T22:10:00+00:00",
+            evidence=weather,
+        ),
     )
-    alternative = _weather_api_configuration(
-        candidate_id="candidate-without-weather",
-        weather_evidence=None,
+
+    response = client.post(
+        "/api/search/weather-evidence",
+        json={
+            "ski_area_id": "area",
+            "intent": {
+                "constraints": {
+                    "travel_window": {
+                        "start_date": "2027-01-10",
+                        "end_date": "2027-01-12",
+                    }
+                }
+            },
+        },
     )
+
+    assert response.status_code == 200
+    payload = response.json()["evidence"]
+    assert payload["mode"] == "forecast_assisted"
+    assert payload["historical"]["daily_profile"][0]["snow_depth_cm_p50"] == 80
+    assert payload["historical"]["provenance_status"] == "homogeneous"
+    assert payload["historical"]["sources"][0]["baseline_period"] == "normal_30y"
+    assert payload["forecast"]["usable_date_count"] == 3
+    assert payload["forecast"]["sources"][0]["forecast_run_id"] == "run-ecmwf"
+    assert response.json()["status"] == "available"
+
+
+def test_search_weather_evidence_endpoint_serializes_typed_unavailable_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.api.routes.get_search_weather_evidence",
+        lambda **_kwargs: SearchWeatherEvidenceUnavailableResponse(
+            weather_evidence_version="search-weather-evidence-v1",
+            ski_area_id="area",
+            evaluated_at="2027-01-09T12:00:00+00:00",
+            cache_valid_until="2027-01-09T12:05:00+00:00",
+            unavailable_reason="travel_window_missing",
+            limitations=("A travel month or exact travel dates are required.",),
+        ),
+    )
+
+    response = client.post(
+        "/api/search/weather-evidence",
+        json={"ski_area_id": "area", "intent": {}},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "unavailable"
+    assert response.json()["unavailable_reason"] == "travel_window_missing"
+
+
+def test_search_grouped_response_omits_weather_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    top = _weather_api_configuration(candidate_id="candidate")
     monkeypatch.setattr(
         "app.api.routes.search_trip_configurations",
         lambda **_kwargs: SearchV4Response(
@@ -318,7 +414,7 @@ def test_search_serializes_typed_weather_evidence_and_optional_omission(
             ranking_policy_version="search-v4-policy-1",
             ranking_status="ranked",
             applied_intent=SearchIntent(),
-            eligible_candidate_count=2,
+            eligible_candidate_count=1,
             excluded_candidate_count=0,
             results=(
                 SearchV4RecommendationGroup(
@@ -327,7 +423,6 @@ def test_search_serializes_typed_weather_evidence_and_optional_omission(
                     rank=1,
                     fit_score=88,
                     top_configuration=top,
-                    alternative_configurations=(alternative,),
                 ),
             ),
         ),
@@ -339,12 +434,72 @@ def test_search_serializes_typed_weather_evidence_and_optional_omission(
     )
 
     assert response.status_code == 200
-    group = response.json()["results"][0]
-    payload = group["top_configuration"]["weather_evidence"]
-    assert payload["mode"] == "forecast_assisted"
-    assert payload["historical"]["daily_profile"][0]["snow_depth_cm_p50"] == 80
-    assert payload["forecast"]["usable_date_count"] == 3
-    assert group["alternative_configurations"][0]["weather_evidence"] is None
+    assert "weather_evidence" not in _top_configuration(response.json())
+
+
+def test_search_weather_evidence_endpoint_rejects_bounded_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unknown_area(**_kwargs):
+        raise UnknownSearchWeatherAreaError("unknown-area")
+
+    monkeypatch.setattr("app.api.routes.get_search_weather_evidence", unknown_area)
+    unknown_response = client.post(
+        "/api/search/weather-evidence",
+        json={"ski_area_id": "unknown-area", "intent": {}},
+    )
+
+    assert unknown_response.status_code == 422
+    assert unknown_response.json() == {"detail": "Unknown ski area ID."}
+
+    def invalid_intent(**_kwargs):
+        raise SearchIntentPolicyError("unknown factor ID: invalid")
+
+    monkeypatch.setattr("app.api.routes.get_search_weather_evidence", invalid_intent)
+    invalid_response = client.post(
+        "/api/search/weather-evidence",
+        json={"ski_area_id": "area", "intent": {}},
+    )
+
+    assert invalid_response.status_code == 422
+    assert invalid_response.json() == {"detail": "unknown factor ID: invalid"}
+
+
+def test_search_weather_evidence_endpoint_records_bounded_http_route_metric(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+    monkeypatch.setattr(
+        "app.api.routes.get_search_weather_evidence",
+        lambda **_kwargs: SearchWeatherEvidenceUnavailableResponse(
+            weather_evidence_version="search-weather-evidence-v1",
+            ski_area_id="area",
+            evaluated_at="2027-01-09T12:00:00+00:00",
+            cache_valid_until="2027-01-09T12:05:00+00:00",
+            unavailable_reason="travel_window_missing",
+            limitations=("A travel month or exact travel dates are required.",),
+        ),
+    )
+    try:
+        response = client.post(
+            "/api/search/weather-evidence",
+            json={"ski_area_id": "area", "intent": {}},
+        )
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    assert response.status_code == 200
+    assert any(
+        name == "snowcast_http_request_duration_seconds"
+        and labels
+        == {
+            "route": "/api/search/weather-evidence",
+            "method": "POST",
+            "status_class": "2xx",
+        }
+        for name, labels, _value in recorder.histograms
+    )
 
 
 def _raw_weather_observation(

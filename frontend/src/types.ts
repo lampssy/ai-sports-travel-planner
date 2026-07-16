@@ -153,14 +153,29 @@ export interface WeatherEvidencePoint {
   wind_gust_kmh: number | null;
 }
 
-export interface HistoricalWeatherEvidence {
-  source_label: string;
+export interface HistoricalWeatherSource {
   source_model: string;
   computed_at: string;
+  baseline_period: "normal_30y" | "recent_15y";
   baseline_start_year: number;
   baseline_end_year: number;
   evidence_seasons: number;
   latest_archive_year: number | null;
+  elevation_m: number;
+  row_count: number;
+  profile_dates: string[];
+}
+
+export interface HistoricalWeatherEvidence {
+  source_label: string;
+  source_model: string | null;
+  computed_at: string | null;
+  baseline_start_year: number | null;
+  baseline_end_year: number | null;
+  evidence_seasons: number | null;
+  latest_archive_year: number | null;
+  provenance_status: "homogeneous" | "mixed";
+  sources: HistoricalWeatherSource[];
   snow_depth_cm_p25: number | null;
   snow_depth_cm_p50: number | null;
   snow_depth_cm_p75: number | null;
@@ -170,11 +185,24 @@ export interface HistoricalWeatherEvidence {
   daily_profile: WeatherEvidencePoint[];
 }
 
-export interface ForecastWeatherEvidence {
+export interface ForecastWeatherSource {
+  forecast_run_id: string;
+  forecast_source_key: string;
   source_label: string;
   source_model: string;
   issued_at: string;
-  freshness: "fresh" | "partial";
+  elevation_m: number;
+  row_count: number;
+  profile_dates: string[];
+}
+
+export interface ForecastWeatherEvidence {
+  source_label: string;
+  source_model: string | null;
+  issued_at: string | null;
+  provenance_status: "homogeneous" | "mixed";
+  sources: ForecastWeatherSource[];
+  coverage_status: "complete" | "partial";
   usable_date_count: number;
   requested_date_count: number;
   average_forecast_share: number;
@@ -186,6 +214,7 @@ export interface SearchWeatherEvidence {
   window_label: string;
   elevation_band: "mid_mountain";
   elevation_m: number | null;
+  elevation_status: "exact" | "mixed";
   interpretation: string;
   limitations: string[];
   historical: HistoricalWeatherEvidence;
@@ -221,8 +250,38 @@ export interface SearchV4Configuration {
   groups: GroupScoreBreakdown[];
   factors: FactorScoreBreakdown[];
   constraint_warnings: ConstraintIssue[];
-  weather_evidence?: SearchWeatherEvidence | null;
 }
+
+export interface SearchWeatherEvidenceRequest {
+  intent: SearchIntent;
+  ski_area_id: string;
+}
+
+export interface SearchWeatherEvidenceResponseBase {
+  weather_evidence_version: "search-weather-evidence-v1";
+  ski_area_id: string;
+  evaluated_at: string;
+  cache_valid_until: string;
+}
+
+export interface SearchWeatherEvidenceAvailableResponse
+  extends SearchWeatherEvidenceResponseBase {
+  status: "available";
+  evidence: SearchWeatherEvidence;
+}
+
+export interface SearchWeatherEvidenceUnavailableResponse
+  extends SearchWeatherEvidenceResponseBase {
+  status: "unavailable";
+  unavailable_reason:
+    | "travel_window_missing"
+    | "historical_evidence_unavailable";
+  limitations: string[];
+}
+
+export type SearchWeatherEvidenceResponse =
+  | SearchWeatherEvidenceAvailableResponse
+  | SearchWeatherEvidenceUnavailableResponse;
 
 export interface SearchV4RecommendationGroup {
   ski_region_id: string;
