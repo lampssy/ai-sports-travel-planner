@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: accepted by owner; implementation planning next
+- Status: accepted by owner; implementation plan prepared
 - Owner: solo-builder
 - Accepted visual pack:
   `docs/ui-concepts/2026-07-16-search-v4-web-experience/`
@@ -19,7 +19,8 @@
   `docs/superpowers/specs/2026-07-10-search-v4-factor-registry-and-dynamic-refinement-design.md`
 - Related model docs: `docs/search-ranking-model.md`,
   `docs/planning-model.md`, `docs/domain-language.md`
-- Related plan: pending
+- Related plan:
+  `docs/superpowers/plans/2026-07-16-search-v4-web-experience.md`
 - Related ADRs:
   `docs/architecture/adr/0012-versioned-search-factor-registry-and-ranking-policy.md`
 
@@ -181,6 +182,8 @@ Invariants:
     subordinate to the ski-trip recommendation;
   - resolved: deterministic per-option impact metadata supports the approved
     pre-apply ranking preview without exposing score deltas;
+  - resolved: use `lucide-react` as the presentation-only icon system instead
+    of maintaining local icon SVGs;
   - accepted assumption: implementation does not add a routing dependency,
     persist search state beyond the browser session, or introduce provider
     inventory unless a new owner checkpoint approves it.
@@ -214,6 +217,7 @@ Invariants:
 | Mixed | Refinement impact preview | Exact movement claims require deterministic server evidence and a stable API contract | Generic copy; apply immediately; structured per-option preview | Structured per-option preview with rank changes, no score deltas | Matches the approved UI and keeps calculation authority on the server | This spec and implementation plan |
 | Product / Domain | Visual identity | The current white/blue V4 UI is clear but generic; a saturated pink theme would weaken evidence semantics | Minimal white/blue; light watercolor; midnight shell with restrained color | Midnight shell, neutral cards, soft alpenglow/powder atmosphere | Restores brand distinction while preserving semantic green and amber | This spec |
 | Technical | Dossier navigation | A missing route removed a key explanation surface | Modal; inline-only; dedicated route | Dedicated dossier route with return-state preservation | Keeps results scannable and lets the dossier own deep evidence | Implementation plan |
+| Technical | Icon system | Repeated local SVGs would drift visually and add accessibility boilerplate across the new surfaces | Continue local SVGs; add `lucide-react` | Add `lucide-react` as the only new frontend dependency | Gives the accepted UI a consistent icon vocabulary while icons remain decorative or explicitly labelled by their controls | This spec and implementation plan |
 | Mixed | Dossier result switching | Users need comparison context without turning the detail view into another full results board | Back-only navigation; persistent full results; compact master-detail navigator | Collapsible desktop navigator plus compact mobile switcher | Preserves orientation and quick switching without duplicating card content | This spec and implementation plan |
 | Product / Domain | Weather evidence mode | Forecast and climate evidence answer different questions and must not be blended opaquely | Raw weather table; always-on forecast; conditional evidence mode | Month-only climatology; exact-date forecast-assisted evidence with historical context when usable | Matches Search V4 semantics and keeps uncertainty legible | This spec and `docs/planning-model.md` |
 | Mixed | Weather evidence contract | Generic factor payloads are flexible but unsafe for a user-facing chart and evidence labels | Parse generic factor internals in the client; typed API view model | Additive typed weather-evidence summary built server-side | Keeps interpretation deterministic, testable, and aligned with ranking evidence | This spec and implementation plan |
@@ -226,6 +230,9 @@ Invariants:
   only.
 - Search V4 remains the ranking and reranking boundary. Dossier navigation uses
   the ranked response already present in browser-session state.
+- `lucide-react` is the approved presentation-only icon dependency. Icon choice
+  must not encode status without adjacent text, and no other UI or chart
+  dependency is introduced by this implementation.
 - The typed weather summary is an additive configuration field. Implementation
   must benchmark complete grouped responses; if the payload or mapping cost is
   not acceptable, pause for an owner checkpoint on a bounded on-demand dossier
@@ -315,6 +322,13 @@ The primary refinement card shows:
 - selected option state;
 - structured impact preview when available;
 - `Apply and rerank` and `Skip for now` actions.
+
+Search V4 may return several validated refinement questions. The results rail
+shows one primary question at a time and keeps the remaining questions in a
+bounded client-side queue. Applying, skipping, or dismissing the current
+question advances to the next still-relevant question. Applying a question
+reruns Search V4, so the returned queue replaces any unanswered questions from
+the previous response rather than carrying stale refinements forward.
 
 Selecting an option does not immediately mutate the applied intent. The UI
 enters a preview state. Applying sends the option's typed patches to Search V4.
