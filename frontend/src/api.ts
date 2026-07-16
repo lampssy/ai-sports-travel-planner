@@ -6,6 +6,8 @@ import type {
   CurrentTripResponse,
   ParsedQueryResponse,
   SearchResponse,
+  SearchWeatherEvidenceRequest,
+  SearchWeatherEvidenceResponse,
   SearchV4Request,
 } from "./types";
 
@@ -70,6 +72,36 @@ export async function searchResorts(request: SearchV4Request): Promise<SearchRes
   }
 
   return (await response.json()) as SearchResponse;
+}
+
+export async function fetchSearchWeatherEvidence(
+  request: SearchWeatherEvidenceRequest,
+  signal?: AbortSignal,
+): Promise<SearchWeatherEvidenceResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/search/weather-evidence`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+      signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    throw new Error(
+      errorMessageFromFetchFailure(error, "Unable to load snow evidence."),
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      await errorMessageFromResponse(response, "Unable to load snow evidence."),
+    );
+  }
+
+  return (await response.json()) as SearchWeatherEvidenceResponse;
 }
 
 export async function parseTripBrief(

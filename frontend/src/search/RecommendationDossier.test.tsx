@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import type {
   SearchIntent,
@@ -11,6 +11,17 @@ import type {
 import { RecommendationDossier } from "./RecommendationDossier";
 import { boundedNavigatorGroups } from "./RecommendationNavigator";
 import { createSearchSession } from "./searchSession";
+
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => new Promise<Response>(() => undefined)),
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 const intent: SearchIntent = {
   constraints: {

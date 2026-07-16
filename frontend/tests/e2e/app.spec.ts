@@ -2,20 +2,220 @@ import { expect, type Page, test } from "@playwright/test";
 
 import type {
   SearchResponse,
+  SearchWeatherEvidenceRequest,
+  SearchWeatherEvidenceResponse,
   SearchV4Request,
+  WeatherEvidencePoint,
 } from "../../../src/types";
 import { monthSearchResponse } from "./fixtures/searchV4";
 
 type MockSearchResult = SearchResponse | { status: number; detail: string };
+type MockWeatherResult =
+  | SearchWeatherEvidenceResponse
+  | { status: number; detail: string };
+type WeatherResponder = (
+  request: SearchWeatherEvidenceRequest,
+  requestIndex: number,
+) => MockWeatherResult;
+
+const historicalProfile: WeatherEvidencePoint[] = [
+  {
+    date_or_month_day: "03-01",
+    snow_depth_cm: null,
+    snow_depth_cm_p25: 70,
+    snow_depth_cm_p50: 110,
+    snow_depth_cm_p75: 150,
+    snowfall_cm: 3.8,
+    temperature_min_c: -9,
+    temperature_max_c: -3.4,
+    rain_risk: null,
+    thaw_risk: 0.08,
+    wind_gust_kmh: null,
+  },
+  {
+    date_or_month_day: "03-15",
+    snow_depth_cm: null,
+    snow_depth_cm_p25: 82,
+    snow_depth_cm_p50: 128,
+    snow_depth_cm_p75: 176,
+    snowfall_cm: 4.2,
+    temperature_min_c: -8,
+    temperature_max_c: -2.1,
+    rain_risk: null,
+    thaw_risk: 0.18,
+    wind_gust_kmh: null,
+  },
+  {
+    date_or_month_day: "03-31",
+    snow_depth_cm: null,
+    snow_depth_cm_p25: 76,
+    snow_depth_cm_p50: 119,
+    snow_depth_cm_p75: 164,
+    snowfall_cm: 3.1,
+    temperature_min_c: -6,
+    temperature_max_c: 0.4,
+    rain_risk: null,
+    thaw_risk: 0.32,
+    wind_gust_kmh: null,
+  },
+];
+
+function monthWeatherResponse(
+  skiAreaId = "tignes-ski-area",
+  limitations: string[] = [],
+): Extract<SearchWeatherEvidenceResponse, { status: "available" }> {
+  return {
+    weather_evidence_version: "search-weather-evidence-v1",
+    status: "available",
+    ski_area_id: skiAreaId,
+    evaluated_at: "2026-07-16T12:00:00Z",
+    cache_valid_until: "2099-07-16T12:05:00Z",
+    evidence: {
+      mode: "climatology",
+      window_label: "March",
+      elevation_band: "mid_mountain",
+      elevation_m: 2400,
+      elevation_status: "exact",
+      interpretation: "Historically reliable at mid-mountain in March.",
+      limitations,
+      historical: {
+        source_label: "Open-Meteo archive climatology",
+        source_model: "ERA5-Land",
+        computed_at: "2026-07-15T02:00:00Z",
+        baseline_start_year: 1995,
+        baseline_end_year: 2024,
+        evidence_seasons: 30,
+        latest_archive_year: 2024,
+        provenance_status: "homogeneous",
+        sources: [],
+        snow_depth_cm_p25: 82,
+        snow_depth_cm_p50: 128,
+        snow_depth_cm_p75: 176,
+        probability_snow_depth_ge_30cm: 0.87,
+        average_daily_snowfall_cm: 4.2,
+        average_max_temperature_c: -2.1,
+        daily_profile: historicalProfile,
+      },
+      forecast: null,
+    },
+  };
+}
+
+function forecastWeatherResponse(
+  head = "forecast-head-1",
+  cacheValidUntil = "2099-07-16T13:00:00Z",
+): Extract<SearchWeatherEvidenceResponse, { status: "available" }> {
+  return {
+    ...monthWeatherResponse(),
+    cache_valid_until: cacheValidUntil,
+    evidence: {
+      ...monthWeatherResponse().evidence,
+      mode: "forecast_assisted",
+      window_label: "20-22 July 2026",
+      interpretation: "Fresh forecast evidence supports the selected dates.",
+      forecast: {
+        source_label: "Open-Meteo forecast",
+        source_model: "best_match",
+        issued_at:
+          head === "forecast-head-1"
+            ? "2026-07-16T11:00:00Z"
+            : "2026-07-16T12:30:00Z",
+        provenance_status: "homogeneous",
+        sources: [
+          {
+            forecast_run_id: head,
+            forecast_source_key: "open-meteo",
+            source_label: "Open-Meteo forecast",
+            source_model: "best_match",
+            issued_at: "2026-07-16T11:00:00Z",
+            elevation_m: 2400,
+            row_count: 3,
+            profile_dates: ["2026-07-20", "2026-07-21", "2026-07-22"],
+          },
+        ],
+        coverage_status: "partial",
+        usable_date_count: 2,
+        requested_date_count: 3,
+        average_forecast_share: 0.67,
+        daily_profile: [
+          {
+            date_or_month_day: "2026-07-20",
+            snow_depth_cm: 112,
+            snow_depth_cm_p25: null,
+            snow_depth_cm_p50: null,
+            snow_depth_cm_p75: null,
+            snowfall_cm: 7.4,
+            temperature_min_c: -7,
+            temperature_max_c: -1,
+            rain_risk: 0.1,
+            thaw_risk: 0.2,
+            wind_gust_kmh: 46,
+          },
+          {
+            date_or_month_day: "2026-07-21",
+            snow_depth_cm: 118,
+            snow_depth_cm_p25: null,
+            snow_depth_cm_p50: null,
+            snow_depth_cm_p75: null,
+            snowfall_cm: 5.1,
+            temperature_min_c: -8,
+            temperature_max_c: -2,
+            rain_risk: 0.05,
+            thaw_risk: 0.1,
+            wind_gust_kmh: 35,
+          },
+        ],
+      },
+    },
+  };
+}
+
+async function mockWeatherEvidenceApi(
+  page: Page,
+  responder: WeatherResponder = (request) =>
+    monthWeatherResponse(request.ski_area_id),
+  weatherRequests: SearchWeatherEvidenceRequest[] = [],
+  responseGates: Array<Promise<void> | undefined> = [],
+) {
+  await page.route("**/api/search/weather-evidence", async (route) => {
+    const request = route.request().postDataJSON() as SearchWeatherEvidenceRequest;
+    const requestIndex = weatherRequests.length;
+    weatherRequests.push(request);
+    const next = responder(request, requestIndex);
+    await responseGates[requestIndex];
+    if ("status" in next && typeof next.status === "number") {
+      await route.fulfill({
+        status: next.status,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: next.detail }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(next),
+    });
+  });
+}
 
 async function mockSearchV4Api(
   page: Page,
   response: SearchResponse | MockSearchResult[],
   searchRequests: SearchV4Request[],
   responseGates: Array<Promise<void> | undefined> = [],
+  weatherResponder?: WeatherResponder,
+  weatherRequests: SearchWeatherEvidenceRequest[] = [],
+  weatherResponseGates: Array<Promise<void> | undefined> = [],
 ) {
   const responses = Array.isArray(response) ? response : [response];
   let responseIndex = 0;
+  await mockWeatherEvidenceApi(
+    page,
+    weatherResponder,
+    weatherRequests,
+    weatherResponseGates,
+  );
   await page.route("**/api/current-trip", async (route) => {
     await route.fulfill({
       status: 401,
@@ -499,6 +699,313 @@ test("desktop dossier switches without search and collapses to the compact rail"
   await expectNoHorizontalOverflow(page);
 });
 
+test("month dossier loads one typed area, reuses cache, and renders the honest handoff", async ({
+  page,
+}) => {
+  const searchRequests: SearchV4Request[] = [];
+  const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+  await mockSearchV4Api(
+    page,
+    monthSearchResponse,
+    searchRequests,
+    [],
+    undefined,
+    weatherRequests,
+  );
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View dossier",
+  }).click();
+
+  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Snow evidence for March" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: "Historical snow-depth profile" }),
+  ).toBeVisible();
+  await page.getByText("View structured weather values").click();
+  await expect(
+    page.getByRole("table", { name: "Historical weather values" }),
+  ).toBeVisible();
+  await expect(page.getByText("Stay-base estimate, not live hotel inventory")).toBeVisible();
+  const outbound = page.getByRole("link", { name: "Open accommodation search" });
+  await expect(outbound).toHaveAttribute(
+    "href",
+    "/api/outbound/accommodation/tignes?stay_base_id=tignes-le-lac&focus_ski_area_id=tignes-ski-area&source_surface=recommendation_dossier",
+  );
+  expect(weatherRequests).toHaveLength(1);
+  expect(weatherRequests[0]).toEqual({
+    intent: monthSearchResponse.applied_intent,
+    ski_area_id: "tignes-ski-area",
+  });
+  await expect(page.getByText(/booking\.com|available rooms|hotel rating/i)).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+  await page.getByText("View structured weather values").click();
+  await page.addStyleTag({
+    content:
+      ".search-command-header,.dossier-anchor-nav,.dossier-navigator{position:static!important}",
+  });
+  await scrollYAfterLayout(page);
+  await page.screenshot({
+    path: "../.superpowers/sdd/task-7-dossier-month-desktop.png",
+    fullPage: true,
+  });
+
+  await page.getByRole("button", { name: "All results" }).click();
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View dossier",
+  }).click();
+  await expect(page.getByText("Historical pattern")).toBeVisible();
+  expect(weatherRequests).toHaveLength(1);
+});
+
+test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alternatives", async ({
+  page,
+}) => {
+  const searchResponse = structuredClone(monthSearchResponse);
+  searchResponse.applied_intent.constraints.travel_window = {
+    start_date: "2026-07-20",
+    end_date: "2026-07-22",
+  };
+  const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+  await mockSearchV4Api(
+    page,
+    searchResponse,
+    [],
+    [],
+    () => forecastWeatherResponse(),
+    weatherRequests,
+  );
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  await submitHomepageBrief(page, "Tignes from 20 to 22 July");
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View dossier",
+  }).click();
+
+  await expect(page.getByText("Forecast-assisted")).toBeVisible();
+  await expect(page.getByText(/fresh at evaluation time/i)).toBeVisible();
+  await expect(page.getByText(/partial coverage: 2 of 3 dates/i)).toBeVisible();
+  const forecastTab = page.getByRole("tab", { name: "Forecast" });
+  const historicalTab = page.getByRole("tab", { name: "Historical context" });
+  await forecastTab.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(historicalTab).toBeFocused();
+  await expect(historicalTab).toHaveAttribute("aria-selected", "true");
+  await expect(
+    page.getByRole("tabpanel", { name: "Historical context" }),
+  ).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(forecastTab).toBeFocused();
+  await expect(
+    page.getByRole("img", { name: "Forecast snow profile" }),
+  ).toBeVisible();
+  await expect(page.getByText(/dashed line: forecast depth/i)).toBeVisible();
+  await expect(page.getByText(/diamond: rain, thaw, or wind risk/i)).toBeVisible();
+  expect(weatherRequests[0].intent.constraints.travel_window).toEqual({
+    start_date: "2026-07-20",
+    end_date: "2026-07-22",
+  });
+  await expectNoHorizontalOverflow(page);
+  await page.addStyleTag({
+    content:
+      ".search-command-header,.dossier-anchor-nav,.dossier-navigator{position:static!important}",
+  });
+  await scrollYAfterLayout(page);
+  await page.screenshot({
+    path: "../.superpowers/sdd/task-7-dossier-forecast-desktop.png",
+    fullPage: true,
+  });
+});
+
+test("stale fallback and typed unavailable states keep dossier controls intact", async ({
+  page,
+}) => {
+  let releaseEvidence: (() => void) | undefined;
+  const evidenceGate = new Promise<void>((resolve) => {
+    releaseEvidence = resolve;
+  });
+  const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+  await mockSearchV4Api(
+    page,
+    monthSearchResponse,
+    [],
+    [],
+    (request) =>
+      request.ski_area_id === "tignes-ski-area"
+        ? monthWeatherResponse(request.ski_area_id, [
+            "The selected forecast run was stale at evaluation time.",
+          ])
+        : {
+            weather_evidence_version: "search-weather-evidence-v1",
+            status: "unavailable",
+            ski_area_id: request.ski_area_id,
+            evaluated_at: "2026-07-16T12:00:00Z",
+            cache_valid_until: "2099-07-16T12:05:00Z",
+            unavailable_reason: "historical_evidence_unavailable",
+            limitations: ["No supported historical evidence covers this ski area."],
+          },
+    weatherRequests,
+    [evidenceGate],
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View dossier",
+  }).click();
+  const snowAnchor = page.getByRole("link", { name: "Snow evidence" });
+  await snowAnchor.focus();
+  releaseEvidence?.();
+  await expect(page.getByText(/selected forecast run was stale/i)).toBeVisible();
+  await expect(snowAnchor).toBeFocused();
+  await expect(page.getByRole("tab", { name: "Forecast" })).toHaveCount(0);
+
+  await page.getByRole("button", {
+    name: /les arcs - peisey vallandry, rank 2/i,
+  }).click();
+  await expect(
+    page.getByRole("heading", { name: "Snow evidence unavailable" }),
+  ).toBeVisible();
+  await expect(page.getByRole("status")).toContainText(
+    "Snow evidence is unavailable for Les Arcs.",
+  );
+  await expect(
+    page.getByRole("heading", {
+      name: "Les Arcs - Peisey Vallandry - Arc 1800",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Recommendation results" }),
+  ).toBeVisible();
+  expect(weatherRequests).toHaveLength(2);
+});
+
+test("transport failure is not cached and retry announces recovered evidence", async ({
+  page,
+}) => {
+  const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+  await mockSearchV4Api(
+    page,
+    monthSearchResponse,
+    [],
+    [],
+    (request, index) =>
+      index === 0
+        ? { status: 503, detail: "Stored weather evidence is temporarily unavailable." }
+        : monthWeatherResponse(request.ski_area_id),
+    weatherRequests,
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View dossier",
+  }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Snow evidence could not be loaded" }),
+  ).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("could not be loaded");
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Recommendation results" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Retry snow evidence" }).click();
+  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("Snow evidence loaded");
+  await expect(
+    page.getByRole("button", { name: "Reload snow evidence" }),
+  ).toBeFocused();
+  expect(weatherRequests).toHaveLength(2);
+});
+
+test("expired forecast cache refetches and replaces the selected run head", async ({
+  page,
+}) => {
+  const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+  const expiresSoon = new Date(Date.now() + 3000).toISOString();
+  await mockSearchV4Api(
+    page,
+    monthSearchResponse,
+    [],
+    [],
+    (_request, index) =>
+      index === 0
+        ? forecastWeatherResponse("forecast-head-1", expiresSoon)
+        : forecastWeatherResponse("forecast-head-2"),
+    weatherRequests,
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  const openDossier = () =>
+    page.locator("article.recommendation-card").first().getByRole("link", {
+      name: "View dossier",
+    }).click();
+  await openDossier();
+  await expect(page.getByText(/selected run forecast-head-1/i)).toBeVisible();
+  await page.getByRole("button", { name: "All results" }).click();
+  await openDossier();
+  await expect(page.getByText(/selected run forecast-head-1/i)).toBeVisible();
+  expect(weatherRequests).toHaveLength(1);
+
+  await page.getByRole("button", { name: "All results" }).click();
+  await page.waitForTimeout(3100);
+  await openDossier();
+  await expect(page.getByText(/selected run forecast-head-2/i)).toBeVisible();
+  await expect(page.getByText(/selected run forecast-head-1/i)).toHaveCount(0);
+  expect(weatherRequests).toHaveLength(2);
+});
+
+test("late weather response cannot cross the selected ski-area context", async ({
+  page,
+}) => {
+  let releaseFirst: (() => void) | undefined;
+  const firstGate = new Promise<void>((resolve) => {
+    releaseFirst = resolve;
+  });
+  await mockSearchV4Api(
+    page,
+    monthSearchResponse,
+    [],
+    [],
+    (request) => {
+      const response = monthWeatherResponse(request.ski_area_id);
+      if (request.ski_area_id === "les-arcs-ski-area") {
+        response.evidence = { ...response.evidence, window_label: "Les Arcs March" };
+      }
+      return response;
+    },
+    [],
+    [firstGate],
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View dossier",
+  }).click();
+  await expect(
+    page.getByRole("heading", { name: "Loading snow evidence for Tignes" }),
+  ).toBeVisible();
+  await page.getByRole("button", {
+    name: /les arcs - peisey vallandry, rank 2/i,
+  }).click();
+  await expect(
+    page.getByRole("heading", { name: "Snow evidence for Les Arcs March" }),
+  ).toBeVisible();
+  releaseFirst?.();
+  await page.waitForTimeout(100);
+  await expect(
+    page.getByRole("heading", { name: "Snow evidence for Les Arcs March" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Snow evidence for March" }),
+  ).toHaveCount(0);
+});
+
 test("All results restores selected candidates, expansion state, and exact scroll", async ({
   page,
 }) => {
@@ -634,11 +1141,13 @@ test("mobile dossier uses a keyboard-operable bounded switcher", async ({ page }
       name: "Les Arcs - Peisey Vallandry - Arc 1800",
     }),
   ).toBeFocused();
+  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(page.getByText("Stay-base estimate, not live hotel inventory")).toBeVisible();
   expect(searchRequests).toHaveLength(1);
   await expectNoHorizontalOverflow(page);
   await scrollYAfterLayout(page);
   await page.screenshot({
-    path: "../.superpowers/sdd/task-6-dossier-mobile-390.png",
+    path: "../.superpowers/sdd/task-7-dossier-mobile-390.png",
     fullPage: true,
   });
 });

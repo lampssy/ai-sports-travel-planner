@@ -5,8 +5,10 @@ import { factorLabels, groupLabels } from "./searchPresentation";
 
 export function ScoringDetails({
   configuration,
+  rankingPolicyVersion,
 }: {
   configuration: SearchV4Configuration;
+  rankingPolicyVersion?: string;
 }) {
   const groups = configuration.groups.filter((group) => groupLabels[group.group_id]);
   const factors = configuration.factors.filter(
@@ -20,6 +22,12 @@ export function ScoringDetails({
         Show scoring details
       </summary>
       <div className="scoring-details__content">
+        {rankingPolicyVersion ? (
+          <section className="scoring-details__policy">
+            <h4>Ranking policy</h4>
+            <code>{rankingPolicyVersion}</code>
+          </section>
+        ) : null}
         {groups.length ? (
           <section>
             <h4>Decision groups</h4>
@@ -35,15 +43,16 @@ export function ScoringDetails({
         ) : null}
         {factors.length ? (
           <section>
-            <h4>Factor evidence</h4>
+            <h4>Raw factor contributions</h4>
             <dl className="scoring-details__factors">
               {factors.map((factor) => (
                 <div key={factor.factor_id}>
-                  <dt>{factorLabels[factor.factor_id]}</dt>
+                  <dt>
+                    <span>{factorLabels[factor.factor_id]}</span>
+                    <code>{factor.factor_id}</code>
+                  </dt>
                   <dd>
-                    {factor.effective_evidence_cap === 0
-                      ? "Limited evidence"
-                      : `${factor.contribution_points.toFixed(1)} points`}
+                    Weight {factor.effective_weight.toFixed(2)}; {factor.contribution_points.toFixed(1)} points; evidence cap {factor.effective_evidence_cap.toFixed(2)}
                   </dd>
                 </div>
               ))}

@@ -2,12 +2,13 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import type { SearchV4Configuration } from "../types";
+import { AccommodationHandoff } from "./AccommodationHandoff";
+import { DecisionEvidenceLedger } from "./DecisionEvidenceLedger";
 import { DossierVerdict } from "./DossierVerdict";
 import { RecommendationNavigator } from "./RecommendationNavigator";
 import { ScoringDetails } from "./ScoringDetails";
-import {
-  formatPassPrice,
-} from "./searchPresentation";
+import { SnowEvidence } from "./SnowEvidence";
+import { TripConfigurationDetails } from "./TripConfigurationDetails";
 import { findSelectedCandidate, type SearchSession } from "./searchSession";
 
 const anchors = [
@@ -15,6 +16,7 @@ const anchors = [
   ["trip-configuration", "Trip configuration"],
   ["alternatives", "Alternatives"],
   ["accommodation", "Accommodation"],
+  ["decision-evidence", "Decision evidence"],
   ["scoring-details", "Scoring details"],
 ] as const;
 
@@ -41,7 +43,6 @@ export function RecommendationDossier({
     session.response.results.find((item) => item.ski_region_id === skiRegionId) ??
     session.response.results[0];
   const configuration = findSelectedCandidate(group, candidateId);
-  const candidates = [group.top_configuration, ...group.alternative_configurations];
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -89,66 +90,29 @@ export function RecommendationDossier({
           ))}
         </nav>
 
-        <section className="dossier-section" id="snow-evidence">
-          <p className="section-label">Snow evidence</p>
-          <h2>Snow evidence for your search window</h2>
-        </section>
+        <SnowEvidence
+          intent={session.response.applied_intent}
+          skiAreaId={configuration.ski_area_id}
+          skiAreaName={configuration.ski_area_name}
+        />
 
-        <section className="dossier-section" id="trip-configuration">
-          <p className="section-label">Selected trip configuration</p>
-          <h2>{configuration.stay_base_name} and {configuration.selected_pass.name}</h2>
-          <dl className="dossier-facts">
-            <div><dt>Destination</dt><dd>{configuration.stay_destination_name}</dd></div>
-            <div><dt>Ski area</dt><dd>{configuration.ski_area_name}</dd></div>
-            <div><dt>Stay base</dt><dd>{configuration.stay_base_name}</dd></div>
-            <div><dt>Selected pass</dt><dd>{configuration.selected_pass.name}</dd></div>
-            <div><dt>Pass price</dt><dd>{formatPassPrice(configuration)}</dd></div>
-            <div>
-              <dt>Accessible terrain</dt>
-              <dd>
-                {configuration.selected_pass.accessible_piste_km != null
-                  ? `${configuration.selected_pass.accessible_piste_km} km`
-                  : "Not available"}
-              </dd>
-            </div>
-          </dl>
-        </section>
+        <TripConfigurationDetails
+          group={group}
+          configuration={configuration}
+          onSelectCandidate={onSelectCandidate}
+        />
 
-        <section className="dossier-section" id="alternatives">
-          <p className="section-label">Alternatives</p>
-          <h2>Configurations in {group.ski_region_name}</h2>
-          <div className="dossier-alternatives">
-            {candidates.map((candidate) => {
-              const selected = candidate.candidate_id === configuration.candidate_id;
-              return (
-                <button
-                  type="button"
-                  key={candidate.candidate_id}
-                  aria-label={`Select ${candidate.stay_base_name} with ${candidate.selected_pass.name}`}
-                  aria-pressed={selected}
-                  onClick={() => onSelectCandidate(group.ski_region_id, candidate.candidate_id)}
-                >
-                  <span aria-hidden="true" className="dossier-alternatives__radio" />
-                  <span>
-                    <strong>{candidate.stay_base_name}</strong>
-                    <small>{candidate.selected_pass.name}</small>
-                  </span>
-                  <em>{selected ? "Current" : `#${group.rank}`}</em>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        <AccommodationHandoff configuration={configuration} />
 
-        <section className="dossier-section dossier-accommodation" id="accommodation">
-          <p className="section-label">Accommodation</p>
-          <h2>Stay in {configuration.stay_base_name}</h2>
-        </section>
+        <DecisionEvidenceLedger configuration={configuration} />
 
         <section className="dossier-section" id="scoring-details">
           <p className="section-label">Decision evidence</p>
           <h2>Scoring details</h2>
-          <ScoringDetails configuration={configuration} />
+          <ScoringDetails
+            configuration={configuration}
+            rankingPolicyVersion={session.response.ranking_policy_version}
+          />
         </section>
       </article>
     </main>

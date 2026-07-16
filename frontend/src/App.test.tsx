@@ -7,6 +7,7 @@ import type {
   SearchIntent,
   SearchResponse,
   SearchV4Configuration,
+  SearchWeatherEvidenceResponse,
 } from "./types";
 
 const intent: SearchIntent = {
@@ -142,6 +143,16 @@ function response(
 let searchResponses: SearchResponse[];
 let requests: Array<{ url: string; init?: RequestInit }>;
 
+const weatherResponse: SearchWeatherEvidenceResponse = {
+  weather_evidence_version: "search-weather-evidence-v1",
+  status: "unavailable",
+  ski_area_id: "tignes-ski-area",
+  evaluated_at: "2026-07-16T12:00:00Z",
+  cache_valid_until: "2099-07-16T12:05:00Z",
+  unavailable_reason: "historical_evidence_unavailable",
+  limitations: ["No supported historical evidence covers this ski area."],
+};
+
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
   vi.stubGlobal("scrollTo", vi.fn());
@@ -159,6 +170,9 @@ beforeEach(() => {
         return new Response(JSON.stringify(searchResponses.shift() ?? response()), {
           status: 200,
         });
+      }
+      if (url === "/api/search/weather-evidence") {
+        return new Response(JSON.stringify(weatherResponse), { status: 200 });
       }
       if (url === "/api/parse-query") {
         return new Response(
@@ -351,6 +365,15 @@ test("opens the selected candidate dossier without rerunning search and saves it
     await screen.findByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
   ).toBeInTheDocument();
   expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+  await screen.findByRole("heading", { name: "Snow evidence unavailable" });
+  const weatherRequest = requests.find(
+    (item) => item.url === "/api/search/weather-evidence",
+  );
+  expect(weatherRequest?.init?.method).toBe("POST");
+  expect(JSON.parse(String(weatherRequest?.init?.body))).toEqual({
+    intent,
+    ski_area_id: "tignes-ski-area",
+  });
 
   await user.click(screen.getByRole("button", { name: "Save as current trip" }));
   const saveRequest = requests.find(

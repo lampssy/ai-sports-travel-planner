@@ -184,8 +184,37 @@ export function formatPassPrice(configuration: SearchV4Configuration): string {
 
 export function formatLodging(configuration: SearchV4Configuration): string {
   const estimate = configuration.lodging_estimate;
-  if (!estimate) return "Lodging estimate unavailable";
-  return `${estimate.currency} ${estimate.minimum}-${estimate.maximum} nightly (${estimate.trust_status})`;
+  if (!estimate || estimate.trust_status === "needs_source") {
+    return "Lodging estimate unavailable";
+  }
+  const unit = estimate.mode === "lodging_nightly" ? "/night" : " total trip";
+  return `${estimate.currency} ${estimate.minimum}-${estimate.maximum}${unit} (${lodgingTrustLabel(estimate.trust_status)})`;
+}
+
+export function lodgingTrustLabel(
+  trustStatus: NonNullable<SearchV4Configuration["lodging_estimate"]>["trust_status"],
+): string {
+  switch (trustStatus) {
+    case "verified":
+      return "Verified";
+    case "verified_with_adjustment":
+      return "Verified with adjustment";
+    case "estimated":
+      return "Estimated";
+    case "needs_source":
+      return "Needs source";
+  }
+}
+
+export function formatAccommodationEstimate(
+  configuration: SearchV4Configuration,
+): string | null {
+  const estimate = configuration.lodging_estimate;
+  if (!estimate || estimate.trust_status === "needs_source") return null;
+  const unit = estimate.mode === "lodging_nightly" ? "/night" : " total trip";
+  return `${estimate.currency} ${formatNumber(estimate.minimum)}-${formatNumber(
+    estimate.maximum,
+  )}${unit}`;
 }
 
 export type TripEssentialCategory =

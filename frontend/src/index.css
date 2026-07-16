@@ -2150,6 +2150,515 @@ textarea:focus-visible,
   background: var(--white);
 }
 
+.snow-evidence__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.snow-mode {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--alpine-blue);
+  background: var(--ice);
+  font-size: 0.68rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.snow-mode--forecast {
+  color: var(--pine);
+  background: var(--white);
+}
+
+.snow-evidence__provenance,
+.snow-evidence__forecast-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.73rem;
+}
+
+.snow-evidence__provenance strong {
+  color: var(--ink);
+}
+
+.snow-evidence__provenance span,
+.snow-evidence__forecast-meta span {
+  padding-left: 1rem;
+  border-left: 1px solid var(--border);
+}
+
+.snow-evidence__mode-note,
+.accommodation-handoff__intro {
+  margin: 0.85rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.snow-evidence__historical-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(14rem, 0.75fr);
+  align-items: start;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.snow-chart-block {
+  min-width: 0;
+}
+
+.snow-chart-block__interpretation {
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.snow-chart-block__visual {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.snow-chart {
+  width: 100%;
+  min-height: 12rem;
+  display: block;
+  aspect-ratio: 8 / 3;
+}
+
+.snow-chart__grid {
+  stroke: var(--border-soft);
+  stroke-width: 1;
+}
+
+.snow-chart__range {
+  fill: var(--alpenglow-soft);
+  stroke: #b84f75;
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+}
+
+.snow-chart__line {
+  fill: none;
+  stroke: var(--alpine-blue);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+}
+
+.snow-chart__line--forecast {
+  stroke: var(--pine);
+  stroke-dasharray: 10 6;
+}
+
+.snow-chart__risk {
+  fill: #b76800;
+  stroke: var(--white);
+  stroke-width: 2;
+}
+
+.snow-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.67rem;
+  list-style: none;
+}
+
+.snow-chart-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-line {
+  width: 1.6rem;
+  border-top: 3px solid var(--alpine-blue);
+}
+
+.legend-line--dashed {
+  border-color: var(--pine);
+  border-top-style: dashed;
+}
+
+.legend-range {
+  width: 1.6rem;
+  height: 0.65rem;
+  border: 1px dashed #b84f75;
+  background: var(--alpenglow-soft);
+}
+
+.legend-risk {
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 1px solid var(--white);
+  background: #b76800;
+  transform: rotate(45deg);
+}
+
+.snow-values {
+  margin-top: 0.75rem;
+}
+
+.snow-values summary {
+  width: fit-content;
+  color: var(--alpine-blue);
+  font-size: 0.73rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.snow-values__scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-top: 0.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--white);
+}
+
+.snow-values table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.68rem;
+}
+
+.snow-values th,
+.snow-values td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.snow-values th {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.snow-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 2.2rem 0 0;
+}
+
+.snow-metrics div {
+  min-width: 0;
+  padding: 0.85rem;
+  border-left: 3px solid var(--alpine-blue);
+  background: var(--white);
+}
+
+.snow-metrics dt {
+  color: var(--muted);
+  font-size: 0.63rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.snow-metrics dd {
+  margin: 0.3rem 0 0;
+  overflow-wrap: anywhere;
+  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 850;
+}
+
+.snow-tabs {
+  width: fit-content;
+  display: flex;
+  margin-top: 1.25rem;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--white);
+}
+
+.snow-tabs button {
+  min-height: 2.4rem;
+  padding: 0.55rem 0.85rem;
+  border: 0;
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 800;
+}
+
+.snow-tabs button[aria-selected="true"] {
+  color: var(--white);
+  background: var(--alpine-blue);
+}
+
+.snow-evidence__views [role="tabpanel"] {
+  margin-top: 1rem;
+}
+
+.snow-evidence__limitations,
+.snow-evidence__supported,
+.evidence-ledger__warnings {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid #b76800;
+  border-radius: 6px;
+  background: var(--white);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.snow-evidence__supported {
+  border-left-color: var(--pine);
+}
+
+.snow-evidence__limitations svg,
+.evidence-ledger__warnings svg {
+  flex: 0 0 auto;
+  color: #8b5200;
+}
+
+.snow-evidence__supported svg {
+  flex: 0 0 auto;
+  color: var(--pine);
+}
+
+.snow-evidence__limitations ul,
+.evidence-ledger__warnings ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.snow-evidence-state {
+  min-height: 12rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--alpine-blue);
+  border-radius: 6px;
+  background: var(--white);
+}
+
+.snow-evidence-state > svg {
+  flex: 0 0 auto;
+  color: var(--alpine-blue);
+}
+
+.snow-evidence-state h2 {
+  font-size: 1.2rem;
+}
+
+.snow-evidence-state p:not(.section-label) {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.snow-evidence-state--error,
+.snow-evidence-state--unavailable {
+  border-left-color: #b76800;
+}
+
+.snow-evidence-state--error > svg,
+.snow-evidence-state--unavailable > svg {
+  color: #8b5200;
+}
+
+.snow-evidence-state ul {
+  margin: 0.65rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.snow-evidence__retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.9rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 6px;
+  font-weight: 800;
+}
+
+.trip-configuration__alternatives {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-soft);
+  scroll-margin-top: 4rem;
+}
+
+.trip-configuration__alternatives h3 {
+  margin: 0.45rem 0 0;
+  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.05rem;
+}
+
+.accommodation-handoff__panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.65fr);
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.accommodation-handoff__panel > div:first-child {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.25rem 0.65rem;
+}
+
+.accommodation-handoff__panel > div:first-child > svg {
+  grid-row: 1 / span 4;
+  color: var(--alpine-blue);
+}
+
+.accommodation-handoff__label,
+.accommodation-handoff__trust {
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.accommodation-handoff__panel strong {
+  overflow-wrap: anywhere;
+  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.2rem;
+}
+
+.accommodation-handoff__panel small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.accommodation-handoff__access {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.7rem 0 0;
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.accommodation-handoff__access svg {
+  color: var(--pine);
+}
+
+.accommodation-handoff__action {
+  display: grid;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.accommodation-handoff__action .primary-command {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.evidence-ledger__rows {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.evidence-ledger__rows article {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--white);
+}
+
+.evidence-ledger__rows article > svg {
+  color: var(--alpine-blue);
+}
+
+.evidence-ledger__rows h3,
+.evidence-ledger__rows p {
+  margin: 0;
+}
+
+.evidence-ledger__rows h3 {
+  font-size: 0.78rem;
+}
+
+.evidence-ledger__rows p {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.evidence-ledger__rows article > span {
+  max-width: 13rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 999px;
+  color: var(--alpine-blue);
+  background: var(--ice);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.scoring-details__policy {
+  grid-column: 1 / -1;
+}
+
+.scoring-details__policy code,
+.scoring-details__factors code {
+  overflow-wrap: anywhere;
+  font-size: 0.68rem;
+}
+
+.scoring-details__factors dt span,
+.scoring-details__factors dt code {
+  display: block;
+}
+
+.scoring-details__factors dt code {
+  margin-top: 0.2rem;
+  color: var(--muted);
+}
+
 .dossier-recovery {
   max-width: 42rem;
   padding-block: 5rem;
@@ -2593,6 +3102,76 @@ textarea:focus-visible,
 
   .dossier-alternatives em {
     grid-column: 2;
+  }
+}
+
+@media (max-width: 56rem) {
+  .snow-evidence__historical-layout,
+  .accommodation-handoff__panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .snow-metrics {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 40rem) {
+  .snow-evidence__heading {
+    display: grid;
+  }
+
+  .snow-mode,
+  .snow-tabs {
+    max-width: 100%;
+    width: fit-content;
+  }
+
+  .snow-evidence__provenance,
+  .snow-evidence__forecast-meta {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .snow-evidence__provenance span,
+  .snow-evidence__forecast-meta span {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .snow-chart {
+    min-height: 9rem;
+  }
+
+  .snow-chart-legend,
+  .snow-tabs {
+    display: grid;
+  }
+
+  .snow-tabs button {
+    width: 100%;
+  }
+
+  .snow-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .accommodation-handoff__panel {
+    padding: 1rem;
+  }
+
+  .accommodation-handoff__action .primary-command {
+    width: 100%;
+  }
+
+  .evidence-ledger__rows article {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .evidence-ledger__rows article > span {
+    grid-column: 2;
+    justify-self: start;
+    text-align: left;
   }
 }
 
