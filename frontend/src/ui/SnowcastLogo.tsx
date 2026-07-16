@@ -1,17 +1,11 @@
 export function SnowcastLogo({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className={`snowcast-logo${compact ? " snowcast-logo--compact" : ""}`}>
       <div
-        className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-midnight shadow-sm ${
-          compact ? "h-10 w-10" : "h-12 w-12"
-        }`}
+        className="snowcast-logo__mark"
         aria-hidden="true"
       >
-        <svg
-          viewBox="0 0 48 48"
-          className={compact ? "h-8 w-8" : "h-9 w-9"}
-          role="img"
-        >
+        <svg viewBox="0 0 48 48" role="img">
           <path
             d="M4 37 17.5 13.5 26 28l5-8.7L44 37H4Z"
             fill="currentColor"
@@ -28,15 +22,9 @@ export function SnowcastLogo({ compact = false }: { compact?: boolean }) {
           />
         </svg>
       </div>
-      <div className={compact ? "hidden sm:block" : ""}>
-        <p className="font-display text-xl font-semibold leading-none tracking-tight text-white">
-          SNOWCAST
-        </p>
-        {!compact ? (
-          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/58">
-            Snow-aware planning
-          </p>
-        ) : null}
+      <div>
+        <p className="snowcast-logo__name">SNOWCAST</p>
+        <p className="snowcast-logo__tagline">Snow-aware planning</p>
       </div>
     </div>
   );
