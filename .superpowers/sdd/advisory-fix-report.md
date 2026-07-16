@@ -113,3 +113,42 @@ Visual inspection notes:
 - Browser verification used the repository's configured Chromium/Darwin Playwright project; no separate Firefox or WebKit run was requested.
 - npm emitted existing `always-auth` deprecation warnings; they did not affect tests or the build.
 - No unresolved Blocker or High finding remains in this fix wave.
+
+## Re-review Follow-up
+
+### Outcome
+
+- Status: `DONE`
+- Follow-up base: `8637c9483a8787c8b40b483e1f7d09cfcd66206f`
+- Implementation commit: `6f677bdca26dd5b235e0171c78c4c2d4c1357d52`
+- Accessibility High: resolved. The drawer activation effect now reads the latest close callback through a ref and no longer re-runs when parent-controlled field callbacks change identity. Initial close-button focus, inert background state, bidirectional Tab containment, Escape, cleanup, and trigger restoration remain activation-scoped.
+- Data Trust Medium: resolved. Selected-pass terrain scoring factors render a plain-language trust label from `accessible_piste_km_evidence.trust_status`: `Verified`, `Verified with adjustment`, `Estimated`, or `Needs source`. Unknown factors remain hidden and the scoring disclosure remains closed by default.
+- DDC: no new checkpoint required; the re-review prescribed both narrow behaviors.
+- ADR: no new ADR required; no durable architecture or data-ownership boundary changed.
+- Advisory review: lane A Accessibility High and lane B Data Trust Medium were the exact inputs for this follow-up.
+
+### Changed Files
+
+- `frontend/src/search/SearchFiltersDrawer.tsx`
+- `frontend/src/search/ScoringDetails.tsx`
+- `frontend/src/search/searchPresentation.ts`
+- `frontend/src/index.css`
+- `frontend/src/search/RecommendationCard.test.tsx`
+- `frontend/src/search/RecommendationDossier.test.tsx`
+- `frontend/tests/e2e/app.spec.ts`
+
+### Test-first Evidence
+
+- Red unit run: the result and dossier tests failed three assertions because the scoring rows did not contain `Estimated` or `Needs source`.
+- Red browser run: after clearing Country and typing `Austria`, the exact re-review head retained only `A`, proving focus returned to Close after the first controlled update.
+- `npm test -- --run src/search/RecommendationCard.test.tsx src/search/RecommendationDossier.test.tsx`: 2 files, 11 tests passed.
+- `npx playwright test tests/e2e/app.spec.ts --grep "filter drawer preserves" --workers=1`: 1 passed.
+- `npm test -- --run`: 12 files, 83 tests passed.
+- `npx playwright test tests/e2e/app.spec.ts --grep "filter drawer preserves" --repeat-each=5 --workers=1`: 5 passed.
+- `npx playwright test tests/e2e/app.spec.ts`: 30 passed.
+- `npm run build`: TypeScript and Vite production build passed; 1,811 modules transformed.
+- `git diff --check`: passed.
+
+### Follow-up Concerns
+
+None. Both assigned re-review findings are closed with focused and protected-journey coverage. The observability backlog item remained untouched as directed and is not part of this follow-up's acceptance scope.
