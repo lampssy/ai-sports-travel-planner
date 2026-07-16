@@ -1,6 +1,6 @@
 {
   "title": "Cortina d'Ampezzo Catalog V2 Fact And Graph Review",
-  "summary": "Preserves independently supported Cortina town and stay-base facts, removes ski-area facts whose source scope cannot survive the unresolved owner graph, and inventories the owner, access, connected-domain, map, and pass decisions for a separate owner-gated migration.",
+  "summary": "Adds independently supported Cortina stay-base facts and trust evidence while keeping owner-scoped ski-area facts unchanged and unresolved; it inventories the owner, access, connected-domain, map, and pass decisions for a separate owner-gated migration.",
   "changed_entities": [
     "stay_base:cortina-dampezzo-cortina-dampezzo",
     "trust_manifest:stay_bases:cortina-dampezzo-cortina-dampezzo"
