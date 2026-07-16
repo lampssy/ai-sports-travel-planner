@@ -8,7 +8,11 @@ import type {
   WeatherEvidencePoint,
 } from "../types";
 import { SnowEvidence } from "./SnowEvidence";
-import { clearWeatherEvidenceCache } from "./weatherEvidenceCache";
+import {
+  clearWeatherEvidenceCache,
+  readWeatherEvidenceCache,
+  weatherEvidenceCacheKey,
+} from "./weatherEvidenceCache";
 
 const monthIntent: SearchIntent = {
   constraints: { travel_window: { month: 3 } },
@@ -84,6 +88,7 @@ function historicalResponse(
 
 function forecastResponse(
   head = "forecast-head-1",
+  pointUpdates: Partial<WeatherEvidencePoint> = {},
 ): Extract<SearchWeatherEvidenceResponse, { status: "available" }> {
   const forecastPoint: WeatherEvidencePoint = {
     date_or_month_day: "2026-07-20",
@@ -97,6 +102,7 @@ function forecastResponse(
     rain_risk: 0.1,
     thaw_risk: 0.2,
     wind_gust_kmh: 46,
+    ...pointUpdates,
   };
   return {
     ...historicalResponse(),
@@ -201,6 +207,44 @@ test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
   await user.keyboard("{ArrowRight}");
   expect(forecastTab).toHaveFocus();
   expect(forecastTab).toHaveAttribute("aria-selected", "true");
+});
+
+test("does not mark a non-null wind gust as a forecast risk", async () => {
+  render(
+    <SnowEvidence
+      intent={datesIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={vi.fn().mockResolvedValue(forecastResponse("forecast-head-1", {
+        rain_risk: 0,
+        thaw_risk: 0,
+        wind_gust_kmh: 10,
+      }))}
+    />,
+  );
+
+  await screen.findByText("Forecast-assisted");
+  expect(document.querySelectorAll(".snow-chart__risk")).toHaveLength(0);
+  expect(screen.getByText(/diamond: rain or thaw risk/i)).toBeVisible();
+  expect(screen.getByText(/diamond markers identify days with rain or thaw risk/i)).toBeVisible();
+});
+
+test("marks a positive rain or thaw signal as a forecast risk", async () => {
+  render(
+    <SnowEvidence
+      intent={datesIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={vi.fn().mockResolvedValue(forecastResponse("forecast-head-1", {
+        rain_risk: 0,
+        thaw_risk: 0.2,
+        wind_gust_kmh: 10,
+      }))}
+    />,
+  );
+
+  await screen.findByText("Forecast-assisted");
+  expect(document.querySelectorAll(".snow-chart__risk")).toHaveLength(1);
 });
 
 test("renders server fallback limitations and typed unavailability without generic factor inference", async () => {
@@ -383,4 +427,58 @@ test("ignores an older in-flight response after the ski area changes", async () 
     expect(screen.getByRole("heading", { name: "Snow evidence for Les Arcs March" })).toBeVisible();
   });
   expect(screen.queryByRole("heading", { name: "Snow evidence for March" })).toBeNull();
+});
+
+test("ignores an older in-flight response after the applied window changes for the same ski area", async () => {
+  vi.setSystemTime("2026-07-16T11:00:00Z");
+  let resolveFirst: ((response: SearchWeatherEvidenceResponse) => void) | undefined;
+  let resolveSecond: ((response: SearchWeatherEvidenceResponse) => void) | undefined;
+  const first = new Promise<SearchWeatherEvidenceResponse>((resolve) => {
+    resolveFirst = resolve;
+  });
+  const second = new Promise<SearchWeatherEvidenceResponse>((resolve) => {
+    resolveSecond = resolve;
+  });
+  const aprilIntent: SearchIntent = {
+    ...monthIntent,
+    constraints: { travel_window: { month: 4 } },
+  };
+  const aprilResponse = historicalResponse({
+    evidence: { ...historicalResponse().evidence, window_label: "April" },
+  });
+  const loadEvidence = vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
+  const { rerender } = render(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={loadEvidence}
+    />,
+  );
+
+  rerender(
+    <SnowEvidence
+      intent={aprilIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={loadEvidence}
+    />,
+  );
+  await waitFor(() => expect(loadEvidence).toHaveBeenCalledTimes(2));
+
+  resolveSecond?.(aprilResponse);
+  expect(await screen.findByRole("heading", { name: "Snow evidence for April" })).toBeVisible();
+
+  resolveFirst?.(historicalResponse());
+  await waitFor(() => {
+    expect(screen.getByRole("heading", { name: "Snow evidence for April" })).toBeVisible();
+  });
+  expect(screen.queryByRole("heading", { name: "Snow evidence for March" })).toBeNull();
+  expect(
+    readWeatherEvidenceCache(weatherEvidenceCacheKey("tignes-ski-area", { month: 3 })),
+  ).toBeNull();
+  expect(
+    readWeatherEvidenceCache(weatherEvidenceCacheKey("tignes-ski-area", { month: 4 })),
+  ).toBe(aprilResponse);
+  vi.useRealTimers();
 });

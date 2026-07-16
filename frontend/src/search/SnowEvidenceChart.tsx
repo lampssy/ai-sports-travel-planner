@@ -116,7 +116,7 @@ export function SnowEvidenceChart({
             </title>
             <desc id={descriptionId}>
               {mode === "forecast"
-                ? "A dashed line shows forecast snow depth; diamond markers identify days with rain, thaw, or wind risk."
+                ? "A dashed line shows forecast snow depth; diamond markers identify days with rain or thaw risk."
                 : "A solid line shows median snow depth and a shaded band shows the 25th to 75th percentile range."}
             </desc>
             <line className="snow-chart__grid" x1="42" y1="202" x2="598" y2="202" />
@@ -133,8 +133,7 @@ export function SnowEvidenceChart({
               ? points.map((point, index) => {
                   const hasRisk =
                     (point.rain_risk ?? 0) > 0 ||
-                    (point.thaw_risk ?? 0) > 0 ||
-                    point.wind_gust_kmh != null;
+                    (point.thaw_risk ?? 0) > 0;
                   const value = point.snow_depth_cm;
                   if (!hasRisk || value == null) return null;
                   const x = xFor(index, points.length);
@@ -162,7 +161,7 @@ export function SnowEvidenceChart({
             ) : (
               <>
                 <li><span className="legend-line legend-line--dashed" />Dashed line: forecast depth</li>
-                <li><span className="legend-risk" />Diamond: rain, thaw, or wind risk</li>
+                <li><span className="legend-risk" />Diamond: rain or thaw risk</li>
               </>
             )}
           </ul>
