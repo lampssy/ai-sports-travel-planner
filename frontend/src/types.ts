@@ -130,12 +130,29 @@ export interface SearchV4PassPriceSummary {
   season_label: string | null;
 }
 
+export type CatalogTrustStatus =
+  | "verified"
+  | "verified_with_adjustment"
+  | "estimated"
+  | "needs_source";
+
+export interface SearchV4TerrainEvidence {
+  trust_status: CatalogTrustStatus;
+  scope: "pass" | "terrain_domain" | "ski_area";
+  source_entity_id: string;
+  field_group:
+    | "pass_accessible_terrain"
+    | "aggregate_terrain"
+    | "terrain_metrics";
+}
+
 export interface SearchV4PassSummary {
   lift_pass_product_id: string;
   name: string;
   validity_scope: string;
   covered_ski_area_ids: string[];
   accessible_piste_km: number | null;
+  accessible_piste_km_evidence: SearchV4TerrainEvidence | null;
   price: SearchV4PassPriceSummary | null;
 }
 
@@ -238,11 +255,7 @@ export interface SearchV4Configuration {
     minimum: number;
     maximum: number;
     currency: string;
-    trust_status:
-      | "verified"
-      | "verified_with_adjustment"
-      | "estimated"
-      | "needs_source";
+    trust_status: CatalogTrustStatus;
     provenance: string;
   } | null;
   ranking_status: "ranked" | "unscored";

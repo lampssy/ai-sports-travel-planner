@@ -66,6 +66,12 @@ function configuration(
       validity_scope: "single_ski_area",
       covered_ski_area_ids: [`area-${rank}`],
       accessible_piste_km: 100 + rank,
+      accessible_piste_km_evidence: {
+        trust_status: "verified",
+        scope: "pass",
+        source_entity_id: `pass-${candidateId}`,
+        field_group: "pass_accessible_terrain",
+      },
       price: {
         duration_days: 6,
         audience: "adult",
@@ -221,6 +227,53 @@ test("renders the verdict hierarchy, progressive anchors, and selected save targ
   expect(onSelectCandidate).toHaveBeenCalledWith("region-4", "region-4-top");
 });
 
+test("qualifies estimated terrain in dossier essentials and evidence ledger", () => {
+  const estimatedSession = session();
+  const selected = estimatedSession.response.results[0].top_configuration;
+  selected.selected_pass = {
+    ...selected.selected_pass,
+    accessible_piste_km: 31,
+    accessible_piste_km_evidence: {
+      trust_status: "estimated",
+      scope: "ski_area",
+      source_entity_id: "pinzolo-ski-area",
+      field_group: "terrain_metrics",
+    },
+  } as SearchV4Configuration["selected_pass"];
+  selected.factors = [
+    {
+      ...selected.factors[0],
+      factor_id: "accessible_terrain_scale",
+      group_id: "ski_experience",
+      raw_value: 31,
+      provenance_summary: "Estimated ski-area terrain.",
+    },
+  ];
+
+  render(
+    <RecommendationDossier
+      session={estimatedSession}
+      skiRegionId="region-1"
+      candidateId="region-1-top"
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText("Estimated 31 km (ski area only)")).toBeVisible();
+  expect(
+    screen.getByText(
+      "Estimated 31 km in selected ski area; pass-wide coverage needs source",
+    ),
+  ).toBeVisible();
+  expect(screen.getAllByText("Selected ski-area terrain")).toHaveLength(2);
+  expect(screen.queryByText("Pass-accessible terrain")).toBeNull();
+  expect(screen.queryByText("31 km accessible")).toBeNull();
+});
+
 test("exposes desktop collapse and the bounded mobile switcher", async () => {
   const user = userEvent.setup();
   const onToggleNavigator = vi.fn();
@@ -251,4 +304,55 @@ test("exposes desktop collapse and the bounded mobile switcher", async () => {
   expect(switcher).toHaveAttribute("aria-expanded", "true");
   await user.click(screen.getByRole("button", { name: /switch to region 2/i }));
   expect(onSwitch).toHaveBeenCalledWith("region-2", "region-2-top");
+});
+
+test("navigator and mobile switcher open the selected alternative they display", async () => {
+  const user = userEvent.setup();
+  const selectedSession = session();
+  const secondGroup = selectedSession.response.results[1];
+  const selectedAlternative = configuration(
+    "region-2",
+    2,
+    "region-2-selected-alternative",
+  );
+  selectedAlternative.stay_base_name = "Selected Base 2";
+  selectedAlternative.ski_area_id = "selected-area-2";
+  secondGroup.alternative_configurations = [selectedAlternative];
+  selectedSession.selectedCandidateIdByGroup[secondGroup.ski_region_id] =
+    selectedAlternative.candidate_id;
+  const onSwitch = vi.fn();
+
+  render(
+    <RecommendationDossier
+      session={selectedSession}
+      skiRegionId="region-1"
+      candidateId="region-1-top"
+      onSwitch={onSwitch}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  const navigator = screen.getByRole("navigation", {
+    name: "Recommendation results",
+  });
+  expect(within(navigator).getByText("Selected Base 2")).toBeVisible();
+  await user.click(
+    within(navigator).getByRole("button", {
+      name: /region 2, rank 2, open recommendation/i,
+    }),
+  );
+  expect(onSwitch).toHaveBeenLastCalledWith(
+    "region-2",
+    "region-2-selected-alternative",
+  );
+
+  await user.click(screen.getByRole("button", { name: /recommendation 1 of 4/i }));
+  await user.click(screen.getByRole("button", { name: /switch to region 2/i }));
+  expect(onSwitch).toHaveBeenLastCalledWith(
+    "region-2",
+    "region-2-selected-alternative",
+  );
 });

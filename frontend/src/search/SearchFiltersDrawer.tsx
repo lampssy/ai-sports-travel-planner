@@ -47,19 +47,66 @@ export function SearchFiltersDrawer({
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    const dialog = dialogRef.current;
+    const layer = dialog?.closest(".drawer-layer");
+    const backgroundElements = layer?.parentElement
+      ? [...layer.parentElement.children].filter(
+          (element): element is HTMLElement =>
+            element instanceof HTMLElement && element !== layer,
+        )
+      : [];
+    const previousBackgroundState = backgroundElements.map((element) => ({
+      element,
+      inert: element.inert,
+      ariaHidden: element.getAttribute("aria-hidden"),
+    }));
+    for (const element of backgroundElements) {
+      element.inert = true;
+      element.setAttribute("aria-hidden", "true");
+    }
     closeRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         onClose();
         window.setTimeout(() => returnFocusRef.current?.focus(), 0);
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+      const focusable = [
+        ...dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((element) => !element.hidden);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || !dialog.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (active === last || !dialog.contains(active))) {
+        event.preventDefault();
+        first.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      for (const { element, inert, ariaHidden } of previousBackgroundState) {
+        element.inert = inert;
+        if (ariaHidden == null) element.removeAttribute("aria-hidden");
+        else element.setAttribute("aria-hidden", ariaHidden);
+      }
+    };
   }, [onClose, open, returnFocusRef]);
 
   if (!open) return null;
@@ -90,17 +137,18 @@ export function SearchFiltersDrawer({
 
   return (
     <div className="drawer-layer">
-      <button
-        type="button"
+      <div
         className="drawer-backdrop"
-        aria-label="Dismiss filters"
+        aria-hidden="true"
         onClick={closeAndReturnFocus}
       />
       <section
+        ref={dialogRef}
         className="filters-drawer"
         role="dialog"
         aria-modal="true"
         aria-labelledby="filters-drawer-title"
+        tabIndex={-1}
       >
         <header className="filters-drawer__header">
           <div>

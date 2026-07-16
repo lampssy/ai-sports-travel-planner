@@ -29,6 +29,12 @@ const tignesConfiguration: SearchV4Configuration = {
     validity_scope: "local_multi_area",
     covered_ski_area_ids: ["tignes-ski-area", "val-disere-ski-area"],
     accessible_piste_km: 300,
+    accessible_piste_km_evidence: {
+      trust_status: "verified",
+      scope: "pass",
+      source_entity_id: "tignes-val-disere-pass",
+      field_group: "pass_accessible_terrain",
+    },
     price: {
       duration_days: 6,
       audience: "adult",
@@ -110,6 +116,12 @@ const tignesAlternativeConfiguration: SearchV4Configuration = {
     validity_scope: "single_ski_area",
     covered_ski_area_ids: ["tignes-ski-area"],
     accessible_piste_km: 150,
+    accessible_piste_km_evidence: {
+      trust_status: "verified",
+      scope: "pass",
+      source_entity_id: "tignes-local-pass",
+      field_group: "pass_accessible_terrain",
+    },
     price: {
       duration_days: 6,
       audience: "adult",
@@ -149,6 +161,12 @@ const lesArcsConfiguration: SearchV4Configuration = {
     validity_scope: "regional",
     covered_ski_area_ids: ["les-arcs-ski-area", "la-plagne-ski-area"],
     accessible_piste_km: 425,
+    accessible_piste_km_evidence: {
+      trust_status: "verified",
+      scope: "pass",
+      source_entity_id: "paradiski-pass",
+      field_group: "pass_accessible_terrain",
+    },
     price: {
       duration_days: 6,
       audience: "adult",

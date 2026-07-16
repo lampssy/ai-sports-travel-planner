@@ -387,17 +387,37 @@ test("desktop homepage submits once, preserves the brief, and focuses results", 
   await expectNoHorizontalOverflow(page);
 });
 
-test("filter drawer closes with Escape and returns focus", async ({ page }) => {
+test("filter drawer traps focus, makes the background inert, and restores focus", async ({ page }) => {
   await mockSearchV4Api(page, monthSearchResponse, []);
   await page.goto("/");
 
   const trigger = page.getByRole("button", { name: "Adjust filters" });
   await trigger.click();
-  await expect(page.getByRole("dialog", { name: "Adjust filters" })).toBeVisible();
+  const dialog = page.getByRole("dialog", { name: "Adjust filters" });
+  await expect(dialog).toBeVisible();
+  const close = dialog.getByRole("button", { name: "Close filters" });
+  const lastControl = dialog.getByRole("button", { name: "Large lift network" });
+  await expect(close).toBeFocused();
+  await expect(page.getByRole("button", { name: "Dismiss filters" })).toHaveCount(0);
+  expect(
+    await page.locator(".app-shell > :not(.drawer-layer)").evaluateAll((elements) =>
+      elements.every((element) => (element as HTMLElement).inert),
+    ),
+  ).toBe(true);
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(lastControl).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
   await page.keyboard.press("Escape");
 
-  await expect(page.getByRole("dialog", { name: "Adjust filters" })).toBeHidden();
+  await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
+  expect(
+    await page.locator(".app-shell > :not(.drawer-layer)").evaluateAll((elements) =>
+      elements.every((element) => !(element as HTMLElement).inert),
+    ),
+  ).toBe(true);
   await expectNoHorizontalOverflow(page);
 });
 
@@ -413,6 +433,36 @@ test("mobile homepage transition has no horizontal overflow", async ({ page }) =
   expect(searchRequests).toHaveLength(1);
   await expectNoHorizontalOverflow(page);
 });
+
+for (const [name, viewport] of [
+  ["tablet", { width: 1024, height: 768 }],
+  ["mobile", { width: 390, height: 844 }],
+] as const) {
+  test(`${name} results and dossier keep Current trip reachable`, async ({ page }) => {
+    await mockSearchV4Api(page, monthSearchResponse, []);
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await submitHomepageBrief(page, "March in France with reliable snow");
+
+    const currentTrip = page.getByRole("button", {
+      name: "Current trip",
+      exact: true,
+    });
+    await expect(currentTrip).toBeVisible();
+    await currentTrip.click();
+    await expect(page).toHaveURL(/\/current-trip$/);
+    await page.getByRole("button", { name: /back to search/i }).click();
+
+    await page
+      .locator("article.recommendation-card")
+      .first()
+      .getByRole("link", { name: "View dossier" })
+      .click();
+    await expect(currentTrip).toBeVisible();
+    await currentTrip.click();
+    await expect(page).toHaveURL(/\/current-trip$/);
+  });
+}
 
 test("anonymous current-trip route remains available", async ({ page }) => {
   await mockSearchV4Api(page, monthSearchResponse, []);
@@ -547,7 +597,7 @@ test("a delayed rerank cannot restore results scroll on Current trip", async ({
   expect(await page.evaluate(() => window.scrollY)).toBe(40);
 });
 
-test("a delayed rerank blocks chip and open-drawer edits", async ({ page }) => {
+test("a delayed rerank blocks chip edits and drawer entry", async ({ page }) => {
   let releaseRerank: (() => void) | undefined;
   const rerankGate = new Promise<void>((resolve) => {
     releaseRerank = resolve;
@@ -562,25 +612,10 @@ test("a delayed rerank blocks chip and open-drawer edits", async ({ page }) => {
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with reliable snow");
   await page.getByRole("radio", { name: /snow reliability/i }).click();
-  await page.getByRole("button", { name: "Adjust" }).click();
-  await page.getByRole("button", { name: "Apply and rerank" }).dispatchEvent("click");
+  await page.getByRole("button", { name: "Apply and rerank" }).click();
   await expect.poll(() => searchRequests.length).toBe(2);
 
-  const dialog = page.getByRole("dialog", { name: "Adjust filters" });
-  const country = dialog.getByLabel("Country");
-  await expect(country).toBeDisabled();
-  await expect(dialog.getByRole("button", { name: "Close filters" })).toBeEnabled();
-  await country.evaluate((element) => {
-    const input = element as HTMLInputElement;
-    const valueSetter = Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )?.set;
-    valueSetter?.call(input, "Austria");
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-  await dialog.getByRole("button", { name: "Close filters" }).click();
-
+  await expect(page.getByRole("button", { name: "Adjust" })).toBeDisabled();
   const franceChip = page.getByRole("button", { name: "Remove France" });
   await expect(franceChip).toBeDisabled();
   await franceChip.dispatchEvent("click");
@@ -701,6 +736,94 @@ test("desktop dossier switches without search and collapses to the compact rail"
   expect(searchRequests).toHaveLength(1);
   await expectNoHorizontalOverflow(page);
 });
+
+for (const [name, viewport] of [
+  ["desktop navigator", { width: 1440, height: 900 }],
+  ["mobile switcher", { width: 390, height: 844 }],
+] as const) {
+  test(`${name} preserves the displayed selected alternative through route, weather, and save`, async ({ page }) => {
+    const response = structuredClone(monthSearchResponse);
+    const secondGroup = response.results[1];
+    const alternative = structuredClone(secondGroup.top_configuration);
+    alternative.candidate_id = "les-arcs-alt-access--les-arcs-local-pass";
+    alternative.stay_base_id = "peisey-2000";
+    alternative.stay_base_name = "Peisey 2000";
+    alternative.ski_area_id = "peisey-ski-area";
+    alternative.ski_area_name = "Peisey Vallandry";
+    alternative.access.ski_area_access_id = "peisey-alt-access";
+    alternative.selected_pass.lift_pass_product_id = "les-arcs-local-pass";
+    alternative.selected_pass.name = "Les Arcs local pass";
+    alternative.selected_pass.covered_ski_area_ids = ["peisey-ski-area"];
+    alternative.selected_pass.accessible_piste_km_evidence!.source_entity_id =
+      "les-arcs-local-pass";
+    secondGroup.alternative_configurations = [alternative];
+    const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+    const saveRequests: Array<Record<string, unknown>> = [];
+    page.on("request", (request) => {
+      if (request.method() === "PUT" && request.url().endsWith("/api/current-trip")) {
+        saveRequests.push(request.postDataJSON() as Record<string, unknown>);
+      }
+    });
+    await mockSearchV4Api(
+      page,
+      response,
+      [],
+      [],
+      undefined,
+      weatherRequests,
+    );
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await submitHomepageBrief(page, "March in France with reliable snow");
+
+    const secondCard = page.locator("article.recommendation-card").nth(1);
+    await secondCard.getByRole("button", { name: /expand les arcs/i }).click();
+    await secondCard
+      .getByRole("button", { name: /select peisey 2000 with les arcs local pass/i })
+      .click();
+    await page
+      .locator("article.recommendation-card")
+      .first()
+      .getByRole("link", { name: "View dossier" })
+      .click();
+
+    if (name === "desktop navigator") {
+      const navigator = page.getByRole("navigation", {
+        name: "Recommendation results",
+      });
+      await expect(navigator.getByText("Peisey 2000")).toBeVisible();
+      await navigator
+        .getByRole("button", { name: /les arcs - peisey vallandry, rank 2/i })
+        .click();
+    } else {
+      await page.getByRole("button", { name: /recommendation 1 of 2/i }).click();
+      const switchOption = page.getByRole("button", {
+        name: "Switch to Les Arcs - Peisey Vallandry",
+      });
+      await expect(switchOption.getByText("Peisey 2000")).toBeVisible();
+      await switchOption.click();
+    }
+
+    await expect(page).toHaveURL(
+      /\/recommendations\/paradiski\?candidate=les-arcs-alt-access--les-arcs-local-pass$/,
+    );
+    await expect(
+      page.getByRole("heading", {
+        name: "Les Arcs - Peisey Vallandry - Peisey 2000",
+      }),
+    ).toBeFocused();
+    await expect.poll(() => weatherRequests.at(-1)?.ski_area_id).toBe(
+      "peisey-ski-area",
+    );
+    await page.getByRole("button", { name: "Save as current trip" }).click();
+    await expect.poll(() => saveRequests.length).toBe(1);
+    expect(saveRequests[0]).toMatchObject({
+      stay_base_id: "peisey-2000",
+      focus_ski_area_id: "peisey-ski-area",
+      lift_pass_product_id: "les-arcs-local-pass",
+    });
+  });
+}
 
 test("month dossier loads one typed area, reuses cache, and renders the honest handoff", async ({
   page,
@@ -1042,6 +1165,7 @@ test("All results restores selected candidates, expansion state, and exact scrol
     page.getByRole("button", { name: /collapse les arcs - peisey vallandry/i }),
   ).toHaveAttribute("aria-expanded", "true");
   await expect.poll(() => scrollYAfterLayout(page)).toBe(expectedScroll);
+  await expect(firstCard.getByRole("link", { name: "View dossier" })).toBeFocused();
   expect(searchRequests).toHaveLength(1);
 });
 
@@ -1073,7 +1197,29 @@ test("browser Back restores the exact results scroll without rerunning search", 
     page.getByRole("button", { name: /collapse les arcs - peisey vallandry/i }),
   ).toHaveAttribute("aria-expanded", "true");
   await expect.poll(() => scrollYAfterLayout(page)).toBe(expectedScroll);
+  await expect(firstCard.getByRole("link", { name: "View dossier" })).toBeFocused();
   expect(searchRequests).toHaveLength(1);
+});
+
+test("dossier return focuses the results heading when the originating control no longer exists", async ({
+  page,
+}) => {
+  await mockSearchV4Api(page, monthSearchResponse, []);
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+  await page
+    .locator("article.recommendation-card")
+    .first()
+    .getByRole("link", { name: "View dossier" })
+    .click();
+  await page
+    .getByRole("button", { name: /select le lac with tignes local pass/i })
+    .click();
+  await page.getByRole("button", { name: "Back to results" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Recommended ski trips" }),
+  ).toBeFocused();
 });
 
 test("invalid dossier routes recover to a canonical top configuration", async ({
@@ -1247,6 +1393,7 @@ test("keyboard-only core flow keeps focus and route announcements logical", asyn
   await back.focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/$/);
+  await expect(dossier).toBeFocused();
   await expectNoHorizontalOverflow(page);
 });
 

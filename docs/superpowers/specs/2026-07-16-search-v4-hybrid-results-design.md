@@ -438,10 +438,17 @@ remain directly comparable. Selection is deterministic:
 Examples:
 
 - `Terrain - 360 km`
+- `Terrain - Estimated 31 km (ski area only)`
 - `Pass value - EUR 58/day`
 - `Lift access - 250 m walk`
 - `Estimated stay - EUR 220-310/night`
 - `Travel effort - 3h 20m transfer`
+
+Terrain remains a core metric, but the typed response keeps the kilometre value
+paired with field-level evidence: trust status, source scope (`pass`,
+`terrain_domain`, or `ski_area`), source entity ID, and owning trust-manifest
+field group. A ski-area fallback remains visible when useful, but it is labelled
+as ski-area-only and never presented as verified pass-accessible coverage.
 
 Use `Estimated`, `Approx.`, or `From` when required by source semantics. A
 lodging estimate with no provider inventory never appears as a live hotel rate.
@@ -483,8 +490,9 @@ At wide desktop widths the dossier uses a master-detail shell:
 
 Each row shows only rank, ski-region name, selected stay base, `Trip fit`, and a
 short snow-window label. The current dossier is visibly and programmatically
-selected. Rows navigate directly to the corresponding top configuration's
-dossier; they do not expand into result cards or duplicate full evidence.
+selected. Rows navigate directly to the session-selected configuration they
+display for that recommendation group; they do not reset the group to its top
+configuration, expand into result cards, or duplicate full evidence.
 
 The compact navigator shows the top three recommendation groups. If the current
 dossier is outside that set, it shows the top two plus the current group. The

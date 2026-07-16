@@ -10,9 +10,11 @@ import {
   buildParsedChips,
   buildCandidateNarrative,
   evidenceQualityMode,
+  factorLabelForConfiguration,
   formatTripEssential,
   refinementPreviewCopy,
   selectTripEssentialCategories,
+  terrainPresentation,
 } from "./searchPresentation";
 
 const baseIntent: SearchIntent = {
@@ -54,6 +56,12 @@ function configuration(
       validity_scope: "regional",
       covered_ski_area_ids: [`area-${candidateId}`],
       accessible_piste_km: 300,
+      accessible_piste_km_evidence: {
+        trust_status: "verified",
+        scope: "pass",
+        source_entity_id: `pass-${candidateId}`,
+        field_group: "pass_accessible_terrain",
+      },
       price: {
         duration_days: 6,
         audience: "adult",
@@ -192,6 +200,42 @@ describe("trip essentials", () => {
     ).toBeNull();
   });
 
+  test("keeps ski-area terrain fallback useful without claiming pass-wide coverage", () => {
+    const estimatedTerrain = configuration("estimated-terrain", {
+      selected_pass: {
+        ...configuration("estimated-terrain").selected_pass,
+        accessible_piste_km: 31,
+        accessible_piste_km_evidence: {
+          trust_status: "estimated",
+          scope: "ski_area",
+          source_entity_id: "pinzolo-ski-area",
+          field_group: "terrain_metrics",
+        },
+      } as SearchV4Configuration["selected_pass"],
+    });
+
+    expect(formatTripEssential("terrain", estimatedTerrain)?.value).toBe(
+      "Estimated 31 km (ski area only)",
+    );
+  });
+
+  test("labels needs-source ski-area terrain at the field level", () => {
+    const selectedPass = {
+      ...configuration("needs-source-terrain").selected_pass,
+      accessible_piste_km: 31,
+      accessible_piste_km_evidence: {
+        trust_status: "needs_source" as const,
+        scope: "ski_area" as const,
+        source_entity_id: "pinzolo-ski-area",
+        field_group: "terrain_metrics" as const,
+      },
+    };
+
+    expect(terrainPresentation(selectedPass)?.evidenceLabel).toBe(
+      "31 km in selected ski area (needs source); pass-wide coverage unresolved",
+    );
+  });
+
   test("does not expose an unknown access-mode identifier", () => {
     const unknownAccess = configuration("unknown-access", {
       access: {
@@ -208,6 +252,81 @@ describe("trip essentials", () => {
 });
 
 describe("deterministic recommendation copy", () => {
+  test("qualifies an accessible-terrain narrative to its ski-area evidence scope", () => {
+    const candidate = configuration("bounded-terrain", {
+      selected_pass: {
+        ...configuration("bounded-terrain").selected_pass,
+        accessible_piste_km: 31,
+        accessible_piste_km_evidence: {
+          trust_status: "estimated",
+          scope: "ski_area",
+          source_entity_id: "pinzolo-ski-area",
+          field_group: "terrain_metrics",
+        },
+      },
+      factors: [
+        {
+          factor_id: "accessible_terrain_scale",
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: 31,
+          raw_utility: 0.8,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 0.65,
+          effective_utility: 0.7,
+          effective_weight: 1,
+          contribution_points: 8,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Estimated ski-area terrain.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(buildCandidateNarrative(candidate)).toEqual({
+      verdict: "A strong selected ski-area terrain match.",
+      strength:
+        "Estimated 31 km in selected ski area; pass-wide coverage needs source.",
+    });
+  });
+
+  test("does not infer pass-wide terrain wording when terrain provenance is absent", () => {
+    const candidate = configuration("missing-terrain-provenance", {
+      selected_pass: {
+        ...configuration("missing-terrain-provenance").selected_pass,
+        accessible_piste_km: 31,
+        accessible_piste_km_evidence: null,
+      },
+      factors: [
+        {
+          factor_id: "accessible_terrain_scale",
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: 31,
+          raw_utility: 0.8,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 0.65,
+          effective_utility: 0.7,
+          effective_weight: 1,
+          contribution_points: 8,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Terrain provenance is missing.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(factorLabelForConfiguration(candidate, "accessible_terrain_scale")).toBe(
+      "Terrain scale",
+    );
+    expect(buildCandidateNarrative(candidate)).toEqual({
+      verdict: "A strong terrain scale match.",
+      strength: "Terrain scale contributes positively to this comparison.",
+    });
+  });
+
   test("uses approved factor copy without reading arbitrary factor JSON", () => {
     const candidate = configuration("copy", {
       factors: [

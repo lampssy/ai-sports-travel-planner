@@ -201,9 +201,11 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
   const historical = evidence.historical;
   const metrics = evidenceMetrics(response);
   const elevation =
-    evidence.elevation_m == null
-      ? "Mid-mountain elevation unavailable"
-      : `Representative mid-mountain at ${evidence.elevation_m.toLocaleString("en-GB")} m`;
+    evidence.elevation_status === "mixed"
+      ? "Mixed source elevations across this assessment"
+      : evidence.elevation_status === "unavailable" || evidence.elevation_m == null
+        ? "Mid-mountain elevation unavailable"
+        : `Representative mid-mountain at ${evidence.elevation_m.toLocaleString("en-GB")} m`;
 
   return (
     <>
@@ -238,7 +240,9 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
           <span>
             {forecast.coverage_status === "complete" ? "Complete" : "Partial"} coverage: {forecast.usable_date_count} of {forecast.requested_date_count} dates
           </span>
-          <span>Forecast share {percentage(forecast.average_forecast_share)}</span>
+          <span>
+            Forecast coverage in this assessment {percentage(forecast.average_forecast_share)}
+          </span>
           {forecast.sources.map((source) => (
             <span key={source.forecast_run_id}>Selected run {source.forecast_run_id}</span>
           ))}

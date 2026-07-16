@@ -247,6 +247,12 @@ def _weather_api_configuration(
             validity_scope="ski_area",
             covered_ski_area_ids=("area",),
             accessible_piste_km=180,
+            accessible_piste_km_evidence={
+                "trust_status": "verified",
+                "scope": "pass",
+                "source_entity_id": "pass",
+                "field_group": "pass_accessible_terrain",
+            },
             price=None,
         ),
         lodging_estimate=None,

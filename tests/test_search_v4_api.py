@@ -54,6 +54,45 @@ def test_post_search_accepts_typed_v4_contract(monkeypatch) -> None:
     assert captured["brief"] == "A good-value intermediate trip in France."
 
 
+def test_post_search_preserves_pinzolo_terrain_trust_provenance() -> None:
+    payload = _request_payload()
+    payload["intent"] = {
+        "constraints": {
+            "location": {"country": "Italy"},
+            "pass_price_ceiling": {
+                "maximum": 320,
+                "currency": "EUR",
+                "duration_days": 6,
+                "audience": "adult",
+                "season": "high season 2025/26",
+            },
+        },
+        "party": {"skill_levels": ["intermediate"]},
+        "objectives": [],
+    }
+
+    response = TestClient(app).post("/api/search", json=payload)
+
+    assert response.status_code == 200
+    pinzolo = next(
+        configuration
+        for group in response.json()["results"]
+        for configuration in (
+            group["top_configuration"],
+            *group["alternative_configurations"],
+        )
+        if configuration["selected_pass"]["lift_pass_product_id"]
+        == "pinzolo-local-pass"
+    )
+    assert pinzolo["selected_pass"]["accessible_piste_km"] == 31
+    assert pinzolo["selected_pass"]["accessible_piste_km_evidence"] == {
+        "trust_status": "estimated",
+        "scope": "ski_area",
+        "source_entity_id": "pinzolo-ski-area",
+        "field_group": "terrain_metrics",
+    }
+
+
 def test_search_get_contract_is_removed() -> None:
     search_routes = [
         route for route in app.routes if getattr(route, "path", None) == "/api/search"

@@ -41,6 +41,12 @@ function candidate(
       validity_scope: "regional",
       covered_ski_area_ids: ["cervinia-area"],
       accessible_piste_km: terrainKm,
+      accessible_piste_km_evidence: {
+        trust_status: "verified",
+        scope: "pass",
+        source_entity_id: `pass-${id}`,
+        field_group: "pass_accessible_terrain",
+      },
       price: {
         duration_days: 6,
         audience: "adult",
@@ -200,5 +206,43 @@ describe("RecommendationCard", () => {
     expect(screen.queryByText("future_internal_factor")).not.toBeInTheDocument();
     expect(screen.getByText("Ski experience")).toBeInTheDocument();
     expect(screen.getByText("Stay-base access")).toBeInTheDocument();
+  });
+
+  test("labels estimated ski-area terrain without presenting it as accessible terrain", () => {
+    const estimated = candidate("estimated", "Pinzolo", "Pinzolo Skipass", 31);
+    estimated.selected_pass = {
+      ...estimated.selected_pass,
+      accessible_piste_km_evidence: {
+        trust_status: "estimated",
+        scope: "ski_area",
+        source_entity_id: "pinzolo-ski-area",
+        field_group: "terrain_metrics",
+      },
+    } as SearchV4Configuration["selected_pass"];
+
+    render(
+      <RecommendationCard
+        result={{
+          ...result,
+          top_configuration: estimated,
+          alternative_configurations: [],
+        }}
+        expanded
+        selectedCandidateId={estimated.candidate_id}
+        essentialCategories={["terrain"]}
+        changedRank={false}
+        onToggle={vi.fn()}
+        onSelectCandidate={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Estimated 31 km (ski area only)")).toBeVisible();
+    expect(
+      screen.getByText(
+        "Estimated 31 km in selected ski area; pass-wide coverage needs source",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText("31 km accessible terrain")).toBeNull();
   });
 });

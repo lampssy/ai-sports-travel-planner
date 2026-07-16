@@ -17,6 +17,7 @@ import {
   buildCandidateNarrative,
   evidenceQualityMode,
   snowWindowLabel,
+  terrainPresentation,
   type TripEssentialCategory,
 } from "./searchPresentation";
 import { findSelectedCandidate } from "./searchSession";
@@ -43,6 +44,7 @@ export function RecommendationCard({
   onSave: (configuration: SearchV4Configuration) => void;
 }) {
   const configuration = findSelectedCandidate(result, selectedCandidateId);
+  const terrain = terrainPresentation(configuration.selected_pass);
   const detailsId = `recommendation-${result.ski_region_id}`;
   const narrative = buildCandidateNarrative(configuration);
   const evidenceMode = evidenceQualityMode(configuration);
@@ -124,11 +126,7 @@ export function RecommendationCard({
               <section className="selected-pass" aria-label="Selected pass">
                 <p className="section-label">Selected pass</p>
                 <strong>{configuration.selected_pass.name}</strong>
-                {configuration.selected_pass.accessible_piste_km != null ? (
-                  <span>
-                    {configuration.selected_pass.accessible_piste_km} km accessible terrain
-                  </span>
-                ) : null}
+                {terrain ? <span>{terrain.evidenceLabel}</span> : null}
               </section>
             </div>
             <div className="recommendation-card__signals">

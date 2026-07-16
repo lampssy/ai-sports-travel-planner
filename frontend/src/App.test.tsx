@@ -48,6 +48,12 @@ const tignesConfiguration: SearchV4Configuration = {
     validity_scope: "local_multi_area",
     covered_ski_area_ids: ["tignes-ski-area", "val-disere-ski-area"],
     accessible_piste_km: 300,
+    accessible_piste_km_evidence: {
+      trust_status: "verified",
+      scope: "pass",
+      source_entity_id: "tignes-pass",
+      field_group: "pass_accessible_terrain",
+    },
     price: {
       duration_days: 6,
       audience: "adult",
@@ -314,7 +320,7 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeInTheDocument();
   expect(screen.getByText("82.4")).toBeInTheDocument();
-  expect(screen.getByText(/300 km accessible terrain/i)).toBeInTheDocument();
+  expect(screen.getByText(/300 km pass-accessible terrain/i)).toBeInTheDocument();
   expect(screen.getByText(/estimated EUR 180-255\/night/i)).toBeInTheDocument();
   const searchRequest = requests.find((item) => item.url === "/api/search");
   expect(searchRequest?.init?.method).toBe("POST");
@@ -601,7 +607,7 @@ test("previews a validated dynamic refinement before applying it", async () => {
   expect(screen.getByText(/prefer stay-base après: lively/i)).toBeInTheDocument();
 });
 
-test("guards open-drawer and chip mutations during a delayed rerank", async () => {
+test("guards drawer entry and chip mutations during a delayed rerank", async () => {
   searchResponses = [
     response({
       refinements: [
@@ -628,7 +634,6 @@ test("guards open-drawer and chip mutations during a delayed rerank", async () =
   render(<App />);
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   await user.click(await screen.findByRole("radio", { name: /very important/i }));
-  await user.click(screen.getByRole("button", { name: "Adjust" }));
 
   let resolveRerank: ((value: Response) => void) | undefined;
   vi.stubGlobal(
@@ -649,10 +654,7 @@ test("guards open-drawer and chip mutations during a delayed rerank", async () =
 
   fireEvent.click(screen.getByRole("button", { name: /apply and rerank/i }));
   expect(await screen.findByText(/reranking these recommendations/i)).toBeVisible();
-  const country = screen.getByLabelText("Country");
-  expect(country).toBeDisabled();
-  fireEvent.change(country, { target: { value: "Austria" } });
-  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  expect(screen.getByRole("button", { name: "Adjust" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Remove France" })).toBeDisabled();
 
   resolveRerank?.(new Response(JSON.stringify(response()), { status: 200 }));
@@ -661,6 +663,7 @@ test("guards open-drawer and chip mutations during a delayed rerank", async () =
   });
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   expect(screen.getByLabelText("Country")).toHaveValue("France");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
   expect(screen.getByRole("button", { name: "Remove France" })).toBeInTheDocument();
 });
 

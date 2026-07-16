@@ -2,6 +2,7 @@ import type {
   RefinementPreview,
   SearchIntent,
   SearchV4Configuration,
+  SearchV4PassSummary,
   SearchV4RecommendationGroup,
 } from "../types";
 import type { EvidenceQualityMode } from "../ui/snowcastCopy";
@@ -230,6 +231,63 @@ export interface TripEssential {
   value: string;
 }
 
+export interface TerrainPresentation {
+  essentialValue: string;
+  evidenceLabel: string;
+}
+
+export function terrainPresentation(
+  selectedPass: SearchV4PassSummary,
+): TerrainPresentation | null {
+  const kilometres = selectedPass.accessible_piste_km;
+  const evidence = selectedPass.accessible_piste_km_evidence;
+  if (kilometres == null || !evidence) return null;
+
+  const prefix =
+    evidence.trust_status === "estimated"
+      ? "Estimated "
+      : evidence.trust_status === "verified_with_adjustment"
+        ? "Adjusted "
+        : "";
+  const needsSource = evidence.trust_status === "needs_source";
+  const unresolvedSuffix = needsSource ? " (needs source)" : "";
+
+  if (evidence.scope === "ski_area") {
+    return {
+      essentialValue: `${prefix}${kilometres} km (ski area only${
+        needsSource ? "; needs source" : ""
+      })`,
+      evidenceLabel: `${prefix}${kilometres} km in selected ski area${
+        needsSource ? " (needs source)" : ""
+      }; pass-wide coverage ${needsSource ? "unresolved" : "needs source"}`,
+    };
+  }
+  if (evidence.scope === "terrain_domain") {
+    return {
+      essentialValue: `${prefix}${kilometres} km (covered domain${
+        needsSource ? "; needs source" : ""
+      })`,
+      evidenceLabel: `${prefix}${kilometres} km in covered terrain domain${unresolvedSuffix}`,
+    };
+  }
+  return {
+    essentialValue: `${prefix}${kilometres} km${unresolvedSuffix}`,
+    evidenceLabel: `${prefix}${kilometres} km pass-accessible terrain${unresolvedSuffix}`,
+  };
+}
+
+export function factorLabelForConfiguration(
+  configuration: SearchV4Configuration,
+  factorId: string,
+): string | undefined {
+  if (factorId !== "accessible_terrain_scale") return factorLabels[factorId];
+  const scope = configuration.selected_pass.accessible_piste_km_evidence?.scope;
+  if (scope === "ski_area") return "Selected ski-area terrain";
+  if (scope === "terrain_domain") return "Covered terrain-domain scale";
+  if (scope === "pass") return factorLabels[factorId];
+  return "Terrain scale";
+}
+
 const tripEssentialOrder: TripEssentialCategory[] = [
   "terrain",
   "passValue",
@@ -314,11 +372,12 @@ export function formatTripEssential(
 ): TripEssential | null {
   switch (category) {
     case "terrain":
-      return configuration.selected_pass.accessible_piste_km != null
+      const terrain = terrainPresentation(configuration.selected_pass);
+      return terrain
         ? {
             category,
             label: "Terrain",
-            value: `${configuration.selected_pass.accessible_piste_km} km`,
+            value: terrain.essentialValue,
           }
         : null;
     case "passValue": {
@@ -380,7 +439,7 @@ export function selectTripEssentialCategories(
 }
 
 const strengthCopy: Record<string, string> = {
-  accessible_terrain_scale: "The selected pass provides broad accessible terrain.",
+  accessible_terrain_scale: "Terrain scale contributes positively to this comparison.",
   party_skill_coverage: "The selected terrain supports your party's skill mix.",
   terrain_potential_scale: "The selected pass supports a broad terrain choice.",
   lift_network_scale: "The lift network supports varied ski-day plans.",
@@ -394,7 +453,7 @@ const strengthCopy: Record<string, string> = {
 };
 
 const watchoutCopy: Record<string, string> = {
-  accessible_terrain_scale: "Accessible terrain evidence is limited for this pass.",
+  accessible_terrain_scale: "Terrain-scale evidence is limited for this pass.",
   party_skill_coverage: "Party skill coverage needs a closer terrain review.",
   terrain_potential_scale: "Connected terrain evidence is limited.",
   lift_network_scale: "Lift-network evidence is limited.",
@@ -429,14 +488,27 @@ export function buildCandidateNarrative(
       watchoutCopy[factor.factor_id] &&
       (factor.effective_evidence_cap === 0 || factor.warnings.length > 0),
   );
+  const supportedLabel = supported
+    ? factorLabelForConfiguration(configuration, supported.factor_id)
+    : undefined;
+  const supportedTerrain =
+    supported?.factor_id === "accessible_terrain_scale"
+      ? terrainPresentation(configuration.selected_pass)
+      : null;
   const verdict = supported
     ? supported.factor_id === "stay_base_access"
       ? "A practical lift-access match for this trip."
-      : `A strong ${factorLabels[supported.factor_id]?.toLowerCase() ?? "trip"} match.`
+      : `A strong ${supportedLabel?.toLowerCase() ?? "trip"} match.`
     : "A complete trip configuration for comparison.";
   return {
     verdict,
-    ...(supported ? { strength: strengthCopy[supported.factor_id] } : {}),
+    ...(supported
+      ? {
+          strength: supportedTerrain
+            ? `${supportedTerrain.evidenceLabel}.`
+            : strengthCopy[supported.factor_id],
+        }
+      : {}),
     ...(caution ? { watchout: watchoutCopy[caution.factor_id] } : {}),
   };
 }

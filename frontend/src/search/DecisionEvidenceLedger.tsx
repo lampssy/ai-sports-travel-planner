@@ -1,7 +1,11 @@
 import { AlertTriangle, Database, MapPin, Ticket } from "lucide-react";
 
 import type { SearchV4Configuration } from "../types";
-import { factorLabels } from "./searchPresentation";
+import {
+  factorLabelForConfiguration,
+  factorLabels,
+  terrainPresentation,
+} from "./searchPresentation";
 
 export function DecisionEvidenceLedger({
   configuration,
@@ -15,6 +19,7 @@ export function DecisionEvidenceLedger({
     ...configuration.constraint_warnings.map((warning) => warning.message),
     ...configuration.factors.flatMap((factor) => factor.warnings),
   ];
+  const terrain = terrainPresentation(configuration.selected_pass);
 
   return (
     <section className="dossier-section evidence-ledger" id="decision-evidence">
@@ -25,7 +30,7 @@ export function DecisionEvidenceLedger({
           <article key={factor.factor_id}>
             <Database aria-hidden="true" size={19} />
             <div>
-              <h3>{factorLabels[factor.factor_id]}</h3>
+              <h3>{factorLabelForConfiguration(configuration, factor.factor_id)}</h3>
               <p>{factor.provenance_summary}</p>
             </div>
             <span>{factor.effective_evidence_cap === 0 ? "Limited evidence" : "Supported"}</span>
@@ -50,9 +55,7 @@ export function DecisionEvidenceLedger({
             <p>{configuration.selected_pass.name} is the pass selected for this configuration.</p>
           </div>
           <span>
-            {configuration.selected_pass.accessible_piste_km != null
-              ? `${configuration.selected_pass.accessible_piste_km} km accessible`
-              : "Coverage unresolved"}
+            {terrain?.evidenceLabel ?? "Coverage unresolved"}
           </span>
         </article>
         {configuration.lodging_estimate?.provenance ? (

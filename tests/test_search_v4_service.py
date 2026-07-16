@@ -34,6 +34,7 @@ from app.domain.search_v4_models import (
     LocationScope,
     LodgingBudgetConstraint,
     PartyContext,
+    PassPriceCeilingConstraint,
     SearchConstraints,
     SearchIntent,
     TravelContext,
@@ -895,6 +896,46 @@ def test_service_constrains_then_bulk_loads_weather_once_and_ranks() -> None:
     assert len(forecast.calls[0]["ski_area_ids"]) == len(
         set(forecast.calls[0]["ski_area_ids"])
     )
+
+
+def test_service_qualifies_ski_area_terrain_fallback_with_owning_trust() -> None:
+    snapshot, manifest = _catalog_and_trust()
+
+    result = search_trip_configurations(
+        intent=SearchIntent(
+            constraints=SearchConstraints(
+                location=LocationScope(country="Italy"),
+                pass_price_ceiling=PassPriceCeilingConstraint(
+                    maximum=320,
+                    currency="EUR",
+                    duration_days=6,
+                    audience="adult",
+                    season="high season 2025/26",
+                ),
+            )
+        ),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        include_refinements=False,
+    )
+
+    pinzolo = next(
+        configuration
+        for group in result.results
+        for configuration in (
+            group.top_configuration,
+            *group.alternative_configurations,
+        )
+        if configuration.selected_pass.lift_pass_product_id == "pinzolo-local-pass"
+    )
+
+    assert pinzolo.selected_pass.accessible_piste_km == 31
+    assert pinzolo.selected_pass.accessible_piste_km_evidence.model_dump() == {
+        "trust_status": "estimated",
+        "scope": "ski_area",
+        "source_entity_id": "pinzolo-ski-area",
+        "field_group": "terrain_metrics",
+    }
 
 
 def test_one_area_dossier_loads_only_the_requested_area_once() -> None:

@@ -93,7 +93,7 @@ export function RecommendationNavigator({
                 onClick={() =>
                   onSwitch(
                     group.ski_region_id,
-                    group.top_configuration.candidate_id,
+                    configuration.candidate_id,
                   )
                 }
               >
@@ -131,28 +131,34 @@ export function RecommendationNavigator({
         </button>
         {switcherOpen ? (
           <div id="dossier-switcher-options" className="dossier-switcher__options">
-            {groups.map((group) => (
-              <button
-                type="button"
-                key={group.ski_region_id}
-                aria-current={
-                  group.ski_region_id === currentGroup.ski_region_id
-                    ? "page"
-                    : undefined
-                }
-                aria-label={`Switch to ${group.ski_region_name}`}
-                onClick={() => {
-                  setSwitcherOpen(false);
-                  onSwitch(
-                    group.ski_region_id,
-                    group.top_configuration.candidate_id,
-                  );
-                }}
-              >
-                <span>#{group.rank}</span>
-                <strong>{group.ski_region_name}</strong>
-              </button>
-            ))}
+            {groups.map((group) => {
+              const configuration = findSelectedCandidate(
+                group,
+                session.selectedCandidateIdByGroup[group.ski_region_id],
+              );
+              return (
+                <button
+                  type="button"
+                  key={group.ski_region_id}
+                  aria-current={
+                    group.ski_region_id === currentGroup.ski_region_id
+                      ? "page"
+                      : undefined
+                  }
+                  aria-label={`Switch to ${group.ski_region_name}`}
+                  onClick={() => {
+                    setSwitcherOpen(false);
+                    onSwitch(group.ski_region_id, configuration.candidate_id);
+                  }}
+                >
+                  <span>#{group.rank}</span>
+                  <span className="dossier-switcher__option-copy">
+                    <strong>{group.ski_region_name}</strong>
+                    <small>{configuration.stay_base_name}</small>
+                  </span>
+                </button>
+              );
+            })}
             <button type="button" onClick={onReturn}>
               <ArrowLeft aria-hidden="true" size={16} />
               All results

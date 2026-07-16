@@ -103,6 +103,7 @@ function App() {
     useRef<PendingRerankScrollRestore | null>(null);
   const routeRef = useRef(route);
   const pendingDossierScrollRestoreRef = useRef(false);
+  const pendingDossierFocusHrefRef = useRef<string | null>(null);
   const [rerankRestoreRequest, setRerankRestoreRequest] = useState(0);
 
   useEffect(() => {
@@ -152,6 +153,7 @@ function App() {
 
       event.preventDefault();
       const resultsScrollY = window.scrollY;
+      pendingDossierFocusHrefRef.current = `${destination.pathname}${destination.search}`;
       const nextRoute = parseAppRoute(destination as unknown as Location);
       setSession((current) =>
         current
@@ -203,12 +205,43 @@ function App() {
       pendingDossierScrollRestoreRef.current = false;
       return;
     }
-    const frame = window.requestAnimationFrame(() => {
+    let focusFrame = 0;
+    let focusTimer = 0;
+    const scrollFrame = window.requestAnimationFrame(() => {
       if (routeRef.current.name !== "search") return;
       window.scrollTo(0, session.resultsScrollY);
-      pendingDossierScrollRestoreRef.current = false;
+      focusFrame = window.requestAnimationFrame(() => {
+        if (routeRef.current.name !== "search") return;
+        const originHref = pendingDossierFocusHrefRef.current;
+        const restoreFocus = () => {
+          if (routeRef.current.name !== "search") return;
+          const origin = originHref
+            ? [
+                ...document.querySelectorAll<HTMLAnchorElement>(
+                  'a[href^="/recommendations/"]',
+                ),
+              ].find((anchor) => anchor.getAttribute("href") === originHref)
+            : null;
+          (origin ?? resultsHeadingRef.current)?.focus({ preventScroll: true });
+        };
+        restoreFocus();
+        focusTimer = window.setTimeout(() => {
+          if (
+            document.activeElement === document.body ||
+            document.activeElement === document.documentElement
+          ) {
+            restoreFocus();
+          }
+        }, 100);
+        pendingDossierFocusHrefRef.current = null;
+        pendingDossierScrollRestoreRef.current = false;
+      });
     });
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      window.cancelAnimationFrame(scrollFrame);
+      window.cancelAnimationFrame(focusFrame);
+      window.clearTimeout(focusTimer);
+    };
   }, [route.name, session]);
 
   useEffect(() => {

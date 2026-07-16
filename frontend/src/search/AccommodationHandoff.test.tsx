@@ -32,6 +32,12 @@ function configuration(
       validity_scope: "single_ski_area",
       covered_ski_area_ids: ["tignes-ski-area"],
       accessible_piste_km: 150,
+      accessible_piste_km_evidence: {
+        trust_status: "verified",
+        scope: "pass",
+        source_entity_id: "pass-1",
+        field_group: "pass_accessible_terrain",
+      },
       price: null,
     },
     lodging_estimate: {

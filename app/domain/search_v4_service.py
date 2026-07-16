@@ -148,12 +148,24 @@ class SearchV4PassPriceSummary(_SearchV4Model):
     season_label: str | None
 
 
+class SearchV4TerrainEvidence(_SearchV4Model):
+    trust_status: Status
+    scope: Literal["pass", "terrain_domain", "ski_area"]
+    source_entity_id: str
+    field_group: Literal[
+        "pass_accessible_terrain",
+        "aggregate_terrain",
+        "terrain_metrics",
+    ]
+
+
 class SearchV4PassSummary(_SearchV4Model):
     lift_pass_product_id: str
     name: str
     validity_scope: str
     covered_ski_area_ids: tuple[str, ...]
     accessible_piste_km: float | None
+    accessible_piste_km_evidence: SearchV4TerrainEvidence | None
     price: SearchV4PassPriceSummary | None
 
 
@@ -695,7 +707,13 @@ def search_trip_configurations(
             client=llm_client,
             already_answered_question_ids=already_answered_question_ids,
         )
-    results = _group_results(ordered, duration_days, audience, season_label)
+    results = _group_results(
+        ordered,
+        duration_days,
+        audience,
+        season_label,
+        manifest,
+    )
     response = SearchV4Response(
         search_model_version=selected_policy.search_model_version,
         ranking_policy_version=selected_policy.ranking_policy_version,
@@ -1100,6 +1118,7 @@ def _group_results(
     duration_days: int,
     audience: str,
     season_label: str | None,
+    manifest: CatalogTrustManifest,
 ) -> tuple[SearchV4RecommendationGroup, ...]:
     grouped: dict[str, list[_EvaluatedCandidate]] = defaultdict(list)
     for item in ordered:
@@ -1112,7 +1131,13 @@ def _group_results(
     for rank, items in enumerate(ordered_groups, start=1):
         selected = _material_alternatives(items)
         configurations = tuple(
-            _configuration(item, duration_days, audience, season_label)
+            _configuration(
+                item,
+                duration_days,
+                audience,
+                season_label,
+                manifest,
+            )
             for item in selected
         )
         top = configurations[0]
@@ -1160,6 +1185,7 @@ def _configuration(
     duration_days: int,
     audience: str,
     season_label: str | None,
+    manifest: CatalogTrustManifest,
 ) -> SearchV4Configuration:
     record = item.record
     ranking = item.ranking
@@ -1187,6 +1213,7 @@ def _configuration(
             duration_days=duration_days,
             audience=audience,
             season_label=season_label,
+            manifest=manifest,
         ),
         lodging_estimate=record.constraint_facts.lodging,
         ranking_status="ranked" if isinstance(ranking, RankedScore) else "unscored",
@@ -1203,10 +1230,26 @@ def _pass_summary(
     duration_days: int,
     audience: str,
     season_label: str | None,
+    manifest: CatalogTrustManifest,
 ) -> SearchV4PassSummary:
     product = record.selected_pass
     aggregate = product.pass_accessible_terrain
     accessible_km = aggregate.total_piste_km if aggregate is not None else None
+    terrain_evidence = (
+        SearchV4TerrainEvidence(
+            trust_status=_status(
+                manifest,
+                "lift_pass_products",
+                product.lift_pass_product_id,
+                "pass_accessible_terrain",
+            ),
+            scope="pass",
+            source_entity_id=product.lift_pass_product_id,
+            field_group="pass_accessible_terrain",
+        )
+        if accessible_km is not None
+        else None
+    )
     if accessible_km is None:
         matched_domains = tuple(
             domain
@@ -1215,12 +1258,36 @@ def _pass_summary(
             and domain.total_piste_km is not None
         )
         if len(matched_domains) == 1:
-            accessible_km = matched_domains[0].total_piste_km
+            matched_domain = matched_domains[0]
+            accessible_km = matched_domain.total_piste_km
+            terrain_evidence = SearchV4TerrainEvidence(
+                trust_status=_status(
+                    manifest,
+                    "terrain_domains",
+                    matched_domain.terrain_domain_id,
+                    "aggregate_terrain",
+                ),
+                scope="terrain_domain",
+                source_entity_id=matched_domain.terrain_domain_id,
+                field_group="aggregate_terrain",
+            )
         elif (
             not product.terrain_domain_ids
             and record.ski_area.ski_area_id in product.valid_ski_area_ids
         ):
             accessible_km = record.ski_area.total_piste_km
+            if accessible_km is not None:
+                terrain_evidence = SearchV4TerrainEvidence(
+                    trust_status=_status(
+                        manifest,
+                        "ski_areas",
+                        record.ski_area.ski_area_id,
+                        "terrain_metrics",
+                    ),
+                    scope="ski_area",
+                    source_entity_id=record.ski_area.ski_area_id,
+                    field_group="terrain_metrics",
+                )
     price = select_matching_pass_price(
         product=product,
         duration_days=duration_days,
@@ -1233,6 +1300,7 @@ def _pass_summary(
         validity_scope=product.validity_scope,
         covered_ski_area_ids=record.pass_covered_ski_area_ids,
         accessible_piste_km=accessible_km,
+        accessible_piste_km_evidence=terrain_evidence,
         price=(
             SearchV4PassPriceSummary(
                 duration_days=price.duration_days,

@@ -1,7 +1,11 @@
 import { Layers3 } from "lucide-react";
 
 import type { SearchV4Configuration } from "../types";
-import { factorLabels, groupLabels } from "./searchPresentation";
+import {
+  factorLabelForConfiguration,
+  factorLabels,
+  groupLabels,
+} from "./searchPresentation";
 
 export function ScoringDetails({
   configuration,
@@ -48,7 +52,9 @@ export function ScoringDetails({
               {factors.map((factor) => (
                 <div key={factor.factor_id}>
                   <dt>
-                    <span>{factorLabels[factor.factor_id]}</span>
+                    <span>
+                      {factorLabelForConfiguration(configuration, factor.factor_id)}
+                    </span>
                     <code>{factor.factor_id}</code>
                   </dt>
                   <dd>

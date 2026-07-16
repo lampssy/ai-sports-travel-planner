@@ -196,6 +196,10 @@ test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
   expect(screen.getByText(/issued.*16 jul 2026/i)).toBeVisible();
   expect(screen.getByText(/fresh at evaluation time/i)).toBeVisible();
   expect(screen.getByText(/partial coverage.*2 of 3 dates/i)).toBeVisible();
+  expect(
+    screen.getByText("Forecast coverage in this assessment 67%"),
+  ).toBeVisible();
+  expect(screen.queryByText(/forecast share/i)).toBeNull();
   const forecastTab = screen.getByRole("tab", { name: "Forecast" });
   const historicalTab = screen.getByRole("tab", { name: "Historical context" });
   expect(forecastTab).toHaveAttribute("aria-selected", "true");
@@ -207,6 +211,65 @@ test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
   await user.keyboard("{ArrowRight}");
   expect(forecastTab).toHaveFocus();
   expect(forecastTab).toHaveAttribute("aria-selected", "true");
+});
+
+test("distinguishes mixed source elevations from unavailable elevation", async () => {
+  const mixed = forecastResponse();
+  mixed.evidence = {
+    ...mixed.evidence,
+    elevation_m: null,
+    elevation_status: "mixed",
+    historical: {
+      ...mixed.evidence.historical,
+      provenance_status: "mixed",
+      sources: [
+        {
+          source_model: "ERA5-Land",
+          computed_at: "2026-07-15T02:00:00Z",
+          baseline_period: "normal_30y",
+          baseline_start_year: 1995,
+          baseline_end_year: 2024,
+          evidence_seasons: 30,
+          latest_archive_year: 2024,
+          elevation_m: 2200,
+          row_count: 1,
+          profile_dates: ["03-15"],
+        },
+        {
+          source_model: "ERA5-Land",
+          computed_at: "2026-07-15T02:00:00Z",
+          baseline_period: "recent_15y",
+          baseline_start_year: 2010,
+          baseline_end_year: 2024,
+          evidence_seasons: 15,
+          latest_archive_year: 2024,
+          elevation_m: 2400,
+          row_count: 1,
+          profile_dates: ["03-15"],
+        },
+      ],
+    },
+    forecast: mixed.evidence.forecast
+      ? {
+          ...mixed.evidence.forecast,
+          provenance_status: "mixed",
+        }
+      : null,
+  };
+
+  render(
+    <SnowEvidence
+      intent={datesIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={vi.fn().mockResolvedValue(mixed)}
+    />,
+  );
+
+  expect(
+    await screen.findByText("Mixed source elevations across this assessment"),
+  ).toBeVisible();
+  expect(screen.queryByText(/elevation unavailable/i)).toBeNull();
 });
 
 test("does not mark a non-null wind gust as a forecast risk", async () => {

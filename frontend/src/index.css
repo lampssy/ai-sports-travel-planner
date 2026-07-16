@@ -2699,7 +2699,7 @@ textarea:focus-visible,
   }
 
   .search-command-header__inner {
-    grid-template-columns: auto minmax(18rem, 1fr);
+    grid-template-columns: auto minmax(18rem, 1fr) auto;
   }
 
   .results-workspace {
@@ -2713,6 +2713,10 @@ textarea:focus-visible,
   }
 
   .compact-nav {
+    display: flex;
+  }
+
+  .compact-nav button[aria-current="page"] {
     display: none;
   }
 
@@ -2805,6 +2809,17 @@ textarea:focus-visible,
     color: var(--alpine-blue);
   }
 
+  .dossier-switcher__option-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .dossier-switcher__option-copy small {
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+
   .dossier-content {
     padding-top: 1rem;
   }
@@ -2871,9 +2886,19 @@ textarea:focus-visible,
   }
 
   .search-command-header__inner {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 1rem;
     padding-block: 1rem;
+  }
+
+  .search-command-header__inner .compact-search-form {
+    grid-column: 1 / -1;
+  }
+
+  .search-command-header__inner .compact-nav {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
   }
 
   .compact-search-form {
