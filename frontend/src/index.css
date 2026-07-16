@@ -2702,6 +2702,16 @@ textarea:focus-visible,
     grid-template-columns: auto minmax(18rem, 1fr);
   }
 
+  .results-workspace {
+    grid-template-columns: 15rem minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .recommendation-card__details {
+    grid-template-columns: minmax(0, 1fr) 14rem;
+    gap: 1.25rem;
+  }
+
   .compact-nav {
     display: none;
   }

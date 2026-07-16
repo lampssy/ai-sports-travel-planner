@@ -124,6 +124,20 @@ green while the stale five-test E2E suite was red as described above.
   focused month, forecast-assisted, retry, cache-expiry, stale-response, and
   390 px states. The final exact-head review reported zero Critical, Important,
   or Minor findings.
+- 2026-07-16 Task 8 Phase A visual and verification gate: generated and
+  inspected 11 deterministic Chromium baselines covering the homepage and
+  independently expanded result cards at 1440x900, 1024x768, and 390x844;
+  expanded/collapsed desktop dossiers; a full month dossier; and mobile dossier
+  switcher/snow-evidence states. Comparison with all five accepted references
+  exposed and resolved tablet metric compression plus missing post-rerank
+  focus. Keyboard-only routing, announcements, 200% zoom-equivalent reflow,
+  reduced motion, explicit status text, initial/rerank failures, empty and
+  missing-data states, unavailable/stale weather, dossier recovery, and
+  horizontal overflow are covered by browser assertions. Verification passed
+  1,417 backend tests, Ruff, 74 frontend unit tests, production build, and 35
+  Chromium E2E journeys. WebKit remains unavailable because its configured
+  Playwright executable is not installed; no dependency was installed. The
+  feature spec remains pre-completion pending independent advisory review.
 
 ---
 

@@ -489,6 +489,9 @@ test("desktop board compares, selects alternatives, and reranks in place", async
   await expect(
     page.locator(".rerank-feedback").getByText(/2 recommendations changed position/i),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Recommended ski trips" }),
+  ).toBeFocused();
   await expect(page.getByText("Replacement refinement?")).toBeVisible();
   await expect(page.getByText("Which stay style fits?")).toBeHidden();
   await expect.poll(() => scrollYAfterLayout(page)).toBe(scrollBeforeRerank);
@@ -1165,4 +1168,165 @@ test("direct dossier load without search state offers recovery", async ({ page }
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByLabel("Describe your ski trip")).toBeVisible();
   expect(searchRequests).toHaveLength(0);
+});
+
+test("keyboard-only core flow keeps focus and route announcements logical", async ({
+  page,
+}) => {
+  const response = structuredClone(monthSearchResponse);
+  response.applied_intent.constraints.travel_window = {
+    start_date: "2026-07-20",
+    end_date: "2026-07-22",
+  };
+  await mockSearchV4Api(
+    page,
+    response,
+    [],
+    [],
+    () => forecastWeatherResponse(),
+  );
+  await page.goto("/");
+
+  const brief = page.getByLabel("Describe your ski trip");
+  await brief.fill("Tignes from 20 to 22 July");
+  await brief.press("Tab");
+  await expect(page.getByRole("button", { name: "Find resorts" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Recommended ski trips" }),
+  ).toBeFocused();
+
+  const secondCardToggle = page.getByRole("button", {
+    name: /expand les arcs - peisey vallandry/i,
+  });
+  const stableSecondCardToggle = page.locator(
+    'button[aria-controls="recommendation-paradiski"]',
+  );
+  await secondCardToggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(stableSecondCardToggle).toHaveAttribute("aria-expanded", "true");
+  await expect(stableSecondCardToggle).toBeFocused();
+
+  const scoring = page.locator("article.recommendation-card").first().locator("summary");
+  await scoring.focus();
+  await page.keyboard.press("Enter");
+  await expect(scoring.locator("..")).toHaveAttribute("open", "");
+
+  const dossier = page
+    .locator("article.recommendation-card")
+    .first()
+    .getByRole("link", { name: "View dossier" });
+  await dossier.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
+  ).toBeFocused();
+
+  const historicalTab = page.getByRole("tab", { name: "Historical context" });
+  await page.getByRole("tab", { name: "Forecast" }).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(historicalTab).toBeFocused();
+
+  const secondRecommendation = page.getByRole("button", {
+    name: /les arcs - peisey vallandry, rank 2/i,
+  });
+  await secondRecommendation.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", {
+      name: "Les Arcs - Peisey Vallandry - Arc 1800",
+    }),
+  ).toBeFocused();
+  await expect(
+    page.locator('[aria-live="polite"]').filter({
+      hasText: "Showing Les Arcs - Peisey Vallandry, stay in Arc 1800",
+    }),
+  ).toBeAttached();
+
+  const back = page.getByRole("button", { name: "Back to results" });
+  await back.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/$/);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("failed initial search can be resubmitted without losing the brief", async ({
+  page,
+}) => {
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(
+    page,
+    [
+      { status: 503, detail: "Search is temporarily unavailable." },
+      monthSearchResponse,
+    ],
+    searchRequests,
+  );
+  await page.goto("/");
+
+  const brief = "March in France with reliable snow";
+  await page.getByLabel("Describe your ski trip").fill(brief);
+  await page.getByRole("button", { name: "Find resorts" }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Search is temporarily unavailable.",
+  );
+  await expect(page.getByLabel("Describe your ski trip")).toHaveValue(brief);
+  await expect(page.getByRole("button", { name: "Find resorts" })).toBeEnabled();
+
+  await page.getByRole("button", { name: "Find resorts" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Recommended ski trips" }),
+  ).toBeFocused();
+  expect(searchRequests).toHaveLength(2);
+});
+
+test("no results and missing metrics remain explicit and overflow-free", async ({
+  page,
+}) => {
+  const noResults = structuredClone(monthSearchResponse);
+  noResults.eligible_candidate_count = 0;
+  noResults.results = [];
+
+  const missingMetrics = structuredClone(monthSearchResponse);
+  const configuration = missingMetrics.results[0].top_configuration;
+  configuration.fit_score = null;
+  configuration.lodging_estimate = null;
+  configuration.selected_pass.price = null;
+  configuration.selected_pass.accessible_piste_km = null;
+  configuration.access.distance_m = null;
+  configuration.access.duration_minutes = null;
+  missingMetrics.results[0].fit_score = null;
+
+  await mockSearchV4Api(page, [noResults, missingMetrics], []);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Find resorts" }).click();
+  await expect(
+    page.getByRole("heading", { name: "No trip matches every hard constraint" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Adjust hard constraints" })).toBeVisible();
+
+  await page.getByLabel("Trip brief").press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Recommended ski trips" }),
+  ).toBeVisible();
+  await expect(page.locator("article.recommendation-card").first()).toContainText("—");
+  await expect(page.locator("body")).not.toContainText(/undefined|NaN|\[object Object\]/);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("results reflow at a 1440 viewport equivalent to 200 percent zoom", async ({
+  page,
+}) => {
+  await mockSearchV4Api(page, refinementResponse(), []);
+  await page.setViewportSize({ width: 720, height: 450 });
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+
+  await expect(page.getByText("Limited evidence — Fallback-heavy")).toBeVisible();
+  await expect(page.getByText("Snow evidence is limited for the requested travel window.")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  const motion = await page.locator(".recommendation-card__toggle").first().evaluate(
+    (element) => getComputedStyle(element).transitionDuration,
+  );
+  expect(["0s", "0.01ms"]).toContain(motion);
 });

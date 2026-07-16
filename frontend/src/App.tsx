@@ -191,7 +191,7 @@ function App() {
 
   useEffect(() => {
     if (focusRequest > 0 && session) {
-      resultsHeadingRef.current?.focus();
+      resultsHeadingRef.current?.focus({ preventScroll: true });
     }
   }, [focusRequest]);
 
@@ -437,6 +437,7 @@ function App() {
       setGroupPriorities(nextGroups);
       setAnsweredQuestionIds(nextAnswered);
       setUndoState(previousState);
+      setFocusRequest((current) => current + 1);
       if (previousResponse) {
         const summary = rankChangeSummary(previousResponse, nextResponse);
         setRankFeedback(summary.announcement);
@@ -477,6 +478,7 @@ function App() {
       setObjectives(undoState.objectives);
       setAnsweredQuestionIds(undoState.answeredQuestionIds);
       setUndoState(null);
+      setFocusRequest((current) => current + 1);
       setRankFeedback("Previous trip decisions restored.");
       setChangedRankGroupIds(new Set());
     } catch (caught) {

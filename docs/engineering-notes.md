@@ -425,13 +425,16 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 ### Routeable app routes vs public stay-destination pages
 - The React app has lightweight client-side routes for `/`,
   `/recommendations/:skiRegionId`, and `/current-trip` without adding a routing
-  dependency.
+  dependency. Navigation uses the browser History API while the active search,
+  selected alternatives, expansions, dossier navigator state, and return scroll
+  position remain in the in-memory React search session.
 - A recommendation route is an app-state route, not a public SEO page. It uses
   the latest search context because detail includes the selected configuration,
   alternatives, travel window, ranking evidence, and parser-derived filters.
-- The latest search context is cached in `sessionStorage` for demo-friendly
-  reloads. Opening a recommendation route without cached context shows a "Run a
-  search first" fallback instead of inventing a generic market detail.
+- Dossier routes are intentionally not reloadable or transferable yet. A reload,
+  direct navigation, or new tab has no in-memory ranked search context and shows
+  the explicit "Run a search first" recovery state instead of reconstructing or
+  inventing a recommendation.
 - Public, crawler-friendly stay-destination pages use
   `/ski-destinations/{stay_destination_id}`.
 - FastAPI registers destination pages, `/sitemap.xml`, and `/robots.txt` before
@@ -461,6 +464,10 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 
 ### Target web UI route boundaries
 - The React web app remains the anonymous planning and demo surface, not the authenticated mobile companion.
+- `lucide-react` is the presentation icon system for the web experience. Icons
+  inside labelled controls are decorative; icon-only controls carry an
+  accessible name and tooltip. Domain charts remain semantic application UI,
+  not Lucide illustrations.
 - Search should open as an editorial command surface, then collapse into a compact command bar after results exist.
 - Manual filter editing belongs in a refine drawer; the primary post-search workspace belongs to recommendation comparison, evidence, and tradeoffs.
 - The post-search decision rail is the place for parsed context, active chips, assumptions, evidence mode, travel effort, and "why this leads" context. This keeps the result board readable while still making the ranking inputs auditable.
@@ -488,6 +495,10 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   canonical ski-area ID. It reuses Search V4's stored climatology and latest
   complete forecast-head policy, but it does not rerun ranking, call a provider,
   or invoke an LLM.
+- Refinement impact previews and weather interpretation/provenance summaries
+  are server-owned typed presentation contracts. The browser renders those
+  summaries and never derives rank movement from scores or parses raw factor
+  values to create weather claims.
 - The dossier caches available and typed unavailable responses only for the
   current browser session by travel window and ski area and only until the
   server-declared validity time. Forecast-assisted validity follows the earliest
@@ -495,6 +506,13 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   after five minutes. Transport failures remain retryable. Evidence loaded
   later may be fresher than the original ranking request, so issue times and
   provenance stay visible.
+- Snow charts use bounded semantic inline SVG with labelled chart roles and an
+  equivalent expandable structured-value table. The visual trend is therefore
+  not the only way to access the underlying dates, depth, snowfall,
+  temperature, and risk values.
+- The representative maximum-shape one-area route measured 32,809 serialized
+  bytes and 7.273 ms warm-domain p95 construction time. This remains the
+  reference measurement for the accepted on-demand boundary.
 - ADR 0014 owns this API and request-path boundary.
 
 ### Direct Gemini API vs LangChain / LangGraph
