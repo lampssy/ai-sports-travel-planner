@@ -101,6 +101,11 @@ green while the stale five-test E2E suite was red as described above.
   Ruff; the maximum-shape route remained 32,809 bytes with 7.273 ms warm-domain
   p95. The final full-range review reported zero Critical, Important, or Minor
   findings.
+- 2026-07-16 Task 4 implementation gate: completed at `f8c4d52`; 25 frontend
+  unit tests, production build, and four Chromium E2E flows passed, with
+  desktop and 390 px mobile inspection. Exact-head review reported no findings.
+  Fresh WebKit verification was unavailable because that Playwright executable
+  is not installed; no dependency was installed to work around it.
 
 ---
 
