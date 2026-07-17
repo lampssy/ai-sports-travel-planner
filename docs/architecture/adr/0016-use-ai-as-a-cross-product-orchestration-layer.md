@@ -1,6 +1,6 @@
 # ADR 0016: Use AI As A Cross-Product Orchestration Layer
 
-Status: proposed
+Status: accepted
 Date: 2026-07-17
 
 Supersedes: N/A
@@ -114,7 +114,7 @@ on generated prose.
   refinement semantics, future companion behavior, and cross-product API
   boundaries.
 - Developer Decision Checkpoint: resolved by the owner on 2026-07-17.
-- ADR status: proposed pending written-spec review.
+- ADR status: accepted after owner written-spec review on 2026-07-18.
 - Advisory design review: completed on 2026-07-17 with Product / Strategy,
   Backend / API, AI / LLM Reliability, and Security & Privacy. No findings
   remain after the related spec was revised.

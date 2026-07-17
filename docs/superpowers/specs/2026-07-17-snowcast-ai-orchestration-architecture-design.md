@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: proposed for written review
+- Status: accepted
 - Owner: solo-builder
 - Date: 2026-07-17
 - Related ADR: `docs/architecture/adr/0016-use-ai-as-a-cross-product-orchestration-layer.md`
@@ -243,8 +243,8 @@ needs.
 - Developer Decision Checkpoint: resolved by the owner on 2026-07-17. Snowcast
   AI is a cross-product operational orchestration layer, not a chat-centric
   product; durable preferences belong to separate explicit customization.
-- ADR status: proposed ADR 0016 records the accepted architectural direction;
-  it becomes accepted after written-spec review.
+- ADR status: accepted ADR 0016 records the architectural direction.
+- Written-spec review: approved by the owner on 2026-07-18.
 - Advisory design review: completed on 2026-07-17 with Product / Strategy,
   Backend / API, AI / LLM Reliability, and Security & Privacy. Review findings
   about dynamic refinement ownership, preference lifecycle, and evaluation were
