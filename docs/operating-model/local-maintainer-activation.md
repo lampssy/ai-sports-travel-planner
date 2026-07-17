@@ -81,13 +81,18 @@ The installed skill must:
   category without an enumerated candidate/source checklist is incomplete, the
   first fix batches every compatible checklist entry, and a known-but-unfixed
   candidate remains repeated rather than becoming a supposedly new finding;
+- before classifying a destination or ski-area boundary as an owner choice, run
+  one fresh read-only `boundary-adjudication` review for the concrete candidates
+  on the exact head; return `policy_determined` results to the fixer and reserve
+  `owner-decision` for `owner_choice_required` results;
 - perform at most six remediation cycles, using a fresh independent full
   `snowcast-catalog-review` context after every fix and passing the ledger only
   as untrusted history; cycles five and six require demonstrable convergence;
 - recheck current-main mergeability before every fix and adaptive review and
-  once more before final manual-check or validation/push, stop new semantic work
-  at 150 minutes, and at 180 interrupt semantic work while allowing at most 30
-  active minutes of exact-state validation, publication, recovery, and cleanup;
+  once more before final manual-check or validation/push; start no boundary
+  adjudication at or after minute 120, stop new semantic work at 150 minutes,
+  and at 180 interrupt semantic work while allowing at most 30 active minutes
+  of exact-state validation, publication, recovery, and cleanup;
 - bind a complete review disposition to the exact reviewed head; use
   `manual-check` only for a complete scope-safe reviewed handoff, route an
   incomplete review to status-only `blocked/review-incomplete`, and reserve

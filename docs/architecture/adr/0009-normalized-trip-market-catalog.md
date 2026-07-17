@@ -19,6 +19,7 @@ Related docs:
 - `docs/planning-model.md`
 - `docs/data-trust-model.md`
 - `docs/snow-evidence-model.md`
+- `docs/architecture/adr/0016-require-evidence-owner-boundaries-for-ski-areas.md`
 
 ## Context
 

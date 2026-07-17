@@ -82,7 +82,7 @@ def _catalog(**rows: list[dict[str, object]]) -> str:
 
 def _valid_full_report() -> dict[str, object]:
     return {
-        "report_schema_version": 2,
+        "report_schema_version": 3,
         "title": "Alpha full curation",
         "summary": "Reviews Alpha against its official source.",
         "reviewed_targets": [
@@ -105,12 +105,26 @@ def _valid_full_report() -> dict[str, object]:
                 "candidate_name": "Alpha",
                 "candidate_kind": "ski_area",
                 "disposition": "represented",
-                "signals": ["official_independent_identity"],
+                "signals": [
+                    "official_independent_identity",
+                    "independent_weather_presentation",
+                ],
                 "evidence_refs": ["alpha-scope"],
                 "target_refs": [
                     {"target_type": "ski_area", "target_id": "alpha"},
                 ],
                 "rationale": "The official source confirms the represented entity.",
+                "ski_area_boundary": {
+                    "parent_ski_area_id": None,
+                    "terrain_scope": "complete",
+                    "connectivity_to_parent": "not_applicable",
+                    "operational_scope": "unknown",
+                    "weather_scope": "independent",
+                    "pass_scope": "none",
+                    "provider_consensus": "separate",
+                    "separation_value": "material",
+                    "evidence_refs": ["alpha-scope"],
+                },
             }
         ],
         "evidence": [
@@ -290,7 +304,7 @@ def test_catalog_comparison_requires_schema_version_two() -> None:
         build_intent_snapshot(repository, "base", "head")
 
 
-def test_full_schema_v2_report_collects_reviewed_scope_and_trust_targets() -> None:
+def test_full_schema_v3_report_collects_reviewed_scope_and_trust_targets() -> None:
     path = "docs/catalog-curation/alpha.json"
     report = _valid_full_report()
     repository = FakeIntentRepository(
@@ -324,10 +338,10 @@ def test_report_target_can_be_declared_by_review_and_scope_without_drift() -> No
     )
 
 
-def test_incomplete_schema_v2_report_is_rejected_with_path_context() -> None:
+def test_incomplete_schema_v3_report_is_rejected_with_path_context() -> None:
     path = "docs/catalog-curation/incomplete.json"
     report = {
-        "report_schema_version": 2,
+        "report_schema_version": 3,
         "reviewed_targets": [],
         "entity_scope_assessments": [],
     }
@@ -357,7 +371,7 @@ def test_incomplete_schema_v2_report_is_rejected_with_path_context() -> None:
                     "entity_scope_assessments": [],
                 }
             ),
-            "report_schema_version must be 2",
+            "report_schema_version must be 3",
         ),
     ],
 )

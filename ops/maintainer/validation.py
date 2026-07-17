@@ -387,7 +387,7 @@ def validate_proposal(
             base_trust.validate_against_catalog(base_catalog)
             head_trust.validate_against_catalog(head_catalog)
             report = load_catalog_curation_report(report_file)
-            if report.report_schema_version != 2:
+            if report.report_schema_version != 3:
                 raise ValueError
             validate_catalog_curation_report(report)
             reconcile_catalog_curation_report(
@@ -503,7 +503,7 @@ def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:
             "--current-trust-manifest-path",
             TRUST_MANIFEST_PATH,
             "--require-report-schema-version",
-            "2",
+            "3",
             "--skip-product-backlog-validation",
         ),
         (

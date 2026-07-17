@@ -140,6 +140,10 @@ Out of scope:
 - Starts curation with parallel independent `source-trust` and `graph-scope`
   reviews of the same prepared head, then consolidates both dispositions into
   one first fix.
+- Before treating a destination or ski-area boundary finding as an owner
+  choice, runs one fresh focused boundary adjudication against the accepted
+  model rules. A policy-determined graph returns to the normal fixer/re-review
+  loop; only multiple defensible product graphs reach `owner-decision`.
 - Carries a private structured finding ledger into each later fresh full review
   as untrusted history so resolved, repeated, regressed, and genuinely new
   findings remain distinguishable without narrowing independent review.
@@ -350,13 +354,20 @@ the same-key duplicate gate without trying to infer identity from prose.
    they count as one initial review stage.
 5. Codex consolidates the two complete dispositions into one private finding
    ledger and first fix. It deduplicates overlapping findings but preserves
-   conflicts and routes material owner/domain disagreements to
-   `owner-decision` instead of asking the fixer to choose. For scope inventory,
+   conflicts. For scope inventory,
    the ledger has one stable candidate entry per concrete entity, product,
    access edge, sector, document, or other reviewed candidate, including its
    normalized key and specific source inventory. A reviewer output that names
    only an inventory category is incomplete until it enumerates that checklist;
    one generic umbrella finding cannot replace the candidate-level ledger.
+   Before routing a destination or ski-area boundary disagreement
+   to `owner-decision`, it starts one fresh read-only
+   `snowcast-catalog-review` context in `boundary-adjudication` mode for the
+   concrete candidates on the exact current head. The context receives the
+   disputed questions and factual evidence inventory, but no reviewer's
+   preferred graph. It returns `policy_determined`, `owner_choice_required`,
+   or `evidence_insufficient`, with a recommended graph, alternatives,
+   decisive evidence, and identity/weather consequences.
 6. Before every fix, before adaptive reviews, and once more before any final
    manual-check or validation/push sequence, Codex fetches current `origin/main`,
    verifies the exact local head and clean worktree, and uses read-only `git merge-tree
@@ -382,21 +393,34 @@ the same-key duplicate gate without trying to infer identity from prose.
    complete initial candidate/source inventory counts as scope expansion. The
    parent updates the ledger. Missing or
    incomplete output requests status-only `blocked/review-incomplete` when
-   safe, never `manual-check` or readiness. A real model/owner choice requests
-   `owner-decision` separately.
+   safe, never `manual-check` or readiness. A boundary finding requests
+   `owner-decision` only after focused adjudication confirms
+   `owner_choice_required`. `policy_determined` returns to the fixer and its
+   mandatory fresh full review. `evidence_insufficient` uses `manual-check`
+   only for an otherwise complete scope-safe head and otherwise requests
+   `blocked/review-incomplete` when safe.
 9. At most six remediation cycles occur in one run. One cycle contains one
    maintainer-managed fixer invocation, which may batch compatible ledger
    findings, one parent-owned local commit, and the required fresh full review.
+   Boundary adjudication is read-only and does not consume a remediation-cycle
+   slot, but it consumes the same wall-clock budget; its resulting fix and fresh
+   review consume one normal cycle.
    Cycles five and six are adaptive: before spawning their reviews Codex repeats
    the current-main mergeability check, then continues only when ledger evidence
    shows fewer, lower-severity, or materially narrower in-model findings. A
    repeated unchanged finding, regression, non-narrowing new set, or loss of
    progress stops the loop and requests status-only `blocked/non-converging`
-   when safe. A real owner/model choice requests status-only
-   `owner-decision/owner-decision`; its observed remote head remains separate
-   from any unpublished local review/fix head.
+   when safe. A real owner/model choice confirmed by focused adjudication
+   requests status-only `owner-decision/owner-decision`; its observed remote
+   head remains separate from any unpublished local review/fix head.
 10. The curation lease acquisition starts a private wall-clock semantic budget.
-    At 150 minutes Codex starts no new reviewer or fixer. At 180 minutes it
+    Boundary adjudication uses this same budget and never extends the cycle.
+    Codex starts it when the possible owner choice first appears and never at or
+    after minute 120, preserving time for a policy-determined fix and fresh full
+    review. A boundary question first found after that cutoff remains an exact
+    unpublished follow-up for the next cycle and is not prematurely published
+    as `owner-decision`. At 150 minutes Codex starts no new reviewer or fixer.
+    At 180 minutes it
     interrupts active semantic contexts and enters finalization-only mode: no
     research, review, fix, commit, or new test run may begin. After exact local
     head, worktree, remote head, current-main mergeability, and review-evidence
@@ -421,7 +445,7 @@ the same-key duplicate gate without trying to infer identity from prose.
 14. The helper performs the guarded push if needed.
 15. Codex writes a concise synopsis of the final reviewed scope, evidence,
     verification, and owner caveats, then requests `waiting-ci` with that body
-    input while GitHub checks are pending. The full schema-v2 report remains in
+    input while GitHub checks are pending. The full schema-v3 report remains in
     the repository.
 16. A later lightweight run handles the unchanged `waiting-ci` head without
     preparation or semantic review: it requests readiness when checks are green
@@ -815,8 +839,11 @@ Example:
 - **Rebase/current-main conflict:** abort, retain backup, and request the
   status-only `blocked/conflict` outcome when the selected remote head remains
   exact; otherwise Triage only.
-- **Source/domain ambiguity:** request the status-only
-  `owner-decision/owner-decision` outcome when exact-head publication is safe.
+- **Destination/ski-area boundary ambiguity:** run focused boundary adjudication
+  before minute 120. Return a policy-determined result to the fixer, route an
+  evidence gap through the safe manual-check/review-incomplete rules, and
+  request status-only `owner-decision/owner-decision` only when multiple
+  defensible product graphs remain and exact-head publication is safe.
 - **Validation failure:** return the allowlisted check/substage and failure kind
   plus safe structured facts for Codex interpretation; use manual-check only
   for a complete reviewed scope-safe head, otherwise request status-only
@@ -1038,6 +1065,10 @@ replaced. It is history, not current operational instruction:
 - Curation starts no semantic work after 150 minutes, interrupts active
   semantic contexts at 180 minutes, and then permits only the separate bounded
   exact-state finalization phase.
+- A destination or ski-area boundary reaches `owner-decision` only after one
+  exact-head focused adjudication confirms multiple defensible graphs; the pass
+  starts before minute 120, shares the same 180-minute budget, and returns a
+  policy-determined graph to the fixer plus fresh full review.
 - A PR becomes ready only for the unchanged Codex-reviewed,
   helper-validated, CI-green, mergeable head.
 - The branch and prospective merge with current `main` both pass verification.

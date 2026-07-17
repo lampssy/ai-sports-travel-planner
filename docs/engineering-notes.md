@@ -704,7 +704,7 @@ documentation, and tests may change during remediation; production code,
 operational code, the maintainer's own instructions, unsafe file modes, and
 empty diffs fail closed. Codex may therefore review and repair legacy reports
 or add supporting non-production artifacts. Validation-backed push and
-readiness still require one canonical schema-version-2 report reconciled to
+readiness still require one canonical schema-version-3 report reconciled to
 the exact reviewed catalog and trust changes.
 
 Ski-area-access catalog `source_urls` are the entity-level union of the trust
@@ -785,6 +785,17 @@ review independently rechecks the complete scope, then reconciles that untrusted
 ledger so claimed fixes, repeated or regressed issues, and genuinely new
 findings remain visible without asking a reviewer to trust prior conclusions.
 
+A possible destination or ski-area owner choice receives one additional focused
+boundary adjudication before escalation. This is not another full review: it
+applies the accepted boundary gates to the concrete candidates and returns
+`policy_determined`, `owner_choice_required`, or `evidence_insufficient`. A
+policy-determined graph goes back through the normal fixer and fresh-review
+loop; only multiple defensible product graphs reach the owner. The adjudication
+shares the existing cycle clock, starts before minute 120, and never extends the
+150-minute semantic or 180-minute hard deadlines. A late boundary question is
+preserved as an exact-head follow-up rather than being prematurely labeled an
+owner decision.
+
 The adaptive maximum remains six remediation cycles. Before every fix and each
 adaptive review, the parent fetches current main and runs a read-only merge-tree
 probe; a conflict stops the cycle before more work is accumulated. The first
@@ -845,7 +856,7 @@ catalog for the live "already represented" check, while GitHub remains the
 authority for open proposal identity. Reading the modified worktree for this
 gate would make every valid addition appear to duplicate itself.
 
-For curation readiness, the checked-in schema-v2 report is the complete source
+For curation readiness, the checked-in schema-v3 report is the complete source
 of truth and the PR body is only a concise human synopsis. Both `waiting-ci` and
 `ready` require that synopsis. Legacy unmarked bodies are replaced only through
 an explicit helper adoption flag on an already-authorized automation-owned PR;
@@ -1052,14 +1063,16 @@ evidence before field completeness is accepted. This makes missing graph nodes
 and relationships reviewable without treating every name found on a map as a
 new catalog entity.
 
-Official map sectors, webcams, limited-area tickets, and secondary-provider
-listings are discovery signals. A new `SkiArea` needs durable independent-owner
-scope such as its own official identity, operator, operating/status or weather
-presentation, child-scoped terrain metrics, or full local pass. A named sector
-that remains ski-connected within one owner scope maps back to the existing
-area as `not_separate`; Pengelstein and Resterhöhe within KitzSki are the
-reference pattern. Artificial child areas must not be created merely to
-manufacture a `TerrainDomain`.
+Official map sectors, webcams, limited-area tickets, dedicated identity pages,
+and child-scoped metrics are discovery or terrain-identity signals. They do not
+create a `SkiArea` without a durable operations, weather, or full-local-pass
+owner and material separation value. Connected candidates default to the parent
+and require two independent owner categories, including operations or weather,
+before being split. Disconnected or transfer-required complete terrain may
+qualify with one owner category. Every candidate is compared with its nearest
+parent scope; provider aggregation is corroborating evidence rather than the
+deciding rule. Artificial child areas must not be created merely to manufacture
+a `TerrainDomain`. See ADR 0016.
 
 Accommodation and terrain boundaries remain independent. A distinct,
 bookable accommodation market such as Kirchberg may justify its own
@@ -1070,7 +1083,7 @@ Sourceable missing entities that fit the active curation batch should be added
 in that PR. Deferral is an escape hatch for work that would make the batch
 unmanageably broad, mix a separate model concern, depend on uncurated graph
 nodes, require weather-identity migration, or remain genuinely unresolved. In
-schema-version-2 reports, every `deferred` or `unresolved` assessment carries a
+schema-version-3 reports, every `deferred` or `unresolved` assessment carries a
 canonical `backlog_ref` to one consolidated regional H3 item under
 `Catalog Curation Refinements`; that item contains the exact
 `candidate_kind:candidate_id` marker for each linked assessment. Other

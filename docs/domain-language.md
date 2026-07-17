@@ -278,6 +278,20 @@ archive weather, climatology, season windows, elevation, terrain metrics, and
 skill support attach to ski_area_id. A ski area may be reachable from several
 stay destinations.
 
+A separate ski area must have complete terrain scope, at least one durable
+operations, weather, or full-local-pass owner, and material separation value.
+Dedicated identity pages, child-scoped metrics, individual lift tickets,
+webcams, and named map sectors are supporting evidence only. Curation must
+compare every candidate with its nearest parent owner scope.
+
+A ski-connected child remains part of its parent by default. Splitting it
+requires two independent owner categories across operations, weather, and full
+local pass, including operations or weather. A disconnected or
+transfer-required complete area may qualify with one owner category. A
+recognizable sector that fails these gates is `not_separate`; it may become a
+future ski sub-area if product needs justify that layer. Provider boundaries
+corroborate this assessment but do not determine it.
+
 **Piste difficulty profile**
 
 A ski-area breakdown normalized into beginner, intermediate, and advanced

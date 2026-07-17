@@ -77,7 +77,7 @@ def build_intent_snapshot(
     base: str,
     head: str,
 ) -> IntentSnapshot:
-    """Build canonical output intent, including schema-v2 report targets."""
+    """Build canonical output intent, including schema-v3 report targets."""
     snapshot = build_preparation_intent_snapshot(repository, base, head)
     report_targets: set[str] = set()
     for path in sorted(snapshot.changed_paths):
@@ -297,8 +297,8 @@ def _report_targets(
                 f"cannot read changed report {path}: {error}"
             ) from error
         raise
-    if report.get("report_schema_version") != 2:
-        raise IntentValidationError(f"{path}: report_schema_version must be 2")
+    if report.get("report_schema_version") != 3:
+        raise IntentValidationError(f"{path}: report_schema_version must be 3")
     try:
         typed_report = CatalogCurationReport.model_validate(report)
         validate_catalog_curation_report(typed_report)

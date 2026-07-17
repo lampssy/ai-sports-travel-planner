@@ -43,7 +43,7 @@ CatalogFieldCoverageStatus = Literal[
 ]
 CatalogIssueSeverity = Literal["error", "warning"]
 CatalogReviewScope = Literal["full", "narrow"]
-CatalogReportSchemaVersion = Literal[1, 2]
+CatalogReportSchemaVersion = Literal[1, 2, 3]
 CatalogScopeCandidateKind = Literal[
     "stay_destination",
     "stay_base",
@@ -101,6 +101,34 @@ CatalogBoundaryFailureRoute = Literal[
     "external_pass_context",
     "blocked",
 ]
+CatalogSkiAreaTerrainScope = Literal["complete", "sector", "unresolved"]
+CatalogSkiAreaParentConnectivity = Literal[
+    "connected",
+    "transfer_required",
+    "disconnected",
+    "not_applicable",
+    "unknown",
+]
+CatalogSkiAreaOwnerScope = Literal[
+    "independent",
+    "parent_owned",
+    "mixed",
+    "unknown",
+]
+CatalogSkiAreaPassScope = Literal[
+    "full_local",
+    "limited",
+    "shared_only",
+    "none",
+    "unknown",
+]
+CatalogSkiAreaProviderConsensus = Literal[
+    "separate",
+    "aggregated",
+    "mixed",
+    "unknown",
+]
+CatalogSkiAreaSeparationValue = Literal["material", "redundant", "unresolved"]
 JsonValue = str | int | float | bool | None | dict[str, Any] | list[Any]
 
 SOURCE_BACKED_TRUST_STATUSES = {"verified", "verified_with_adjustment"}
@@ -123,7 +151,7 @@ CATALOG_BACKLOG_REF_PREFIX = "docs/product-backlog.md#"
 CATALOG_BACKLOG_REF_PATTERN = re.compile(
     rf"^{re.escape(CATALOG_BACKLOG_REF_PREFIX)}[a-z0-9]+(?:-[a-z0-9]+)*$"
 )
-INDEPENDENT_SKI_AREA_SIGNALS = frozenset(
+LEGACY_INDEPENDENT_SKI_AREA_SIGNALS = frozenset(
     {
         "official_independent_identity",
         "separate_operator",
@@ -133,6 +161,14 @@ INDEPENDENT_SKI_AREA_SIGNALS = frozenset(
         "full_local_pass",
     }
 )
+SKI_AREA_TERRAIN_IDENTITY_SIGNALS = frozenset(
+    {"official_independent_identity", "child_scoped_terrain_metrics"}
+)
+SKI_AREA_OPERATION_OWNER_SIGNALS = frozenset(
+    {"separate_operator", "independent_status_or_schedule"}
+)
+SKI_AREA_WEATHER_OWNER_SIGNALS = frozenset({"independent_weather_presentation"})
+SKI_AREA_PASS_OWNER_SIGNALS = frozenset({"full_local_pass"})
 SCOPE_ID_FIELD_PATHS: Mapping[CatalogScopeCandidateKind, str] = MappingProxyType(
     {
         "stay_destination": "stay_destination_id",
@@ -668,6 +704,39 @@ class CatalogEntityScopeTargetRef(CatalogCurationContractModel):
         return self.target_type, self.target_id
 
 
+class CatalogSkiAreaBoundaryAssessment(CatalogCurationContractModel):
+    parent_ski_area_id: str | None = None
+    terrain_scope: CatalogSkiAreaTerrainScope
+    connectivity_to_parent: CatalogSkiAreaParentConnectivity
+    operational_scope: CatalogSkiAreaOwnerScope
+    weather_scope: CatalogSkiAreaOwnerScope
+    pass_scope: CatalogSkiAreaPassScope
+    provider_consensus: CatalogSkiAreaProviderConsensus
+    separation_value: CatalogSkiAreaSeparationValue
+    evidence_refs: list[str] = Field(min_length=1)
+
+    @field_validator("parent_ski_area_id")
+    @classmethod
+    def validate_parent_ski_area_id(cls, value: str | None) -> str | None:
+        return _validate_optional_non_blank_string(value, "parent_ski_area_id")
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
+        return _validate_string_list(values, "ski-area boundary evidence_refs")
+
+    @model_validator(mode="after")
+    def validate_parent_reference(self) -> CatalogSkiAreaBoundaryAssessment:
+        if self.connectivity_to_parent == "not_applicable":
+            if self.parent_ski_area_id is not None:
+                raise ValueError(
+                    "not_applicable connectivity forbids parent_ski_area_id"
+                )
+        elif self.parent_ski_area_id is None:
+            raise ValueError("ski-area parent connectivity requires parent_ski_area_id")
+        return self
+
+
 class CatalogEntityScopeAssessment(CatalogCurationContractModel):
     candidate_id: str = Field(min_length=1)
     candidate_name: str = Field(min_length=1)
@@ -678,6 +747,7 @@ class CatalogEntityScopeAssessment(CatalogCurationContractModel):
     target_refs: list[CatalogEntityScopeTargetRef] = Field(default_factory=list)
     backlog_ref: str | None = None
     rationale: str = Field(min_length=1)
+    ski_area_boundary: CatalogSkiAreaBoundaryAssessment | None = None
 
     @field_validator("candidate_id", "candidate_name", "rationale")
     @classmethod
@@ -1029,6 +1099,94 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
         raise CatalogValidationError(sorted(set(issues)))
 
 
+def _validate_ski_area_boundary_assessment(
+    assessment: CatalogEntityScopeAssessment,
+    issues: list[str],
+) -> None:
+    boundary = assessment.ski_area_boundary
+    if boundary is None:
+        return
+
+    candidate_id = assessment.candidate_id
+    signals = set(assessment.signals)
+    if assessment.candidate_kind != "ski_area":
+        issues.append(
+            f"{candidate_id}: ski_area_boundary is only valid for ski-area candidates"
+        )
+        return
+
+    if not set(boundary.evidence_refs).issubset(assessment.evidence_refs):
+        issues.append(
+            f"{candidate_id}: ski-area boundary evidence must also appear in "
+            "scope evidence_refs"
+        )
+
+    if assessment.disposition == "not_separate":
+        target_ids = {target.target_id for target in assessment.target_refs}
+        if (
+            boundary.parent_ski_area_id is None
+            or boundary.parent_ski_area_id not in target_ids
+        ):
+            issues.append(
+                f"{candidate_id}: not_separate ski area requires its parent "
+                "as the catalog target"
+            )
+        if boundary.separation_value != "redundant":
+            issues.append(
+                f"{candidate_id}: not_separate ski area requires redundant "
+                "separation value"
+            )
+        return
+
+    if assessment.disposition not in {"represented", "add_entity"}:
+        return
+
+    if boundary.terrain_scope != "complete":
+        issues.append(
+            f"{candidate_id}: separate ski area requires complete terrain scope"
+        )
+    if not SKI_AREA_TERRAIN_IDENTITY_SIGNALS.intersection(signals):
+        issues.append(
+            f"{candidate_id}: separate ski area requires complete terrain "
+            "identity evidence"
+        )
+    if boundary.separation_value != "material":
+        issues.append(
+            f"{candidate_id}: separate ski area requires material separation value"
+        )
+    if boundary.connectivity_to_parent == "unknown":
+        issues.append(
+            f"{candidate_id}: separate ski area requires resolved parent connectivity"
+        )
+
+    independent_operations = boundary.operational_scope == "independent" and bool(
+        SKI_AREA_OPERATION_OWNER_SIGNALS.intersection(signals)
+    )
+    independent_weather = boundary.weather_scope == "independent" and bool(
+        SKI_AREA_WEATHER_OWNER_SIGNALS.intersection(signals)
+    )
+    independent_pass = boundary.pass_scope == "full_local" and bool(
+        SKI_AREA_PASS_OWNER_SIGNALS.intersection(signals)
+    )
+    owner_categories = sum(
+        (independent_operations, independent_weather, independent_pass)
+    )
+    if owner_categories == 0:
+        issues.append(
+            f"{candidate_id}: separate ski area requires independent operations, "
+            "weather, or full local pass evidence"
+        )
+        return
+
+    if boundary.connectivity_to_parent == "connected" and (
+        owner_categories < 2 or not (independent_operations or independent_weather)
+    ):
+        issues.append(
+            f"{candidate_id}: connected ski area requires two independent owner "
+            "categories, including operations or weather"
+        )
+
+
 def _validate_entity_scope_assessments(
     report: CatalogCurationReport,
     reviewed_by_key: Mapping[tuple[str, str], CatalogReviewedTarget],
@@ -1037,8 +1195,11 @@ def _validate_entity_scope_assessments(
     issues: list[str],
 ) -> None:
     assessments = report.entity_scope_assessments
-    if report.report_schema_version == 2 and not assessments:
-        issues.append("schema version 2 requires entity_scope_assessments")
+    if report.report_schema_version >= 2 and not assessments:
+        issues.append(
+            f"schema version {report.report_schema_version} requires "
+            "entity_scope_assessments"
+        )
         return
 
     candidate_ids = [assessment.candidate_id for assessment in assessments]
@@ -1052,7 +1213,7 @@ def _validate_entity_scope_assessments(
         if assessment.is_passing
     }
     for assessment in assessments:
-        if report.report_schema_version == 2:
+        if report.report_schema_version >= 2:
             if assessment.disposition in BACKLOG_REQUIRED_SCOPE_DISPOSITIONS:
                 if assessment.backlog_ref is None:
                     issues.append(
@@ -1073,6 +1234,17 @@ def _validate_entity_scope_assessments(
             issues.append(
                 f"{assessment.candidate_id}: unknown scope evidence {evidence_id}"
             )
+        if (
+            report.report_schema_version == 3
+            and assessment.candidate_kind == "ski_area"
+            and assessment.ski_area_boundary is None
+        ):
+            issues.append(
+                f"{assessment.candidate_id}: schema version 3 ski-area "
+                "assessment requires boundary contract"
+            )
+        if report.report_schema_version == 3:
+            _validate_ski_area_boundary_assessment(assessment, issues)
         for target_ref in assessment.target_refs:
             referenced_target_keys.add(target_ref.target_key)
             if target_ref.target_key not in reviewed_by_key:
@@ -1111,7 +1283,8 @@ def _validate_entity_scope_assessments(
         if (
             assessment.candidate_kind == "ski_area"
             and assessment.disposition == "add_entity"
-            and not INDEPENDENT_SKI_AREA_SIGNALS.intersection(assessment.signals)
+            and report.report_schema_version < 3
+            and not LEGACY_INDEPENDENT_SKI_AREA_SIGNALS.intersection(assessment.signals)
         ):
             issues.append(
                 f"{assessment.candidate_id}: new ski area requires an "
@@ -1139,7 +1312,7 @@ def _validate_entity_scope_assessments(
                 "ski_connected_terrain"
             )
 
-    if report.report_schema_version != 2:
+    if report.report_schema_version < 2:
         return
     for target_key, target in reviewed_by_key.items():
         if (
@@ -1299,6 +1472,44 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
                 f"{_code_cell(assessment.disposition)} | {signals} | {targets} | "
                 f"{evidence} | {backlog} | {_markdown_cell(assessment.rationale)} |"
             )
+        ski_area_assessments = [
+            assessment
+            for assessment in report.entity_scope_assessments
+            if assessment.ski_area_boundary is not None
+        ]
+        if ski_area_assessments:
+            lines.extend(
+                [
+                    "",
+                    "## Ski-Area Boundary Assessments",
+                    "",
+                    "| Candidate | Parent | Terrain | Connectivity | Operations | "
+                    "Weather | Pass | Provider Consensus | Separation Value | "
+                    "Evidence |",
+                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                ]
+            )
+            for assessment in ski_area_assessments:
+                boundary = assessment.ski_area_boundary
+                assert boundary is not None
+                parent = (
+                    _code_cell(boundary.parent_ski_area_id)
+                    if boundary.parent_ski_area_id is not None
+                    else ""
+                )
+                evidence = ", ".join(
+                    _code_cell(evidence_id) for evidence_id in boundary.evidence_refs
+                )
+                lines.append(
+                    f"| {_code_cell(assessment.candidate_id)} | {parent} | "
+                    f"{_code_cell(boundary.terrain_scope)} | "
+                    f"{_code_cell(boundary.connectivity_to_parent)} | "
+                    f"{_code_cell(boundary.operational_scope)} | "
+                    f"{_code_cell(boundary.weather_scope)} | "
+                    f"{_code_cell(boundary.pass_scope)} | "
+                    f"{_code_cell(boundary.provider_consensus)} | "
+                    f"{_code_cell(boundary.separation_value)} | {evidence} |"
+                )
     lines.extend(
         [
             "",

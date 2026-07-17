@@ -118,6 +118,68 @@ def _scope_report_payload(
     return payload
 
 
+def _ski_area_boundary_payload(
+    *,
+    parent_ski_area_id: str | None = None,
+    terrain_scope: str = "complete",
+    connectivity_to_parent: str = "not_applicable",
+    operational_scope: str = "unknown",
+    weather_scope: str = "unknown",
+    pass_scope: str = "none",
+    provider_consensus: str = "separate",
+    separation_value: str = "material",
+    evidence_refs: list[str] | None = None,
+) -> dict:
+    return {
+        "parent_ski_area_id": parent_ski_area_id,
+        "terrain_scope": terrain_scope,
+        "connectivity_to_parent": connectivity_to_parent,
+        "operational_scope": operational_scope,
+        "weather_scope": weather_scope,
+        "pass_scope": pass_scope,
+        "provider_consensus": provider_consensus,
+        "separation_value": separation_value,
+        "evidence_refs": evidence_refs or ["example-scope"],
+    }
+
+
+def _complete_new_ski_area_report_target(payload: dict, target_id: str) -> None:
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": target_id,
+            "scope": "narrow",
+            "required_field_paths": ["ski_area_id", "name"],
+        }
+    )
+    payload["changes"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": target_id,
+            "field_path": "ski_area_id",
+            "before": None,
+            "after": target_id,
+            "trust_status": "estimated",
+        }
+    )
+    payload["field_coverage"].extend(
+        [
+            {
+                "target_type": "ski_area",
+                "target_id": target_id,
+                "field_path": "ski_area_id",
+                "status": "changed",
+            },
+            {
+                "target_type": "ski_area",
+                "target_id": target_id,
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+        ]
+    )
+
+
 def test_canonical_paths_cover_only_normalized_catalog_entities() -> None:
     assert set(CANONICAL_FIELD_PATHS) == NORMALIZED_TARGET_TYPES
     assert "stay_destination_id" in CANONICAL_FIELD_PATHS["stay_destination"]
@@ -415,7 +477,270 @@ def test_connected_named_sector_can_be_assessed_as_not_separate() -> None:
     validate_catalog_curation_report(report)
 
 
-def test_independent_owner_signal_can_support_a_new_ski_area() -> None:
+def test_schema_three_ski_area_assessment_requires_boundary_contract() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="not_separate",
+        signals=["official_map_sector", "ski_connected_terrain"],
+        target_type="ski_area",
+        target_id="parent-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "parent-area",
+            "scope": "narrow",
+            "required_field_paths": ["name"],
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "parent-area",
+            "field_path": "name",
+            "status": "reviewed-no-change",
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="schema version 3 ski-area assessment requires boundary contract",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_rejects_ski_area_identity_without_owner_evidence() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="add_entity",
+        signals=["official_independent_identity", "child_scoped_terrain_metrics"],
+        target_type="ski_area",
+        target_id="identity-only-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload()
+    )
+    _complete_new_ski_area_report_target(payload, "identity-only-area")
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="requires independent operations, weather, or full local pass evidence",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_connected_ski_area_requires_two_owner_categories() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="add_entity",
+        signals=[
+            "official_independent_identity",
+            "full_local_pass",
+            "ski_connected_terrain",
+        ],
+        target_type="ski_area",
+        target_id="connected-pass-only-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(
+            parent_ski_area_id="parent-area",
+            connectivity_to_parent="connected",
+            operational_scope="parent_owned",
+            weather_scope="parent_owned",
+            pass_scope="full_local",
+            provider_consensus="aggregated",
+        )
+    )
+    _complete_new_ski_area_report_target(payload, "connected-pass-only-area")
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="connected ski area requires two independent owner categories",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_accepts_connected_area_with_pass_and_operations() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="add_entity",
+        signals=[
+            "official_independent_identity",
+            "independent_status_or_schedule",
+            "full_local_pass",
+            "ski_connected_terrain",
+        ],
+        target_type="ski_area",
+        target_id="connected-independent-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(
+            parent_ski_area_id="parent-area",
+            connectivity_to_parent="connected",
+            operational_scope="independent",
+            pass_scope="full_local",
+        )
+    )
+    _complete_new_ski_area_report_target(payload, "connected-independent-area")
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_curation_report(report)
+
+
+def test_schema_three_accepts_transfer_area_with_independent_weather() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="add_entity",
+        signals=[
+            "official_independent_identity",
+            "independent_weather_presentation",
+            "disconnected_terrain",
+        ],
+        target_type="ski_area",
+        target_id="transfer-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(
+            parent_ski_area_id="parent-area",
+            connectivity_to_parent="transfer_required",
+            weather_scope="independent",
+        )
+    )
+    _complete_new_ski_area_report_target(payload, "transfer-area")
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_curation_report(report)
+
+
+def test_schema_three_not_separate_requires_redundant_separation_value() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="not_separate",
+        signals=["official_map_sector", "ski_connected_terrain"],
+        target_type="ski_area",
+        target_id="parent-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(
+            parent_ski_area_id="parent-area",
+            terrain_scope="sector",
+            connectivity_to_parent="connected",
+            operational_scope="parent_owned",
+            weather_scope="parent_owned",
+            pass_scope="shared_only",
+            provider_consensus="aggregated",
+            separation_value="material",
+        )
+    )
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "parent-area",
+            "scope": "narrow",
+            "required_field_paths": ["name"],
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "parent-area",
+            "field_path": "name",
+            "status": "reviewed-no-change",
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="not_separate ski area requires redundant separation value",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_not_separate_requires_parent_target() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="not_separate",
+        signals=["official_map_sector"],
+        target_type="ski_area",
+        target_id="parent-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(
+            terrain_scope="sector",
+            connectivity_to_parent="not_applicable",
+            operational_scope="parent_owned",
+            weather_scope="parent_owned",
+            pass_scope="shared_only",
+            provider_consensus="aggregated",
+            separation_value="redundant",
+        )
+    )
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "parent-area",
+            "scope": "narrow",
+            "required_field_paths": ["name"],
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "parent-area",
+            "field_path": "name",
+            "status": "reviewed-no-change",
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="not_separate ski area requires its parent as the catalog target",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_separate_area_requires_resolved_parent_connectivity() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="add_entity",
+        signals=[
+            "official_independent_identity",
+            "independent_weather_presentation",
+        ],
+        target_type="ski_area",
+        target_id="unknown-connectivity-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(
+            parent_ski_area_id="parent-area",
+            connectivity_to_parent="unknown",
+            weather_scope="independent",
+        )
+    )
+    _complete_new_ski_area_report_target(payload, "unknown-connectivity-area")
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="separate ski area requires resolved parent connectivity",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_two_independent_owner_signal_can_support_new_ski_area() -> None:
     payload = _scope_report_payload(
         candidate_kind="ski_area",
         disposition="add_entity",
@@ -503,6 +828,37 @@ def test_scope_assessment_markdown_is_rendered() -> None:
     assert "## Entity Scope Assessments" in rendered
     assert "`example-access`" in rendered
     assert "`represented`" in rendered
+
+
+def test_ski_area_boundary_markdown_is_rendered() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="not_separate",
+        signals=["official_map_sector", "ski_connected_terrain"],
+        target_type="ski_area",
+        target_id="parent-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(
+            parent_ski_area_id="parent-area",
+            terrain_scope="sector",
+            connectivity_to_parent="connected",
+            operational_scope="parent_owned",
+            weather_scope="parent_owned",
+            pass_scope="shared_only",
+            provider_consensus="aggregated",
+            separation_value="redundant",
+        )
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    rendered = render_catalog_curation_report_markdown(report)
+
+    assert "## Ski-Area Boundary Assessments" in rendered
+    assert "`parent-area`" in rendered
+    assert "`parent_owned`" in rendered
+    assert "`redundant`" in rendered
 
 
 def test_scope_assessment_markdown_renders_backlog_reference() -> None:

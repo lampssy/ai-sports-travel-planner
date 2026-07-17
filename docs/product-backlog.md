@@ -870,7 +870,7 @@ Proposed schema and contract work:
   stored map URL exactly.
 - Add `official_trail_map.url` and `official_trail_map.season_label` to canonical
   ski-region curation coverage.
-- Allow `ski_region` candidates in schema-version-2 entity-scope assessments so
+- Allow `ski_region` candidates in schema-version-3 entity-scope assessments so
   new trip-market and regional-network umbrellas are reviewed explicitly.
 - Update domain language, the relevant ADR, catalog curation/review skills, and
   validation tests with the ownership hierarchy above.

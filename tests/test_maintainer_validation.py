@@ -341,7 +341,7 @@ def test_validate_curation_runs_fixed_commands_for_one_exact_head(
     assert "app.data.validate_catalog" in commands[0]
     assert "app.data.validate_catalog_curation" in commands[1]
     schema_flag = commands[1].index("--require-report-schema-version")
-    assert commands[1][schema_flag + 1] == "2"
+    assert commands[1][schema_flag + 1] == "3"
     assert "--skip-product-backlog-validation" in commands[1]
     assert "--product-backlog-path" not in commands[1]
     assert "tests/test_catalog_curation_backlog.py" not in commands[2]
@@ -552,7 +552,7 @@ def _report_payload(
                 }
             )
     return {
-        "report_schema_version": 2,
+        "report_schema_version": 3,
         "title": "Nendaz Village onboarding",
         "summary": "Adds a separately represented stay base.",
         "reviewed_targets": [
