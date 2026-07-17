@@ -1,8 +1,58 @@
 import type {
+  RefinementProposal,
   SearchResponse,
   SearchV4Configuration,
   SearchV4RecommendationGroup,
 } from "../../../src/types";
+
+export const developmentStyleRefinement: RefinementProposal = {
+  question_id: "development-style",
+  question: "What kind of place would you prefer to stay in?",
+  reason:
+    "Your preferred village or resort style can change which stay base fits you best.",
+  options: [
+    {
+      label: "Traditional mountain village",
+      description: "Prefer a base with traditional settlement character.",
+      intent_changed: true,
+      group_priority_patches: [],
+      factor_preference_patches: [
+        {
+          factor_id: "development_style",
+          mode: "prefer",
+          importance: "normal",
+          values: ["traditional"],
+        },
+      ],
+      objective_patches: [],
+      preview: {
+        top_rank_changes: [
+          {
+            ski_region_id: "paradiski",
+            previous_rank: 2,
+            preview_rank: 1,
+          },
+        ],
+        eligible_candidate_count_delta: 0,
+      },
+    },
+    {
+      label: "Purpose-built ski resort",
+      description: "Prefer a purpose-built ski resort base.",
+      intent_changed: false,
+      group_priority_patches: [],
+      factor_preference_patches: [
+        {
+          factor_id: "development_style",
+          mode: "prefer",
+          importance: "normal",
+          values: ["planned_resort"],
+        },
+      ],
+      objective_patches: [],
+    },
+  ],
+};
 
 const tignesConfiguration: SearchV4Configuration = {
   candidate_id: "tignes-access--tignes-val-disere-pass",

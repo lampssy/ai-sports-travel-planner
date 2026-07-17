@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+import re
 import tomllib
 from collections import Counter
 from collections.abc import Mapping, Sequence
@@ -7,16 +10,45 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Annotated, Self
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    ValidationError,
+    model_validator,
+)
 
 from app.domain.search_policy import SearchPolicy, load_search_policy
-from app.domain.search_v4_models import FactorPreferencePatch, SearchObjective
+from app.domain.search_refinement import (
+    RefinementCandidateState,
+    RefinementOption,
+    RefinementProposal,
+    RefinementValidationError,
+    ValidatedRefinementProposal,
+    validate_refinement_proposal,
+)
+from app.domain.search_v4_models import (
+    FactorPreferencePatch,
+    SearchIntent,
+    SearchObjective,
+)
 
 _NonBlankText = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1),
 ]
 _MODEL_CONFIG = ConfigDict(frozen=True, extra="forbid")
+_MAX_INTERACTION_QUESTION_CHARACTERS = 280
+_MAX_INTERACTION_REASON_CHARACTERS = 500
+_QUESTION_START = re.compile(
+    r"^(?:What|Which|Would|How|Do|Does|Is|Are)\b",
+    flags=re.IGNORECASE,
+)
+_MULTI_TOPIC_FALLBACK = (
+    "Which of these trip preferences matters most to you?",
+    "Your answer can distinguish otherwise similar trip options.",
+)
 DEFAULT_REFINEMENT_PRESENTATION_PATH = (
     Path(__file__).resolve().parents[1]
     / "config"
@@ -137,6 +169,151 @@ class RefinementPresentationPolicy(_PresentationModel):
                 if answer.objective_patch is not None
             ),
         )
+
+
+def resolve_interaction_copy(
+    question: str,
+    reason: str,
+    topic_ids: Sequence[str],
+    candidate_ids: Sequence[str],
+    presentation: RefinementPresentationPolicy,
+) -> tuple[str, str]:
+    """Keep bounded traveller-facing copy and replace unsafe fields independently."""
+
+    fallback_question, fallback_reason = _fallback_copy(topic_ids, presentation)
+    blocked_tokens = (*presentation.blocked_copy_terms, *candidate_ids)
+    resolved_question = (
+        question if _safe_question(question, blocked_tokens) else fallback_question
+    )
+    resolved_reason = (
+        reason if _safe_reason(reason, blocked_tokens) else fallback_reason
+    )
+    return resolved_question, resolved_reason
+
+
+def semantic_refinement_question_id(
+    *,
+    topic_ids: Sequence[str],
+    answer_id_sets: Sequence[Sequence[str]],
+    presentation: RefinementPresentationPolicy,
+) -> str:
+    semantic_payload = {
+        "presentation_policy_version": presentation.presentation_policy_version,
+        "topic_ids": sorted(topic_ids),
+        "answer_id_sets": sorted(sorted(answer_ids) for answer_ids in answer_id_sets),
+    }
+    semantic_digest = hashlib.sha256(
+        json.dumps(
+            semantic_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+    return f"refinement-{semantic_digest}"
+
+
+def build_deterministic_refinement_fallback(
+    *,
+    intent: SearchIntent,
+    candidates: Sequence[RefinementCandidateState],
+    policy: SearchPolicy,
+    presentation: RefinementPresentationPolicy,
+    already_answered_question_ids: frozenset[str] = frozenset(),
+) -> ValidatedRefinementProposal | None:
+    """Return the first material registry-backed fallback question."""
+
+    for topic in sorted(presentation.topics, key=lambda item: item.fallback_priority):
+        try:
+            options = tuple(
+                _fallback_option(answer_id, presentation)
+                for answer_id in topic.fallback_answer_ids
+            )
+            proposal = RefinementProposal(
+                question_id=semantic_refinement_question_id(
+                    topic_ids=(topic.topic_id,),
+                    answer_id_sets=tuple(
+                        (answer_id,) for answer_id in topic.fallback_answer_ids
+                    ),
+                    presentation=presentation,
+                ),
+                question=topic.fallback_question,
+                reason=topic.fallback_reason,
+                options=options,
+            )
+            return validate_refinement_proposal(
+                proposal=proposal,
+                intent=intent,
+                candidates=candidates,
+                policy=policy,
+                already_answered_question_ids=already_answered_question_ids,
+            )
+        except (RefinementValidationError, ValidationError):
+            continue
+    return None
+
+
+def _fallback_option(
+    answer_id: str,
+    presentation: RefinementPresentationPolicy,
+) -> RefinementOption:
+    resolved = presentation.resolve_answer_ids((answer_id,))
+    return RefinementOption(
+        label=resolved.label,
+        description=resolved.description,
+        group_priority_patches=(),
+        factor_preference_patches=resolved.factor_preferences,
+        objective_patches=resolved.objectives,
+    )
+
+
+def _fallback_copy(
+    topic_ids: Sequence[str],
+    presentation: RefinementPresentationPolicy,
+) -> tuple[str, str]:
+    if not topic_ids:
+        raise ValueError("refinement interaction copy requires at least one topic")
+    if len(topic_ids) > 1:
+        return _MULTI_TOPIC_FALLBACK
+    try:
+        topic = presentation.topic_by_id[topic_ids[0]]
+    except KeyError as error:
+        raise KeyError(f"unknown refinement topic ID: {topic_ids[0]}") from error
+    return topic.fallback_question, topic.fallback_reason
+
+
+def _safe_question(question: str, blocked_tokens: Sequence[str]) -> bool:
+    return (
+        len(question) <= _MAX_INTERACTION_QUESTION_CHARACTERS
+        and question.endswith("?")
+        and _QUESTION_START.match(question) is not None
+        and not _contains_digit_or_percent(question)
+        and not _contains_blocked_token(question, blocked_tokens)
+    )
+
+
+def _safe_reason(reason: str, blocked_tokens: Sequence[str]) -> bool:
+    return (
+        len(reason) <= _MAX_INTERACTION_REASON_CHARACTERS
+        and not _contains_digit_or_percent(reason)
+        and not _contains_blocked_token(reason, blocked_tokens)
+    )
+
+
+def _contains_digit_or_percent(text: str) -> bool:
+    return "%" in text or any(character.isdigit() for character in text)
+
+
+def _contains_blocked_token(text: str, tokens: Sequence[str]) -> bool:
+    return any(
+        re.search(
+            rf"(?<!\w){re.escape(token)}(?!\w)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        is not None
+        for token in tokens
+        if token
+    )
 
 
 def load_refinement_presentation_policy(

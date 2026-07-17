@@ -37,6 +37,25 @@ const refinement: RefinementProposal = {
   ],
 };
 
+test("uses the concrete question as the heading and reason as support text", () => {
+  render(
+    <RefinementCard
+      refinement={refinement}
+      loading={false}
+      error={null}
+      onApply={vi.fn()}
+      onSkip={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen.getByRole("heading", { level: 2, name: refinement.question }),
+  ).toBeVisible();
+  expect(screen.getByText(refinement.reason)).toHaveClass(
+    "contextual-refinement__reason",
+  );
+});
+
 test("previews a selected option before apply and supports clear and skip", async () => {
   const user = userEvent.setup();
   const onApply = vi.fn();

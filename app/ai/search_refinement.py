@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import time
 from collections import Counter
@@ -26,7 +25,11 @@ from app.domain.search_refinement import (
     ValidatedRefinementProposal,
     validate_refinement_proposal,
 )
-from app.domain.search_refinement_presentation import RefinementPresentationPolicy
+from app.domain.search_refinement_presentation import (
+    RefinementPresentationPolicy,
+    resolve_interaction_copy,
+    semantic_refinement_question_id,
+)
 from app.domain.search_v4_models import SearchIntent
 from app.observability.parser import record_llm_failure, record_llm_result
 
@@ -136,6 +139,7 @@ def compile_refinement_selection(
     presentation: RefinementPresentationPolicy,
     *,
     eligible_topic_answer_ids: Mapping[str, frozenset[str]],
+    candidate_ids: Sequence[str],
 ) -> RefinementProposal:
     """Compile provider-selected IDs into the stable public refinement contract."""
 
@@ -174,18 +178,19 @@ def compile_refinement_selection(
                 "refinement answer ID is not eligible for this request: "
                 + ", ".join(sorted(unexposed_answer_ids))
             )
-        try:
-            resolved = presentation.resolve_answer_ids(option.answer_ids)
-        except (KeyError, ValueError) as error:
-            raise RefinementValidationError(str(error)) from error
         answer_factor_ids = {
             presentation.answer_by_id[answer_id].factor_id
             for answer_id in option.answer_ids
         }
+        if len(answer_factor_ids) != len(option.answer_ids):
+            raise RefinementValidationError(
+                "a refinement option may select at most one answer per factor"
+            )
         if not answer_factor_ids <= selected_factor_ids:
             raise RefinementValidationError(
                 "refinement answer ID belongs outside selected topics"
             )
+        resolved = presentation.resolve_answer_ids(option.answer_ids)
         represented_factor_ids.update(answer_factor_ids)
         compiled_options.append(
             RefinementOption(
@@ -201,65 +206,23 @@ def compile_refinement_selection(
             "every selected refinement topic must be represented by an option"
         )
 
-    semantic_payload = {
-        "presentation_policy_version": presentation.presentation_policy_version,
-        "topic_ids": sorted(topic_ids),
-        "answer_id_sets": sorted(
-            [sorted(option.answer_ids) for option in selection.options]
-        ),
-    }
-    semantic_digest = hashlib.sha256(
-        json.dumps(
-            semantic_payload,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-    ).hexdigest()[:16]
+    question, reason = resolve_interaction_copy(
+        selection.question,
+        selection.reason,
+        topic_ids,
+        candidate_ids,
+        presentation,
+    )
     return RefinementProposal(
-        question_id=f"refinement-{semantic_digest}",
-        question=selection.question,
-        reason=selection.reason,
+        question_id=semantic_refinement_question_id(
+            topic_ids=topic_ids,
+            answer_id_sets=tuple(option.answer_ids for option in selection.options),
+            presentation=presentation,
+        ),
+        question=question,
+        reason=reason,
         options=tuple(compiled_options),
     )
-
-
-def build_deterministic_refinement_fallback(
-    *,
-    intent: SearchIntent,
-    candidates: Sequence[RefinementCandidateState],
-    policy: SearchPolicy,
-    presentation: RefinementPresentationPolicy,
-    already_answered_question_ids: frozenset[str] = frozenset(),
-) -> ValidatedRefinementProposal | None:
-    """Return the first material policy-backed fallback question."""
-
-    for topic in sorted(presentation.topics, key=lambda item: item.fallback_priority):
-        selection = _RefinementQuestionSelection(
-            topic_ids=(topic.topic_id,),
-            question=topic.fallback_question,
-            reason=topic.fallback_reason,
-            options=tuple(
-                _RefinementOptionSelection(answer_ids=(answer_id,))
-                for answer_id in topic.fallback_answer_ids
-            ),
-        )
-        try:
-            proposal = compile_refinement_selection(
-                selection,
-                presentation,
-                eligible_topic_answer_ids={topic.topic_id: frozenset(topic.answer_ids)},
-            )
-            validated = validate_refinement_proposal(
-                proposal=proposal,
-                intent=intent,
-                candidates=candidates,
-                policy=policy,
-                already_answered_question_ids=already_answered_question_ids,
-            )
-            return validated.model_copy(update={"proposal": proposal})
-        except (RefinementValidationError, ValidationError, ValueError):
-            continue
-    return None
 
 
 def generate_refinement_proposals(
@@ -329,6 +292,9 @@ def generate_refinement_proposals(
                     selection,
                     presentation,
                     eligible_topic_answer_ids=eligible_topic_answer_ids,
+                    candidate_ids=tuple(
+                        candidate.candidate_id for candidate in candidates
+                    ),
                 )
                 validated = validate_refinement_proposal(
                     proposal=proposal,
@@ -337,10 +303,8 @@ def generate_refinement_proposals(
                     policy=policy,
                     already_answered_question_ids=already_answered_question_ids,
                 )
-                validated_items.append(
-                    validated.model_copy(update={"proposal": proposal})
-                )
-            except (ValidationError, RefinementValidationError, ValueError):
+                validated_items.append(validated)
+            except (ValidationError, RefinementValidationError):
                 continue
         question_ids = [item.proposal.question_id for item in validated_items]
         if len(question_ids) != len(set(question_ids)):
@@ -350,7 +314,7 @@ def generate_refinement_proposals(
             raise RefinementValidationError(
                 "no refinement question passed deterministic validation"
             )
-    except (ValidationError, RefinementValidationError, ValueError):
+    except (ValidationError, RefinementValidationError):
         record_llm_result(
             operation="search_refinement",
             model=client.model,

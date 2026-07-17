@@ -11,7 +11,6 @@ from app.domain.search_refinement import (
     RefinementProposal,
     RefinementValidationError,
     apply_refinement_option,
-    build_deterministic_refinement_fallback,
     validate_refinement_proposal,
 )
 from app.domain.search_v4_models import (
@@ -120,7 +119,7 @@ def test_material_group_question_passes_deterministic_impact_gate() -> None:
     assert result.impact.material is True
 
 
-def test_validated_question_copy_is_derived_from_typed_patches() -> None:
+def test_planning_validation_preserves_precompiled_presentation_copy() -> None:
     proposal = _material_proposal().model_copy(
         update={
             "question": "Verified live snowfall guarantees this result.",
@@ -153,94 +152,7 @@ def test_validated_question_copy_is_derived_from_typed_patches() -> None:
         policy=load_search_policy(),
     )
 
-    assert result.proposal.question == "What should matter more in your ranking?"
-    assert result.proposal.reason == (
-        "These choices change how your current matches are evaluated."
-    )
-    assert [option.label for option in result.proposal.options] == [
-        "Prioritize Ski experience",
-        "Prioritize Stay practicality",
-    ]
-    assert "guarantee" not in result.proposal.model_dump_json().lower()
-    assert "risk free" not in result.proposal.model_dump_json().lower()
-
-
-def test_deterministic_fallback_returns_first_policy_ordered_material_group() -> None:
-    fallback = build_deterministic_refinement_fallback(
-        intent=SearchIntent(),
-        candidates=_candidates(),
-        policy=load_search_policy(),
-    )
-
-    assert fallback is not None
-    assert fallback.proposal.question_id == "fallback-group-trip_viability"
-    assert fallback.proposal.question == (
-        "How should trip viability influence your ranking?"
-    )
-    assert fallback.proposal.reason == (
-        "These choices change how your current matches are evaluated."
-    )
-    assert fallback.proposal.options == (
-        RefinementOption(
-            label="Prioritize Trip viability",
-            description=("Give trip viability more influence in the ranking."),
-            group_priority_patches=(
-                GroupPriorityPatch(
-                    group_id="trip_viability",
-                    importance="important",
-                ),
-            ),
-        ),
-        RefinementOption(
-            label="Keep Trip viability secondary",
-            description=("Keep trip viability secondary to the overall trip balance."),
-            group_priority_patches=(
-                GroupPriorityPatch(
-                    group_id="trip_viability",
-                    importance="secondary",
-                ),
-            ),
-        ),
-    )
-    assert fallback.impact.material is True
-
-
-def test_deterministic_fallback_returns_none_when_no_group_variant_is_material() -> (
-    None
-):
-    candidates = tuple(
-        RefinementCandidateState(
-            candidate_id=f"same-{index}",
-            evaluations=(
-                _evaluation("trip_window_snow_fit", 0.7),
-                _evaluation("accessible_terrain_scale", 0.7),
-                _evaluation("stay_base_access", 0.7),
-            ),
-        )
-        for index in range(3)
-    )
-
-    assert (
-        build_deterministic_refinement_fallback(
-            intent=SearchIntent(),
-            candidates=candidates,
-            policy=load_search_policy(),
-        )
-        is None
-    )
-
-
-def test_deterministic_fallback_suppresses_answered_question_ids() -> None:
-    fallback = build_deterministic_refinement_fallback(
-        intent=SearchIntent(),
-        candidates=_candidates(),
-        policy=load_search_policy(),
-        already_answered_question_ids=frozenset({"fallback-group-ski_experience"}),
-    )
-
-    assert fallback is None or fallback.proposal.question_id != (
-        "fallback-group-ski_experience"
-    )
+    assert result.proposal == proposal
 
 
 def test_validated_refinement_preserves_each_variant_ranking() -> None:

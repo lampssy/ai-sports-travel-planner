@@ -5,14 +5,59 @@ from copy import deepcopy
 import pytest
 from pydantic import ValidationError
 
+import app.domain.search_refinement_presentation as presentation_module
+from app.domain.search_factors.models import FactorEvaluation
 from app.domain.search_policy import load_search_policy
+from app.domain.search_refinement import (
+    RefinementCandidateState,
+    RefinementValidationError,
+)
 from app.domain.search_refinement_presentation import (
     RefinementPresentationPolicy,
+    build_deterministic_refinement_fallback,
     load_refinement_presentation_policy,
+    resolve_interaction_copy,
+    semantic_refinement_question_id,
     validate_refinement_presentation_policy,
 )
+from app.domain.search_v4_models import SearchIntent
 
 pytestmark = pytest.mark.db_free
+
+
+def _evaluation(factor_id: str, utility: float, *, cap: float = 1) -> FactorEvaluation:
+    return FactorEvaluation(
+        factor_id=factor_id,
+        scope="test",
+        entity_ids=("candidate",),
+        raw_value=utility,
+        raw_utility=utility,
+        neutral_utility=0.5,
+        effective_evidence_cap=cap,
+        evidence_cap_components={"test": cap},
+        warnings=(),
+        provenance_summary="Test evidence.",
+        explanation_inputs={},
+    )
+
+
+def _fallback_candidates() -> tuple[RefinementCandidateState, ...]:
+    return tuple(
+        RefinementCandidateState(
+            candidate_id=candidate_id,
+            evaluations=(
+                _evaluation("trip_window_snow_fit", 0.7),
+                _evaluation("accessible_terrain_scale", terrain),
+                _evaluation("stay_base_access", access),
+                _evaluation("development_style", development),
+            ),
+        )
+        for candidate_id, terrain, access, development in (
+            ("traditional-base", 0.2, 0.3, 1.0),
+            ("planned-base", 1.0, 0.9, 0.0),
+            ("mixed-base", 0.6, 0.6, 0.5),
+        )
+    )
 
 
 def test_default_registry_covers_every_active_clarifiable_factor() -> None:
@@ -42,6 +87,229 @@ def test_registry_copy_resolves_to_typed_actions() -> None:
         "development_style",
         "local_pace",
     ]
+
+
+def test_safe_dynamic_interaction_copy_survives_unchanged() -> None:
+    presentation = load_refinement_presentation_policy()
+    question = "What kind of place would you prefer to stay in?"
+    reason = "Your preferred atmosphere can separate otherwise similar options."
+
+    assert resolve_interaction_copy(
+        question,
+        reason,
+        ("development_style",),
+        ("candidate-a", "candidate-b"),
+        presentation,
+    ) == (question, reason)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "How should trip viability influence your ranking?",
+        "Should factor development_style have more weight?",
+        "Would changing this score reorder candidate-a?",
+        "Would 25% more evidence change the result?",
+        "Would candidate-b suit you best?",
+        "Would option 2 suit you best?",
+        "Choose the atmosphere you want?",
+        "What kind of place would you prefer to stay in",
+        "What " + ("very " * 100) + "long preference matters?",
+    ],
+)
+def test_unsafe_dynamic_question_uses_topic_fallback(question: str) -> None:
+    presentation = load_refinement_presentation_policy()
+
+    resolved = resolve_interaction_copy(
+        question,
+        "Your preferred atmosphere can separate otherwise similar options.",
+        ("development_style",),
+        ("candidate-a", "candidate-b"),
+        presentation,
+    )
+
+    assert resolved == (
+        "What kind of place would you prefer to stay in?",
+        "Your preferred atmosphere can separate otherwise similar options.",
+    )
+
+
+def test_unsafe_reason_falls_back_without_discarding_safe_question() -> None:
+    presentation = load_refinement_presentation_policy()
+    question = "What kind of place would you prefer to stay in?"
+
+    resolved = resolve_interaction_copy(
+        question,
+        "This ranking score separates candidate-a from candidate-b.",
+        ("development_style",),
+        ("candidate-a", "candidate-b"),
+        presentation,
+    )
+
+    assert resolved == (
+        question,
+        "Your preferred village or resort style can change which stay base "
+        "fits you best.",
+    )
+
+
+def test_multiple_topics_use_generic_copy_only_for_unsafe_fields() -> None:
+    presentation = load_refinement_presentation_policy()
+    safe_reason = "Your preferred balance can separate otherwise similar options."
+
+    assert resolve_interaction_copy(
+        "How should ranking weight affect candidate-a?",
+        safe_reason,
+        ("accessible_terrain_scale", "stay_base_access"),
+        ("candidate-a",),
+        presentation,
+    ) == (
+        "Which of these trip preferences matters most to you?",
+        safe_reason,
+    )
+
+
+def test_blocked_terms_and_candidate_ids_match_whole_tokens_only() -> None:
+    presentation = load_refinement_presentation_policy()
+    question = "What kind of factory town or larger village would suit you?"
+    reason = "Your answer can distinguish otherwise similar trip options."
+
+    assert resolve_interaction_copy(
+        question,
+        reason,
+        ("development_style",),
+        ("large",),
+        presentation,
+    ) == (question, reason)
+
+
+def test_registry_fallback_uses_first_material_topic_and_authoritative_copy() -> None:
+    presentation = load_refinement_presentation_policy()
+    fallback = build_deterministic_refinement_fallback(
+        intent=SearchIntent(),
+        candidates=_fallback_candidates(),
+        policy=load_search_policy(),
+        presentation=presentation,
+    )
+
+    assert fallback is not None
+    development_topic = presentation.topic_by_id["development_style"]
+    assert fallback.proposal.question_id == semantic_refinement_question_id(
+        topic_ids=(development_topic.topic_id,),
+        answer_id_sets=tuple(
+            (answer_id,) for answer_id in development_topic.fallback_answer_ids
+        ),
+        presentation=presentation,
+    )
+    assert (
+        fallback.proposal.question == "What kind of place would you prefer to stay in?"
+    )
+    assert fallback.proposal.reason == (
+        "Your preferred village or resort style can change which stay base "
+        "fits you best."
+    )
+    assert [option.label for option in fallback.proposal.options] == [
+        "Traditional mountain village",
+        "A mix of old and new",
+        "Purpose-built ski resort",
+        "It doesn't matter",
+    ]
+    assert fallback.impact.material is True
+
+
+def test_registry_fallback_returns_none_without_actionable_trusted_variation() -> None:
+    candidates = tuple(
+        RefinementCandidateState(
+            candidate_id=f"unknown-{index}",
+            evaluations=(
+                _evaluation("trip_window_snow_fit", 0.5, cap=0),
+                _evaluation("accessible_terrain_scale", utility, cap=0),
+                _evaluation("stay_base_access", 1 - utility, cap=0),
+                _evaluation("development_style", utility, cap=0),
+            ),
+        )
+        for index, utility in enumerate((0.2, 0.6, 1.0))
+    )
+
+    assert (
+        build_deterministic_refinement_fallback(
+            intent=SearchIntent(),
+            candidates=candidates,
+            policy=load_search_policy(),
+            presentation=load_refinement_presentation_policy(),
+        )
+        is None
+    )
+
+
+def test_registry_fallback_suppresses_answered_semantic_id() -> None:
+    presentation = load_refinement_presentation_policy()
+    first = build_deterministic_refinement_fallback(
+        intent=SearchIntent(),
+        candidates=_fallback_candidates(),
+        policy=load_search_policy(),
+        presentation=presentation,
+    )
+    assert first is not None
+
+    next_fallback = build_deterministic_refinement_fallback(
+        intent=SearchIntent(),
+        candidates=_fallback_candidates(),
+        policy=load_search_policy(),
+        presentation=presentation,
+        already_answered_question_ids=frozenset({first.proposal.question_id}),
+    )
+
+    assert next_fallback is None or next_fallback.proposal.question_id != (
+        first.proposal.question_id
+    )
+
+
+def test_registry_fallback_tries_every_topic_before_returning_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    attempted_ids: list[str] = []
+
+    def reject(*, proposal: object, **_kwargs: object) -> None:
+        attempted_ids.append(getattr(proposal, "question_id"))
+        raise RefinementValidationError("not material")
+
+    monkeypatch.setattr(presentation_module, "validate_refinement_proposal", reject)
+    presentation = load_refinement_presentation_policy()
+
+    assert (
+        build_deterministic_refinement_fallback(
+            intent=SearchIntent(),
+            candidates=_fallback_candidates(),
+            policy=load_search_policy(),
+            presentation=presentation,
+        )
+        is None
+    )
+    assert len(attempted_ids) == len(presentation.topics)
+
+
+def test_registry_fallback_does_not_swallow_configuration_errors() -> None:
+    presentation = load_refinement_presentation_policy()
+    development_topic = next(
+        topic for topic in presentation.topics if topic.topic_id == "development_style"
+    ).model_copy(update={"fallback_answer_ids": ("missing.answer", "also.missing")})
+    broken = presentation.model_copy(
+        update={
+            "topics": tuple(
+                development_topic if topic.topic_id == "development_style" else topic
+                for topic in presentation.topics
+            )
+        }
+    )
+
+    with pytest.raises(KeyError, match="unknown refinement answer ID"):
+        build_deterministic_refinement_fallback(
+            intent=SearchIntent(),
+            candidates=_fallback_candidates(),
+            policy=load_search_policy(),
+            presentation=broken,
+        )
 
 
 def test_registry_resolves_task_2_provider_answer_ids() -> None:

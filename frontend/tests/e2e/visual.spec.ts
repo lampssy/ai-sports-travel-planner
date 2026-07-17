@@ -7,7 +7,10 @@ import type {
   SearchV4RefinementResponse,
   WeatherEvidencePoint,
 } from "../../../src/types";
-import { monthSearchResponse } from "./fixtures/searchV4";
+import {
+  developmentStyleRefinement,
+  monthSearchResponse,
+} from "./fixtures/searchV4";
 
 const fixedNow = new Date("2026-07-16T12:00:00Z");
 const desktop = { width: 1440, height: 900 };
@@ -216,43 +219,7 @@ function denseForecastWeatherResponse(): SearchWeatherEvidenceResponse {
 
 function resultsResponse(): SearchResponse {
   const response = structuredClone(monthSearchResponse);
-  response.refinements = [
-    {
-      question_id: "snow-priority",
-      question: "What should break the tie?",
-      reason: "One answer could reorder your top results.",
-      options: [
-        {
-          label: "Snow reliability",
-          description: "Favor high-altitude options.",
-          intent_changed: true,
-          group_priority_patches: [],
-          factor_preference_patches: [],
-          objective_patches: [
-            { factor_id: "trip_window_snow_fit", importance: "high" },
-          ],
-          preview: {
-            top_rank_changes: [
-              {
-                ski_region_id: "paradiski",
-                previous_rank: 2,
-                preview_rank: 1,
-              },
-            ],
-            eligible_candidate_count_delta: 0,
-          },
-        },
-        {
-          label: "Shorter journey",
-          description: "Minimize travel effort.",
-          intent_changed: false,
-          group_priority_patches: [],
-          factor_preference_patches: [],
-          objective_patches: [],
-        },
-      ],
-    },
-  ];
+  response.refinements = [structuredClone(developmentStyleRefinement)];
   return response;
 }
 
@@ -314,6 +281,7 @@ async function mockApi(
     const payload: SearchV4RefinementResponse = {
       search_model_version: "search-v4",
       ranking_policy_version: response.ranking_policy_version,
+      refinement_presentation_policy_version: "search-refinement-presentation-1",
       baseline_fingerprint: response.baseline_fingerprint,
       baseline_status: "current",
       refinement_status: response.refinements.length

@@ -22,7 +22,6 @@ from pydantic import (
 from app.ai.llm_client import LLMClient
 from app.ai.search_refinement import (
     RefinementGenerationResult,
-    build_deterministic_refinement_fallback,
     generate_refinement_proposals,
 )
 from app.data.audit_search_factor_readiness import DEFAULT_TRUST_MANIFEST_PATH
@@ -93,6 +92,7 @@ from app.domain.search_refinement import (
 )
 from app.domain.search_refinement_presentation import (
     RefinementPresentationPolicy,
+    build_deterministic_refinement_fallback,
     load_refinement_presentation_policy,
 )
 from app.domain.search_refinement_snapshot import (

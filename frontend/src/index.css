@@ -1633,7 +1633,7 @@ textarea:focus-visible,
   line-height: 1.45;
 }
 
-.contextual-refinement__question {
+.contextual-refinement__reason {
   margin: 0.5rem 0 0;
   color: var(--muted);
   font-size: 0.82rem;

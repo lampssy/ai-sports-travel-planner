@@ -29,8 +29,8 @@ export function RefinementCard({
         <GitBranch aria-hidden="true" size={17} />
         Next refinement
       </p>
-      <h2>{refinement.reason}</h2>
-      <p className="contextual-refinement__question">{refinement.question}</p>
+      <h2>{refinement.question}</h2>
+      <p className="contextual-refinement__reason">{refinement.reason}</p>
       <fieldset className="refinement-options">
         <legend className="sr-only">Refinement options</legend>
         {refinement.options.map((option, index) => (
