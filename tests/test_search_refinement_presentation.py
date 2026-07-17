@@ -333,6 +333,45 @@ def test_registry_fallback_does_not_swallow_pydantic_construction_errors() -> No
 
 
 @pytest.mark.parametrize(
+    ("field", "maximum"),
+    [
+        ("label", 80),
+        ("description", 240),
+    ],
+)
+def test_registry_rejects_fallback_option_copy_exceeding_search_policy_bounds(
+    field: str,
+    maximum: int,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    payload = presentation.model_dump(mode="python")
+    payload["answers"][0][field] = "x" * (maximum + 1)
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    with pytest.raises(ValueError, match=f"max_option_{field}_characters"):
+        validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+@pytest.mark.parametrize(
+    ("field", "maximum"),
+    [
+        ("label", 80),
+        ("description", 240),
+    ],
+)
+def test_registry_accepts_fallback_option_copy_at_search_policy_bounds(
+    field: str,
+    maximum: int,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    payload = presentation.model_dump(mode="python")
+    payload["answers"][0][field] = "x" * maximum
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+@pytest.mark.parametrize(
     ("section", "field", "maximum"),
     [
         ("topics", "fallback_question", 280),

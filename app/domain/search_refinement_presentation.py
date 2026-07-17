@@ -412,6 +412,7 @@ def validate_refinement_presentation_policy(
         answer_ids_by_factor.setdefault(answer.factor_id, set()).add(answer.answer_id)
 
     for topic in presentation.topics:
+        _validate_fallback_copy_bounds(topic, search_policy)
         for answer_id in topic.answer_ids:
             answer = answers_by_id.get(answer_id)
             if answer is None:
@@ -442,6 +443,47 @@ def validate_refinement_presentation_policy(
                 f"topic {topic.topic_id} must list every answer for factor "
                 f"{topic.factor_id}"
             )
+
+        for answer_id in topic.fallback_answer_ids:
+            _validate_fallback_option_bounds(
+                presentation.resolve_answer_ids((answer_id,)),
+                topic.topic_id,
+                answer_id,
+                search_policy,
+            )
+
+
+def _validate_fallback_copy_bounds(
+    topic: RefinementTopicPolicy,
+    search_policy: SearchPolicy,
+) -> None:
+    maximum = search_policy.refinement.max_question_characters
+    if len(topic.fallback_question) > maximum:
+        raise ValueError(
+            f"topic {topic.topic_id} fallback question exceeds search policy "
+            f"max_question_characters ({maximum})"
+        )
+
+
+def _validate_fallback_option_bounds(
+    option: ResolvedRefinementAnswer,
+    topic_id: str,
+    answer_id: str,
+    search_policy: SearchPolicy,
+) -> None:
+    limits = search_policy.refinement
+    if len(option.label) > limits.max_option_label_characters:
+        raise ValueError(
+            f"topic {topic_id} fallback answer {answer_id} label exceeds search "
+            "policy max_option_label_characters "
+            f"({limits.max_option_label_characters})"
+        )
+    if len(option.description) > limits.max_option_description_characters:
+        raise ValueError(
+            f"topic {topic_id} fallback answer {answer_id} description exceeds "
+            "search policy max_option_description_characters "
+            f"({limits.max_option_description_characters})"
+        )
 
 
 def _require_unique_ids(kind: str, values: Sequence[str]) -> None:
