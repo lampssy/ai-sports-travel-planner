@@ -109,6 +109,8 @@ class RefinementPresentationPolicy(_PresentationModel):
     def resolve_answer_ids(self, answer_ids: Sequence[str]) -> ResolvedRefinementAnswer:
         if not answer_ids:
             raise ValueError("refinement answer IDs must not be empty")
+        if len(answer_ids) > 3:
+            raise ValueError("a refinement option may contain at most 3 answer IDs")
         if len(answer_ids) != len(set(answer_ids)):
             raise ValueError("refinement answer IDs must be unique")
         answers: list[RefinementAnswerPolicy] = []

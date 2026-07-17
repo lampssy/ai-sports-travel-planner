@@ -17,8 +17,8 @@ factor_id = "accessible_terrain_scale"
 traveller_topic = "the amount of terrain covered by the selected pass"
 fallback_question = "How much terrain would you like your selected pass to cover?"
 fallback_reason = "Your answer can change which trip option fits you best."
-fallback_answer_ids = ["accessible_terrain_scale.high", "accessible_terrain_scale.normal", "accessible_terrain_scale.low"]
-answer_ids = ["accessible_terrain_scale.high", "accessible_terrain_scale.normal", "accessible_terrain_scale.low"]
+fallback_answer_ids = ["accessible_terrain_scale.as_much_as_possible", "accessible_terrain_scale.normal", "accessible_terrain_scale.low"]
+answer_ids = ["accessible_terrain_scale.as_much_as_possible", "accessible_terrain_scale.normal", "accessible_terrain_scale.low"]
 fallback_priority = 7
 
 [[topics]]
@@ -97,8 +97,8 @@ factor_id = "stay_base_access"
 traveller_topic = "easy access from the accommodation base to the slopes"
 fallback_question = "How easy should it be to reach the slopes from where you stay?"
 fallback_reason = "Your answer can change which trip option fits you best."
-fallback_answer_ids = ["stay_base_access.high", "stay_base_access.normal", "stay_base_access.low"]
-answer_ids = ["stay_base_access.high", "stay_base_access.normal", "stay_base_access.low"]
+fallback_answer_ids = ["stay_base_access.as_easy_as_possible", "stay_base_access.normal", "stay_base_access.low"]
+answer_ids = ["stay_base_access.as_easy_as_possible", "stay_base_access.normal", "stay_base_access.low"]
 fallback_priority = 5
 
 [[topics]]
@@ -203,7 +203,7 @@ description = "Keep dependable snow conditions for the requested dates secondary
 factor_preference_patch = { factor_id = "trip_window_snow_fit", mode = "prefer", importance = "low" }
 
 [[answers]]
-answer_id = "accessible_terrain_scale.high"
+answer_id = "accessible_terrain_scale.as_much_as_possible"
 factor_id = "accessible_terrain_scale"
 label = "As much as possible"
 description = "Make the amount of terrain covered by the selected pass a major priority."
@@ -371,7 +371,7 @@ description = "Do not use snowmaking backup when natural snow is weak as an extr
 factor_preference_patch = { factor_id = "snowmaking_availability", mode = "ignore" }
 
 [[answers]]
-answer_id = "stay_base_access.high"
+answer_id = "stay_base_access.as_easy_as_possible"
 factor_id = "stay_base_access"
 label = "As easy as possible"
 description = "Make easy access from the accommodation base to the slopes a major priority."

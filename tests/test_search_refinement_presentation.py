@@ -44,6 +44,26 @@ def test_registry_copy_resolves_to_typed_actions() -> None:
     ]
 
 
+def test_registry_resolves_task_2_provider_answer_ids() -> None:
+    presentation = load_refinement_presentation_policy()
+
+    resolved = presentation.resolve_answer_ids(
+        [
+            "accessible_terrain_scale.as_much_as_possible",
+            "stay_base_access.as_easy_as_possible",
+        ]
+    )
+
+    assert resolved.answer_ids == (
+        "accessible_terrain_scale.as_much_as_possible",
+        "stay_base_access.as_easy_as_possible",
+    )
+    assert [item.factor_id for item in resolved.factor_preferences] == [
+        "accessible_terrain_scale",
+        "stay_base_access",
+    ]
+
+
 def test_provider_topics_expose_only_approved_copy_for_allowed_factors() -> None:
     presentation = load_refinement_presentation_policy()
 
@@ -116,6 +136,20 @@ def test_registry_rejects_unknown_or_repeated_answers() -> None:
     with pytest.raises(ValueError, match="must be unique"):
         presentation.resolve_answer_ids(
             ["development_style.traditional", "development_style.traditional"]
+        )
+
+
+def test_registry_rejects_more_than_three_distinct_answer_ids() -> None:
+    presentation = load_refinement_presentation_policy()
+
+    with pytest.raises(ValueError, match="at most 3 answer IDs"):
+        presentation.resolve_answer_ids(
+            [
+                "trip_window_snow_fit.high",
+                "accessible_terrain_scale.as_much_as_possible",
+                "terrain_potential_scale.high",
+                "lift_network_scale.high",
+            ]
         )
 
 
