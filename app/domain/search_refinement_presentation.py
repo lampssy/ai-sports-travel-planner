@@ -15,7 +15,6 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
-    ValidationError,
     model_validator,
 )
 
@@ -34,13 +33,29 @@ from app.domain.search_v4_models import (
     SearchObjective,
 )
 
+_MAX_INTERACTION_QUESTION_CHARACTERS = 280
+_MAX_INTERACTION_REASON_CHARACTERS = 500
 _NonBlankText = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1),
 ]
+_RegistryQuestionText = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=_MAX_INTERACTION_QUESTION_CHARACTERS,
+    ),
+]
+_RegistryDisplayText = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=_MAX_INTERACTION_REASON_CHARACTERS,
+    ),
+]
 _MODEL_CONFIG = ConfigDict(frozen=True, extra="forbid")
-_MAX_INTERACTION_QUESTION_CHARACTERS = 280
-_MAX_INTERACTION_REASON_CHARACTERS = 500
 _QUESTION_START = re.compile(
     r"^(?:What|Which|Would|How|Do|Does|Is|Are)\b",
     flags=re.IGNORECASE,
@@ -64,8 +79,8 @@ class _PresentationModel(BaseModel):
 class RefinementAnswerPolicy(_PresentationModel):
     answer_id: _NonBlankText
     factor_id: _NonBlankText
-    label: _NonBlankText
-    description: _NonBlankText
+    label: _RegistryDisplayText
+    description: _RegistryDisplayText
     factor_preference_patch: FactorPreferencePatch | None = None
     objective_patch: SearchObjective | None = None
 
@@ -87,8 +102,8 @@ class RefinementTopicPolicy(_PresentationModel):
     topic_id: _NonBlankText
     factor_id: _NonBlankText
     traveller_topic: _NonBlankText
-    fallback_question: _NonBlankText
-    fallback_reason: _NonBlankText
+    fallback_question: _RegistryQuestionText
+    fallback_reason: _RegistryDisplayText
     fallback_answer_ids: tuple[_NonBlankText, ...] = Field(min_length=2, max_length=5)
     answer_ids: tuple[_NonBlankText, ...] = Field(min_length=2, max_length=8)
     fallback_priority: int = Field(ge=1, le=100)
@@ -247,7 +262,7 @@ def build_deterministic_refinement_fallback(
                 policy=policy,
                 already_answered_question_ids=already_answered_question_ids,
             )
-        except (RefinementValidationError, ValidationError):
+        except RefinementValidationError:
             continue
     return None
 

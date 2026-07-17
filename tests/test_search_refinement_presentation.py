@@ -312,6 +312,47 @@ def test_registry_fallback_does_not_swallow_configuration_errors() -> None:
         )
 
 
+def test_registry_fallback_does_not_swallow_pydantic_construction_errors() -> None:
+    presentation = load_refinement_presentation_policy()
+    broken = presentation.model_copy(
+        update={
+            "topics": tuple(
+                topic.model_copy(update={"fallback_question": "x" * 501})
+                for topic in presentation.topics
+            )
+        }
+    )
+
+    with pytest.raises(ValidationError, match="question"):
+        build_deterministic_refinement_fallback(
+            intent=SearchIntent(),
+            candidates=_fallback_candidates(),
+            policy=load_search_policy(),
+            presentation=broken,
+        )
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "maximum"),
+    [
+        ("topics", "fallback_question", 280),
+        ("topics", "fallback_reason", 500),
+        ("answers", "label", 500),
+        ("answers", "description", 500),
+    ],
+)
+def test_registry_rejects_copy_exceeding_public_bounds(
+    section: str,
+    field: str,
+    maximum: int,
+) -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload[section][0][field] = "x" * (maximum + 1)
+
+    with pytest.raises(ValidationError, match=field):
+        RefinementPresentationPolicy.model_validate(payload)
+
+
 def test_registry_resolves_task_2_provider_answer_ids() -> None:
     presentation = load_refinement_presentation_policy()
 
