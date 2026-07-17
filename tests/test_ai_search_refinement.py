@@ -291,6 +291,49 @@ def test_invalid_selection_is_temporarily_unavailable_after_one_attempt(
     assert len(client.calls) == 1
 
 
+def test_registered_but_unexposed_selection_is_rejected() -> None:
+    policy = load_search_policy()
+    reduced_policy = policy.model_copy(
+        update={
+            "refinement": policy.refinement.model_copy(
+                update={"max_clarifiable_factors": 1}
+            )
+        }
+    )
+    payload = {
+        "questions": [
+            {
+                "topic_ids": ["accessible_terrain_scale"],
+                "question": "How much ski terrain would you like to have available?",
+                "reason": "This preference could help distinguish the trip options.",
+                "options": [
+                    {"answer_ids": ["accessible_terrain_scale.as_much_as_possible"]},
+                    {"answer_ids": ["accessible_terrain_scale.low"]},
+                ],
+            }
+        ]
+    }
+    client = _Client([json.dumps(payload)])
+
+    result = generate_refinement_proposals(
+        brief="Help me choose.",
+        intent=SearchIntent(),
+        candidates=_candidates(),
+        policy=reduced_policy,
+        presentation=load_refinement_presentation_policy(),
+        client=client,
+    )
+
+    context = json.loads(str(client.calls[0]["user_prompt"]))
+    assert [topic["topic_id"] for topic in context["clarification_topics"]] == [
+        "trip_window_snow_fit"
+    ]
+    assert result == RefinementGenerationResult(
+        outcome="provider_unavailable",
+        proposals=(),
+    )
+
+
 def test_question_id_is_semantic_and_bound_to_presentation_version() -> None:
     presentation = load_refinement_presentation_policy()
     reordered = _valid_payload()

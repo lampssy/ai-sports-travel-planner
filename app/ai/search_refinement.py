@@ -4,7 +4,7 @@ import hashlib
 import json
 import time
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Literal
 
@@ -134,6 +134,8 @@ REFINEMENT_RESPONSE_JSON_SCHEMA = _compact_response_schema()
 def compile_refinement_selection(
     selection: _RefinementQuestionSelection,
     presentation: RefinementPresentationPolicy,
+    *,
+    eligible_topic_answer_ids: Mapping[str, frozenset[str]],
 ) -> RefinementProposal:
     """Compile provider-selected IDs into the stable public refinement contract."""
 
@@ -143,6 +145,10 @@ def compile_refinement_selection(
     topics_by_id = presentation.topic_by_id
     selected_topics = []
     for topic_id in topic_ids:
+        if topic_id not in eligible_topic_answer_ids:
+            raise RefinementValidationError(
+                f"refinement topic ID is not eligible for this request: {topic_id}"
+            )
         try:
             selected_topics.append(topics_by_id[topic_id])
         except KeyError as error:
@@ -154,11 +160,20 @@ def compile_refinement_selection(
     represented_factor_ids: set[str] = set()
     option_signatures: set[tuple[str, ...]] = set()
     compiled_options: list[RefinementOption] = []
+    eligible_answer_ids = frozenset().union(
+        *(eligible_topic_answer_ids[topic_id] for topic_id in topic_ids)
+    )
     for option in selection.options:
         signature = tuple(sorted(option.answer_ids))
         if signature in option_signatures:
             raise RefinementValidationError("refinement answer variants must be unique")
         option_signatures.add(signature)
+        unexposed_answer_ids = set(option.answer_ids) - eligible_answer_ids
+        if unexposed_answer_ids:
+            raise RefinementValidationError(
+                "refinement answer ID is not eligible for this request: "
+                + ", ".join(sorted(unexposed_answer_ids))
+            )
         try:
             resolved = presentation.resolve_answer_ids(option.answer_ids)
         except (KeyError, ValueError) as error:
@@ -229,7 +244,11 @@ def build_deterministic_refinement_fallback(
             ),
         )
         try:
-            proposal = compile_refinement_selection(selection, presentation)
+            proposal = compile_refinement_selection(
+                selection,
+                presentation,
+                eligible_topic_answer_ids={topic.topic_id: frozenset(topic.answer_ids)},
+            )
             validated = validate_refinement_proposal(
                 proposal=proposal,
                 intent=intent,
@@ -255,6 +274,9 @@ def generate_refinement_proposals(
 ) -> RefinementGenerationResult:
     if len(candidates) < 2 or policy.refinement.max_questions == 0:
         return RefinementGenerationResult(outcome="no_proposals", proposals=())
+    eligible_provider_topics = presentation.provider_topics(
+        _clarifiable_factor_ids(policy)
+    )
     context = build_refinement_context(
         brief=brief,
         intent=intent,
@@ -262,7 +284,12 @@ def generate_refinement_proposals(
         policy=policy,
         presentation=presentation,
         already_answered_question_ids=already_answered_question_ids,
+        eligible_provider_topics=eligible_provider_topics,
     )
+    eligible_topic_answer_ids = {
+        topic["topic_id"]: frozenset(answer["answer_id"] for answer in topic["answers"])
+        for topic in eligible_provider_topics
+    }
     system_prompt = _system_prompt()
     user_prompt = json.dumps(context, sort_keys=True, separators=(",", ":"))
     llm_started = time.perf_counter()
@@ -298,7 +325,11 @@ def generate_refinement_proposals(
         validated_items: list[ValidatedRefinementProposal] = []
         for selection in payload.questions:
             try:
-                proposal = compile_refinement_selection(selection, presentation)
+                proposal = compile_refinement_selection(
+                    selection,
+                    presentation,
+                    eligible_topic_answer_ids=eligible_topic_answer_ids,
+                )
                 validated = validate_refinement_proposal(
                     proposal=proposal,
                     intent=intent,
@@ -354,15 +385,11 @@ def build_refinement_context(
     policy: SearchPolicy,
     presentation: RefinementPresentationPolicy,
     already_answered_question_ids: frozenset[str],
+    eligible_provider_topics: Sequence[dict[str, object]] | None = None,
 ) -> dict[str, object]:
-    clarifiable_factors = tuple(
-        factor
-        for factor in policy.factors
-        if factor.lifecycle == "active"
-        and factor.clarifiable
-        and "clarification" in factor.roles
-    )[: policy.refinement.max_clarifiable_factors]
-    clarifiable_ids = frozenset(factor.factor_id for factor in clarifiable_factors)
+    clarifiable_ids = _clarifiable_factor_ids(policy)
+    if eligible_provider_topics is None:
+        eligible_provider_topics = presentation.provider_topics(clarifiable_ids)
     bounded_candidates = tuple(candidates)[: policy.refinement.max_candidate_summaries]
     summaries = []
     coverage_counts: Counter[str] = Counter()
@@ -420,10 +447,21 @@ def build_refinement_context(
                     presentation.topic_by_id[topic["topic_id"]].factor_id
                 ],
             }
-            for topic in presentation.provider_topics(clarifiable_ids)
+            for topic in eligible_provider_topics
         ],
         "candidate_summaries": summaries,
     }
+
+
+def _clarifiable_factor_ids(policy: SearchPolicy) -> frozenset[str]:
+    clarifiable_factors = tuple(
+        factor
+        for factor in policy.factors
+        if factor.lifecycle == "active"
+        and factor.clarifiable
+        and "clarification" in factor.roles
+    )[: policy.refinement.max_clarifiable_factors]
+    return frozenset(factor.factor_id for factor in clarifiable_factors)
 
 
 def _system_prompt() -> str:
