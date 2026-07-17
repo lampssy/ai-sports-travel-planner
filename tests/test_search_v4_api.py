@@ -178,6 +178,7 @@ def test_post_search_refinements_uses_separate_typed_contract(
         return SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
+            refinement_presentation_policy_version="search-refinement-presentation-1",
             refinement_status="not_needed",
         )
 
@@ -191,6 +192,7 @@ def test_post_search_refinements_uses_separate_typed_contract(
     assert response.json() == {
         "search_model_version": "search-v4",
         "ranking_policy_version": "search-v4-policy-1",
+        "refinement_presentation_policy_version": "search-refinement-presentation-1",
         "baseline_fingerprint": "0" * 64,
         "baseline_status": "current",
         "refinement_status": "not_needed",
@@ -213,6 +215,7 @@ def test_post_search_refinements_propagates_request_context_to_worker(
         return SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
+            refinement_presentation_policy_version="search-refinement-presentation-1",
             refinement_status="not_needed",
         )
 
@@ -468,6 +471,7 @@ def test_refinement_deadline_holds_capacity_until_worker_finishes(
         return SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
+            refinement_presentation_policy_version="search-refinement-presentation-1",
             refinement_status="not_needed",
         )
 

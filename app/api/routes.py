@@ -49,6 +49,9 @@ from app.domain.models import (
 from app.domain.search_factors import build_factor_registry
 from app.domain.search_intent_policy import SearchIntentPolicyError
 from app.domain.search_policy import load_search_policy
+from app.domain.search_refinement_presentation import (
+    load_refinement_presentation_policy,
+)
 from app.domain.search_v4_service import (
     SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS,
     SearchV4RefinementRequest,
@@ -186,9 +189,13 @@ def search_refinements(
     except FutureTimeoutError:
         record_search_refinement_route_outcome("deadline_exceeded")
         policy = load_search_policy()
+        presentation = load_refinement_presentation_policy()
         return SearchV4RefinementResponse(
             search_model_version=policy.search_model_version,
             ranking_policy_version=policy.ranking_policy_version,
+            refinement_presentation_policy_version=(
+                presentation.presentation_policy_version
+            ),
             baseline_fingerprint=payload.baseline_fingerprint,
             baseline_status="unverified",
             refinement_status="temporarily_unavailable",
@@ -266,8 +273,12 @@ def search_readiness() -> SearchReadinessResponse:
         policy = load_search_policy()
         registry = build_factor_registry()
         registry.validate_policy(policy)
+        presentation = load_refinement_presentation_policy()
         checks["search_model"] = policy.search_model_version
         checks["ranking_policy"] = policy.ranking_policy_version
+        checks["refinement_presentation_policy"] = (
+            presentation.presentation_policy_version
+        )
         checks["factor_count"] = len(policy.factors)
         checks["factor_registry"] = "ok"
 

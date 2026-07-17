@@ -22,6 +22,7 @@ from pydantic import (
 from app.ai.llm_client import LLMClient
 from app.ai.search_refinement import (
     RefinementGenerationResult,
+    build_deterministic_refinement_fallback,
     generate_refinement_proposals,
 )
 from app.data.audit_search_factor_readiness import DEFAULT_TRUST_MANIFEST_PATH
@@ -89,7 +90,10 @@ from app.domain.search_refinement import (
     RefinementOption,
     RefinementVariantOutcome,
     ValidatedRefinementProposal,
-    build_deterministic_refinement_fallback,
+)
+from app.domain.search_refinement_presentation import (
+    RefinementPresentationPolicy,
+    load_refinement_presentation_policy,
 )
 from app.domain.search_refinement_snapshot import (
     RefinementBaselineCandidate,
@@ -317,6 +321,7 @@ class SearchV4RefinementRequest(_SearchV4Model):
 class SearchV4RefinementResponse(_SearchV4Model):
     search_model_version: Literal["search-v4"]
     ranking_policy_version: str
+    refinement_presentation_policy_version: str
     baseline_fingerprint: BaselineFingerprint = _EMPTY_BASELINE_FINGERPRINT
     baseline_status: Literal["current", "stale", "unverified"] = "current"
     refinement_status: Literal[
@@ -903,6 +908,7 @@ def get_search_refinements(
     """Generate refinement state from the exact evaluated ranking baseline."""
 
     started = request_started_at if request_started_at is not None else clock()
+    presentation = load_refinement_presentation_policy()
     store = (
         refinement_snapshot_store
         if refinement_snapshot_store is not None
@@ -922,6 +928,7 @@ def get_search_refinements(
         )
         return _refinement_response(
             policy=selected_policy,
+            presentation=presentation,
             status="temporarily_unavailable",
             baseline_fingerprint=baseline_fingerprint,
             baseline_status=baseline_status,
@@ -936,6 +943,7 @@ def get_search_refinements(
     if not baseline.candidates:
         return _refinement_response(
             policy=selected_policy,
+            presentation=presentation,
             status="not_needed",
             baseline_fingerprint=baseline.fingerprint,
             baseline_status="current",
@@ -954,6 +962,7 @@ def get_search_refinements(
                 intent=intent,
                 candidates=states,
                 policy=selected_policy,
+                presentation=presentation,
                 client=llm_client_factory(remaining_seconds),
                 already_answered_question_ids=already_answered_question_ids,
             )
@@ -968,6 +977,7 @@ def get_search_refinements(
             intent=intent,
             candidates=states,
             policy=selected_policy,
+            presentation=presentation,
             already_answered_question_ids=already_answered_question_ids,
         )
         if not generated.proposals
@@ -998,6 +1008,7 @@ def get_search_refinements(
     if elapsed_seconds >= SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS:
         return _refinement_response(
             policy=selected_policy,
+            presentation=presentation,
             status="temporarily_unavailable",
             baseline_fingerprint=baseline.fingerprint,
             baseline_status="current",
@@ -1018,6 +1029,7 @@ def get_search_refinements(
     )
     return _refinement_response(
         policy=selected_policy,
+        presentation=presentation,
         status=status,
         baseline_fingerprint=baseline.fingerprint,
         baseline_status="current",
@@ -1032,6 +1044,7 @@ def get_search_refinements(
 def _refinement_response(
     *,
     policy: SearchPolicy,
+    presentation: RefinementPresentationPolicy,
     status: Literal["questions_available", "not_needed", "temporarily_unavailable"],
     baseline_fingerprint: str,
     baseline_status: Literal["current", "stale", "unverified"],
@@ -1053,6 +1066,9 @@ def _refinement_response(
     return SearchV4RefinementResponse(
         search_model_version=policy.search_model_version,
         ranking_policy_version=policy.ranking_policy_version,
+        refinement_presentation_policy_version=(
+            presentation.presentation_policy_version
+        ),
         baseline_fingerprint=baseline_fingerprint,
         baseline_status=baseline_status,
         refinement_status=status,
@@ -1781,11 +1797,13 @@ def _refinements(
         return ()
     candidates = _refinement_baseline_candidates(ordered)
     states = _refinement_states(candidates)
+    presentation = load_refinement_presentation_policy()
     generated = generate_refinement_proposals(
         brief=brief,
         intent=intent,
         candidates=states,
         policy=policy,
+        presentation=presentation,
         client=client,
         already_answered_question_ids=already_answered_question_ids,
     )

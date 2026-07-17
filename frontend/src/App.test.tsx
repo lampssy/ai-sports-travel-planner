@@ -171,6 +171,9 @@ function refinementResponse(
     fallback_used: false,
     refinements: [],
     ...updates,
+    refinement_presentation_policy_version:
+      updates.refinement_presentation_policy_version ??
+      "search-refinement-presentation-1",
   };
 }
 

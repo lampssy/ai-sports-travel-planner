@@ -189,6 +189,7 @@ def test_search_refinements_serializes_previews_and_preserves_patch_fields(
         lambda **_kwargs: SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
+            refinement_presentation_policy_version=("search-refinement-presentation-1"),
             refinement_status="questions_available",
             refinements=(refinement,),
         ),
@@ -1454,6 +1455,10 @@ def test_search_readiness_checks_search_dependencies() -> None:
     assert payload["checks"]["ranking_policy"]
     assert payload["checks"]["factor_count"] > 0
     assert payload["checks"]["factor_registry"] == "ok"
+    assert payload["checks"]["refinement_presentation_policy"] == (
+        "search-refinement-presentation-1"
+    )
+    assert "Traditional mountain village" not in response.text
     assert payload["checks"]["expected_forecast_head_count"] > 0
     assert "forecast_head_count" in payload["checks"]
     assert "fresh_forecast_head_count" in payload["checks"]

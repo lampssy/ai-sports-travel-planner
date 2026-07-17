@@ -967,6 +967,7 @@ def test_refinement_response_requires_status_consistent_queue() -> None:
         SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
+            refinement_presentation_policy_version="search-refinement-presentation-1",
             refinement_status="questions_available",
         )
 
@@ -974,6 +975,7 @@ def test_refinement_response_requires_status_consistent_queue() -> None:
         SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
+            refinement_presentation_policy_version="search-refinement-presentation-1",
             baseline_status="stale",
             refinement_status="not_needed",
         )
@@ -982,6 +984,7 @@ def test_refinement_response_requires_status_consistent_queue() -> None:
         SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
+            refinement_presentation_policy_version="search-refinement-presentation-1",
             baseline_status="unverified",
             refinement_status="not_needed",
         )
@@ -990,6 +993,7 @@ def test_refinement_response_requires_status_consistent_queue() -> None:
         SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
+            refinement_presentation_policy_version="search-refinement-presentation-1",
             refinement_status="not_needed",
             refinements=(
                 search_v4_service.SearchV4RefinementProposal(
@@ -1153,18 +1157,18 @@ def test_refinement_service_uses_fallback_and_records_bounded_outcome(
         reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
         refinement_snapshot_store=snapshot_store,
     )
-    monkeypatch.setattr(
-        search_v4_service,
-        "generate_refinement_proposals",
-        lambda **_kwargs: search_v4_service.RefinementGenerationResult(
+    presentations: list[object] = []
+
+    def generate(**kwargs: object) -> search_v4_service.RefinementGenerationResult:
+        presentations.append(kwargs["presentation"])
+        return search_v4_service.RefinementGenerationResult(
             outcome="no_proposals",
             proposals=(),
-        ),
-    )
-    monkeypatch.setattr(
-        search_v4_service,
-        "build_deterministic_refinement_fallback",
-        lambda **kwargs: _validated_refinement(
+        )
+
+    def fallback(**kwargs: object) -> ValidatedRefinementProposal:
+        presentations.append(kwargs["presentation"])
+        return _validated_refinement(
             (
                 tuple(item.candidate_id for item in kwargs["candidates"]),
                 frozenset(item.candidate_id for item in kwargs["candidates"]),
@@ -1175,7 +1179,13 @@ def test_refinement_service_uses_fallback_and_records_bounded_outcome(
                 ),
                 frozenset(item.candidate_id for item in kwargs["candidates"]),
             ),
-        ),
+        )
+
+    monkeypatch.setattr(search_v4_service, "generate_refinement_proposals", generate)
+    monkeypatch.setattr(
+        search_v4_service,
+        "build_deterministic_refinement_fallback",
+        fallback,
     )
 
     recorder = InMemoryMetricsRecorder()
@@ -1193,8 +1203,13 @@ def test_refinement_service_uses_fallback_and_records_bounded_outcome(
         reset_metrics_recorder_for_tests()
 
     assert response.refinement_status == "questions_available"
+    assert response.refinement_presentation_policy_version == (
+        "search-refinement-presentation-1"
+    )
     assert response.fallback_used is True
     assert len(response.refinements) == 1
+    assert len(presentations) == 2
+    assert presentations[0] is presentations[1]
     assert (
         "snowcast_search_refinement_requests_total",
         {
@@ -1213,6 +1228,28 @@ def test_refinement_service_uses_fallback_and_records_bounded_outcome(
         {"search_model": "search-v4"},
         1,
     ) in recorder.counters
+
+
+def test_refinement_service_treats_invalid_presentation_as_configuration_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        search_v4_service,
+        "load_refinement_presentation_policy",
+        lambda: (_ for _ in ()).throw(ValueError("invalid presentation config")),
+    )
+
+    with pytest.raises(ValueError, match="invalid presentation config"):
+        get_search_refinements(
+            intent=_intent(),
+            brief="Help us decide.",
+            baseline_fingerprint="a" * 64,
+            already_answered_question_ids=frozenset(),
+            llm_client_factory=lambda _remaining: pytest.fail(
+                "configuration failure must skip provider"
+            ),
+            refinement_snapshot_store=SearchRefinementSnapshotStore(),
+        )
 
 
 def test_refinement_service_returns_not_needed_for_zero_result_baseline(

@@ -359,6 +359,7 @@ export interface SearchResponse {
 export interface SearchV4RefinementResponse {
   search_model_version: "search-v4";
   ranking_policy_version: string;
+  refinement_presentation_policy_version: string;
   baseline_fingerprint: string;
   baseline_status: "current" | "stale" | "unverified";
   refinement_status:
