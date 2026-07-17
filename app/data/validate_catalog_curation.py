@@ -24,7 +24,7 @@ def _add_report_schema_version_argument(parser: argparse.ArgumentParser) -> None
     parser.add_argument(
         "--require-report-schema-version",
         type=int,
-        choices=(1, 2),
+        choices=(1, 2, 3),
         help="Reject reports older than this curation-report schema version.",
     )
 

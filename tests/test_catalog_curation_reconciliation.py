@@ -213,6 +213,12 @@ def _schema_two_relationship_report() -> CatalogCurationReport:
     return CatalogCurationReport.model_validate(payload)
 
 
+def _schema_three_relationship_report() -> CatalogCurationReport:
+    payload = _schema_two_relationship_report().model_dump(mode="json")
+    payload["report_schema_version"] = 3
+    return CatalogCurationReport.model_validate(payload)
+
+
 def _schema_two_deferred_report() -> CatalogCurationReport:
     payload = _schema_two_relationship_report().model_dump(mode="json")
     assessment = payload["entity_scope_assessments"][0]
@@ -441,6 +447,29 @@ def test_typed_cli_accepts_required_schema_version_and_reports_it(
 
     assert exit_code == 0
     assert "report_schema_version=2" in capsys.readouterr().out
+
+
+def test_typed_cli_accepts_required_schema_version_three(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    report_path = tmp_path / "report-v3.json"
+    report_path.write_text(
+        _schema_three_relationship_report().model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "typed",
+            str(report_path),
+            "--require-report-schema-version",
+            "3",
+        ]
+    )
+
+    assert exit_code == 0
+    assert "report_schema_version=3" in capsys.readouterr().out
 
 
 def test_typed_cli_requires_backlog_path_for_deferred_report(
