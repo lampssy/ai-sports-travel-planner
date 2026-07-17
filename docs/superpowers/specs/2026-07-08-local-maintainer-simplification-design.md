@@ -263,7 +263,7 @@ Validation is bound to one exact Codex-reviewed commit and checks:
 
 - catalog schema and canonical loader;
 - catalog trust-manifest consistency;
-- schema-version-2 curation report structure and reconciliation;
+- schema-version-3 curation report structure and reconciliation;
 - error-level catalog policy;
 - resulting-diff path and file-mode safety;
 - fixed focused catalog tests;
@@ -465,7 +465,7 @@ three-attempt counters are removed.
 Incoming curation reports may use a legacy schema or be incomplete. Codex
 treats them as context and upgrades the existing report during remediation.
 The final validation and readiness gates continue to require exactly one
-schema-version-2 report reconciled to the reviewed catalog and trust changes.
+schema-version-3 report reconciled to the reviewed catalog and trust changes.
 
 ## Readiness Contract
 
@@ -1047,7 +1047,7 @@ replaced. It is history, not current operational instruction:
   instructions, workflows, dependencies, migrations, deployment configuration,
   and executable scripts remain excluded.
 - Curation preparation accepts schema-independent incoming report content, but
-  final validation requires one canonical schema-version-2 reconciled report.
+  final validation requires one canonical schema-version-3 reconciled report.
 - Initial curation review uses complete independent source/trust and graph/scope
   lanes on the same exact prepared head; neither lane sees the other's output.
 - Initial multi-candidate scope output becomes a candidate-level ledger with an
@@ -1087,10 +1087,12 @@ replaced. It is history, not current operational instruction:
   deterministic/Codex boundary, readiness, registry removal, future coverage
   registry, lease, local state, GitHub state, retry pause, PR selection,
   lifecycle labels, discovery history/backlog cleanup, safe errors, and the
-  shorter discovery mutation-window lease. The owner also chose
-  schema-independent report input with canonical schema-version-2 output, then
-  chose resulting-diff safety instead of blob/path/target equality and allowed
-  documentation plus tests in curation scope. The owner also chose preferred
+  shorter discovery mutation-window lease. The owner initially chose
+  schema-independent report input with canonical schema-version-2 output; the
+  later ski-area boundary contract upgraded canonical output and final
+  validation to schema version 3. The owner then chose resulting-diff safety
+  instead of blob/path/target equality and allowed documentation plus tests in
+  curation scope. The owner also chose preferred
   retry after viable source-validated selection, backlog-first regional
   completion, and explicit
   decision-bearing catalog proposals whose unresolved migration handoffs block
