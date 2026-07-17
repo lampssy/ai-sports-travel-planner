@@ -143,6 +143,12 @@ Out of scope:
 - Carries a private structured finding ledger into each later fresh full review
   as untrusted history so resolved, repeated, regressed, and genuinely new
   findings remain distinguishable without narrowing independent review.
+- Represents multi-candidate scope findings as a candidate-level ledger with
+  one stable entry per concrete entity, product, edge, sector, or document. An
+  inventory category is incomplete until its candidates and source inventory
+  are enumerated; the first fix batches all compatible candidate entries, and a
+  known-but-unfixed candidate remains repeated rather than being rediscovered
+  as new scope.
 - Performs at most six remediation cycles. Cycles five and six run only while
   remaining findings are in-model and the ledger shows concrete convergence.
   It rechecks current-main mergeability before every fix and adaptive review
@@ -345,7 +351,12 @@ the same-key duplicate gate without trying to infer identity from prose.
 5. Codex consolidates the two complete dispositions into one private finding
    ledger and first fix. It deduplicates overlapping findings but preserves
    conflicts and routes material owner/domain disagreements to
-   `owner-decision` instead of asking the fixer to choose.
+   `owner-decision` instead of asking the fixer to choose. For scope inventory,
+   the ledger has one stable candidate entry per concrete entity, product,
+   access edge, sector, document, or other reviewed candidate, including its
+   normalized key and specific source inventory. A reviewer output that names
+   only an inventory category is incomplete until it enumerates that checklist;
+   one generic umbrella finding cannot replace the candidate-level ledger.
 6. Before every fix, before adaptive reviews, and once more before any final
    manual-check or validation/push sequence, Codex fetches current `origin/main`,
    verifies the exact local head and clean worktree, and uses read-only `git merge-tree
@@ -358,12 +369,18 @@ the same-key duplicate gate without trying to infer identity from prose.
 7. Codex applies a fix when the issue is inside the existing model and source
    evidence is sufficient. It may update non-control-plane documentation and
    tests, but not production code, operational code, or the maintainer's own
-   instructions. Addressed ledger entries become only `claimed-fixed`.
+   instructions. The first fix batches every compatible open candidate entry
+   from the completed initial inventory rather than choosing one representative.
+   Each actually addressed ledger entry becomes only `claimed-fixed`; an
+   umbrella category or omitted checklist member does not.
 8. A fresh independent full Codex review follows every fix. It runs in a new
    reviewer context, receives the ledger only as untrusted history, independently
    reviews the exact current head and full scope, and then classifies prior
    entries as resolved, repeated, regressed, superseded, or owner-decision while
-   reporting new findings separately. The parent updates the ledger. Missing or
+   reporting new findings separately. A known-but-unfixed candidate from the
+   initial checklist is repeated, not new; only a candidate absent from the
+   complete initial candidate/source inventory counts as scope expansion. The
+   parent updates the ledger. Missing or
    incomplete output requests status-only `blocked/review-incomplete` when
    safe, never `manual-check` or readiness. A real model/owner choice requests
    `owner-decision` separately.
@@ -1006,6 +1023,10 @@ replaced. It is history, not current operational instruction:
   final validation requires one canonical schema-version-2 reconciled report.
 - Initial curation review uses complete independent source/trust and graph/scope
   lanes on the same exact prepared head; neither lane sees the other's output.
+- Initial multi-candidate scope output becomes a candidate-level ledger with an
+  enumerated candidate/source checklist; an inventory category alone is
+  incomplete, and a known-but-unfixed candidate cannot later be classified as
+  newly discovered scope.
 - Every post-fix full reviewer independently reconstructs current scope before
   reconciling the parent-owned finding ledger as untrusted history.
 - Current-main conflicts stop before every fix, adaptive review, and final

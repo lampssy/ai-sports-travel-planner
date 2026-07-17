@@ -76,6 +76,11 @@ The installed skill must:
 - run complementary independent source/trust and graph/scope reviews in
   parallel on the initial prepared head, then consolidate them into one first
   fix and private finding ledger;
+- preserve multi-candidate scope findings as a candidate-level ledger with one
+  entry per concrete entity, product, edge, sector, or document; an inventory
+  category without an enumerated candidate/source checklist is incomplete, the
+  first fix batches every compatible checklist entry, and a known-but-unfixed
+  candidate remains repeated rather than becoming a supposedly new finding;
 - perform at most six remediation cycles, using a fresh independent full
   `snowcast-catalog-review` context after every fix and passing the ledger only
   as untrusted history; cycles five and six require demonstrable convergence;
