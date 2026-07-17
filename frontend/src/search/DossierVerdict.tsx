@@ -31,12 +31,15 @@ export function DossierVerdict({
 }) {
   const narrative = buildCandidateNarrative(configuration);
   const evidenceMode = evidenceQualityMode(configuration);
+  const unscored = configuration.ranking_status === "unscored";
+  const reasonHeadingId = unscored ? "why-consider-it" : "why-it-leads";
 
   return (
     <header className="dossier-verdict">
       <div className="dossier-verdict__title">
         <p className="eyebrow">
-          #{rank} · {configuration.stay_destination_name}
+          {unscored ? "Unranked option" : `#${rank}`} ·{" "}
+          {configuration.stay_destination_name}
         </p>
         <h1 ref={headingRef} tabIndex={-1}>
           {configuration.ski_region_name} - {configuration.stay_base_name}
@@ -56,14 +59,7 @@ export function DossierVerdict({
           <strong>{snowWindowLabel(configuration)}</strong>
           <span>Snow window</span>
         </div>
-        {evidenceMode ? (
-          <EvidenceQualityBadge mode={evidenceMode} compact />
-        ) : (
-          <div className="dossier-verdict__supported-evidence">
-            <p>Evidence quality</p>
-            <strong>Supported evidence</strong>
-          </div>
-        )}
+        <EvidenceQualityBadge mode={evidenceMode} compact />
       </div>
 
       <button
@@ -75,16 +71,19 @@ export function DossierVerdict({
         Save as current trip
       </button>
 
-      <section className="dossier-verdict__reasons" aria-labelledby="why-it-leads">
-        <p className="section-label" id="why-it-leads">
-          Why it leads
+      <section className="dossier-verdict__reasons" aria-labelledby={reasonHeadingId}>
+        <p className="section-label" id={reasonHeadingId}>
+          {unscored ? "Why consider it" : "Why it leads"}
         </p>
         <div>
           <p>
             <CheckCircle2 aria-hidden="true" size={20} />
             <span>
               <strong>Supported strength</strong>
-              {narrative.strength ?? "This is a complete ranked trip configuration."}
+              {narrative.strength ??
+                (unscored
+                  ? "This is a complete trip configuration with available supporting evidence."
+                  : "This is a complete ranked trip configuration.")}
             </span>
           </p>
           <p>

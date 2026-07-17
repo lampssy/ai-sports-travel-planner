@@ -5,7 +5,10 @@ import json
 import pytest
 
 from app.ai.llm_client import LLMClient, LLMClientError
-from app.ai.search_refinement import generate_refinement_proposals
+from app.ai.search_refinement import (
+    RefinementGenerationResult,
+    generate_refinement_proposals,
+)
 from app.domain.search_factors.models import FactorEvaluation
 from app.domain.search_policy import load_search_policy
 from app.domain.search_refinement import RefinementCandidateState
@@ -125,9 +128,11 @@ def test_llm_proposals_are_structured_then_deterministically_validated() -> None
         client=client,
     )
 
-    assert len(result) == 1
-    assert result[0].proposal.question_id == "terrain-vs-access"
-    assert result[0].impact.winner_changed is True
+    assert isinstance(result, RefinementGenerationResult)
+    assert result.outcome == "proposals_generated"
+    assert len(result.proposals) == 1
+    assert result.proposals[0].proposal.question_id == "terrain-vs-access"
+    assert result.proposals[0].impact.winner_changed is True
     call = client.calls[0]
     assert "untrusted planning content" in str(call["system_prompt"])
     assert "night_skiing" in str(call["user_prompt"])
@@ -164,7 +169,7 @@ def test_refinement_uses_compact_gemini_compatible_response_schema() -> None:
     }
 
 
-def test_refinement_records_bounded_llm_and_outcome_metrics() -> None:
+def test_refinement_records_bounded_llm_metrics_without_public_outcomes() -> None:
     recorder = InMemoryMetricsRecorder()
     set_metrics_recorder_for_tests(recorder)
     try:
@@ -178,7 +183,7 @@ def test_refinement_records_bounded_llm_and_outcome_metrics() -> None:
     finally:
         reset_metrics_recorder_for_tests()
 
-    assert len(result) == 1
+    assert len(result.proposals) == 1
     assert (
         "snowcast_llm_requests_total",
         {
@@ -188,14 +193,13 @@ def test_refinement_records_bounded_llm_and_outcome_metrics() -> None:
         },
         1,
     ) in recorder.counters
-    assert (
-        "snowcast_search_refinement_outcomes_total",
-        {"outcome": "shown", "search_model": "search-v4"},
-        1,
-    ) in recorder.counters
+    assert not any(
+        metric_name == "snowcast_search_refinement_outcomes_total"
+        for metric_name, _attributes, _value in recorder.counters
+    )
 
 
-def test_invalid_output_gets_one_bounded_retry() -> None:
+def test_invalid_output_is_temporarily_unavailable_after_one_attempt() -> None:
     invalid = json.dumps(
         {
             "questions": [
@@ -247,8 +251,33 @@ def test_invalid_output_gets_one_bounded_retry() -> None:
         client=client,
     )
 
-    assert len(result) == 1
-    assert len(client.calls) == 2
+    assert result == RefinementGenerationResult(
+        outcome="provider_unavailable",
+        proposals=(),
+    )
+    assert len(client.calls) == 1
+
+
+def test_invalid_provider_output_records_invalid_output_not_success() -> None:
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+    try:
+        generate_refinement_proposals(
+            brief="Help me choose.",
+            intent=SearchIntent(),
+            candidates=_candidates(),
+            policy=load_search_policy(),
+            client=_Client(["not-json"]),
+        )
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    statuses = [
+        attributes["status"]
+        for name, attributes, _value in recorder.counters
+        if name == "snowcast_llm_requests_total"
+    ]
+    assert statuses == ["invalid_output"]
 
 
 def test_valid_questions_survive_an_invalid_sibling_without_retry() -> None:
@@ -300,35 +329,83 @@ def test_valid_questions_survive_an_invalid_sibling_without_retry() -> None:
         client=client,
     )
 
-    assert [item.proposal.question_id for item in result] == ["terrain-vs-access"]
+    assert [item.proposal.question_id for item in result.proposals] == [
+        "terrain-vs-access"
+    ]
     assert len(client.calls) == 1
 
 
-def test_llm_failure_or_repeated_invalid_output_returns_no_questions() -> None:
+def test_llm_failure_or_invalid_output_is_temporarily_unavailable() -> None:
     failure = LLMClientError("provider failed", reason="provider_error")
     failing_client = _Client([failure, failure])
 
-    assert (
-        generate_refinement_proposals(
-            brief="Help me choose.",
-            intent=SearchIntent(),
-            candidates=_candidates(),
-            policy=load_search_policy(),
-            client=failing_client,
-        )
-        == ()
+    assert generate_refinement_proposals(
+        brief="Help me choose.",
+        intent=SearchIntent(),
+        candidates=_candidates(),
+        policy=load_search_policy(),
+        client=failing_client,
+    ) == RefinementGenerationResult(
+        outcome="provider_unavailable",
+        proposals=(),
     )
-    assert len(failing_client.calls) == 2
+    assert len(failing_client.calls) == 1
 
     invalid_client = _Client(["{}", "{}"])
-    assert (
+    assert generate_refinement_proposals(
+        brief="Help me choose.",
+        intent=SearchIntent(),
+        candidates=_candidates(),
+        policy=load_search_policy(),
+        client=invalid_client,
+    ) == RefinementGenerationResult(
+        outcome="provider_unavailable",
+        proposals=(),
+    )
+    assert len(invalid_client.calls) == 1
+
+
+def test_llm_failure_records_only_the_bounded_provider_reason() -> None:
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+    try:
         generate_refinement_proposals(
             brief="Help me choose.",
             intent=SearchIntent(),
             candidates=_candidates(),
             policy=load_search_policy(),
-            client=invalid_client,
+            client=_Client(
+                [
+                    LLMClientError(
+                        "provider failed",
+                        reason="quota_error",
+                        provider_message="sensitive provider detail",
+                    )
+                ]
+            ),
         )
-        == ()
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    assert (
+        "snowcast_llm_failures_total",
+        {
+            "operation": "search_refinement",
+            "model": "test-model",
+            "reason": "quota_error",
+        },
+        1,
+    ) in recorder.counters
+    assert "sensitive provider detail" not in repr(recorder.counters)
+
+
+def test_accepted_empty_provider_response_is_not_needed() -> None:
+    result = generate_refinement_proposals(
+        brief="Help me choose.",
+        intent=SearchIntent(),
+        candidates=_candidates(),
+        policy=load_search_policy(),
+        client=_Client([json.dumps({"questions": []})]),
     )
-    assert len(invalid_client.calls) == 2
+
+    assert result == RefinementGenerationResult(outcome="no_proposals", proposals=())

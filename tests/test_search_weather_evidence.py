@@ -213,7 +213,7 @@ def test_month_summary_prefers_latest_normal_rows_and_preserves_provenance() -> 
     assert summary.historical.baseline_start_year == 1991
     assert summary.historical.baseline_end_year == 2020
     assert summary.historical.evidence_seasons == 25
-    assert summary.historical.daily_profile[0].snow_depth_cm_p50 == 80
+    assert summary.historical.daily_profile[1].snow_depth_cm_p50 == 80
     assert summary.historical.provenance_status == "homogeneous"
     assert len(summary.historical.sources) == 1
     assert summary.historical.sources[0].profile_dates == ("01-02",)
@@ -343,7 +343,7 @@ def test_month_summary_uses_recent_rows_only_when_normal_is_absent() -> None:
 
     assert summary is not None
     assert summary.historical.source_label == "Recent 15-year snow climatology"
-    assert summary.historical.daily_profile[0].snow_depth_cm_p50 == 70
+    assert summary.historical.daily_profile[2].snow_depth_cm_p50 == 70
 
 
 def test_exact_dates_weight_repeated_calendar_dates_in_historical_evidence() -> None:
@@ -494,8 +494,89 @@ def test_exact_dates_report_partial_usable_forecast_coverage() -> None:
     assert summary.forecast is not None
     assert summary.forecast.coverage_status == "partial"
     assert summary.forecast.usable_date_count == 2
-    assert len(summary.forecast.daily_profile) == 2
+    assert len(summary.forecast.daily_profile) == 3
+    assert summary.forecast.daily_profile[2].snow_depth_cm is None
     assert any("2 of 3" in limitation for limitation in summary.limitations)
+
+
+def test_historical_profile_preserves_missing_middle_requested_day() -> None:
+    requested = tuple(date(2027, 1, 1) + timedelta(days=offset) for offset in range(3))
+
+    summary = build_search_weather_evidence(
+        context=_context(TravelWindow(month=1)),
+        candidate=_candidate(
+            climatology_rows=(
+                _climatology(requested[0], snow_depth_cm_p50=70),
+                _climatology(requested[2], snow_depth_cm_p50=90),
+            ),
+        ),
+    )
+
+    assert summary is not None
+    assert len(summary.historical.daily_profile) == 31
+    assert [
+        point.date_or_month_day for point in summary.historical.daily_profile[:3]
+    ] == [
+        "01-01",
+        "01-02",
+        "01-03",
+    ]
+    assert [
+        point.snow_depth_cm_p50 for point in summary.historical.daily_profile[:3]
+    ] == [
+        70,
+        None,
+        90,
+    ]
+    assert all(
+        value is None
+        for key, value in summary.historical.daily_profile[1].model_dump().items()
+        if key != "date_or_month_day"
+    )
+    assert summary.historical.sources[0].row_count == 2
+    assert summary.historical.sources[0].profile_dates == ("01-01", "01-03")
+    assert any("2 of 31" in limitation for limitation in summary.limitations)
+
+
+def test_forecast_profile_preserves_missing_middle_requested_day() -> None:
+    requested = tuple(date(2027, 1, 2) + timedelta(days=offset) for offset in range(3))
+
+    summary = build_search_weather_evidence(
+        context=_context(TravelWindow(start_date=requested[0], end_date=requested[-1])),
+        candidate=_candidate(
+            climatology_rows=tuple(_climatology(day) for day in requested),
+            forecast_rows=(
+                _served(requested[0], depth_cm=60),
+                _served(requested[2], depth_cm=62),
+            ),
+        ),
+    )
+
+    assert summary is not None
+    assert summary.mode == "forecast_assisted"
+    assert summary.forecast is not None
+    assert [point.date_or_month_day for point in summary.forecast.daily_profile] == [
+        requested[0].isoformat(),
+        requested[1].isoformat(),
+        requested[2].isoformat(),
+    ]
+    assert [point.snow_depth_cm for point in summary.forecast.daily_profile] == [
+        60,
+        None,
+        62,
+    ]
+    assert all(
+        value is None
+        for key, value in summary.forecast.daily_profile[1].model_dump().items()
+        if key != "date_or_month_day"
+    )
+    assert summary.forecast.usable_date_count == 2
+    assert summary.forecast.requested_date_count == 3
+    assert summary.forecast.sources[0].row_count == 2
+    assert summary.forecast.sources[0].profile_dates == (
+        requested[0].isoformat(),
+        requested[2].isoformat(),
+    )
 
 
 def test_stale_forecast_falls_back_to_climatology_with_explicit_limitation() -> None:

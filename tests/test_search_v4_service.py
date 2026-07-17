@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import statistics
 import time
+from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from types import SimpleNamespace
 from typing import cast
@@ -19,8 +20,13 @@ from app.domain.catalog import AggregateTerrainMetrics
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.models import SnowClimatologyDaily
+from app.domain.search_factors.models import FactorEvaluation
 from app.domain.search_policy import load_search_policy
-from app.domain.search_ranking import UnscoredAllocation
+from app.domain.search_ranking import (
+    RankedScore,
+    UnscoredAllocation,
+    score_factor_evaluations,
+)
 from app.domain.search_refinement import (
     RefinementCandidateState,
     RefinementImpact,
@@ -28,6 +34,10 @@ from app.domain.search_refinement import (
     RefinementProposal,
     RefinementVariantOutcome,
     ValidatedRefinementProposal,
+)
+from app.domain.search_refinement_snapshot import (
+    SearchRefinementSnapshotStore,
+    canonical_search_intent_digest,
 )
 from app.domain.search_v4_models import (
     FactorPreferencePatch,
@@ -43,10 +53,12 @@ from app.domain.search_v4_models import (
     TravelWindow,
 )
 from app.domain.search_v4_service import (
+    SearchV4RefinementResponse,
     SearchV4Response,
     UnknownSearchWeatherAreaError,
     forecast_run_is_fresh,
     generate_v4_candidate_records,
+    get_search_refinements,
     get_search_weather_evidence,
     search_trip_configurations,
 )
@@ -54,6 +66,11 @@ from app.domain.weather_forecast import (
     ServedWeatherForecastDaily,
     WeatherForecastDaily,
     WeatherForecastRun,
+)
+from app.observability.metrics import (
+    InMemoryMetricsRecorder,
+    reset_metrics_recorder_for_tests,
+    set_metrics_recorder_for_tests,
 )
 
 pytestmark = pytest.mark.db_free
@@ -923,6 +940,584 @@ def test_refinements_are_absent_when_llm_returns_no_validated_proposal(
     assert refinements == ()
 
 
+def test_ranking_only_search_never_generates_refinements(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    monkeypatch.setattr(
+        search_v4_service,
+        "generate_refinement_proposals",
+        lambda **_kwargs: pytest.fail("ranking must not call refinement generation"),
+    )
+
+    result = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+    )
+
+    assert result.refinements == ()
+
+
+def test_refinement_response_requires_status_consistent_queue() -> None:
+    with pytest.raises(ValueError, match="questions_available"):
+        SearchV4RefinementResponse(
+            search_model_version="search-v4",
+            ranking_policy_version="search-v4-policy-1",
+            refinement_status="questions_available",
+        )
+
+    with pytest.raises(ValueError, match="non-current baselines"):
+        SearchV4RefinementResponse(
+            search_model_version="search-v4",
+            ranking_policy_version="search-v4-policy-1",
+            baseline_status="stale",
+            refinement_status="not_needed",
+        )
+
+    with pytest.raises(ValueError, match="non-current baselines"):
+        SearchV4RefinementResponse(
+            search_model_version="search-v4",
+            ranking_policy_version="search-v4-policy-1",
+            baseline_status="unverified",
+            refinement_status="not_needed",
+        )
+
+    with pytest.raises(ValueError, match="must not include refinements"):
+        SearchV4RefinementResponse(
+            search_model_version="search-v4",
+            ranking_policy_version="search-v4-policy-1",
+            refinement_status="not_needed",
+            refinements=(
+                search_v4_service.SearchV4RefinementProposal(
+                    question_id="question",
+                    question="Which option?",
+                    reason="The leading options differ.",
+                    options=(
+                        search_v4_service.SearchV4RefinementOption(
+                            label="First option",
+                            description="Choose the first option.",
+                            intent_changed=True,
+                        ),
+                        search_v4_service.SearchV4RefinementOption(
+                            label="Second option",
+                            description="Choose the second option.",
+                            intent_changed=True,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+
+def test_baseline_fingerprint_detects_same_order_evidence_and_intent_drift() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    evaluated = search_v4_service._evaluate_search(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+    )
+    original = search_v4_service._baseline_fingerprint(evaluated)
+    first = evaluated.ordered[0]
+    changed_evaluation = first.evaluations[0].model_copy(
+        update={"effective_evidence_cap": 0.123}
+    )
+    evidence_changed = replace(
+        evaluated,
+        ordered=(
+            replace(
+                first,
+                evaluations=(changed_evaluation, *first.evaluations[1:]),
+            ),
+            *evaluated.ordered[1:],
+        ),
+    )
+    intent_changed = replace(
+        evaluated,
+        intent=evaluated.intent.model_copy(update={"assumptions": ("Changed",)}),
+    )
+
+    assert search_v4_service._baseline_fingerprint(evidence_changed) != original
+    assert search_v4_service._baseline_fingerprint(intent_changed) != original
+
+
+def test_refinement_snapshot_compaction_preserves_scores() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    intent = _intent()
+    evaluated = search_v4_service._evaluate_search(
+        intent=intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+    )
+    compact_candidates = search_v4_service._refinement_baseline_candidates(
+        evaluated.ordered
+    )
+    variant_intent = intent.model_copy(
+        update={
+            "group_priorities": (
+                GroupPriorityPatch(
+                    group_id="ski_experience",
+                    importance="very_high",
+                ),
+            )
+        }
+    )
+
+    for original, compact in zip(
+        evaluated.ordered,
+        compact_candidates,
+        strict=True,
+    ):
+        for evaluation in compact.evaluations:
+            assert set(evaluation.__dataclass_fields__) == {
+                "factor_id",
+                "raw_utility",
+                "neutral_utility",
+                "effective_evidence_cap",
+            }
+
+        for candidate_intent in (intent, variant_intent):
+            original_score = score_factor_evaluations(
+                evaluations=original.evaluations,
+                intent=candidate_intent,
+                policy=evaluated.policy,
+            )
+            compact_score = score_factor_evaluations(
+                evaluations=tuple(
+                    evaluation.materialize() for evaluation in compact.evaluations
+                ),
+                intent=candidate_intent,
+                policy=evaluated.policy,
+            )
+            assert type(compact_score) is type(original_score)
+            if isinstance(original_score, RankedScore):
+                assert isinstance(compact_score, RankedScore)
+                assert compact_score.fit_score == pytest.approx(
+                    original_score.fit_score
+                )
+
+
+@pytest.mark.parametrize(
+    ("evidence_cap", "forecast_coverage", "expected"),
+    (
+        (0.0, 0.0, "fallback_heavy"),
+        (1.0, 0.0, "archive_backed"),
+        (1.0, 0.5, "forecast_assisted"),
+    ),
+)
+def test_evidence_profile_is_derived_from_backend_weather_evidence(
+    evidence_cap: float,
+    forecast_coverage: float,
+    expected: str,
+) -> None:
+    evaluation = FactorEvaluation(
+        factor_id="trip_window_snow_fit",
+        scope="ski_area",
+        entity_ids=("area",),
+        raw_value=None,
+        raw_utility=0.7,
+        neutral_utility=0.5,
+        effective_evidence_cap=evidence_cap,
+        evidence_cap_components={
+            "climatology_date_coverage": evidence_cap,
+            "forecast_date_coverage": forecast_coverage,
+        },
+        warnings=(),
+        provenance_summary="Test weather evidence.",
+        explanation_inputs={},
+    )
+
+    assert search_v4_service._evidence_profile((evaluation,)) == expected
+
+
+def test_refinement_service_uses_fallback_and_records_bounded_outcome(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    snapshot_store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "generate_refinement_proposals",
+        lambda **_kwargs: search_v4_service.RefinementGenerationResult(
+            outcome="no_proposals",
+            proposals=(),
+        ),
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "build_deterministic_refinement_fallback",
+        lambda **kwargs: _validated_refinement(
+            (
+                tuple(item.candidate_id for item in kwargs["candidates"]),
+                frozenset(item.candidate_id for item in kwargs["candidates"]),
+            ),
+            (
+                tuple(
+                    reversed(tuple(item.candidate_id for item in kwargs["candidates"]))
+                ),
+                frozenset(item.candidate_id for item in kwargs["candidates"]),
+            ),
+        ),
+    )
+
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+    try:
+        response = get_search_refinements(
+            intent=_intent(),
+            brief="Help us decide.",
+            baseline_fingerprint=baseline.baseline_fingerprint,
+            already_answered_question_ids=frozenset(),
+            llm_client_factory=lambda _remaining_seconds: object(),
+            refinement_snapshot_store=snapshot_store,
+        )
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    assert response.refinement_status == "questions_available"
+    assert response.fallback_used is True
+    assert len(response.refinements) == 1
+    assert (
+        "snowcast_search_refinement_requests_total",
+        {
+            "search_model": "search-v4",
+            "ranking_policy_version": "search-v4-policy-1",
+            "status": "questions_available",
+            "reason": "deterministic_fallback",
+            "fallback_used": True,
+            "window_type": "exact_dates",
+            "has_origin": False,
+        },
+        1,
+    ) in recorder.counters
+    assert (
+        "snowcast_search_refinement_fallbacks_total",
+        {"search_model": "search-v4"},
+        1,
+    ) in recorder.counters
+
+
+def test_refinement_service_returns_not_needed_for_zero_result_baseline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    snapshot_store = SearchRefinementSnapshotStore()
+    zero_intent = SearchIntent(
+        constraints=SearchConstraints(location=LocationScope(country="Norway"))
+    )
+    baseline = search_trip_configurations(
+        intent=zero_intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    response = get_search_refinements(
+        intent=zero_intent,
+        brief="No candidates expected.",
+        baseline_fingerprint=baseline.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=lambda _remaining: pytest.fail("must skip provider"),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert baseline.eligible_candidate_count == 0
+    assert response.refinement_status == "not_needed"
+    assert response.refinements == ()
+
+
+def test_refinement_service_fails_closed_on_snapshot_miss_without_reevaluation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot_store = SearchRefinementSnapshotStore()
+    monkeypatch.setattr(
+        search_v4_service,
+        "_evaluate_search",
+        lambda **_kwargs: pytest.fail("snapshot miss must not rerun search"),
+    )
+
+    response = get_search_refinements(
+        intent=_intent(),
+        brief="Help us decide.",
+        baseline_fingerprint="a" * 64,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=lambda _remaining: pytest.fail(
+            "snapshot miss must skip provider"
+        ),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert response.baseline_status == "unverified"
+    assert response.refinement_status == "temporarily_unavailable"
+    assert response.fallback_used is False
+    assert response.refinements == ()
+
+
+def test_refinement_service_fails_closed_after_snapshot_expiry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    now = [0.0]
+    snapshot_store = SearchRefinementSnapshotStore(clock=lambda: now[0])
+    baseline = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    now[0] = 60.0
+    monkeypatch.setattr(
+        search_v4_service,
+        "_evaluate_search",
+        lambda **_kwargs: pytest.fail("expired snapshot must not rerun search"),
+    )
+
+    response = get_search_refinements(
+        intent=_intent(),
+        brief="Help us decide.",
+        baseline_fingerprint=baseline.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=lambda _remaining: pytest.fail(
+            "expired snapshot must skip provider"
+        ),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert response.baseline_status == "unverified"
+    assert response.refinement_status == "temporarily_unavailable"
+
+
+def test_refinement_service_fails_closed_after_snapshot_eviction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    snapshot_store = SearchRefinementSnapshotStore(max_entries=1)
+    initial_intent = _intent()
+    initial = search_trip_configurations(
+        intent=initial_intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    search_trip_configurations(
+        intent=initial_intent.model_copy(update={"assumptions": ("New search",)}),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "_evaluate_search",
+        lambda **_kwargs: pytest.fail("evicted snapshot must not rerun search"),
+    )
+
+    response = get_search_refinements(
+        intent=initial_intent,
+        brief="Help us decide.",
+        baseline_fingerprint=initial.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=lambda _remaining: pytest.fail(
+            "evicted snapshot must skip provider"
+        ),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert response.baseline_status == "unverified"
+    assert response.refinement_status == "temporarily_unavailable"
+
+
+def test_refinement_service_rejects_fingerprint_reuse_with_another_intent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    snapshot_store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    changed_intent = _intent().model_copy(update={"assumptions": ("Changed",)})
+    monkeypatch.setattr(
+        search_v4_service,
+        "_evaluate_search",
+        lambda **_kwargs: pytest.fail("intent mismatch must not rerun search"),
+    )
+
+    response = get_search_refinements(
+        intent=changed_intent,
+        brief="Help us decide.",
+        baseline_fingerprint=baseline.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=lambda _remaining: pytest.fail(
+            "intent mismatch must skip provider"
+        ),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert response.baseline_status == "stale"
+    assert response.refinement_status == "temporarily_unavailable"
+
+
+def test_refinement_service_skips_provider_when_request_budget_is_exhausted() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    snapshot_store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    clock_values = iter((0.0, 5.0, 5.0, 5.0))
+
+    response = get_search_refinements(
+        intent=_intent(),
+        brief="Help us decide.",
+        baseline_fingerprint=baseline.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=lambda _remaining: pytest.fail("deadline skips provider"),
+        clock=lambda: next(clock_values),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert response.refinement_status == "temporarily_unavailable"
+    assert response.refinements == ()
+
+
+def test_refinement_service_passes_only_remaining_deadline_to_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    snapshot_store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "_evaluate_search",
+        lambda **_kwargs: pytest.fail("refinement must reuse the snapshot"),
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "generate_refinement_proposals",
+        lambda **_kwargs: search_v4_service.RefinementGenerationResult(
+            outcome="no_proposals",
+            proposals=(),
+        ),
+    )
+    remaining: list[float] = []
+    clock_values = iter((10.0, 11.0, 11.0, 11.0))
+
+    get_search_refinements(
+        intent=_intent(),
+        brief="Help us decide.",
+        baseline_fingerprint=baseline.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=lambda budget: remaining.append(budget) or object(),
+        clock=lambda: next(clock_values),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert remaining == [4.0]
+
+
+def test_each_rerank_stores_a_fresh_refinement_snapshot_after_prior_expiry() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    now = [0.0]
+    snapshot_store = SearchRefinementSnapshotStore(
+        ttl_seconds=60,
+        max_entries=64,
+        clock=lambda: now[0],
+    )
+    initial_intent = _intent()
+    initial = search_trip_configurations(
+        intent=initial_intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    initial_lookup = snapshot_store.get(
+        initial.baseline_fingerprint,
+        canonical_search_intent_digest(initial_intent),
+    )
+    assert initial_lookup.outcome == "hit"
+
+    now[0] = 61.0
+    refined_intent = initial_intent.model_copy(
+        update={"assumptions": ("Prefer the quieter option",)}
+    )
+    refined = search_trip_configurations(
+        intent=refined_intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert refined.baseline_fingerprint != initial.baseline_fingerprint
+    assert (
+        snapshot_store.get(
+            refined.baseline_fingerprint,
+            canonical_search_intent_digest(refined_intent),
+        ).outcome
+        == "hit"
+    )
+    assert (
+        snapshot_store.get(
+            initial.baseline_fingerprint,
+            canonical_search_intent_digest(initial_intent),
+        ).outcome
+        == "miss"
+    )
+
+
 def test_service_constrains_then_bulk_loads_weather_once_and_ranks() -> None:
     snapshot, manifest = _catalog_and_trust()
     climatology = _ClimatologyRepository()
@@ -948,6 +1543,9 @@ def test_service_constrains_then_bulk_loads_weather_once_and_ranks() -> None:
     assert result.results[0].top_configuration.fit_score is not None
     assert len(climatology.calls) == 1
     assert len(forecast.calls) == 1
+    assert {
+        configuration.evidence_profile for configuration in _configurations(result)
+    } == {"fallback_heavy"}
     assert forecast.calls[0]["source_keys"] == (
         "ecmwf_ifs025_ensemble_mean",
         "ncep_gefs05_ensemble_mean",
@@ -955,6 +1553,15 @@ def test_service_constrains_then_bulk_loads_weather_once_and_ranks() -> None:
     assert len(forecast.calls[0]["ski_area_ids"]) == len(
         set(forecast.calls[0]["ski_area_ids"])
     )
+
+    argentiere_balme = next(
+        configuration
+        for configuration in _configurations(result)
+        if configuration.access.ski_area_access_id
+        == "chamonix-mont-blanc-argentiere--balme-le-tour-vallorcine"
+    )
+    assert argentiere_balme.access.relationship_trust_status == "estimated"
+    assert argentiere_balme.access.access_mode_distance_trust_status == "needs_source"
 
 
 def test_service_qualifies_ski_area_terrain_fallback_with_owning_trust() -> None:

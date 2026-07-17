@@ -1,18 +1,29 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import time
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-from typing import Literal, Protocol, Self
+from typing import Annotated, Literal, Protocol, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    model_validator,
+)
 
 from app.ai.llm_client import LLMClient
-from app.ai.search_refinement import generate_refinement_proposals
+from app.ai.search_refinement import (
+    RefinementGenerationResult,
+    generate_refinement_proposals,
+)
 from app.data.audit_search_factor_readiness import DEFAULT_TRUST_MANIFEST_PATH
 from app.data.catalog_repository import CatalogRepository
 from app.data.repositories import get_snow_climatology_repository
@@ -29,7 +40,11 @@ from app.domain.catalog import (
 )
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.catalog_trust import CatalogTrustManifest, Status
-from app.domain.models import SnowClimatologyDaily, TravelEffort
+from app.domain.models import (
+    PlanningEvidenceProfile,
+    SnowClimatologyDaily,
+    TravelEffort,
+)
 from app.domain.ranking import quality_score
 from app.domain.search_constraints import (
     CandidateFeatureFact,
@@ -74,6 +89,14 @@ from app.domain.search_refinement import (
     RefinementOption,
     RefinementVariantOutcome,
     ValidatedRefinementProposal,
+    build_deterministic_refinement_fallback,
+)
+from app.domain.search_refinement_snapshot import (
+    RefinementBaselineCandidate,
+    RefinementBaselineSnapshot,
+    RefinementFactorEvaluation,
+    SearchRefinementSnapshotStore,
+    canonical_search_intent_digest,
 )
 from app.domain.search_v4_models import (
     FactorPreferencePatch,
@@ -95,6 +118,8 @@ from app.domain.weather_forecast import (
     WeatherForecastRun,
 )
 from app.observability.search import (
+    record_search_refinement_completed,
+    record_search_refinement_snapshot_outcome,
     record_search_v4_completed,
     search_phase,
 )
@@ -102,6 +127,18 @@ from app.observability.search import (
 _MODEL_CONFIG = ConfigDict(frozen=True, extra="forbid")
 _FORECAST_CONSISTENCY_DELAY = timedelta(minutes=10)
 _CURRENCY_PREFIX = re.compile(r"^\s*([A-Za-z]{3})\b")
+SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS = 5.0
+_EMPTY_BASELINE_FINGERPRINT = "0" * 64
+BaselineFingerprint = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=64,
+        max_length=64,
+        pattern=r"^[a-f0-9]{64}$",
+    ),
+]
+default_refinement_snapshot_store = SearchRefinementSnapshotStore()
 
 
 class _ClimatologyRepository(Protocol):
@@ -136,6 +173,8 @@ class SearchV4AccessSummary(_SearchV4Model):
     distance_m: int | None
     duration_minutes: int | None
     is_direct: bool
+    relationship_trust_status: Status
+    access_mode_distance_trust_status: Status
 
 
 class SearchV4PassPriceSummary(_SearchV4Model):
@@ -180,6 +219,7 @@ class SearchV4Configuration(_SearchV4Model):
     stay_base_name: str
     ski_area_id: str
     ski_area_name: str
+    evidence_profile: PlanningEvidenceProfile
     access: SearchV4AccessSummary
     selected_pass: SearchV4PassSummary
     lodging_estimate: CandidateLodgingEstimate | None
@@ -230,6 +270,7 @@ class SearchV4RefinementProposal(_SearchV4Model):
 class SearchV4Response(_SearchV4Model):
     search_model_version: Literal["search-v4"]
     ranking_policy_version: str
+    baseline_fingerprint: BaselineFingerprint = _EMPTY_BASELINE_FINGERPRINT
     ranking_status: Literal["ranked", "unscored"]
     unscored_reason: str | None = None
     applied_intent: SearchIntent
@@ -253,6 +294,54 @@ class SearchV4Request(_SearchV4Model):
             set(self.already_answered_question_ids)
         ):
             raise ValueError("answered refinement question IDs must be unique")
+        return self
+
+
+class SearchV4RefinementRequest(_SearchV4Model):
+    intent: SearchIntent
+    brief: str | None = Field(default=None, max_length=2_000)
+    baseline_fingerprint: BaselineFingerprint
+    already_answered_question_ids: tuple[SearchIdentifier, ...] = Field(
+        default=(), max_length=50
+    )
+
+    @model_validator(mode="after")
+    def require_unique_answered_question_ids(self) -> Self:
+        if len(self.already_answered_question_ids) != len(
+            set(self.already_answered_question_ids)
+        ):
+            raise ValueError("answered refinement question IDs must be unique")
+        return self
+
+
+class SearchV4RefinementResponse(_SearchV4Model):
+    search_model_version: Literal["search-v4"]
+    ranking_policy_version: str
+    baseline_fingerprint: BaselineFingerprint = _EMPTY_BASELINE_FINGERPRINT
+    baseline_status: Literal["current", "stale", "unverified"] = "current"
+    refinement_status: Literal[
+        "questions_available",
+        "not_needed",
+        "temporarily_unavailable",
+    ]
+    fallback_used: bool = False
+    refinements: tuple[SearchV4RefinementProposal, ...] = ()
+
+    @model_validator(mode="after")
+    def require_status_consistent_queue(self) -> Self:
+        if self.refinement_status == "questions_available" and not self.refinements:
+            raise ValueError("questions_available requires refinements")
+        if self.refinement_status != "questions_available" and self.refinements:
+            raise ValueError("non-question statuses must not include refinements")
+        if self.fallback_used and self.refinement_status != "questions_available":
+            raise ValueError("fallback_used requires questions_available")
+        if self.baseline_status != "current" and self.refinements:
+            raise ValueError("non-current baselines must not include refinements")
+        if (
+            self.baseline_status != "current"
+            and self.refinement_status != "temporarily_unavailable"
+        ):
+            raise ValueError("non-current baselines must be temporarily_unavailable")
         return self
 
 
@@ -284,6 +373,22 @@ class _FactorEvaluatedCandidate:
     record: V4CandidateRecord
     constraint_decision: ConstraintDecision
     evaluations: tuple[FactorEvaluation, ...]
+
+
+@dataclass(frozen=True)
+class _EvaluatedSearch:
+    intent: SearchIntent
+    policy: SearchPolicy
+    snapshot: CatalogSnapshot
+    manifest: CatalogTrustManifest
+    all_records: tuple[V4CandidateRecord, ...]
+    ordered: tuple[_EvaluatedCandidate, ...]
+    excluded_count: int
+    ranking_status: Literal["ranked", "unscored"]
+    unscored_reason: str | None
+    duration_days: int
+    audience: str
+    season_label: str | None
 
 
 class UnknownSearchWeatherAreaError(ValueError):
@@ -514,14 +619,88 @@ def search_trip_configurations(
     forecast_repository: _ForecastRepository | None = None,
     policy: SearchPolicy | None = None,
     reference_time: datetime | None = None,
-    include_refinements: bool = True,
-    brief: str | None = None,
-    llm_client: LLMClient | None = None,
-    already_answered_question_ids: frozenset[str] = frozenset(),
+    include_refinements: bool | None = None,
+    refinement_snapshot_store: SearchRefinementSnapshotStore | None = None,
 ) -> SearchV4Response:
-    """Execute Search V4 without invoking or depending on the V3 scorer."""
+    """Rank Search V4 candidates without refinement generation."""
 
-    search_started = time.perf_counter()
+    started = time.perf_counter()
+    evaluated = _evaluate_search(
+        intent=intent,
+        catalog_snapshot=catalog_snapshot,
+        trust_manifest=trust_manifest,
+        climatology_repository=climatology_repository,
+        forecast_repository=forecast_repository,
+        policy=policy,
+        reference_time=reference_time,
+    )
+    results = _group_results(
+        evaluated.ordered,
+        evaluated.duration_days,
+        evaluated.audience,
+        evaluated.season_label,
+        evaluated.manifest,
+    )
+    baseline_fingerprint = _baseline_fingerprint(evaluated)
+    store = (
+        refinement_snapshot_store
+        if refinement_snapshot_store is not None
+        else default_refinement_snapshot_store
+    )
+    mutation = store.put(
+        RefinementBaselineSnapshot(
+            fingerprint=baseline_fingerprint,
+            intent_digest=canonical_search_intent_digest(evaluated.intent),
+            policy=evaluated.policy,
+            candidates=_refinement_baseline_candidates(evaluated.ordered),
+        )
+    )
+    if mutation.expired_count:
+        record_search_refinement_snapshot_outcome(
+            "expired",
+            count=mutation.expired_count,
+        )
+    if mutation.evicted_count:
+        record_search_refinement_snapshot_outcome(
+            "evicted",
+            count=mutation.evicted_count,
+        )
+    response = SearchV4Response(
+        search_model_version=evaluated.policy.search_model_version,
+        ranking_policy_version=evaluated.policy.ranking_policy_version,
+        baseline_fingerprint=baseline_fingerprint,
+        ranking_status=evaluated.ranking_status,
+        unscored_reason=evaluated.unscored_reason,
+        applied_intent=intent,
+        eligible_candidate_count=len(evaluated.ordered),
+        excluded_candidate_count=evaluated.excluded_count,
+        results=results,
+        refinements=(),
+    )
+    record_search_v4_completed(
+        intent=intent,
+        ranking_policy_version=evaluated.policy.ranking_policy_version,
+        ranking_status=evaluated.ranking_status,
+        candidate_count=len(evaluated.all_records),
+        eligible_candidate_count=len(evaluated.ordered),
+        result_group_count=len(results),
+        duration_seconds=time.perf_counter() - started,
+    )
+    return response
+
+
+def _evaluate_search(
+    *,
+    intent: SearchIntent,
+    catalog_snapshot: CatalogSnapshot | None = None,
+    trust_manifest: CatalogTrustManifest | None = None,
+    climatology_repository: _ClimatologyRepository | None = None,
+    forecast_repository: _ForecastRepository | None = None,
+    policy: SearchPolicy | None = None,
+    reference_time: datetime | None = None,
+) -> _EvaluatedSearch:
+    """Build the bounded deterministic state shared by ranking and refinement."""
+
     selected_policy = policy or load_search_policy()
     validate_search_intent(intent, selected_policy)
     snapshot = catalog_snapshot or CatalogRepository().get_snapshot()
@@ -545,26 +724,20 @@ def search_trip_configurations(
     )
     excluded_count = len(all_records) - len(eligible_records)
     if not eligible_records:
-        response = SearchV4Response(
-            search_model_version=selected_policy.search_model_version,
-            ranking_policy_version=selected_policy.ranking_policy_version,
-            ranking_status="ranked",
-            applied_intent=intent,
-            eligible_candidate_count=0,
-            excluded_candidate_count=excluded_count,
-            results=(),
-        )
-        record_search_v4_completed(
+        return _EvaluatedSearch(
             intent=intent,
-            ranking_policy_version=selected_policy.ranking_policy_version,
-            ranking_status=response.ranking_status,
-            candidate_count=len(all_records),
-            eligible_candidate_count=0,
-            result_group_count=0,
-            question_count=0,
-            duration_seconds=time.perf_counter() - search_started,
+            policy=selected_policy,
+            snapshot=snapshot,
+            manifest=manifest,
+            all_records=all_records,
+            ordered=(),
+            excluded_count=excluded_count,
+            ranking_status="ranked",
+            unscored_reason=None,
+            duration_days=1,
+            audience="adult",
+            season_label=None,
         )
-        return response
 
     duration_days, audience, season_label = _pass_slice(intent)
     static_candidates = tuple(_static_candidate(record) for record in eligible_records)
@@ -699,45 +872,304 @@ def search_trip_configurations(
         if ranking_status == "unscored"
         else None
     )
-    with search_phase(phase="refinement", intent=intent):
-        refinements = _refinements(
-            include=include_refinements,
-            brief=brief,
-            intent=intent,
-            ordered=ordered,
-            policy=selected_policy,
-            client=llm_client,
-            already_answered_question_ids=already_answered_question_ids,
-        )
-    results = _group_results(
-        ordered,
-        duration_days,
-        audience,
-        season_label,
-        manifest,
-    )
-    response = SearchV4Response(
-        search_model_version=selected_policy.search_model_version,
-        ranking_policy_version=selected_policy.ranking_policy_version,
+    return _EvaluatedSearch(
+        intent=intent,
+        policy=selected_policy,
+        snapshot=snapshot,
+        manifest=manifest,
+        all_records=all_records,
+        ordered=ordered,
+        excluded_count=excluded_count,
         ranking_status=ranking_status,
         unscored_reason=unscored_reason,
-        applied_intent=intent,
-        eligible_candidate_count=len(eligible_records),
-        excluded_candidate_count=excluded_count,
-        results=results,
+        duration_days=duration_days,
+        audience=audience,
+        season_label=season_label,
+    )
+
+
+def get_search_refinements(
+    *,
+    intent: SearchIntent,
+    brief: str | None,
+    baseline_fingerprint: str,
+    already_answered_question_ids: frozenset[str],
+    llm_client_factory: Callable[[float], LLMClient],
+    policy: SearchPolicy | None = None,
+    refinement_snapshot_store: SearchRefinementSnapshotStore | None = None,
+    clock: Callable[[], float] = time.monotonic,
+    request_started_at: float | None = None,
+) -> SearchV4RefinementResponse:
+    """Generate refinement state from the exact evaluated ranking baseline."""
+
+    started = request_started_at if request_started_at is not None else clock()
+    store = (
+        refinement_snapshot_store
+        if refinement_snapshot_store is not None
+        else default_refinement_snapshot_store
+    )
+    lookup = store.get(
+        baseline_fingerprint,
+        canonical_search_intent_digest(intent),
+    )
+    record_search_refinement_snapshot_outcome(lookup.outcome)
+    baseline = lookup.snapshot
+    if baseline is None:
+        selected_policy = policy or load_search_policy()
+        validate_search_intent(intent, selected_policy)
+        baseline_status: Literal["stale", "unverified"] = (
+            "stale" if lookup.outcome == "intent_mismatch" else "unverified"
+        )
+        return _refinement_response(
+            policy=selected_policy,
+            status="temporarily_unavailable",
+            baseline_fingerprint=baseline_fingerprint,
+            baseline_status=baseline_status,
+            fallback_used=False,
+            refinements=(),
+            reason=f"snapshot_{lookup.outcome}",
+            intent=intent,
+            duration_seconds=clock() - started,
+        )
+    selected_policy = baseline.policy
+    validate_search_intent(intent, selected_policy)
+    if not baseline.candidates:
+        return _refinement_response(
+            policy=selected_policy,
+            status="not_needed",
+            baseline_fingerprint=baseline.fingerprint,
+            baseline_status="current",
+            fallback_used=False,
+            refinements=(),
+            reason="zero_results",
+            intent=intent,
+            duration_seconds=clock() - started,
+        )
+    states = _refinement_states(baseline.candidates)
+    remaining_seconds = SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS - (clock() - started)
+    if remaining_seconds > 0:
+        with search_phase(phase="refinement", intent=intent):
+            generated = generate_refinement_proposals(
+                brief=brief,
+                intent=intent,
+                candidates=states,
+                policy=selected_policy,
+                client=llm_client_factory(remaining_seconds),
+                already_answered_question_ids=already_answered_question_ids,
+            )
+    else:
+        generated = RefinementGenerationResult(
+            outcome="provider_unavailable",
+            proposals=(),
+        )
+
+    fallback = (
+        build_deterministic_refinement_fallback(
+            intent=intent,
+            candidates=states,
+            policy=selected_policy,
+            already_answered_question_ids=already_answered_question_ids,
+        )
+        if not generated.proposals
+        and clock() - started < SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS
+        else None
+    )
+    validated = (
+        generated.proposals
+        if generated.proposals
+        else ((fallback,) if fallback else ())
+    )
+    fallback_used = fallback is not None
+    status: Literal["questions_available", "not_needed", "temporarily_unavailable"] = (
+        "questions_available"
+        if validated
+        else (
+            "temporarily_unavailable"
+            if generated.outcome == "provider_unavailable"
+            else "not_needed"
+        )
+    )
+    refinements = _serialized_refinements(
+        validated=validated,
+        intent=intent,
+        candidates=baseline.candidates,
+    )
+    elapsed_seconds = clock() - started
+    if elapsed_seconds >= SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS:
+        return _refinement_response(
+            policy=selected_policy,
+            status="temporarily_unavailable",
+            baseline_fingerprint=baseline.fingerprint,
+            baseline_status="current",
+            fallback_used=False,
+            refinements=(),
+            reason="deadline_exhausted",
+            intent=intent,
+            duration_seconds=elapsed_seconds,
+        )
+    reason = (
+        "deterministic_fallback"
+        if fallback_used
+        else "provider_proposal"
+        if generated.proposals
+        else "provider_unavailable"
+        if generated.outcome == "provider_unavailable"
+        else "no_material_question"
+    )
+    return _refinement_response(
+        policy=selected_policy,
+        status=status,
+        baseline_fingerprint=baseline.fingerprint,
+        baseline_status="current",
+        fallback_used=fallback_used,
+        refinements=refinements,
+        reason=reason,
+        intent=intent,
+        duration_seconds=elapsed_seconds,
+    )
+
+
+def _refinement_response(
+    *,
+    policy: SearchPolicy,
+    status: Literal["questions_available", "not_needed", "temporarily_unavailable"],
+    baseline_fingerprint: str,
+    baseline_status: Literal["current", "stale", "unverified"],
+    fallback_used: bool,
+    refinements: tuple[SearchV4RefinementProposal, ...],
+    reason: str,
+    intent: SearchIntent,
+    duration_seconds: float,
+) -> SearchV4RefinementResponse:
+    record_search_refinement_completed(
+        intent=intent,
+        ranking_policy_version=policy.ranking_policy_version,
+        status=status,
+        reason=reason,
+        fallback_used=fallback_used,
+        question_count=len(refinements),
+        duration_seconds=duration_seconds,
+    )
+    return SearchV4RefinementResponse(
+        search_model_version=policy.search_model_version,
+        ranking_policy_version=policy.ranking_policy_version,
+        baseline_fingerprint=baseline_fingerprint,
+        baseline_status=baseline_status,
+        refinement_status=status,
+        fallback_used=fallback_used,
         refinements=refinements,
     )
-    record_search_v4_completed(
-        intent=intent,
-        ranking_policy_version=selected_policy.ranking_policy_version,
-        ranking_status=ranking_status,
-        candidate_count=len(all_records),
-        eligible_candidate_count=len(eligible_records),
-        result_group_count=len(results),
-        question_count=len(refinements),
-        duration_seconds=time.perf_counter() - search_started,
+
+
+def _baseline_fingerprint(evaluated: _EvaluatedSearch) -> str:
+    payload = {
+        "candidate_states": [
+            {
+                "candidate_id": item.record.candidate_id,
+                "rank": rank,
+                "evaluations": [
+                    evaluation.model_dump(mode="json")
+                    for evaluation in item.evaluations
+                ],
+                "ranking": item.ranking.model_dump(mode="json"),
+            }
+            for rank, item in enumerate(evaluated.ordered, start=1)
+        ],
+        "catalog_content_digest": _canonical_digest(
+            evaluated.snapshot.model_dump(mode="json")
+        ),
+        "intent_digest": canonical_search_intent_digest(evaluated.intent),
+        "ranking_policy_version": evaluated.policy.ranking_policy_version,
+        "search_model_version": evaluated.policy.search_model_version,
+        "trust_manifest_digest": _canonical_digest(
+            evaluated.manifest.model_dump(mode="json")
+        ),
+        "weather_selection_revision": evaluated.policy.weather.policy_version,
+    }
+    return _canonical_digest(payload)
+
+
+def _canonical_digest(value: object) -> str:
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _refinement_baseline_candidates(
+    ordered: Sequence[_EvaluatedCandidate],
+) -> tuple[RefinementBaselineCandidate, ...]:
+    return tuple(
+        RefinementBaselineCandidate(
+            candidate_id=item.record.candidate_id,
+            ski_region_id=item.record.region.ski_region_id,
+            constraint_facts=item.record.constraint_facts,
+            evaluations=tuple(
+                _compact_refinement_evaluation(evaluation)
+                for evaluation in item.evaluations
+            ),
+            unscored=isinstance(item.ranking, UnscoredAllocation),
+        )
+        for item in ordered
     )
-    return response
+
+
+def _compact_refinement_evaluation(
+    evaluation: FactorEvaluation,
+) -> RefinementFactorEvaluation:
+    """Retain only fields consumed by refinement actionability and scoring."""
+
+    return RefinementFactorEvaluation(
+        factor_id=evaluation.factor_id,
+        raw_utility=evaluation.raw_utility,
+        neutral_utility=evaluation.neutral_utility,
+        effective_evidence_cap=evaluation.effective_evidence_cap,
+    )
+
+
+def _refinement_states(
+    candidates: Sequence[RefinementBaselineCandidate],
+) -> tuple[RefinementCandidateState, ...]:
+    return tuple(
+        RefinementCandidateState(
+            candidate_id=item.candidate_id,
+            evaluations=tuple(
+                evaluation.materialize() for evaluation in item.evaluations
+            ),
+            eligibility_evaluator=(
+                lambda candidate_intent, facts=item.constraint_facts: (
+                    evaluate_search_constraints(
+                        candidate=facts,
+                        intent=candidate_intent,
+                    ).eligible
+                )
+            ),
+        )
+        for item in candidates
+    )
+
+
+def _serialized_refinements(
+    *,
+    validated: Sequence[ValidatedRefinementProposal],
+    intent: SearchIntent,
+    candidates: Sequence[RefinementBaselineCandidate],
+) -> tuple[SearchV4RefinementProposal, ...]:
+    baseline_ordered_candidate_ids = tuple(item.candidate_id for item in candidates)
+    baseline_unscored_candidate_ids = frozenset(
+        item.candidate_id for item in candidates if item.unscored
+    )
+    candidate_region_ids = {
+        item.candidate_id: item.ski_region_id for item in candidates
+    }
+    return tuple(
+        _response_refinement_proposal(
+            item,
+            intent=intent,
+            baseline_ordered_candidate_ids=baseline_ordered_candidate_ids,
+            baseline_unscored_candidate_ids=baseline_unscored_candidate_ids,
+            candidate_region_ids=candidate_region_ids,
+        )
+        for item in validated
+    )
 
 
 def _load_trust_manifest(path: Path) -> CatalogTrustManifest:
@@ -1201,6 +1633,7 @@ def _configuration(
         stay_base_name=record.stay_base.name,
         ski_area_id=record.ski_area.ski_area_id,
         ski_area_name=record.ski_area.name,
+        evidence_profile=_evidence_profile(item.evaluations),
         access=SearchV4AccessSummary(
             ski_area_access_id=record.access.ski_area_access_id,
             access_mode=record.access.access_mode,
@@ -1209,6 +1642,18 @@ def _configuration(
             distance_m=record.access.distance_m,
             duration_minutes=record.access.duration_minutes,
             is_direct=record.access.is_direct,
+            relationship_trust_status=_status(
+                manifest,
+                "ski_area_access",
+                record.access.ski_area_access_id,
+                "relationship",
+            ),
+            access_mode_distance_trust_status=_status(
+                manifest,
+                "ski_area_access",
+                record.access.ski_area_access_id,
+                "access_mode_distance",
+            ),
         ),
         selected_pass=_pass_summary(
             record,
@@ -1224,6 +1669,42 @@ def _configuration(
         factors=ranking.factors if isinstance(ranking, RankedScore) else (),
         constraint_warnings=item.constraint_decision.warnings,
     )
+
+
+def _evidence_profile(
+    evaluations: Sequence[FactorEvaluation],
+) -> PlanningEvidenceProfile:
+    snow = next(
+        (
+            evaluation
+            for evaluation in evaluations
+            if evaluation.factor_id == "trip_window_snow_fit"
+        ),
+        None,
+    )
+    if snow is None or snow.effective_evidence_cap <= 0:
+        return "fallback_heavy"
+    forecast_coverage = snow.evidence_cap_components.get(
+        "forecast_date_coverage",
+        0,
+    )
+    if (
+        isinstance(forecast_coverage, (int, float))
+        and not isinstance(forecast_coverage, bool)
+        and forecast_coverage > 0
+    ):
+        return "forecast_assisted"
+    climatology_coverage = snow.evidence_cap_components.get(
+        "climatology_date_coverage",
+        0,
+    )
+    if (
+        isinstance(climatology_coverage, (int, float))
+        and not isinstance(climatology_coverage, bool)
+        and climatology_coverage >= 1
+    ):
+        return "archive_backed"
+    return "fallback_heavy"
 
 
 def _pass_summary(
@@ -1298,22 +1779,9 @@ def _refinements(
 ) -> tuple[SearchV4RefinementProposal, ...]:
     if not include or client is None:
         return ()
-    states = tuple(
-        RefinementCandidateState(
-            candidate_id=item.record.candidate_id,
-            evaluations=item.evaluations,
-            eligibility_evaluator=(
-                lambda candidate_intent, facts=item.record.constraint_facts: (
-                    evaluate_search_constraints(
-                        candidate=facts,
-                        intent=candidate_intent,
-                    ).eligible
-                )
-            ),
-        )
-        for item in ordered
-    )
-    validated = generate_refinement_proposals(
+    candidates = _refinement_baseline_candidates(ordered)
+    states = _refinement_states(candidates)
+    generated = generate_refinement_proposals(
         brief=brief,
         intent=intent,
         candidates=states,
@@ -1321,24 +1789,15 @@ def _refinements(
         client=client,
         already_answered_question_ids=already_answered_question_ids,
     )
-    baseline_ordered_candidate_ids = tuple(state.candidate_id for state in states)
-    baseline_unscored_candidate_ids = frozenset(
-        item.record.candidate_id
-        for item in ordered
-        if isinstance(item.ranking, UnscoredAllocation)
+    validated = (
+        generated.proposals
+        if isinstance(generated, RefinementGenerationResult)
+        else generated
     )
-    candidate_region_ids = {
-        item.record.candidate_id: item.record.region.ski_region_id for item in ordered
-    }
-    return tuple(
-        _response_refinement_proposal(
-            item,
-            intent=intent,
-            baseline_ordered_candidate_ids=baseline_ordered_candidate_ids,
-            baseline_unscored_candidate_ids=baseline_unscored_candidate_ids,
-            candidate_region_ids=candidate_region_ids,
-        )
-        for item in validated
+    return _serialized_refinements(
+        validated=validated,
+        intent=intent,
+        candidates=candidates,
     )
 
 

@@ -19,6 +19,11 @@ jobs:
       - name: Set up Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
       - name: Deploy to Fly
         run: flyctl deploy --remote-only --app "$FLY_APP"
         env:
@@ -40,3 +45,10 @@ jobs:
             --header 'Content-Type: application/json' \
             --data '{"intent":{"constraints":{"location":{"country":"France"},"travel_window":{"month":3}},"party":{"skill_levels":["intermediate"]},"objectives":[{"factor_id":"pass_terrain_value","importance":"normal"}]},"generate_refinements":false}' \
             "$BASE_URL/api/search"
+
+      - name: Smoke check ranking and refinement flow
+        run: |
+          python ops/canary/search_canary.py \
+            --base-url "$BASE_URL" \
+            --latency-threshold-seconds 15 \
+            --refinement-latency-threshold-seconds 6

@@ -73,8 +73,12 @@ export interface SearchIntent {
 
 export interface SearchV4Request {
   intent: SearchIntent;
+}
+
+export interface SearchV4RefinementRequest {
+  intent: SearchIntent;
   brief: string | null;
-  generate_refinements: boolean;
+  baseline_fingerprint: string;
   already_answered_question_ids: string[];
 }
 
@@ -117,6 +121,8 @@ export interface SearchV4AccessSummary {
   distance_m: number | null;
   duration_minutes: number | null;
   is_direct: boolean;
+  relationship_trust_status: CatalogTrustStatus;
+  access_mode_distance_trust_status: CatalogTrustStatus;
 }
 
 export interface SearchV4PassPriceSummary {
@@ -248,6 +254,10 @@ export interface SearchV4Configuration {
   stay_base_name: string;
   ski_area_id: string;
   ski_area_name: string;
+  evidence_profile:
+    | "archive_backed"
+    | "forecast_assisted"
+    | "fallback_heavy";
   access: SearchV4AccessSummary;
   selected_pass: SearchV4PassSummary;
   lodging_estimate: {
@@ -336,12 +346,26 @@ export interface RefinementProposal {
 export interface SearchResponse {
   search_model_version: "search-v4";
   ranking_policy_version: string;
+  baseline_fingerprint: string;
   ranking_status: "ranked" | "unscored";
   unscored_reason: string | null;
   applied_intent: SearchIntent;
   eligible_candidate_count: number;
   excluded_candidate_count: number;
   results: SearchV4RecommendationGroup[];
+  refinements: RefinementProposal[];
+}
+
+export interface SearchV4RefinementResponse {
+  search_model_version: "search-v4";
+  ranking_policy_version: string;
+  baseline_fingerprint: string;
+  baseline_status: "current" | "stale" | "unverified";
+  refinement_status:
+    | "questions_available"
+    | "not_needed"
+    | "temporarily_unavailable";
+  fallback_used: boolean;
   refinements: RefinementProposal[];
 }
 

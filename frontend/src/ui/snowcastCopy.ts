@@ -12,17 +12,14 @@ export const initialHeroCopy = {
 export const evidenceQualityCopy = {
   archiveBacked: {
     label: "Archive-backed",
-    trust: "High evidence",
     description: "Historical seasons support this travel window.",
   },
   forecastAssisted: {
     label: "Forecast-assisted",
-    trust: "Medium evidence",
     description: "Current forecast supports the recommendation.",
   },
   fallbackHeavy: {
     label: "Fallback-heavy",
-    trust: "Limited evidence",
     description: "Sparse data means seasonal traits carry more of the answer.",
   },
 } as const;

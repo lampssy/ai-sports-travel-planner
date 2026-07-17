@@ -8,7 +8,6 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
-    computed_field,
     model_validator,
 )
 
@@ -71,12 +70,10 @@ class TravelWindow(_SearchV4Model):
             raise ValueError("travel window needs a month or exact dates")
         return self
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def mode(self) -> Literal["month", "exact_dates"]:
         return "exact_dates" if self.start_date is not None else "month"
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def ski_day_count(self) -> int | None:
         if self.start_date is None or self.end_date is None:
@@ -112,12 +109,10 @@ class LodgingBudgetConstraint(_SearchV4Model):
     ]
     budget_flex: float = Field(default=0, ge=0, le=0.5)
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def effective_flex(self) -> float:
         return max(0.10, self.budget_flex)
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def effective_maximum(self) -> float:
         return self.maximum * (1 + self.effective_flex)

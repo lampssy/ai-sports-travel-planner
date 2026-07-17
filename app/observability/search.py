@@ -77,7 +77,6 @@ def record_search_v4_completed(
     candidate_count: int,
     eligible_candidate_count: int,
     result_group_count: int,
-    question_count: int,
     duration_seconds: float,
     span: object | None = None,
 ) -> None:
@@ -103,7 +102,6 @@ def record_search_v4_completed(
         ("snowcast_search_candidates", candidate_count),
         ("snowcast_search_eligible_candidates", eligible_candidate_count),
         ("snowcast_search_result_groups", result_group_count),
-        ("snowcast_search_refinement_questions", question_count),
     ):
         recorder.observe(metric_name, float(value), bounded_counts)
     if eligible_candidate_count == 0:
@@ -118,21 +116,64 @@ def record_search_v4_completed(
                 "snowcast.search.candidate_count": candidate_count,
                 "snowcast.search.eligible_candidate_count": (eligible_candidate_count),
                 "snowcast.search.result_group_count": result_group_count,
-                "snowcast.search.refinement_question_count": question_count,
             },
         )
 
 
-def record_search_refinement_outcome(
+def record_search_refinement_completed(
     *,
-    outcome: str,
+    intent: SearchIntent,
+    ranking_policy_version: str,
+    status: str,
+    reason: str,
+    fallback_used: bool,
     question_count: int,
+    duration_seconds: float,
 ) -> None:
-    attributes = {"outcome": outcome, "search_model": "search-v4"}
+    attributes = {
+        "search_model": "search-v4",
+        "ranking_policy_version": ranking_policy_version,
+        "status": status,
+        "reason": reason,
+        "fallback_used": fallback_used,
+        "window_type": search_window_type(intent),
+        "has_origin": bool(intent.travel_context.origin_text),
+    }
     recorder = get_metrics_recorder()
-    recorder.increment("snowcast_search_refinement_outcomes_total", attributes)
+    recorder.increment("snowcast_search_refinement_requests_total", attributes)
     recorder.observe(
-        "snowcast_search_refinement_output_questions",
-        float(question_count),
+        "snowcast_search_refinement_duration_seconds",
+        duration_seconds,
         attributes,
+    )
+    recorder.observe(
+        "snowcast_search_refinement_questions",
+        float(question_count),
+        {"search_model": "search-v4", "status": status},
+    )
+    if fallback_used:
+        recorder.increment(
+            "snowcast_search_refinement_fallbacks_total",
+            {"search_model": "search-v4"},
+        )
+
+
+def record_search_refinement_route_outcome(outcome: str) -> None:
+    get_metrics_recorder().increment(
+        "snowcast_search_refinement_route_outcomes_total",
+        {"search_model": "search-v4", "outcome": outcome},
+    )
+
+
+def record_search_refinement_snapshot_outcome(
+    outcome: str,
+    *,
+    count: int = 1,
+) -> None:
+    """Record one of the bounded evaluated-baseline snapshot outcomes."""
+
+    get_metrics_recorder().increment(
+        "snowcast_search_refinement_snapshot_outcomes_total",
+        {"search_model": "search-v4", "outcome": outcome},
+        amount=count,
     )

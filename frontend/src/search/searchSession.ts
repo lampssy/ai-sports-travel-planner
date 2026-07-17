@@ -23,6 +23,16 @@ export interface SearchSession {
   dossierGroupId: string | null;
 }
 
+export type RefinementLifecycleStatus =
+  | "idle"
+  | "loading"
+  | "slow"
+  | "questions_available"
+  | "not_needed"
+  | "skipped"
+  | "temporarily_unavailable"
+  | "stale";
+
 export const defaultSearchFilters: SearchFilters = {
   location: "France",
   maxPrice: "320",
@@ -210,7 +220,7 @@ export function createSearchSession(
     response,
     expandedGroupIds: new Set(winner ? [winner] : []),
     selectedCandidateIdByGroup: defaultSelections(response),
-    refinementQueue: response.refinements,
+    refinementQueue: [],
     resultsScrollY: 0,
     dossierNavigatorCollapsed: false,
     dossierGroupId: null,
@@ -244,8 +254,15 @@ export function reconcileSearchSession(
     response,
     expandedGroupIds,
     selectedCandidateIdByGroup,
-    refinementQueue: response.refinements,
+    refinementQueue: [],
   };
+}
+
+export function replaceRefinements(
+  current: SearchSession,
+  refinements: RefinementProposal[],
+): SearchSession {
+  return { ...current, refinementQueue: refinements };
 }
 
 export function dismissRefinement(

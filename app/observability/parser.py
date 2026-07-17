@@ -7,6 +7,10 @@ from contextlib import contextmanager
 from app.observability.metrics import get_metrics_recorder
 from app.observability.tracing import set_span_attributes, start_span
 
+_BOUNDED_LLM_FAILURE_REASONS = frozenset(
+    {"auth_error", "network_error", "provider_error", "quota_error"}
+)
+
 
 @contextmanager
 def parser_operation(operation: str, *, model: str | None = None) -> Iterator[float]:
@@ -62,6 +66,23 @@ def record_llm_result(
     }
     recorder.increment("snowcast_llm_requests_total", attributes)
     recorder.observe("snowcast_llm_duration_seconds", duration_seconds, attributes)
+
+
+def record_llm_failure(
+    *,
+    operation: str,
+    model: str | None,
+    reason: str,
+) -> None:
+    safe_reason = reason if reason in _BOUNDED_LLM_FAILURE_REASONS else "provider_error"
+    get_metrics_recorder().increment(
+        "snowcast_llm_failures_total",
+        {
+            "operation": operation,
+            "model": model or "unknown",
+            "reason": safe_reason,
+        },
+    )
 
 
 def record_llm_retry(

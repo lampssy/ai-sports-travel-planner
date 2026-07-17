@@ -53,7 +53,7 @@ export function TripConfigurationDetails({
                   <strong>{candidate.stay_base_name}</strong>
                   <small>{candidate.selected_pass.name}</small>
                 </span>
-                <em>{selected ? "Current" : `#${group.rank}`}</em>
+                <em>{selected ? "Current" : "Alternative"}</em>
               </button>
             );
           })}

@@ -167,8 +167,58 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
   return chips;
 }
 
+function accessTrustState(
+  configuration: SearchV4Configuration,
+): "verified" | "verified_with_adjustment" | "estimated" | "needs_source" {
+  const statuses = [
+    configuration.access.relationship_trust_status,
+    configuration.access.access_mode_distance_trust_status,
+  ];
+  if (statuses.includes("needs_source")) return "needs_source";
+  if (statuses.includes("estimated")) return "estimated";
+  if (statuses.includes("verified_with_adjustment")) {
+    return "verified_with_adjustment";
+  }
+  return "verified";
+}
+
+function accessTrustPrefix(configuration: SearchV4Configuration): string {
+  const trust = accessTrustState(configuration);
+  if (trust === "estimated") return "Estimated ";
+  if (trust === "verified_with_adjustment") return "Adjusted ";
+  return "";
+}
+
 export function formatAccess(configuration: SearchV4Configuration): string {
-  return titleCase(configuration.access.access_mode);
+  if (accessTrustState(configuration) === "needs_source") {
+    return "Access details need source verification";
+  }
+  const mode = accessModeLabels[configuration.access.access_mode];
+  if (!mode) return "Access mode unavailable";
+  return `${accessTrustPrefix(configuration)}${titleCase(mode)}`;
+}
+
+export function formatAccommodationAccessContext(
+  configuration: SearchV4Configuration,
+): string | null {
+  if (accessTrustState(configuration) === "needs_source") return null;
+  const { access } = configuration;
+  const mode = accessModeLabels[access.access_mode];
+  if (!mode) return null;
+  const detail =
+    access.distance_m != null
+      ? `${access.distance_m} m ${mode}`
+      : access.duration_minutes != null
+        ? `${access.duration_minutes} min ${mode}`
+        : access.is_direct
+          ? "direct access"
+          : null;
+  const context = detail
+    ? access.nearest_lift_name
+      ? `${access.nearest_lift_name} - ${detail}`
+      : detail
+    : access.nearest_lift_name;
+  return context ? `${accessTrustPrefix(configuration)}${context}` : null;
 }
 
 export function formatPassPrice(configuration: SearchV4Configuration): string {
@@ -366,17 +416,19 @@ function passValue(configuration: SearchV4Configuration): string | null {
 
 function accessValue(configuration: SearchV4Configuration): string | null {
   const { access } = configuration;
+  if (accessTrustState(configuration) === "needs_source") return null;
   const mode = accessModeLabels[access.access_mode];
   if (!mode) return null;
-  if (access.distance_m != null) return `${access.distance_m} m ${mode}`;
+  const prefix = accessTrustPrefix(configuration);
+  if (access.distance_m != null) return `${prefix}${access.distance_m} m ${mode}`;
   if (access.duration_minutes != null) {
-    return `${access.duration_minutes} min ${mode}`;
+    return `${prefix}${access.duration_minutes} min ${mode}`;
   }
   if (access.is_direct || access.access_mode === "ski_in_ski_out") {
-    return "Ski-in/out";
+    return `${prefix}Ski-in/out`;
   }
   const distance = liftDistanceLabels[access.lift_distance];
-  return distance ? `${distance} ${mode}` : titleCase(mode);
+  return distance ? `${prefix}${distance} ${mode}` : `${prefix}${titleCase(mode)}`;
 }
 
 function lodgingValue(configuration: SearchV4Configuration): string | null {
@@ -497,15 +549,226 @@ export interface CandidateNarrative {
   watchout?: string;
 }
 
+export interface DecisionEvidencePresentation {
+  supports: Array<{ id: string; title: string; detail: string }>;
+  uncertainties: Array<{ id: string; detail: string }>;
+  technicalDetails: Array<{
+    id: string;
+    label: string;
+    provenance: string;
+    evidenceLabel: string;
+  }>;
+}
+
+function supportedFactor(
+  configuration: SearchV4Configuration,
+  factorId: string,
+): boolean {
+  const factor = configuration.factors.find((item) => item.factor_id === factorId);
+  return Boolean(
+    factor &&
+      factor.effective_evidence_cap > 0 &&
+      factor.effective_utility > factor.neutral_utility,
+  );
+}
+
+export function decisionEvidencePresentation(
+  configuration: SearchV4Configuration,
+): DecisionEvidencePresentation {
+  const supports: DecisionEvidencePresentation["supports"] = [];
+  const uncertainties: DecisionEvidencePresentation["uncertainties"] = [];
+  const addSupport = (id: string, title: string, detail: string) => {
+    supports.push({ id, title, detail });
+  };
+  const addUncertainty = (id: string, detail: string) => {
+    if (!uncertainties.some((item) => item.detail === detail)) {
+      uncertainties.push({ id, detail });
+    }
+  };
+
+  const snowFactor = configuration.factors.find(
+    (item) => item.factor_id === "trip_window_snow_fit",
+  );
+  if (supportedFactor(configuration, "trip_window_snow_fit")) {
+    addSupport(
+      "snow-window",
+      "Snow window",
+      "Available snow evidence supports the requested travel window.",
+    );
+  } else if (
+    snowFactor &&
+    (snowFactor.effective_evidence_cap === 0 || snowFactor.warnings.length > 0)
+  ) {
+    addUncertainty(
+      "snow-window",
+      "Snow evidence is limited for the requested travel window.",
+    );
+  }
+
+  if (supportedFactor(configuration, "party_skill_coverage")) {
+    addSupport(
+      "skill-match",
+      "Skill match",
+      "The selected ski area supports the requested skill level.",
+    );
+  }
+
+  const terrain = terrainPresentation(configuration.selected_pass);
+  if (
+    terrain &&
+    configuration.selected_pass.accessible_piste_km_evidence?.trust_status !==
+      "needs_source"
+  ) {
+    addSupport(
+      "terrain",
+      "Terrain choice",
+      `${terrain.essentialValue} is covered by the selected pass context.`,
+    );
+  } else {
+    addUncertainty(
+      "terrain",
+      "Comparable pass-wide terrain coverage is not available yet.",
+    );
+  }
+
+  const access = accessValue(configuration);
+  const accessNeedsSource = accessTrustState(configuration) === "needs_source";
+  if (access && configuration.access.lift_distance !== "far" && !accessNeedsSource) {
+    addSupport(
+      "lift-access",
+      "Lift access",
+      `${configuration.stay_base_name} offers ${access.toLowerCase()} for this configuration.`,
+    );
+  } else if (accessNeedsSource) {
+    addUncertainty(
+      "lift-access",
+      "Lift access from this stay base still needs source verification.",
+    );
+  } else {
+    addUncertainty(
+      "lift-access",
+      "Lift access may require additional local travel from the selected stay base.",
+    );
+  }
+
+  const price = passValue(configuration);
+  if (price) {
+    addSupport(
+      "pass-price",
+      "Pass value",
+      `The selected pass is currently compared at ${price}.`,
+    );
+  } else {
+    addUncertainty(
+      "pass-price",
+      "A comparable pass price is not available for this configuration.",
+    );
+  }
+
+  const lodging = formatAccommodationEstimate(configuration);
+  if (lodging) {
+    addSupport(
+      "lodging",
+      "Stay estimate",
+      `${configuration.stay_base_name} is estimated at ${lodging}.`,
+    );
+  } else {
+    addUncertainty(
+      "lodging",
+      "No stay-price estimate is available for this configuration.",
+    );
+  }
+
+  if (configuration.constraint_warnings.length > 0) {
+    addUncertainty(
+      "constraints",
+      "One or more trip constraints rely on limited supporting data.",
+    );
+  }
+
+  const technicalDetails: DecisionEvidencePresentation["technicalDetails"] =
+    configuration.factors
+      .filter((factor) => factorLabels[factor.factor_id] && factor.provenance_summary)
+      .map((factor) => ({
+        id: `factor-${factor.factor_id}`,
+        label:
+          factorLabelForConfiguration(configuration, factor.factor_id) ??
+          "Ranking factor",
+        provenance: factor.provenance_summary,
+        evidenceLabel:
+          factor.effective_evidence_cap > 0 ? "Supported" : "Limited evidence",
+      }));
+
+  const accessTrust = accessTrustState(configuration);
+  const accessProvenanceLabel =
+    accessTrust === "estimated"
+      ? "Estimated access"
+      : accessTrust === "verified_with_adjustment"
+        ? "Adjusted access"
+        : "Selected access";
+  const accessEvidencePrefix =
+    accessTrust === "estimated"
+      ? "Estimated "
+      : accessTrust === "verified_with_adjustment"
+        ? "Adjusted "
+        : "";
+  technicalDetails.push(
+    accessTrust === "needs_source"
+      ? {
+          id: "catalog-access",
+          label: "Stay base and lift access",
+          provenance:
+            "Lift-access relationship and distance need source verification.",
+          evidenceLabel: "Needs source",
+        }
+      : {
+          id: "catalog-access",
+          label: "Stay base and lift access",
+          provenance: configuration.access.nearest_lift_name
+            ? `${accessProvenanceLabel} is anchored to ${configuration.access.nearest_lift_name}.`
+            : `${accessProvenanceLabel} uses the catalog stay-base relationship.`,
+          evidenceLabel:
+            configuration.access.distance_m != null
+              ? `${accessEvidencePrefix}${configuration.access.distance_m} m`
+              : `${accessEvidencePrefix}Catalog context`,
+        },
+  );
+  technicalDetails.push({
+    id: "selected-pass",
+    label: "Selected pass",
+    provenance: `${configuration.selected_pass.name} is selected for this configuration.`,
+    evidenceLabel: terrain?.evidenceLabel ?? "Coverage unresolved",
+  });
+  if (configuration.lodging_estimate?.provenance) {
+    technicalDetails.push({
+      id: "lodging-estimate",
+      label: "Lodging estimate",
+      provenance: configuration.lodging_estimate.provenance,
+      evidenceLabel: "Stay-base estimate",
+    });
+  }
+
+  return {
+    supports: supports.slice(0, 4),
+    uncertainties,
+    technicalDetails,
+  };
+}
+
 export function buildCandidateNarrative(
   configuration: SearchV4Configuration,
 ): CandidateNarrative {
+  const accessTrust = accessTrustState(configuration);
   const supported = configuration.factors
     .filter(
       (factor) =>
         strengthCopy[factor.factor_id] &&
         factor.effective_evidence_cap > 0 &&
-        factor.effective_utility > factor.neutral_utility,
+        factor.effective_utility > factor.neutral_utility &&
+        !(
+          factor.factor_id === "stay_base_access" &&
+          accessTrust === "needs_source"
+        ),
     )
     .sort((left, right) => right.effective_utility - left.effective_utility)[0];
   const caution = configuration.factors.find(
@@ -520,9 +783,18 @@ export function buildCandidateNarrative(
     supported?.factor_id === "accessible_terrain_scale"
       ? terrainPresentation(configuration.selected_pass)
       : null;
+  const watchout = caution
+    ? caution.factor_id === "stay_base_access" && accessTrust === "needs_source"
+      ? "Lift-access details need source verification."
+      : watchoutCopy[caution.factor_id]
+    : undefined;
   const verdict = supported
     ? supported.factor_id === "stay_base_access"
-      ? "A practical lift-access match for this trip."
+      ? accessTrust === "estimated"
+        ? "An estimated practical lift-access match for this trip."
+        : accessTrust === "verified_with_adjustment"
+          ? "An adjusted practical lift-access match for this trip."
+          : "A practical lift-access match for this trip."
       : `A strong ${supportedLabel?.toLowerCase() ?? "trip"} match.`
     : "A complete trip configuration for comparison.";
   return {
@@ -531,10 +803,16 @@ export function buildCandidateNarrative(
       ? {
           strength: supportedTerrain
             ? `${supportedTerrain.evidenceLabel}.`
-            : strengthCopy[supported.factor_id],
+            : supported.factor_id === "stay_base_access"
+              ? accessTrust === "estimated"
+                ? "Catalog estimates suggest the stay base keeps access practical."
+                : accessTrust === "verified_with_adjustment"
+                  ? "Adjusted access evidence supports the stay base as a practical choice."
+                  : strengthCopy[supported.factor_id]
+              : strengthCopy[supported.factor_id],
         }
       : {}),
-    ...(caution ? { watchout: watchoutCopy[caution.factor_id] } : {}),
+    ...(watchout ? { watchout } : {}),
   };
 }
 
@@ -550,14 +828,14 @@ export function snowWindowLabel(configuration: SearchV4Configuration): string {
 
 export function evidenceQualityMode(
   configuration: SearchV4Configuration,
-): EvidenceQualityMode | null {
-  const snowFactor = configuration.factors.find(
-    (item) => item.factor_id === "trip_window_snow_fit",
-  );
-  if (!snowFactor || snowFactor.effective_evidence_cap === 0) {
-    return "fallbackHeavy";
+): EvidenceQualityMode {
+  if (configuration.evidence_profile === "archive_backed") {
+    return "archiveBacked";
   }
-  return null;
+  if (configuration.evidence_profile === "forecast_assisted") {
+    return "forecastAssisted";
+  }
+  return "fallbackHeavy";
 }
 
 export function refinementPreviewCopy(
@@ -565,7 +843,7 @@ export function refinementPreviewCopy(
   intentChanged = true,
 ): string {
   if (!intentChanged) return "Keeps your current trip decisions and ranking.";
-  if (!preview) return "This answer can materially reorder your results";
+  if (!preview) return "This changes how your current matches are evaluated.";
   const changes = preview.top_rank_changes;
   if (changes.length === 1) {
     const change = changes[0];
@@ -591,5 +869,5 @@ export function refinementPreviewCopy(
       preview.eligible_candidate_count_delta,
     )} trip configurations.`;
   }
-  return "This answer can materially reorder your results";
+  return "This changes how your current matches are evaluated.";
 }

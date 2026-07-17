@@ -52,6 +52,7 @@ test("separates hard constraints from preferences and renders one refinement", (
     <SearchContextRail
       intent={intent}
       refinement={refinement}
+      refinementStatus="questions_available"
       loading={false}
       refinementError={null}
       refinementControlRef={createRef<HTMLInputElement>()}
@@ -74,6 +75,9 @@ test("separates hard constraints from preferences and renders one refinement", (
   expect(within(preferences).getByText(/stay-base access/i)).toBeVisible();
   expect(screen.getByRole("button", { name: "Adjust" })).toBeVisible();
   expect(screen.getAllByText("What should break the tie?")).toHaveLength(1);
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "A refinement question is ready. What should break the tie?",
+  );
 });
 
 test("disables context mutations while recommendations are loading", () => {
@@ -83,6 +87,7 @@ test("disables context mutations while recommendations are loading", () => {
     <SearchContextRail
       intent={intent}
       refinement={refinement}
+      refinementStatus="questions_available"
       loading
       refinementError={null}
       refinementControlRef={createRef<HTMLInputElement>()}
@@ -100,4 +105,150 @@ test("disables context mutations while recommendations are loading", () => {
   }
   expect(onOpenFilters).not.toHaveBeenCalled();
   expect(onRemoveChip).not.toHaveBeenCalled();
+});
+
+test("announces initial and replacement refinement questions", () => {
+  const sharedProps = {
+    intent,
+    loading: false,
+    refinementError: null,
+    refinementControlRef: createRef<HTMLInputElement>(),
+    adjustFiltersRef: createRef<HTMLButtonElement>(),
+    onOpenFilters: vi.fn(),
+    onRemoveChip: vi.fn(),
+    onApplyRefinement: vi.fn(),
+    onSkipRefinement: vi.fn(),
+  };
+  const { rerender } = render(
+    <SearchContextRail
+      {...sharedProps}
+      refinement={null}
+      refinementStatus="loading"
+    />,
+  );
+
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Checking whether one answer could improve this ranking.",
+  );
+
+  rerender(
+    <SearchContextRail
+      {...sharedProps}
+      refinement={refinement}
+      refinementStatus="questions_available"
+    />,
+  );
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "A refinement question is ready. What should break the tie?",
+  );
+
+  rerender(
+    <SearchContextRail
+      {...sharedProps}
+      refinement={{
+        ...refinement,
+        question_id: "next-priority",
+        question: "What should matter next?",
+      }}
+      refinementStatus="questions_available"
+    />,
+  );
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "A refinement question is ready. What should matter next?",
+  );
+});
+
+test.each([
+  ["loading", "Checking whether one answer could improve this ranking."],
+  [
+    "slow",
+    "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
+  ],
+  [
+    "temporarily_unavailable",
+    "Refinement is temporarily unavailable. Your ranking is still ready.",
+  ],
+  ["stale", "A newer ranking replaced this refinement check."],
+] as const)("renders the %s refinement lifecycle state", (status, copy) => {
+  render(
+    <SearchContextRail
+      intent={intent}
+      refinement={null}
+      refinementStatus={status}
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByRole("status")).toHaveTextContent(copy);
+});
+
+test("keeps the idle lifecycle state compact", () => {
+  render(
+    <SearchContextRail
+      intent={intent}
+      refinement={null}
+      refinementStatus="idle"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+
+test("shows when no useful follow-up is needed", () => {
+  render(
+    <SearchContextRail
+      intent={intent}
+      refinement={null}
+      refinementStatus="not_needed"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "No follow-up would materially change these results.",
+  );
+});
+
+test("reports a skipped follow-up without claiming it was unnecessary", () => {
+  render(
+    <SearchContextRail
+      intent={intent}
+      refinement={null}
+      refinementStatus="skipped"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Follow-up skipped. Results unchanged.",
+  );
 });

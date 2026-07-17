@@ -48,6 +48,7 @@ function response(
   return {
     search_model_version: "search-v4",
     ranking_policy_version: "test-policy",
+    baseline_fingerprint: "baseline-a",
     ranking_status: "ranked",
     unscored_reason: null,
     applied_intent: appliedIntent,
@@ -78,7 +79,38 @@ test("creates an in-memory session with the winner expanded and selected", () =>
     "region-a": "candidate-a",
     "region-b": "candidate-b",
   });
+  expect(session.refinementQueue).toEqual([]);
   expect(session.resultsScrollY).toBe(0);
+});
+
+test("does not hydrate or reconcile the refinement queue from the legacy search field", () => {
+  const legacyRefinement = {
+    question_id: "legacy-question",
+    question: "Legacy question?",
+    reason: "Returned only for compatibility.",
+    options: [],
+  };
+  const initialResponse = {
+    ...response([group("region-a", "candidate-a")]),
+    refinements: [legacyRefinement],
+  };
+  const session = createSearchSession("France", initialResponse);
+
+  expect(session.refinementQueue).toEqual([]);
+
+  const currentWithLoadedRefinement = {
+    ...session,
+    refinementQueue: [legacyRefinement],
+  };
+  const next = reconcileSearchSession(
+    currentWithLoadedRefinement,
+    {
+      ...response([group("region-a", "candidate-a")]),
+      refinements: [legacyRefinement],
+    },
+  );
+
+  expect(next.refinementQueue).toEqual([]);
 });
 
 test("rerank preserves present selections, expansions, and scroll and expands the new winner", () => {

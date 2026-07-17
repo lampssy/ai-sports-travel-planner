@@ -1,83 +1,81 @@
-import { AlertTriangle, Database, MapPin, Ticket } from "lucide-react";
+import { CheckCircle2, Database, TriangleAlert } from "lucide-react";
 
 import type { SearchV4Configuration } from "../types";
-import {
-  factorLabelForConfiguration,
-  factorLabels,
-  terrainPresentation,
-} from "./searchPresentation";
+import { Alert } from "../ui/Alert";
+import { Badge } from "../ui/Badge";
+import { Disclosure } from "../ui/Disclosure";
+import { SectionHeader } from "../ui/SectionHeader";
+import { decisionEvidencePresentation } from "./searchPresentation";
 
 export function DecisionEvidenceLedger({
   configuration,
 }: {
   configuration: SearchV4Configuration;
 }) {
-  const factors = configuration.factors.filter(
-    (factor) => factorLabels[factor.factor_id] && factor.provenance_summary,
-  );
-  const warnings = [
-    ...configuration.constraint_warnings.map((warning) => warning.message),
-    ...configuration.factors.flatMap((factor) => factor.warnings),
-  ];
-  const terrain = terrainPresentation(configuration.selected_pass);
+  const presentation = decisionEvidencePresentation(configuration);
 
   return (
-    <section className="dossier-section evidence-ledger" id="decision-evidence">
-      <p className="section-label">Decision evidence</p>
-      <h2>Evidence ledger</h2>
-      <div className="evidence-ledger__rows">
-        {factors.map((factor) => (
-          <article key={factor.factor_id}>
-            <Database aria-hidden="true" size={19} />
-            <div>
-              <h3>{factorLabelForConfiguration(configuration, factor.factor_id)}</h3>
-              <p>{factor.provenance_summary}</p>
-            </div>
-            <span>{factor.effective_evidence_cap === 0 ? "Limited evidence" : "Supported"}</span>
-          </article>
-        ))}
-        <article>
-          <MapPin aria-hidden="true" size={19} />
-          <div>
-            <h3>Stay base and lift access</h3>
-            <p>
-              {configuration.access.nearest_lift_name
-                ? `Selected access is anchored to ${configuration.access.nearest_lift_name}.`
-                : "Selected access uses the catalog stay-base relationship."}
-            </p>
-          </div>
-          <span>{configuration.access.distance_m != null ? `${configuration.access.distance_m} m` : "Catalog context"}</span>
-        </article>
-        <article>
-          <Ticket aria-hidden="true" size={19} />
-          <div>
-            <h3>Selected pass</h3>
-            <p>{configuration.selected_pass.name} is the pass selected for this configuration.</p>
-          </div>
-          <span>
-            {terrain?.evidenceLabel ?? "Coverage unresolved"}
-          </span>
-        </article>
-        {configuration.lodging_estimate?.provenance ? (
-          <article>
-            <Database aria-hidden="true" size={19} />
-            <div>
-              <h3>Lodging estimate</h3>
-              <p>{configuration.lodging_estimate.provenance}</p>
-            </div>
-            <span>Stay-base evidence</span>
-          </article>
-        ) : null}
-      </div>
-      {warnings.length ? (
-        <div className="evidence-ledger__warnings">
-          <AlertTriangle aria-hidden="true" size={18} />
-          <div>
-            <strong>Warnings and limitations</strong>
-            <ul>{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+    <section className="dossier-section why-trip" id="decision-evidence">
+      <SectionHeader
+        eyebrow="Decision evidence"
+        title="Why this trip"
+        description="The clearest evidence supporting this configuration, with uncertainty kept explicit."
+      />
+
+      {presentation.supports.length ? (
+        <div className="why-trip__supports">
+          <h3>What supports this choice</h3>
+          <div className="why-trip__findings">
+            {presentation.supports.map((item) => (
+              <article key={item.id}>
+                <CheckCircle2 aria-hidden="true" size={19} />
+                <div>
+                  <h4>{item.title}</h4>
+                  <p>{item.detail}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       ) : null}
+
+      {presentation.uncertainties.length ? (
+        <Alert variant="warning" className="why-trip__uncertainties">
+          <TriangleAlert aria-hidden="true" size={19} />
+          <div>
+            <h3>What remains uncertain</h3>
+            <ul>
+              {presentation.uncertainties.map((item) => (
+                <li key={item.id}>{item.detail}</li>
+              ))}
+            </ul>
+          </div>
+        </Alert>
+      ) : null}
+
+      <Disclosure
+        label="Sources and calculation details"
+        className="why-trip__technical"
+      >
+        <div className="why-trip__technical-rows">
+          {presentation.technicalDetails.map((item) => (
+            <article key={item.id}>
+              <Database aria-hidden="true" size={18} />
+              <div>
+                <h4>{item.label}</h4>
+                <p>{item.provenance}</p>
+              </div>
+              <Badge
+                variant={
+                  item.evidenceLabel === "Limited evidence" ? "warning" : "info"
+                }
+              >
+                {item.evidenceLabel}
+              </Badge>
+            </article>
+          ))}
+        </div>
+      </Disclosure>
     </section>
   );
 }

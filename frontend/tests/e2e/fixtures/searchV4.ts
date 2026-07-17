@@ -14,6 +14,7 @@ const tignesConfiguration: SearchV4Configuration = {
   stay_base_name: "Le Lac",
   ski_area_id: "tignes-ski-area",
   ski_area_name: "Tignes",
+  evidence_profile: "fallback_heavy",
   access: {
     ski_area_access_id: "tignes-le-lac-access",
     access_mode: "walk",
@@ -22,6 +23,8 @@ const tignesConfiguration: SearchV4Configuration = {
     distance_m: 250,
     duration_minutes: 4,
     is_direct: true,
+    relationship_trust_status: "verified",
+    access_mode_distance_trust_status: "verified",
   },
   selected_pass: {
     lift_pass_product_id: "tignes-val-disere-pass",
@@ -146,6 +149,7 @@ const lesArcsConfiguration: SearchV4Configuration = {
   stay_base_name: "Arc 1800",
   ski_area_id: "les-arcs-ski-area",
   ski_area_name: "Les Arcs",
+  evidence_profile: "archive_backed",
   access: {
     ski_area_access_id: "arc-1800-access",
     access_mode: "shuttle",
@@ -154,6 +158,8 @@ const lesArcsConfiguration: SearchV4Configuration = {
     distance_m: 450,
     duration_minutes: 7,
     is_direct: false,
+    relationship_trust_status: "verified",
+    access_mode_distance_trust_status: "estimated",
   },
   selected_pass: {
     lift_pass_product_id: "paradiski-pass",

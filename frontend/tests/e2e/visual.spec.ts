@@ -4,6 +4,7 @@ import type {
   SearchResponse,
   SearchWeatherEvidenceRequest,
   SearchWeatherEvidenceResponse,
+  SearchV4RefinementResponse,
   WeatherEvidencePoint,
 } from "../../../src/types";
 import { monthSearchResponse } from "./fixtures/searchV4";
@@ -162,10 +163,55 @@ function forecastWeatherResponse(): SearchWeatherEvidenceResponse {
             thaw_risk: 0,
             wind_gust_kmh: 10,
           },
+          {
+            date_or_month_day: "2026-07-22",
+            snow_depth_cm: null,
+            snow_depth_cm_p25: null,
+            snow_depth_cm_p50: null,
+            snow_depth_cm_p75: null,
+            snowfall_cm: null,
+            temperature_min_c: null,
+            temperature_max_c: null,
+            rain_risk: null,
+            thaw_risk: null,
+            wind_gust_kmh: null,
+          },
         ],
       },
     },
   };
+}
+
+function denseForecastWeatherResponse(): SearchWeatherEvidenceResponse {
+  const response = forecastWeatherResponse();
+  if (response.status !== "available" || response.evidence.forecast == null) {
+    throw new Error("Forecast fixture must be available.");
+  }
+
+  const dailyProfile = Array.from({ length: 31 }, (_, index) => ({
+    date_or_month_day: `2026-07-${String(index + 1).padStart(2, "0")}`,
+    snow_depth_cm: 108 + (index % 7),
+    snow_depth_cm_p25: null,
+    snow_depth_cm_p50: null,
+    snow_depth_cm_p75: null,
+    snowfall_cm: index % 4 === 0 ? 2.5 : 0,
+    temperature_min_c: -8 + (index % 3),
+    temperature_max_c: -2 + (index % 4),
+    rain_risk: 0.1,
+    thaw_risk: 0.2,
+    wind_gust_kmh: 32 + (index % 5),
+  }));
+  const profileDates = dailyProfile.map((point) => point.date_or_month_day);
+
+  response.evidence.window_label = "July 2026";
+  response.evidence.forecast.coverage_status = "complete";
+  response.evidence.forecast.usable_date_count = dailyProfile.length;
+  response.evidence.forecast.requested_date_count = dailyProfile.length;
+  response.evidence.forecast.average_forecast_share = 1;
+  response.evidence.forecast.daily_profile = dailyProfile;
+  response.evidence.forecast.sources[0].row_count = dailyProfile.length;
+  response.evidence.forecast.sources[0].profile_dates = profileDates;
+  return response;
 }
 
 function resultsResponse(): SearchResponse {
@@ -219,6 +265,15 @@ function exactDateResponse(): SearchResponse {
   return response;
 }
 
+function denseExactDateResponse(): SearchResponse {
+  const response = exactDateResponse();
+  response.applied_intent.constraints.travel_window = {
+    start_date: "2026-07-01",
+    end_date: "2026-07-31",
+  };
+  return response;
+}
+
 async function mockApi(
   page: Page,
   response: SearchResponse,
@@ -255,7 +310,25 @@ async function mockApi(
       body: JSON.stringify({ ...weatherResponse, ski_area_id: request.ski_area_id }),
     });
   });
-  await page.route("**/api/search", (route) =>
+  await page.route(/\/api\/search\/refinements$/, (route) => {
+    const payload: SearchV4RefinementResponse = {
+      search_model_version: "search-v4",
+      ranking_policy_version: response.ranking_policy_version,
+      baseline_fingerprint: response.baseline_fingerprint,
+      baseline_status: "current",
+      refinement_status: response.refinements.length
+        ? "questions_available"
+        : "not_needed",
+      fallback_used: false,
+      refinements: response.refinements,
+    };
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(payload),
+    });
+  });
+  await page.route(/\/api\/search$/, (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -306,7 +379,7 @@ async function openDossier(
     .getByRole("link", { name: "View dossier" })
     .click();
   await waitForStablePage(page, "Tignes - Val d'Isere - Le Lac");
-  await expect(page.getByRole("heading", { name: /Snow evidence for/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Snow & weather for/ })).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -385,6 +458,15 @@ test("exact-date dossier with collapsed desktop navigator", async ({ page }) => 
     animations: "disabled",
     caret: "hide",
   });
+
+  await page
+    .locator(".snow-source-tabs > .snowcast-segmented-tabs__panel:not([hidden]) details")
+    .getByText("Sources and daily values")
+    .click();
+  const table = page.getByRole("table", { name: "Forecast weather values" });
+  await expect(table.getByRole("row", { name: /2026-07-20/ })).toContainText("112 cm");
+  await expect(table.getByRole("row", { name: /2026-07-20/ })).toContainText("7.4 cm");
+  await expect(table.getByRole("row", { name: /2026-07-20/ })).toContainText("-7 °C");
 });
 
 test("mobile dossier switcher", async ({ page }) => {
@@ -402,10 +484,31 @@ test("mobile dossier switcher", async ({ page }) => {
 test("mobile dossier snow evidence", async ({ page }) => {
   await page.setViewportSize(mobile);
   await openDossier(page, monthSearchResponse, monthWeatherResponse());
-  await page.getByRole("heading", { name: "Snow evidence for March" }).scrollIntoViewIfNeeded();
+  await page.getByRole("heading", { name: "Snow & weather for March" }).scrollIntoViewIfNeeded();
 
   await expect(page).toHaveScreenshot("dossier-mobile-snow-evidence.png", {
     animations: "disabled",
     caret: "hide",
   });
+});
+
+test("mobile dossier bounds dense forecast labels", async ({ page }) => {
+  await page.setViewportSize(mobile);
+  await openDossier(page, denseExactDateResponse(), denseForecastWeatherResponse());
+  const chart = page.getByRole("img", {
+    name: /Forecast snow depth chart/i,
+  });
+  await page.mouse.move(0, 0);
+  await chart.scrollIntoViewIfNeeded();
+  await expect(chart.locator(".recharts-tooltip-wrapper")).toBeHidden();
+
+  await expect(chart).toHaveScreenshot("dossier-mobile-dense-forecast-chart.png", {
+    animations: "disabled",
+    caret: "hide",
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
 });

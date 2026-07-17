@@ -6,8 +6,11 @@ import type {
   CurrentTripResponse,
   ParsedQueryResponse,
   SearchResponse,
+  SearchIntent,
   SearchWeatherEvidenceRequest,
   SearchWeatherEvidenceResponse,
+  SearchV4RefinementRequest,
+  SearchV4RefinementResponse,
   SearchV4Request,
 } from "./types";
 
@@ -15,22 +18,56 @@ const API_PREFIX = "/api";
 const MOBILE_AUTH_REQUIRED_MESSAGE =
   "Current trip is available in the authenticated mobile app.";
 const API_UNREACHABLE_MESSAGE =
-  "Backend API is not reachable. The service may be starting or temporarily unavailable.";
+  "Could not connect to Snowcast. Check that the local service is running, then try again.";
+const API_UNAVAILABLE_MESSAGE =
+  "Snowcast is temporarily unavailable. Try again shortly.";
+const REFINEMENT_CLIENT_DEADLINE_MS = 6_500;
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number | null,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+interface ValidationIssue {
+  loc?: Array<string | number>;
+  msg?: string;
+}
+
+function validationIssueMessage(issue: ValidationIssue): string | null {
+  if (!issue.msg) return null;
+  const field = (issue.loc ?? [])
+    .filter((part) => !["body", "intent", "constraints"].includes(String(part)))
+    .map((part) => String(part).replaceAll("_", " "))
+    .join(" ");
+  if (!field) return issue.msg;
+  return `${field.charAt(0).toUpperCase()}${field.slice(1)}: ${issue.msg}`;
+}
 
 async function errorMessageFromResponse(
   response: Response,
   fallback: string,
 ): Promise<string> {
-  const payload = (await response.json().catch(() => null)) as
-    | { detail?: string }
-    | null;
-
-  if (payload?.detail) {
-    return payload.detail;
+  if (response.status >= 500) {
+    return API_UNAVAILABLE_MESSAGE;
   }
 
-  if (response.status >= 500) {
-    return API_UNREACHABLE_MESSAGE;
+  const payload = (await response.json().catch(() => null)) as
+    | { detail?: string | ValidationIssue[] }
+    | null;
+
+  if (typeof payload?.detail === "string" && payload.detail) {
+    return payload.detail;
+  }
+  if (Array.isArray(payload?.detail)) {
+    const messages = payload.detail
+      .map(validationIssueMessage)
+      .filter((message): message is string => Boolean(message));
+    if (messages.length) return messages.join("; ");
   }
 
   return fallback;
@@ -49,6 +86,41 @@ function errorMessageFromFetchFailure(
   return fallback;
 }
 
+type ResponseTravelWindow = NonNullable<
+  SearchIntent["constraints"]["travel_window"]
+> & {
+  mode?: unknown;
+  ski_day_count?: unknown;
+};
+
+type ResponseLodgingBudget = NonNullable<
+  SearchIntent["constraints"]["lodging_budget"]
+> & {
+  effective_flex?: unknown;
+  effective_maximum?: unknown;
+};
+
+export function searchIntentRequestPayload(intent: SearchIntent): SearchIntent {
+  const constraints = { ...intent.constraints };
+
+  if (constraints.travel_window) {
+    const { mode: _mode, ski_day_count: _skiDayCount, ...travelWindow } =
+      constraints.travel_window as ResponseTravelWindow;
+    constraints.travel_window = travelWindow;
+  }
+
+  if (constraints.lodging_budget) {
+    const {
+      effective_flex: _effectiveFlex,
+      effective_maximum: _effectiveMaximum,
+      ...lodgingBudget
+    } = constraints.lodging_budget as ResponseLodgingBudget;
+    constraints.lodging_budget = lodgingBudget;
+  }
+
+  return { ...intent, constraints };
+}
+
 export async function searchResorts(request: SearchV4Request): Promise<SearchResponse> {
   let response: Response;
   try {
@@ -57,7 +129,7 @@ export async function searchResorts(request: SearchV4Request): Promise<SearchRes
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify({ intent: searchIntentRequestPayload(request.intent) }),
     });
   } catch (error) {
     throw new Error(
@@ -66,12 +138,65 @@ export async function searchResorts(request: SearchV4Request): Promise<SearchRes
   }
 
   if (!response.ok) {
-    throw new Error(
+    throw new ApiError(
       await errorMessageFromResponse(response, "Unable to load resort results."),
+      response.status,
     );
   }
 
   return (await response.json()) as SearchResponse;
+}
+
+export async function fetchSearchRefinements(
+  request: SearchV4RefinementRequest,
+  signal?: AbortSignal,
+): Promise<SearchV4RefinementResponse> {
+  const transportController = new AbortController();
+  const abortFromCaller = () => transportController.abort();
+  if (signal?.aborted) {
+    transportController.abort();
+  } else {
+    signal?.addEventListener("abort", abortFromCaller, { once: true });
+  }
+  const deadlineTimer = globalThis.setTimeout(
+    () => transportController.abort(),
+    REFINEMENT_CLIENT_DEADLINE_MS,
+  );
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/search/refinements`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...request,
+        intent: searchIntentRequestPayload(request.intent),
+      }),
+      signal: transportController.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    throw new ApiError(
+      errorMessageFromFetchFailure(error, "Unable to check for a refinement."),
+      null,
+    );
+  } finally {
+    globalThis.clearTimeout(deadlineTimer);
+    signal?.removeEventListener("abort", abortFromCaller);
+  }
+
+  if (!response.ok) {
+    throw new ApiError(
+      await errorMessageFromResponse(
+        response,
+        "Unable to check for a refinement.",
+      ),
+      response.status,
+    );
+  }
+
+  return (await response.json()) as SearchV4RefinementResponse;
 }
 
 export async function fetchSearchWeatherEvidence(
@@ -85,7 +210,10 @@ export async function fetchSearchWeatherEvidence(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify({
+        ...request,
+        intent: searchIntentRequestPayload(request.intent),
+      }),
       signal,
     });
   } catch (error) {
@@ -165,23 +293,29 @@ export async function saveCurrentTrip(input: {
   trip_end_date?: string | null;
   booking_status: BookingStatus;
 }): Promise<CurrentTrip> {
-  const response = await fetch(`${API_PREFIX}/current-trip`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(input),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/current-trip`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
+    });
+  } catch (error) {
+    throw new Error(
+      errorMessageFromFetchFailure(error, "Unable to save current trip."),
+    );
+  }
 
   if (response.status === 401) {
     throw new Error(MOBILE_AUTH_REQUIRED_MESSAGE);
   }
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? "Unable to save current trip.");
+    throw new Error(
+      await errorMessageFromResponse(response, "Unable to save current trip."),
+    );
   }
 
   return (await response.json()) as CurrentTrip;

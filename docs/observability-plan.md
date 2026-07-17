@@ -105,10 +105,13 @@ snowcast_search_phase_duration_seconds{phase,search_model,window_type,has_origin
 snowcast_search_candidates{search_model,ranking_status,window_type,has_origin}
 snowcast_search_eligible_candidates{search_model,ranking_status,window_type,has_origin}
 snowcast_search_result_groups{search_model,ranking_status,window_type,has_origin}
-snowcast_search_refinement_questions{search_model,ranking_status,window_type,has_origin}
 snowcast_search_empty_results_total{search_model,ranking_status,window_type,has_origin}
-snowcast_search_refinement_outcomes_total{search_model,outcome}
-snowcast_search_refinement_output_questions{search_model,outcome}
+snowcast_search_refinement_requests_total{search_model,ranking_policy_version,status,reason,fallback_used,window_type,has_origin}
+snowcast_search_refinement_duration_seconds{search_model,ranking_policy_version,status,reason,fallback_used,window_type,has_origin}
+snowcast_search_refinement_questions{search_model,status}
+snowcast_search_refinement_fallbacks_total{search_model}
+snowcast_search_refinement_route_outcomes_total{search_model,outcome}
+snowcast_search_refinement_snapshot_outcomes_total{search_model,outcome}
 ```
 
 Parser and LLM:
@@ -118,6 +121,7 @@ snowcast_parse_requests_total{mode,status}
 snowcast_parse_duration_seconds{mode,status}
 snowcast_parse_confidence{mode}
 snowcast_llm_requests_total{operation,model,status}
+snowcast_llm_failures_total{operation,model,reason}
 snowcast_llm_duration_seconds{operation,model,status}
 snowcast_llm_retries_total{operation,model,reason}
 snowcast_llm_fallbacks_total{operation,reason}

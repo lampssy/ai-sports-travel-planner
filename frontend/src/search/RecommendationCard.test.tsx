@@ -26,6 +26,7 @@ function candidate(
     stay_base_name: stayBase,
     ski_area_id: "cervinia-area",
     ski_area_name: "Cervinia",
+    evidence_profile: "archive_backed",
     access: {
       ski_area_access_id: `access-${id}`,
       access_mode: "walk",
@@ -34,6 +35,8 @@ function candidate(
       distance_m: id === "primary" ? 250 : 400,
       duration_minutes: 4,
       is_direct: true,
+      relationship_trust_status: "verified",
+      access_mode_distance_trust_status: "verified",
     },
     selected_pass: {
       lift_pass_product_id: `pass-${id}`,
@@ -140,6 +143,13 @@ describe("RecommendationCard", () => {
     const toggle = screen.getByRole("button", {
       name: /collapse matterhorn ski paradise/i,
     });
+    const heading = screen.getByRole("heading", {
+      name: /matterhorn ski paradise.*stay in breuil-cervinia/i,
+    });
+    expect(toggle).not.toContainElement(heading);
+    expect(toggle).toHaveAccessibleName(
+      /breuil-cervinia.*trip fit 94\.8.*snow window/i,
+    );
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(toggle).toHaveAttribute("aria-controls", "recommendation-region-a");
 
@@ -158,6 +168,8 @@ describe("RecommendationCard", () => {
     const card = screen.getByRole("article");
     const toggle = within(card).getByRole("button", { name: /collapse matterhorn/i });
     const dossierLink = within(card).getByRole("link", { name: /view dossier/i });
+    expect(dossierLink.querySelector(".lucide-arrow-right")).toBeInTheDocument();
+    expect(dossierLink.querySelector(".lucide-external-link")).not.toBeInTheDocument();
     dossierLink.addEventListener("click", (event) => event.preventDefault());
     await user.click(dossierLink);
     expect(toggle).toHaveAttribute("aria-expanded", "true");

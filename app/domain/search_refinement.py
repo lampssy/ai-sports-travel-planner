@@ -11,6 +11,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    ValidationError,
     model_validator,
 )
 
@@ -229,8 +230,10 @@ def validate_refinement_proposal(
         raise RefinementValidationError(
             "refinement answer variants do not have material impact"
         )
+    grounded_proposal = _ground_refinement_copy(proposal, policy)
+    _validate_text_and_option_bounds(grounded_proposal, policy)
     return ValidatedRefinementProposal(
-        proposal=proposal,
+        proposal=grounded_proposal,
         impact=impact,
         variant_outcomes=tuple(
             RefinementVariantOutcome(
@@ -241,6 +244,161 @@ def validate_refinement_proposal(
             for variant, variant_intent in zip(variants, variant_intents, strict=True)
         ),
     )
+
+
+def _ground_refinement_copy(
+    proposal: RefinementProposal,
+    policy: SearchPolicy,
+) -> RefinementProposal:
+    groups = {group.group_id: group for group in policy.groups}
+    factors = {factor.factor_id: factor for factor in policy.factors}
+    target_labels: list[str] = []
+    grounded_options: list[RefinementOption] = []
+
+    for option in proposal.options:
+        actions: list[tuple[str, str, str]] = []
+        for patch in option.group_priority_patches:
+            label = groups[patch.group_id].label
+            target_labels.append(label)
+            if patch.importance in {"important", "primary", "very_high"}:
+                actions.append(
+                    (
+                        f"Prioritize {label}",
+                        f"Give {label.lower()} more influence in the ranking.",
+                        label,
+                    )
+                )
+            elif patch.importance in {"ignore", "secondary"}:
+                actions.append(
+                    (
+                        f"Keep {label} secondary",
+                        f"Keep {label.lower()} secondary to the overall trip balance.",
+                        label,
+                    )
+                )
+            else:
+                actions.append(
+                    (
+                        f"Balance {label}",
+                        f"Keep {label.lower()} balanced with the other trip decisions.",
+                        label,
+                    )
+                )
+        for patch in option.factor_preference_patches:
+            label = factors[patch.factor_id].label
+            target_labels.append(label)
+            values = ", ".join(value.replace("_", " ") for value in patch.values)
+            value_suffix = f" ({values})" if values else ""
+            action = {
+                "prefer": "Prefer",
+                "avoid": "Avoid",
+                "ignore": "Do not prioritize",
+                "require": "Require",
+            }[patch.mode]
+            actions.append(
+                (
+                    f"{action} {label}{value_suffix}",
+                    f"{action} options based on {label.lower()}{value_suffix}.",
+                    label,
+                )
+            )
+        for patch in option.objective_patches:
+            label = factors[patch.factor_id].label
+            target_labels.append(label)
+            actions.append(
+                (
+                    f"Optimize {label}",
+                    f"Optimize the ranking for {label.lower()}.",
+                    label,
+                )
+            )
+
+        first_label = actions[0][0]
+        option_label = (
+            first_label
+            if len(actions) == 1
+            else f"{first_label} + {len(actions) - 1} more"
+        )
+        grounded_options.append(
+            option.model_copy(
+                update={
+                    "label": option_label,
+                    "description": " ".join(action[1] for action in actions),
+                }
+            )
+        )
+
+    unique_targets = tuple(dict.fromkeys(target_labels))
+    question = (
+        f"How should {unique_targets[0].lower()} influence your ranking?"
+        if len(unique_targets) == 1
+        else "What should matter more in your ranking?"
+    )
+    return proposal.model_copy(
+        update={
+            "question": question,
+            "reason": "These choices change how your current matches are evaluated.",
+            "options": tuple(grounded_options),
+        }
+    )
+
+
+def build_deterministic_refinement_fallback(
+    *,
+    intent: SearchIntent,
+    candidates: Sequence[RefinementCandidateState],
+    policy: SearchPolicy,
+    already_answered_question_ids: frozenset[str] = frozenset(),
+) -> ValidatedRefinementProposal | None:
+    """Return the first policy-ordered material group-priority question."""
+
+    for group in policy.groups:
+        if not group.clarifiable:
+            continue
+        label = group.label.lower()
+        proposal = RefinementProposal(
+            question_id=f"fallback-group-{group.group_id}",
+            question=f"How strongly should {label} influence your ranking?",
+            reason=(
+                f"Your leading options differ on {label}, so this choice could "
+                "change their order."
+            ),
+            options=(
+                RefinementOption(
+                    label="Make it a priority",
+                    description=(f"Give {label} more influence in the ranking."),
+                    group_priority_patches=(
+                        GroupPriorityPatch(
+                            group_id=group.group_id,
+                            importance="important",
+                        ),
+                    ),
+                ),
+                RefinementOption(
+                    label="Keep it secondary",
+                    description=(
+                        f"Keep {label} secondary to the overall trip balance."
+                    ),
+                    group_priority_patches=(
+                        GroupPriorityPatch(
+                            group_id=group.group_id,
+                            importance="secondary",
+                        ),
+                    ),
+                ),
+            ),
+        )
+        try:
+            return validate_refinement_proposal(
+                proposal=proposal,
+                intent=intent,
+                candidates=candidates,
+                policy=policy,
+                already_answered_question_ids=already_answered_question_ids,
+            )
+        except (RefinementValidationError, ValidationError, ValueError):
+            continue
+    return None
 
 
 def _validate_text_and_option_bounds(

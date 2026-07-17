@@ -215,6 +215,7 @@ def _metric_views() -> list[View]:
         for name in (
             "snowcast_http_request_duration_seconds",
             "snowcast_search_duration_seconds",
+            "snowcast_search_refinement_duration_seconds",
             "snowcast_search_phase_duration_seconds",
             "snowcast_parse_duration_seconds",
             "snowcast_llm_duration_seconds",
@@ -232,10 +233,6 @@ def _metric_views() -> list[View]:
         _histogram_view("snowcast_search_eligible_candidates", _COUNT_BUCKETS),
         _histogram_view("snowcast_search_result_groups", _COUNT_BUCKETS),
         _histogram_view("snowcast_search_refinement_questions", _COUNT_BUCKETS),
-        _histogram_view(
-            "snowcast_search_refinement_output_questions",
-            _COUNT_BUCKETS,
-        ),
     ]
 
 

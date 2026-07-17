@@ -1,8 +1,8 @@
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle2,
   ChevronDown,
-  ExternalLink,
   Save,
 } from "lucide-react";
 
@@ -56,46 +56,44 @@ export function RecommendationCard({
       data-rank-changed={changedRank || undefined}
     >
       <header className="recommendation-card__header">
+        <span className="rank-marker">
+          {configuration.ranking_status === "ranked"
+            ? `#${result.rank}`
+            : "Unranked"}
+        </span>
+        <span className="recommendation-card__identity">
+          <span className="eyebrow">
+            {configuration.stay_destination_name}
+          </span>
+          <h2 className="recommendation-card__title">
+            {result.ski_region_name}{" "}
+            <span>— stay in {configuration.stay_base_name}</span>
+          </h2>
+          <span className="recommendation-card__verdict">{narrative.verdict}</span>
+        </span>
+        <span className="recommendation-card__scores">
+          <span>
+            <strong>
+              {configuration.fit_score != null
+                ? configuration.fit_score.toFixed(1)
+                : "—"}
+            </strong>
+            <small>Trip fit</small>
+          </span>
+          <span>
+            <strong>{snowWindowLabel(configuration)}</strong>
+            <small>Snow window</small>
+          </span>
+        </span>
         <button
           type="button"
           className="recommendation-card__toggle"
-          aria-label={`${expanded ? "Collapse" : "Expand"} ${result.ski_region_name}`}
+          aria-label={`${expanded ? "Collapse" : "Expand"} ${result.ski_region_name}. Stay in ${configuration.stay_base_name}. Trip fit ${configuration.fit_score != null ? configuration.fit_score.toFixed(1) : "not scored"}. Snow window ${snowWindowLabel(configuration)}.`}
           aria-expanded={expanded}
           aria-controls={detailsId}
+          title={`${expanded ? "Collapse" : "Expand"} recommendation details`}
           onClick={onToggle}
         >
-          <span className="rank-marker">
-            {configuration.ranking_status === "ranked"
-              ? `#${result.rank}`
-              : "Unranked"}
-          </span>
-          <span className="recommendation-card__identity">
-            <span className="eyebrow">
-              {configuration.stay_destination_name}
-            </span>
-            <span
-              className="recommendation-card__title"
-              role="heading"
-              aria-level={2}
-            >
-              {result.ski_region_name} <span>— stay in {configuration.stay_base_name}</span>
-            </span>
-            <span className="recommendation-card__verdict">{narrative.verdict}</span>
-          </span>
-          <span className="recommendation-card__scores">
-            <span>
-              <strong>
-                {configuration.fit_score != null
-                  ? configuration.fit_score.toFixed(1)
-                  : "—"}
-              </strong>
-              <small>Trip fit</small>
-            </span>
-            <span>
-              <strong>{snowWindowLabel(configuration)}</strong>
-              <small>Snow window</small>
-            </span>
-          </span>
           <ChevronDown aria-hidden="true" size={22} />
         </button>
       </header>
@@ -114,15 +112,7 @@ export function RecommendationCard({
               categories={essentialCategories}
             />
             <div className="recommendation-card__evidence-grid">
-              {evidenceMode ? (
-                <EvidenceQualityBadge mode={evidenceMode} compact />
-              ) : (
-                <section className="selected-pass" aria-label="Evidence quality">
-                  <p className="section-label">Evidence quality</p>
-                  <strong>Supported evidence</strong>
-                  <span>Source mode is available in the dossier.</span>
-                </section>
-              )}
+              <EvidenceQualityBadge mode={evidenceMode} compact />
               <section className="selected-pass" aria-label="Selected pass">
                 <p className="section-label">Selected pass</p>
                 <strong>{configuration.selected_pass.name}</strong>
@@ -150,7 +140,7 @@ export function RecommendationCard({
               className="primary-card-action"
               href={buildDossierHref(result.ski_region_id, configuration.candidate_id)}
             >
-              <ExternalLink aria-hidden="true" size={18} />
+              <ArrowRight aria-hidden="true" size={18} />
               View dossier
             </a>
             <button
@@ -184,7 +174,9 @@ export function RecommendationCard({
               </section>
             ) : null}
           </aside>
-          <ScoringDetails configuration={configuration} />
+          {configuration.ranking_status === "ranked" ? (
+            <ScoringDetails configuration={configuration} />
+          ) : null}
         </div>
       ) : null}
     </article>

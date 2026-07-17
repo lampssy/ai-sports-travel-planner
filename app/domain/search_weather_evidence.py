@@ -188,7 +188,7 @@ def build_search_weather_evidence(
     if not selected_historical:
         return None
 
-    historical = _historical_evidence(selected_historical)
+    historical = _historical_evidence(selected_historical, window)
     limitations = list(
         _historical_limitations(
             selected_historical,
@@ -240,15 +240,7 @@ def _select_historical_rows(
             continue
         rows_by_month_day.setdefault((row.month, row.day), []).append(row)
 
-    if window.mode == "month":
-        assert window.month is not None
-        requested_month_days = tuple(
-            sorted(key for key in rows_by_month_day if key[0] == window.month)
-        )
-    else:
-        requested_month_days = tuple(
-            (item.month, item.day) for item in _requested_dates(window)
-        )
+    requested_month_days = _requested_month_days(window)
 
     selected: list[SnowClimatologyDaily] = []
     for month_day in requested_month_days:
@@ -282,8 +274,16 @@ def _latest_historical_row(
 
 def _historical_evidence(
     rows: tuple[SnowClimatologyDaily, ...],
+    window: TravelWindow,
 ) -> HistoricalWeatherEvidence:
-    profile_rows = rows[:_PROFILE_LIMIT]
+    requested_month_days = _requested_month_days(window)
+    profile_month_days = requested_month_days[:_PROFILE_LIMIT]
+    rows_by_month_day = {(row.month, row.day): row for row in rows}
+    profile_rows = tuple(
+        rows_by_month_day[month_day]
+        for month_day in profile_month_days
+        if month_day in rows_by_month_day
+    )
     sources = _historical_sources(rows, profile_rows)
     homogeneous = len(sources) == 1
     exact_source = sources[0] if homogeneous else None
@@ -327,7 +327,12 @@ def _historical_evidence(
         average_max_temperature_c=(
             sum(row.avg_max_temperature_c for row in rows) / len(rows)
         ),
-        daily_profile=tuple(_historical_point(row) for row in profile_rows),
+        daily_profile=tuple(
+            _historical_point(rows_by_month_day[month_day])
+            if month_day in rows_by_month_day
+            else _missing_weather_point(f"{month_day[0]:02d}-{month_day[1]:02d}")
+            for month_day in profile_month_days
+        ),
     )
 
 
@@ -415,7 +420,16 @@ def _forecast_evidence(
     if not accepted_rows:
         return None
 
-    profile_rows = tuple(accepted_rows[:_PROFILE_LIMIT])
+    requested_dates = _requested_dates(window)
+    profile_dates = requested_dates[:_PROFILE_LIMIT]
+    rows_by_date = {
+        valid_date: (valid_date, row, share) for valid_date, row, share in accepted_rows
+    }
+    profile_rows = tuple(
+        rows_by_date[valid_date]
+        for valid_date in profile_dates
+        if valid_date in rows_by_date
+    )
     sources = _forecast_sources(accepted_rows, profile_rows)
     homogeneous = len(sources) == 1
     exact_source = sources[0] if homogeneous else None
@@ -430,19 +444,19 @@ def _forecast_evidence(
         provenance_status="homogeneous" if homogeneous else "mixed",
         sources=sources,
         coverage_status=(
-            "complete"
-            if len(accepted_rows) == len(_requested_dates(window))
-            else "partial"
+            "complete" if len(accepted_rows) == len(requested_dates) else "partial"
         ),
         usable_date_count=len(accepted_rows),
-        requested_date_count=len(_requested_dates(window)),
+        requested_date_count=len(requested_dates),
         average_forecast_share=(
             sum(share for _valid_date, _row, share in accepted_rows)
             / len(accepted_rows)
         ),
         daily_profile=tuple(
-            _forecast_point(valid_date, row, context)
-            for valid_date, row, _share in profile_rows
+            _forecast_point(valid_date, rows_by_date[valid_date][1], context)
+            if valid_date in rows_by_date
+            else _missing_weather_point(valid_date.isoformat())
+            for valid_date in profile_dates
         ),
     )
 
@@ -508,6 +522,10 @@ def _forecast_point(
         thaw_risk=outlook.thaw_risk if outlook is not None else None,
         wind_gust_kmh=row.daily.wind_gusts_10m_max_kmh,
     )
+
+
+def _missing_weather_point(date_or_month_day: str) -> WeatherEvidencePoint:
+    return WeatherEvidencePoint(date_or_month_day=date_or_month_day)
 
 
 def _historical_source_label(rows: Sequence[SnowClimatologyDaily]) -> str:
@@ -604,6 +622,16 @@ def _requested_dates(window: TravelWindow) -> tuple[date, ...]:
         window.start_date + timedelta(days=offset)
         for offset in range((window.end_date - window.start_date).days + 1)
     )
+
+
+def _requested_month_days(window: TravelWindow) -> tuple[tuple[int, int], ...]:
+    if window.mode == "month":
+        assert window.month is not None
+        return tuple(
+            (window.month, day)
+            for day in range(1, calendar.monthrange(2024, window.month)[1] + 1)
+        )
+    return tuple((item.month, item.day) for item in _requested_dates(window))
 
 
 def _elevation_provenance(

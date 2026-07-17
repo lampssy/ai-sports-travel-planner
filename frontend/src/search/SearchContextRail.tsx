@@ -11,6 +11,20 @@ import {
   type ParsedChip,
 } from "./searchPresentation";
 import { RefinementCard } from "./RefinementCard";
+import type { RefinementLifecycleStatus } from "./searchSession";
+
+const REFINEMENT_STATUS_COPY: Partial<
+  Record<RefinementLifecycleStatus, string>
+> = {
+  loading: "Checking whether one answer could improve this ranking.",
+  slow:
+    "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
+  temporarily_unavailable:
+    "Refinement is temporarily unavailable. Your ranking is still ready.",
+  stale: "A newer ranking replaced this refinement check.",
+  not_needed: "No follow-up would materially change these results.",
+  skipped: "Follow-up skipped. Results unchanged.",
+};
 
 function ContextGroup({
   label,
@@ -48,6 +62,7 @@ function ContextGroup({
 export function SearchContextRail({
   intent,
   refinement,
+  refinementStatus,
   loading,
   refinementError,
   refinementControlRef,
@@ -59,6 +74,7 @@ export function SearchContextRail({
 }: {
   intent: SearchIntent;
   refinement: RefinementProposal | null;
+  refinementStatus: RefinementLifecycleStatus;
   loading: boolean;
   refinementError: string | null;
   refinementControlRef: RefObject<HTMLInputElement>;
@@ -75,9 +91,23 @@ export function SearchContextRail({
     ),
   );
   const preferences = chips.filter((chip) => !hard.includes(chip));
+  const lifecycleCopy = REFINEMENT_STATUS_COPY[refinementStatus];
+  const refinementAnnouncement = refinement
+    ? `A refinement question is ready. ${refinement.question}`
+    : lifecycleCopy;
 
   return (
     <aside className="search-context" aria-label="Search context">
+      {refinementAnnouncement ? (
+        <p
+          className="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {refinementAnnouncement}
+        </p>
+      ) : null}
       <div className="search-context__heading">
         <div>
           <span>Search understood</span>
@@ -116,6 +146,14 @@ export function SearchContextRail({
           onApply={onApplyRefinement}
           onSkip={onSkipRefinement}
         />
+      ) : null}
+      {!refinement && lifecycleCopy ? (
+        <div className="contextual-refinement">
+          <p>{lifecycleCopy}</p>
+          {refinementError ? (
+            <p className="refinement-error">{refinementError}</p>
+          ) : null}
+        </div>
       ) : null}
     </aside>
   );

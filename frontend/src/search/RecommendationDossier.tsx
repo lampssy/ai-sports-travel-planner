@@ -12,12 +12,12 @@ import { TripConfigurationDetails } from "./TripConfigurationDetails";
 import { findSelectedCandidate, type SearchSession } from "./searchSession";
 
 const anchors = [
-  ["snow-evidence", "Snow evidence"],
-  ["trip-configuration", "Trip configuration"],
+  ["snow-evidence", "Snow & weather"],
+  ["trip-configuration", "Trip details"],
   ["alternatives", "Alternatives"],
   ["accommodation", "Accommodation"],
-  ["decision-evidence", "Decision evidence"],
-  ["scoring-details", "Scoring details"],
+  ["decision-evidence", "Why this trip"],
+  ["scoring-details", "How ranking works"],
 ] as const;
 
 export function RecommendationDossier({
@@ -44,6 +44,10 @@ export function RecommendationDossier({
     session.response.results[0];
   const configuration = findSelectedCandidate(group, candidateId);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const unscored = configuration.ranking_status === "unscored";
+  const visibleAnchors = unscored
+    ? anchors.filter(([id]) => id !== "scoring-details")
+    : anchors;
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -83,7 +87,7 @@ export function RecommendationDossier({
         />
 
         <nav className="dossier-anchor-nav" aria-label="Dossier sections">
-          {anchors.map(([id, label]) => (
+          {visibleAnchors.map(([id, label]) => (
             <a key={id} href={`#${id}`}>
               {label}
             </a>
@@ -106,14 +110,16 @@ export function RecommendationDossier({
 
         <DecisionEvidenceLedger configuration={configuration} />
 
-        <section className="dossier-section" id="scoring-details">
-          <p className="section-label">Decision evidence</p>
-          <h2>Scoring details</h2>
-          <ScoringDetails
-            configuration={configuration}
-            rankingPolicyVersion={session.response.ranking_policy_version}
-          />
-        </section>
+        {!unscored ? (
+          <section className="dossier-section" id="scoring-details">
+            <p className="section-label">Decision evidence</p>
+            <h2>Scoring details</h2>
+            <ScoringDetails
+              configuration={configuration}
+              rankingPolicyVersion={session.response.ranking_policy_version}
+            />
+          </section>
+        ) : null}
       </article>
     </main>
   );

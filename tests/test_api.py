@@ -33,6 +33,7 @@ from app.domain.search_v4_service import (
     SearchV4RefinementPreview,
     SearchV4RefinementProposal,
     SearchV4RefinementRankChange,
+    SearchV4RefinementResponse,
     SearchV4Response,
     UnknownSearchWeatherAreaError,
 )
@@ -140,7 +141,7 @@ def _sign_in(
     return {"Authorization": f"Bearer {payload['access_token']}"}, payload
 
 
-def test_search_serializes_refinement_previews_and_preserves_patch_fields(
+def test_search_refinements_serializes_previews_and_preserves_patch_fields(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     refinement = SearchV4RefinementProposal(
@@ -184,22 +185,21 @@ def test_search_serializes_refinement_previews_and_preserves_patch_fields(
         ),
     )
     monkeypatch.setattr(
-        "app.api.routes.search_trip_configurations",
-        lambda **_kwargs: SearchV4Response(
+        "app.api.routes.get_search_refinements",
+        lambda **_kwargs: SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
-            ranking_status="ranked",
-            applied_intent=SearchIntent(),
-            eligible_candidate_count=0,
-            excluded_candidate_count=0,
-            results=(),
+            refinement_status="questions_available",
             refinements=(refinement,),
         ),
     )
 
     response = client.post(
-        "/api/search",
-        json={"intent": {}, "generate_refinements": False},
+        "/api/search/refinements",
+        json={
+            "intent": {},
+            "baseline_fingerprint": "a" * 64,
+        },
     )
 
     assert response.status_code == 200
@@ -236,6 +236,7 @@ def _weather_api_configuration(
         stay_base_name="Base",
         ski_area_id="area",
         ski_area_name="Area",
+        evidence_profile="archive_backed",
         access=SearchV4AccessSummary(
             ski_area_access_id="access",
             access_mode="walk",
@@ -244,6 +245,8 @@ def _weather_api_configuration(
             distance_m=250,
             duration_minutes=4,
             is_direct=True,
+            relationship_trust_status="verified",
+            access_mode_distance_trust_status="verified",
         ),
         selected_pass=SearchV4PassSummary(
             lift_pass_product_id="pass",
@@ -440,7 +443,7 @@ def test_search_grouped_response_omits_weather_evidence(
 
     response = client.post(
         "/api/search",
-        json={"intent": {}, "generate_refinements": False},
+        json={"intent": {}},
     )
 
     assert response.status_code == 200

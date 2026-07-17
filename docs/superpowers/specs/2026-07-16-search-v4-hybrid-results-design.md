@@ -2,7 +2,8 @@
 
 ## Status
 
-- Status: implemented; advisory feature-review complete
+- Status: implemented; follow-up trust, refinement-lifecycle, weather-evidence,
+  responsive-polish, and exact-state advisory review complete on 2026-07-17
 - Owner: solo-builder
 - Accepted visual pack:
   `docs/ui-concepts/2026-07-16-search-v4-web-experience/`
@@ -21,8 +22,11 @@
   `docs/planning-model.md`, `docs/domain-language.md`
 - Related plan:
   `docs/superpowers/plans/2026-07-16-search-v4-web-experience.md`
+- Active follow-up plan:
+  `docs/superpowers/plans/2026-07-17-search-v4-trust-and-ui-polish.md`
 - Related ADRs:
-  `docs/architecture/adr/0012-versioned-search-factor-registry-and-ranking-policy.md`
+  `docs/architecture/adr/0012-versioned-search-factor-registry-and-ranking-policy.md`,
+  `docs/architecture/adr/0015-load-search-refinements-after-ranking.md`
 
 This spec consolidates the accepted homepage, results board, and recommendation
 dossier into one Search V4 web experience. It supersedes the homepage,
@@ -70,7 +74,17 @@ In scope:
 - Search V4 visual system across homepage, results, and dossier, including
   responsive, loading, empty, missing-data, and accessibility states;
 - the minimum structured refinement-impact response needed by the approved UI;
-- the minimum typed weather-evidence response needed by the approved dossier.
+- the minimum typed weather-evidence response needed by the approved dossier;
+- an explicit refinement-availability outcome and a deterministic, materially
+  validated fallback when the bounded LLM proposal path is unavailable;
+- plain-language decision evidence with technical provenance available only in
+  a secondary disclosure;
+- a small Snowcast-owned React UI foundation for repeated actions, statuses,
+  metrics, section headings, disclosures, tabs, and async states;
+- action-scoped search, refinement, save, and weather errors that preserve
+  usable prior state without presenting stale failures as current-page errors;
+- a restrained creamy-pink to snow-white to powder-blue application canvas and
+  the responsive/focus polish identified during browser review.
 
 Out of scope:
 
@@ -81,7 +95,11 @@ Out of scope:
 - authentication, booking, affiliate, or payment behavior;
 - changing forecast/climatology ranking semantics or evidence thresholds;
 - persistent saved searches or reloadable dossier links without search state;
-- generic chat or unbounded LLM-generated UI content.
+- generic chat or unbounded LLM-generated UI content;
+- a full shadcn migration, a generic component marketplace, or a Storybook
+  deployment;
+- deterministic questions that bypass the existing materiality thresholds or
+  alter ranking weights, candidate eligibility, or evidence semantics.
 
 ## Product Fit
 
@@ -118,25 +136,43 @@ search results.
 - New client-facing view models: refinement option preview and weather evidence
   summary. They expose existing Planning and Weather evidence; they do not
   create new ranking factors or domain entities.
+- New post-search response state: `refinement_status`, with
+  `questions_available`, `not_needed`, or `temporarily_unavailable`. This is an
+  orchestration outcome, not a ranking factor or confidence score.
 - Domain-language changes: none required; all durable terms already exist in
   `docs/domain-language.md`.
 
 Important state transitions:
 
 1. The homepage parses a trip brief and transitions into Search V4 results.
-2. Search results load with the leading recommendation expanded.
-3. The user may expand or collapse any recommendation independently.
-4. The user selects a refinement option and sees its deterministic impact
+2. Search results load with the leading recommendation expanded without
+   waiting for an LLM.
+3. The client requests an optional refinement using the returned canonical
+   applied intent and baseline fingerprint. The server reads the exact
+   short-lived evaluated baseline stored by ranking; the refinement rail loads
+   independently and stale requests are cancelled or discarded when the intent
+   changes.
+4. The user may expand or collapse any recommendation independently while the
+   refinement request is pending.
+5. The user selects a refinement option and sees its deterministic impact
    preview when the API provides one.
-5. The user applies the option, Search V4 reruns, and changed positions are
-   announced without moving the viewport unexpectedly.
-6. The user may select an alternative trip configuration inside a ski-region
+6. The user applies the option, Search V4 reruns with the updated intent, stores
+   a new evaluated baseline, and changed positions are announced without moving
+   the viewport unexpectedly. The client immediately requests the next
+   refinement from that new baseline.
+7. The user may select an alternative trip configuration inside a ski-region
    group without changing the group's rank.
-7. The user opens a dossier for the selected configuration, switches among
+8. The user opens a dossier for the selected configuration, switches among
    recommendation dossiers from the navigator, and can return to the same
    search, scroll, and expansion context during the current browser session.
-8. The dossier presents climatology for month-only searches. For exact dates it
+9. The dossier presents climatology for month-only searches. For exact dates it
    presents forecast-assisted evidence only when a usable forecast exists.
+10. When the bounded LLM path produces no usable proposal, Snowcast may offer
+   one deterministic group-priority question only after the existing variant
+   simulation proves that its options can materially change the ranking.
+11. A failed search update keeps the previous ranked response visible and
+    identifies it as the previous ranking; returning from a dossier does not
+    issue another search request or surface unrelated stale errors.
 
 Invariants:
 
@@ -159,13 +195,41 @@ Invariants:
 - every weather value remains scoped to the selected ski area and representative
   elevation band;
 - all values in design visualizations are illustrative, not product fixtures.
+- raw provenance enums, source-reference counts, and internal field-group
+  wording never appear in the primary decision explanation;
+- deterministic fallback refinements use the same typed patches, validation,
+  materiality thresholds, answered-question suppression, and rerank path as
+  LLM-proposed refinements;
+- `not_needed` means no material follow-up is available, while
+  `temporarily_unavailable` means the exact baseline handoff is unavailable or
+  mismatched, or proposal generation failed and no validated fallback could be
+  produced;
+- `POST /api/search` never invokes an LLM; refinement loading is optional and
+  cannot make an otherwise successful ranking fail;
+- the refinement request uses the ranking response's canonical applied intent
+  and baseline fingerprint, reads only the exact stored evaluated baseline, and
+  is ignored when it no longer matches the active search session;
+- a public baseline fingerprint is not trusted without a matching SHA-256
+  digest recomputed from the request's canonical intent; canonical serialization
+  supplies the equality binding without storing a full intent or performing a
+  second typed-equality check;
+- missing, expired, evicted, restarted, or mismatched baseline state never
+  reruns deterministic search or invokes Gemini;
+- a delivered question remains answerable after the 60-second server handoff
+  expires; applying it performs a deliberate full rerank and creates a new
+  baseline;
+- weather charts render only typed historical or forecast rows returned by the
+  weather-evidence endpoint, preserve missing-data gaps, and keep an equivalent
+  accessible value table.
 
 ## Decision And Review Gate
 
-- Classification: review-gated
+- Classification: `review-gated`, full design flow
 - High-risk domains touched: planning/ranking explainability, evidence and
   estimate trust, shared API contract, and product-facing navigation.
 - Developer Decision Checkpoints:
+  - resolved by the owner on 2026-07-17 for the evaluated-baseline snapshot
+    handoff recorded in ADR 0015;
   - resolved: one first-viewport homepage command stage with a concrete example
     recommendation instead of generic process cards;
   - resolved: hybrid decision-board structure;
@@ -187,22 +251,57 @@ Invariants:
     guardrail;
   - resolved: use `lucide-react` as the presentation-only icon system instead
     of maintaining local icon SVGs;
-  - accepted assumption: implementation does not add a routing dependency,
-    persist search state beyond the browser session, or introduce provider
-    inventory unless a new owner checkpoint approves it.
+  - resolved: replace the technical evidence ledger with a plain-language
+    `Why this trip` summary, keeping raw provenance in a collapsed
+    `Sources and calculation details` disclosure;
+  - resolved: add explicit refinement availability and use a deterministic
+    fallback only when the existing variant simulation proves material impact;
+  - resolved: use a small Snowcast-owned React component foundation and avoid a
+    full shadcn migration; headless third-party primitives remain opt-in only
+    for genuinely complex interaction behavior;
+  - resolved: add Recharts for the typed snow/weather visualization while
+    preserving the accessible table and truthful missing-data gaps;
+  - resolved: show `Snow depth`, `Fresh snow`, and `Temperature` as separate
+    segmented chart views so one plotted view has one unit and one Y axis;
+  - resolved: after deterministic ranking, store a typed, lightweight
+    evaluated-baseline snapshot in a thread-safe process-local LRU/TTL store
+    with a 60-second TTL and maximum 64 entries;
+  - resolved: bind refinement lookup to both the public baseline fingerprint and
+    the SHA-256 digest recomputed from canonical request intent; this digest
+    comparison supplies equality binding and a fingerprint alone is not trusted;
+  - resolved: retain no full `SearchIntent` or origin text, full
+    `CatalogSnapshot` or `CatalogTrustManifest`, brief, or provider secrets in
+    the baseline store;
+  - resolved: a missing, expired, evicted, restarted, or mismatched baseline
+    returns `temporarily_unavailable` without deterministic search or Gemini;
+  - resolved: the 60-second TTL covers only the server handoff for generating a
+    question. A delivered question remains answerable; applying it reruns full
+    search, stores a new baseline, and immediately requests the next refinement;
+  - resolved: protect the anonymous refinement endpoint with two concurrent
+    requests and six requests per minute per client with burst two in the
+    current one-machine deployment;
+  - resolved: apply a subtle creamy-pink to snow-white to powder-blue canvas
+    gradient while keeping content surfaces neutral and semantic statuses
+    independent from brand color;
+  - accepted assumption: the process-local store fits the current
+    single-instance deployment. Horizontal scaling requires sticky routing,
+    shared state, or a redesigned handoff; no durable search-session persistence
+    or provider inventory is introduced.
   - unresolved: none.
 - ADR status: accepted ADR 0014 owns the on-demand dossier weather-evidence
-  boundary. If implementation adopts a router library, persists search state
-  beyond the browser session, adds a provider request or server cache, freezes
-  result snapshots server-side, or moves ranking/evidence interpretation to
-  the client, pause for a new decision and reassess ADR need.
+  boundary. ADR 0015 is required and records the accepted process-local
+  evaluated-baseline handoff. If implementation adopts a router library,
+  persists or shares search state, scales to multiple web processes without an
+  approved routing/state design, stores full catalog/trust snapshots, adds
+  provider acquisition, or moves ranking/evidence interpretation to the client,
+  pause for a new decision and reassess ADR need.
 - Advisory design-review:
   - reviewers: Product / Strategy, Backend / API, Data Trust & Source
     Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
     Performance, Monetization / Partnerships
   - status: completed on 2026-07-16 for the consolidated full-flow revision; no
     Blocker or High finding remains open
-- Advisory feature-review before final handoff:
+- Original advisory feature-review:
   - reviewers: Product / Strategy, Backend / API, Data Trust & Source
     Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
     Performance, Monetization / Partnerships
@@ -210,6 +309,9 @@ Invariants:
     The two worthwhile Medium residuals are tracked in `docs/product-backlog.md`:
     weather-evidence outcome metrics and scope-aware `pass_terrain_value`
     wording.
+- Follow-up advisory review:
+  - exact-state feature-review completed on 2026-07-17 after all implementation
+    fixes; no Blocker, High, Medium, or Low finding remains open.
 
 ## Developer Decision Checkpoints
 
@@ -223,6 +325,13 @@ Invariants:
 | Product / Domain | Visual identity | The current white/blue V4 UI is clear but generic; a saturated pink theme would weaken evidence semantics | Minimal white/blue; light watercolor; midnight shell with restrained color | Midnight shell, neutral cards, soft alpenglow/powder atmosphere | Restores brand distinction while preserving semantic green and amber | This spec |
 | Technical | Dossier navigation | A missing route removed a key explanation surface | Modal; inline-only; dedicated route | Dedicated dossier route with return-state preservation | Keeps results scannable and lets the dossier own deep evidence | Implementation plan |
 | Technical | Icon system | Repeated local SVGs would drift visually and add accessibility boilerplate across the new surfaces | Continue local SVGs; add `lucide-react` | Add `lucide-react` as the only new frontend dependency | Gives the accepted UI a consistent icon vocabulary while icons remain decorative or explicitly labelled by their controls | This spec and implementation plan |
+| Technical | Reusable UI foundation | One-off global CSS and repeated markup make responsive and semantic states drift | Keep page-local markup; full shadcn migration; small Snowcast-owned primitives | Small Snowcast-owned primitives, with selective headless primitives only when interaction complexity justifies them | Encodes brand geometry and accessibility states without re-theming the application or forcing every section into a generic card | This spec and follow-up plan |
+| Mixed | Refinement availability | An empty queue currently conflates no useful question with LLM or validation failure | Silent empty state; always ask; explicit status plus validated fallback | Explicit status and one deterministic fallback only after existing materiality validation | Keeps questions useful and truthful while removing provider variability from the primary workflow | This spec, Search V4 model docs, and follow-up plan |
+| Technical | Refinement request boundary | Optional remote-model latency blocks ranking, while repeated evaluation can drift from the exact ranked view | Keep refinement inline; rerun from canonical intent; store a lightweight evaluated baseline; persist or share full state | Load after ranking from a typed process-local evaluated-baseline snapshot with a 60-second TTL and 64-entry maximum | Keeps ranking fast and failure-isolated while preserving exact-view materiality and preview consistency; temporary unavailability is accepted when the handoff is gone | ADR 0015, this spec, and follow-up plan |
+| Technical | Refinement admission policy | A separate anonymous endpoint can repeat deterministic and paid provider work after browser cancellation | No guard; require auth; application-local limits; shared managed limiter | Application-local two-concurrent, six-per-minute-per-client, burst-two guard for the current single machine | Protects current provider capacity without changing anonymous search; reset and per-machine limitations are explicit and require replacement before scale-out | ADR 0015, this spec, and follow-up plan |
+| Product / Domain | Decision evidence hierarchy | Internal provenance summaries are accurate for diagnostics but artificial and difficult for travellers to interpret | Keep ledger; compact evidence table; plain-language summary with raw details collapsed | `Why this trip` summary with strengths, uncertainties, and collapsed technical provenance | Makes trust evidence understandable without hiding auditable source detail | This spec and follow-up plan |
+| Technical | Weather chart implementation | The hand-built SVG lacks axes, tooltips, threshold context, and robust gap handling | Extend local SVG; use a low-level visualization toolkit; add Recharts | Add Recharts and keep the accessible data table | Improves chart semantics and responsiveness while retaining typed server data as the only source | This spec and follow-up plan |
+| Product / Technical | Weather chart units | Plotting depth, snowfall, and temperature together makes scales and visual comparison ambiguous | Multi-axis chart; normalized values; separate metric views | Segmented Snow depth / Fresh snow / Temperature views | Keeps each view interpretable without hiding any typed metric or inventing normalization | This spec and follow-up plan |
 | Mixed | Dossier result switching | Users need comparison context without turning the detail view into another full results board | Back-only navigation; persistent full results; compact master-detail navigator | Collapsible desktop navigator plus compact mobile switcher | Preserves orientation and quick switching without duplicating card content | This spec and implementation plan |
 | Product / Domain | Weather evidence mode | Forecast and climate evidence answer different questions and must not be blended opaquely | Raw weather table; always-on forecast; conditional evidence mode | Month-only climatology; exact-date forecast-assisted evidence with historical context when usable | Matches Search V4 semantics and keeps uncertainty legible | This spec and `docs/planning-model.md` |
 | Mixed | Weather evidence delivery | Generic factor payloads are unsafe for charts, while full profiles on every result exceeded all real-cardinality response-cost limits | Parse factor internals; attach every profile; top-results-only profiles; one on-demand dossier endpoint | Versioned typed one-area endpoint using stored Search V4 evidence | Keeps interpretation deterministic and complete for every dossier without making each search transfer every profile | ADR 0014, this spec, and implementation plan |
@@ -241,7 +350,36 @@ Invariants:
   data, or invoke an LLM.
 - `lucide-react` is the approved presentation-only icon dependency. Icon choice
   must not encode status without adjacent text, and no other UI or chart
-  dependency is introduced by this implementation.
+  dependency was introduced by the original implementation.
+- The follow-up adds Recharts as the only chart dependency. It receives typed
+  historical and forecast points from the weather-evidence endpoint and never
+  derives, interpolates, or fabricates weather observations.
+- Snowcast owns a small internal UI layer under `frontend/src/ui`. Primitives
+  expose semantic variants and stable accessibility behavior; feature
+  components remain in `frontend/src/search`. A full shadcn migration is not
+  part of this increment.
+- Search V4 owns refinement availability and fallback selection. The AI module
+  reports whether proposal generation produced questions, found none, or was
+  unavailable; the domain fallback reuses typed group-priority patches and the
+  existing deterministic materiality validator.
+- After deterministic ranking, `POST /api/search` stores the minimum typed
+  evaluated baseline needed for refinement validation and previews in a
+  thread-safe, process-local LRU/TTL store. Entries live for 60 seconds and the
+  store holds at most 64. It does not retain a full catalog/trust snapshot,
+  brief, or provider secrets.
+- `POST /api/search/refinements` consumes only the exact stored baseline bound
+  to both the public baseline fingerprint and the SHA-256 digest recomputed from
+  canonical request intent. The full intent is not stored, and there is no
+  separate typed-equality check. A missing, expired, evicted, restarted, or
+  mismatched handoff is
+  `temporarily_unavailable`; it triggers neither deterministic search nor
+  Gemini.
+- The process-local handoff is accepted only for the current single-instance
+  deployment. Horizontal scaling requires sticky routing, shared state, or a
+  redesigned handoff.
+- The frontend projects response-shaped `SearchIntent` values back to the
+  request schema before calling the weather-evidence endpoint. Computed
+  response fields never cross the request boundary.
 - Detailed weather profiles are not part of `SearchV4Configuration`. Result
   cards retain Search V4's bounded decision summaries; the dossier loads one
   typed profile envelope and caches it until its server-declared validity time
@@ -333,8 +471,25 @@ Search V4 may return several validated refinement questions. The results rail
 shows one primary question at a time and keeps the remaining questions in a
 bounded client-side queue. Applying, skipping, or dismissing the current
 question advances to the next still-relevant question. Applying a question
-reruns Search V4, so the returned queue replaces any unanswered questions from
-the previous response rather than carrying stale refinements forward.
+reruns Search V4 first, then starts a new refinement request from the returned
+applied intent and newly stored baseline. The new queue replaces unanswered
+questions from the previous request rather than carrying stale refinements
+forward.
+
+The refinement rail is a progressive state. It initially says
+`Checking whether one answer could improve these results...`; after 2.5 seconds
+it changes to `Still checking for a useful follow-up...` without cancelling the
+request. At the five-second hard budget it resolves to a validated question,
+`No follow-up needed`, or `Refinement unavailable`. Results remain fully
+interactive in every refinement state.
+
+The baseline snapshot's 60-second TTL limits only how long the server accepts
+the ranking-to-refinement handoff for question generation. Once delivered, a
+question and its typed patches remain answerable after that TTL. Applying the
+answer starts a full rerank, which creates a new snapshot before the client asks
+for the next question. A deliberate ranking refresh does the same. Cache loss
+or expiry can remove optional refinement, but never makes the visible ranking
+unusable.
 
 Selecting an option does not immediately mutate the applied intent. The UI
 enters a preview state. Applying sends the option's typed patches to Search V4.
@@ -479,7 +634,8 @@ The dossier uses this hierarchy:
 6. selected configuration, pass, and practical trip essentials;
 7. alternative configurations within the recommendation group;
 8. stay-base estimate and accommodation handoff;
-9. decision evidence ledger and collapsed scoring details;
+9. plain-language `Why this trip`, collapsed source/calculation details, and
+   collapsed scoring details;
 10. save-current-trip action.
 
 The dossier is an evidence-led decision surface, not a collection of equal
@@ -533,10 +689,13 @@ Destination, ski area, stay base, selected pass, and access remain explicitly
 labelled. The interface does not collapse these entities into a generic
 `resort` label when they differ.
 
-### Conditional Snow Evidence
+### Conditional Snow And Weather Evidence
 
-Snow evidence is tied to the requested window and selected ski area. It is a
-decision summary, not a raw weather dashboard.
+Snow and weather evidence is tied to the requested window and selected ski
+area. It is a decision summary, not a raw weather dashboard. The section starts
+with a compact conclusion, representative elevation, and evidence mode. It then
+shows a stable metric row for the values that exist, followed by one chart and
+progressively disclosed source detail.
 
 Month-only searches:
 
@@ -575,6 +734,59 @@ Chart accessibility requirements:
 - provide a table or structured list inside the detail disclosure for users who
   cannot interpret the chart;
 - use units in every metric and explain the elevation band.
+
+Chart presentation requirements:
+
+- provide segmented `Snow depth`, `Fresh snow`, and `Temperature` views and
+  plot only one unit with one labelled Y axis at a time;
+- use labelled date and value axes, a responsive tooltip, and a labelled 30 cm
+  planning reference when snow depth is available;
+- render the historical interquartile range as a range area and median as a
+  separate line; forecast snow depth, snowfall, and temperature remain
+  distinguishable by label and line/area treatment rather than color alone;
+- preserve null values as visible gaps and never connect a line across missing
+  observations;
+- emit and display one ordered row per requested date or month-day; a date with
+  no stored observation remains present with null values rather than
+  disappearing from the timeline;
+- keep source, climatology baseline, issued-at time, freshness, and coverage in
+  a compact provenance strip or disclosure rather than a paragraph of internal
+  metadata;
+- show limitations in a semantic warning state and remove implementation terms
+  such as `typed evidence` from traveller-facing copy.
+
+### Why This Trip
+
+The former `Evidence ledger` becomes `Why this trip`.
+
+The default view contains:
+
+- `What supports this choice`: up to four deterministic, plain-language
+  findings derived from the selected configuration's factor results, access,
+  pass, and stay estimate;
+- `What remains uncertain`: deduplicated material limitations and warnings;
+- `Sources and calculation details`: a collapsed disclosure containing factor
+  labels, technical provenance summaries, source-reference counts, evidence
+  caps, selected-pass scope, access anchors, and lodging provenance for users
+  who need audit detail.
+
+The primary findings never expose raw factor IDs, trust enums such as
+`verified_with_adjustment`, or phrases such as `Catalog field-group evidence`.
+Technical provenance remains verbatim only inside the explicitly technical
+disclosure.
+
+### Reusable UI Foundation
+
+Repeated interface behavior is encoded in Snowcast-owned primitives rather
+than copied page markup. The initial foundation covers buttons, icon buttons,
+badges, alerts, metric tiles, section headings, disclosures, segmented tabs,
+and async states. Each primitive has semantic variants, keyboard/focus
+behavior, stable dimensions, and focused component tests.
+
+Domain components such as recommendation cards, refinement cards, evidence
+summaries, and snow/weather panels compose these primitives. The foundation
+does not introduce a generic card abstraction, force page sections into nested
+cards, or replace existing feature ownership.
 
 ### Accommodation Handoff
 
@@ -624,25 +836,58 @@ Color rules:
 - the page-edge treatment must remain subtle enough that removing it does not
   change information hierarchy.
 
+The application canvas uses one restrained horizontal/diagonal blend from
+creamy alpenglow at the upper-left, through snow white in the content center,
+to powder blue at the upper-right and lower edge. It replaces disconnected
+solid side bands. White and ice content surfaces retain sufficient contrast;
+the gradient never appears inside status badges, evidence cells, or charts.
+
 Typography remains Sora for compact headings and Manrope for body and controls.
 Use stable metric-cell widths and no viewport-scaled font sizes.
 
 ## API And Client Contract
 
-Existing endpoint:
+Ranking endpoint:
 
-- `POST /api/search` remains the Search V4 request and rerank boundary.
+- `POST /api/search` remains the Search V4 request and rerank boundary and does
+  not invoke an LLM. After deterministic ranking it stores a typed, lightweight
+  evaluated-baseline snapshot and returns its public baseline fingerprint.
+
+Post-search refinement endpoint:
+
+- `POST /api/search/refinements` accepts the canonical `applied_intent`, the
+  brief, answered question IDs, and public baseline fingerprint after ranking
+  has rendered;
+- it loads the exact evaluated baseline stored by `POST /api/search` and accepts
+  it only when the stored fingerprint and the SHA-256 digest recomputed from the
+  request's canonical intent both match. Canonical serialization supplies the
+  equality binding; no full intent is stored and no second typed-equality check
+  occurs. The public fingerprint alone is not trusted;
+- it never reruns deterministic search. A missing, expired, evicted, restarted,
+  or mismatched baseline returns `temporarily_unavailable` without invoking
+  Gemini;
+- it returns `search_model_version`, `ranking_policy_version`,
+  `baseline_fingerprint`, `baseline_status`, `refinement_status`, orthogonal
+  `fallback_used`, and a bounded `refinements` queue;
+- the client cancels or ignores a stale request when the active applied intent
+  changes and suppresses a response that does not belong to the visible
+  ranking;
+- `/api/search` temporarily accepts legacy refinement request fields but ignores
+  them and returns `refinements: []` so current web/mobile clients remain
+  compatible during migration.
 
 Required response extension:
 
 - each validated `RefinementOption` may include a deterministic preview;
 - the preview is computed from server-side variant ranking simulation;
-- preview construction reuses the current candidate evaluations and variant
+- preview construction reuses the stored candidate evaluations and variant
   simulation; it must not add another LLM call or repeat catalog/database
   acquisition;
 - the dossier may request one typed, display-ready weather summary for the
   selected configuration's ski area and the current applied intent;
-- the client never recomputes scores or eligibility.
+- the client never recomputes scores or eligibility;
+- the refinement response includes `refinement_status` so an empty
+  `refinements` array is not ambiguous.
 
 Proposed client contract:
 
@@ -653,6 +898,9 @@ RefinementOption.preview?:
       previous_rank: integer or null
       preview_rank: integer or null
   eligible_candidate_count_delta: integer
+
+SearchV4RefinementResponse.refinement_status:
+  questions_available | not_needed | temporarily_unavailable
 ```
 
 Rules:
@@ -667,8 +915,39 @@ Rules:
 - `null` previous rank means the group enters the visible ranked set;
 - `null` preview rank means the group leaves the visible ranked set;
 - preview absence is valid and falls back to generic material-impact copy;
-- the optional additive field does not break clients that ignore it;
-- the response remains usable when refinement generation fails or is disabled.
+- the optional preview field does not break clients that ignore it;
+- the ranked response remains usable while refinement is loading, fails, or is
+  unavailable;
+- the evaluated-baseline store is thread-safe and process-local, expires entries
+  after 60 seconds, evicts the least-recently-used entry when insertion would
+  exceed 64 entries, and retains only the canonical intent SHA-256 digest, not a
+  full `SearchIntent`, origin text, full `CatalogSnapshot`,
+  `CatalogTrustManifest`, brief, or provider secrets;
+- the 60-second TTL is only the ranking-to-refinement server handoff. A delivered
+  question remains answerable after expiry;
+- applying a delivered answer reruns full search with the updated intent, stores
+  a new baseline, and immediately requests the next refinement from that new
+  snapshot; a deliberate ranking refresh also creates a new snapshot;
+- `questions_available` requires at least one validated refinement;
+- `not_needed` requires an empty refinement list and no material deterministic
+  fallback;
+- `temporarily_unavailable` requires an empty refinement list because the exact
+  baseline handoff is unavailable/mismatched or provider/output failure has no
+  material deterministic fallback;
+- a deterministic fallback may emit at most one question, uses only configured
+  clarifiable groups, and must pass the existing option validation and
+  material-impact simulation before serialization.
+- the user-facing refinement request performs at most one provider attempt;
+  snapshot lookup, provider work, and fallback validation share one five-second
+  monotonic deadline from route ingress;
+- missing, expired, evicted, restarted, or mismatched baseline requests invoke
+  neither deterministic search nor a provider; zero-result baselines invoke no
+  provider;
+- application-local admission allows at most two concurrent requests and six
+  requests per minute per client with burst two; a bounded `429` is returned
+  before snapshot lookup, and client identity is never a telemetry label;
+- malformed provider response JSON maps to a bounded provider failure and never
+  escapes as an unhandled exception or appears in public error text.
 
 Accepted weather endpoint contract:
 
@@ -824,6 +1103,9 @@ a dependency.
 - Travel effort remains approximate when derived from fallback routing.
 - Evidence quality continues to distinguish archive-backed,
   forecast-assisted, and fallback-heavy recommendations.
+- `SearchV4Configuration.evidence_profile` owns that three-value distinction
+  in the backend. The client maps the typed profile to presentation copy and
+  never infers it from generic factor warnings or provenance strings.
 - Month-only evidence comes from `SnowClimatologyDaily` rows for the selected
   ski area and representative mid-mountain band. The baseline years, evidence
   seasons, and latest archive year remain visible or available in the detail
@@ -855,10 +1137,11 @@ Deterministic code owns:
   limitation labels;
 - evidence and estimate labels.
 
-The LLM may continue to propose bounded refinement question wording, option
-wording, and typed patches under the existing Search V4 policy. It does not
-generate recommendation explanations, metric values, rank changes, or dossier
-facts on the client.
+The LLM may propose bounded typed refinement patches under the existing Search
+V4 policy. After validation, policy-owned deterministic templates regenerate
+the visible question, reason, option label, and option description. The LLM does
+not generate recommendation explanations, metric values, rank changes, dossier
+facts, or user-facing refinement claims.
 
 Search results remain fully usable when refinement generation fails, times out,
 or is disabled.
@@ -951,8 +1234,17 @@ Accessibility:
   identifiers, but not free-text briefs or typed accommodation/travel details.
 - Refinement preview metadata is server-produced and treated as untrusted input
   for rendering; the client uses text rendering, not HTML injection.
-- Existing rate limits and timeout behavior for refinement generation remain in
-  force.
+- Refinement is rate-limited separately from ranking, performs one provider
+  attempt within a five-second hard budget, and records no brief, prompt,
+  response, question text, question ID, token, or provider error body.
+- The evaluated-baseline store retains only the canonical intent SHA-256 digest,
+  not a full `SearchIntent`, origin text, full `CatalogSnapshot`,
+  `CatalogTrustManifest`, brief, provider credential, prompt, token, response,
+  or other provider secret. Fingerprints are identifiers, not authorization or
+  proof of a matching canonical intent digest.
+- The process-local store is valid for the current single-instance deployment
+  only; horizontal deployment requires approved sticky routing, shared state,
+  or a redesigned handoff.
 
 ## Observability And Operations
 
@@ -965,6 +1257,8 @@ Useful aggregate events:
 - dossier navigator collapsed/expanded;
 - weather evidence view changed between forecast and historical context;
 - refinement preview selected, applied, cleared, failed;
+- bounded evaluated-baseline outcome: `hit`, `miss`, `expired`,
+  `intent_mismatch`, or `evicted`;
 - missing `Trip essentials` category;
 - missing weather-evidence summary or forecast-unavailable state;
 - dossier return-state restoration failed.
@@ -985,6 +1279,17 @@ deterministic search results.
 - Submitting the homepage brief transitions to results without losing the brief
   or parsed intent.
 - The compact midnight command header replaces the permanent Search V4 form.
+- A successful ranking stores a lightweight evaluated baseline for at most 60
+  seconds in the process-local 64-entry LRU store without retaining the full
+  intent or origin text, catalog/trust snapshot, brief, or provider secrets.
+- Refinement uses only a stored baseline matching both the public fingerprint
+  and the SHA-256 digest recomputed from canonical request intent. Miss,
+  expiry, eviction, restart, or mismatch yields typed `temporarily_unavailable`,
+  performs no deterministic search or Gemini call, and leaves the ranking
+  usable.
+- A delivered refinement remains answerable after snapshot expiry. Applying it
+  reruns full search with the updated intent, stores a new baseline, and starts
+  the next refinement request from that snapshot.
 - Hard constraints and preferences are visible in user language and editable
   through the manual-adjustment entry point.
 - The board displays one recommendation group per ski region.
@@ -1049,6 +1354,17 @@ Unit tests:
 
 API and integration tests:
 
+- ranking stores the typed lightweight evaluated baseline after deterministic
+  evaluation and excludes full catalog/trust snapshots, brief, and provider
+  secrets;
+- snapshot lookup requires a matching fingerprint plus the SHA-256 digest
+  recomputed from canonical request intent; canonical serialization supplies the
+  equality binding without a stored full intent or second typed-equality check;
+- hit, miss, expiry, LRU eviction when inserting at the 64-entry capacity,
+  process reset, and concurrent access preserve the typed store and endpoint
+  invariants;
+- miss, expiry, eviction, restart, and canonical-intent digest mismatch return
+  `temporarily_unavailable` without deterministic search or Gemini;
 - per-option preview is derived from deterministic variant rankings;
 - preview omits score and policy internals;
 - refinement response without preview remains schema-valid;
@@ -1066,6 +1382,9 @@ API and integration tests:
 
 UI tests:
 
+- a delivered question remains applicable after the server snapshot TTL, and
+  applying it reranks before immediately requesting the next refinement from
+  the new baseline;
 - homepage search preserves brief and parsed intent through navigation;
 - result 1 is open initially;
 - results 1 and 2 can remain open simultaneously;
@@ -1108,8 +1427,9 @@ Visual and manual checks:
 - Design-review status: completed on 2026-07-16.
 - Feature-review status: completed on 2026-07-16 and approved under the
   advisory gate (Blocker: 0, High: 0).
-- Outcome: implemented after owner review, exact-head remediation, and final
-  verification recorded in the implementation plan.
+- Follow-up feature-review status: pending on the exact implementation head.
+- Original outcome: implemented after owner review, exact-head remediation, and
+  final verification recorded in the implementation plan.
 - Consolidated-flow findings resolved in this revision:
   - [High] Backend / API: session-long weather caching could outlive forecast
     freshness. Every response now carries server-owned evaluation and validity

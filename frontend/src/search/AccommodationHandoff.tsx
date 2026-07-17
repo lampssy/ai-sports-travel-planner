@@ -3,24 +3,10 @@ import { ExternalLink, Footprints, Hotel } from "lucide-react";
 import { buildAccommodationBookingRedirectUrl } from "../api";
 import type { SearchV4Configuration } from "../types";
 import {
+  formatAccommodationAccessContext,
   formatAccommodationEstimate,
   lodgingTrustLabel,
 } from "./searchPresentation";
-
-function accessContext(configuration: SearchV4Configuration): string | null {
-  const { access } = configuration;
-  const mode = access.access_mode === "walk" ? "walk" : access.access_mode.replaceAll("_", " ");
-  const detail =
-    access.distance_m != null
-      ? `${access.distance_m} m ${mode}`
-      : access.duration_minutes != null
-        ? `${access.duration_minutes} min ${mode}`
-        : access.is_direct
-          ? "direct access"
-          : null;
-  if (!detail) return access.nearest_lift_name;
-  return access.nearest_lift_name ? `${access.nearest_lift_name} - ${detail}` : detail;
-}
 
 export function AccommodationHandoff({
   configuration,
@@ -37,7 +23,7 @@ export function AccommodationHandoff({
     },
     "recommendation_dossier",
   );
-  const access = accessContext(configuration);
+  const access = formatAccommodationAccessContext(configuration);
 
   return (
     <section className="dossier-section accommodation-handoff" id="accommodation">

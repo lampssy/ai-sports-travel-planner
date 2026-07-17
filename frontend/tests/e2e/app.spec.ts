@@ -4,6 +4,8 @@ import type {
   SearchResponse,
   SearchWeatherEvidenceRequest,
   SearchWeatherEvidenceResponse,
+  SearchV4RefinementRequest,
+  SearchV4RefinementResponse,
   SearchV4Request,
   WeatherEvidencePoint,
 } from "../../../src/types";
@@ -220,6 +222,7 @@ async function mockSearchV4Api(
   weatherResponder?: WeatherResponder,
   weatherRequests: SearchWeatherEvidenceRequest[] = [],
   weatherResponseGates: Array<Promise<void> | undefined> = [],
+  refinementRequests: SearchV4RefinementRequest[] = [],
 ) {
   const responses = Array.isArray(response) ? response : [response];
   let responseIndex = 0;
@@ -254,7 +257,40 @@ async function mockSearchV4Api(
     });
   });
 
-  await page.route("**/api/search", async (route) => {
+  await page.route(/\/api\/search\/refinements$/, async (route) => {
+    refinementRequests.push(
+      route.request().postDataJSON() as SearchV4RefinementRequest,
+    );
+    const ranking = responses[
+      Math.min(Math.max(responseIndex - 1, 0), responses.length - 1)
+    ];
+    if ("status" in ranking) {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Refinement is temporarily unavailable." }),
+      });
+      return;
+    }
+    const payload: SearchV4RefinementResponse = {
+      search_model_version: "search-v4",
+      ranking_policy_version: ranking.ranking_policy_version,
+      baseline_fingerprint: ranking.baseline_fingerprint,
+      baseline_status: "current",
+      refinement_status: ranking.refinements.length
+        ? "questions_available"
+        : "not_needed",
+      fallback_used: false,
+      refinements: ranking.refinements,
+    };
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(payload),
+    });
+  });
+
+  await page.route(/\/api\/search$/, async (route) => {
     searchRequests.push(route.request().postDataJSON() as SearchV4Request);
     const currentResponseIndex = responseIndex;
     const next = responses[Math.min(currentResponseIndex, responses.length - 1)];
@@ -581,8 +617,16 @@ test("desktop board compares, selects alternatives, and reranks in place", async
   await expect(
     page.getByRole("heading", { name: "Recommended ski trips" }),
   ).toBeFocused();
-  await expect(page.getByText("Replacement refinement?")).toBeVisible();
-  await expect(page.getByText("Which stay style fits?")).toBeHidden();
+  await expect(
+    page.locator(".contextual-refinement__question", {
+      hasText: "Replacement refinement?",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.locator(".contextual-refinement__question", {
+      hasText: "Which stay style fits?",
+    }),
+  ).toBeHidden();
   await expect.poll(() => scrollYAfterLayout(page)).toBe(scrollBeforeRerank);
   await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
   expect(searchRequests).toHaveLength(2);
@@ -615,10 +659,16 @@ test("refinement objective survives pass-priority edits and reranks", async ({
     { factor_id: "trip_window_snow_fit", importance: "high" },
   ];
   const searchRequests: SearchV4Request[] = [];
+  const refinementRequests: SearchV4RefinementRequest[] = [];
   await mockSearchV4Api(
     page,
     [refinementResponse(), refined, passPrice, snowOnly],
     searchRequests,
+    [],
+    undefined,
+    [],
+    [],
+    refinementRequests,
   );
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with reliable snow");
@@ -642,9 +692,9 @@ test("refinement objective survives pass-priority edits and reranks", async ({
   expect(searchRequests[1].intent.objectives).toEqual(refined.applied_intent.objectives);
   expect(searchRequests[2].intent.objectives).toEqual(passPrice.applied_intent.objectives);
   expect(searchRequests[3].intent.objectives).toEqual(snowOnly.applied_intent.objectives);
-  expect(searchRequests[3].already_answered_question_ids).toEqual([
-    "snow-priority",
-  ]);
+  await expect
+    .poll(() => refinementRequests.at(-1)?.already_answered_question_ids)
+    .toEqual(["snow-priority"]);
 });
 
 test("a no-op refinement focuses the next queued control without reranking", async ({
@@ -728,7 +778,9 @@ test("a delayed rerank cannot restore results scroll on Current trip", async ({
     window.scrollTo(0, 40);
   });
   const rerankResponse = page.waitForResponse(
-    (response) => response.url().includes("/api/search") && response.request().method() === "POST",
+    (response) =>
+      new URL(response.url()).pathname === "/api/search" &&
+      response.request().method() === "POST",
   );
   releaseRerank?.();
   await rerankResponse;
@@ -761,7 +813,11 @@ test("a delayed rerank blocks chip edits and drawer entry", async ({ page }) => 
   await expect(franceChip).toBeDisabled();
   await franceChip.dispatchEvent("click");
   releaseRerank?.();
-  await expect(page.getByText("Replacement refinement?")).toBeVisible();
+  await expect(
+    page.locator(".contextual-refinement__question", {
+      hasText: "Replacement refinement?",
+    }),
+  ).toBeVisible();
 
   expect(searchRequests[1].intent.constraints.location).toEqual({ country: "France" });
   await expect(page.getByRole("button", { name: "Remove France" })).toBeEnabled();
@@ -791,7 +847,7 @@ test("failed refinement apply preserves results and the selected option", async 
   ).toBeVisible();
   await expect(option).toBeChecked();
   await expect(page.getByRole("alert")).toContainText(
-    "Reranking is temporarily unavailable.",
+    "Snowcast is temporarily unavailable. Try again shortly.",
   );
   await expect(page.getByRole("button", { name: /retry apply and rerank/i })).toBeEnabled();
 });
@@ -805,9 +861,17 @@ test("mobile board advances refinements in document flow without overflow", asyn
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with easy lift access");
 
-  await expect(page.getByText("What should break the tie?")).toBeVisible();
+  await expect(
+    page.locator(".contextual-refinement__question", {
+      hasText: "What should break the tie?",
+    }),
+  ).toBeVisible();
   await page.getByRole("button", { name: /skip for now/i }).click();
-  await expect(page.getByText("Which stay style fits?")).toBeVisible();
+  await expect(
+    page.locator(".contextual-refinement__question", {
+      hasText: "Which stay style fits?",
+    }),
+  ).toBeVisible();
   expect(searchRequests).toHaveLength(1);
   await page
     .getByRole("button", { name: /expand les arcs - peisey vallandry/i })
@@ -988,12 +1052,12 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
 
   await expect(page.getByText("Historical pattern")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Snow evidence for March" }),
+    page.getByRole("heading", { name: "Snow & weather for March" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("img", { name: "Historical snow-depth profile" }),
+    page.getByRole("img", { name: /historical snow depth chart in cm/i }),
   ).toBeVisible();
-  await page.getByText("View structured weather values").click();
+  await page.getByText("Sources and daily values").click();
   await expect(
     page.getByRole("table", { name: "Historical weather values" }),
   ).toBeVisible();
@@ -1010,7 +1074,7 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
   });
   await expect(page.getByText(/booking\.com|available rooms|hotel rating/i)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
-  await page.getByText("View structured weather values").click();
+  await page.getByText("Sources and daily values").click();
   await page.addStyleTag({
     content:
       ".search-command-header,.dossier-anchor-nav,.dossier-navigator{position:static!important}",
@@ -1054,8 +1118,8 @@ test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alt
   }).click();
 
   await expect(page.getByText("Forecast-assisted")).toBeVisible();
-  await expect(page.getByText(/fresh at evaluation time/i)).toBeVisible();
-  await expect(page.getByText(/partial coverage: 2 of 3 dates/i)).toBeVisible();
+  await expect(page.getByText(/fresh at .* utc/i)).toBeVisible();
+  await expect(page.getByText("2 of 3 covered")).toBeVisible();
   const forecastTab = page.getByRole("tab", { name: "Forecast" });
   const historicalTab = page.getByRole("tab", { name: "Historical context" });
   await forecastTab.focus();
@@ -1068,11 +1132,20 @@ test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alt
   await page.keyboard.press("ArrowLeft");
   await expect(forecastTab).toBeFocused();
   await expect(
-    page.getByRole("img", { name: "Forecast snow profile" }),
+    page.getByRole("img", { name: /forecast snow depth chart in cm/i }),
   ).toBeVisible();
-  await expect(page.getByText(/dashed line: forecast depth/i)).toBeVisible();
-  await expect(page.getByText(/diamond: rain or thaw risk/i)).toBeVisible();
-  await expect(page.locator(".snow-chart__risk")).toHaveCount(1);
+  await page.getByRole("tab", { name: "Fresh snow" }).click();
+  await expect(
+    page.getByRole("img", { name: /forecast fresh snow chart in cm/i }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Temperature" }).click();
+  await expect(
+    page.getByRole("img", { name: /forecast temperature chart in °c/i }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Snow depth" }).click();
+  await expect(
+    page.getByRole("img", { name: /forecast snow depth chart in cm/i }),
+  ).toBeVisible();
   expect(weatherRequests[0].intent.constraints.travel_window).toEqual({
     start_date: "2026-07-20",
     end_date: "2026-07-22",
@@ -1124,7 +1197,7 @@ test("stale fallback and typed unavailable states keep dossier controls intact",
   await page.locator("article.recommendation-card").first().getByRole("link", {
     name: "View dossier",
   }).click();
-  const snowAnchor = page.getByRole("link", { name: "Snow evidence" });
+  const snowAnchor = page.getByRole("link", { name: "Snow & weather" });
   await snowAnchor.focus();
   releaseEvidence?.();
   await expect(page.getByText(/selected forecast run was stale/i)).toBeVisible();
@@ -1184,7 +1257,9 @@ test("transport failure is not cached and retry announces recovered evidence", a
   ).toBeVisible();
   await page.getByRole("button", { name: "Retry snow evidence" }).click();
   await expect(page.getByText("Historical pattern")).toBeVisible();
-  await expect(page.getByRole("status")).toContainText("Snow evidence loaded");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Snow evidence loaded for Tignes." }),
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Reload snow evidence" }),
   ).toBeFocused();
@@ -1213,18 +1288,25 @@ test("expired forecast cache refetches and replaces the selected run head", asyn
     page.locator("article.recommendation-card").first().getByRole("link", {
       name: "View dossier",
     }).click();
+  const openSourceDetails = () =>
+    page
+      .locator("summary:visible", { hasText: "Sources and daily values" })
+      .click();
   await openDossier();
-  await expect(page.getByText(/selected run forecast-head-1/i)).toBeVisible();
+  await openSourceDetails();
+  await expect(page.getByText(/run forecast-head-1,/i)).toBeVisible();
   await page.getByRole("button", { name: "All results" }).click();
   await openDossier();
-  await expect(page.getByText(/selected run forecast-head-1/i)).toBeVisible();
+  await openSourceDetails();
+  await expect(page.getByText(/run forecast-head-1,/i)).toBeVisible();
   expect(weatherRequests).toHaveLength(1);
 
   await page.getByRole("button", { name: "All results" }).click();
   await page.waitForTimeout(3100);
   await openDossier();
-  await expect(page.getByText(/selected run forecast-head-2/i)).toBeVisible();
-  await expect(page.getByText(/selected run forecast-head-1/i)).toHaveCount(0);
+  await openSourceDetails();
+  await expect(page.getByText(/run forecast-head-2,/i)).toBeVisible();
+  await expect(page.getByText(/run forecast-head-1,/i)).toHaveCount(0);
   expect(weatherRequests).toHaveLength(2);
 });
 
@@ -1262,15 +1344,15 @@ test("late weather response cannot cross the selected ski-area context", async (
     name: /les arcs - peisey vallandry, rank 2/i,
   }).click();
   await expect(
-    page.getByRole("heading", { name: "Snow evidence for Les Arcs March" }),
+    page.getByRole("heading", { name: "Snow & weather for Les Arcs March" }),
   ).toBeVisible();
   releaseFirst?.();
   await page.waitForTimeout(100);
   await expect(
-    page.getByRole("heading", { name: "Snow evidence for Les Arcs March" }),
+    page.getByRole("heading", { name: "Snow & weather for Les Arcs March" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Snow evidence for March" }),
+    page.getByRole("heading", { name: "Snow & weather for March" }),
   ).toHaveCount(0);
 });
 
@@ -1556,7 +1638,7 @@ test("failed initial search can be resubmitted without losing the brief", async 
   await page.getByLabel("Describe your ski trip").fill(brief);
   await page.getByRole("button", { name: "Find resorts" }).click();
   await expect(page.getByRole("alert")).toContainText(
-    "Search is temporarily unavailable.",
+    "Snowcast is temporarily unavailable. Try again shortly.",
   );
   await expect(page.getByLabel("Describe your ski trip")).toHaveValue(brief);
   await expect(page.getByRole("button", { name: "Find resorts" })).toBeEnabled();
@@ -1610,7 +1692,7 @@ test("results reflow at a 1440 viewport equivalent to 200 percent zoom", async (
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with reliable snow");
 
-  await expect(page.getByText("Limited evidence — Fallback-heavy")).toBeVisible();
+  await expect(page.getByText("Fallback-heavy", { exact: true })).toBeVisible();
   await expect(page.getByText("Snow evidence is limited for the requested travel window.")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   const motion = await page.locator(".recommendation-card__toggle").first().evaluate(

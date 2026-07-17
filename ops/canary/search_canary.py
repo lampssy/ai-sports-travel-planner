@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 
 DEFAULT_BASE_URL = "https://snowcast.fly.dev"
 DEFAULT_LATENCY_THRESHOLD_SECONDS = 15.0
+DEFAULT_REFINEMENT_LATENCY_THRESHOLD_SECONDS = 6.0
 DEFAULT_TIMEOUT_SECONDS = 30.0
 
 JsonPayload = dict[str, Any]
@@ -32,6 +33,9 @@ def run_canary(
     *,
     base_url: str,
     latency_threshold_seconds: float = DEFAULT_LATENCY_THRESHOLD_SECONDS,
+    refinement_latency_threshold_seconds: float = (
+        DEFAULT_REFINEMENT_LATENCY_THRESHOLD_SECONDS
+    ),
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     request_json: RequestJson | None = None,
 ) -> list[CanaryResult]:
@@ -42,12 +46,35 @@ def run_canary(
         _check_status(request, "health", "/api/healthz", timeout_seconds),
         _check_status(request, "ready", "/api/readyz", timeout_seconds),
         _check_search_readiness(request, timeout_seconds),
-        _check_search(
-            request,
-            timeout_seconds=timeout_seconds,
-            latency_threshold_seconds=latency_threshold_seconds,
-        ),
     ]
+    search_result, search_payload = _check_search(
+        request,
+        timeout_seconds=timeout_seconds,
+        latency_threshold_seconds=latency_threshold_seconds,
+    )
+    results.append(search_result)
+    if search_result.passed:
+        refinement_result, retry_handoff = _check_refinements(
+            request,
+            search_payload=search_payload,
+            timeout_seconds=timeout_seconds,
+            latency_threshold_seconds=refinement_latency_threshold_seconds,
+        )
+        if retry_handoff:
+            retry_search_result, retry_search_payload = _check_search(
+                request,
+                timeout_seconds=timeout_seconds,
+                latency_threshold_seconds=latency_threshold_seconds,
+            )
+            results.append(retry_search_result)
+            if retry_search_result.passed:
+                refinement_result, _ = _check_refinements(
+                    request,
+                    search_payload=retry_search_payload,
+                    timeout_seconds=timeout_seconds,
+                    latency_threshold_seconds=(refinement_latency_threshold_seconds),
+                )
+        results.append(refinement_result)
     return results
 
 
@@ -65,6 +92,12 @@ def main() -> None:
         help="Fail when the representative search takes longer than this value.",
     )
     parser.add_argument(
+        "--refinement-latency-threshold-seconds",
+        default=DEFAULT_REFINEMENT_LATENCY_THRESHOLD_SECONDS,
+        type=float,
+        help="Fail when post-search refinement takes longer than this value.",
+    )
+    parser.add_argument(
         "--timeout-seconds",
         default=DEFAULT_TIMEOUT_SECONDS,
         type=float,
@@ -75,6 +108,9 @@ def main() -> None:
     results = run_canary(
         base_url=args.base_url,
         latency_threshold_seconds=args.latency_threshold_seconds,
+        refinement_latency_threshold_seconds=(
+            args.refinement_latency_threshold_seconds
+        ),
         timeout_seconds=args.timeout_seconds,
     )
     for result in results:
@@ -136,7 +172,7 @@ def _check_search(
     *,
     timeout_seconds: float,
     latency_threshold_seconds: float,
-) -> CanaryResult:
+) -> tuple[CanaryResult, JsonPayload]:
     request_payload: JsonPayload = {
         "intent": {
             "constraints": {
@@ -147,7 +183,6 @@ def _check_search(
             "travel_context": {"origin_text": "Berlin", "mode": "car"},
             "objectives": [{"factor_id": "pass_terrain_value", "importance": "normal"}],
         },
-        "generate_refinements": False,
     }
     status_code, payload, duration_seconds = request(
         "POST",
@@ -187,11 +222,92 @@ def _check_search(
         f"ranking_status={ranking_status} "
         f"threshold={latency_threshold_seconds:.1f}s"
     )
-    return CanaryResult(
-        name="representative-search",
-        passed=passed,
-        message=message,
-        duration_seconds=duration_seconds,
+    return (
+        CanaryResult(
+            name="representative-search",
+            passed=passed,
+            message=message,
+            duration_seconds=duration_seconds,
+        ),
+        payload,
+    )
+
+
+def _check_refinements(
+    request: RequestJson,
+    *,
+    search_payload: JsonPayload,
+    timeout_seconds: float,
+    latency_threshold_seconds: float,
+) -> tuple[CanaryResult, bool]:
+    applied_intent = search_payload.get("applied_intent")
+    baseline_fingerprint = search_payload.get("baseline_fingerprint")
+    ranking_policy_version = search_payload.get("ranking_policy_version")
+    if not isinstance(applied_intent, dict) or not isinstance(
+        baseline_fingerprint, str
+    ):
+        return (
+            CanaryResult(
+                name="representative-refinement",
+                passed=False,
+                message="ranking response omitted refinement baseline fields",
+                duration_seconds=0.0,
+            ),
+            False,
+        )
+
+    status_code, payload, duration_seconds = request(
+        "POST",
+        "/api/search/refinements",
+        {
+            "intent": applied_intent,
+            "brief": "Product canary representative search",
+            "baseline_fingerprint": baseline_fingerprint,
+            "already_answered_question_ids": [],
+        },
+        timeout_seconds,
+    )
+    status = payload.get("refinement_status")
+    baseline_status = payload.get("baseline_status")
+    refinements = payload.get("refinements")
+    question_count = len(refinements) if isinstance(refinements, list) else -1
+    status_shape_ok = (status == "questions_available" and question_count > 0) or (
+        status in {"not_needed", "temporarily_unavailable"} and question_count == 0
+    )
+    passed = (
+        status_code == 200
+        and payload.get("search_model_version") == "search-v4"
+        and payload.get("ranking_policy_version") == ranking_policy_version
+        and payload.get("baseline_fingerprint") == baseline_fingerprint
+        and baseline_status == "current"
+        and isinstance(payload.get("fallback_used"), bool)
+        and status_shape_ok
+        and duration_seconds <= latency_threshold_seconds
+    )
+    retry_handoff = (
+        status_code == 200
+        and payload.get("search_model_version") == "search-v4"
+        and payload.get("ranking_policy_version") == ranking_policy_version
+        and payload.get("baseline_fingerprint") == baseline_fingerprint
+        and status == "temporarily_unavailable"
+        and baseline_status in {"stale", "unverified"}
+        and isinstance(payload.get("fallback_used"), bool)
+        and question_count == 0
+        and duration_seconds <= latency_threshold_seconds
+    )
+    message = (
+        f"status_code={status_code} status={status} baseline={baseline_status} "
+        f"questions={question_count} "
+        f"threshold={latency_threshold_seconds:.1f}s"
+    )
+    return (
+        CanaryResult(
+            name="representative-refinement",
+            passed=passed,
+            message=message,
+            duration_seconds=duration_seconds,
+        ),
+        retry_handoff,
     )
 
 

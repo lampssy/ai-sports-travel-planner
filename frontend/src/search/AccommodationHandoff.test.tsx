@@ -17,6 +17,7 @@ function configuration(
     stay_base_name: "Le Lac",
     ski_area_id: "tignes-ski-area",
     ski_area_name: "Tignes",
+    evidence_profile: "archive_backed",
     access: {
       ski_area_access_id: "access-1",
       access_mode: "walk",
@@ -25,6 +26,8 @@ function configuration(
       distance_m: 250,
       duration_minutes: 4,
       is_direct: true,
+      relationship_trust_status: "verified",
+      access_mode_distance_trust_status: "verified",
     },
     selected_pass: {
       lift_pass_product_id: "pass-1",
@@ -87,4 +90,22 @@ test("does not render a numeric lodging estimate when sourcing is required", () 
   expect(screen.getByText("Needs source")).toBeVisible();
   expect(screen.getByText(/no supported lodging estimate is available/i)).toBeVisible();
   expect(screen.queryByText(/180|255/)).toBeNull();
+});
+
+test("does not expose unverified lift-access details", () => {
+  const candidate = configuration();
+  render(
+    <AccommodationHandoff
+      configuration={{
+        ...candidate,
+        access: {
+          ...candidate.access,
+          relationship_trust_status: "verified",
+          access_mode_distance_trust_status: "needs_source",
+        },
+      }}
+    />,
+  );
+
+  expect(screen.queryByText(/toviere|250 m|walk/i)).toBeNull();
 });

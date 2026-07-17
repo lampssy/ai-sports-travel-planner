@@ -1,15 +1,61 @@
-import { useId } from "react";
+import type { ReactNode } from "react";
+import {
+  Area,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import type { WeatherEvidencePoint } from "../types";
+import { Disclosure } from "../ui/Disclosure";
+import { SegmentedTabs } from "../ui/SegmentedTabs";
 
-type ChartMode = "historical" | "forecast";
+export type ChartMode = "historical" | "forecast";
+export type WeatherMetric = "depth" | "freshSnow" | "temperature";
+
+export interface WeatherChartDatum {
+  label: string;
+  depthRange: [number, number] | null;
+  medianDepth: number | null;
+  depth: number | null;
+  freshSnow: number | null;
+  minimumTemperature: number | null;
+  maximumTemperature: number | null;
+}
+
+export const weatherMetricDefinition = {
+  depth: {
+    label: "Snow depth",
+    unit: "cm",
+    referenceValue: 30,
+  },
+  freshSnow: {
+    label: "Fresh snow",
+    unit: "cm",
+    referenceValue: null,
+  },
+  temperature: {
+    label: "Temperature",
+    unit: "°C",
+    referenceValue: null,
+  },
+} as const satisfies Record<
+  WeatherMetric,
+  { label: string; unit: string; referenceValue: number | null }
+>;
 
 const valueColumns = [
   ["snow_depth_cm", "Snow depth", "cm"],
   ["snow_depth_cm_p25", "Depth p25", "cm"],
   ["snow_depth_cm_p50", "Median depth", "cm"],
   ["snow_depth_cm_p75", "Depth p75", "cm"],
-  ["snowfall_cm", "Snowfall", "cm"],
+  ["snowfall_cm", "Fresh snow", "cm"],
   ["temperature_min_c", "Minimum temperature", "°C"],
   ["temperature_max_c", "Maximum temperature", "°C"],
   ["rain_risk", "Rain risk", "%"],
@@ -25,184 +71,301 @@ function displayValue(value: number, unit: string): string {
   return `${rendered} ${unit}`;
 }
 
-function pointValue(point: WeatherEvidencePoint, mode: ChartMode): number | null {
-  return mode === "forecast" ? point.snow_depth_cm : point.snow_depth_cm_p50;
-}
-
-function xFor(index: number, count: number): number {
-  if (count <= 1) return 320;
-  return 42 + (index / (count - 1)) * 556;
-}
-
-function yFor(value: number, maximum: number): number {
-  return 202 - (value / maximum) * 160;
-}
-
-function linePath(
-  points: WeatherEvidencePoint[],
-  mode: ChartMode,
-  maximum: number,
+function formatTooltipValue(
+  value: number | [number, number] | undefined,
+  unit: string,
 ): string {
-  return points
-    .flatMap((point, index) => {
-      const value = pointValue(point, mode);
-      return value == null
-        ? []
-        : [{ index, value }];
-    })
-    .map(
-      ({ index, value }, plottedIndex) =>
-        `${plottedIndex === 0 ? "M" : "L"}${xFor(index, points.length)} ${yFor(
-          value,
-          maximum,
-        )}`,
-    )
-    .join(" ");
+  if (value == null) return "Not available";
+  if (Array.isArray(value)) {
+    return `${displayValue(value[0], unit)} to ${displayValue(value[1], unit)}`;
+  }
+  return displayValue(value, unit);
 }
 
-function rangePath(points: WeatherEvidencePoint[], maximum: number): string {
-  const ranged = points.flatMap((point, index) =>
-    point.snow_depth_cm_p25 == null || point.snow_depth_cm_p75 == null
-      ? []
-      : [{ point, index }],
+export function buildWeatherChartData(
+  _mode: ChartMode,
+  _metric: WeatherMetric,
+  points: WeatherEvidencePoint[],
+): WeatherChartDatum[] {
+  return points.map((point) => ({
+    label: point.date_or_month_day,
+    depthRange:
+      point.snow_depth_cm_p25 == null || point.snow_depth_cm_p75 == null
+        ? null
+        : [point.snow_depth_cm_p25, point.snow_depth_cm_p75],
+    medianDepth: point.snow_depth_cm_p50,
+    depth: point.snow_depth_cm,
+    freshSnow: point.snowfall_cm,
+    minimumTemperature: point.temperature_min_c,
+    maximumTemperature: point.temperature_max_c,
+  }));
+}
+
+export function selectWeatherChartTickLabels(
+  data: WeatherChartDatum[],
+  maximumTicks = 3,
+): string[] {
+  if (!data.length) return [];
+
+  const boundedMaximum = Math.max(1, Math.floor(maximumTicks));
+  if (data.length <= boundedMaximum) {
+    return data.map((point) => point.label);
+  }
+  if (boundedMaximum === 1) {
+    return [data[0].label];
+  }
+
+  const lastIndex = data.length - 1;
+  return Array.from({ length: boundedMaximum }, (_, index) =>
+    data[Math.round((index * lastIndex) / (boundedMaximum - 1))].label,
   );
-  if (!ranged.length) return "";
-  const upper = ranged.map(({ point, index }) =>
-    `${xFor(index, points.length)} ${yFor(point.snow_depth_cm_p75 ?? 0, maximum)}`,
+}
+
+export function formatWeatherChartTickLabel(label: string): string {
+  return /^\d{4}-(\d{2}-\d{2})$/.exec(label)?.[1] ?? label;
+}
+
+function hasMetricData(data: WeatherChartDatum[], metric: WeatherMetric): boolean {
+  if (metric === "depth") {
+    return data.some(
+      (point) =>
+        point.depth != null || point.medianDepth != null || point.depthRange != null,
+    );
+  }
+  if (metric === "freshSnow") {
+    return data.some((point) => point.freshSnow != null);
+  }
+  return data.some(
+    (point) =>
+      point.minimumTemperature != null || point.maximumTemperature != null,
   );
-  const lower = [...ranged].reverse().map(({ point, index }) =>
-    `${xFor(index, points.length)} ${yFor(point.snow_depth_cm_p25 ?? 0, maximum)}`,
+}
+
+function WeatherChart({
+  mode,
+  metric,
+  points,
+}: {
+  mode: ChartMode;
+  metric: WeatherMetric;
+  points: WeatherEvidencePoint[];
+}) {
+  const definition = weatherMetricDefinition[metric];
+  const data = buildWeatherChartData(mode, metric, points);
+  const xAxisTicks = selectWeatherChartTickLabels(data);
+  const available = hasMetricData(data, metric);
+
+  if (!available) {
+    const valueKind = mode === "forecast" ? "forecast values" : "observations";
+    return (
+      <div className="snow-chart-empty" role="status">
+        No {definition.label.toLowerCase()} {valueKind} are available for this window.
+      </div>
+    );
+  }
+
+  const seriesNames: Record<string, string> = {
+    depthRange: `Typical range (${definition.unit})`,
+    medianDepth: `Median depth (${definition.unit})`,
+    depth: `Forecast depth (${definition.unit})`,
+    freshSnow: `Fresh snow (${definition.unit})`,
+    minimumTemperature: `Minimum (${definition.unit})`,
+    maximumTemperature: `Maximum (${definition.unit})`,
+  };
+
+  return (
+    <div
+      className="snow-chart-block__visual"
+      role="img"
+      aria-label={`${mode === "forecast" ? "Forecast" : "Historical"} ${definition.label.toLowerCase()} chart in ${definition.unit}. Missing ${mode === "forecast" ? "forecast values" : "observations"} are shown as gaps.`}
+    >
+      <div className="snow-chart__unit" aria-hidden="true">
+        {definition.unit}
+      </div>
+      <ResponsiveContainer width="100%" height={320}>
+        <ComposedChart data={data} margin={{ top: 16, right: 20, bottom: 8, left: 4 }}>
+          <CartesianGrid strokeDasharray="3 5" vertical={false} />
+          <XAxis
+            dataKey="label"
+            interval={0}
+            tickFormatter={formatWeatherChartTickLabel}
+            ticks={xAxisTicks}
+            tickMargin={10}
+          />
+          <YAxis
+            tickFormatter={(value: number) => `${value} ${definition.unit}`}
+            width={62}
+          />
+          <Tooltip
+            formatter={(value, name) => [
+              formatTooltipValue(value as number | [number, number] | undefined, definition.unit),
+              seriesNames[String(name)] ?? String(name),
+            ]}
+          />
+          <Legend formatter={(value) => seriesNames[String(value)] ?? String(value)} />
+
+          {metric === "depth" && mode === "historical" ? (
+            <>
+              <Area
+                type="linear"
+                dataKey="depthRange"
+                name="depthRange"
+                connectNulls={false}
+                stroke="#b84f75"
+                fill="#f6dce7"
+                fillOpacity={0.72}
+                isAnimationActive={false}
+              />
+              <Line
+                type="linear"
+                dataKey="medianDepth"
+                name="medianDepth"
+                connectNulls={false}
+                stroke="#1261b8"
+                strokeWidth={3}
+                dot={{ r: 3 }}
+                isAnimationActive={false}
+              />
+            </>
+          ) : null}
+          {metric === "depth" && mode === "forecast" ? (
+            <Line
+              type="linear"
+              dataKey="depth"
+              name="depth"
+              connectNulls={false}
+              stroke="#087f6a"
+              strokeWidth={3}
+              dot={{ r: 3 }}
+              isAnimationActive={false}
+            />
+          ) : null}
+          {metric === "freshSnow" ? (
+            <Line
+              type="linear"
+              dataKey="freshSnow"
+              name="freshSnow"
+              connectNulls={false}
+              stroke="#1261b8"
+              strokeWidth={3}
+              dot={{ r: 3 }}
+              isAnimationActive={false}
+            />
+          ) : null}
+          {metric === "temperature" ? (
+            <>
+              <Line
+                type="linear"
+                dataKey="minimumTemperature"
+                name="minimumTemperature"
+                connectNulls={false}
+                stroke="#1261b8"
+                strokeWidth={3}
+                dot={{ r: 3 }}
+                isAnimationActive={false}
+              />
+              <Line
+                type="linear"
+                dataKey="maximumTemperature"
+                name="maximumTemperature"
+                connectNulls={false}
+                stroke="#b84f75"
+                strokeWidth={3}
+                dot={{ r: 3 }}
+                isAnimationActive={false}
+              />
+            </>
+          ) : null}
+          {metric === "depth" && definition.referenceValue != null ? (
+            <ReferenceLine
+              y={definition.referenceValue}
+              stroke="#a15d00"
+              strokeDasharray="5 5"
+              label={{ value: "30 cm guide", fill: "#704300", position: "insideTopRight" }}
+            />
+          ) : null}
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
   );
-  return `M${upper.join(" L")} L${lower.join(" L")} Z`;
+}
+
+function WeatherValuesTable({
+  mode,
+  points,
+}: {
+  mode: ChartMode;
+  points: WeatherEvidencePoint[];
+}) {
+  const tableLabel =
+    mode === "forecast" ? "Forecast weather values" : "Historical weather values";
+
+  return (
+    <div className="snow-values__scroll">
+      <table aria-label={tableLabel}>
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            {valueColumns.map(([key, label, unit]) => (
+              <th key={key} scope="col">
+                {label} ({unit})
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {points.map((point) => (
+            <tr key={point.date_or_month_day}>
+              <th scope="row">{point.date_or_month_day}</th>
+              {valueColumns.map(([key, , unit]) => (
+                <td key={key}>
+                  {point[key] == null ? "Not available" : displayValue(point[key], unit)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export function SnowEvidenceChart({
   mode,
   points,
   interpretation,
+  sourceDetails,
 }: {
   mode: ChartMode;
   points: WeatherEvidencePoint[];
   interpretation: string;
+  sourceDetails: ReactNode;
 }) {
-  const titleId = useId();
-  const descriptionId = useId();
-  const plotted = points.flatMap((point) =>
-    [
-      point.snow_depth_cm,
-      point.snow_depth_cm_p25,
-      point.snow_depth_cm_p50,
-      point.snow_depth_cm_p75,
-    ].flatMap((value) => (value == null ? [] : [value])),
+  const metricTabs = (Object.keys(weatherMetricDefinition) as WeatherMetric[]).map(
+    (metric) => ({
+      id: metric,
+      label: weatherMetricDefinition[metric].label,
+      panel: <WeatherChart mode={mode} metric={metric} points={points} />,
+    }),
   );
-  const maximum = Math.max(1, ...plotted) * 1.1;
-  const path = linePath(points, mode, maximum);
-  const range = mode === "historical" ? rangePath(points, maximum) : "";
-  const tableLabel = mode === "forecast" ? "Forecast weather values" : "Historical weather values";
 
   return (
     <div className="snow-chart-block">
       <p className="snow-chart-block__interpretation">{interpretation}</p>
-      {points.length ? (
-        <div className="snow-chart-block__visual">
-          <svg
-            className="snow-chart"
-            viewBox="0 0 640 240"
-            role="img"
-            aria-labelledby={`${titleId} ${descriptionId}`}
-          >
-            <title id={titleId}>
-              {mode === "forecast" ? "Forecast snow profile" : "Historical snow-depth profile"}
-            </title>
-            <desc id={descriptionId}>
-              {mode === "forecast"
-                ? "A dashed line shows forecast snow depth; diamond markers identify days with rain or thaw risk."
-                : "A solid line shows median snow depth and a shaded band shows the 25th to 75th percentile range."}
-            </desc>
-            <line className="snow-chart__grid" x1="42" y1="202" x2="598" y2="202" />
-            <line className="snow-chart__grid" x1="42" y1="122" x2="598" y2="122" />
-            <line className="snow-chart__grid" x1="42" y1="42" x2="598" y2="42" />
-            {range ? <path className="snow-chart__range" d={range} /> : null}
-            {path ? (
-              <path
-                className={`snow-chart__line snow-chart__line--${mode}`}
-                d={path}
-              />
-            ) : null}
-            {mode === "forecast"
-              ? points.map((point, index) => {
-                  const hasRisk =
-                    (point.rain_risk ?? 0) > 0 ||
-                    (point.thaw_risk ?? 0) > 0;
-                  const value = point.snow_depth_cm;
-                  if (!hasRisk || value == null) return null;
-                  const x = xFor(index, points.length);
-                  const y = yFor(value, maximum);
-                  return (
-                    <rect
-                      key={point.date_or_month_day}
-                      className="snow-chart__risk"
-                      x={x - 4}
-                      y={y - 4}
-                      width="8"
-                      height="8"
-                      transform={`rotate(45 ${x} ${y})`}
-                    />
-                  );
-                })
-              : null}
-          </svg>
-          <ul className="snow-chart-legend" aria-label="Chart symbols">
-            {mode === "historical" ? (
-              <>
-                <li><span className="legend-line legend-line--solid" />Solid line: median</li>
-                <li><span className="legend-range" />Shaded range: 25th to 75th percentile</li>
-              </>
-            ) : (
-              <>
-                <li><span className="legend-line legend-line--dashed" />Dashed line: forecast depth</li>
-                <li><span className="legend-risk" />Diamond: rain or thaw risk</li>
-              </>
-            )}
-          </ul>
-        </div>
-      ) : (
-        <p className="snow-chart-block__empty">No daily profile values are available.</p>
-      )}
-
-      {points.length ? (
-        <details className="snow-values">
-          <summary>View structured weather values</summary>
-          <div className="snow-values__scroll">
-            <table aria-label={tableLabel}>
-              <thead>
-                <tr>
-                  <th scope="col">Date</th>
-                  {valueColumns.map(([key, label]) =>
-                    points.some((point) => point[key] != null) ? (
-                      <th key={key} scope="col">{label}</th>
-                    ) : null,
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {points.map((point) => (
-                  <tr key={point.date_or_month_day}>
-                    <th scope="row">{point.date_or_month_day}</th>
-                    {valueColumns.map(([key, , unit]) =>
-                      points.some((candidate) => candidate[key] != null) ? (
-                        <td key={key}>
-                          {point[key] == null ? null : displayValue(point[key], unit)}
-                        </td>
-                      ) : null,
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
-      ) : null}
+      <SegmentedTabs
+        tabs={metricTabs}
+        ariaLabel={`${mode === "forecast" ? "Forecast" : "Historical"} weather metrics`}
+        defaultValue="depth"
+        className="snow-metric-tabs"
+      />
+      <Disclosure label="Sources and daily values" className="snow-values">
+        <div className="snow-values__sources">{sourceDetails}</div>
+        {points.length ? (
+          <WeatherValuesTable mode={mode} points={points} />
+        ) : (
+          <p>No daily weather values are available.</p>
+        )}
+      </Disclosure>
     </div>
   );
 }

@@ -1,10 +1,13 @@
-import { AlertTriangle, CheckCircle2, RefreshCw, Snowflake } from "lucide-react";
+import { RefreshCw, Snowflake } from "lucide-react";
 import {
+  Component,
+  lazy,
+  Suspense,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type KeyboardEvent,
+  type ReactNode,
 } from "react";
 
 import { fetchSearchWeatherEvidence } from "../api";
@@ -12,8 +15,15 @@ import type {
   SearchIntent,
   SearchWeatherEvidenceRequest,
   SearchWeatherEvidenceResponse,
+  WeatherEvidencePoint,
 } from "../types";
-import { SnowEvidenceChart } from "./SnowEvidenceChart";
+import { Action } from "../ui/Action";
+import { Alert } from "../ui/Alert";
+import { AsyncState } from "../ui/AsyncState";
+import { Badge } from "../ui/Badge";
+import { MetricTile } from "../ui/MetricTile";
+import { SectionHeader } from "../ui/SectionHeader";
+import { SegmentedTabs } from "../ui/SegmentedTabs";
 import {
   deleteWeatherEvidenceCache,
   readWeatherEvidenceCache,
@@ -22,7 +32,6 @@ import {
 } from "./weatherEvidenceCache";
 
 type AvailableResponse = Extract<SearchWeatherEvidenceResponse, { status: "available" }>;
-type EvidenceView = "forecast" | "historical";
 type EvidenceState =
   | { kind: "loading"; contextKey: string }
   | { kind: "error"; contextKey: string; message: string }
@@ -42,6 +51,12 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
   hour12: false,
   timeZone: "UTC",
 });
+
+const LazySnowEvidenceChart = lazy(() =>
+  import("./SnowEvidenceChart").then((module) => ({
+    default: module.SnowEvidenceChart,
+  })),
+);
 
 function formatDateTime(value: string): string {
   return dateTimeFormatter.format(new Date(value));
@@ -72,125 +87,226 @@ function statusAnnouncement(
 function evidenceMetrics(response: AvailableResponse) {
   const { historical } = response.evidence;
   return [
-    historical.snow_depth_cm_p50 == null
-      ? null
-      : ["Median depth", `${formatNumber(historical.snow_depth_cm_p50)} cm`],
-    historical.snow_depth_cm_p25 == null || historical.snow_depth_cm_p75 == null
-      ? null
-      : [
-          "Typical range",
-          `${formatNumber(historical.snow_depth_cm_p25)}-${formatNumber(
-            historical.snow_depth_cm_p75,
-          )} cm`,
-        ],
-    historical.average_daily_snowfall_cm == null
-      ? null
-      : [
-          "Average snowfall",
-          `${formatNumber(historical.average_daily_snowfall_cm)} cm/day`,
-        ],
-    historical.probability_snow_depth_ge_30cm == null
-      ? null
-      : [
-          "Depth above 30 cm",
-          percentage(historical.probability_snow_depth_ge_30cm),
-        ],
-    historical.average_max_temperature_c == null
-      ? null
-      : [
-          "Average max temperature",
-          `${formatNumber(historical.average_max_temperature_c)} °C`,
-        ],
-  ].flatMap((metric) => (metric ? [metric] : [])) as Array<[string, string]>;
+    {
+      label: "Average daily median depth",
+      value:
+        historical.snow_depth_cm_p50 == null
+          ? "Not available"
+          : `${formatNumber(historical.snow_depth_cm_p50)} cm`,
+      detail:
+        historical.probability_snow_depth_ge_30cm == null
+          ? undefined
+          : `${percentage(historical.probability_snow_depth_ge_30cm)} average historical likelihood above 30 cm`,
+    },
+    {
+      label: "Typical depth range",
+      value:
+        historical.snow_depth_cm_p25 == null || historical.snow_depth_cm_p75 == null
+          ? "Not available"
+          : `${formatNumber(historical.snow_depth_cm_p25)}-${formatNumber(
+              historical.snow_depth_cm_p75,
+            )} cm`,
+    },
+    {
+      label: "Fresh snow",
+      value:
+        historical.average_daily_snowfall_cm == null
+          ? "Not available"
+          : `${formatNumber(historical.average_daily_snowfall_cm)} cm/day`,
+      detail: "Historical daily average",
+    },
+    {
+      label: "Average high",
+      value:
+        historical.average_max_temperature_c == null
+          ? "Not available"
+          : `${formatNumber(historical.average_max_temperature_c)} °C`,
+    },
+  ];
 }
 
-function EvidenceTabs({
-  response,
+function ChartLoadingState() {
+  return (
+    <AsyncState
+      state="loading"
+      message="Preparing the weather chart..."
+      className="snow-chart-loading"
+    />
+  );
+}
+
+function WeatherChartFallback({
+  mode,
+  points,
 }: {
-  response: AvailableResponse;
+  mode: "historical" | "forecast";
+  points: WeatherEvidencePoint[];
 }) {
-  const [view, setView] = useState<EvidenceView>("forecast");
-  const forecastRef = useRef<HTMLButtonElement>(null);
-  const historicalRef = useRef<HTMLButtonElement>(null);
+  return (
+    <Alert variant="warning" live="polite" className="snow-chart-fallback">
+      <div>
+        <strong>Weather chart could not be displayed</strong>
+        <p>The underlying values remain available below.</p>
+        <div className="snow-values__scroll">
+          <table
+            aria-label={`${mode === "forecast" ? "Forecast" : "Historical"} weather values`}
+          >
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Snow depth (cm)</th>
+                <th scope="col">Fresh snow (cm)</th>
+                <th scope="col">Minimum (°C)</th>
+                <th scope="col">Maximum (°C)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {points.map((point) => (
+                <tr key={point.date_or_month_day}>
+                  <th scope="row">{point.date_or_month_day}</th>
+                  <td>{point.snow_depth_cm ?? point.snow_depth_cm_p50 ?? "Not available"}</td>
+                  <td>{point.snowfall_cm ?? "Not available"}</td>
+                  <td>{point.temperature_min_c ?? "Not available"}</td>
+                  <td>{point.temperature_max_c ?? "Not available"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </Alert>
+  );
+}
+
+class WeatherChartBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function HistoricalSourceDetails({ response }: { response: AvailableResponse }) {
+  const historical = response.evidence.historical;
+  return (
+    <div className="snow-source-details">
+      <p><strong>{historical.source_label}</strong></p>
+      <p>
+        {historical.baseline_start_year != null && historical.baseline_end_year != null
+          ? `Climatology ${historical.baseline_start_year}-${historical.baseline_end_year}`
+          : "Climatology period unavailable"}
+        {historical.computed_at ? ` · Computed ${formatDateTime(historical.computed_at)} UTC` : ""}
+      </p>
+      <ul>
+        {historical.sources.map((source, index) => (
+          <li key={`${source.source_model}-${source.baseline_period}-${index}`}>
+            {source.source_model}, {source.evidence_seasons} seasons, {source.row_count} source rows
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ForecastSourceDetails({ response }: { response: AvailableResponse }) {
   const forecast = response.evidence.forecast;
   if (!forecast) return null;
+  return (
+    <div className="snow-source-details">
+      <p><strong>{forecast.source_label}</strong></p>
+      <p>{forecast.source_model ?? "Forecast model unavailable"}</p>
+      <ul>
+        {forecast.sources.map((source) => (
+          <li key={source.forecast_run_id}>
+            Run {source.forecast_run_id}, issued {formatDateTime(source.issued_at)} UTC, {source.row_count} source rows
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
-  const selectFromKey = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-    event.preventDefault();
-    const next: EvidenceView =
-      event.key === "Home"
-        ? "forecast"
-        : event.key === "End"
-          ? "historical"
-          : event.key === "ArrowRight"
-            ? view === "forecast"
-              ? "historical"
-              : "forecast"
-            : view === "historical"
-              ? "forecast"
-              : "historical";
-    setView(next);
-    (next === "forecast" ? forecastRef : historicalRef).current?.focus();
-  };
+function EvidenceExplorer({
+  response,
+  historicalSummary,
+}: {
+  response: AvailableResponse;
+  historicalSummary: ReactNode;
+}) {
+  const { evidence } = response;
+  const forecast = evidence.mode === "forecast_assisted" ? evidence.forecast : null;
+  const historicalPanel = (
+    <>
+      {historicalSummary}
+      <WeatherChartBoundary
+        fallback={(
+          <WeatherChartFallback
+            mode="historical"
+            points={evidence.historical.daily_profile}
+          />
+        )}
+      >
+        <Suspense fallback={<ChartLoadingState />}>
+          <LazySnowEvidenceChart
+            mode="historical"
+            points={evidence.historical.daily_profile}
+            interpretation={
+              forecast
+                ? "Historical climatology provides context for the same requested window."
+                : evidence.interpretation
+            }
+            sourceDetails={<HistoricalSourceDetails response={response} />}
+          />
+        </Suspense>
+      </WeatherChartBoundary>
+    </>
+  );
+
+  if (!forecast) return historicalPanel;
 
   return (
-    <div className="snow-evidence__views">
-      <div className="snow-tabs" role="tablist" aria-label="Snow evidence views">
-        <button
-          ref={forecastRef}
-          type="button"
-          role="tab"
-          id="snow-tab-forecast"
-          aria-controls="snow-panel-forecast"
-          aria-selected={view === "forecast"}
-          tabIndex={view === "forecast" ? 0 : -1}
-          onClick={() => setView("forecast")}
-          onKeyDown={selectFromKey}
-        >
-          Forecast
-        </button>
-        <button
-          ref={historicalRef}
-          type="button"
-          role="tab"
-          id="snow-tab-historical"
-          aria-controls="snow-panel-historical"
-          aria-selected={view === "historical"}
-          tabIndex={view === "historical" ? 0 : -1}
-          onClick={() => setView("historical")}
-          onKeyDown={selectFromKey}
-        >
-          Historical context
-        </button>
-      </div>
-
-      {view === "forecast" ? (
-        <div
-          id="snow-panel-forecast"
-          role="tabpanel"
-          aria-labelledby="snow-tab-forecast"
-        >
-          <SnowEvidenceChart
-            mode="forecast"
-            points={forecast.daily_profile}
-            interpretation={response.evidence.interpretation}
-          />
-        </div>
-      ) : (
-        <div
-          id="snow-panel-historical"
-          role="tabpanel"
-          aria-labelledby="snow-tab-historical"
-        >
-          <SnowEvidenceChart
-            mode="historical"
-            points={response.evidence.historical.daily_profile}
-            interpretation="Historical climatology provides context for the same requested window."
-          />
-        </div>
-      )}
-    </div>
+    <SegmentedTabs
+      ariaLabel="Weather evidence source"
+      defaultValue="forecast"
+      className="snow-source-tabs"
+      tabs={[
+        {
+          id: "forecast",
+          label: "Forecast",
+          panel: (
+            <WeatherChartBoundary
+              fallback={(
+                <WeatherChartFallback
+                  mode="forecast"
+                  points={forecast.daily_profile}
+                />
+              )}
+            >
+              <Suspense fallback={<ChartLoadingState />}>
+                <LazySnowEvidenceChart
+                  mode="forecast"
+                  points={forecast.daily_profile}
+                  interpretation={evidence.interpretation}
+                  sourceDetails={<ForecastSourceDetails response={response} />}
+                />
+              </Suspense>
+            </WeatherChartBoundary>
+          ),
+        },
+        {
+          id: "historical",
+          label: "Historical context",
+          panel: historicalPanel,
+        },
+      ]}
+    />
   );
 }
 
@@ -209,43 +325,32 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
 
   return (
     <>
-      <div className="snow-evidence__heading">
-        <div>
-          <p className="section-label">Snow evidence</p>
-          <h2>Snow evidence for {evidence.window_label}</h2>
-        </div>
-        <span className={`snow-mode snow-mode--${isForecastAssisted ? "forecast" : "historical"}`}>
+      <SectionHeader
+        eyebrow="Snow evidence"
+        title={`Snow & weather for ${evidence.window_label}`}
+        description={evidence.interpretation}
+        className="snow-evidence__heading"
+        action={(
+          <Badge variant={isForecastAssisted ? "supported" : "info"} className="snow-mode">
           <Snowflake aria-hidden="true" size={15} />
           {isForecastAssisted ? "Forecast-assisted" : "Historical pattern"}
-        </span>
-      </div>
+          </Badge>
+        )}
+      />
 
-      <div className="snow-evidence__provenance">
+      <div className="snow-evidence__context" aria-label="Weather evidence context">
         <strong>{elevation}</strong>
         {historical.evidence_seasons != null ? (
           <span>{historical.evidence_seasons} evidence seasons</span>
         ) : null}
-        <span>{historical.source_label}</span>
-        {historical.baseline_start_year != null && historical.baseline_end_year != null ? (
-          <span>
-            Climatology {historical.baseline_start_year}-{historical.baseline_end_year}
-          </span>
-        ) : null}
       </div>
 
       {isForecastAssisted && forecast ? (
-        <div className="snow-evidence__forecast-meta">
-          {forecast.issued_at ? <span>Issued {formatDateTime(forecast.issued_at)} UTC</span> : null}
-          <span>Fresh at evaluation time {formatDateTime(response.evaluated_at)} UTC</span>
-          <span>
-            {forecast.coverage_status === "complete" ? "Complete" : "Partial"} coverage: {forecast.usable_date_count} of {forecast.requested_date_count} dates
-          </span>
-          <span>
-            Forecast coverage in this assessment {percentage(forecast.average_forecast_share)}
-          </span>
-          {forecast.sources.map((source) => (
-            <span key={source.forecast_run_id}>Selected run {source.forecast_run_id}</span>
-          ))}
+        <div className="snow-evidence__forecast-summary" aria-label="Forecast status">
+          <div><span>Issued</span><strong>{forecast.issued_at ? `${formatDateTime(forecast.issued_at)} UTC` : "Not available"}</strong></div>
+          <div><span>Freshness</span><strong>{`Fresh at ${formatDateTime(response.evaluated_at)} UTC`}</strong></div>
+          <div><span>Requested dates</span><strong>{forecast.usable_date_count} of {forecast.requested_date_count} covered</strong></div>
+          <div><span>Forecast coverage in this assessment</span><strong>{percentage(forecast.average_forecast_share)}</strong></div>
         </div>
       ) : (
         <p className="snow-evidence__mode-note">
@@ -253,31 +358,17 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
         </p>
       )}
 
-      {isForecastAssisted && forecast ? (
-        <EvidenceTabs response={response} />
-      ) : (
-        <div className="snow-evidence__historical-layout">
-          <SnowEvidenceChart
-            mode="historical"
-            points={historical.daily_profile}
-            interpretation={evidence.interpretation}
-          />
-          {metrics.length ? (
-            <dl className="snow-metrics">
-              {metrics.map(([label, value]) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
-        </div>
-      )}
+      <EvidenceExplorer
+        response={response}
+        historicalSummary={<div className="snow-metrics" aria-label="Historical snow and weather summary">
+        {metrics.map((metric) => (
+          <MetricTile key={metric.label} {...metric} />
+        ))}
+        </div>}
+      />
 
       {evidence.limitations.length ? (
-        <div className="snow-evidence__limitations">
-          <AlertTriangle aria-hidden="true" size={18} />
+        <Alert variant="warning" className="snow-evidence__limitations">
           <div>
             <strong>Evidence limitations</strong>
             <ul>
@@ -286,13 +377,8 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
               ))}
             </ul>
           </div>
-        </div>
-      ) : (
-        <div className="snow-evidence__supported">
-          <CheckCircle2 aria-hidden="true" size={18} />
-          <span>Typed weather evidence is available for this ski area and window.</span>
-        </div>
-      )}
+        </Alert>
+      ) : null}
     </>
   );
 }
@@ -318,11 +404,18 @@ export function SnowEvidence({
   });
   const [retryRequest, setRetryRequest] = useState(0);
   const requestIdentity = useRef(0);
+  const reloadButtonRef = useRef<HTMLButtonElement>(null);
   const intentRef = useRef(intent);
   intentRef.current = intent;
   const visibleState: EvidenceState =
     state.contextKey === key ? state : { kind: "loading", contextKey: key };
   const retrying = retryRequest > 0 && visibleState.kind === "loading";
+
+  useEffect(() => {
+    if (retryRequest > 0 && visibleState.kind === "ready") {
+      reloadButtonRef.current?.focus({ preventScroll: true });
+    }
+  }, [retryRequest, visibleState.kind]);
 
   useEffect(() => {
     const cached = readWeatherEvidenceCache(key);
@@ -372,38 +465,42 @@ export function SnowEvidence({
       </p>
 
       {visibleState.kind === "loading" ? (
-        <div className="snow-evidence-state" aria-busy="true">
-          <RefreshCw aria-hidden="true" size={20} />
-          <div>
-            <p className="section-label">Snow evidence</p>
-            <h2>Loading snow evidence for {skiAreaName}</h2>
-            <p>The verdict and recommendation controls remain available.</p>
-          </div>
-        </div>
+        <AsyncState
+          state="loading"
+          title={`Loading snow evidence for ${skiAreaName}`}
+          message="The verdict and recommendation controls remain available."
+          className="snow-evidence-state"
+        />
       ) : null}
 
       {visibleState.kind === "error" ? (
-        <div className="snow-evidence-state snow-evidence-state--error">
-          <AlertTriangle aria-hidden="true" size={20} />
-          <div>
-            <p className="section-label">Snow evidence</p>
-            <h2>Snow evidence could not be loaded</h2>
-            <p>{visibleState.message}</p>
-          </div>
-        </div>
+        <AsyncState
+          state="error"
+          title="Snow evidence could not be loaded"
+          message={visibleState.message}
+          retryLabel="Retry snow evidence"
+          onRetry={() => setRetryRequest((current) => current + 1)}
+          className="snow-evidence-state"
+        />
       ) : null}
 
       {visibleState.kind === "ready" && visibleState.response.status === "unavailable" ? (
-        <div className="snow-evidence-state snow-evidence-state--unavailable">
-          <AlertTriangle aria-hidden="true" size={20} />
-          <div>
-            <p className="section-label">Snow evidence</p>
-            <h2>Snow evidence unavailable</h2>
-            <p>
+        <AsyncState
+          state="error"
+          title="Snow evidence unavailable"
+          retryLabel="Check again"
+          onRetry={() => {
+            deleteWeatherEvidenceCache(key);
+            setRetryRequest((current) => current + 1);
+          }}
+          className="snow-evidence-state"
+          message={(
+            <>
+              <p>
               {visibleState.response.unavailable_reason === "travel_window_missing"
                 ? "No applied travel window is available for weather evidence."
                 : "Historical weather evidence is unavailable for this ski area and travel window."}
-            </p>
+              </p>
             {visibleState.response.limitations.length ? (
               <ul>
                 {visibleState.response.limitations.map((limitation) => (
@@ -411,18 +508,21 @@ export function SnowEvidence({
                 ))}
               </ul>
             ) : null}
-          </div>
-        </div>
+            </>
+          )}
+        />
       ) : null}
 
       {visibleState.kind === "ready" && visibleState.response.status === "available" ? (
         <AvailableEvidence response={visibleState.response} />
       ) : null}
 
-      {visibleState.kind === "error" || retryRequest > 0 ? (
-        <button
-          type="button"
-          className="secondary-card-action snow-evidence__retry"
+      {visibleState.kind !== "error" && retryRequest > 0 ? (
+        <Action
+          ref={reloadButtonRef}
+          variant="secondary"
+          size="sm"
+          className="snow-evidence__retry"
           aria-disabled={retrying}
           onClick={() => {
             if (retrying) return;
@@ -431,12 +531,8 @@ export function SnowEvidence({
           }}
         >
           <RefreshCw aria-hidden="true" size={17} />
-          {visibleState.kind === "error"
-            ? "Retry snow evidence"
-            : retrying
-              ? "Retrying snow evidence"
-              : "Reload snow evidence"}
-        </button>
+          {retrying ? "Retrying snow evidence" : "Reload snow evidence"}
+        </Action>
       ) : null}
     </section>
   );

@@ -9,8 +9,10 @@ import type {
 import {
   buildParsedChips,
   buildCandidateNarrative,
+  decisionEvidencePresentation,
   evidenceQualityMode,
   factorLabelForConfiguration,
+  formatAccess,
   formatTripEssential,
   refinementPreviewCopy,
   selectTripEssentialCategories,
@@ -41,6 +43,7 @@ function configuration(
     stay_base_name: `Base ${candidateId}`,
     ski_area_id: `area-${candidateId}`,
     ski_area_name: `Area ${candidateId}`,
+    evidence_profile: "archive_backed",
     access: {
       ski_area_access_id: `access-${candidateId}`,
       access_mode: "walk",
@@ -49,6 +52,8 @@ function configuration(
       distance_m: 250,
       duration_minutes: 4,
       is_direct: true,
+      relationship_trust_status: "verified",
+      access_mode_distance_trust_status: "verified",
     },
     selected_pass: {
       lift_pass_product_id: `pass-${candidateId}`,
@@ -244,6 +249,8 @@ describe("trip essentials", () => {
         distance_m: null,
         duration_minutes: null,
         is_direct: false,
+        relationship_trust_status: "verified",
+        access_mode_distance_trust_status: "estimated",
       },
     });
 
@@ -372,8 +379,77 @@ describe("deterministic recommendation copy", () => {
     });
   });
 
-  test("does not infer archive or forecast mode from factor warning state", () => {
+  test("qualifies or suppresses access strengths from non-verified catalog evidence", () => {
+    const accessFactor = {
+      factor_id: "stay_base_access",
+      group_id: "stay_practicality",
+      direction: "prefer" as const,
+      raw_value: null,
+      raw_utility: 0.9,
+      neutral_utility: 0.5,
+      effective_evidence_cap: 1,
+      effective_utility: 0.9,
+      effective_weight: 1,
+      contribution_points: 12,
+      evidence_cap_components: {},
+      warnings: [],
+      provenance_summary: "Catalog access evidence.",
+      explanation_inputs: {},
+    };
+    const estimated = configuration("estimated-access", {
+      access: {
+        ...configuration("estimated-access").access,
+        relationship_trust_status: "estimated",
+        access_mode_distance_trust_status: "estimated",
+      },
+      factors: [accessFactor],
+    });
+    const needsSource = configuration("unsourced-access", {
+      access: {
+        ...configuration("unsourced-access").access,
+        relationship_trust_status: "needs_source",
+        access_mode_distance_trust_status: "needs_source",
+      },
+      factors: [accessFactor],
+    });
+    const adjusted = configuration("adjusted-access", {
+      access: {
+        ...configuration("adjusted-access").access,
+        relationship_trust_status: "verified_with_adjustment",
+        access_mode_distance_trust_status: "verified_with_adjustment",
+      },
+      factors: [accessFactor],
+    });
+    const missingEvidence = configuration("missing-access-evidence", {
+      access: {
+        ...configuration("missing-access-evidence").access,
+        relationship_trust_status: "needs_source",
+        access_mode_distance_trust_status: "needs_source",
+      },
+      factors: [{ ...accessFactor, effective_evidence_cap: 0 }],
+    });
+
+    expect(buildCandidateNarrative(estimated)).toEqual({
+      verdict: "An estimated practical lift-access match for this trip.",
+      strength: "Catalog estimates suggest the stay base keeps access practical.",
+    });
+    expect(buildCandidateNarrative(needsSource)).toEqual({
+      verdict: "A complete trip configuration for comparison.",
+    });
+    expect(buildCandidateNarrative(adjusted)).toEqual({
+      verdict: "An adjusted practical lift-access match for this trip.",
+      strength:
+        "Adjusted access evidence supports the stay base as a practical choice.",
+    });
+    expect(buildCandidateNarrative(missingEvidence)).toEqual({
+      verdict: "A complete trip configuration for comparison.",
+      watchout: "Lift-access details need source verification.",
+    });
+  });
+
+  test("uses the backend-owned evidence profile instead of factor internals", () => {
     const candidate = configuration("supported-snow", {
+      evidence_profile: "forecast_assisted",
       factors: [
         {
           factor_id: "trip_window_snow_fit",
@@ -394,7 +470,12 @@ describe("deterministic recommendation copy", () => {
       ],
     });
 
-    expect(evidenceQualityMode(candidate)).toBeNull();
+    expect(evidenceQualityMode(candidate)).toBe("forecastAssisted");
+    expect(
+      evidenceQualityMode(
+        configuration("fallback", { evidence_profile: "fallback_heavy" }),
+      ),
+    ).toBe("fallbackHeavy");
   });
 
   test("does not expose unknown factor or group identifiers as context labels", () => {
@@ -419,6 +500,140 @@ describe("deterministic recommendation copy", () => {
     expect(buildParsedChips(intent).map((chip) => chip.label)).toEqual([
       "Intermediate",
     ]);
+  });
+});
+
+describe("why this trip presentation", () => {
+  test("builds bounded traveller-facing support without exposing internal provenance", () => {
+    const candidate = configuration("why", {
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: 0.82,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 0.8,
+          effective_utility: 0.76,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Catalog field-group evidence: verified_with_adjustment; 4 source reference(s).",
+          explanation_inputs: {},
+        },
+        {
+          factor_id: "party_skill_coverage",
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: 0.9,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.9,
+          effective_weight: 1,
+          contribution_points: 12,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Catalog field-group evidence: verified_with_adjustment; 2 source reference(s).",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    const presentation = decisionEvidencePresentation(candidate);
+    const primaryCopy = JSON.stringify({
+      supports: presentation.supports,
+      uncertainties: presentation.uncertainties,
+    });
+
+    expect(presentation.supports).toHaveLength(4);
+    expect(presentation.supports.map((item) => item.title)).toEqual([
+      "Snow window",
+      "Skill match",
+      "Terrain choice",
+      "Lift access",
+    ]);
+    expect(primaryCopy).not.toMatch(/verified_with_adjustment|Catalog field-group|source reference|trip_window_snow_fit/);
+    expect(presentation.technicalDetails[0].provenance).toContain(
+      "Catalog field-group evidence",
+    );
+  });
+
+  test("states missing snow, pass coverage, and lodging evidence as uncertainties", () => {
+    const candidate = configuration("uncertain", {
+      selected_pass: {
+        ...configuration("uncertain").selected_pass,
+        accessible_piste_km: null,
+        accessible_piste_km_evidence: null,
+        price: null,
+      },
+      lodging_estimate: null,
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: 0.5,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 0,
+          effective_utility: 0.5,
+          effective_weight: 1,
+          contribution_points: 0,
+          evidence_cap_components: {},
+          warnings: ["climatology unavailable"],
+          provenance_summary: "No source references.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    const presentation = decisionEvidencePresentation(candidate);
+
+    expect(presentation.uncertainties.map((item) => item.detail)).toEqual(
+      expect.arrayContaining([
+        "Snow evidence is limited for the requested travel window.",
+        "Comparable pass-wide terrain coverage is not available yet.",
+        "A comparable pass price is not available for this configuration.",
+        "No stay-price estimate is available for this configuration.",
+      ]),
+    );
+    expect(new Set(presentation.uncertainties.map((item) => item.detail)).size).toBe(
+      presentation.uncertainties.length,
+    );
+  });
+
+  test("does not present unverified lift access as positive evidence", () => {
+    const candidate = configuration("unverified-access", {
+      access: {
+        ...configuration("unverified-access").access,
+        relationship_trust_status: "estimated",
+        access_mode_distance_trust_status: "needs_source",
+      },
+    });
+
+    const presentation = decisionEvidencePresentation(candidate);
+
+    expect(presentation.supports.map((item) => item.title)).not.toContain(
+      "Lift access",
+    );
+    expect(presentation.uncertainties.map((item) => item.detail)).toContain(
+      "Lift access from this stay base still needs source verification.",
+    );
+    expect(formatTripEssential("liftAccess", candidate)).toBeNull();
+    expect(formatAccess(candidate)).toBe(
+      "Access details need source verification",
+    );
+    const technicalAccess = presentation.technicalDetails.find(
+      (item) => item.id === "catalog-access",
+    );
+    expect(technicalAccess).toMatchObject({
+      evidenceLabel: "Needs source",
+      provenance: "Lift-access relationship and distance need source verification.",
+    });
+    expect(JSON.stringify(technicalAccess)).not.toMatch(/Plan Maison|250 m/i);
   });
 });
 
@@ -462,7 +677,7 @@ describe("refinement preview copy", () => {
     [
       "absent",
       undefined,
-      "This answer can materially reorder your results",
+      "This changes how your current matches are evaluated.",
     ],
   ])("formats %s preview", (_name, preview, expected) => {
     expect(refinementPreviewCopy(preview)).toBe(expected);

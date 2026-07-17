@@ -42,6 +42,7 @@ export function RecommendationNavigator({
   );
   const collapsed = session.dossierNavigatorCollapsed;
   const recommendationCount = session.response.results.length;
+  const unscored = session.response.ranking_status === "unscored";
 
   return (
     <>
@@ -53,7 +54,9 @@ export function RecommendationNavigator({
         <div className="dossier-navigator__heading">
           <div>
             <span>Search results</span>
-            <strong>{recommendationCount} recommendations</strong>
+            <strong>
+              {recommendationCount} {unscored ? "options" : "recommendations"}
+            </strong>
           </div>
           <button
             type="button"
@@ -81,15 +84,22 @@ export function RecommendationNavigator({
               group,
               session.selectedCandidateIdByGroup[group.ski_region_id],
             );
+            const rowUnscored = configuration.ranking_status === "unscored";
             return (
               <button
                 type="button"
                 className="dossier-navigator__row"
                 key={group.ski_region_id}
                 aria-current={selected ? "page" : undefined}
-                aria-label={`${group.ski_region_name}, rank ${group.rank}, ${
-                  selected ? "viewing" : "open recommendation"
-                }`}
+                aria-label={`${group.ski_region_name}, ${
+                  rowUnscored ? "unranked option" : `rank ${group.rank}`
+                }, ${selected ? "viewing" : "open option"}. Stay in ${
+                  configuration.stay_base_name
+                }. ${
+                  rowUnscored
+                    ? "Trip fit not scored"
+                    : `${configuration.fit_score?.toFixed(0)} trip fit`
+                }. ${snowWindowLabel(configuration)} snow.`}
                 onClick={() =>
                   onSwitch(
                     group.ski_region_id,
@@ -97,13 +107,16 @@ export function RecommendationNavigator({
                   )
                 }
               >
-                <span className="dossier-navigator__rank">#{group.rank}</span>
+                <span className="dossier-navigator__rank">
+                  {rowUnscored ? "—" : `#${group.rank}`}
+                </span>
                 <span className="dossier-navigator__copy">
                   <strong>{group.ski_region_name}</strong>
                   <small>{configuration.stay_base_name}</small>
                   <small>
-                    {configuration.fit_score?.toFixed(0) ?? "Unscored"} trip fit ·{" "}
-                    {snowWindowLabel(configuration)} snow
+                    {rowUnscored
+                      ? `Unranked option · ${snowWindowLabel(configuration)} snow`
+                      : `${configuration.fit_score?.toFixed(0)} trip fit · ${snowWindowLabel(configuration)} snow`}
                   </small>
                 </span>
               </button>
@@ -124,7 +137,9 @@ export function RecommendationNavigator({
           onClick={() => setSwitcherOpen((current) => !current)}
         >
           <span>
-            Recommendation {currentGroup.rank} of {recommendationCount}
+            {unscored
+              ? "Viewing unranked option"
+              : `Recommendation ${currentGroup.rank} of ${recommendationCount}`}
             <strong>{currentGroup.ski_region_name}</strong>
           </span>
           <ChevronDown aria-hidden="true" size={19} />
@@ -151,7 +166,7 @@ export function RecommendationNavigator({
                     onSwitch(group.ski_region_id, configuration.candidate_id);
                   }}
                 >
-                  <span>#{group.rank}</span>
+                  <span>{unscored ? "—" : `#${group.rank}`}</span>
                   <span className="dossier-switcher__option-copy">
                     <strong>{group.ski_region_name}</strong>
                     <small>{configuration.stay_base_name}</small>

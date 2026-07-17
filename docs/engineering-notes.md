@@ -1075,6 +1075,65 @@ operating status should remain a separate operational-status concern with its
 own freshness, observation, and trust model rather than being mixed into static
 catalog curation.
 
+## Search V4 Client And API Boundaries
+
+Search ranking and optional refinement generation are separate request
+lifecycles. `POST /api/search` returns a complete usable ranking and never waits
+for an LLM. After deterministic ranking it stores a typed, lightweight
+evaluated-baseline snapshot in a thread-safe process-local LRU/TTL store. The
+store holds at most 64 entries for 60 seconds and retains only the canonical
+intent SHA-256 digest, not a full `SearchIntent`, origin text, full
+`CatalogSnapshot` or `CatalogTrustManifest`, brief, or provider secrets.
+This exact-view consistency may retain evaluated baseline data for the full
+60-second window; deploy or process restart clears it.
+
+The browser then requests `POST /api/search/refinements` from the canonical
+applied intent and public baseline fingerprint. The endpoint accepts only the
+exact stored snapshot bound to both that fingerprint and the SHA-256 digest
+recomputed from canonical request intent. Canonical serialization supplies the
+equality binding; the store retains neither the full intent nor origin text, and
+no separate typed-equality check occurs. The caller-visible fingerprint is not
+trusted by itself. It never reruns deterministic search. Miss, expiry, eviction,
+process restart, or canonical-intent digest mismatch returns typed
+`temporarily_unavailable` and invokes neither deterministic search nor Gemini.
+Ranking remains usable, and a deliberate ranking refresh creates a new snapshot.
+
+The 60-second TTL is the ranking-to-refinement server handoff window for
+generating a question, not a user answer timeout. A delivered question remains
+answerable after expiry. Applying its typed answer reruns full search with the
+updated intent, stores a new baseline, and immediately requests the next
+refinement from that new snapshot. The process-local design is accepted for the
+current single-instance deployment; horizontal scaling requires sticky routing,
+shared state, or a redesigned handoff. Bounded `hit`, `miss`, `expired`, and
+`evicted` outcomes make the handoff observable without recording intent, brief,
+fingerprint, candidate, or client identifiers. ADR 0015 owns these handoff,
+deadline, local admission, and compatibility rules.
+
+Derived travel-window and lodging-budget values remain plain domain properties,
+not Pydantic request or response fields. The web API client also projects typed
+objects back to request-shaped payloads before search, refinement, or weather
+requests. This explicit boundary prevents a response object from being posted
+back as an accidentally broader request contract.
+
+The LLM may identify useful typed refinement patches, but validated patches are
+the only trusted output. User-visible question, reason, label, and description
+copy is regenerated deterministically from policy-owned labels after validation.
+Access claims likewise require both relationship and distance/mode trust; a
+`needs_source` component cannot render as a positive near-lift claim.
+Recommendation evidence mode is also backend-owned. Search V4 emits
+`archive_backed`, `forecast_assisted`, or `fallback_heavy` from the evaluated
+trip-window snow evidence; React only maps that typed value to traveller copy.
+
+Repeated React interaction semantics live in a deliberately small internal UI
+foundation under `frontend/src/ui`. It owns actions, alerts, async states,
+badges, disclosures, metric tiles, section headers, and segmented tabs. Search
+components retain domain composition and copy; there is no generic card layer
+or full component-framework migration. Snow evidence uses a lazy Recharts
+module over typed API rows, preserves null gaps, and pairs every chart with an
+accessible data table. A failed chart chunk falls back to a compact table of the
+same values. The browser must not interpolate observations or derive new
+weather claims.
+
 ## Concepts Clarified
 
 ### BFF

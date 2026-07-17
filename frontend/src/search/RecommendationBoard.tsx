@@ -13,12 +13,15 @@ import {
   type ParsedChip,
 } from "./searchPresentation";
 import type { SearchSession } from "./searchSession";
+import type { RefinementLifecycleStatus } from "./searchSession";
 
 export function RecommendationBoard({
   session,
   loading,
   error,
+  saveError,
   refinementError,
+  refinementStatus,
   refinementControlRef,
   rankFeedback,
   changedRankGroupIds,
@@ -37,7 +40,9 @@ export function RecommendationBoard({
   session: SearchSession;
   loading: boolean;
   error: string | null;
+  saveError: string | null;
   refinementError: string | null;
+  refinementStatus: RefinementLifecycleStatus;
   refinementControlRef: RefObject<HTMLInputElement>;
   rankFeedback: string | null;
   changedRankGroupIds: Set<string>;
@@ -69,6 +74,7 @@ export function RecommendationBoard({
       <SearchContextRail
         intent={session.intent}
         refinement={session.refinementQueue[0] ?? null}
+        refinementStatus={refinementStatus}
         loading={loading}
         refinementError={refinementError}
         refinementControlRef={refinementControlRef}
@@ -120,6 +126,11 @@ export function RecommendationBoard({
         {error ? (
           <p className="error-copy" role="alert">
             {error}
+          </p>
+        ) : null}
+        {saveError ? (
+          <p className="error-copy" role="alert">
+            {saveError}
           </p>
         ) : null}
 

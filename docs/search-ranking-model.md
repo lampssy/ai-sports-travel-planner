@@ -902,8 +902,9 @@ The provider-facing response schema deliberately contains only the compact
 structural types and controlled enums supported by Gemini. Pydantic size and
 shape validation plus deterministic policy validation remain authoritative.
 Questions are validated independently: an invalid or immaterial sibling is
-dropped without discarding a useful question that passed every gate. The one
-bounded retry is used only when no proposed question survives.
+dropped without discarding a useful question that passed every gate. The
+refinement provider receives one attempt only; no retry can extend the request
+budget.
 
 For `positive_presence`, a clarification needs at least one trustworthy
 non-neutral candidate outcome, at least two distinct effective utilities, and
@@ -933,6 +934,86 @@ characters. Exact travel windows are capped at 366 days, request collections
 are size-limited, and every refinement question has bounded options and typed
 patches. Invalid or oversized refinement output produces no question and never
 changes deterministic search results.
+
+Each returned `SearchV4Configuration` carries a backend-owned
+`evidence_profile`: `forecast_assisted` when selected trip-window evidence
+uses usable forecast coverage, `archive_backed` when complete requested-window
+climatology coverage supports the snow factor, and `fallback_heavy` otherwise.
+The frontend presents this typed source profile and does not reconstruct it
+from generic score-factor internals.
+
+## Post-Search Refinement Contract
+
+`POST /api/search` is ranking-only. It never constructs or calls Gemini and
+returns an immediately usable ranking with an empty `refinements` list during
+the client migration. The legacy `brief`, `generate_refinements`, and answered
+question-ID fields remain accepted on that endpoint only for mobile/web
+compatibility; they are ignored.
+
+`POST /api/search/refinements` accepts the canonical intent, a bounded brief,
+unique bounded answered question IDs, and the ranking response's
+`baseline_fingerprint`. Ranking stores the minimum evaluated candidate state
+needed by refinement in a thread-safe process-local LRU/TTL store. Refinement
+accepts only the exact stored fingerprint plus canonical intent digest and
+never reruns deterministic search. The whole endpoint has a five-second
+monotonic deadline: snapshot lookup and validation consume from that budget,
+the provider receives only the remaining timeout, and deterministic fallback
+is skipped once the deadline is exhausted.
+
+The refinement response has exactly one public status:
+
+- `questions_available`: a non-empty validated queue is available;
+- `not_needed`: no material question is needed, including a zero-result
+  baseline;
+- `temporarily_unavailable`: provider/output failure, an exhausted deadline,
+  or a missing, expired, evicted, restarted, or intent-mismatched baseline left
+  no valid queue.
+
+Admission rejection is an HTTP `429`, not a refinement response. Its generic
+error body is `{"detail": "Refinement is temporarily unavailable."}` and a
+`Retry-After` header supplies the bounded retry delay.
+
+`fallback_used` is orthogonal to status. When the provider has no usable
+proposal or is unavailable, Snowcast may return one fallback question only if
+the existing typed proposal validator confirms materiality. It tries
+clarifiable groups in policy order, uses `fallback-group-<group_id>`, offers
+only `important` and `secondary` `GroupPriorityPatch` variants, and suppresses
+already answered IDs. It never duplicates ranking or materiality logic.
+
+The fingerprint remains a public SHA-256 integrity digest. Its canonical inputs
+include the applied intent, complete catalog snapshot, trust manifest, ordered
+evaluated candidate states and ranking allocations, Search V4 and
+ranking-policy versions, and the weather-selection policy revision. Ranking
+uses it as the key for a separate lightweight snapshot containing only the
+policy and minimum evaluated candidate, constraint, evidence, region, and
+scoring state required by refinement. The snapshot does not retain the full
+catalog or trust manifest, the trip brief, provider prompts, responses, or
+credentials. The caller's canonical intent digest must also match; the public
+fingerprint is never trusted alone.
+
+The snapshot expires 60 seconds after ranking and the process-local store holds
+at most 64 entries with LRU eviction. A miss, expiry, eviction, restart, or
+intent mismatch returns `temporarily_unavailable` without deterministic search
+or Gemini. This TTL covers only generation of the next question. Once a
+question reaches the browser, its typed answer remains usable after expiry.
+Applying a material answer performs a full rerank, stores a new baseline and
+fingerprint, and requests the next refinement from that fresh baseline.
+
+Refinement requests are protected before snapshot lookup by app-local admission
+control: at most two concurrent requests and a per-client token bucket of six
+requests per minute with a burst of two. The route uses `Fly-Client-IP` only
+when it is a syntactically valid fixed Fly header; otherwise it uses the direct
+request peer. Client identities are retained only in the bounded in-memory
+guard and are never emitted in metrics or logs. Rejected requests receive a
+generic `429` with `Retry-After`.
+
+Endpoint metrics record only bounded final outcomes and `fallback_used`; the
+AI layer records provider-call health separately and does not emit public
+refinement status before fallback handling. Snapshot metrics record only the
+bounded `hit`, `miss`, `expired`, `intent_mismatch`, and `evicted` outcomes.
+The store is intentionally valid only for the current single-process
+deployment; multiple web processes require sticky routing, shared state, or a
+redesigned handoff.
 
 ## Factor Policy Visibility
 
@@ -995,12 +1076,10 @@ code changes.
 ## Search V4 Cutover
 
 Search V4 directly replaced the unused Search V3 implementation through
-`POST /api/search`. The web and mobile clients and their tests moved in the same
-cutover. The old GET contract, hardcoded V3 scorer, model-selection flags,
-compatibility code, and V3-only ranking tests were deleted. There is no
-parallel endpoint, shadow comparison, or runtime V3 rollback path. Normal
-source-control revert remains sufficient while the product has no users or
-external consumers.
+`POST /api/search`. The old GET contract, hardcoded V3 scorer, model-selection
+flags, and V3-only ranking tests were deleted. There is no parallel endpoint,
+shadow comparison, or runtime V3 rollback path. The narrow Search V4 request
+field compatibility noted above is temporary and does not preserve V3 behavior.
 
 Golden scenarios define correct V4 behavior; preserving V3 ordering is not an
 acceptance criterion.

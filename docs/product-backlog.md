@@ -1570,6 +1570,45 @@ Promotion trigger:
 - Promote alongside the next sizable web or mobile feature, especially if the
   implementation would otherwise expand the all-in-one files further.
 
+### Search V4 Request-Path Latency Budget
+
+Status: candidate
+Area: Performance; Search V4
+Source: Search V4 trust and UI polish browser acceptance
+
+Why it matters:
+
+- Local live acceptance showed that removing refinement generation from the
+  ranking request improves failure isolation, but ranking can still take about
+  five seconds on the seeded development stack. Refinement and weather evidence
+  can each take a similar amount of time, so the next optimization should be
+  measurement-led rather than another UI-only loading treatment.
+
+First scope:
+
+- Break down cold and warm `POST /api/search`, `/api/search/refinements`, and
+  `/api/search/weather-evidence` durations into ranking evaluation, database,
+  evaluated-baseline lookup, provider/fallback, and serialization phases as
+  applicable.
+- Track the approved 60-second/64-entry evaluated-baseline store's bounded hit,
+  miss, expired, and evicted outcomes alongside memory and endpoint latency.
+- Define a local benchmark fixture and an initial p50/p95 product budget before
+  selecting an index, cache, query-shape, or background-execution change.
+
+Not now:
+
+- Do not expand the approved lightweight process-local handoff into a general
+  search-response cache, full catalog/trust snapshot, persisted/shared state,
+  new database index, or parallel provider work from one manual timing
+  observation.
+- Do not weaken ranking, evidence, exact-baseline binding, or typed
+  unavailability semantics to reduce time.
+
+Promotion trigger:
+
+- Promote before the next Search V4 performance sprint or when production-like
+  telemetry can be collected from representative catalog and weather data.
+
 ## Recovered But Not Active
 
 These ideas appeared in older backlog or sprint notes but should not be treated

@@ -4,11 +4,12 @@ import json
 import time
 from collections import Counter
 from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from app.ai.llm_client import LLMClient, LLMClientError
-from app.ai.retry import TRANSIENT_LLM_RETRY_REASONS
 from app.domain.search_factors import build_factor_registry
 from app.domain.search_policy import SearchPolicy
 from app.domain.search_refinement import (
@@ -19,10 +20,19 @@ from app.domain.search_refinement import (
     validate_refinement_proposal,
 )
 from app.domain.search_v4_models import SearchIntent
-from app.observability.parser import record_llm_result, record_llm_retry
-from app.observability.search import record_search_refinement_outcome
+from app.observability.parser import record_llm_failure, record_llm_result
 
 MAX_UNTRUSTED_BRIEF_CHARACTERS = 2_000
+
+
+@dataclass(frozen=True)
+class RefinementGenerationResult:
+    outcome: Literal[
+        "proposals_generated",
+        "no_proposals",
+        "provider_unavailable",
+    ]
+    proposals: tuple[ValidatedRefinementProposal, ...]
 
 
 class _RefinementOutput(BaseModel):
@@ -84,9 +94,9 @@ def generate_refinement_proposals(
     policy: SearchPolicy,
     client: LLMClient,
     already_answered_question_ids: frozenset[str] = frozenset(),
-) -> tuple[ValidatedRefinementProposal, ...]:
+) -> RefinementGenerationResult:
     if len(candidates) < 2 or policy.refinement.max_questions == 0:
-        return ()
+        return RefinementGenerationResult(outcome="no_proposals", proposals=())
     context = build_refinement_context(
         brief=brief,
         intent=intent,
@@ -96,93 +106,83 @@ def generate_refinement_proposals(
     )
     system_prompt = _system_prompt()
     user_prompt = json.dumps(context, sort_keys=True, separators=(",", ":"))
-    attempts = policy.refinement.max_llm_retries + 1
-    for attempt in range(attempts):
-        llm_started = time.perf_counter()
-        try:
-            raw = client.complete(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                temperature=0.2,
-                response_mime_type="application/json",
-                response_json_schema=REFINEMENT_RESPONSE_JSON_SCHEMA,
-            )
-        except LLMClientError as error:
-            record_llm_result(
-                operation="search_refinement",
-                model=client.model,
-                status="error",
-                duration_seconds=time.perf_counter() - llm_started,
-            )
-            if attempt + 1 < attempts and error.reason in TRANSIENT_LLM_RETRY_REASONS:
-                record_llm_retry(
-                    operation="search_refinement",
-                    model=client.model,
-                    reason=error.reason,
-                )
-                continue
-            record_search_refinement_outcome(
-                outcome=error.reason,
-                question_count=0,
-            )
-            return ()
+    llm_started = time.perf_counter()
+    try:
+        raw = client.complete(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=0.2,
+            response_mime_type="application/json",
+            response_json_schema=REFINEMENT_RESPONSE_JSON_SCHEMA,
+        )
+    except LLMClientError as error:
         record_llm_result(
             operation="search_refinement",
             model=client.model,
-            status="success",
+            status="error",
             duration_seconds=time.perf_counter() - llm_started,
         )
-        try:
-            payload = _RefinementOutput.model_validate_json(raw)
-            if len(payload.questions) > policy.refinement.max_questions:
-                raise RefinementValidationError("too many refinement questions")
-            question_ids = [item.question_id for item in payload.questions]
-            if len(question_ids) != len(set(question_ids)):
-                raise RefinementValidationError("duplicate refinement question IDs")
-            validated_items: list[ValidatedRefinementProposal] = []
-            for proposal in payload.questions:
-                try:
-                    validated_items.append(
-                        validate_refinement_proposal(
-                            proposal=proposal,
-                            intent=intent,
-                            candidates=candidates,
-                            policy=policy,
-                            already_answered_question_ids=(
-                                already_answered_question_ids
-                            ),
-                        )
+        record_llm_failure(
+            operation="search_refinement",
+            model=client.model,
+            reason=error.reason,
+        )
+        result = RefinementGenerationResult(
+            outcome="provider_unavailable",
+            proposals=(),
+        )
+        return result
+    try:
+        payload = _RefinementOutput.model_validate_json(raw)
+        if len(payload.questions) > policy.refinement.max_questions:
+            raise RefinementValidationError("too many refinement questions")
+        question_ids = [item.question_id for item in payload.questions]
+        if len(question_ids) != len(set(question_ids)):
+            raise RefinementValidationError("duplicate refinement question IDs")
+        validated_items: list[ValidatedRefinementProposal] = []
+        for proposal in payload.questions:
+            try:
+                validated_items.append(
+                    validate_refinement_proposal(
+                        proposal=proposal,
+                        intent=intent,
+                        candidates=candidates,
+                        policy=policy,
+                        already_answered_question_ids=already_answered_question_ids,
                     )
-                except (ValidationError, RefinementValidationError, ValueError):
-                    # Questions are independent proposals. One invented,
-                    # immaterial, or currently unready topic must not discard a
-                    # useful sibling that passed every deterministic gate.
-                    continue
-            validated = tuple(validated_items)
-            if payload.questions and not validated:
-                raise RefinementValidationError(
-                    "no refinement question passed deterministic validation"
                 )
-            record_search_refinement_outcome(
-                outcome="shown" if validated else "no_questions",
-                question_count=len(validated),
-            )
-            return validated
-        except (ValidationError, RefinementValidationError, ValueError):
-            if attempt + 1 < attempts:
-                record_llm_retry(
-                    operation="search_refinement",
-                    model=client.model,
-                    reason="invalid_output",
-                )
+            except (ValidationError, RefinementValidationError, ValueError):
                 continue
-            record_search_refinement_outcome(
-                outcome="invalid_output",
-                question_count=0,
+        validated = tuple(validated_items)
+        if payload.questions and not validated:
+            raise RefinementValidationError(
+                "no refinement question passed deterministic validation"
             )
-            return ()
-    record_search_refinement_outcome(outcome="no_questions", question_count=0)
-    return ()
+    except (ValidationError, RefinementValidationError, ValueError):
+        record_llm_result(
+            operation="search_refinement",
+            model=client.model,
+            status="invalid_output",
+            duration_seconds=time.perf_counter() - llm_started,
+        )
+        result = RefinementGenerationResult(
+            outcome="provider_unavailable",
+            proposals=(),
+        )
+        return result
+
+    record_llm_result(
+        operation="search_refinement",
+        model=client.model,
+        status="success",
+        duration_seconds=time.perf_counter() - llm_started,
+    )
+
+    result = RefinementGenerationResult(
+        outcome="proposals_generated" if validated else "no_proposals",
+        proposals=validated,
+    )
+    return result
 
 
 def build_refinement_context(

@@ -27,9 +27,7 @@ export function EvidenceQualityBadge({
         Evidence quality
       </p>
       <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <p className="font-semibold text-ink">
-          {copy.trust} — {copy.label}
-        </p>
+        <p className="font-semibold text-ink">{copy.label}</p>
         {seasons !== null && seasons !== undefined ? (
           <span className="text-xs font-semibold">
             · {seasons} season{seasons === 1 ? "" : "s"}

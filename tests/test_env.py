@@ -278,6 +278,23 @@ def test_gemini_client_marks_malformed_response_as_provider_error(
     assert raised.value.provider_status == "MISSING_CONTENT"
 
 
+def test_gemini_client_normalizes_malformed_success_body_to_provider_error(
+    monkeypatch,
+) -> None:
+    client = GeminiClient(api_key="test-key", model="gemini-3.1-flash-lite-preview")
+
+    def fake_urlopen(request, timeout=20):
+        return StubHTTPResponse(b"this is not JSON")
+
+    monkeypatch.setattr("app.ai.gemini_client.urlopen", fake_urlopen)
+
+    with pytest.raises(LLMClientError) as raised:
+        client.complete(system_prompt="Reply with ok", user_prompt="test")
+
+    assert raised.value.reason == "provider_error"
+    assert raised.value.provider_status == "MALFORMED_RESPONSE"
+
+
 def test_gemini_client_classifies_network_error(monkeypatch) -> None:
     client = GeminiClient(api_key="test-key", model="gemini-3.1-flash-lite-preview")
 

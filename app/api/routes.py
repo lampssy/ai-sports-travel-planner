@@ -1,3 +1,8 @@
+import ipaddress
+import time
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
+from contextvars import copy_context
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -7,6 +12,7 @@ from pydantic import BaseModel
 
 from app.ai.gemini_client import GeminiClient
 from app.ai.parser import QueryParser, get_query_parser
+from app.api.refinement_admission import RefinementAdmissionGuard
 from app.auth.google import (
     GoogleAuthConfigurationError,
     GoogleIdentityTokenError,
@@ -44,10 +50,14 @@ from app.domain.search_factors import build_factor_registry
 from app.domain.search_intent_policy import SearchIntentPolicyError
 from app.domain.search_policy import load_search_policy
 from app.domain.search_v4_service import (
+    SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS,
+    SearchV4RefinementRequest,
+    SearchV4RefinementResponse,
     SearchV4Request,
     SearchV4Response,
     UnknownSearchWeatherAreaError,
     forecast_run_is_fresh,
+    get_search_refinements,
     get_search_weather_evidence,
     search_trip_configurations,
 )
@@ -60,10 +70,15 @@ from app.domain.trip_companion import (
     mark_current_trip_checked,
     maybe_record_companion_event,
 )
+from app.observability.search import record_search_refinement_route_outcome
 
 router = APIRouter()
 bearer_scheme = HTTPBearer(auto_error=False)
-SEARCH_REFINEMENT_LLM_TIMEOUT_SECONDS = 5
+refinement_admission_guard = RefinementAdmissionGuard()
+refinement_executor = ThreadPoolExecutor(
+    max_workers=2,
+    thread_name_prefix="search-refinement",
+)
 
 
 class HealthResponse(BaseModel):
@@ -73,6 +88,10 @@ class HealthResponse(BaseModel):
 class SearchReadinessResponse(BaseModel):
     status: str
     checks: dict[str, str | int]
+
+
+class ApiErrorResponse(BaseModel):
+    detail: str
 
 
 def get_authenticated_user(
@@ -92,21 +111,109 @@ def get_authenticated_user(
 @router.post("/search", response_model=SearchV4Response)
 def search(payload: SearchV4Request) -> SearchV4Response:
     try:
-        return search_trip_configurations(
+        return search_trip_configurations(intent=payload.intent)
+    except SearchIntentPolicyError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.post(
+    "/search/refinements",
+    response_model=SearchV4RefinementResponse,
+    responses={
+        429: {
+            "model": ApiErrorResponse,
+            "description": "Refinement admission limit reached",
+            "headers": {
+                "Retry-After": {
+                    "description": "Seconds before another refinement request",
+                    "schema": {"type": "integer", "minimum": 1},
+                }
+            },
+        }
+    },
+)
+def search_refinements(
+    payload: SearchV4RefinementRequest,
+    request: Request,
+) -> SearchV4RefinementResponse:
+    request_started_at = time.monotonic()
+    admission = refinement_admission_guard.acquire(_refinement_client_key(request))
+    if not admission.accepted:
+        record_search_refinement_route_outcome("admission_rejected")
+        headers = (
+            {"Retry-After": str(admission.retry_after_seconds)}
+            if admission.retry_after_seconds is not None
+            else None
+        )
+        raise HTTPException(
+            status_code=429,
+            detail="Refinement is temporarily unavailable.",
+            headers=headers,
+        )
+    worker_context = copy_context()
+    try:
+        future = refinement_executor.submit(
+            worker_context.run,
+            get_search_refinements,
             intent=payload.intent,
             brief=payload.brief,
-            include_refinements=payload.generate_refinements,
-            llm_client=(
-                GeminiClient(timeout_seconds=SEARCH_REFINEMENT_LLM_TIMEOUT_SECONDS)
-                if payload.generate_refinements
-                else None
-            ),
+            baseline_fingerprint=payload.baseline_fingerprint,
             already_answered_question_ids=frozenset(
                 payload.already_answered_question_ids
             ),
+            llm_client_factory=lambda timeout_seconds: GeminiClient(
+                timeout_seconds=timeout_seconds
+            ),
+            request_started_at=request_started_at,
+        )
+    except Exception as error:
+        admission.release()
+        record_search_refinement_route_outcome("executor_rejected")
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load refinements.",
+        ) from error
+    future.add_done_callback(lambda _future: admission.release())
+    remaining_seconds = max(
+        0.0,
+        SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS
+        - (time.monotonic() - request_started_at),
+    )
+    try:
+        response = future.result(timeout=remaining_seconds)
+        record_search_refinement_route_outcome("completed")
+        return response
+    except FutureTimeoutError:
+        record_search_refinement_route_outcome("deadline_exceeded")
+        policy = load_search_policy()
+        return SearchV4RefinementResponse(
+            search_model_version=policy.search_model_version,
+            ranking_policy_version=policy.ranking_policy_version,
+            baseline_fingerprint=payload.baseline_fingerprint,
+            baseline_status="unverified",
+            refinement_status="temporarily_unavailable",
         )
     except SearchIntentPolicyError as error:
+        record_search_refinement_route_outcome("invalid_intent")
         raise HTTPException(status_code=422, detail=str(error)) from error
+    except Exception as error:
+        record_search_refinement_route_outcome("route_error")
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load refinements.",
+        ) from error
+
+
+def _refinement_client_key(request: Request) -> str:
+    fly_client_ip = request.headers.get("Fly-Client-IP")
+    if fly_client_ip:
+        try:
+            return f"fly:{ipaddress.ip_address(fly_client_ip).compressed}"
+        except ValueError:
+            pass
+    if request.client is None or not request.client.host:
+        return "client:unknown"
+    return f"client:{request.client.host}"
 
 
 @router.post(

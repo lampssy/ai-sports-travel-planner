@@ -32,16 +32,33 @@ def test_product_canary_passes_on_healthy_search_flow() -> None:
                 0.03,
             )
         assert method == "POST"
-        assert path == "/api/search"
+        if path == "/api/search":
+            intent = payload["intent"] if payload else {}
+            return (
+                200,
+                {
+                    "search_model_version": "search-v4",
+                    "ranking_policy_version": "search-v4.0.0",
+                    "baseline_fingerprint": "a" * 64,
+                    "applied_intent": intent,
+                    "ranking_status": "ranked",
+                    "results": [{"top_configuration": {"fit_score": 82.0}}],
+                },
+                3.0,
+            )
+        assert path == "/api/search/refinements"
         return (
             200,
             {
                 "search_model_version": "search-v4",
                 "ranking_policy_version": "search-v4.0.0",
-                "ranking_status": "ranked",
-                "results": [{"top_configuration": {"fit_score": 82.0}}],
+                "baseline_fingerprint": "a" * 64,
+                "baseline_status": "current",
+                "refinement_status": "not_needed",
+                "fallback_used": False,
+                "refinements": [],
             },
-            3.0,
+            4.5,
         )
 
     results = run_canary(
@@ -51,8 +68,8 @@ def test_product_canary_passes_on_healthy_search_flow() -> None:
     )
 
     assert all(result.passed for result in results)
-    assert requests[-1][0:2] == ("POST", "/api/search")
-    assert requests[-1][2] == {
+    assert requests[-2][0:2] == ("POST", "/api/search")
+    assert requests[-2][2] == {
         "intent": {
             "constraints": {
                 "location": {"country": "France"},
@@ -62,8 +79,228 @@ def test_product_canary_passes_on_healthy_search_flow() -> None:
             "travel_context": {"origin_text": "Berlin", "mode": "car"},
             "objectives": [{"factor_id": "pass_terrain_value", "importance": "normal"}],
         },
-        "generate_refinements": False,
     }
+    assert requests[-1] == (
+        "POST",
+        "/api/search/refinements",
+        {
+            "intent": requests[-2][2]["intent"],
+            "brief": "Product canary representative search",
+            "baseline_fingerprint": "a" * 64,
+            "already_answered_question_ids": [],
+        },
+    )
+    assert results[-1].name == "representative-refinement"
+
+
+def test_product_canary_fails_on_unsafe_refinement_contract() -> None:
+    def request_json(
+        _method: str,
+        path: str,
+        payload: dict | None,
+        _timeout_seconds: float,
+    ) -> tuple[int, dict, float]:
+        if path in {"/api/healthz", "/api/readyz"}:
+            return 200, {"status": "ok"}, 0.01
+        if path == "/api/search-readiness":
+            return (
+                200,
+                {"status": "ok", "checks": {"database": "ok", "catalog": "ok"}},
+                0.01,
+            )
+        if path == "/api/search":
+            return (
+                200,
+                {
+                    "search_model_version": "search-v4",
+                    "ranking_policy_version": "search-v4.0.0",
+                    "baseline_fingerprint": "b" * 64,
+                    "applied_intent": payload["intent"] if payload else {},
+                    "ranking_status": "ranked",
+                    "results": [{"top_configuration": {"fit_score": 82.0}}],
+                },
+                1.0,
+            )
+        return (
+            200,
+            {
+                "search_model_version": "search-v4",
+                "ranking_policy_version": "search-v4.0.0",
+                "baseline_fingerprint": "b" * 64,
+                "baseline_status": "current",
+                "refinement_status": "questions_available",
+                "fallback_used": False,
+                "refinements": [],
+            },
+            1.0,
+        )
+
+    results = run_canary(base_url="https://example.test", request_json=request_json)
+
+    assert results[-1].passed is False
+    assert "questions=0" in results[-1].message
+
+
+def test_product_canary_fails_on_slow_refinement() -> None:
+    def request_json(
+        _method: str,
+        path: str,
+        payload: dict | None,
+        _timeout_seconds: float,
+    ) -> tuple[int, dict, float]:
+        if path in {"/api/healthz", "/api/readyz"}:
+            return 200, {"status": "ok"}, 0.01
+        if path == "/api/search-readiness":
+            return (
+                200,
+                {"status": "ok", "checks": {"database": "ok", "catalog": "ok"}},
+                0.01,
+            )
+        if path == "/api/search":
+            return (
+                200,
+                {
+                    "search_model_version": "search-v4",
+                    "ranking_policy_version": "search-v4.0.0",
+                    "baseline_fingerprint": "c" * 64,
+                    "applied_intent": payload["intent"] if payload else {},
+                    "ranking_status": "ranked",
+                    "results": [{"top_configuration": {"fit_score": 82.0}}],
+                },
+                1.0,
+            )
+        return (
+            200,
+            {
+                "search_model_version": "search-v4",
+                "ranking_policy_version": "search-v4.0.0",
+                "baseline_fingerprint": "c" * 64,
+                "baseline_status": "current",
+                "refinement_status": "temporarily_unavailable",
+                "fallback_used": False,
+                "refinements": [],
+            },
+            6.1,
+        )
+
+    results = run_canary(base_url="https://example.test", request_json=request_json)
+
+    assert results[-1].passed is False
+    assert "threshold=6.0s" in results[-1].message
+
+
+def test_product_canary_retries_unverified_refinement_handoff_once() -> None:
+    search_calls = 0
+    refinement_calls = 0
+
+    def request_json(
+        _method: str,
+        path: str,
+        payload: dict | None,
+        _timeout_seconds: float,
+    ) -> tuple[int, dict, float]:
+        nonlocal refinement_calls, search_calls
+        if path in {"/api/healthz", "/api/readyz"}:
+            return 200, {"status": "ok"}, 0.01
+        if path == "/api/search-readiness":
+            return (
+                200,
+                {"status": "ok", "checks": {"database": "ok", "catalog": "ok"}},
+                0.01,
+            )
+        if path == "/api/search":
+            search_calls += 1
+            fingerprint = ("d" if search_calls == 1 else "e") * 64
+            return (
+                200,
+                {
+                    "search_model_version": "search-v4",
+                    "ranking_policy_version": "search-v4.0.0",
+                    "baseline_fingerprint": fingerprint,
+                    "applied_intent": payload["intent"] if payload else {},
+                    "ranking_status": "ranked",
+                    "results": [{"top_configuration": {"fit_score": 82.0}}],
+                },
+                1.0,
+            )
+        refinement_calls += 1
+        fingerprint = ("d" if refinement_calls == 1 else "e") * 64
+        return (
+            200,
+            {
+                "search_model_version": "search-v4",
+                "ranking_policy_version": "search-v4.0.0",
+                "baseline_fingerprint": fingerprint,
+                "baseline_status": (
+                    "unverified" if refinement_calls == 1 else "current"
+                ),
+                "refinement_status": "temporarily_unavailable",
+                "fallback_used": False,
+                "refinements": [],
+            },
+            1.5,
+        )
+
+    results = run_canary(base_url="https://example.test", request_json=request_json)
+
+    assert all(result.passed for result in results)
+    assert search_calls == 2
+    assert refinement_calls == 2
+    assert "status=temporarily_unavailable" in results[-1].message
+
+
+def test_product_canary_fails_when_refinement_handoff_is_unverified_twice() -> None:
+    search_calls = 0
+
+    def request_json(
+        _method: str,
+        path: str,
+        payload: dict | None,
+        _timeout_seconds: float,
+    ) -> tuple[int, dict, float]:
+        nonlocal search_calls
+        if path in {"/api/healthz", "/api/readyz"}:
+            return 200, {"status": "ok"}, 0.01
+        if path == "/api/search-readiness":
+            return (
+                200,
+                {"status": "ok", "checks": {"database": "ok", "catalog": "ok"}},
+                0.01,
+            )
+        if path == "/api/search":
+            search_calls += 1
+            fingerprint = str(search_calls) * 64
+            return (
+                200,
+                {
+                    "search_model_version": "search-v4",
+                    "ranking_policy_version": "search-v4.0.0",
+                    "baseline_fingerprint": fingerprint,
+                    "applied_intent": payload["intent"] if payload else {},
+                    "ranking_status": "ranked",
+                    "results": [{"top_configuration": {"fit_score": 82.0}}],
+                },
+                1.0,
+            )
+        return (
+            200,
+            {
+                "search_model_version": "search-v4",
+                "ranking_policy_version": "search-v4.0.0",
+                "baseline_fingerprint": str(search_calls) * 64,
+                "baseline_status": "unverified",
+                "refinement_status": "temporarily_unavailable",
+                "fallback_used": False,
+                "refinements": [],
+            },
+            1.0,
+        )
+
+    results = run_canary(base_url="https://example.test", request_json=request_json)
+
+    assert search_calls == 2
+    assert results[-1].passed is False
+    assert "baseline=unverified" in results[-1].message
 
 
 def test_product_canary_fails_on_empty_representative_search() -> None:
