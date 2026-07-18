@@ -405,6 +405,30 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
         "unsafe traveller-facing copy",
     ),
     (
+        "idna_ideographic_dot_domain",
+        "Details at snowcast。рф",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "idna_fullwidth_dot_domain",
+        "Details at snowcast．рф",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "idna_halfwidth_dot_domain",
+        "Details at snowcast｡рф",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "idna_mixed_dot_domain",
+        "Details at plans。snowcast．рф",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
         "wise_account",
         "Enter your Wise account to continue.",
         "payment_credential",
@@ -465,6 +489,54 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
         "unsafe traveller-facing copy",
     ),
     (
+        "sign_in_account",
+        "Sign in to your account",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "log_in_account",
+        "Log in to your account",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "connect_account",
+        "Connect your account",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "use_account",
+        "Use your account",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "bare_username",
+        "Username preference",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "bare_login",
+        "Login preference",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "bare_sign_in",
+        "Sign-in preference",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "bare_log_in",
+        "Log in preference",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
         "preorder",
         "Preorder this lift pass now",
         "external_action",
@@ -519,6 +591,144 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
         "unsafe traveller-facing copy",
     ),
     (
+        "prebook_compound",
+        "Prebook this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "prebook_exact",
+        "Prebook",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "prebooked_compound",
+        "Prebooked this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "prebooking_compound",
+        "Prebooking this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "repurchase_compound",
+        "Repurchase this pass",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "repurchase_exact",
+        "Repurchase",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "repurchased_compound",
+        "Repurchased this pass",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "repurchasing_compound",
+        "Repurchasing this pass",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "reorder_compound",
+        "Reorder this lift pass",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "resubscribe_compound",
+        "Resubscribe for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_signup",
+        "Signup for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_signup_exact",
+        "Signup",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_signups",
+        "Signups remain open",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "sign_optional_token_up",
+        "Sign yourself up",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "signing_optional_token_up",
+        "Signing yourself up",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "opt_in",
+        "Opt in for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "opt_in_exact",
+        "Opt in",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "opt_optional_token_in",
+        "Opt yourself in",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "check_optional_token_out",
+        "Check yourself out",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "register_outward",
+        "Register for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "registers_outward",
+        "Registers for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "registered_outward",
+        "Registered for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "registering_outward",
+        "Registering for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
         "safe_context_checkout_tail",
         "Lift-pass purchase planning then checking out this pass",
         "external_action",
@@ -545,7 +755,7 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
     (
         "safe_context_account_tail",
         "Pass purchase timing with your account",
-        "external_action",
+        "payment_credential",
         "unsafe traveller-facing copy",
     ),
 )
@@ -839,6 +1049,31 @@ def test_configured_public_copy_allows_safe_non_hostname_planning_copy(
     field: str,
     safe_copy: str,
 ) -> None:
+    presentation = load_refinement_presentation_policy()
+    assert (
+        presentation_module._public_copy_safety_violation(
+            safe_copy,
+            blocked_tokens=presentation.blocked_copy_terms,
+        )
+        is None
+    )
+    payload = presentation.model_dump(mode="python")
+    payload[section][0][field] = safe_copy
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+@pytest.mark.parametrize(
+    ("section", "field"),
+    _CONFIGURED_PUBLIC_COPY_FIELDS,
+    ids=("fallback-question", "fallback-reason", "answer-label", "answer-description"),
+)
+def test_every_configured_public_copy_field_allows_ordinary_dotted_language(
+    section: str,
+    field: str,
+) -> None:
+    safe_copy = "Would you compare terrain, e.g. by size?"
     presentation = load_refinement_presentation_policy()
     assert (
         presentation_module._public_copy_safety_violation(

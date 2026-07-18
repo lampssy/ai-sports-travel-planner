@@ -323,19 +323,6 @@ _ACCOUNT_CREDENTIAL_SHAPE_PATTERN = re.compile(
     r")\b",
     flags=re.IGNORECASE,
 )
-_ACCOUNT_REQUEST_DIRECTIVE_PATTERN = re.compile(
-    r"\b(?:"
-    r"enters?|entered|entering|"
-    r"provides?|provided|providing|"
-    r"shares?|shared|sharing|"
-    r"sends?|sent|sending|"
-    r"submits?|submitted|submitting|"
-    r"registers?|registered|registering|"
-    r"creates?|created|creating|"
-    r"continues?|continued|continuing"
-    r")\b",
-    flags=re.IGNORECASE,
-)
 _SAFE_NON_DIRECTIVE_TRANSACTION_COPY_PATTERNS = (
     re.compile(r"pass\s+purchase\s+timing[.!?]?", flags=re.IGNORECASE),
     re.compile(
@@ -356,19 +343,26 @@ _SAFE_NON_DIRECTIVE_TRANSACTION_COPY_PATTERNS = (
 _TRANSACTION_ACTION_PATTERN = re.compile(
     r"\b(?:"
     r"reserv(?:e|es|ed|ing|ation|ations)|"
-    r"(?:re[-\s]?)?book(?:s|ed|ing|ings)?|"
+    r"book(?:s|ed|ing|ings)?|"
     r"buy(?:s|ing)?|bought|"
     r"purchas(?:e|es|ed|ing)|"
     r"pay(?:s|ing|ment|ments)?|paid|"
-    r"(?:pre[-\s]?)?order(?:s|ed|ing)?|"
+    r"order(?:s|ed|ing)?|"
     r"subscrib(?:e|es|ed|ing)|subscription(?:s)?|"
     r"download(?:s|ed|ing)?|"
     r"install(?:s|ed|ing|ation|ations)?|"
     r"checkout(?:s)?|"
-    r"check(?:s|ed|ing)?[-\s]+out(?:s)?|"
-    r"sign(?:s|ed|ing)?[-\s]+up"
+    r"signup(?:s)?|"
+    r"register(?:s|ed|ing)?|registration(?:s)?|"
+    r"check(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+)?[-\s]+out(?:s)?|"
+    r"sign(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+)?[-\s]+up|"
+    r"opt(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+)?[-\s]+in"
     r")\b",
     flags=re.IGNORECASE,
+)
+_TRANSACTION_COMPOUND_PREFIX_PATTERN = re.compile(
+    r"\b(?:pre|re)[-\s]?(?=[^\W\d_]+)",
+    flags=re.IGNORECASE | re.UNICODE,
 )
 _URI_SCHEME_PATTERN = re.compile(
     r"(?<![\w.+-])[a-z][a-z0-9+.-]*:(?=\S)",
@@ -381,6 +375,7 @@ _HOSTNAME_CANDIDATE_PATTERN = re.compile(
     r"(?![\w-])",
     flags=re.UNICODE,
 )
+_IDNA_DOT_EQUIVALENTS = str.maketrans({"。": ".", "．": ".", "｡": "."})
 _EMAIL_PATTERN = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
 _PHONE_OR_PAYMENT_PATTERN = re.compile(r"(?:\d[\s().+-]*){7,}")
 _PAYMENT_CREDENTIAL_PATTERN = re.compile(
@@ -716,7 +711,9 @@ def _contains_sensitive_pattern(text: str) -> bool:
 
 
 def _contains_valid_hostname(text: str) -> bool:
-    normalized_text = unicodedata.normalize("NFC", text)
+    normalized_text = unicodedata.normalize("NFC", text).translate(
+        _IDNA_DOT_EQUIVALENTS
+    )
     return any(
         _is_valid_hostname(match.group(0))
         for match in _HOSTNAME_CANDIDATE_PATTERN.finditer(normalized_text)
@@ -871,7 +868,7 @@ def _public_copy_safety_violation(
         & (_PAYMENT_CREDENTIAL_PUBLIC_COPY_TERMS | _PAYMENT_PROVIDER_PUBLIC_COPY_TERMS)
         or any(_PAYMENT_PROVIDER_TOKEN_PATTERN.fullmatch(token) for token in tokens)
         or _PAYMENT_CREDENTIAL_PATTERN.search(text) is not None
-        or _contains_account_request(text)
+        or _ACCOUNT_CREDENTIAL_SHAPE_PATTERN.search(text) is not None
     ):
         return "payment_credential"
     if token_set & _SENSITIVE_PUBLIC_COPY_TERMS:
@@ -893,18 +890,11 @@ def _contains_machine_id_shape(text: str) -> bool:
     )
 
 
-def _contains_account_request(text: str) -> bool:
-    return (
-        _ACCOUNT_CREDENTIAL_SHAPE_PATTERN.search(text) is not None
-        and _ACCOUNT_REQUEST_DIRECTIVE_PATTERN.search(text) is not None
-    )
-
-
 def _contains_external_action(text: str, tokens: Sequence[str]) -> bool:
     if frozenset(tokens) & _EXTERNAL_ACTION_PUBLIC_COPY_MARKERS:
         return True
     if not _is_safe_non_directive_transaction_copy(text) and (
-        _TRANSACTION_ACTION_PATTERN.search(text) is not None
+        _contains_transaction_action(text)
     ):
         return True
     return any(
@@ -912,6 +902,13 @@ def _contains_external_action(text: str, tokens: Sequence[str]) -> bool:
         and (index == 0 or tokens[index - 1] in _EXTERNAL_ACTION_CONTEXT_TERMS)
         for index, token in enumerate(tokens)
     )
+
+
+def _contains_transaction_action(text: str) -> bool:
+    if _TRANSACTION_ACTION_PATTERN.search(text) is not None:
+        return True
+    normalized_compounds = _TRANSACTION_COMPOUND_PREFIX_PATTERN.sub("", text)
+    return _TRANSACTION_ACTION_PATTERN.search(normalized_compounds) is not None
 
 
 def _is_safe_non_directive_transaction_copy(text: str) -> bool:
