@@ -7,6 +7,7 @@ ranking, factor policy, and adaptive refinement.
 
 - Active search contract: `search-v4`
 - Active ranking policy: `search-v4-policy-1`
+- Active refinement presentation policy: `search-refinement-presentation-1`
 - Search V4 architecture: ADR 0012
 - Forecast evidence architecture: ADR 0013
 - Search V4 feature design:
@@ -15,6 +16,8 @@ ranking, factor policy, and adaptive refinement.
   `docs/superpowers/specs/2026-07-13-trip-window-weather-forecast-evidence-design.md`
 - Planning and forecast evidence details: `docs/planning-model.md`
 - Executable policy: `app/config/search-ranking/search-v4.toml`
+- Executable refinement presentation registry:
+  `app/config/search-refinement/presentation-v1.toml`
 - Policy inspection: `uv run python -m app.data.explain_search_policy --check`
 
 This document and its generated inventory describe the active behavior. The
@@ -66,6 +69,14 @@ app/domain/search_ranking.py
 
 app/domain/search_refinement.py
   refinement context, proposal validation, and impact simulation
+
+app/config/search-refinement/presentation-v1.toml
+  traveller-facing refinement topics, approved answers, authoritative option
+  copy, typed intent actions, and deterministic fallback order
+
+app/domain/search_refinement_presentation.py
+  presentation-registry validation, answer-ID resolution, safe-copy fallback,
+  and registry-backed deterministic fallback
 ```
 
 The TOML policy is authoritative for numeric policy and active inventory. Typed
@@ -820,54 +831,56 @@ not become a universal always-on definition of value.
 
 ## Dynamic Refinement Questions
 
-Question variants are not predefined in the registry.
+The LLM dynamically selects registered factor topics and writes the question
+and short reason from a bounded context. It selects approved answer IDs rather
+than emitting labels or raw patches. The server resolves each answer ID to
+authoritative presentation copy and typed intent actions, applies presentation
+safety fallback when generated question/reason copy is unsuitable, and then
+runs the existing legality, actionability, and materiality gates. Group-priority
+patches remain part of Search V4 but are not generated as refinement questions
+in this slice.
 
-After initial ranking, Snowcast supplies an LLM with a bounded summary of known
-intent, unresolved priorities, the complete runtime-ready clarifiable registry,
-allowed values, top-result differences, coverage, and already answered
-questions. This includes groups and preference/objective factors inactive in
-the initial score. The LLM may choose one or more registered groups or factors,
-compose a question dynamically, and attach typed group-priority or
-factor-preference patches to each answer.
+After initial ranking, Snowcast supplies the LLM with a bounded summary of known
+intent, unresolved priorities, registered factor topics, approved answer IDs,
+top-result differences, coverage, and already answered questions. This includes
+preference and objective factors that were inactive in the initial score.
+Question wording remains dynamic; answer labels, descriptions, and typed intent
+actions are owned by the versioned presentation registry.
 
 Example shape:
 
 ```json
 {
-  "question": "Which atmosphere would suit you better?",
-  "reason": "The strongest matches differ between slope-side apres and quiet bases.",
+  "topic_ids": ["development_style"],
+  "question": "Which kind of place would feel right for this trip?",
+  "reason": "The leading places offer different village and resort styles.",
   "options": [
     {
-      "label": "Lively after skiing",
-      "preference_patches": [
-        {
-          "factor_id": "ski_day_apres",
-          "mode": "prefer",
-          "values": ["lively", "destination_defining"]
-        }
-      ]
+      "answer_ids": ["development_style.traditional"]
     },
     {
-      "label": "Quiet evenings",
-      "preference_patches": [
-        {
-          "factor_id": "local_pace",
-          "mode": "prefer",
-          "values": ["quiet"]
-        }
-      ]
+      "answer_ids": ["development_style.mixed"]
+    },
+    {
+      "answer_ids": ["development_style.planned_resort"]
+    },
+    {
+      "answer_ids": ["development_style.ignore"]
     }
   ]
 }
 ```
 
-A priority answer may instead include, for example,
-`{"group_id":"travel_effort","importance":"primary"}`. It still contains no
-numeric multiplier.
+The provider never supplies the labels or patches implied by those IDs. For
+example, the registry resolves the four selections above to `Traditional
+mountain village`, `A mix of old and new`, `Purpose-built ski resort`, and `It
+doesn't matter`, plus their typed `development_style` actions. One option may
+combine approved answer IDs from several selected topics, but at most one
+answer may target each factor.
 
 Deterministic code then validates:
 
-- group and factor IDs, importance labels, operations, and values;
+- topic and answer IDs, factor operations, controlled values, and objectives;
 - clarification role and applicable scope;
 - evidence-mode-specific readiness, trust, and actionability within the
   candidate set;
@@ -899,8 +912,13 @@ Only validated proposals are shown. Selecting an answer applies visible typed
 preferences and reruns deterministic search immediately. Search remains fully
 usable if question generation fails or no proposal has material impact.
 The provider-facing response schema deliberately contains only the compact
-structural types and controlled enums supported by Gemini. Pydantic size and
-shape validation plus deterministic policy validation remain authoritative.
+topic/answer-ID structure and bounded question/reason text supported by Gemini.
+Pydantic size and shape validation plus presentation-registry and deterministic
+policy validation remain authoritative. The server replaces unsafe generated
+question and reason fields independently with registry-backed traveller copy;
+candidate IDs, internal policy terms, numeric claims, malformed questions, and
+overlong copy are never shown. Approved option labels and descriptions never
+come from the provider.
 Questions are validated independently: an invalid or immaterial sibling is
 dropped without discarding a useful question that passed every gate. The
 refinement provider receives one attempt only; no retry can extend the request
@@ -971,14 +989,27 @@ The refinement response has exactly one public status:
 
 Admission rejection is an HTTP `429`, not a refinement response. Its generic
 error body is `{"detail": "Refinement is temporarily unavailable."}` and a
-`Retry-After` header supplies the bounded retry delay.
+`Retry-After` header supplies the bounded retry delay. The browser waits for a
+valid delay of at most 15 seconds and retries that admitted request once. It
+shows a compact `retrying` lifecycle message while the ranked results remain
+usable; a second `429` or any other terminal discovery failure ends the cycle.
+Terminal optional failure is announced politely to assistive technology and
+does not leave a visible error or refinement card in the results rail.
 
 `fallback_used` is orthogonal to status. When the provider has no usable
 proposal or is unavailable, Snowcast may return one fallback question only if
-the existing typed proposal validator confirms materiality. It tries
-clarifiable groups in policy order, uses `fallback-group-<group_id>`, offers
-only `important` and `secondary` `GroupPriorityPatch` variants, and suppresses
-already answered IDs. It never duplicates ranking or materiality logic.
+the existing typed proposal validator confirms materiality. It tries registered
+factor topics in configured fallback order, resolves their approved answer IDs
+to the same authoritative option copy and typed actions as provider-selected
+questions, derives a semantic question ID from the presentation-policy version,
+and suppresses already answered IDs. It never creates a group-priority question
+or duplicates ranking or materiality logic.
+
+`search-refinement-presentation-1` versions presentation ownership separately
+from `search-v4` and `search-v4-policy-1`. Copy-only changes under a new
+presentation-policy version may change what travellers read, but they do not
+change factor weights, score equations, candidate eligibility, or ranking
+semantics.
 
 The fingerprint remains a public SHA-256 integrity digest. Its canonical inputs
 include the applied intent, complete catalog snapshot, trust manifest, ordered

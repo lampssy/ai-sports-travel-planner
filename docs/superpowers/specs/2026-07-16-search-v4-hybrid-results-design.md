@@ -5,6 +5,9 @@
 - Status: implemented; follow-up trust, refinement-lifecycle, weather-evidence,
   responsive-polish, and exact-state advisory review complete on 2026-07-17
 - Owner: solo-builder
+- Active search contract: `search-v4`
+- Active ranking policy: `search-v4-policy-1`
+- Active refinement presentation policy: `search-refinement-presentation-1`
 - Accepted visual pack:
   `docs/ui-concepts/2026-07-16-search-v4-web-experience/`
 - Interactive visuals:
@@ -76,7 +79,8 @@ In scope:
 - the minimum structured refinement-impact response needed by the approved UI;
 - the minimum typed weather-evidence response needed by the approved dossier;
 - an explicit refinement-availability outcome and a deterministic, materially
-  validated fallback when the bounded LLM proposal path is unavailable;
+  validated registry-backed factor fallback when the bounded LLM proposal path
+  is unavailable;
 - plain-language decision evidence with technical provenance available only in
   a secondary disclosure;
 - a small Snowcast-owned React UI foundation for repeated actions, statuses,
@@ -168,8 +172,8 @@ Important state transitions:
 9. The dossier presents climatology for month-only searches. For exact dates it
    presents forecast-assisted evidence only when a usable forecast exists.
 10. When the bounded LLM path produces no usable proposal, Snowcast may offer
-   one deterministic group-priority question only after the existing variant
-   simulation proves that its options can materially change the ranking.
+    one registry-backed factor question only after the existing variant
+    simulation proves that its typed options can materially change the ranking.
 11. A failed search update keeps the previous ranked response visible and
     identifies it as the previous ranking; returning from a dossier does not
     issue another search request or surface unrelated stale errors.
@@ -200,6 +204,9 @@ Invariants:
 - deterministic fallback refinements use the same typed patches, validation,
   materiality thresholds, answered-question suppression, and rerank path as
   LLM-proposed refinements;
+- refinement questions are factor-topic-only in this slice. Group-priority
+  patches remain part of Search V4 intent but are not generated as refinement
+  questions;
 - `not_needed` means no material follow-up is available, while
   `temporarily_unavailable` means the exact baseline handoff is unavailable or
   mismatched, or proposal generation failed and no validated fallback could be
@@ -326,7 +333,7 @@ Invariants:
 | Technical | Dossier navigation | A missing route removed a key explanation surface | Modal; inline-only; dedicated route | Dedicated dossier route with return-state preservation | Keeps results scannable and lets the dossier own deep evidence | Implementation plan |
 | Technical | Icon system | Repeated local SVGs would drift visually and add accessibility boilerplate across the new surfaces | Continue local SVGs; add `lucide-react` | Add `lucide-react` as the only new frontend dependency | Gives the accepted UI a consistent icon vocabulary while icons remain decorative or explicitly labelled by their controls | This spec and implementation plan |
 | Technical | Reusable UI foundation | One-off global CSS and repeated markup make responsive and semantic states drift | Keep page-local markup; full shadcn migration; small Snowcast-owned primitives | Small Snowcast-owned primitives, with selective headless primitives only when interaction complexity justifies them | Encodes brand geometry and accessibility states without re-theming the application or forcing every section into a generic card | This spec and follow-up plan |
-| Mixed | Refinement availability | An empty queue currently conflates no useful question with LLM or validation failure | Silent empty state; always ask; explicit status plus validated fallback | Explicit status and one deterministic fallback only after existing materiality validation | Keeps questions useful and truthful while removing provider variability from the primary workflow | This spec, Search V4 model docs, and follow-up plan |
+| Mixed | Refinement availability | An empty queue currently conflates no useful question with LLM or validation failure | Silent empty state; always ask; explicit status plus validated fallback | Explicit status and one registry-backed factor fallback only after existing materiality validation | Keeps questions useful and truthful while removing provider variability from the primary workflow | This spec, Search V4 model docs, and follow-up plan |
 | Technical | Refinement request boundary | Optional remote-model latency blocks ranking, while repeated evaluation can drift from the exact ranked view | Keep refinement inline; rerun from canonical intent; store a lightweight evaluated baseline; persist or share full state | Load after ranking from a typed process-local evaluated-baseline snapshot with a 60-second TTL and 64-entry maximum | Keeps ranking fast and failure-isolated while preserving exact-view materiality and preview consistency; temporary unavailability is accepted when the handoff is gone | ADR 0015, this spec, and follow-up plan |
 | Technical | Refinement admission policy | A separate anonymous endpoint can repeat deterministic and paid provider work after browser cancellation | No guard; require auth; application-local limits; shared managed limiter | Application-local two-concurrent, six-per-minute-per-client, burst-two guard for the current single machine | Protects current provider capacity without changing anonymous search; reset and per-machine limitations are explicit and require replacement before scale-out | ADR 0015, this spec, and follow-up plan |
 | Product / Domain | Decision evidence hierarchy | Internal provenance summaries are accurate for diagnostics but artificial and difficult for travellers to interpret | Keep ledger; compact evidence table; plain-language summary with raw details collapsed | `Why this trip` summary with strengths, uncertainties, and collapsed technical provenance | Makes trust evidence understandable without hiding auditable source detail | This spec and follow-up plan |
@@ -360,8 +367,14 @@ Invariants:
   part of this increment.
 - Search V4 owns refinement availability and fallback selection. The AI module
   reports whether proposal generation produced questions, found none, or was
-  unavailable; the domain fallback reuses typed group-priority patches and the
-  existing deterministic materiality validator.
+  unavailable; the domain fallback resolves approved factor-answer IDs through
+  the versioned presentation registry and reuses the existing deterministic
+  materiality validator.
+- The LLM selects registered factor topics and approved answer IDs and writes
+  only the bounded question and short reason. The server owns option labels,
+  descriptions, typed actions, and independent safe-copy fallback for unsuitable
+  question/reason text. Group-priority refinement questions are outside this
+  slice.
 - After deterministic ranking, `POST /api/search` stores the minimum typed
   evaluated baseline needed for refinement validation and previews in a
   thread-safe, process-local LRU/TTL store. Entries live for 60 seconds and the
@@ -462,7 +475,7 @@ The primary refinement card shows:
 
 - why another answer can materially change the result;
 - one question;
-- two to four bounded options with one-line tradeoffs;
+- two to five bounded options with one-line tradeoffs;
 - selected option state;
 - structured impact preview when available;
 - `Apply and rerank` or truthful `Keep current ranking`, plus `Skip for now`.
@@ -477,11 +490,14 @@ questions from the previous request rather than carrying stale refinements
 forward.
 
 The refinement rail is a progressive state. It initially says
-`Checking whether one answer could improve these results...`; after 2.5 seconds
-it changes to `Still checking for a useful follow-up...` without cancelling the
-request. At the five-second hard budget it resolves to a validated question,
-`No follow-up needed`, or `Refinement unavailable`. Results remain fully
-interactive in every refinement state.
+`Checking whether one answer could improve this ranking.`; after 2.5 seconds it
+changes to `Your ranking is ready. Snowcast is checking whether one answer could
+improve it.` without cancelling the request. A bounded admission `429` with a
+valid `Retry-After` of at most 15 seconds enters `retrying`, waits, and retries
+once while the results remain usable. Success resolves to a validated question
+or `No follow-up would materially change these results.` A terminal optional
+failure is announced politely without a visible persistent error or refinement
+card. Results remain fully interactive in every refinement state.
 
 The baseline snapshot's 60-second TTL limits only how long the server accepts
 the ranking-to-refinement handoff for question generation. Once delivered, a
@@ -867,8 +883,9 @@ Post-search refinement endpoint:
   or mismatched baseline returns `temporarily_unavailable` without invoking
   Gemini;
 - it returns `search_model_version`, `ranking_policy_version`,
-  `baseline_fingerprint`, `baseline_status`, `refinement_status`, orthogonal
-  `fallback_used`, and a bounded `refinements` queue;
+  `refinement_presentation_policy_version`, `baseline_fingerprint`,
+  `baseline_status`, `refinement_status`, orthogonal `fallback_used`, and a
+  bounded `refinements` queue;
 - the client cancels or ignores a stale request when the active applied intent
   changes and suppresses a response that does not belong to the visible
   ranking;
@@ -934,9 +951,10 @@ Rules:
 - `temporarily_unavailable` requires an empty refinement list because the exact
   baseline handoff is unavailable/mismatched or provider/output failure has no
   material deterministic fallback;
-- a deterministic fallback may emit at most one question, uses only configured
-  clarifiable groups, and must pass the existing option validation and
-  material-impact simulation before serialization.
+- a deterministic fallback may emit at most one question, uses registered
+  clarifiable factor topics and authoritative approved answer copy/actions, and
+  must pass the existing option validation and material-impact simulation before
+  serialization;
 - the user-facing refinement request performs at most one provider attempt;
   snapshot lookup, provider work, and fallback validation share one five-second
   monotonic deadline from route ingress;
@@ -946,6 +964,9 @@ Rules:
 - application-local admission allows at most two concurrent requests and six
   requests per minute per client with burst two; a bounded `429` is returned
   before snapshot lookup, and client identity is never a telemetry label;
+- the browser waits for a valid `Retry-After` of at most 15 seconds and retries
+  one admission `429` once; a second `429` or other terminal discovery failure
+  leaves results usable and does not render a persistent error card;
 - malformed provider response JSON maps to a bounded provider failure and never
   escapes as an unhandled exception or appears in public error text.
 
@@ -1131,17 +1152,23 @@ Deterministic code owns:
 - result grouping and ordering;
 - `Trip essentials` selection and formatting;
 - refinement option validation;
+- approved refinement answer labels, descriptions, and typed intent actions;
+- presentation safety fallback for unsuitable generated question/reason copy;
 - per-option rank preview simulation;
 - impact-copy templates;
 - weather-evidence mode selection, aggregation, interpretation templates, and
   limitation labels;
 - evidence and estimate labels.
 
-The LLM may propose bounded typed refinement patches under the existing Search
-V4 policy. After validation, policy-owned deterministic templates regenerate
-the visible question, reason, option label, and option description. The LLM does
-not generate recommendation explanations, metric values, rank changes, dossier
-facts, or user-facing refinement claims.
+The LLM dynamically selects registered factor topics and writes the question
+and short reason from a bounded context. It selects approved answer IDs rather
+than emitting labels or raw patches. The server resolves each answer ID to
+authoritative presentation copy and typed intent actions, applies presentation
+safety fallback when generated question/reason copy is unsuitable, and then
+runs the existing legality, actionability, and materiality gates. Group-priority
+patches remain part of Search V4 but are not generated as refinement questions
+in this slice. The LLM does not generate recommendation explanations, metric
+values, rank changes, dossier facts, option copy, or executable patches.
 
 Search results remain fully usable when refinement generation fails, times out,
 or is disabled.
@@ -1158,6 +1185,9 @@ or is disabled.
 - No-results copy names conflicting hard constraints and provides reversible
   relaxation actions.
 - Missing refinement preview uses generic material-impact copy.
+- One bounded admission retry uses a compact `retrying` status while keeping the
+  board interactive. Terminal optional discovery failure is announced through
+  the polite status region and leaves no visible error/refinement card.
 - A failed refinement apply preserves the selected option and current results,
   announces the error, and permits retry or clear.
 - A failed dossier load offers return to the preserved search state.
@@ -1332,6 +1362,9 @@ deterministic search results.
   positions; applying a typed baseline option preserves the current ranking
   without a request.
 - Search remains usable without refinement generation or preview metadata.
+- Refinement presents a dynamic traveller-facing question as the heading, two
+  to five keyboard-operable approved options, no internal factor/group/ranking
+  vocabulary, and no persistent terminal discovery-failure card.
 - Raw ranking internals and model versions are absent from primary result UI.
 - Pink is limited to brand/refinement accents; green and amber preserve their
   evidence and warning semantics.

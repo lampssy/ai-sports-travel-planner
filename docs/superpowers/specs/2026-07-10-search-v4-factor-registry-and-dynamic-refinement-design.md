@@ -4,6 +4,9 @@
 
 - Status: accepted
 - Owner: solo-builder
+- Active search contract: `search-v4`
+- Active ranking policy: `search-v4-policy-1`
+- Active refinement presentation policy: `search-refinement-presentation-1`
 - Related docs:
   - `docs/search-ranking-model.md`
   - `docs/planning-model.md`
@@ -30,8 +33,9 @@ quiet accommodation, or village character.
 When the initial brief leaves an important preference ambiguous, Snowcast may
 ask a small number of useful follow-up questions. The LLM may decide which
 registered factors are worth clarifying and dynamically compose the question
-and its answer options. Only validated typed preference patches may affect the
-deterministic search and ranking model.
+and short reason. It selects approved answer IDs; server-owned presentation copy
+and validated typed intent actions are the only refinement output that may
+affect the deterministic search and ranking model.
 
 The active ranking model must remain easy for the owner to inspect. One
 high-level document and one versioned policy file must show the active factors,
@@ -51,7 +55,8 @@ In scope:
 - explicit trust, missing-data, lifecycle, and correlation policy;
 - factor roles for hard filtering, ranking, clarification, explanation, and
   diagnostic measurement;
-- LLM-generated refinement questions over registered factors and values;
+- LLM-selected registered factor topics and approved answer IDs, with dynamic
+  question/reason copy and server-owned option copy and typed actions;
 - deterministic validation and impact simulation before a question is shown;
 - automatic reranking after the user selects an answer;
 - support for static catalog, derived catalog, planning-evidence, weather, and
@@ -146,9 +151,13 @@ Durable terms:
   that changes the group's effective budget.
 - `SearchPreference`: a typed `prefer`, `avoid`, or `ignore` instruction for a
   registered factor; a `require` instruction is evaluated as a constraint.
-- `RefinementProposal`: LLM-generated question text, answer options, reasons,
-  and typed group-priority or factor-preference patches awaiting deterministic
-  validation.
+- `RefinementProposal`: LLM-generated question/reason text plus server-resolved
+  answer options and typed factor-preference or objective actions awaiting
+  deterministic validation.
+- `RefinementPresentationPolicy`: a separately versioned registry of
+  traveller-facing factor topics, approved answer IDs, authoritative option
+  copy, typed intent actions, safe question/reason fallback, and deterministic
+  fallback order. Presentation wording does not change score semantics.
 
 Invariants:
 
@@ -692,27 +701,38 @@ models.
 
 ### LLM Ownership
 
-No deterministic registry of question variants is introduced. The factor
-registry describes available capabilities, meanings, controlled values, allowed
-operations, scopes, and whether a factor may be clarified.
+The LLM dynamically selects registered factor topics and writes the question
+and short reason from a bounded context. It selects approved answer IDs rather
+than emitting labels or raw patches. The server resolves each answer ID to
+authoritative presentation copy and typed intent actions, applies presentation
+safety fallback when generated question/reason copy is unsuitable, and then
+runs the existing legality, actionability, and materiality gates. Group-priority
+patches remain part of Search V4 but are not generated as refinement questions
+in this slice.
+
+The factor registry describes scoring capabilities and clarification legality.
+The separate `search-refinement-presentation-1` registry owns traveller-facing
+factor topics, approved answers, option labels and descriptions, typed actions,
+and deterministic fallback copy/order. Changing its wording does not change the
+score equation, active factor inventory, or ranking-policy weights.
 
 The LLM may:
 
 - interpret ambiguity or missing priorities in the user's wording;
-- decide which one or more registered groups or factors would be useful to
+- decide which one or more registered factor topics would be useful to
   contrast;
-- dynamically write the question and concise answer labels;
-- attach one or more typed group-priority or factor-preference patches to each
-  answer;
+- dynamically write the question and short reason;
+- select two to five options using only approved answer IDs;
 - explain why the proposed clarification is relevant.
 
-One answer may patch several factors. For example, a dynamically written
-question may contrast lively ski-day apres, lively village evenings, and a
-quiet accommodation base without relying on a predefined question type.
+One option may combine approved answer IDs from several selected topics, with at
+most one answer for each factor. The server compiles those IDs into authoritative
+labels, descriptions, and typed factor-preference or objective actions.
 
 The LLM may not:
 
 - invent a factor ID, operation, controlled value, or constraint;
+- invent an answer label, description, patch, fact, numeric claim, or ID;
 - provide numeric weights, normalized utilities, trust, or candidate scores;
 - filter or reorder candidates directly;
 - promote user text into catalog or planning evidence.
@@ -725,11 +745,9 @@ The model should receive a bounded summary containing:
 - assumptions and unresolved intent;
 - the top result set's factor differences, without unsupported prose;
 - factor coverage and unknown rates within the candidate set;
-- the complete runtime-ready clarifiable factor registry and controlled values,
-  including `when_requested` and `objective_selected` factors inactive in the
-  initial score;
-- registered group IDs, meanings, allowed importance labels, and current
-  priorities;
+- registered presentation topics and approved answer IDs for every runtime-ready
+  clarifiable factor, including `when_requested` and `objective_selected`
+  factors inactive in the initial score;
 - already asked or answered refinements;
 - a strict structured-output schema.
 
@@ -744,9 +762,9 @@ instructions from expanding capabilities or bypassing the registry.
 
 Each proposal must be rejected unless:
 
-- every group/factor, importance label, operation, and value exists in the
-  runtime-ready registry;
-- every target group or factor allows a clarification role;
+- every factor, operation, and value exists in the runtime-ready registry and
+  every selected answer ID belongs to a selected topic;
+- every target factor allows a clarification role;
 - patches are type-valid and do not contain model-defined weights;
 - options are distinct and do not merely repeat a known preference;
 - enough candidates have trustworthy data for the question to be useful;
@@ -762,14 +780,21 @@ Each proposal must be rejected unless:
 
 The LLM chooses what may be worth asking; the deterministic impact gate decides
 whether the proposal is safe and useful enough to show. If validation fails,
-the system may perform at most a bounded retry or show no question. Search must
-remain usable through explicit controls without the LLM.
+the system may offer one material registry-backed factor question or show no
+question. Search must remain usable through explicit controls without the LLM.
 
 ### Interaction
 
 - Initial results should not be blocked by optional preference questions.
 - Show at most one to three refinements, prioritizing conversational relevance
   and deterministic impact.
+- Render each dynamic traveller-facing question as the heading with two to five
+  keyboard-operable server-owned options and no internal policy vocabulary.
+- If admission returns a bounded `429`, show a compact `retrying` state, wait for
+  a valid `Retry-After` of at most 15 seconds, and retry once while results remain
+  usable.
+- A terminal optional discovery failure is announced politely and leaves no
+  persistent visible error or refinement card.
 - Selecting an answer applies visible preference chips and reruns search
   immediately.
 - The user can remove or edit any inferred or selected preference.
@@ -795,6 +820,9 @@ Search responses should include:
 
 - separate search-model and ranking-policy versions, so an API or algorithm
   contract remains distinguishable from a reviewed weight or activation change;
+- a separate refinement-presentation-policy version on refinement responses, so
+  traveller wording and answer presentation can evolve without implying a
+  scoring-policy change;
 - normalized results and recommendation groups;
 - applied constraints, group priorities, and factor preferences;
 - per-result factor values, trust, contribution, and scope;
@@ -861,7 +889,8 @@ Allowed LLM use:
 
 - parse the brief into typed context and preferences;
 - identify useful clarification topics from the bounded registered factor set;
-- compose dynamic clarification wording and answer options;
+- select approved refinement topics and answer IDs and compose only the dynamic
+  question and short reason;
 - generate explanations only from supplied typed factor evaluations.
 
 Prompt and output boundaries:
@@ -871,14 +900,18 @@ Prompt and output boundaries:
 - no raw model response trusted without validation;
 - no raw brief or prompt logged by default;
 - bounded candidate summary and factor count;
-- one bounded retry at most, with deterministic no-question fallback;
+- one provider attempt within the endpoint deadline;
+- one browser admission retry at most after a bounded `429` and valid
+  `Retry-After`, with results remaining usable;
+- one material registry-backed factor fallback at most, otherwise no question;
 - cache only when privacy-safe and keyed without retaining raw sensitive text.
 
-The provider-facing structured-output schema contains only compact structural
-types and controlled enums. Full Pydantic bounds and deterministic policy
-validation remain application-owned. Validate proposed questions independently
-so one invalid sibling cannot discard another question that passed every gate;
-retry only when none survives.
+The provider-facing structured-output schema contains only topic IDs, answer
+IDs, and bounded question/reason text. Full Pydantic bounds,
+presentation-registry resolution, safe-copy fallback, and deterministic policy
+validation remain application-owned. Approved labels, descriptions, and typed
+actions never come from the provider. Validate proposed questions independently
+so one invalid sibling cannot discard another question that passed every gate.
 
 ## Security, Privacy, And Abuse
 
@@ -1025,9 +1058,9 @@ versioned policy.
 - Terrain explanations identify ski-area, domain, or pass scope.
 - Future predicted availability factors can use the registry without becoming
   catalog facts.
-- The LLM can dynamically propose questions over any clarifiable registered
-  runtime-ready factor, including factors inactive in the initial search,
-  without predefined question variants.
+- The LLM can dynamically select any registered factor topic for a clarifiable
+  runtime-ready factor, including factors inactive in the initial search, and
+  write its question/reason without emitting option copy or raw patches.
 - Invalid, unsupported, non-actionable under their evidence mode, repetitive,
   or immaterial proposals are discarded deterministically.
 - Selecting a refinement answer applies visible typed preferences and reruns
