@@ -5885,7 +5885,8 @@
         "https://www.matterhornparadise.ch/en/experience/skiing",
         "https://www.matterhornparadise.ch/en/information/lifts-and-pistes",
         "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
-        "https://www.cervinia.it/en"
+        "https://www.cervinia.it/en",
+        "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf"
       ],
       "official_trail_map": {
         "url": "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
@@ -5953,20 +5954,15 @@
         "valtournenche-ski-area"
       ],
       "metric_scope": "aggregate",
-      "total_piste_km": 150.0,
-      "total_lift_count": 22,
-      "base_elevation_m": 1524,
-      "summit_elevation_m": 3480,
-      "piste_km_by_difficulty": {
-        "beginner": 54.0,
-        "intermediate": 87.0,
-        "advanced": 9.0
-      },
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "base_elevation_m": null,
+      "summit_elevation_m": null,
+      "piste_km_by_difficulty": null,
       "season_windows": [],
       "source_urls": [
         "https://www.cervinia.it/en",
-        "https://www.cervinia.it/en/impianti",
-        "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+        "https://www.cervinia.it/en/impianti"
       ],
       "official_trail_map": null
     }

@@ -8401,8 +8401,8 @@
           ],
           "snowmaking": [],
           "glacier_terrain": [
-            "https://www.matterhornparadise.ch/en/experience/skiing",
-            "https://www.matterhornparadise.ch/en/experience/skiing/snowpark-zermatt"
+            "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+            "https://www.matterhornparadise.ch/en/experience/skiing"
           ],
           "snow_park": [
             "https://www.matterhornparadise.ch/en/experience/skiing/snowpark-zermatt"
@@ -10063,18 +10063,21 @@
         "field_source_refs": {
           "membership_connectivity": [
             "https://www.cervinia.it/en",
+            "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
             "https://www.matterhornparadise.ch/en/experience/skiing",
             "https://www.matterhornparadise.ch/en/information/lifts-and-pistes",
             "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
           ],
           "aggregate_terrain": [
             "https://www.cervinia.it/en",
+            "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
             "https://www.matterhornparadise.ch/en/experience/skiing",
             "https://www.matterhornparadise.ch/en/information/lifts-and-pistes",
             "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
           ],
           "season": [
             "https://www.cervinia.it/en",
+            "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
             "https://www.matterhornparadise.ch/en/experience/skiing",
             "https://www.matterhornparadise.ch/en/information/lifts-and-pistes",
             "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
@@ -10165,30 +10168,28 @@
         "display_name": "Breuil-Cervinia and Valtournenche",
         "field_statuses": {
           "membership_connectivity": "verified_with_adjustment",
-          "aggregate_terrain": "verified_with_adjustment",
+          "aggregate_terrain": "needs_source",
           "season": "needs_source",
           "official_documents": "needs_source"
         },
         "field_source_refs": {
           "membership_connectivity": [
-            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
             "https://www.cervinia.it/en",
             "https://www.cervinia.it/en/impianti"
           ],
           "aggregate_terrain": [
-            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
             "https://www.cervinia.it/en",
             "https://www.cervinia.it/en/impianti"
           ],
           "season": [
-            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
             "https://www.cervinia.it/en",
             "https://www.cervinia.it/en/impianti"
           ],
           "official_documents": []
         },
         "notes": [
-          "The local domain owns the published Italian-side connected aggregate formerly stored on the Cervinia child.",
+          "The local domain preserves the reviewed connected membership of the Cervinia and Valtournenche ski-area owners.",
+          "The reviewed tariff establishes pass scope, not terrain metrics; unsupported 150 km, 22-lift, difficulty-split, and elevation claims remain null and needs_source.",
           "The domain does not own weather evidence and stores no shared season window."
         ]
       }
