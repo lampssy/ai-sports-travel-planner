@@ -73,6 +73,42 @@ def test_default_registry_covers_every_active_clarifiable_factor() -> None:
     assert {topic.factor_id for topic in presentation.topics} == expected
 
 
+def test_default_registry_visible_copy_rejects_blocked_audience_terms() -> None:
+    presentation = load_refinement_presentation_policy()
+    visible_copy = [
+        *(topic.fallback_question for topic in presentation.topics),
+        *(topic.fallback_reason for topic in presentation.topics),
+        *(answer.label for answer in presentation.answers),
+        *(answer.description for answer in presentation.answers),
+    ]
+
+    for text in visible_copy:
+        assert not presentation_module._contains_blocked_token(
+            text, presentation.blocked_copy_terms
+        ), text
+
+
+@pytest.mark.parametrize(
+    ("section", "field"),
+    [
+        ("topics", "fallback_question"),
+        ("topics", "fallback_reason"),
+        ("answers", "label"),
+        ("answers", "description"),
+    ],
+)
+def test_registry_validation_rejects_blocked_visible_copy(
+    section: str,
+    field: str,
+) -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload[section][0][field] = "Internal optimisation objective"
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    with pytest.raises(ValueError, match="blocked traveller-facing copy"):
+        validate_refinement_presentation_policy(configured, load_search_policy())
+
+
 def test_registry_copy_resolves_to_typed_actions() -> None:
     presentation = load_refinement_presentation_policy()
     resolved = presentation.resolve_answer_ids(

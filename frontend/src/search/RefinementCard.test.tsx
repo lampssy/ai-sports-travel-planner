@@ -54,6 +54,49 @@ test("uses the concrete question as the heading and reason as support text", () 
   expect(screen.getByText(refinement.reason)).toHaveClass(
     "contextual-refinement__reason",
   );
+  expect(
+    screen.getByRole("group", { name: refinement.question }),
+  ).toBeVisible();
+});
+
+test("supports keyboard-only radio selection, apply, and skip focus", async () => {
+  const user = userEvent.setup();
+  const onApply = vi.fn();
+  const onSkip = vi.fn();
+  render(
+    <RefinementCard
+      refinement={refinement}
+      loading={false}
+      error={null}
+      onApply={onApply}
+      onSkip={onSkip}
+    />,
+  );
+
+  await user.tab();
+  expect(document.activeElement).toBe(
+    screen.getByRole("radio", { name: /snow reliability/i }),
+  );
+  await user.keyboard("{ArrowDown}");
+  const shorterJourney = screen.getByRole("radio", { name: /shorter journey/i });
+  expect(document.activeElement).toBe(shorterJourney);
+  expect(shorterJourney).toBeChecked();
+
+  await user.tab();
+  const apply = screen.getByRole("button", { name: /keep current ranking/i });
+  expect(document.activeElement).toBe(apply);
+  await user.keyboard("{Enter}");
+  expect(onApply).toHaveBeenCalledWith(refinement.question_id, refinement.options[1]);
+
+  await user.tab();
+  expect(document.activeElement).toBe(
+    screen.getByRole("button", { name: "Clear" }),
+  );
+  await user.tab();
+  const skip = screen.getByRole("button", { name: /skip for now/i });
+  expect(document.activeElement).toBe(skip);
+  await user.keyboard("{Enter}");
+  expect(onSkip).toHaveBeenCalledWith(refinement.question_id);
 });
 
 test("previews a selected option before apply and supports clear and skip", async () => {

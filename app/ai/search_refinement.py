@@ -89,6 +89,14 @@ class _RefinementOutput(BaseModel):
     ]
 
 
+class _RefinementOutputEnvelope(BaseModel):
+    """Bound the outer response while isolating validation of each sibling."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    questions: Annotated[tuple[object, ...], Field(max_length=3)]
+
+
 def _compact_response_schema() -> dict[str, object]:
     """Build the small JSON Schema accepted by Gemini structured output.
 
@@ -282,12 +290,14 @@ def generate_refinement_proposals(
         )
         return result
     try:
-        payload = _RefinementOutput.model_validate_json(raw)
+        payload = _RefinementOutputEnvelope.model_validate_json(raw)
         if len(payload.questions) > policy.refinement.max_questions:
             raise RefinementValidationError("too many refinement questions")
         validated_items: list[ValidatedRefinementProposal] = []
-        for selection in payload.questions:
+        accepted_question_ids: set[str] = set()
+        for raw_selection in payload.questions:
             try:
+                selection = _RefinementQuestionSelection.model_validate(raw_selection)
                 proposal = compile_refinement_selection(
                     selection,
                     presentation,
@@ -303,12 +313,12 @@ def generate_refinement_proposals(
                     policy=policy,
                     already_answered_question_ids=already_answered_question_ids,
                 )
+                if validated.proposal.question_id in accepted_question_ids:
+                    continue
+                accepted_question_ids.add(validated.proposal.question_id)
                 validated_items.append(validated)
             except (ValidationError, RefinementValidationError):
                 continue
-        question_ids = [item.proposal.question_id for item in validated_items]
-        if len(question_ids) != len(set(question_ids)):
-            raise RefinementValidationError("duplicate refinement question IDs")
         validated = tuple(validated_items)
         if payload.questions and not validated:
             raise RefinementValidationError(

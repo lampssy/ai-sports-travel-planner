@@ -446,6 +446,53 @@ def test_valid_question_survives_invalid_sibling_without_retry() -> None:
     assert len(client.calls) == 1
 
 
+def test_valid_question_survives_structurally_malformed_sibling() -> None:
+    payload = _valid_payload()
+    questions = payload["questions"]
+    assert isinstance(questions, list)
+    questions.insert(
+        0,
+        {
+            "topic_ids": ["accessible_terrain_scale"],
+            "question": "How much terrain would you like?",
+            "reason": "This sibling is missing its options.",
+        },
+    )
+
+    result = _generate(_Client([json.dumps(payload)]))
+
+    assert result.outcome == "proposals_generated"
+    assert len(result.proposals) == 1
+
+
+def test_duplicate_semantic_question_is_skipped_without_losing_unique_sibling() -> None:
+    payload = _valid_payload()
+    questions = payload["questions"]
+    assert isinstance(questions, list)
+    duplicate = dict(questions[0])
+    duplicate["question"] = "Which of those same preferences matters more?"
+    duplicate["reason"] = "Different copy must not create a new semantic question."
+    questions.append(duplicate)
+    questions.append(
+        {
+            "topic_ids": ["accessible_terrain_scale"],
+            "question": "How much terrain would you like your pass to cover?",
+            "reason": "This is a separate useful preference.",
+            "options": [
+                {"answer_ids": ["accessible_terrain_scale.as_much_as_possible"]},
+                {"answer_ids": ["accessible_terrain_scale.low"]},
+            ],
+        }
+    )
+
+    result = _generate(_Client([json.dumps(payload)]))
+
+    assert result.outcome == "proposals_generated"
+    assert len(result.proposals) == 2
+    question_ids = [item.proposal.question_id for item in result.proposals]
+    assert len(question_ids) == len(set(question_ids))
+
+
 def test_refinement_records_bounded_llm_metrics_without_public_outcomes() -> None:
     recorder = InMemoryMetricsRecorder()
     set_metrics_recorder_for_tests(recorder)

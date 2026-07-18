@@ -1,5 +1,5 @@
 import { GitBranch, RotateCcw, X } from "lucide-react";
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useId, useState, type RefObject } from "react";
 
 import type { RefinementOption, RefinementProposal } from "../types";
 import { refinementPreviewCopy } from "./searchPresentation";
@@ -22,6 +22,7 @@ export function RefinementCard({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   useEffect(() => setSelectedIndex(null), [refinement.question_id]);
   const selected = selectedIndex == null ? null : refinement.options[selectedIndex];
+  const questionHeadingId = useId();
 
   return (
     <article className="contextual-refinement">
@@ -29,10 +30,12 @@ export function RefinementCard({
         <GitBranch aria-hidden="true" size={17} />
         Next refinement
       </p>
-      <h2>{refinement.question}</h2>
+      <h2 id={questionHeadingId}>{refinement.question}</h2>
       <p className="contextual-refinement__reason">{refinement.reason}</p>
-      <fieldset className="refinement-options">
-        <legend className="sr-only">Refinement options</legend>
+      <fieldset
+        className="refinement-options"
+        aria-labelledby={questionHeadingId}
+      >
         {refinement.options.map((option, index) => (
           <label key={`${refinement.question_id}-${option.label}`}>
             <input

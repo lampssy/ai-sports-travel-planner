@@ -346,6 +346,7 @@ def validate_refinement_presentation_policy(
     presentation: RefinementPresentationPolicy,
     search_policy: SearchPolicy,
 ) -> None:
+    _validate_visible_copy(presentation)
     _require_unique_ids("topic", [topic.topic_id for topic in presentation.topics])
     _require_unique_ids(
         "topic factor", [topic.factor_id for topic in presentation.topics]
@@ -451,6 +452,30 @@ def validate_refinement_presentation_policy(
                 answer_id,
                 search_policy,
             )
+
+
+def _validate_visible_copy(presentation: RefinementPresentationPolicy) -> None:
+    visible_copy = (
+        *(
+            (f"topic {topic.topic_id} fallback question", topic.fallback_question)
+            for topic in presentation.topics
+        ),
+        *(
+            (f"topic {topic.topic_id} fallback reason", topic.fallback_reason)
+            for topic in presentation.topics
+        ),
+        *(
+            (f"answer {answer.answer_id} label", answer.label)
+            for answer in presentation.answers
+        ),
+        *(
+            (f"answer {answer.answer_id} description", answer.description)
+            for answer in presentation.answers
+        ),
+    )
+    for field, text in visible_copy:
+        if _contains_blocked_token(text, presentation.blocked_copy_terms):
+            raise ValueError(f"{field} contains blocked traveller-facing copy")
 
 
 def _validate_fallback_copy_bounds(

@@ -1,5 +1,5 @@
 presentation_policy_version = "search-refinement-presentation-1"
-blocked_copy_terms = ["candidate", "evidence cap", "factor", "group priority", "ranking", "score", "ski experience", "stay practicality", "trip viability", "utility", "weight"]
+blocked_copy_terms = ["candidate", "evidence cap", "factor", "group priority", "objective", "optimisation", "optimization", "ranking", "score", "ski experience", "stay practicality", "trip viability", "utility", "weight"]
 
 [[topics]]
 topic_id = "trip_window_snow_fit"
@@ -395,14 +395,14 @@ factor_preference_patch = { factor_id = "stay_base_access", mode = "prefer", imp
 answer_id = "pass_price_per_day.high"
 factor_id = "pass_price_per_day"
 label = "Keep it as low as possible"
-description = "Make a lower comparable lift-pass price per ski day a primary optimisation objective."
+description = "Make a lower comparable lift-pass price per ski day a major priority."
 objective_patch = { factor_id = "pass_price_per_day", importance = "high" }
 
 [[answers]]
 answer_id = "pass_price_per_day.normal"
 factor_id = "pass_price_per_day"
 label = "Consider the price"
-description = "Use a lower comparable lift-pass price per ski day as one optimisation objective."
+description = "Consider a lower comparable lift-pass price per ski day alongside your other trip preferences."
 objective_patch = { factor_id = "pass_price_per_day", importance = "normal" }
 
 [[answers]]
@@ -416,14 +416,14 @@ factor_preference_patch = { factor_id = "pass_price_per_day", mode = "ignore" }
 answer_id = "pass_terrain_value.high"
 factor_id = "pass_terrain_value"
 label = "Yes, maximise terrain value"
-description = "Make more pass-covered terrain for the pass price a primary optimisation objective."
+description = "Make getting more pass-covered terrain for the pass price a major priority."
 objective_patch = { factor_id = "pass_terrain_value", importance = "high" }
 
 [[answers]]
 answer_id = "pass_terrain_value.normal"
 factor_id = "pass_terrain_value"
 label = "Use it as one consideration"
-description = "Use more pass-covered terrain for the pass price as one optimisation objective."
+description = "Consider pass-covered terrain for the pass price alongside your other trip preferences."
 objective_patch = { factor_id = "pass_terrain_value", importance = "normal" }
 
 [[answers]]

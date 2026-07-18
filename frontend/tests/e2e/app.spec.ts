@@ -755,7 +755,7 @@ test("refinement admission retry keeps reranked results usable without a persist
   ).toHaveCount(0);
 });
 
-test("a no-op refinement focuses the next queued control without reranking", async ({
+test("keyboard refinement selection keeps Apply and Skip focus predictable", async ({
   page,
 }) => {
   const searchRequests: SearchV4Request[] = [];
@@ -766,8 +766,13 @@ test("a no-op refinement focuses the next queued control without reranking", asy
 
   await page.evaluate(() => window.scrollTo(0, 260));
   const scrollBeforeApply = await scrollYAfterLayout(page);
-  await page.getByRole("radio", { name: /shorter journey/i }).click();
-  await page.getByRole("button", { name: "Keep current ranking" }).click();
+  await page.getByRole("radio", { name: /snow reliability/i }).focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("radio", { name: /shorter journey/i })).toBeFocused();
+  await expect(page.getByRole("radio", { name: /shorter journey/i })).toBeChecked();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Keep current ranking" })).toBeFocused();
+  await page.keyboard.press("Enter");
 
   await expect(page.locator(".rerank-feedback")).toContainText(
     "Current ranking kept.",
@@ -775,6 +780,13 @@ test("a no-op refinement focuses the next queued control without reranking", asy
   await expect(page.getByRole("radio", { name: /quiet base/i })).toBeFocused();
   expect(searchRequests).toHaveLength(1);
   await expect.poll(() => scrollYAfterLayout(page)).toBe(scrollBeforeApply);
+
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Skip for now" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Recommended ski trips" }),
+  ).toBeFocused();
 });
 
 test("saving displayed results ignores unapplied drawer dates", async ({ page }) => {
