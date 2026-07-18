@@ -272,6 +272,39 @@ _UNSAFE_QUESTION_TERMS = frozenset(
         "worst",
     }
 )
+_UNSAFE_PUBLIC_COPY_TERMS = frozenset(
+    {
+        "address",
+        "bank",
+        "book",
+        "buy",
+        "card",
+        "cheapest",
+        "click",
+        "contact",
+        "credential",
+        "credentials",
+        "email",
+        "guarantee",
+        "guaranteed",
+        "passport",
+        "password",
+        "pay",
+        "payment",
+        "phone",
+        "provide",
+        "safest",
+        "secret",
+        "secrets",
+        "send",
+        "share",
+        "snowiest",
+        "submit",
+        "token",
+        "upload",
+        "visit",
+    }
+)
 _URL_PATTERN = re.compile(r"(?:https?://|www\.)\S+", flags=re.IGNORECASE)
 _EMAIL_PATTERN = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
 _PHONE_OR_PAYMENT_PATTERN = re.compile(r"(?:\d[\s().+-]*){7,}")
@@ -820,6 +853,13 @@ def _validate_visible_copy(presentation: RefinementPresentationPolicy) -> None:
         ),
     )
     for field, text in visible_copy:
+        if (
+            _contains_sensitive_pattern(text)
+            or _contains_control_character(text)
+            or _contains_digit_or_percent(text)
+            or frozenset(_tokens(text)) & _UNSAFE_PUBLIC_COPY_TERMS
+        ):
+            raise ValueError(f"{field} contains unsafe traveller-facing copy")
         if _contains_blocked_token(text, presentation.blocked_copy_terms):
             raise ValueError(f"{field} contains blocked traveller-facing copy")
 

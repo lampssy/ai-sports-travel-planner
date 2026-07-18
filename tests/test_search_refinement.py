@@ -12,11 +12,14 @@ from app.domain.search_refinement import (
     RefinementValidationError,
     _rank_variant,
     apply_refinement_option,
+    option_expands_synthesized_require,
     validate_refinement_proposal,
 )
 from app.domain.search_v4_models import (
     FactorPreferencePatch,
+    FactorRequirement,
     GroupPriorityPatch,
+    SearchConstraints,
     SearchIntent,
     SearchObjective,
 )
@@ -265,6 +268,180 @@ def test_rank_variant_does_not_replay_true_to_false_excluded_candidate() -> None
     assert variant.ordered_ids == ()
     assert variant.evaluations_by_candidate_id == {}
     assert replayed_intents == []
+
+
+def test_refinement_rejects_relaxing_a_synthesized_require() -> None:
+    intent = SearchIntent(
+        factor_preferences=(
+            FactorPreferencePatch(factor_id="night_skiing", mode="require"),
+        )
+    )
+    proposal = RefinementProposal(
+        question_id="relax-night-skiing",
+        question="How important is recurring night skiing?",
+        reason="This preference changes which options remain available.",
+        options=(
+            RefinementOption(
+                label="Prefer it",
+                description="Prefer recurring night skiing.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="night_skiing",
+                        mode="prefer",
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="Keep it required",
+                description="Only keep options with recurring night skiing.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="night_skiing",
+                        mode="require",
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    with pytest.raises(RefinementValidationError, match="widen"):
+        validate_refinement_proposal(
+            proposal=proposal,
+            intent=intent,
+            candidates=_candidates(),
+            policy=load_search_policy(),
+        )
+
+
+def test_explicit_factor_requirement_is_not_treated_as_synthesized_widening() -> None:
+    intent = SearchIntent(
+        constraints=SearchConstraints(
+            factor_requirements=(
+                FactorRequirement(
+                    factor_id="night_skiing",
+                    minimum_trust="verified_with_adjustment",
+                ),
+            )
+        ),
+        factor_preferences=(
+            FactorPreferencePatch(factor_id="night_skiing", mode="require"),
+        ),
+    )
+    proposal = RefinementProposal(
+        question_id="explicit-night-skiing",
+        question="How important is recurring night skiing?",
+        reason="The explicit trip requirement remains authoritative.",
+        options=(
+            RefinementOption(
+                label="Prefer it",
+                description="Prefer recurring night skiing.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="night_skiing",
+                        mode="prefer",
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="Keep it required",
+                description="Only keep options with recurring night skiing.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="night_skiing",
+                        mode="require",
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    try:
+        validate_refinement_proposal(
+            proposal=proposal,
+            intent=intent,
+            candidates=_candidates(),
+            policy=load_search_policy(),
+        )
+    except RefinementValidationError as error:
+        assert "widen" not in str(error)
+
+
+@pytest.mark.parametrize(
+    "option",
+    (
+        RefinementOption(
+            label="Prefer it",
+            description="Prefer a quiet or balanced local pace.",
+            factor_preference_patches=(
+                FactorPreferencePatch(factor_id="local_pace", mode="prefer"),
+            ),
+        ),
+        RefinementOption(
+            label="Ignore it",
+            description="Do not use local pace as a preference.",
+            factor_preference_patches=(
+                FactorPreferencePatch(factor_id="local_pace", mode="ignore"),
+            ),
+        ),
+        RefinementOption(
+            label="Broaden it",
+            description="Allow quiet, balanced, or lively local pace.",
+            factor_preference_patches=(
+                FactorPreferencePatch(
+                    factor_id="local_pace",
+                    mode="require",
+                    values=("quiet", "balanced", "lively"),
+                ),
+            ),
+        ),
+        RefinementOption(
+            label="Optimize it",
+            description="Turn local pace into an objective.",
+            objective_patches=(
+                SearchObjective(factor_id="local_pace", importance="normal"),
+            ),
+        ),
+    ),
+)
+def test_synthesized_require_widening_covers_modes_values_and_objectives(
+    option: RefinementOption,
+) -> None:
+    intent = SearchIntent(
+        factor_preferences=(
+            FactorPreferencePatch(
+                factor_id="local_pace",
+                mode="require",
+                values=("quiet", "balanced"),
+            ),
+        )
+    )
+
+    assert option_expands_synthesized_require(intent, option) is True
+
+
+def test_narrower_require_values_do_not_expand_synthesized_require() -> None:
+    intent = SearchIntent(
+        factor_preferences=(
+            FactorPreferencePatch(
+                factor_id="local_pace",
+                mode="require",
+                values=("quiet", "balanced"),
+            ),
+        )
+    )
+    option = RefinementOption(
+        label="Quiet only",
+        description="Only keep quiet accommodation bases.",
+        factor_preference_patches=(
+            FactorPreferencePatch(
+                factor_id="local_pace",
+                mode="require",
+                values=("quiet",),
+            ),
+        ),
+    )
+
+    assert option_expands_synthesized_require(intent, option) is False
 
 
 def test_apply_option_upserts_typed_patches_without_mutating_original() -> None:

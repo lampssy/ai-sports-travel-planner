@@ -274,15 +274,25 @@ Invariants:
     evaluated-baseline snapshot in a thread-safe process-local LRU/TTL store
     with a 60-second TTL and maximum 64 entries;
   - resolved on 2026-07-18: retain the exact static and weather evaluator inputs
-    needed to replay every refinement answer under its variant intent; do not
-    refetch or copy factor formulas;
+    needed to replay every refinement answer under its variant intent for every
+    initially eligible configuration, subject to cache capacity; resolve variant
+    eligibility before deriving cohort-wide numeric bounds and do not refetch or
+    copy factor formulas;
   - resolved: bind refinement lookup to both the public baseline fingerprint and
     the SHA-256 digest recomputed from canonical request intent; this digest
     comparison supplies equality binding and a fingerprint alone is not trusted;
-  - resolved: retain no full `SearchIntent` or origin text, brief, or provider
-    secrets in the baseline store; exact replay does retain referenced catalog,
-    trust-resolver, numeric-bound, and normalized weather evaluator inputs in
-    frozen intent-free context templates;
+  - resolved: retain no full `SearchIntent`, origin text, brief, provider
+    secrets, or full trust manifest in the baseline store; exact replay retains
+    only candidate-scoped immutable catalog evidence, referenced catalog
+    entities, and normalized weather evaluator inputs in frozen intent-free
+    context templates;
+  - resolved: replay is narrow-only and rejects options that could relax an
+    existing synthesized factor `require`; explicit constraint requirements stay
+    authoritative and a new requirement may narrow the retained cohort;
+  - resolved: actively reclaim entries after 60 seconds and globally bound the
+    process-local LRU store to 64 entries, 2,048 candidate replay states, and
+    8,192 unique retained climatology/forecast rows; an individually oversized
+    snapshot leaves ranking intact and makes optional refinement unavailable;
   - resolved: a missing, expired, evicted, restarted, or mismatched baseline
     returns `temporarily_unavailable` without deterministic search or Gemini;
   - resolved: the 60-second TTL covers only the server handoff for generating a
@@ -380,12 +390,19 @@ Invariants:
   topic joined only by a controlled comparison connector. The server
   owns reason copy, option labels, descriptions, typed actions, and deterministic
   fallback for unsafe, sensitive, unsupported, or ungrounded question text.
+  Configured fallback questions and reasons plus answer labels and descriptions
+  pass the same deterministic public-copy safety boundary when the registry
+  loads.
   Group-priority refinement questions are outside this slice.
 - After deterministic ranking, `POST /api/search` stores the minimum typed
   evaluated baseline and exact evaluator inputs needed for refinement
   validation and previews in a thread-safe, process-local LRU/TTL store. Entries
-  live for 60 seconds and the store holds at most 64. It retains no brief or
-  provider secrets.
+  are actively reclaimed after 60 seconds and the store holds at most 64
+  entries, 2,048 candidate replay states, and 8,192 unique retained
+  climatology/forecast rows. It retains every initially eligible configuration
+  subject to those limits, with candidate-scoped intent-free trust evidence and
+  no full manifest, brief, or provider secrets. Capacity loss affects optional
+  refinement only.
 - `POST /api/search/refinements` consumes only the exact stored baseline bound
   to both the public baseline fingerprint and the SHA-256 digest recomputed from
   canonical request intent. The full intent is not stored, and there is no
@@ -395,10 +412,13 @@ Invariants:
   Gemini.
 - Every option variant rebinds the retained inputs to its typed intent and calls
   the registered static and weather evaluators through transient ordinary
-  contexts. Multi-topic options are symmetric, replayed materiality and previews
-  share the same outcomes, and `max_questions = 0` disables both provider and
-  fallback generation. A candidate missing required replay state fails closed
-  before either generation path.
+  contexts. Eligibility is resolved first, then numeric bounds are derived once
+  across the variant-eligible cohort. Replay rejects any option that could widen
+  an existing synthesized `require`, while allowing new narrowing requirements.
+  Multi-topic options are symmetric, replayed materiality and previews share the
+  same outcomes, and `max_questions = 0` disables both provider and fallback
+  generation. A candidate missing required replay state fails closed before
+  either generation path.
 - The process-local handoff is accepted only for the current single-instance
   deployment. Horizontal scaling requires sticky routing, shared state, or a
   redesigned handoff.

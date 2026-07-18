@@ -1032,7 +1032,10 @@ or duplicates ranking or materiality logic.
 from `search-v4` and `search-v4-policy-1`. Copy-only changes under a new
 presentation-policy version may change what travellers read, but they do not
 change factor weights, score equations, candidate eligibility, or ranking
-semantics.
+semantics. Every configured fallback question and reason, plus every approved
+answer label and description, passes deterministic public-copy validation when
+the registry loads; unsafe copy cannot become either provider-resolved or
+fallback output.
 
 The fingerprint remains a public SHA-256 integrity digest. Its canonical inputs
 include the applied intent, complete catalog snapshot, trust manifest, ordered
@@ -1040,17 +1043,28 @@ evaluated candidate states and ranking allocations, Search V4 and
 ranking-policy versions, and the weather-selection policy revision. Ranking
 uses it as the key for a separate bounded snapshot containing the policy,
 compact candidate/constraint/scoring state, and exact evaluator inputs required
-by refinement. It retains immutable candidate catalog entities, trust resolver
-state, normalized weather rows, numeric bounds, and frozen intent-free evaluator
-context templates, but not a full `SearchIntent`, origin text, trip brief,
-provider prompts, responses, or credentials. Ordinary contexts containing a
-variant intent exist only for the duration of an evaluator replay. The caller's
-canonical intent digest must also match; the public fingerprint is never trusted
-alone.
+by refinement for every initially eligible configuration, subject to capacity.
+It retains immutable candidate catalog entities, normalized weather rows,
+frozen candidate-scoped trust evidence, and intent-free evaluator context
+templates, but not a full trust manifest, `SearchIntent`, origin text, trip
+brief, provider prompts, responses, or credentials. Ordinary contexts
+containing a variant intent exist only for the duration of an evaluator replay.
+The caller's canonical intent digest must also match; the public fingerprint is
+never trusted alone.
 
-The snapshot expires 60 seconds after ranking and the process-local store holds
-at most 64 entries with LRU eviction. A miss, expiry, eviction, restart, intent
-mismatch, or candidate missing its required replay state returns
+Replay is narrow-only. A proposal is rejected if any option could relax an
+existing synthesized factor `require`; explicit constraint requirements remain
+authoritative, while a new requirement may narrow the retained cohort. For each
+accepted variant, eligibility is resolved before numeric normalization. The
+numeric bounds are then derived exactly once across the variant-eligible cohort
+and shared by every replayed registered evaluator.
+
+The snapshot is actively reclaimed 60 seconds after ranking. The process-local
+LRU store holds at most 64 entries, 2,048 candidate replay states, and 8,192
+unique climatology/forecast rows. A snapshot that cannot fit by itself is not
+retained; this affects optional refinement only, never the ranking. A miss,
+expiry, eviction, capacity rejection, restart, intent mismatch, or candidate
+missing its required replay state returns
 `temporarily_unavailable` without deterministic search, Gemini, or fallback
 generation. This TTL covers only generation of the next question. Once a
 question reaches the browser, its typed answer remains usable after expiry.
@@ -1067,8 +1081,8 @@ generic `429` with `Retry-After`.
 
 Endpoint metrics record only bounded final outcomes and `fallback_used`; the
 AI layer records provider-call health separately and does not emit public
-refinement status before fallback handling. Snapshot metrics record only the
-bounded `hit`, `miss`, `expired`, `intent_mismatch`, and `evicted` outcomes.
+refinement status before fallback handling. Snapshot metrics record only
+bounded lookup, eviction, and capacity-rejection outcomes.
 The store is intentionally valid only for the current single-process
 deployment; multiple web processes require sticky routing, shared state, or a
 redesigned handoff.

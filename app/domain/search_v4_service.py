@@ -61,6 +61,7 @@ from app.domain.search_constraints import (
 from app.domain.search_factors.models import FactorEvaluation
 from app.domain.search_factors.static import (
     ManifestCatalogEvidenceResolver,
+    RecordingCatalogEvidenceResolver,
     StaticEvaluationContext,
     StaticFactorCandidate,
     build_static_factor_registry,
@@ -89,6 +90,7 @@ from app.domain.search_refinement import (
     RefinementOption,
     RefinementVariantOutcome,
     ValidatedRefinementProposal,
+    option_expands_synthesized_require,
 )
 from app.domain.search_refinement_presentation import (
     RefinementPresentationPolicy,
@@ -99,9 +101,11 @@ from app.domain.search_refinement_snapshot import (
     RefinementBaselineCandidate,
     RefinementBaselineSnapshot,
     RefinementCandidateReplayState,
+    RefinementCohortReplay,
     RefinementFactorEvaluation,
     SearchRefinementSnapshotStore,
     StaticEvaluationReplayContextTemplate,
+    ThreadedSnapshotCleanupScheduler,
     WeatherEvaluationReplayContextTemplate,
     canonical_search_intent_digest,
 )
@@ -145,7 +149,9 @@ BaselineFingerprint = Annotated[
         pattern=r"^[a-f0-9]{64}$",
     ),
 ]
-default_refinement_snapshot_store = SearchRefinementSnapshotStore()
+default_refinement_snapshot_store = SearchRefinementSnapshotStore(
+    cleanup_scheduler=ThreadedSnapshotCleanupScheduler()
+)
 
 
 class _ClimatologyRepository(Protocol):
@@ -675,6 +681,8 @@ def search_trip_configurations(
             "evicted",
             count=mutation.evicted_count,
         )
+    if mutation.capacity_rejected:
+        record_search_refinement_snapshot_outcome("capacity_rejected")
     response = SearchV4Response(
         search_model_version=evaluated.policy.search_model_version,
         ranking_policy_version=evaluated.policy.ranking_policy_version,
@@ -759,7 +767,9 @@ def _evaluate_search(
             strict=True,
         )
     }
-    trust_resolver = ManifestCatalogEvidenceResolver(manifest)
+    trust_resolver = RecordingCatalogEvidenceResolver(
+        ManifestCatalogEvidenceResolver(manifest)
+    )
     static_context = StaticEvaluationContext(
         intent=intent,
         policy=selected_policy,
@@ -774,14 +784,6 @@ def _evaluate_search(
         pass_duration_days=duration_days,
         pass_audience=audience,
         pass_season_label=season_label,
-    )
-    static_replay_context_template = StaticEvaluationReplayContextTemplate(
-        policy=static_context.policy,
-        trust_resolver=static_context.trust_resolver,
-        numeric_bounds=static_context.numeric_bounds,
-        pass_duration_days=static_context.pass_duration_days,
-        pass_audience=static_context.pass_audience,
-        pass_season_label=static_context.pass_season_label,
     )
     static_registry = build_static_factor_registry()
     with search_phase(phase="static_factor_evaluation", intent=intent):
@@ -799,6 +801,14 @@ def _evaluate_search(
                 strict=True,
             )
         }
+    static_replay_context_template = StaticEvaluationReplayContextTemplate(
+        policy=static_context.policy,
+        trust_resolver=trust_resolver.freeze(),
+        numeric_bounds=static_context.numeric_bounds,
+        pass_duration_days=static_context.pass_duration_days,
+        pass_audience=static_context.pass_audience,
+        pass_season_label=static_context.pass_season_label,
+    )
 
     area_ids = tuple(
         sorted({record.ski_area.ski_area_id for record in eligible_records})
@@ -1206,11 +1216,19 @@ def _compact_refinement_evaluation(
 def _refinement_states(
     candidates: Sequence[RefinementBaselineCandidate],
 ) -> tuple[RefinementCandidateState, ...]:
-    states: list[RefinementCandidateState] = []
+    replay_states: list[tuple[str, RefinementCandidateReplayState]] = []
     for item in candidates:
         replay_state = item.replay_state
         if replay_state is None:
             raise ValueError("refinement baseline candidate lacks replay state")
+        replay_states.append((item.candidate_id, replay_state))
+    cohort_replayer = RefinementCohortReplay(tuple(replay_states)).evaluate
+    states: list[RefinementCandidateState] = []
+    for item, (_candidate_id, replay_state) in zip(
+        candidates,
+        replay_states,
+        strict=True,
+    ):
         states.append(
             RefinementCandidateState(
                 candidate_id=item.candidate_id,
@@ -1226,6 +1244,7 @@ def _refinement_states(
                     )
                 ),
                 evaluation_replayer=replay_state.evaluate,
+                cohort_evaluation_replayer=cohort_replayer,
             )
         )
     return tuple(states)
@@ -1934,7 +1953,7 @@ def _refinement_preview(
     if (
         intent is not None
         and option is not None
-        and _option_can_expand_existing_require(intent, option)
+        and option_expands_synthesized_require(intent, option)
     ):
         return None
     if _visible_top_three_has_unscored_candidate(
@@ -1994,46 +2013,6 @@ def _refinement_preview(
             - len(set(baseline_ordered_candidate_ids))
         ),
     )
-
-
-def _option_can_expand_existing_require(
-    intent: SearchIntent,
-    option: RefinementOption,
-) -> bool:
-    explicit_requirement_ids = {
-        requirement.factor_id for requirement in intent.constraints.factor_requirements
-    }
-    existing_requires = {
-        preference.factor_id: preference
-        for preference in intent.factor_preferences
-        if preference.mode == "require"
-        and preference.factor_id not in explicit_requirement_ids
-    }
-    if any(
-        objective.factor_id in existing_requires
-        for objective in option.objective_patches
-    ):
-        return True
-    for patch in option.factor_preference_patches:
-        existing = existing_requires.get(patch.factor_id)
-        if existing is None:
-            continue
-        if patch.mode != "require":
-            return True
-        if _require_values_can_expand(existing.values, patch.values):
-            return True
-    return False
-
-
-def _require_values_can_expand(
-    existing_values: Sequence[str],
-    proposed_values: Sequence[str],
-) -> bool:
-    if not existing_values:
-        return False
-    if not proposed_values:
-        return True
-    return not set(proposed_values).issubset(existing_values)
 
 
 def _visible_top_three_has_unscored_candidate(

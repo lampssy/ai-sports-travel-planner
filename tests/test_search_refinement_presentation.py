@@ -119,6 +119,44 @@ def test_registry_validation_rejects_blocked_visible_copy(
         validate_refinement_presentation_policy(configured, load_search_policy())
 
 
+@pytest.mark.parametrize(
+    ("section", "field", "unsafe_copy"),
+    (
+        (
+            "topics",
+            "fallback_question",
+            "Would you visit https://example.com/offer?\u202e",
+        ),
+        (
+            "topics",
+            "fallback_reason",
+            "Send your passport now.\0",
+        ),
+        (
+            "answers",
+            "label",
+            "Book the guaranteed best option",
+        ),
+        (
+            "answers",
+            "description",
+            "Share payment details for candidate-a at one hundred percent.",
+        ),
+    ),
+)
+def test_registry_validation_rejects_unsafe_public_copy(
+    section: str,
+    field: str,
+    unsafe_copy: str,
+) -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload[section][0][field] = unsafe_copy
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    with pytest.raises(ValueError, match="unsafe traveller-facing copy"):
+        validate_refinement_presentation_policy(configured, load_search_policy())
+
+
 def test_registry_copy_resolves_to_typed_actions() -> None:
     presentation = load_refinement_presentation_policy()
     resolved = presentation.resolve_answer_ids(

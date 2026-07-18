@@ -724,7 +724,9 @@ The factor registry describes scoring capabilities and clarification legality.
 The separate `search-refinement-presentation-1` registry owns traveller-facing
 factor topics, approved answers, option labels and descriptions, typed actions,
 and deterministic fallback copy/order. Changing its wording does not change the
-score equation, active factor inventory, or ranking-policy weights.
+score equation, active factor inventory, or ranking-policy weights. Every
+configured fallback question and reason, answer label, and answer description
+is deterministically validated for safe public copy when the registry loads.
 
 The LLM may:
 
@@ -779,9 +781,14 @@ Each proposal must be rejected unless:
 - patches are type-valid and do not contain model-defined weights;
 - options are distinct and do not merely repeat a known preference;
 - enough candidates have trustworthy data for the question to be useful;
+- no option can relax an existing synthesized factor `require`; explicit
+  constraint requirements remain authoritative, while a new `require` may
+  narrow the retained cohort;
 - every answer variant is evaluated by replaying the registered static and
   weather evaluators from the captured baseline inputs under its variant intent,
   without fresh acquisition;
+- variant eligibility is resolved before numeric bounds, which are derived once
+  over the eligible replay cohort and shared by every surviving evaluator;
 - retained evaluator context templates are frozen and intent-free; ordinary
   contexts containing the request variant exist only transiently during replay;
 - evidence-mode-specific actionability holds: positive-presence needs at least

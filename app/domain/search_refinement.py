@@ -104,6 +104,13 @@ class RefinementCandidateState:
     evaluation_replayer: (
         Callable[[SearchIntent], tuple[FactorEvaluation, ...]] | None
     ) = None
+    cohort_evaluation_replayer: (
+        Callable[
+            [SearchIntent, tuple[str, ...]],
+            Mapping[str, tuple[FactorEvaluation, ...]],
+        ]
+        | None
+    ) = None
 
     def __post_init__(self) -> None:
         if not self.candidate_id.strip():
@@ -206,6 +213,10 @@ def validate_refinement_proposal(
     variant_intents: list[SearchIntent] = []
     for option in proposal.options:
         _validate_option_targets(option, policy)
+        if option_expands_synthesized_require(intent, option):
+            raise RefinementValidationError(
+                "refinement option would widen a synthesized require"
+            )
         signature = _option_signature(option)
         if signature in option_signatures:
             raise RefinementValidationError("refinement options must be distinct")
@@ -312,6 +323,45 @@ def _require_clarifiable_factor(factor: FactorPolicy) -> None:
         )
 
 
+def synthesized_require_factor_ids(intent: SearchIntent) -> frozenset[str]:
+    explicit_requirement_ids = {
+        requirement.factor_id for requirement in intent.constraints.factor_requirements
+    }
+    return frozenset(
+        preference.factor_id
+        for preference in intent.factor_preferences
+        if preference.mode == "require"
+        and preference.factor_id not in explicit_requirement_ids
+    )
+
+
+def option_expands_synthesized_require(
+    intent: SearchIntent,
+    option: RefinementOption,
+) -> bool:
+    synthesized_requires = {
+        preference.factor_id: preference
+        for preference in intent.factor_preferences
+        if preference.factor_id in synthesized_require_factor_ids(intent)
+    }
+    if any(
+        objective.factor_id in synthesized_requires
+        for objective in option.objective_patches
+    ):
+        return True
+    for patch in option.factor_preference_patches:
+        existing = synthesized_requires.get(patch.factor_id)
+        if existing is None:
+            continue
+        if patch.mode != "require":
+            return True
+        if existing.values and (
+            not patch.values or not set(patch.values).issubset(existing.values)
+        ):
+            return True
+    return False
+
+
 def _validate_factor_actionability(
     proposal: RefinementProposal,
     variants: Sequence[_VariantRanking],
@@ -409,14 +459,32 @@ def _rank_variant(
         )
         if is_eligible:
             eligible.append(candidate)
-    evaluations_by_candidate_id = {
-        candidate.candidate_id: (
-            candidate.evaluation_replayer(intent)
-            if candidate.evaluation_replayer is not None
-            else candidate.evaluations
-        )
+    cohort_replayers = [
+        candidate.cohort_evaluation_replayer
         for candidate in eligible
-    }
+        if candidate.cohort_evaluation_replayer is not None
+    ]
+    if cohort_replayers:
+        cohort_replayer = cohort_replayers[0]
+        if len(cohort_replayers) != len(eligible) or any(
+            replayer is not cohort_replayer for replayer in cohort_replayers[1:]
+        ):
+            raise ValueError("eligible refinement candidates must share cohort replay")
+        eligible_candidate_ids = tuple(candidate.candidate_id for candidate in eligible)
+        evaluations_by_candidate_id = dict(
+            cohort_replayer(intent, eligible_candidate_ids)
+        )
+        if set(evaluations_by_candidate_id) != set(eligible_candidate_ids):
+            raise ValueError("cohort replay must evaluate every eligible candidate")
+    else:
+        evaluations_by_candidate_id = {
+            candidate.candidate_id: (
+                candidate.evaluation_replayer(intent)
+                if candidate.evaluation_replayer is not None
+                else candidate.evaluations
+            )
+            for candidate in eligible
+        }
     scores: dict[str, float] = {}
     for candidate in eligible:
         result = score_factor_evaluations(

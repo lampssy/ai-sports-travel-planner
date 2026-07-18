@@ -4,6 +4,8 @@ import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import FrozenInstanceError
+from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
@@ -12,6 +14,7 @@ from app.domain.search_policy import SearchPolicy, load_search_policy
 from app.domain.search_refinement_snapshot import (
     RefinementBaselineCandidate,
     RefinementBaselineSnapshot,
+    RefinementCandidateReplayState,
     RefinementFactorEvaluation,
     SearchRefinementSnapshotStore,
     canonical_search_intent_digest,
@@ -29,7 +32,34 @@ class _Clock:
         return self.now
 
 
-def _candidate(candidate_id: str = "candidate") -> RefinementBaselineCandidate:
+class _ManualCleanupHandle:
+    def __init__(self) -> None:
+        self.cancelled = False
+
+    def cancel(self) -> None:
+        self.cancelled = True
+
+
+class _ManualCleanupScheduler:
+    def __init__(self) -> None:
+        self.callback = None
+        self.handle = _ManualCleanupHandle()
+
+    def start(self, *, interval_seconds: float, callback):
+        assert interval_seconds > 0
+        self.callback = callback
+        return self.handle
+
+    def run_once(self) -> int:
+        assert self.callback is not None
+        return self.callback()
+
+
+def _candidate(
+    candidate_id: str = "candidate",
+    *,
+    weather_rows: tuple[object, ...] = (),
+) -> RefinementBaselineCandidate:
     constraint_facts = ConstraintCandidateFacts(
         candidate_id=candidate_id,
         location=CandidateLocation(
@@ -45,12 +75,26 @@ def _candidate(candidate_id: str = "candidate") -> RefinementBaselineCandidate:
         neutral_utility=0.5,
         effective_evidence_cap=1,
     )
+    replay_state = (
+        cast(
+            RefinementCandidateReplayState,
+            SimpleNamespace(
+                weather_candidate=SimpleNamespace(
+                    climatology_rows=weather_rows,
+                    forecast_rows=(),
+                )
+            ),
+        )
+        if weather_rows
+        else None
+    )
     return RefinementBaselineCandidate(
         candidate_id=candidate_id,
         ski_region_id="ski-region",
         constraint_facts=constraint_facts,
         evaluations=(evaluation,),
         unscored=False,
+        replay_state=replay_state,
     )
 
 
@@ -66,6 +110,26 @@ def _snapshot(
         intent_digest=canonical_search_intent_digest(resolved_intent),
         policy=policy or load_search_policy(),
         candidates=(_candidate(f"candidate-{fingerprint}"),),
+    )
+
+
+def _capacity_snapshot(
+    fingerprint: str,
+    *,
+    candidate_count: int = 1,
+    weather_rows: tuple[object, ...] = (),
+) -> RefinementBaselineSnapshot:
+    return RefinementBaselineSnapshot(
+        fingerprint=fingerprint,
+        intent_digest=canonical_search_intent_digest(SearchIntent()),
+        policy=load_search_policy(),
+        candidates=tuple(
+            _candidate(
+                f"candidate-{fingerprint}-{index}",
+                weather_rows=weather_rows,
+            )
+            for index in range(candidate_count)
+        ),
     )
 
 
@@ -199,6 +263,97 @@ def test_store_never_exceeds_max_entries() -> None:
     )
 
 
+def test_candidate_budget_evicts_least_recently_used_snapshot() -> None:
+    store = SearchRefinementSnapshotStore(max_candidate_replay_states=2)
+    first = _capacity_snapshot("first")
+    second = _capacity_snapshot("second")
+    third = _capacity_snapshot("third")
+    store.put(first)
+    store.put(second)
+    assert store.get(first.fingerprint, first.intent_digest).outcome == "hit"
+
+    mutation = store.put(third)
+
+    assert mutation.evicted_count == 1
+    assert mutation.capacity_rejected is False
+    assert store.get(second.fingerprint, second.intent_digest).outcome == "miss"
+    assert store.get(first.fingerprint, first.intent_digest).outcome == "hit"
+    assert store.get(third.fingerprint, third.intent_digest).outcome == "hit"
+    assert store.usage().candidate_replay_state_count == 2
+
+
+def test_weather_row_budget_counts_shared_rows_once_and_evicts_lru() -> None:
+    store = SearchRefinementSnapshotStore(max_weather_rows=2)
+    first_row = object()
+    third_row = object()
+    first = _capacity_snapshot(
+        "first",
+        candidate_count=2,
+        weather_rows=(first_row,),
+    )
+    second = _capacity_snapshot("second", weather_rows=(first_row,))
+    third = _capacity_snapshot("third", weather_rows=(third_row,))
+    store.put(first)
+    assert store.usage().weather_row_count == 1
+    store.put(second)
+    assert store.usage().weather_row_count == 2
+    assert store.get(first.fingerprint, first.intent_digest).outcome == "hit"
+
+    mutation = store.put(third)
+
+    assert mutation.evicted_count == 1
+    assert store.get(second.fingerprint, second.intent_digest).outcome == "miss"
+    assert store.get(first.fingerprint, first.intent_digest).outcome == "hit"
+    assert store.get(third.fingerprint, third.intent_digest).outcome == "hit"
+    assert store.usage().weather_row_count == 2
+
+
+def test_individually_oversized_snapshot_is_not_retained() -> None:
+    store = SearchRefinementSnapshotStore(max_candidate_replay_states=1)
+    snapshot = _capacity_snapshot("oversized", candidate_count=2)
+
+    mutation = store.put(snapshot)
+
+    assert mutation.capacity_rejected is True
+    assert mutation.evicted_count == 0
+    assert store.get(snapshot.fingerprint, snapshot.intent_digest).outcome == "miss"
+    assert store.usage().entry_count == 0
+
+
+def test_individually_oversized_weather_snapshot_is_not_retained() -> None:
+    store = SearchRefinementSnapshotStore(max_weather_rows=1)
+    snapshot = _capacity_snapshot(
+        "oversized-weather",
+        weather_rows=(object(), object()),
+    )
+
+    mutation = store.put(snapshot)
+
+    assert mutation.capacity_rejected is True
+    assert mutation.evicted_count == 0
+    assert store.get(snapshot.fingerprint, snapshot.intent_digest).outcome == "miss"
+    assert store.usage().weather_row_count == 0
+
+
+def test_cleanup_scheduler_reclaims_expired_snapshot_without_another_request() -> None:
+    clock = _Clock()
+    scheduler = _ManualCleanupScheduler()
+    store = SearchRefinementSnapshotStore(
+        ttl_seconds=60,
+        clock=clock,
+        cleanup_scheduler=scheduler,
+        cleanup_interval_seconds=5,
+    )
+    store.put(_snapshot("active-expiry"))
+
+    clock.now = 60
+    assert scheduler.run_once() == 1
+    assert store.usage().entry_count == 0
+
+    store.close()
+    assert scheduler.handle.cancelled is True
+
+
 def test_store_supports_basic_concurrent_puts_and_gets() -> None:
     store = SearchRefinementSnapshotStore(max_entries=64)
     policy = load_search_policy()
@@ -246,6 +401,12 @@ def test_store_supports_interleaved_concurrent_puts_and_gets() -> None:
         {"ttl_seconds": -1},
         {"max_entries": 0},
         {"max_entries": -1},
+        {"max_candidate_replay_states": 0},
+        {"max_candidate_replay_states": -1},
+        {"max_weather_rows": 0},
+        {"max_weather_rows": -1},
+        {"cleanup_interval_seconds": 0},
+        {"cleanup_interval_seconds": -1},
     ),
 )
 def test_store_rejects_non_positive_configuration(kwargs: dict[str, float]) -> None:

@@ -20,7 +20,7 @@ from app.domain.search_refinement_presentation import (
     build_deterministic_refinement_fallback,
     load_refinement_presentation_policy,
 )
-from app.domain.search_v4_models import SearchIntent
+from app.domain.search_v4_models import FactorPreferencePatch, SearchIntent
 from app.observability.metrics import (
     InMemoryMetricsRecorder,
     reset_metrics_recorder_for_tests,
@@ -139,10 +139,11 @@ def _generate(
     *,
     brief: str | None = "Help me choose.",
     candidates: tuple[RefinementCandidateState, ...] | None = None,
+    intent: SearchIntent | None = None,
 ) -> RefinementGenerationResult:
     return generate_refinement_proposals(
         brief=brief,
-        intent=SearchIntent(),
+        intent=intent or SearchIntent(),
         candidates=candidates if candidates is not None else _candidates(),
         policy=load_search_policy(),
         presentation=load_refinement_presentation_policy(),
@@ -226,6 +227,50 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
     assert "exactly one answer ID for every selected topic" in str(
         call["system_prompt"]
     )
+
+
+def test_provider_context_omits_synthesized_required_factor_topic() -> None:
+    client = _Client([json.dumps({"questions": []})])
+    intent = SearchIntent(
+        factor_preferences=(
+            FactorPreferencePatch(factor_id="night_skiing", mode="require"),
+        )
+    )
+
+    result = _generate(client, intent=intent)
+
+    assert result.outcome == "no_proposals"
+    prompt = json.loads(str(client.calls[0]["user_prompt"]))
+    assert "night_skiing" not in {
+        topic["topic_id"] for topic in prompt["clarification_topics"]
+    }
+
+
+def test_required_topic_question_isolated_from_valid_provider_sibling() -> None:
+    payload = _valid_payload()
+    questions = payload["questions"]
+    assert isinstance(questions, list)
+    questions.append(
+        {
+            "topic_ids": ["night_skiing"],
+            "question": "Would recurring night skiing add value to your trip?",
+            "options": [
+                {"answer_ids": ["night_skiing.prefer"]},
+                {"answer_ids": ["night_skiing.ignore"]},
+            ],
+        }
+    )
+    intent = SearchIntent(
+        factor_preferences=(
+            FactorPreferencePatch(factor_id="night_skiing", mode="require"),
+        )
+    )
+
+    result = _generate(_Client([json.dumps(payload)]), intent=intent)
+
+    assert result.outcome == "proposals_generated"
+    assert len(result.proposals) == 1
+    assert result.proposals[0].proposal.question_id.startswith("refinement-")
 
 
 def test_refinement_uses_compact_answer_id_only_provider_schema() -> None:

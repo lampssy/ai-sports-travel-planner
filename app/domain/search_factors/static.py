@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Literal, Protocol
 
 from app.domain.catalog import (
@@ -90,6 +91,62 @@ class ManifestCatalogEvidenceResolver:
             status=entry.field_statuses[field_group],
             source_refs=entry.field_source_refs[field_group],
         )
+
+
+CatalogEvidenceKey = tuple[str, str, str]
+
+
+@dataclass(frozen=True)
+class ScopedCatalogEvidenceResolver:
+    """Immutable evidence retained only for fields touched by one search cohort."""
+
+    evidence_by_key: Mapping[CatalogEvidenceKey, ResolvedCatalogEvidence]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "evidence_by_key",
+            MappingProxyType(dict(self.evidence_by_key)),
+        )
+
+    def resolve(
+        self,
+        entity_type: str,
+        entity_id: str,
+        field_group: str,
+    ) -> ResolvedCatalogEvidence:
+        try:
+            return self.evidence_by_key[(entity_type, entity_id, field_group)]
+        except KeyError as error:
+            raise KeyError(
+                "catalog evidence was not captured for refinement replay: "
+                f"{entity_type}/{entity_id}/{field_group}"
+            ) from error
+
+
+class RecordingCatalogEvidenceResolver:
+    """Record exact manifest-backed evidence used by initial evaluation."""
+
+    def __init__(self, delegate: CatalogEvidenceResolver) -> None:
+        self._delegate = delegate
+        self._evidence_by_key: dict[
+            CatalogEvidenceKey,
+            ResolvedCatalogEvidence,
+        ] = {}
+
+    def resolve(
+        self,
+        entity_type: str,
+        entity_id: str,
+        field_group: str,
+    ) -> ResolvedCatalogEvidence:
+        key = (entity_type, entity_id, field_group)
+        evidence = self._delegate.resolve(*key)
+        self._evidence_by_key[key] = evidence
+        return evidence
+
+    def freeze(self) -> ScopedCatalogEvidenceResolver:
+        return ScopedCatalogEvidenceResolver(self._evidence_by_key)
 
 
 @dataclass(frozen=True)

@@ -24,6 +24,7 @@ from app.domain.search_refinement import (
     RefinementProposal,
     RefinementValidationError,
     ValidatedRefinementProposal,
+    synthesized_require_factor_ids,
     validate_refinement_proposal,
 )
 from app.domain.search_refinement_presentation import (
@@ -287,7 +288,7 @@ def generate_refinement_proposals(
         brief[:MAX_UNTRUSTED_BRIEF_CHARACTERS] if brief is not None else None
     )
     eligible_provider_topics = presentation.provider_topics(
-        _clarifiable_factor_ids(policy)
+        _clarifiable_factor_ids(policy) - synthesized_require_factor_ids(intent)
     )
     context = build_refinement_context(
         brief=bounded_untrusted_brief,

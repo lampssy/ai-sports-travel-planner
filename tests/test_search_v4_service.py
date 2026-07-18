@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
+import app.domain.search_refinement_snapshot as refinement_snapshot_module
 from app.api.routes import router
 from app.data.audit_search_factor_readiness import DEFAULT_TRUST_MANIFEST_PATH
 from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
@@ -34,10 +35,14 @@ from app.domain.search_refinement import (
     RefinementImpact,
     RefinementOption,
     RefinementProposal,
+    RefinementValidationError,
     RefinementVariantOutcome,
     ValidatedRefinementProposal,
     apply_refinement_option,
     validate_refinement_proposal,
+)
+from app.domain.search_refinement_presentation import (
+    load_refinement_presentation_policy,
 )
 from app.domain.search_refinement_snapshot import (
     RefinementBaselineCandidate,
@@ -273,6 +278,28 @@ def _assert_all_option_replay_matches_full_search(
             if expected_preview is not None
             else None
         )
+
+
+def _registered_positive_presence_proposal(factor_id: str) -> RefinementProposal:
+    presentation = load_refinement_presentation_policy()
+    topic = presentation.topic_by_id[factor_id]
+    options = []
+    for answer_id in topic.fallback_answer_ids:
+        resolved = presentation.resolve_answer_ids((answer_id,))
+        options.append(
+            RefinementOption(
+                label=resolved.label,
+                description=resolved.description,
+                factor_preference_patches=resolved.factor_preferences,
+                objective_patches=resolved.objectives,
+            )
+        )
+    return RefinementProposal(
+        question_id=f"{factor_id}-require-equivalence",
+        question=topic.fallback_question,
+        reason=topic.fallback_reason,
+        options=tuple(options),
+    )
 
 
 def _climatology_row(
@@ -1252,6 +1279,7 @@ def test_refinement_snapshot_replay_graph_excludes_intent_and_origin_text() -> N
     assert lookup.snapshot is not None
     retained_values = tuple(_walk_object_graph(lookup.snapshot))
     assert not any(isinstance(value, SearchIntent) for value in retained_values)
+    assert not any(isinstance(value, CatalogTrustManifest) for value in retained_values)
     assert private_origin not in {
         value for value in retained_values if isinstance(value, str)
     }
@@ -1447,6 +1475,135 @@ def test_refinement_replay_makes_neutral_categorical_raw_variation_actionable() 
         trust_manifest=manifest,
         policy=lookup.snapshot.policy,
     )
+
+
+@pytest.mark.parametrize(
+    "factor_id",
+    (
+        "marked_freeride_routes",
+        "snow_park",
+        "night_skiing",
+        "glacier_terrain",
+        "snowmaking_availability",
+    ),
+)
+def test_require_answer_replay_matches_full_narrowed_cohort(
+    factor_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    intent = _intent().model_copy(
+        update={
+            "constraints": _intent().constraints.model_copy(
+                update={"location": LocationScope(country="Austria")}
+            )
+        }
+    )
+    store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=store,
+    )
+    lookup = store.get(
+        baseline.baseline_fingerprint,
+        canonical_search_intent_digest(intent),
+    )
+    assert lookup.snapshot is not None
+    proposal = _registered_positive_presence_proposal(factor_id)
+    derive_calls: list[int] = []
+    original_derive_numeric_bounds = refinement_snapshot_module.derive_numeric_bounds
+
+    def derive_numeric_bounds(**kwargs):
+        derive_calls.append(len(kwargs["candidates"]))
+        return original_derive_numeric_bounds(**kwargs)
+
+    monkeypatch.setattr(
+        refinement_snapshot_module,
+        "derive_numeric_bounds",
+        derive_numeric_bounds,
+    )
+
+    validated = validate_refinement_proposal(
+        proposal=proposal,
+        intent=intent,
+        candidates=search_v4_service._refinement_states(lookup.snapshot.candidates),
+        policy=lookup.snapshot.policy,
+    )
+    assert len(derive_calls) == len(proposal.options)
+
+    _assert_all_option_replay_matches_full_search(
+        validated=validated,
+        intent=intent,
+        baseline_candidates=lookup.snapshot.candidates,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        policy=lookup.snapshot.policy,
+    )
+
+
+def test_production_refinement_rejects_relaxing_synthesized_require() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    base_intent = _intent().model_copy(
+        update={
+            "constraints": _intent().constraints.model_copy(
+                update={"location": LocationScope(country="Austria")}
+            )
+        }
+    )
+    intent = base_intent.model_copy(
+        update={
+            "factor_preferences": (
+                FactorPreferencePatch(
+                    factor_id="marked_freeride_routes",
+                    mode="require",
+                ),
+            )
+        }
+    )
+    store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=store,
+    )
+    lookup = store.get(
+        baseline.baseline_fingerprint,
+        canonical_search_intent_digest(intent),
+    )
+    assert lookup.snapshot is not None
+    proposal = _registered_positive_presence_proposal("marked_freeride_routes")
+    relaxed_intent = apply_refinement_option(
+        intent,
+        proposal.options[-1],
+        lookup.snapshot.policy,
+    )
+    relaxed = search_v4_service._evaluate_search(
+        intent=relaxed_intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        policy=lookup.snapshot.policy,
+    )
+    assert len(relaxed.ordered) > len(lookup.snapshot.candidates)
+
+    with pytest.raises(RefinementValidationError, match="widen"):
+        validate_refinement_proposal(
+            proposal=proposal,
+            intent=intent,
+            candidates=search_v4_service._refinement_states(lookup.snapshot.candidates),
+            policy=lookup.snapshot.policy,
+        )
 
 
 def test_exact_date_snowmaking_replay_updates_trip_window_snow_fit() -> None:
@@ -1914,6 +2071,48 @@ def test_refinement_service_fails_closed_when_snapshot_lacks_replay_state(
     assert response.refinement_status == "temporarily_unavailable"
     assert response.fallback_used is False
     assert response.refinements == ()
+
+
+def test_capacity_rejection_keeps_search_results_and_refinement_fails_closed() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    intent = _intent()
+    snapshot_store = SearchRefinementSnapshotStore(max_candidate_replay_states=1)
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+    try:
+        baseline = search_trip_configurations(
+            intent=intent,
+            catalog_snapshot=snapshot,
+            trust_manifest=manifest,
+            climatology_repository=_ClimatologyRepository(),
+            forecast_repository=_ForecastRepository(),
+            reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+            refinement_snapshot_store=snapshot_store,
+        )
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    assert baseline.results
+    assert snapshot_store.usage().entry_count == 0
+    assert (
+        "snowcast_search_refinement_snapshot_outcomes_total",
+        {"search_model": "search-v4", "outcome": "capacity_rejected"},
+        1,
+    ) in recorder.counters
+
+    refinement = get_search_refinements(
+        intent=intent,
+        brief="Help us decide.",
+        baseline_fingerprint=baseline.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=lambda _remaining: pytest.fail(
+            "capacity rejection must skip provider"
+        ),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert refinement.baseline_status == "unverified"
+    assert refinement.refinement_status == "temporarily_unavailable"
 
 
 def test_refinement_service_fails_closed_after_snapshot_expiry(
@@ -2613,6 +2812,50 @@ def test_exact_date_search_does_not_map_weather_evidence_without_changing_rankin
     assert _ranking_projection(result) == _ranking_projection(baseline)
     assert len(baseline_climatology.calls) == 1
     assert len(baseline_forecast.calls) == 1
+
+
+def test_maximum_shape_search_snapshot_fits_global_replay_budgets() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    start = date(2027, 2, 1)
+    end = start + timedelta(days=30)
+    intent = SearchIntent(
+        constraints=SearchConstraints(
+            travel_window=TravelWindow(start_date=start, end_date=end),
+        ),
+        party=PartyContext(skill_levels=("intermediate",)),
+    )
+    store = SearchRefinementSnapshotStore()
+
+    started_at = time.perf_counter()
+    result = search_trip_configurations(
+        intent=intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_MaximumShapeClimatologyRepository(),
+        forecast_repository=_MaximumShapeForecastRepository(),
+        reference_time=datetime(2027, 2, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=store,
+    )
+    elapsed_ms = (time.perf_counter() - started_at) * 1_000
+
+    usage = store.usage()
+    print(
+        "maximum-shape snapshot: "
+        f"candidates={usage.candidate_replay_state_count}, "
+        f"weather_rows={usage.weather_row_count}, elapsed_ms={elapsed_ms:.1f}"
+    )
+    assert result.results
+    assert usage.entry_count == 1
+    assert usage.candidate_replay_state_count == result.eligible_candidate_count
+    assert 0 < usage.candidate_replay_state_count <= 2_048
+    assert 0 < usage.weather_row_count <= 8_192
+    assert (
+        store.get(
+            result.baseline_fingerprint,
+            canonical_search_intent_digest(intent),
+        ).outcome
+        == "hit"
+    )
 
 
 def test_one_area_endpoint_cost(monkeypatch: pytest.MonkeyPatch) -> None:

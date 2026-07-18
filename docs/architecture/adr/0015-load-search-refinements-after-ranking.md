@@ -51,18 +51,23 @@ web process.
 
 The snapshot contains the canonical intent SHA-256 digest, the public baseline
 fingerprint, policy and compact baseline scores, constraint facts, and the exact
-in-memory static and weather evaluator inputs used for each retained candidate.
-Those replay inputs include immutable candidate catalog entities, trust
-resolver state, normalized weather rows, selected numeric bounds, and evaluator
-context templates with the intent field deliberately omitted. They do not
-include the full `SearchIntent` or origin text, trip brief, provider credentials,
-prompts, tokens, responses, or other provider secrets. The state is
-process-local and is not serialized or persisted.
+in-memory static and weather evaluator inputs used for every candidate
+configuration that passed the initial hard constraints, subject to cache
+capacity. Those replay inputs include immutable candidate catalog entities,
+normalized weather rows, and frozen candidate-scoped catalog evidence, plus
+evaluator context templates with the intent field deliberately omitted. They do
+not retain the full trust manifest, full `SearchIntent`, origin text, trip brief,
+provider credentials, prompts, tokens, responses, or other provider secrets.
+The state is process-local and is not serialized or persisted.
 
-The store is thread-safe and process-local, uses LRU eviction, expires entries
-60 seconds after insertion, and holds at most 64 entries. The limit is a server
-handoff window for starting refinement generation, not a user answer timeout.
-The store records bounded `hit`, `miss`, `expired`, and `evicted` outcomes
+The store is thread-safe and process-local, actively reclaims entries 60 seconds
+after insertion through one cancellable scheduler, and uses global LRU limits of
+64 entries, 2,048 candidate replay states, and 8,192 unique retained
+climatology/forecast rows. Shared rows count once within one snapshot and again
+in distinct snapshots. A snapshot that cannot fit by itself is not retained;
+the ranking remains valid and only optional refinement becomes unavailable. The
+60-second lifetime is a server handoff window for starting refinement
+generation, not a user answer timeout. The store records bounded outcomes
 without attaching intent, brief, fingerprint, candidate, or client identifiers.
 
 After results render, the web client calls `POST /api/search/refinements` with
@@ -72,10 +77,15 @@ handoff must match the stored fingerprint and the SHA-256 digest recomputed from
 the request's canonical intent. Canonical serialization defines the equality
 binding; no full intent is stored and no separate typed-equality check occurs.
 The public fingerprint alone is never trusted. The endpoint generates and
-validates optional refinement proposals from that snapshot. For every answer
-variant it rebinds the retained contexts to the variant `SearchIntent`, calls
-the same registered static and weather factor evaluators as ranking, and then
-scores those replayed evaluations. Replayed static snowmaking evidence is
+validates optional refinement proposals from that snapshot. Replay is
+narrow-only: it rejects any proposal option that could relax an existing
+synthesized `require` and reintroduce a candidate absent from the initial
+cohort, while explicit constraint requirements remain authoritative and new
+requirements may narrow the cohort. For every accepted answer variant, replay
+first resolves eligibility across the retained cohort, derives shared numeric
+bounds exactly once from the variant-eligible candidates, rebinds the retained
+contexts to the variant `SearchIntent`, and calls the same registered static and
+weather factor evaluators as ranking. Replayed static snowmaking evidence is
 supplied to the existing weather evaluator so cross-factor trip-window snow
 effects remain exact. Refinement never reruns candidate acquisition, catalog
 loading, climatology or forecast repository queries, routing, or any
@@ -134,7 +144,9 @@ copy, and resolves the selected IDs to typed factor-preference or objective
 patches. Raw provider patches never cross this boundary, and group-priority
 refinement questions are not generated in this slice. Every option in a
 multi-topic question contains exactly one registered answer for every selected
-topic; asymmetric options are rejected independently from valid siblings.
+topic; asymmetric options are rejected independently from valid siblings. All
+registry-owned fallback questions, reasons, answer labels, and answer
+descriptions are deterministically safety-validated at load time.
 
 Deterministic zero-result recovery remains part of the ranking response because
 it is necessary to explain hard-constraint failure. Optional preference
@@ -165,9 +177,9 @@ explicit progressive loading lifecycle.
 Refinement proposals, actionability, materiality, and previews use evaluator
 results replayed from the exact bounded baseline behind the ranking the user
 sees. Achieving that consistency intentionally retains referenced catalog,
-trust, and normalized weather evaluator inputs in process for up to 60 seconds
-and adds bounded memory, expiry, eviction, and concurrency behavior that must
-be tested and observed.
+candidate-scoped trust evidence, and normalized weather evaluator inputs in
+process for up to 60 seconds and adds bounded memory, active expiry, eviction,
+and concurrency behavior that must be tested and observed.
 
 Expiry, eviction, deploy, or restart can make optional refinement temporarily
 unavailable, but never invalidates the displayed ranking or triggers hidden
@@ -197,10 +209,11 @@ sticky routing before horizontal scale.
 
 ## Revisit When
 
-Reconsider the 60-second TTL, 64-entry bound, and process-local ownership only
-from measured hit, miss, expiry, eviction, memory, and latency evidence. Choose
-sticky routing, shared state, or a redesigned stateless handoff before running
-multiple web processes, and reconsider persistence only if cross-device or
-long-lived exact search sessions become a product requirement. Replace the
+Reconsider the 60-second TTL, 64-entry bound, 2,048-candidate budget,
+8,192-weather-row budget, and process-local ownership only from measured hit,
+miss, expiry, eviction, capacity rejection, memory, and latency evidence.
+Choose sticky routing, shared state, or a redesigned stateless handoff before
+running multiple web processes, and reconsider persistence only if cross-device
+or long-lived exact search sessions become a product requirement. Replace the
 local limiter with a shared edge or datastore-backed limiter before horizontal
 scale or when measured legitimate traffic approaches its configured bounds.
