@@ -191,22 +191,27 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
         "fallback_question",
         "approved_question_vocabulary",
         "grounding_terms",
-        "allowed_preference_question_forms",
+        "allowed_preference_question_shapes",
         "coverage_ratio",
         "trusted_non_neutral_count",
         "answers",
     }
     assert {
-        "importance_or_priority",
-        "preference",
-        "matter",
-        "desired_kind_type_or_pace",
-        "add_value_or_improve_trip",
-        "influence_choice",
-        "rather",
-        "ease",
-    } == set(topic["allowed_preference_question_forms"])
-    assert "allowed_preference_question_form" in str(call["system_prompt"])
+        "How important is/are <grounded topic> to you/for your trip?",
+        "How much should/does <grounded topic> matter/influence your choice?",
+        "Would you prefer/like/want <grounded choice>?",
+        "Would you rather <grounded choice>?",
+        (
+            "Would <grounded topic> matter to you/improve your trip/"
+            "add value to your trip?"
+        ),
+        "Does <grounded topic> matter to you/for your trip?",
+        "Is/Are <grounded topic> important to you/for your trip?",
+        ("What kind/type/pace/atmosphere ... would you prefer/like/want?"),
+        "Which ... would you prefer/choose/rather have?",
+        "How easy should <grounded access> be?",
+    } == set(topic["allowed_preference_question_shapes"])
+    assert "allowed_preference_question_shape" in str(call["system_prompt"])
 
 
 def test_refinement_uses_compact_answer_id_only_provider_schema() -> None:

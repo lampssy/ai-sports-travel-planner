@@ -62,16 +62,85 @@ _QUESTION_START = re.compile(
     flags=re.IGNORECASE,
 )
 _WORD_TOKEN = re.compile(r"[^\W\d_]+(?:['’‘][^\W\d_]+)?", flags=re.UNICODE)
-_ALLOWED_QUESTION_PUNCTUATION = frozenset({"?", "'", "’", "‘", "-", ","})
-_ALLOWED_PREFERENCE_QUESTION_FORMS = (
-    "importance_or_priority",
-    "preference",
-    "matter",
-    "desired_kind_type_or_pace",
-    "add_value_or_improve_trip",
-    "influence_choice",
-    "rather",
-    "ease",
+_ALLOWED_QUESTION_PUNCTUATION = frozenset({"?", "'", "’", "‘", "-"})
+_ALLOWED_PREFERENCE_QUESTION_SHAPES = (
+    "How important is/are <grounded topic> to you/for your trip?",
+    "How much should/does <grounded topic> matter/influence your choice?",
+    "Would you prefer/like/want <grounded choice>?",
+    "Would you rather <grounded choice>?",
+    ("Would <grounded topic> matter to you/improve your trip/add value to your trip?"),
+    "Does <grounded topic> matter to you/for your trip?",
+    "Is/Are <grounded topic> important to you/for your trip?",
+    "What kind/type/pace/atmosphere ... would you prefer/like/want?",
+    "Which ... would you prefer/choose/rather have?",
+    "How easy should <grounded access> be?",
+)
+_PREFERENCE_QUESTION_PATTERNS = tuple(
+    re.compile(pattern, flags=re.IGNORECASE)
+    for pattern in (
+        r"How important (?:is|are) (?P<body>.+) (?:to you|for your trip)\?",
+        (
+            r"How much (?:should|does) (?P<body>.+) "
+            r"(?:matter|influence your choice)\?"
+        ),
+        r"Would you (?:prefer|like|want) (?P<body>.+)\?",
+        r"Would you rather (?P<body>.+)\?",
+        (
+            r"Would (?P<body>.+) "
+            r"(?:matter to you|improve your trip|add value to your trip)\?"
+        ),
+        r"Does (?P<body>.+) matter (?:to you|for your trip)\?",
+        r"(?:Is|Are) (?P<body>.+) important (?:to you|for your trip)\?",
+        (
+            r"What (?:kind|type|pace|atmosphere)(?: of)? (?P<body>.+) "
+            r"would you (?:prefer|like|want)\?"
+        ),
+        r"Which (?P<body>.+) would you (?:prefer|choose|rather have)\?",
+        r"How easy should (?P<body>.+) be\?",
+    )
+)
+_QUESTION_BODY_DISALLOWED_TOKENS = frozenset(
+    {
+        "add",
+        "am",
+        "and",
+        "are",
+        "because",
+        "but",
+        "can",
+        "could",
+        "did",
+        "do",
+        "does",
+        "had",
+        "has",
+        "have",
+        "if",
+        "important",
+        "importance",
+        "improve",
+        "influence",
+        "is",
+        "like",
+        "may",
+        "matter",
+        "matters",
+        "might",
+        "must",
+        "prefer",
+        "preference",
+        "priority",
+        "rather",
+        "shall",
+        "should",
+        "was",
+        "were",
+        "when",
+        "while",
+        "will",
+        "would",
+        "want",
+    }
 )
 _GENERIC_QUESTION_VOCABULARY = frozenset(
     {
@@ -85,6 +154,7 @@ _GENERIC_QUESTION_VOCABULARY = frozenset(
         "by",
         "could",
         "choice",
+        "choose",
         "do",
         "does",
         "easy",
@@ -133,8 +203,10 @@ _GENERIC_QUESTION_VOCABULARY = frozenset(
         "with",
         "without",
         "would",
+        "want",
         "you",
         "your",
+        "atmosphere",
     }
 )
 _SENSITIVE_BRIEF_MARKERS = frozenset(
@@ -281,8 +353,8 @@ class RefinementPresentationPolicy(_PresentationModel):
                     sorted(self.approved_question_vocabulary((topic.topic_id,)))
                 ),
                 "grounding_terms": tuple(sorted(self.grounding_terms(topic.topic_id))),
-                "allowed_preference_question_forms": (
-                    _ALLOWED_PREFERENCE_QUESTION_FORMS
+                "allowed_preference_question_shapes": (
+                    _ALLOWED_PREFERENCE_QUESTION_SHAPES
                 ),
                 "answers": tuple(
                     {
@@ -487,9 +559,9 @@ def _safe_question(
         len(question) <= _MAX_INTERACTION_QUESTION_CHARACTERS
         and question.endswith("?")
         and _QUESTION_START.match(question) is not None
-        and _matches_allowed_preference_question_form(question_tokens)
-        and all(question_tokens & terms for terms in selected_grounding_terms)
         and question_tokens <= approved_vocabulary
+        and _matches_allowed_preference_question_form(question)
+        and all(question_tokens & terms for terms in selected_grounding_terms)
         and not question_tokens & _UNSAFE_QUESTION_TERMS
         and _has_only_allowed_question_characters(question)
         and not _contains_digit_or_percent(question)
@@ -528,32 +600,17 @@ def _has_only_allowed_question_characters(question: str) -> bool:
 
 
 def _matches_allowed_preference_question_form(
-    question_tokens: frozenset[str],
+    question: str,
 ) -> bool:
-    if not question_tokens & {"you", "your", "trip", "choice", "dates"}:
+    if any(separator in question for separator in (",", ";", ":")):
         return False
-    if question_tokens & {"important", "importance", "priority"}:
-        return True
-    if question_tokens & {"kind", "type", "pace"} and question_tokens & {
-        "prefer",
-        "like",
-        "suit",
-    }:
-        return True
-    if question_tokens & {"prefer", "preference", "like", "favour", "favor"}:
-        return True
-    if question_tokens & {"matter", "matters"}:
-        return True
-    if {"add", "value"} <= question_tokens or {"improve", "trip"} <= question_tokens:
-        return True
-    if {"influence", "choice"} <= question_tokens:
-        return True
-    if "rather" in question_tokens:
-        return True
-    return bool(
-        question_tokens & {"easy", "easier", "ease"}
-        and question_tokens & {"how", "should", "prefer", "suit", "would"}
-    )
+    for pattern in _PREFERENCE_QUESTION_PATTERNS:
+        match = pattern.fullmatch(question)
+        if match is None:
+            continue
+        body_tokens = frozenset(_tokens(match.group("body")))
+        return bool(body_tokens) and not body_tokens & _QUESTION_BODY_DISALLOWED_TOKENS
+    return False
 
 
 def _brief_requires_registered_fallback(brief: str | None) -> bool:

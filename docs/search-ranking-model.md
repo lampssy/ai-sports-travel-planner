@@ -916,9 +916,14 @@ topic/answer-ID structure and bounded question text supported by Gemini.
 Pydantic size and shape validation plus presentation-registry and deterministic
 policy validation remain authoritative. The server accepts provider question
 wording only when it uses an approved traveller-preference or priority form,
-selected-topic vocabulary, and the minimal allowed Unicode letter, mark,
-whitespace, and punctuation policy. Otherwise it uses registry-backed traveller
-copy and always supplies the configured single-topic or multi-topic reason. A
+anchored as one complete question with no appended clause or comma, semicolon,
+or colon; uses selected-topic vocabulary; and follows the minimal allowed
+Unicode letter, mark, whitespace, and punctuation policy. Factual `have`, `is`,
+`are`, or `does` claims cannot be rescued by an incidental preference word or a
+conjoined preference clause. Otherwise the server uses registry-backed
+traveller copy, which is config-validated rather than passed through the
+generated-copy grammar, and always supplies the configured single-topic or
+multi-topic reason. A
 bounded brief containing a configured sensitive, credential, payment, or
 contact marker forces that fallback for the request; candidate IDs, external
 actions, unsupported claims, internal policy terms, numeric claims, malformed

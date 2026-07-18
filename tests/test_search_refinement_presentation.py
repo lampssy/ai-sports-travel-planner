@@ -206,7 +206,7 @@ def test_multiple_topics_use_generic_copy_only_for_unsafe_fields() -> None:
 
 def test_blocked_terms_and_candidate_ids_match_whole_tokens_only() -> None:
     presentation = load_refinement_presentation_policy()
-    question = "What traditional mountain village or resort would you prefer?"
+    question = "Which traditional mountain village or resort would you prefer?"
 
     assert resolve_interaction_copy(
         question,
@@ -245,36 +245,52 @@ def test_factual_selected_topic_question_uses_registered_fallback() -> None:
 
 
 @pytest.mark.parametrize(
-    ("topic_id", "question"),
+    ("topic_ids", "question"),
     [
         (
-            "trip_window_snow_fit",
-            "Are dependable snow conditions a priority for your dates?",
+            ("trip_window_snow_fit",),
+            "How important are dependable snow conditions for your trip?",
         ),
         (
-            "snowmaking_availability",
-            "Does snowmaking backup matter for your trip when natural snow is weak?",
-        ),
-        (
-            "night_skiing",
-            "Would recurring night skiing improve your trip?",
-        ),
-        (
-            "pass_price_per_day",
+            ("pass_price_per_day",),
             "How much should lift-pass price influence your choice?",
         ),
         (
-            "local_pace",
-            "What pace would suit you around your accommodation base?",
+            ("accessible_terrain_scale",),
+            "Would you prefer more terrain covered by the selected pass?",
         ),
         (
-            "stay_base_access",
+            ("pass_terrain_value",),
+            "Would you rather maximise terrain covered for the pass price?",
+        ),
+        (
+            ("night_skiing",),
+            "Would recurring night skiing add value to your trip?",
+        ),
+        (
+            ("glacier_terrain",),
+            "Does glacier terrain matter to you?",
+        ),
+        (
+            ("trip_window_snow_fit",),
+            "Are dependable snow conditions important to you?",
+        ),
+        (
+            ("development_style",),
+            "What kind of village or resort development style would you prefer?",
+        ),
+        (
+            ("development_style",),
+            "Which traditional mountain village would you choose?",
+        ),
+        (
+            ("stay_base_access",),
             "How easy should access from your accommodation base be?",
         ),
     ],
 )
 def test_registered_preference_question_forms_accept_safe_paraphrases(
-    topic_id: str,
+    topic_ids: tuple[str, ...],
     question: str,
 ) -> None:
     presentation = load_refinement_presentation_policy()
@@ -282,12 +298,93 @@ def test_registered_preference_question_forms_accept_safe_paraphrases(
     assert (
         resolve_interaction_copy(
             question,
-            (topic_id,),
+            topic_ids,
             (),
             presentation,
         )[0]
         == question
     )
+
+
+@pytest.mark.parametrize(
+    ("topic_ids", "question", "fallback_question"),
+    [
+        (
+            ("stay_base_access",),
+            "Would your accommodation base have easy access to the slopes?",
+            "How easy should it be to reach the slopes from where you stay?",
+        ),
+        (
+            ("glacier_terrain", "trip_window_snow_fit"),
+            (
+                "Does glacier terrain have dependable snow conditions for your "
+                "trip, and does this matter?"
+            ),
+            "Which of these trip preferences matters most to you?",
+        ),
+        (
+            ("glacier_terrain", "trip_window_snow_fit"),
+            (
+                "Does glacier terrain have dependable snow conditions for your trip "
+                "and is this important?"
+            ),
+            "Which of these trip preferences matters most to you?",
+        ),
+        (
+            ("glacier_terrain", "trip_window_snow_fit"),
+            (
+                "Does glacier terrain have dependable snow conditions for your trip "
+                "and is this a priority?"
+            ),
+            "Which of these trip preferences matters most to you?",
+        ),
+        (
+            ("glacier_terrain", "trip_window_snow_fit"),
+            (
+                "Does glacier terrain have dependable snow conditions for your trip "
+                "and does this matter?"
+            ),
+            "Which of these trip preferences matters most to you?",
+        ),
+        (
+            ("glacier_terrain",),
+            "Would glacier terrain matter to you improve your trip?",
+            "Does glacier terrain matter for this trip?",
+        ),
+    ],
+)
+def test_dynamic_question_rejects_factual_or_appended_preference_clauses(
+    topic_ids: tuple[str, ...],
+    question: str,
+    fallback_question: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+
+    assert (
+        resolve_interaction_copy(
+            question,
+            topic_ids,
+            (),
+            presentation,
+        )[0]
+        == fallback_question
+    )
+
+
+def test_configured_fallback_questions_bypass_generated_copy_grammar() -> None:
+    presentation = load_refinement_presentation_policy()
+
+    validate_refinement_presentation_policy(presentation, load_search_policy())
+    for topic in presentation.topics:
+        assert (
+            resolve_interaction_copy(
+                "This is not a generated preference question.",
+                (topic.topic_id,),
+                (),
+                presentation,
+            )[0]
+            == topic.fallback_question
+        )
 
 
 @pytest.mark.parametrize(
@@ -315,9 +412,7 @@ def test_dynamic_question_allows_registered_minimal_punctuation(
     apostrophe: str,
 ) -> None:
     presentation = load_refinement_presentation_policy()
-    question = (
-        "Would you prefer traditional mountain village, or purpose-built ski resort?"
-    )
+    question = "Would you prefer a traditional mountain village?"
 
     assert presentation_module._has_only_allowed_question_characters(
         f"traveller{apostrophe}s preference?"
@@ -330,6 +425,24 @@ def test_dynamic_question_allows_registered_minimal_punctuation(
             presentation,
         )[0]
         == question
+    )
+
+
+@pytest.mark.parametrize("separator", [",", ";", ":"])
+def test_dynamic_question_rejects_clause_separators(separator: str) -> None:
+    presentation = load_refinement_presentation_policy()
+
+    assert (
+        resolve_interaction_copy(
+            (
+                "Would you prefer a traditional mountain village"
+                f"{separator} or a purpose-built ski resort?"
+            ),
+            ("development_style",),
+            (),
+            presentation,
+        )[0]
+        == "What kind of place would you prefer to stay in?"
     )
 
 
