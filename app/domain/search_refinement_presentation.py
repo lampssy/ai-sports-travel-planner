@@ -235,21 +235,13 @@ _SENSITIVE_BRIEF_MARKERS = frozenset(
 )
 _SENSITIVE_PUBLIC_COPY_TERMS = _SENSITIVE_BRIEF_MARKERS
 _EXTERNAL_ACTION_PUBLIC_COPY_MARKERS = frozenset({"external", "offer"})
-_EXTERNAL_ACTION_PUBLIC_COPY_VERBS = frozenset(
+_NON_TRANSACTION_EXTERNAL_ACTION_VERBS = frozenset(
     {
-        "book",
-        "buy",
         "click",
-        "download",
         "follow",
-        "install",
-        "pay",
         "provide",
-        "purchase",
-        "reserve",
         "send",
         "share",
-        "subscribe",
         "submit",
         "upload",
         "visit",
@@ -302,6 +294,68 @@ _PAYMENT_CREDENTIAL_PUBLIC_COPY_TERMS = frozenset(
         "wallet",
     }
 )
+_PAYMENT_PROVIDER_PUBLIC_COPY_TERMS = frozenset(
+    {
+        "alipay",
+        "cashapp",
+        "coinbase",
+        "klarna",
+        "metamask",
+        "paypal",
+        "revolut",
+        "stripe",
+        "venmo",
+        "wechatpay",
+    }
+)
+_PAYMENT_PROVIDER_TOKEN_PATTERN = re.compile(
+    r"(?:[a-z]+pay|pay[a-z]+)",
+    flags=re.IGNORECASE,
+)
+_SAFE_NON_DIRECTIVE_TRANSACTION_PATTERNS = (
+    re.compile(r"\bpass\s+purchase\s+timing\b", flags=re.IGNORECASE),
+    re.compile(
+        r"\blift[-\s]+pass\s+purchase\s+(?:planning|price\s+comparison)\b",
+        flags=re.IGNORECASE,
+    ),
+)
+_TRANSACTION_DIRECTIVE_OR_URGENCY_TERMS = frozenset(
+    {
+        "complete",
+        "confirm",
+        "continue",
+        "enter",
+        "finalise",
+        "finalize",
+        "finish",
+        "immediate",
+        "immediately",
+        "make",
+        "now",
+        "place",
+        "proceed",
+        "start",
+        "submit",
+        "today",
+        "urgent",
+        "urgently",
+    }
+)
+_TRANSACTION_ACTION_PATTERN = re.compile(
+    r"\b(?:"
+    r"reserv(?:e|es|ed|ing|ation|ations)|"
+    r"book(?:s|ed|ing|ings)?|"
+    r"buy(?:s|ing)?|bought|"
+    r"purchas(?:e|es|ed|ing)|"
+    r"pay(?:s|ing|ment|ments)?|paid|"
+    r"order(?:s|ed|ing)?|"
+    r"subscrib(?:e|es|ed|ing)|subscription(?:s)?|"
+    r"download(?:s|ed|ing)?|"
+    r"install(?:s|ed|ing|ation|ations)?|"
+    r"checkout(?:s)?|check[-\s]+out(?:s)?"
+    r")\b",
+    flags=re.IGNORECASE,
+)
 _URI_SCHEME_PATTERN = re.compile(
     r"(?<![\w.+-])[a-z][a-z0-9+.-]*:(?=\S)",
     flags=re.IGNORECASE,
@@ -310,7 +364,7 @@ _WWW_PATTERN = re.compile(r"\bwww\.\S+", flags=re.IGNORECASE)
 _BARE_DOMAIN_PATTERN = re.compile(
     r"(?<![@\w-])"
     r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
-    r"(?:ai|app|at|biz|ch|co|com|de|dev|edu|eu|fr|gov|info|io|me|net|org|pl|travel|uk)"
+    r"[a-z]{2,63}"
     r"(?![\w-])",
     flags=re.IGNORECASE,
 )
@@ -766,13 +820,15 @@ def _public_copy_safety_violation(
     tokens = _tokens(text)
     token_set = frozenset(tokens)
     if (
-        token_set & _PAYMENT_CREDENTIAL_PUBLIC_COPY_TERMS
+        token_set
+        & (_PAYMENT_CREDENTIAL_PUBLIC_COPY_TERMS | _PAYMENT_PROVIDER_PUBLIC_COPY_TERMS)
+        or any(_PAYMENT_PROVIDER_TOKEN_PATTERN.fullmatch(token) for token in tokens)
         or _PAYMENT_CREDENTIAL_PATTERN.search(text) is not None
     ):
         return "payment_credential"
     if token_set & _SENSITIVE_PUBLIC_COPY_TERMS:
         return "sensitive_request"
-    if _contains_external_action(tokens):
+    if _contains_external_action(text, tokens):
         return "external_action"
     if _contains_unsupported_claim(tokens):
         return "unsupported_claim"
@@ -789,11 +845,21 @@ def _contains_machine_id_shape(text: str) -> bool:
     )
 
 
-def _contains_external_action(tokens: Sequence[str]) -> bool:
+def _contains_external_action(text: str, tokens: Sequence[str]) -> bool:
     if frozenset(tokens) & _EXTERNAL_ACTION_PUBLIC_COPY_MARKERS:
         return True
+    has_transaction_shape = _TRANSACTION_ACTION_PATTERN.search(text) is not None
+    transaction_copy = text
+    for safe_pattern in _SAFE_NON_DIRECTIVE_TRANSACTION_PATTERNS:
+        transaction_copy = safe_pattern.sub(" ", transaction_copy)
+    if _TRANSACTION_ACTION_PATTERN.search(transaction_copy) is not None:
+        return True
+    if has_transaction_shape and (
+        frozenset(tokens) & _TRANSACTION_DIRECTIVE_OR_URGENCY_TERMS
+    ):
+        return True
     return any(
-        token in _EXTERNAL_ACTION_PUBLIC_COPY_VERBS
+        token in _NON_TRANSACTION_EXTERNAL_ACTION_VERBS
         and (index == 0 or tokens[index - 1] in _EXTERNAL_ACTION_CONTEXT_TERMS)
         for index, token in enumerate(tokens)
     )

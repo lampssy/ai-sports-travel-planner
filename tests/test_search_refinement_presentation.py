@@ -31,6 +31,12 @@ _CONFIGURED_PUBLIC_COPY_FIELDS = (
     ("answers", "description"),
 )
 
+_SAFE_NON_DIRECTIVE_TRANSACTION_COPY = (
+    "Pass purchase timing",
+    "Lift-pass purchase planning",
+    "Lift-pass purchase price comparison",
+)
+
 _ISOLATED_UNSAFE_PUBLIC_COPY = (
     (
         "url",
@@ -53,7 +59,7 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
     (
         "payment",
         "Payment preference",
-        "sensitive_request",
+        "payment_credential",
         "unsafe traveller-facing copy",
     ),
     (
@@ -213,6 +219,162 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
     (
         "install_action",
         "Install this app",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "booking_it_domain",
+        "Details at booking.it",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "booking_ski_domain",
+        "Details at booking.ski",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "snowcast_ski_domain",
+        "Details at snowcast.ski",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "example_xyz_domain",
+        "Details at example.xyz",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "paypal_account",
+        "Enter your PayPal account to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "googlepay_account",
+        "Enter your GooglePay account to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "make_purchase",
+        "Make a purchase now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "complete_booking",
+        "Complete this booking now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "order_pass",
+        "Order this lift pass now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "proceed_checkout",
+        "Proceed with checkout now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "kindly_reserve",
+        "Kindly reserve this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "immediately_book",
+        "Immediately book this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "confirm_order",
+        "Confirm this order today",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "place_order",
+        "Place an order today",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "finish_checkout",
+        "Finish the checkout today",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "start_subscription",
+        "Start a subscription today",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "purchasing_inflection",
+        "Purchasing this pass continues externally",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "booked_inflection",
+        "Booked this option externally",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "buying_inflection",
+        "Buying this option continues externally",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "paid_inflection",
+        "Paid for this option externally",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "ordering_inflection",
+        "Ordering this option continues externally",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "subscribed_inflection",
+        "Subscribed for updates externally",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "downloaded_inflection",
+        "Downloaded this guide externally",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "installing_inflection",
+        "Installing this app continues externally",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "safe_phrase_with_transaction_trigger",
+        "Make pass purchase timing final now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "safe_phrase_with_urgency",
+        "Immediately review lift-pass purchase planning",
         "external_action",
         "unsafe traveller-facing copy",
     ),
@@ -440,6 +602,32 @@ def test_configured_public_copy_allows_natural_single_hyphen_words(
     ),
 )
 def test_configured_public_copy_allows_ordinary_planning_vocabulary(
+    section: str,
+    field: str,
+    safe_copy: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    assert (
+        presentation_module._public_copy_safety_violation(
+            safe_copy,
+            blocked_tokens=presentation.blocked_copy_terms,
+        )
+        is None
+    )
+    payload = presentation.model_dump(mode="python")
+    payload[section][0][field] = safe_copy
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+@pytest.mark.parametrize(
+    ("section", "field"),
+    _CONFIGURED_PUBLIC_COPY_FIELDS,
+    ids=("fallback-question", "fallback-reason", "answer-label", "answer-description"),
+)
+@pytest.mark.parametrize("safe_copy", _SAFE_NON_DIRECTIVE_TRANSACTION_COPY)
+def test_every_configured_public_copy_field_allows_narrow_purchase_planning_contexts(
     section: str,
     field: str,
     safe_copy: str,
