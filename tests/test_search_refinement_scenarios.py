@@ -191,8 +191,18 @@ def test_terrain_versus_access_compiles_distinct_typed_variants() -> None:
                     "from where you stay?"
                 ),
                 "options": [
-                    {"answer_ids": ["accessible_terrain_scale.as_much_as_possible"]},
-                    {"answer_ids": ["stay_base_access.as_easy_as_possible"]},
+                    {
+                        "answer_ids": [
+                            "accessible_terrain_scale.as_much_as_possible",
+                            "stay_base_access.low",
+                        ]
+                    },
+                    {
+                        "answer_ids": [
+                            "accessible_terrain_scale.low",
+                            "stay_base_access.as_easy_as_possible",
+                        ]
+                    },
                 ],
             }
         ]
@@ -205,7 +215,10 @@ def test_terrain_versus_access_compiles_distinct_typed_variants() -> None:
     assert options[0].factor_preference_patches[0].factor_id == (
         "accessible_terrain_scale"
     )
-    assert options[1].factor_preference_patches[0].factor_id == "stay_base_access"
+    assert tuple(patch.factor_id for patch in options[1].factor_preference_patches) == (
+        "accessible_terrain_scale",
+        "stay_base_access",
+    )
     assert options[0].factor_preference_patches != options[1].factor_preference_patches
     assert all(
         variant.intent_changed for variant in result.proposals[0].variant_outcomes

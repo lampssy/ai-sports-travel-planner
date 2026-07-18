@@ -6,9 +6,19 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.refinement_admission import RefinementAdmissionGuard
+from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
 from app.domain import search_v4_service
+from app.domain.search_constraints import CandidateLocation, ConstraintCandidateFacts
 from app.domain.search_intent_policy import SearchIntentPolicyError
-from app.domain.search_refinement_snapshot import SearchRefinementSnapshotStore
+from app.domain.search_policy import load_search_policy
+from app.domain.search_refinement_snapshot import (
+    RefinementBaselineCandidate,
+    RefinementBaselineSnapshot,
+    RefinementFactorEvaluation,
+    SearchRefinementSnapshotStore,
+    canonical_search_intent_digest,
+)
+from app.domain.search_v4_models import SearchIntent
 from app.domain.search_v4_service import (
     SearchV4RefinementResponse,
     SearchV4Response,
@@ -288,6 +298,22 @@ def test_post_search_refinements_fails_closed_when_snapshot_is_missing(
 def test_post_search_snapshot_is_consumed_by_the_followup_route(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    class _ClimatologyRepository:
+        def list_daily_rows_for_ski_areas_window(
+            self,
+            ski_area_ids: tuple[str, ...],
+            **_kwargs: object,
+        ) -> dict[tuple[str, str, str], tuple[object, ...]]:
+            return {
+                (ski_area_id, "mid", baseline): ()
+                for ski_area_id in ski_area_ids
+                for baseline in ("normal_30y", "recent_15y")
+            }
+
+    class _ForecastRepository:
+        def list_latest_daily_rows(self, **_kwargs: object) -> tuple[object, ...]:
+            return ()
+
     snapshot_store = SearchRefinementSnapshotStore()
     monkeypatch.setattr(
         search_v4_service,
@@ -301,6 +327,21 @@ def test_post_search_snapshot_is_consumed_by_the_followup_route(
             outcome="no_proposals",
             proposals=(),
         ),
+    )
+    monkeypatch.setattr(
+        search_v4_service.CatalogRepository,
+        "get_snapshot",
+        lambda _repository: load_catalog_from_path(CATALOG_PATH),
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "get_snow_climatology_repository",
+        _ClimatologyRepository,
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "WeatherForecastRepository",
+        _ForecastRepository,
     )
     monkeypatch.setattr("app.api.routes.GeminiClient", lambda **_kwargs: object())
 
@@ -323,6 +364,73 @@ def test_post_search_snapshot_is_consumed_by_the_followup_route(
         "questions_available",
         "not_needed",
     }
+
+
+def test_post_search_refinements_skips_gemini_when_questions_are_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = _request_payload()
+    intent = SearchIntent.model_validate(payload["intent"])
+    base_policy = load_search_policy()
+    policy = base_policy.model_copy(
+        update={
+            "refinement": base_policy.refinement.model_copy(update={"max_questions": 0})
+        }
+    )
+    candidate_id = "candidate"
+    snapshot_store = SearchRefinementSnapshotStore()
+    snapshot_store.put(
+        RefinementBaselineSnapshot(
+            fingerprint=payload["baseline_fingerprint"],
+            intent_digest=canonical_search_intent_digest(intent),
+            policy=policy,
+            candidates=(
+                RefinementBaselineCandidate(
+                    candidate_id=candidate_id,
+                    ski_region_id="ski-region",
+                    constraint_facts=ConstraintCandidateFacts(
+                        candidate_id=candidate_id,
+                        location=CandidateLocation(
+                            country="France",
+                            region="Savoie",
+                            ski_region_ids=("ski-region",),
+                            destination_id="destination",
+                        ),
+                    ),
+                    evaluations=(
+                        RefinementFactorEvaluation(
+                            factor_id="accessible_terrain_scale",
+                            raw_utility=0.75,
+                            neutral_utility=0.5,
+                            effective_evidence_cap=1,
+                        ),
+                    ),
+                    unscored=False,
+                ),
+            ),
+        )
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "default_refinement_snapshot_store",
+        snapshot_store,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.GeminiClient",
+        lambda **_kwargs: pytest.fail("disabled questions must not construct Gemini"),
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "build_deterministic_refinement_fallback",
+        lambda **_kwargs: pytest.fail("disabled questions must not build fallback"),
+    )
+
+    response = TestClient(app).post("/api/search/refinements", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["baseline_status"] == "current"
+    assert response.json()["refinement_status"] == "not_needed"
+    assert response.json()["refinements"] == []
 
 
 def test_post_search_refinements_rejects_before_evaluation_when_admission_denies(
@@ -496,7 +604,14 @@ def test_refinement_deadline_holds_capacity_until_worker_finishes(
     assert releases == 1
 
 
-def test_post_search_preserves_pinzolo_terrain_trust_provenance() -> None:
+def test_post_search_preserves_pinzolo_terrain_trust_provenance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        search_v4_service.CatalogRepository,
+        "get_snapshot",
+        lambda _repository: load_catalog_from_path(CATALOG_PATH),
+    )
     payload = _request_payload()
     payload["intent"] = {
         "constraints": {

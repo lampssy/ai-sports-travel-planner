@@ -170,7 +170,6 @@ def compile_refinement_selection(
             ) from error
 
     selected_factor_ids = {topic.factor_id for topic in selected_topics}
-    represented_factor_ids: set[str] = set()
     option_signatures: set[tuple[str, ...]] = set()
     visible_option_actions: dict[
         tuple[str, str],
@@ -202,6 +201,10 @@ def compile_refinement_selection(
         if not answer_factor_ids <= selected_factor_ids:
             raise RefinementValidationError(
                 "refinement answer ID belongs outside selected topics"
+            )
+        if answer_factor_ids != selected_factor_ids:
+            raise RefinementValidationError(
+                "every option must contain exactly one answer for every selected topic"
             )
         resolved = presentation.resolve_answer_ids(option.answer_ids)
         visible_copy = (
@@ -236,7 +239,6 @@ def compile_refinement_selection(
                 "refinement options with different actions must have distinct "
                 "visible copy"
             )
-        represented_factor_ids.update(answer_factor_ids)
         compiled_options.append(
             RefinementOption(
                 label=resolved.label,
@@ -246,11 +248,6 @@ def compile_refinement_selection(
                 objective_patches=resolved.objectives,
             )
         )
-    if represented_factor_ids != selected_factor_ids:
-        raise RefinementValidationError(
-            "every selected refinement topic must be represented by an option"
-        )
-
     question, reason = resolve_interaction_copy(
         selection.question,
         topic_ids,
@@ -503,9 +500,9 @@ def _system_prompt() -> str:
         "The server writes the reason. Do not "
         "mention ranking, scores, factors, groups, "
         "weights, utilities, evidence, candidates, internal IDs, or system behavior. "
-        "Select two to five options using only supplied answer IDs. You may combine "
-        "answer IDs from selected topics when the combined choice is coherent, but "
-        "never target the same topic twice in one option. Do not invent answer copy, "
+        "Select two to five options using only supplied answer IDs. Every option "
+        "must contain exactly one answer ID for every selected topic, and must "
+        "never target the same topic twice. Do not invent answer copy, "
         "patches, facts, resort claims, numeric claims, or IDs. Return strict JSON "
         "matching the schema."
     )

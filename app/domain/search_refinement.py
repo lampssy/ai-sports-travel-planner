@@ -101,6 +101,9 @@ class RefinementCandidateState:
     evaluations: tuple[FactorEvaluation, ...]
     eligible: bool = True
     eligibility_evaluator: Callable[[SearchIntent], bool] | None = None
+    evaluation_replayer: (
+        Callable[[SearchIntent], tuple[FactorEvaluation, ...]] | None
+    ) = None
 
     def __post_init__(self) -> None:
         if not self.candidate_id.strip():
@@ -136,6 +139,7 @@ class _VariantRanking:
     eligible_ids: frozenset[str]
     ordered_ids: tuple[str, ...]
     scores: Mapping[str, float]
+    evaluations_by_candidate_id: Mapping[str, tuple[FactorEvaluation, ...]]
 
 
 def apply_refinement_option(
@@ -215,7 +219,6 @@ def validate_refinement_proposal(
         raise RefinementValidationError(
             "refinement options only repeat the current intent"
         )
-    _validate_factor_actionability(proposal, candidates, policy)
     variants = tuple(
         _rank_variant(
             intent=variant_intent,
@@ -223,6 +226,11 @@ def validate_refinement_proposal(
             policy=policy,
         )
         for variant_intent in variant_intents
+    )
+    _validate_factor_actionability(
+        proposal,
+        variants,
+        policy,
     )
     impact = _measure_impact(variants, policy)
     if not impact.material:
@@ -306,7 +314,7 @@ def _require_clarifiable_factor(factor: FactorPolicy) -> None:
 
 def _validate_factor_actionability(
     proposal: RefinementProposal,
-    candidates: Sequence[RefinementCandidateState],
+    variants: Sequence[_VariantRanking],
     policy: SearchPolicy,
 ) -> None:
     factor_ids = {
@@ -320,14 +328,34 @@ def _validate_factor_actionability(
     }
     for factor_id in factor_ids:
         factor = policy.factor(factor_id)
-        evaluations = tuple(
-            evaluation
-            for candidate in candidates
-            if candidate.eligible
-            for evaluation in candidate.evaluations
-            if evaluation.factor_id == factor_id
+        relevant_variants = (
+            variant
+            for option, variant in zip(
+                proposal.options,
+                variants,
+                strict=True,
+            )
+            if any(
+                patch.factor_id == factor_id and patch.mode != "ignore"
+                for patch in option.factor_preference_patches
+            )
+            or any(
+                objective.factor_id == factor_id
+                for objective in option.objective_patches
+            )
         )
-        if not _factor_is_actionable(factor, evaluations):
+        if not any(
+            _factor_is_actionable(
+                factor,
+                tuple(
+                    evaluation
+                    for evaluations in variant.evaluations_by_candidate_id.values()
+                    for evaluation in evaluations
+                    if evaluation.factor_id == factor_id
+                ),
+            )
+            for variant in relevant_variants
+        ):
             raise RefinementValidationError(
                 f"factor is not actionable for current candidates: {factor_id}"
             )
@@ -372,6 +400,15 @@ def _rank_variant(
     candidates: Sequence[RefinementCandidateState],
     policy: SearchPolicy,
 ) -> _VariantRanking:
+    evaluations_by_candidate_id = {
+        candidate.candidate_id: (
+            candidate.evaluation_replayer(intent)
+            if candidate.evaluation_replayer is not None
+            else candidate.evaluations
+        )
+        for candidate in candidates
+        if candidate.eligible
+    }
     eligible: list[RefinementCandidateState] = []
     for candidate in candidates:
         is_eligible = (
@@ -384,7 +421,7 @@ def _rank_variant(
     scores: dict[str, float] = {}
     for candidate in eligible:
         result = score_factor_evaluations(
-            evaluations=candidate.evaluations,
+            evaluations=evaluations_by_candidate_id[candidate.candidate_id],
             intent=intent,
             policy=policy,
         )
@@ -397,6 +434,7 @@ def _rank_variant(
         eligible_ids=frozenset(candidate.candidate_id for candidate in eligible),
         ordered_ids=ordered,
         scores=scores,
+        evaluations_by_candidate_id=evaluations_by_candidate_id,
     )
 
 

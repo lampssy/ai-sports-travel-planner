@@ -838,6 +838,9 @@ single-topic semantic body must exactly equal one phrase registered for that
 topic. A multi-topic body is a controlled comparison containing exactly one
 registered phrase per selected topic, joined only by `or`, `versus`, or `rather
 than`. The server owns reason copy, answer copy, and typed intent actions.
+Every option in a multi-topic question contains exactly one registered answer
+for every selected topic. An asymmetric option set is invalid, while a valid
+sibling question can still survive independently.
 Unsafe or unregistered compositions use deterministic registry-backed
 fallback copy before the existing legality, actionability, and materiality
 gates run. Group-priority patches remain part of Search V4 but are not generated
@@ -937,14 +940,18 @@ dropped without discarding a useful question that passed every gate. The
 refinement provider receives one attempt only; no retry can extend the request
 budget.
 
-For `positive_presence`, a clarification needs at least one trustworthy
+Before actionability and materiality validation, every answer variant reruns
+the registered static and weather evaluators from the exact captured baseline
+inputs under that variant intent. For `positive_presence`, a clarification
+needs at least one trustworthy
 non-neutral candidate outcome, at least two distinct effective utilities, and
 the normal hybrid impact result; broad verified-negative coverage is not
 required. For `categorical_match`, it needs trusted variation that creates at
 least two utilities. Comparative and objective factors continue to enforce
-their applicable coverage gate. Explicit user preferences may activate a
-runtime-ready factor even when the LLM would not independently choose to ask
-about it.
+their applicable coverage gate. Each selected non-ignore factor must pass this
+gate from its replayed outcomes; a material sibling topic cannot rescue a
+meaningless factor. Explicit user preferences may activate a runtime-ready
+factor even when the LLM would not independently choose to ask about it.
 
 The LLM owns registered-topic selection and constrained question composition.
 Deterministic Planning owns public-copy safety, reasons, validity, usefulness,
@@ -984,19 +991,21 @@ compatibility; they are ignored.
 
 `POST /api/search/refinements` accepts the canonical intent, a bounded brief,
 unique bounded answered question IDs, and the ranking response's
-`baseline_fingerprint`. Ranking stores the minimum evaluated candidate state
-needed by refinement in a thread-safe process-local LRU/TTL store. Refinement
-accepts only the exact stored fingerprint plus canonical intent digest and
-never reruns deterministic search. The whole endpoint has a five-second
-monotonic deadline: snapshot lookup and validation consume from that budget,
-the provider receives only the remaining timeout, and deterministic fallback
-is skipped once the deadline is exhausted.
+`baseline_fingerprint`. Ranking stores compact baseline scores plus the exact
+static and weather evaluator inputs needed by refinement in a thread-safe
+process-local LRU/TTL store. Refinement accepts only the exact stored
+fingerprint plus canonical intent digest. It replays the same registered
+evaluators under every variant intent without catalog, weather, routing,
+repository, provider, or network acquisition. The whole endpoint has a
+five-second monotonic deadline: snapshot lookup and validation consume from that
+budget, the provider receives only the remaining timeout, and deterministic
+fallback is skipped once the deadline is exhausted.
 
 The refinement response has exactly one public status:
 
 - `questions_available`: a non-empty validated queue is available;
 - `not_needed`: no material question is needed, including a zero-result
-  baseline;
+  baseline or a captured policy with `max_questions = 0`;
 - `temporarily_unavailable`: provider/output failure, an exhausted deadline,
   or a missing, expired, evicted, restarted, or intent-mismatched baseline left
   no valid queue.
@@ -1029,12 +1038,13 @@ The fingerprint remains a public SHA-256 integrity digest. Its canonical inputs
 include the applied intent, complete catalog snapshot, trust manifest, ordered
 evaluated candidate states and ranking allocations, Search V4 and
 ranking-policy versions, and the weather-selection policy revision. Ranking
-uses it as the key for a separate lightweight snapshot containing only the
-policy and minimum evaluated candidate, constraint, evidence, region, and
-scoring state required by refinement. The snapshot does not retain the full
-catalog or trust manifest, the trip brief, provider prompts, responses, or
-credentials. The caller's canonical intent digest must also match; the public
-fingerprint is never trusted alone.
+uses it as the key for a separate bounded snapshot containing the policy,
+compact candidate/constraint/scoring state, and exact evaluator inputs required
+by refinement. It retains immutable candidate catalog entities, trust resolver
+state, normalized weather rows, numeric bounds, and evaluator contexts, but not
+the trip brief, provider prompts, responses, or credentials. The caller's
+canonical intent digest must also match; the public fingerprint is never
+trusted alone.
 
 The snapshot expires 60 seconds after ranking and the process-local store holds
 at most 64 entries with LRU eviction. A miss, expiry, eviction, restart, or

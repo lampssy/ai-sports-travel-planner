@@ -5,12 +5,22 @@ import json
 import time
 from collections import OrderedDict
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from threading import RLock
 from typing import Literal
 
 from app.domain.search_constraints import ConstraintCandidateFacts
 from app.domain.search_factors.models import FactorEvaluation
+from app.domain.search_factors.static import (
+    StaticEvaluationContext,
+    StaticFactorCandidate,
+    build_static_factor_registry,
+)
+from app.domain.search_factors.weather import (
+    WeatherEvaluationContext,
+    WeatherFactorCandidate,
+    build_weather_factor_registry,
+)
 from app.domain.search_policy import SearchPolicy
 from app.domain.search_v4_models import SearchIntent
 
@@ -39,12 +49,56 @@ class RefinementFactorEvaluation:
 
 
 @dataclass(frozen=True, slots=True)
+class RefinementCandidateReplayState:
+    """Exact evaluator inputs retained for one candidate in a bounded baseline."""
+
+    static_context: StaticEvaluationContext
+    static_candidate: StaticFactorCandidate
+    weather_context: WeatherEvaluationContext
+    weather_candidate: WeatherFactorCandidate
+
+    def evaluate(self, intent: SearchIntent) -> tuple[FactorEvaluation, ...]:
+        static_context = replace(self.static_context, intent=intent)
+        static_registry = build_static_factor_registry()
+        static_evaluations = tuple(
+            static_registry.get(factor_id).evaluate(
+                static_context,
+                self.static_candidate,
+            )
+            for factor_id in static_registry.factor_ids
+        )
+        snowmaking = next(
+            (
+                evaluation
+                for evaluation in static_evaluations
+                if evaluation.factor_id == "snowmaking_availability"
+            ),
+            None,
+        )
+        weather_context = replace(self.weather_context, intent=intent)
+        weather_candidate = replace(
+            self.weather_candidate,
+            snowmaking_evaluation=snowmaking,
+        )
+        weather_registry = build_weather_factor_registry()
+        weather_evaluations = tuple(
+            weather_registry.get(factor_id).evaluate(
+                weather_context,
+                weather_candidate,
+            )
+            for factor_id in weather_registry.factor_ids
+        )
+        return (*static_evaluations, *weather_evaluations)
+
+
+@dataclass(frozen=True, slots=True)
 class RefinementBaselineCandidate:
     candidate_id: str
     ski_region_id: str
     constraint_facts: ConstraintCandidateFacts
     evaluations: tuple[RefinementFactorEvaluation, ...]
     unscored: bool
+    replay_state: RefinementCandidateReplayState | None = None
 
 
 @dataclass(frozen=True, slots=True)

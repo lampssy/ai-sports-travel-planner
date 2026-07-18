@@ -735,9 +735,10 @@ The LLM may:
   topic phrase or a controlled comparison with one phrase per selected topic;
 - select two to five options using only approved answer IDs;
 
-One option may combine approved answer IDs from several selected topics, with at
-most one answer for each factor. The server compiles those IDs into authoritative
-labels, descriptions, and typed factor-preference or objective actions.
+For a multi-topic question, every option must combine exactly one approved
+answer ID from every selected topic. The server rejects asymmetric option sets
+and compiles valid IDs into authoritative labels, descriptions, and typed
+factor-preference or objective actions.
 
 The LLM may not:
 
@@ -778,10 +779,15 @@ Each proposal must be rejected unless:
 - patches are type-valid and do not contain model-defined weights;
 - options are distinct and do not merely repeat a known preference;
 - enough candidates have trustworthy data for the question to be useful;
+- every answer variant is evaluated by replaying the registered static and
+  weather evaluators from the captured baseline inputs under its variant intent,
+  without fresh acquisition;
 - evidence-mode-specific actionability holds: positive-presence needs at least
   one trustworthy non-neutral outcome and two distinct effective utilities,
   categorical matching needs trusted utility variation, and comparative or
   objective factors meet their request-slice coverage gate;
+- every selected non-ignore factor passes its own replayed actionability gate;
+  a material sibling topic cannot rescue a meaningless factor;
 - the patches can be evaluated without mutating production state;
 - simulation activates currently inactive requested/objective factors exactly
   as the answer would;
@@ -1078,6 +1084,8 @@ versioned policy.
   or immaterial proposals are discarded deterministically.
 - Selecting a refinement answer applies visible typed preferences and reruns
   deterministic search.
+- A captured refinement policy with `max_questions = 0` returns no question and
+  invokes neither the provider nor deterministic fallback.
 - Search succeeds without an LLM refinement response.
 - Search V3 is removed after the Search V4 endpoint, web/mobile clients, and
   golden scenarios pass their own acceptance tests.

@@ -112,8 +112,18 @@ def _valid_payload() -> dict[str, object]:
                     "from your accommodation base?"
                 ),
                 "options": [
-                    {"answer_ids": ["accessible_terrain_scale.as_much_as_possible"]},
-                    {"answer_ids": ["stay_base_access.as_easy_as_possible"]},
+                    {
+                        "answer_ids": [
+                            "accessible_terrain_scale.as_much_as_possible",
+                            "stay_base_access.low",
+                        ]
+                    },
+                    {
+                        "answer_ids": [
+                            "accessible_terrain_scale.low",
+                            "stay_base_access.as_easy_as_possible",
+                        ]
+                    },
                 ],
             }
         ]
@@ -152,15 +162,18 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
     assert proposal.question_id.startswith("refinement-")
     assert len(proposal.question_id) == len("refinement-") + 16
     assert [option.label for option in proposal.options] == [
-        "As much as possible",
-        "As easy as possible",
+        "As much as possible + Access can be secondary",
+        "Keep terrain size secondary + As easy as possible",
     ]
     assert proposal.options[0].group_priority_patches == ()
     assert proposal.options[0].factor_preference_patches[0].factor_id == (
         "accessible_terrain_scale"
     )
-    assert proposal.options[1].factor_preference_patches[0].factor_id == (
-        "stay_base_access"
+    assert tuple(
+        patch.factor_id for patch in proposal.options[1].factor_preference_patches
+    ) == (
+        "accessible_terrain_scale",
+        "stay_base_access",
     )
     assert result.proposals[0].impact.winner_changed is True
     assert proposal.question == (
@@ -210,6 +223,9 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
     } == set(topic["allowed_preference_question_shapes"])
     assert "allowed_preference_question_shape" in str(call["system_prompt"])
     assert "exact registered question_phrase" in str(call["system_prompt"])
+    assert "exactly one answer ID for every selected topic" in str(
+        call["system_prompt"]
+    )
 
 
 def test_refinement_uses_compact_answer_id_only_provider_schema() -> None:
@@ -337,7 +353,7 @@ def test_invalid_selection_is_temporarily_unavailable_after_one_attempt(
     assert len(client.calls) == 1
 
 
-def test_visible_option_collision_drops_only_question_and_preserves_sibling() -> None:
+def test_asymmetric_question_drops_only_question_and_preserves_sibling() -> None:
     payload = _valid_payload()
     questions = payload["questions"]
     assert isinstance(questions, list)
@@ -361,12 +377,12 @@ def test_visible_option_collision_drops_only_question_and_preserves_sibling() ->
     assert result.outcome == "proposals_generated"
     assert len(result.proposals) == 1
     assert [option.label for option in result.proposals[0].proposal.options] == [
-        "As much as possible",
-        "As easy as possible",
+        "As much as possible + Access can be secondary",
+        "Keep terrain size secondary + As easy as possible",
     ]
 
 
-def test_visible_option_collision_rejects_different_typed_actions() -> None:
+def test_asymmetric_multi_topic_options_are_rejected_before_copy_compilation() -> None:
     presentation = load_refinement_presentation_policy()
     selection = search_refinement_ai._RefinementQuestionSelection.model_validate(
         {
@@ -384,7 +400,7 @@ def test_visible_option_collision_rejects_different_typed_actions() -> None:
 
     with pytest.raises(
         search_refinement_ai.RefinementValidationError,
-        match="different actions must have distinct visible copy",
+        match="exactly one answer for every selected topic",
     ):
         search_refinement_ai.compile_refinement_selection(
             selection,
@@ -395,6 +411,97 @@ def test_visible_option_collision_rejects_different_typed_actions() -> None:
             },
             candidate_ids=(),
         )
+
+
+def test_multi_topic_question_rejects_an_asymmetric_option() -> None:
+    presentation = load_refinement_presentation_policy()
+    selection = search_refinement_ai._RefinementQuestionSelection.model_validate(
+        {
+            "topic_ids": ["accessible_terrain_scale", "stay_base_access"],
+            "question": (
+                "Would you prefer selected pass terrain or access from your "
+                "accommodation base?"
+            ),
+            "options": [
+                {"answer_ids": ["accessible_terrain_scale.as_much_as_possible"]},
+                {
+                    "answer_ids": [
+                        "accessible_terrain_scale.low",
+                        "stay_base_access.as_easy_as_possible",
+                    ]
+                },
+            ],
+        }
+    )
+
+    with pytest.raises(
+        search_refinement_ai.RefinementValidationError,
+        match="exactly one answer for every selected topic",
+    ):
+        search_refinement_ai.compile_refinement_selection(
+            selection,
+            presentation,
+            eligible_topic_answer_ids={
+                "accessible_terrain_scale": frozenset(
+                    {
+                        "accessible_terrain_scale.as_much_as_possible",
+                        "accessible_terrain_scale.low",
+                    }
+                ),
+                "stay_base_access": frozenset(
+                    {
+                        "stay_base_access.as_easy_as_possible",
+                    }
+                ),
+            },
+            candidate_ids=(),
+        )
+
+
+def test_material_topic_does_not_rescue_non_actionable_multi_topic_sibling() -> None:
+    payload = {
+        "questions": [
+            {
+                "topic_ids": ["accessible_terrain_scale", "development_style"],
+                "question": (
+                    "Would you prefer selected pass terrain or a traditional "
+                    "mountain village?"
+                ),
+                "options": [
+                    {
+                        "answer_ids": [
+                            "accessible_terrain_scale.as_much_as_possible",
+                            "development_style.traditional",
+                        ]
+                    },
+                    {
+                        "answer_ids": [
+                            "accessible_terrain_scale.low",
+                            "development_style.mixed",
+                        ]
+                    },
+                ],
+            }
+        ]
+    }
+    candidates = tuple(
+        RefinementCandidateState(
+            candidate_id=candidate_id,
+            evaluations=(
+                _evaluation("trip_window_snow_fit", 0.7),
+                _evaluation("accessible_terrain_scale", terrain),
+                _evaluation("development_style", 0.5),
+            ),
+        )
+        for candidate_id, terrain in (("small", 0.2), ("large", 1.0))
+    )
+
+    result = _generate(_Client([json.dumps(payload)]), candidates=candidates)
+
+    assert result == RefinementGenerationResult(
+        outcome="provider_unavailable",
+        proposals=(),
+    )
 
 
 def test_registered_but_unexposed_selection_is_rejected() -> None:

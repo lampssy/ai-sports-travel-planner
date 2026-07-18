@@ -34,6 +34,8 @@ from app.domain.search_refinement import (
     RefinementProposal,
     RefinementVariantOutcome,
     ValidatedRefinementProposal,
+    apply_refinement_option,
+    validate_refinement_proposal,
 )
 from app.domain.search_refinement_snapshot import (
     SearchRefinementSnapshotStore,
@@ -1110,6 +1112,311 @@ def test_refinement_snapshot_compaction_preserves_scores() -> None:
                 )
 
 
+def test_apres_replay_matches_full_evaluator_reruns_without_acquisition() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    snapshot = snapshot.model_copy(
+        update={
+            "stay_bases": tuple(
+                base.model_copy(
+                    update={
+                        "local_apres_profile": base.local_apres_profile.model_copy(
+                            update={"intensity": "low_key"}
+                        )
+                    }
+                )
+                if base.stay_base_id == "jochberg-jochberg"
+                else base
+                for base in snapshot.stay_bases
+            )
+        }
+    )
+    intent = _intent().model_copy(
+        update={
+            "constraints": _intent().constraints.model_copy(
+                update={"location": LocationScope(country="Austria")}
+            )
+        }
+    )
+    climate_repository = _ClimatologyRepository()
+    forecast_repository = _ForecastRepository()
+    store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=climate_repository,
+        forecast_repository=forecast_repository,
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=store,
+    )
+    lookup = store.get(
+        baseline.baseline_fingerprint,
+        canonical_search_intent_digest(intent),
+    )
+    assert lookup.snapshot is not None
+    states = search_v4_service._refinement_states(lookup.snapshot.candidates)
+    proposal = RefinementProposal(
+        question_id="local-apres-intensity",
+        question="What evening atmosphere would you prefer near where you stay?",
+        reason="The trusted local atmosphere varies between the trip options.",
+        options=tuple(
+            RefinementOption(
+                label=label,
+                description=description,
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="local_apres",
+                        mode=mode,
+                        values=values,
+                    ),
+                ),
+            )
+            for label, description, mode, values in (
+                (
+                    "Low-key",
+                    "Prefer a low-key evening near the accommodation base.",
+                    "prefer",
+                    ("low_key",),
+                ),
+                (
+                    "Lively",
+                    "Prefer a lively evening near the accommodation base.",
+                    "prefer",
+                    ("lively",),
+                ),
+                (
+                    "It doesn't matter",
+                    "Do not use the local evening atmosphere as a preference.",
+                    "ignore",
+                    (),
+                ),
+            )
+        ),
+    )
+    acquisition_counts = (
+        len(climate_repository.calls),
+        len(forecast_repository.calls),
+    )
+
+    validated = validate_refinement_proposal(
+        proposal=proposal,
+        intent=intent,
+        candidates=states,
+        policy=lookup.snapshot.policy,
+    )
+
+    assert len({item.ordered_candidate_ids for item in validated.variant_outcomes}) > 1
+    for option, outcome in zip(
+        proposal.options,
+        validated.variant_outcomes,
+        strict=True,
+    ):
+        variant_intent = apply_refinement_option(
+            intent,
+            option,
+            lookup.snapshot.policy,
+        )
+        expected = search_v4_service._evaluate_search(
+            intent=variant_intent,
+            catalog_snapshot=snapshot,
+            trust_manifest=manifest,
+            climatology_repository=_ClimatologyRepository(),
+            forecast_repository=_ForecastRepository(),
+            reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+            policy=lookup.snapshot.policy,
+        )
+        assert outcome.ordered_candidate_ids == tuple(
+            item.record.candidate_id for item in expected.ordered
+        )
+    assert (
+        len(climate_repository.calls),
+        len(forecast_repository.calls),
+    ) == acquisition_counts
+
+
+def test_refinement_replay_makes_neutral_categorical_raw_variation_actionable() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    intent = _intent().model_copy(
+        update={
+            "constraints": _intent().constraints.model_copy(
+                update={"location": LocationScope(country="Austria")}
+            )
+        }
+    )
+    store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=store,
+    )
+    lookup = store.get(
+        baseline.baseline_fingerprint,
+        canonical_search_intent_digest(intent),
+    )
+    assert lookup.snapshot is not None
+    states = search_v4_service._refinement_states(lookup.snapshot.candidates)
+    proposal = RefinementProposal(
+        question_id="development-style",
+        question="What kind of place would you prefer to stay in?",
+        reason="Trusted development styles vary between the trip options.",
+        options=(
+            RefinementOption(
+                label="Traditional mountain village",
+                description="Prefer a base with traditional settlement character.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="development_style",
+                        mode="prefer",
+                        values=("traditional",),
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="A mix of old and new",
+                description="Prefer a base mixing traditional and modern development.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="development_style",
+                        mode="prefer",
+                        values=("mixed",),
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="It doesn't matter",
+                description="Do not use development style as an extra preference.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="development_style",
+                        mode="ignore",
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    validated = validate_refinement_proposal(
+        proposal=proposal,
+        intent=intent,
+        candidates=states,
+        policy=lookup.snapshot.policy,
+    )
+
+    assert validated.impact.material is True
+    assert len({item.ordered_candidate_ids for item in validated.variant_outcomes}) > 1
+
+
+def test_exact_date_snowmaking_replay_updates_trip_window_snow_fit() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    intent = _intent().model_copy(
+        update={
+            "constraints": _intent().constraints.model_copy(
+                update={"location": LocationScope(country="Austria")}
+            )
+        }
+    )
+    requested_dates = (date(2027, 1, 10), date(2027, 1, 11), date(2027, 1, 12))
+    climate_rows = tuple(
+        _climatology_row(
+            ski_area_id=ski_area_id,
+            day=day,
+            snow_depth_cm_p50=25,
+        ).model_copy(update={"avg_snow_confidence_score": 0.2})
+        for ski_area_id in _country_area_ids(snapshot, "Austria")
+        for day in requested_dates
+    )
+    store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(climate_rows),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=store,
+    )
+    lookup = store.get(
+        baseline.baseline_fingerprint,
+        canonical_search_intent_digest(intent),
+    )
+    assert lookup.snapshot is not None
+    replay_candidate = next(
+        item
+        for item in lookup.snapshot.candidates
+        if item.replay_state is not None
+        and next(
+            evaluation
+            for evaluation in item.replay_state.evaluate(intent)
+            if evaluation.factor_id == "snowmaking_availability"
+        ).effective_evidence_cap
+        > 0
+    )
+    prefer_option = RefinementOption(
+        label="Useful backup",
+        description="Prefer snowmaking backup when natural snow is weak.",
+        factor_preference_patches=(
+            FactorPreferencePatch(
+                factor_id="snowmaking_availability",
+                mode="prefer",
+            ),
+        ),
+    )
+    ignore_option = RefinementOption(
+        label="It doesn't matter",
+        description="Do not use snowmaking as an extra preference.",
+        factor_preference_patches=(
+            FactorPreferencePatch(
+                factor_id="snowmaking_availability",
+                mode="ignore",
+            ),
+        ),
+    )
+    prefer_intent = apply_refinement_option(
+        intent, prefer_option, lookup.snapshot.policy
+    )
+    ignore_intent = apply_refinement_option(
+        intent, ignore_option, lookup.snapshot.policy
+    )
+    assert replay_candidate.replay_state is not None
+
+    prefer_snow = next(
+        evaluation
+        for evaluation in replay_candidate.replay_state.evaluate(prefer_intent)
+        if evaluation.factor_id == "trip_window_snow_fit"
+    )
+    ignore_snow = next(
+        evaluation
+        for evaluation in replay_candidate.replay_state.evaluate(ignore_intent)
+        if evaluation.factor_id == "trip_window_snow_fit"
+    )
+
+    assert prefer_snow.effective_utility > ignore_snow.effective_utility
+    expected = search_v4_service._evaluate_search(
+        intent=prefer_intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(climate_rows),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        policy=lookup.snapshot.policy,
+    )
+    expected_candidate = next(
+        item
+        for item in expected.ordered
+        if item.record.candidate_id == replay_candidate.candidate_id
+    )
+    expected_snow = next(
+        evaluation
+        for evaluation in expected_candidate.evaluations
+        if evaluation.factor_id == "trip_window_snow_fit"
+    )
+    assert prefer_snow == expected_snow
+
+
 @pytest.mark.parametrize(
     ("evidence_cap", "forecast_coverage", "expected"),
     (
@@ -1282,6 +1589,80 @@ def test_refinement_service_returns_not_needed_for_zero_result_baseline(
     assert baseline.eligible_candidate_count == 0
     assert response.refinement_status == "not_needed"
     assert response.refinements == ()
+
+
+@pytest.mark.parametrize(
+    ("max_questions", "expected_generation_calls"),
+    ((0, 0), (1, 1)),
+)
+def test_refinement_service_respects_zero_and_nearby_nonzero_question_limits(
+    monkeypatch: pytest.MonkeyPatch,
+    max_questions: int,
+    expected_generation_calls: int,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    base_policy = load_search_policy()
+    policy = base_policy.model_copy(
+        update={
+            "refinement": base_policy.refinement.model_copy(
+                update={"max_questions": max_questions}
+            )
+        }
+    )
+    snapshot_store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        policy=policy,
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    generation_calls = 0
+    client_factory_calls = 0
+    fallback_calls = 0
+
+    def generate(**_kwargs: object) -> search_v4_service.RefinementGenerationResult:
+        nonlocal generation_calls
+        generation_calls += 1
+        return search_v4_service.RefinementGenerationResult(
+            outcome="no_proposals",
+            proposals=(),
+        )
+
+    def client_factory(_remaining: float) -> object:
+        nonlocal client_factory_calls
+        client_factory_calls += 1
+        return object()
+
+    def fallback(**_kwargs: object) -> None:
+        nonlocal fallback_calls
+        fallback_calls += 1
+        return None
+
+    monkeypatch.setattr(search_v4_service, "generate_refinement_proposals", generate)
+    monkeypatch.setattr(
+        search_v4_service,
+        "build_deterministic_refinement_fallback",
+        fallback,
+    )
+
+    response = get_search_refinements(
+        intent=_intent(),
+        brief="Help us decide.",
+        baseline_fingerprint=baseline.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=client_factory,
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert response.refinement_status == "not_needed"
+    assert response.refinements == ()
+    assert generation_calls == expected_generation_calls
+    assert client_factory_calls == expected_generation_calls
+    assert fallback_calls == expected_generation_calls
 
 
 def test_refinement_service_fails_closed_on_snapshot_miss_without_reevaluation(

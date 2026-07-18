@@ -98,6 +98,7 @@ from app.domain.search_refinement_presentation import (
 from app.domain.search_refinement_snapshot import (
     RefinementBaselineCandidate,
     RefinementBaselineSnapshot,
+    RefinementCandidateReplayState,
     RefinementFactorEvaluation,
     SearchRefinementSnapshotStore,
     canonical_search_intent_digest,
@@ -371,6 +372,7 @@ class _EvaluatedCandidate:
     constraint_decision: ConstraintDecision
     evaluations: tuple[FactorEvaluation, ...]
     ranking: RankedScore | UnscoredAllocation
+    replay_state: RefinementCandidateReplayState
 
 
 @dataclass(frozen=True)
@@ -378,6 +380,7 @@ class _FactorEvaluatedCandidate:
     record: V4CandidateRecord
     constraint_decision: ConstraintDecision
     evaluations: tuple[FactorEvaluation, ...]
+    replay_state: RefinementCandidateReplayState
 
 
 @dataclass(frozen=True)
@@ -746,6 +749,14 @@ def _evaluate_search(
 
     duration_days, audience, season_label = _pass_slice(intent)
     static_candidates = tuple(_static_candidate(record) for record in eligible_records)
+    static_candidate_by_id = {
+        record.candidate_id: candidate
+        for record, candidate in zip(
+            eligible_records,
+            static_candidates,
+            strict=True,
+        )
+    }
     trust_resolver = ManifestCatalogEvidenceResolver(manifest)
     static_context = StaticEvaluationContext(
         intent=intent,
@@ -842,6 +853,12 @@ def _evaluate_search(
                     record=record,
                     constraint_decision=decisions[record.candidate_id],
                     evaluations=evaluations,
+                    replay_state=RefinementCandidateReplayState(
+                        static_context=static_context,
+                        static_candidate=static_candidate_by_id[record.candidate_id],
+                        weather_context=weather_context,
+                        weather_candidate=weather_candidate,
+                    ),
                 )
             )
     with search_phase(phase="ranking", intent=intent):
@@ -855,6 +872,7 @@ def _evaluate_search(
                     intent=intent,
                     policy=selected_policy,
                 ),
+                replay_state=item.replay_state,
             )
             for item in factor_evaluated
         )
@@ -940,6 +958,19 @@ def get_search_refinements(
         )
     selected_policy = baseline.policy
     validate_search_intent(intent, selected_policy)
+    if selected_policy.refinement.max_questions == 0:
+        return _refinement_response(
+            policy=selected_policy,
+            presentation=presentation,
+            status="not_needed",
+            baseline_fingerprint=baseline.fingerprint,
+            baseline_status="current",
+            fallback_used=False,
+            refinements=(),
+            reason="questions_disabled",
+            intent=intent,
+            duration_seconds=clock() - started,
+        )
     if not baseline.candidates:
         return _refinement_response(
             policy=selected_policy,
@@ -1123,6 +1154,7 @@ def _refinement_baseline_candidates(
                 for evaluation in item.evaluations
             ),
             unscored=isinstance(item.ranking, UnscoredAllocation),
+            replay_state=getattr(item, "replay_state", None),
         )
         for item in ordered
     )
@@ -1131,7 +1163,7 @@ def _refinement_baseline_candidates(
 def _compact_refinement_evaluation(
     evaluation: FactorEvaluation,
 ) -> RefinementFactorEvaluation:
-    """Retain only fields consumed by refinement actionability and scoring."""
+    """Retain the lightweight fallback used when replay state is unavailable."""
 
     return RefinementFactorEvaluation(
         factor_id=evaluation.factor_id,
@@ -1157,6 +1189,9 @@ def _refinement_states(
                         intent=candidate_intent,
                     ).eligible
                 )
+            ),
+            evaluation_replayer=(
+                item.replay_state.evaluate if item.replay_state is not None else None
             ),
         )
         for item in candidates

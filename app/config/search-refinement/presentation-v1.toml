@@ -455,28 +455,28 @@ factor_preference_patch = { factor_id = "pass_terrain_value", mode = "ignore" }
 answer_id = "ski_day_apres.low_key"
 factor_id = "ski_day_apres"
 label = "Low-key"
-description = "Prefer low-key."
+description = "Prefer low-key ski-day après."
 factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values = ["low_key"] }
 
 [[answers]]
 answer_id = "ski_day_apres.moderate"
 factor_id = "ski_day_apres"
 label = "Some atmosphere"
-description = "Prefer some atmosphere."
+description = "Prefer some ski-day après atmosphere."
 factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values = ["moderate"] }
 
 [[answers]]
 answer_id = "ski_day_apres.lively"
 factor_id = "ski_day_apres"
 label = "Lively"
-description = "Prefer lively."
+description = "Prefer lively ski-day après."
 factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values = ["lively"] }
 
 [[answers]]
 answer_id = "ski_day_apres.destination_defining"
 factor_id = "ski_day_apres"
 label = "A major après destination"
-description = "Prefer a major après destination."
+description = "Prefer a ski-day atmosphere that defines the destination."
 factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values = ["destination_defining"] }
 
 [[answers]]
@@ -490,28 +490,28 @@ factor_preference_patch = { factor_id = "ski_day_apres", mode = "ignore" }
 answer_id = "local_apres.low_key"
 factor_id = "local_apres"
 label = "Low-key"
-description = "Prefer low-key."
+description = "Prefer a low-key evening near the accommodation base."
 factor_preference_patch = { factor_id = "local_apres", mode = "prefer", values = ["low_key"] }
 
 [[answers]]
 answer_id = "local_apres.moderate"
 factor_id = "local_apres"
 label = "Some atmosphere"
-description = "Prefer some atmosphere."
+description = "Prefer some evening atmosphere near the accommodation base."
 factor_preference_patch = { factor_id = "local_apres", mode = "prefer", values = ["moderate"] }
 
 [[answers]]
 answer_id = "local_apres.lively"
 factor_id = "local_apres"
 label = "Lively"
-description = "Prefer lively."
+description = "Prefer a lively evening near the accommodation base."
 factor_preference_patch = { factor_id = "local_apres", mode = "prefer", values = ["lively"] }
 
 [[answers]]
 answer_id = "local_apres.destination_defining"
 factor_id = "local_apres"
 label = "A major après destination"
-description = "Prefer a major après destination."
+description = "Prefer an evening atmosphere that defines the accommodation base."
 factor_preference_patch = { factor_id = "local_apres", mode = "prefer", values = ["destination_defining"] }
 
 [[answers]]

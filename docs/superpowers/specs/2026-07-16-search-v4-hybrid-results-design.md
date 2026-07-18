@@ -270,15 +270,18 @@ Invariants:
     preserving the accessible table and truthful missing-data gaps;
   - resolved: show `Snow depth`, `Fresh snow`, and `Temperature` as separate
     segmented chart views so one plotted view has one unit and one Y axis;
-  - resolved: after deterministic ranking, store a typed, lightweight
+  - resolved: after deterministic ranking, store a typed, bounded
     evaluated-baseline snapshot in a thread-safe process-local LRU/TTL store
     with a 60-second TTL and maximum 64 entries;
+  - resolved on 2026-07-18: retain the exact static and weather evaluator inputs
+    needed to replay every refinement answer under its variant intent; do not
+    refetch or copy factor formulas;
   - resolved: bind refinement lookup to both the public baseline fingerprint and
     the SHA-256 digest recomputed from canonical request intent; this digest
     comparison supplies equality binding and a fingerprint alone is not trusted;
-  - resolved: retain no full `SearchIntent` or origin text, full
-    `CatalogSnapshot` or `CatalogTrustManifest`, brief, or provider secrets in
-    the baseline store;
+  - resolved: retain no full `SearchIntent` or origin text, brief, or provider
+    secrets in the baseline store; exact replay does retain referenced catalog,
+    trust-resolver, numeric-bound, and normalized weather evaluator inputs;
   - resolved: a missing, expired, evicted, restarted, or mismatched baseline
     returns `temporarily_unavailable` without deterministic search or Gemini;
   - resolved: the 60-second TTL covers only the server handoff for generating a
@@ -299,9 +302,9 @@ Invariants:
   boundary. ADR 0015 is required and records the accepted process-local
   evaluated-baseline handoff. If implementation adopts a router library,
   persists or shares search state, scales to multiple web processes without an
-  approved routing/state design, stores full catalog/trust snapshots, adds
-  provider acquisition, or moves ranking/evidence interpretation to the client,
-  pause for a new decision and reassess ADR need.
+  approved routing/state design, persists or shares replay state, adds provider
+  acquisition, or moves ranking/evidence interpretation to the client, pause
+  for a new decision and reassess ADR need.
 - Advisory design-review:
   - reviewers: Product / Strategy, Backend / API, Data Trust & Source
     Integrity, UI / UX, Security & Privacy, Observability / Ops, Accessibility,
@@ -334,7 +337,7 @@ Invariants:
 | Technical | Icon system | Repeated local SVGs would drift visually and add accessibility boilerplate across the new surfaces | Continue local SVGs; add `lucide-react` | Add `lucide-react` as the only new frontend dependency | Gives the accepted UI a consistent icon vocabulary while icons remain decorative or explicitly labelled by their controls | This spec and implementation plan |
 | Technical | Reusable UI foundation | One-off global CSS and repeated markup make responsive and semantic states drift | Keep page-local markup; full shadcn migration; small Snowcast-owned primitives | Small Snowcast-owned primitives, with selective headless primitives only when interaction complexity justifies them | Encodes brand geometry and accessibility states without re-theming the application or forcing every section into a generic card | This spec and follow-up plan |
 | Mixed | Refinement availability | An empty queue currently conflates no useful question with LLM or validation failure | Silent empty state; always ask; explicit status plus validated fallback | Explicit status and one registry-backed factor fallback only after existing materiality validation | Keeps questions useful and truthful while removing provider variability from the primary workflow | This spec, Search V4 model docs, and follow-up plan |
-| Technical | Refinement request boundary | Optional remote-model latency blocks ranking, while repeated evaluation can drift from the exact ranked view | Keep refinement inline; rerun from canonical intent; store a lightweight evaluated baseline; persist or share full state | Load after ranking from a typed process-local evaluated-baseline snapshot with a 60-second TTL and 64-entry maximum | Keeps ranking fast and failure-isolated while preserving exact-view materiality and preview consistency; temporary unavailability is accepted when the handoff is gone | ADR 0015, this spec, and follow-up plan |
+| Technical | Refinement request boundary | Optional remote-model latency blocks ranking, while repeated evaluation can drift from the exact ranked view | Keep refinement inline; rerun from canonical intent; store a lightweight evaluated baseline; persist or share full state | Load after ranking from a typed process-local replayable evaluated-baseline snapshot with a 60-second TTL and 64-entry maximum | Keeps ranking fast and failure-isolated while preserving exact-view materiality and preview consistency; temporary unavailability is accepted when the handoff is gone | ADR 0015, this spec, and follow-up plan |
 | Technical | Refinement admission policy | A separate anonymous endpoint can repeat deterministic and paid provider work after browser cancellation | No guard; require auth; application-local limits; shared managed limiter | Application-local two-concurrent, six-per-minute-per-client, burst-two guard for the current single machine | Protects current provider capacity without changing anonymous search; reset and per-machine limitations are explicit and require replacement before scale-out | ADR 0015, this spec, and follow-up plan |
 | Product / Domain | Decision evidence hierarchy | Internal provenance summaries are accurate for diagnostics but artificial and difficult for travellers to interpret | Keep ledger; compact evidence table; plain-language summary with raw details collapsed | `Why this trip` summary with strengths, uncertainties, and collapsed technical provenance | Makes trust evidence understandable without hiding auditable source detail | This spec and follow-up plan |
 | Technical | Weather chart implementation | The hand-built SVG lacks axes, tooltips, threshold context, and robust gap handling | Extend local SVG; use a low-level visualization toolkit; add Recharts | Add Recharts and keep the accessible data table | Improves chart semantics and responsiveness while retaining typed server data as the only source | This spec and follow-up plan |
@@ -378,10 +381,10 @@ Invariants:
   fallback for unsafe, sensitive, unsupported, or ungrounded question text.
   Group-priority refinement questions are outside this slice.
 - After deterministic ranking, `POST /api/search` stores the minimum typed
-  evaluated baseline needed for refinement validation and previews in a
-  thread-safe, process-local LRU/TTL store. Entries live for 60 seconds and the
-  store holds at most 64. It does not retain a full catalog/trust snapshot,
-  brief, or provider secrets.
+  evaluated baseline and exact evaluator inputs needed for refinement
+  validation and previews in a thread-safe, process-local LRU/TTL store. Entries
+  live for 60 seconds and the store holds at most 64. It retains no brief or
+  provider secrets.
 - `POST /api/search/refinements` consumes only the exact stored baseline bound
   to both the public baseline fingerprint and the SHA-256 digest recomputed from
   canonical request intent. The full intent is not stored, and there is no
@@ -389,6 +392,10 @@ Invariants:
   mismatched handoff is
   `temporarily_unavailable`; it triggers neither deterministic search nor
   Gemini.
+- Every option variant rebinds the retained inputs to its typed intent and calls
+  the registered static and weather evaluators. Multi-topic options are
+  symmetric, replayed materiality and previews share the same outcomes, and
+  `max_questions = 0` disables both provider and fallback generation.
 - The process-local handoff is accepted only for the current single-instance
   deployment. Horizontal scaling requires sticky routing, shared state, or a
   redesigned handoff.
@@ -875,7 +882,7 @@ Use stable metric-cell widths and no viewport-scaled font sizes.
 Ranking endpoint:
 
 - `POST /api/search` remains the Search V4 request and rerank boundary and does
-  not invoke an LLM. After deterministic ranking it stores a typed, lightweight
+  not invoke an LLM. After deterministic ranking it stores a typed, bounded
   evaluated-baseline snapshot and returns its public baseline fingerprint.
 
 Post-search refinement endpoint:
@@ -891,6 +898,8 @@ Post-search refinement endpoint:
 - it never reruns deterministic search. A missing, expired, evicted, restarted,
   or mismatched baseline returns `temporarily_unavailable` without invoking
   Gemini;
+- it reruns only the registered static and weather evaluators against retained
+  in-memory inputs for each typed variant, with no fresh acquisition;
 - it returns `search_model_version`, `ranking_policy_version`,
   `refinement_presentation_policy_version`, `baseline_fingerprint`,
   `baseline_status`, `refinement_status`, orthogonal `fallback_used`, and a
@@ -906,9 +915,8 @@ Required response extension:
 
 - each validated `RefinementOption` may include a deterministic preview;
 - the preview is computed from server-side variant ranking simulation;
-- preview construction reuses the stored candidate evaluations and variant
-  simulation; it must not add another LLM call or repeat catalog/database
-  acquisition;
+- preview construction uses the replayed variant evaluations; it must not add
+  another LLM call or repeat catalog/database acquisition;
 - the dossier may request one typed, display-ready weather summary for the
   selected configuration's ski area and the current applied intent;
 - the client never recomputes scores or eligibility;
@@ -946,9 +954,9 @@ Rules:
   unavailable;
 - the evaluated-baseline store is thread-safe and process-local, expires entries
   after 60 seconds, evicts the least-recently-used entry when insertion would
-  exceed 64 entries, and retains only the canonical intent SHA-256 digest, not a
-  full `SearchIntent`, origin text, full `CatalogSnapshot`,
-  `CatalogTrustManifest`, brief, or provider secrets;
+  exceed 64 entries, and retains the canonical intent SHA-256 digest plus exact
+  evaluator inputs, but not a full `SearchIntent`, origin text, brief, or
+  provider secrets;
 - the 60-second TTL is only the ranking-to-refinement server handoff. A delivered
   question remains answerable after expiry;
 - applying a delivered answer reruns full search with the updated intent, stores
@@ -1276,11 +1284,11 @@ Accessibility:
 - Refinement is rate-limited separately from ranking, performs one provider
   attempt within a five-second hard budget, and records no brief, prompt,
   response, question text, question ID, token, or provider error body.
-- The evaluated-baseline store retains only the canonical intent SHA-256 digest,
-  not a full `SearchIntent`, origin text, full `CatalogSnapshot`,
-  `CatalogTrustManifest`, brief, provider credential, prompt, token, response,
-  or other provider secret. Fingerprints are identifiers, not authorization or
-  proof of a matching canonical intent digest.
+- The evaluated-baseline store retains the canonical intent SHA-256 digest and
+  exact candidate evaluator inputs, but not a full `SearchIntent`, origin text,
+  brief, provider credential, prompt, token, response, or other provider secret.
+  Fingerprints are identifiers, not authorization or proof of a matching
+  canonical intent digest.
 - The process-local store is valid for the current single-instance deployment
   only; horizontal deployment requires approved sticky routing, shared state,
   or a redesigned handoff.
@@ -1318,9 +1326,9 @@ deterministic search results.
 - Submitting the homepage brief transitions to results without losing the brief
   or parsed intent.
 - The compact midnight command header replaces the permanent Search V4 form.
-- A successful ranking stores a lightweight evaluated baseline for at most 60
-  seconds in the process-local 64-entry LRU store without retaining the full
-  intent or origin text, catalog/trust snapshot, brief, or provider secrets.
+- A successful ranking stores a bounded evaluated baseline and exact evaluator
+  inputs for at most 60 seconds in the process-local 64-entry LRU store without
+  retaining the full intent or origin text, brief, or provider secrets.
 - Refinement uses only a stored baseline matching both the public fingerprint
   and the SHA-256 digest recomputed from canonical request intent. Miss,
   expiry, eviction, restart, or mismatch yields typed `temporarily_unavailable`,
@@ -1398,8 +1406,8 @@ Unit tests:
 
 API and integration tests:
 
-- ranking stores the typed lightweight evaluated baseline after deterministic
-  evaluation and excludes full catalog/trust snapshots, brief, and provider
+- ranking stores the typed bounded evaluated baseline and replayable evaluator
+  inputs after deterministic evaluation while excluding the brief and provider
   secrets;
 - snapshot lookup requires a matching fingerprint plus the SHA-256 digest
   recomputed from canonical request intent; canonical serialization supplies the
@@ -1410,6 +1418,11 @@ API and integration tests:
 - miss, expiry, eviction, restart, and canonical-intent digest mismatch return
   `temporarily_unavailable` without deterministic search or Gemini;
 - per-option preview is derived from deterministic variant rankings;
+- every option outcome matches a full evaluator rerun from the same captured
+  inputs, including intent-sensitive categories and snowmaking's trip-window
+  snow effect, without new repository or provider acquisition;
+- multi-topic options represent every selected topic symmetrically, and zero
+  configured questions skip provider construction and fallback generation;
 - preview omits score and policy internals;
 - refinement response without preview remains schema-valid;
 - applying the same option produces ranking movement consistent with preview;

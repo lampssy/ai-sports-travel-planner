@@ -135,6 +135,18 @@ def test_registry_copy_resolves_to_typed_actions() -> None:
     ]
 
 
+def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:
+    presentation = load_refinement_presentation_policy()
+
+    ski_day = presentation.answer_by_id["ski_day_apres.low_key"]
+    local = presentation.answer_by_id["local_apres.low_key"]
+
+    assert ski_day.description == "Prefer low-key ski-day après."
+    assert local.description == (
+        "Prefer a low-key evening near the accommodation base."
+    )
+
+
 def test_safe_dynamic_interaction_copy_survives_unchanged() -> None:
     presentation = load_refinement_presentation_policy()
     question = "What kind of place would you prefer to stay in?"
