@@ -9,11 +9,11 @@ export function weatherEvidenceCacheKey(
   travelWindow: TravelWindow,
 ): string {
   if (!travelWindow) return `${skiAreaId}|window:none`;
-  if (typeof travelWindow.month === "number") {
-    return `${skiAreaId}|month:${travelWindow.month}`;
-  }
   if (travelWindow.start_date && travelWindow.end_date) {
     return `${skiAreaId}|dates:${travelWindow.start_date}:${travelWindow.end_date}`;
+  }
+  if (typeof travelWindow.month === "number") {
+    return `${skiAreaId}|month:${travelWindow.month}`;
   }
   return `${skiAreaId}|window:none`;
 }

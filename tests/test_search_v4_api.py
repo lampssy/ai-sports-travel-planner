@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import time
+import threading
 
 import pytest
 from fastapi.testclient import TestClient
@@ -577,6 +577,8 @@ def test_refinement_deadline_releases_endpoint_capacity_before_worker_finishes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     releases = 0
+    worker_released = threading.Event()
+    allow_worker_to_finish = threading.Event()
 
     class _Admission:
         accepted = True
@@ -591,7 +593,8 @@ def test_refinement_deadline_releases_endpoint_capacity_before_worker_finishes(
             return _Admission()
 
     def slow_refinement(**_kwargs: object) -> SearchV4RefinementResponse:
-        time.sleep(0.08)
+        assert allow_worker_to_finish.wait(timeout=1)
+        worker_released.set()
         return SearchV4RefinementResponse(
             search_model_version="search-v4",
             ranking_policy_version="search-v4-policy-1",
@@ -606,17 +609,16 @@ def test_refinement_deadline_releases_endpoint_capacity_before_worker_finishes(
         0.02,
     )
 
-    started = time.monotonic()
     response = TestClient(app).post("/api/search/refinements", json=_request_payload())
-    elapsed = time.monotonic() - started
 
     assert response.status_code == 200
     assert response.json()["refinement_status"] == "temporarily_unavailable"
     assert response.json()["baseline_status"] == "unverified"
-    assert elapsed < 0.07
+    assert not worker_released.is_set()
     assert releases == 1
 
-    time.sleep(0.1)
+    allow_worker_to_finish.set()
+    assert worker_released.wait(timeout=1)
     assert releases == 1
 
 

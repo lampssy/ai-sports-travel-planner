@@ -124,8 +124,9 @@ and immediately requests the next refinement from the new snapshot. Unanswered
 questions from the previous baseline are not carried forward.
 The answer is applied to the exact displayed session intent, filters, and brief
 that produced the question. Unsubmitted drawer or trip-brief edits are drafts
-and cannot alter this rerank. Refinement Undo is available only until the next
-successful ordinary search.
+and cannot alter this rerank. Applying or undoing a refinement patches only the
+answer-owned editor fields, preserving unrelated drafts. Refinement Undo is
+available only until the next successful ordinary search.
 
 The anonymous endpoint has an application-local admission guard for the current
 single-machine deployment: at most two concurrent requests, at most six

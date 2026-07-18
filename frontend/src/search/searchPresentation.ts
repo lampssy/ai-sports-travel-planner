@@ -102,10 +102,10 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
     const { month, start_date: startDate, end_date: endDate } =
       constraints.travel_window;
     const label =
-      typeof month === "number"
-        ? `${monthName(month)} window`
-        : startDate && endDate
-          ? `${startDate} to ${endDate}`
+      startDate && endDate
+        ? `${startDate} to ${endDate}`
+        : typeof month === "number"
+          ? `${monthName(month)} window`
           : null;
     if (label) {
       chips.push({ id: "travel-window", label, action: { kind: "travelWindow" } });

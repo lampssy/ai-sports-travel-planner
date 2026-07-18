@@ -1500,6 +1500,10 @@ test("applies a refinement to the displayed session instead of unsent drawer and
         factor_preferences: [pacePreference],
       },
     }),
+    response({
+      baseline_fingerprint: "baseline-3",
+      applied_intent: appliedTravelIntent,
+    }),
   ];
   const user = userEvent.setup();
   render(<App />);
@@ -1554,6 +1558,47 @@ test("applies a refinement to the displayed session instead of unsent drawer and
     String(lastRequest("/api/search/refinements")?.init?.body),
   );
   expect(latestRefinementRequest.brief).toBe(appliedBrief);
+
+  expect(screen.getByLabelText("Trip brief")).toHaveValue(
+    "Unsent Italy trip from Berlin",
+  );
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Country")).toHaveValue("Italy");
+  expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("Hard drive limit")).toHaveValue(5);
+  expect(screen.getByLabelText("Value objective")).toHaveValue(
+    "pass_price_per_day",
+  );
+  expect(screen.getByRole("button", { name: "Glacier terrain" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  expect(screen.getByText(/prefer local pace: quiet/i)).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Undo" }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  const undoBody = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[2].init?.body),
+  );
+  expect(undoBody.intent).toEqual(appliedTravelIntent);
+  expect(screen.getByLabelText("Trip brief")).toHaveValue(
+    "Unsent Italy trip from Berlin",
+  );
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Country")).toHaveValue("Italy");
+  expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("Hard drive limit")).toHaveValue(5);
+  expect(screen.getByLabelText("Value objective")).toHaveValue(
+    "pass_price_per_day",
+  );
+  expect(screen.getByRole("button", { name: "Glacier terrain" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.queryByText(/prefer local pace: quiet/i)).not.toBeInTheDocument();
 });
 
 test("an ordinary successful search clears refinement undo and rank feedback", async () => {

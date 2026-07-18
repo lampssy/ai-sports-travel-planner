@@ -94,6 +94,23 @@ test("uses exact dates from the response-shaped window even when month is null",
   expect(secondKey).not.toBe(firstKey);
 });
 
+test("gives exact dates precedence when response windows also contain a month", () => {
+  const firstKey = weatherEvidenceCacheKey("tignes-ski-area", {
+    month: 3,
+    start_date: "2027-01-16",
+    end_date: "2027-01-20",
+  });
+  const secondKey = weatherEvidenceCacheKey("tignes-ski-area", {
+    month: 3,
+    start_date: "2027-02-16",
+    end_date: "2027-02-20",
+  });
+
+  expect(firstKey).toBe("tignes-ski-area|dates:2027-01-16:2027-01-20");
+  expect(secondKey).toBe("tignes-ski-area|dates:2027-02-16:2027-02-20");
+  expect(secondKey).not.toBe(firstKey);
+});
+
 test("reuses available and unavailable responses only before server expiry", () => {
   const key = weatherEvidenceCacheKey("tignes-ski-area", { month: 3 });
   writeWeatherEvidenceCache(key, available);

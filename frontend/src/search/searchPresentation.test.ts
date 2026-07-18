@@ -277,6 +277,28 @@ describe("applied travel-window presentation", () => {
       action: { kind: "travelWindow" },
     });
   });
+
+  test("gives complete exact dates precedence when a response also contains a month", () => {
+    const chips = buildParsedChips({
+      ...baseIntent,
+      constraints: {
+        travel_window: {
+          month: 3,
+          start_date: "2027-01-16",
+          end_date: "2027-01-20",
+        },
+      },
+    });
+
+    expect(chips).toContainEqual({
+      id: "travel-window",
+      label: "2027-01-16 to 2027-01-20",
+      action: { kind: "travelWindow" },
+    });
+    expect(chips).not.toContainEqual(
+      expect.objectContaining({ label: "March window" }),
+    );
+  });
 });
 
 describe("deterministic recommendation copy", () => {

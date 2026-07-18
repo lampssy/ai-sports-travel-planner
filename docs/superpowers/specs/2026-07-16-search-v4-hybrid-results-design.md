@@ -165,7 +165,9 @@ Important state transitions:
    the viewport unexpectedly. The client immediately requests the next
    refinement from that new baseline. The rerank uses the displayed session's
    applied filters, intent, and brief; unsubmitted drawer or header edits remain
-   drafts and cannot change the previewed action.
+   drafts and cannot change the previewed action. The selected answer patches
+   only its owned editor fields; unrelated drafts remain intact, and Undo
+   reverses that answer without replacing the current editor with applied state.
 7. The user may select an alternative trip configuration inside a ski-region
    group without changing the group's rank.
 8. The user opens a dossier for the selected configuration, switches among

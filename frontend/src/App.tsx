@@ -72,6 +72,20 @@ interface PreviousSearchState {
   groupPriorities: GroupPriorityPatch[];
   objectives: SearchObjective[];
   answeredQuestionIds: string[];
+  editorBefore: RefinementEditorPatchState;
+  editorAfter: RefinementEditorPatchState;
+}
+
+interface RefinementEditorPatchState {
+  valueObjective: SearchFilters["valueObjective"];
+  preferences: FactorPreferencePatch[];
+  groupPriorities: GroupPriorityPatch[];
+  objectives: SearchObjective[];
+}
+
+interface FetchSearchOptions {
+  exactIntent?: SearchIntent;
+  syncEditorFromResponse?: boolean;
 }
 
 interface PendingRerankScrollRestore {
@@ -98,6 +112,35 @@ function waitForRefinementRetry(
     }, delayMs);
     signal.addEventListener("abort", onAbort, { once: true });
   });
+}
+
+function restoreRefinementDraftItems<T>(
+  current: T[],
+  before: T[],
+  after: T[],
+  key: (item: T) => string,
+): T[] {
+  const beforeByKey = new Map(before.map((item) => [key(item), item]));
+  const afterByKey = new Map(after.map((item) => [key(item), item]));
+  const currentByKey = new Map(current.map((item) => [key(item), item]));
+  const touchedKeys = new Set([...beforeByKey.keys(), ...afterByKey.keys()]);
+  const changedKeys = [...touchedKeys].filter(
+    (itemKey) =>
+      JSON.stringify(beforeByKey.get(itemKey)) !==
+      JSON.stringify(afterByKey.get(itemKey)),
+  );
+  const restored = current.filter((item) => !changedKeys.includes(key(item)));
+  for (const itemKey of changedKeys) {
+    const currentItem = currentByKey.get(itemKey);
+    const afterItem = afterByKey.get(itemKey);
+    if (JSON.stringify(currentItem) !== JSON.stringify(afterItem)) {
+      if (currentItem) restored.push(currentItem);
+      continue;
+    }
+    const beforeItem = beforeByKey.get(itemKey);
+    if (beforeItem) restored.push(beforeItem);
+  }
+  return restored;
 }
 
 function App() {
@@ -541,7 +584,7 @@ function App() {
     nextAnsweredQuestionIds: string[],
     nextBrief: string,
     focusResults: boolean,
-    exactIntent?: SearchIntent,
+    options: FetchSearchOptions = {},
   ) {
     const validationError = validateSearchFilters(nextFilters);
     if (validationError) {
@@ -549,7 +592,7 @@ function App() {
       return null;
     }
     const intent =
-      exactIntent ??
+      options.exactIntent ??
       buildSearchIntent(
         nextFilters,
         nextAssumptions,
@@ -566,11 +609,13 @@ function App() {
     }
     setRefinementStatus("idle");
     const response = await searchResorts({ intent });
-    setFilters(nextFilters);
-    setAssumptions([...response.applied_intent.assumptions]);
-    setPreferences([...response.applied_intent.factor_preferences]);
-    setGroupPriorities([...response.applied_intent.group_priorities]);
-    setObjectives([...response.applied_intent.objectives]);
+    if (options.syncEditorFromResponse !== false) {
+      setFilters(nextFilters);
+      setAssumptions([...response.applied_intent.assumptions]);
+      setPreferences([...response.applied_intent.factor_preferences]);
+      setGroupPriorities([...response.applied_intent.group_priorities]);
+      setObjectives([...response.applied_intent.objectives]);
+    }
     setSession((current) => {
       const next = current
         ? reconcileSearchSession(current, response, nextFilters)
@@ -672,6 +717,43 @@ function App() {
       option.group_priority_patches,
       (item) => item.group_id,
     );
+    const nextEditorPreferences = upsertBy(
+      [...preferences].filter(
+        (item) =>
+          !option.objective_patches.some(
+            (patch) => patch.factor_id === item.factor_id,
+          ),
+      ),
+      option.factor_preference_patches,
+      (item) => item.factor_id,
+    );
+    const nextEditorObjectives = upsertBy(
+      [...objectives].filter(
+        (item) =>
+          !option.factor_preference_patches.some(
+            (patch) => patch.factor_id === item.factor_id,
+          ),
+      ),
+      option.objective_patches,
+      (item) => item.factor_id,
+    );
+    const nextEditorGroups = upsertBy(
+      [...groupPriorities],
+      option.group_priority_patches,
+      (item) => item.group_id,
+    );
+    const selectedValueObjective = option.objective_patches.find(
+      (patch) =>
+        patch.factor_id === "pass_terrain_value" ||
+        patch.factor_id === "pass_price_per_day",
+    )?.factor_id as SearchFilters["valueObjective"] | undefined;
+    const nextEditorValueObjective = selectedValueObjective
+      ? selectedValueObjective
+      : option.factor_preference_patches.some(
+            (patch) => patch.factor_id === filters.valueObjective,
+          )
+        ? ""
+        : filters.valueObjective;
     const previousState: PreviousSearchState = {
       brief: baselineSession.brief,
       filters: baselineSession.appliedFilters,
@@ -681,6 +763,18 @@ function App() {
       groupPriorities: [...baselineIntent.group_priorities],
       objectives: [...baselineIntent.objectives],
       answeredQuestionIds,
+      editorBefore: {
+        valueObjective: filters.valueObjective,
+        preferences: [...preferences],
+        groupPriorities: [...groupPriorities],
+        objectives: [...objectives],
+      },
+      editorAfter: {
+        valueObjective: nextEditorValueObjective,
+        preferences: nextEditorPreferences,
+        groupPriorities: nextEditorGroups,
+        objectives: nextEditorObjectives,
+      },
     };
     const nextIntent: SearchIntent = {
       ...baselineIntent,
@@ -706,7 +800,10 @@ function App() {
         nextAnswered,
         baselineSession.brief,
         false,
-        nextIntent,
+        {
+          exactIntent: nextIntent,
+          syncEditorFromResponse: false,
+        },
       );
       if (!nextResponse) {
         if (pendingRerankScrollRestoreRef.current === pendingScrollRestore) {
@@ -717,6 +814,13 @@ function App() {
       pendingScrollRestore.response = nextResponse;
       setRerankRestoreRequest((current) => current + 1);
       setAnsweredQuestionIds(nextAnswered);
+      setFilters((current) => ({
+        ...current,
+        valueObjective: nextEditorValueObjective,
+      }));
+      setPreferences(nextEditorPreferences);
+      setGroupPriorities(nextEditorGroups);
+      setObjectives(nextEditorObjectives);
       setUndoState(previousState);
       setFocusRequest((current) => current + 1);
       if (previousResponse) {
@@ -770,11 +874,42 @@ function App() {
         undoState.answeredQuestionIds,
         undoState.brief,
         false,
-        undoState.intent,
+        {
+          exactIntent: undoState.intent,
+          syncEditorFromResponse: false,
+        },
       );
-      setFilters(undoState.filters);
-      setBrief(undoState.brief);
-      setLastParsedBrief(undoState.brief.trim());
+      setFilters((current) => ({
+        ...current,
+        valueObjective:
+          current.valueObjective === undoState.editorAfter.valueObjective
+            ? undoState.editorBefore.valueObjective
+            : current.valueObjective,
+      }));
+      setPreferences((current) =>
+        restoreRefinementDraftItems(
+          current,
+          undoState.editorBefore.preferences,
+          undoState.editorAfter.preferences,
+          (item) => item.factor_id,
+        ),
+      );
+      setGroupPriorities((current) =>
+        restoreRefinementDraftItems(
+          current,
+          undoState.editorBefore.groupPriorities,
+          undoState.editorAfter.groupPriorities,
+          (item) => item.group_id,
+        ),
+      );
+      setObjectives((current) =>
+        restoreRefinementDraftItems(
+          current,
+          undoState.editorBefore.objectives,
+          undoState.editorAfter.objectives,
+          (item) => item.factor_id,
+        ),
+      );
       setAnsweredQuestionIds(undoState.answeredQuestionIds);
       setUndoState(null);
       setFocusRequest((current) => current + 1);
