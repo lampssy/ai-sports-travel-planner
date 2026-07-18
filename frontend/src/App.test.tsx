@@ -7,6 +7,7 @@ import type {
   SearchIntent,
   RefinementProposal,
   SearchResponse,
+  SearchV4RefinementRequest,
   SearchV4RefinementResponse,
   SearchV4Configuration,
   SearchWeatherEvidenceResponse,
@@ -474,9 +475,7 @@ test("renders ranking before a separate refinement request resolves", async () =
     ).not.toBeInTheDocument();
   });
   expect(
-    screen.getByText("What matters most?", {
-      selector: ".contextual-refinement__question",
-    }),
+    screen.getByRole("heading", { level: 2, name: "What matters most?" }),
   ).toBeVisible();
   expect(
     screen.getByRole("heading", { name: "Recommended ski trips" }),
@@ -531,16 +530,260 @@ test("keeps ranked results when refinement discovery is rate limited", async () 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(
-    await screen.findByText(
-      "Refinement is temporarily unavailable. Your ranking is still ready.",
-      { selector: ".contextual-refinement > p" },
-    ),
-  ).toBeVisible();
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
   expect(
     screen.queryByText(/snowcast is temporarily unavailable/i),
   ).not.toBeInTheDocument();
 });
+
+test("retries one admitted refinement request after Retry-After without replacing results", async () => {
+  vi.useFakeTimers();
+  let refinementCount = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementCount += 1;
+        if (refinementCount === 1) {
+          return new Response(JSON.stringify({ detail: "Admission limited." }), {
+            status: 429,
+            headers: { "Retry-After": "10" },
+          });
+        }
+        return new Response(
+          JSON.stringify(
+            refinementResponse({
+              refinement_status: "questions_available",
+              refinements: [refinement("retry-question", "Which trade-off matters?")],
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  render(<App />);
+
+  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  await act(() => vi.advanceTimersByTimeAsync(0));
+
+  expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(
+    screen.getByText(
+      "Snowcast is waiting a moment before checking for another useful question.",
+      { selector: ".contextual-refinement > p" },
+    ),
+  ).toBeVisible();
+  expect(screen.getByRole("button", { name: "Adjust" })).toBeEnabled();
+  expect(refinementCount).toBe(1);
+
+  await act(() => vi.advanceTimersByTimeAsync(9_999));
+  expect(refinementCount).toBe(1);
+  await act(() => vi.advanceTimersByTimeAsync(1));
+
+  expect(screen.getByRole("heading", { name: "Which trade-off matters?" })).toBeVisible();
+  expect(refinementCount).toBe(2);
+  const bodies = requests
+    .filter((item) => item.url === "/api/search/refinements")
+    .map((item) => JSON.parse(String(item.init?.body)));
+  expect(bodies).toHaveLength(2);
+  expect(bodies[1]).toEqual(bodies[0]);
+});
+
+test("a new ranking aborts a pending refinement retry", async () => {
+  vi.useFakeTimers();
+  let searchCount = 0;
+  const refinementBodies: SearchV4RefinementRequest[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        searchCount += 1;
+        const requestIntent = JSON.parse(String(init?.body)).intent as SearchIntent;
+        return new Response(
+          JSON.stringify(
+            response({
+              baseline_fingerprint: `baseline-${searchCount}`,
+              applied_intent: requestIntent,
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      if (url === "/api/search/refinements") {
+        const body = JSON.parse(String(init?.body)) as SearchV4RefinementRequest;
+        refinementBodies.push(body);
+        if (body.baseline_fingerprint === "baseline-1") {
+          return new Response(JSON.stringify({ detail: "Admission limited." }), {
+            status: 429,
+            headers: { "Retry-After": "10" },
+          });
+        }
+        return new Response(
+          JSON.stringify(
+            refinementResponse({
+              baseline_fingerprint: "baseline-2",
+              refinement_status: "not_needed",
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  render(<App />);
+
+  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  screen.getByText(
+    "Snowcast is waiting a moment before checking for another useful question.",
+    { selector: ".contextual-refinement > p" },
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /remove optimize terrain per pass price/i }),
+  );
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  expect(searchCount).toBe(2);
+  await act(() => vi.advanceTimersByTimeAsync(10_000));
+
+  expect(
+    refinementBodies.filter((body) => body.baseline_fingerprint === "baseline-1"),
+  ).toHaveLength(1);
+});
+
+test("unmount aborts a pending refinement retry", async () => {
+  vi.useFakeTimers();
+  let refinementCount = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementCount += 1;
+        return new Response(JSON.stringify({ detail: "Admission limited." }), {
+          status: 429,
+          headers: { "Retry-After": "10" },
+        });
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const view = render(<App />);
+
+  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  screen.getByText(
+    "Snowcast is waiting a moment before checking for another useful question.",
+    { selector: ".contextual-refinement > p" },
+  );
+  view.unmount();
+  await act(() => vi.advanceTimersByTimeAsync(10_000));
+
+  expect(refinementCount).toBe(1);
+});
+
+test("a second admission limit terminates the single retry cycle", async () => {
+  vi.useFakeTimers();
+  let refinementCount = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementCount += 1;
+        return new Response(JSON.stringify({ detail: "Admission limited." }), {
+          status: 429,
+          headers: { "Retry-After": "1" },
+        });
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  render(<App />);
+
+  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  screen.getByText(
+    "Snowcast is waiting a moment before checking for another useful question.",
+    { selector: ".contextual-refinement > p" },
+  );
+  await act(() => vi.advanceTimersByTimeAsync(1_000));
+
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(refinementCount).toBe(2);
+  await act(() => vi.advanceTimersByTimeAsync(20_000));
+  expect(refinementCount).toBe(2);
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
+});
+
+test.each(["long Retry-After", "network failure"] as const)(
+  "does not retry a terminal %s",
+  async (failure) => {
+    let refinementCount = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === "/api/current-trip") {
+          return new Response(JSON.stringify({ trip: null }), { status: 200 });
+        }
+        if (url === "/api/search") {
+          return new Response(JSON.stringify(response()), { status: 200 });
+        }
+        if (url === "/api/search/refinements") {
+          refinementCount += 1;
+          if (failure === "network failure") throw new TypeError("offline");
+          return new Response(JSON.stringify({ detail: "Admission limited." }), {
+            status: 429,
+            headers: { "Retry-After": "16" },
+          });
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "No additional refinement is available right now. Your results are unchanged.",
+    );
+    expect(refinementCount).toBe(1);
+    expect(document.querySelector(".contextual-refinement")).toBeNull();
+  },
+);
 
 test("keeps refinement validation details out of the traveller-facing UI", async () => {
   vi.stubGlobal(
@@ -575,12 +818,10 @@ test("keeps refinement validation details out of the traveller-facing UI", async
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(
-    await screen.findByText(
-      "Refinement is temporarily unavailable. Your ranking is still ready.",
-      { selector: ".contextual-refinement > p" },
-    ),
-  ).toBeVisible();
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
   expect(screen.queryByText(/extra inputs are not permitted/i)).not.toBeInTheDocument();
 });
 
@@ -667,12 +908,10 @@ test("keeps ranking usable when a timed-out refinement baseline is unverified", 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(
-    await screen.findByText(
-      "Refinement is temporarily unavailable. Your ranking is still ready.",
-      { selector: ".contextual-refinement > p" },
-    ),
-  ).toBeVisible();
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
   expect(
     screen.queryByText("A newer ranking replaced this refinement check."),
   ).not.toBeInTheDocument();
@@ -1051,8 +1290,9 @@ test("previews a validated dynamic refinement before applying it", async () => {
   render(<App />);
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   expect(
-    await screen.findByText(/would you prefer lively après/i, {
-      selector: ".contextual-refinement__question",
+    await screen.findByRole("heading", {
+      level: 2,
+      name: /would you prefer lively après/i,
     }),
   ).toBeInTheDocument();
 

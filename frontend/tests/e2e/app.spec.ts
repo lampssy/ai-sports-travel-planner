@@ -20,6 +20,24 @@ type WeatherResponder = (
   requestIndex: number,
 ) => MockWeatherResult;
 
+function refinementPayloadFor(
+  ranking: SearchResponse,
+): SearchV4RefinementResponse {
+  return {
+    search_model_version: "search-v4",
+    ranking_policy_version: ranking.ranking_policy_version,
+    baseline_fingerprint: ranking.baseline_fingerprint,
+    baseline_status: "current",
+    refinement_status: ranking.refinements.length
+      ? "questions_available"
+      : "not_needed",
+    fallback_used: false,
+    refinements: ranking.refinements,
+    refinement_presentation_policy_version:
+      "search-refinement-presentation-1",
+  };
+}
+
 const historicalProfile: WeatherEvidencePoint[] = [
   {
     date_or_month_day: "03-01",
@@ -272,17 +290,7 @@ async function mockSearchV4Api(
       });
       return;
     }
-    const payload: SearchV4RefinementResponse = {
-      search_model_version: "search-v4",
-      ranking_policy_version: ranking.ranking_policy_version,
-      baseline_fingerprint: ranking.baseline_fingerprint,
-      baseline_status: "current",
-      refinement_status: ranking.refinements.length
-        ? "questions_available"
-        : "not_needed",
-      fallback_used: false,
-      refinements: ranking.refinements,
-    };
+    const payload = refinementPayloadFor(ranking);
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -618,14 +626,10 @@ test("desktop board compares, selects alternatives, and reranks in place", async
     page.getByRole("heading", { name: "Recommended ski trips" }),
   ).toBeFocused();
   await expect(
-    page.locator(".contextual-refinement__question", {
-      hasText: "Replacement refinement?",
-    }),
+    page.getByRole("heading", { name: "Replacement refinement?" }),
   ).toBeVisible();
   await expect(
-    page.locator(".contextual-refinement__question", {
-      hasText: "Which stay style fits?",
-    }),
+    page.getByRole("heading", { name: "Which stay style fits?" }),
   ).toBeHidden();
   await expect.poll(() => scrollYAfterLayout(page)).toBe(scrollBeforeRerank);
   await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
@@ -695,6 +699,60 @@ test("refinement objective survives pass-priority edits and reranks", async ({
   await expect
     .poll(() => refinementRequests.at(-1)?.already_answered_question_ids)
     .toEqual(["snow-priority"]);
+});
+
+test("refinement admission retry keeps reranked results usable without a persistent error card", async ({
+  page,
+}) => {
+  const initial = refinementResponse();
+  const reranked = rerankedResponse();
+  await mockSearchV4Api(page, [initial, reranked], []);
+  let refinementAttempt = 0;
+  await page.route(/\/api\/search\/refinements$/, async (route) => {
+    refinementAttempt += 1;
+    if (refinementAttempt === 2) {
+      await route.fulfill({
+        status: 429,
+        contentType: "application/json",
+        headers: { "Retry-After": "1" },
+        body: JSON.stringify({ detail: "Admission limited." }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(
+        refinementPayloadFor(refinementAttempt === 1 ? initial : reranked),
+      ),
+    });
+  });
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+
+  await page.getByRole("radio", { name: /snow reliability/i }).click();
+  await page.getByRole("button", { name: "Apply and rerank" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: /les arcs - peisey vallandry/i }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Adjust" })).toBeEnabled();
+  await expect(
+    page.getByText(
+      "Snowcast is waiting a moment before checking for another useful question.",
+      { exact: true },
+    ).last(),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Refinement is temporarily unavailable", { exact: false }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Replacement refinement?" }),
+  ).toBeVisible();
+  expect(refinementAttempt).toBe(3);
+  await expect(
+    page.getByText("Refinement is temporarily unavailable", { exact: false }),
+  ).toHaveCount(0);
 });
 
 test("a no-op refinement focuses the next queued control without reranking", async ({
@@ -814,9 +872,7 @@ test("a delayed rerank blocks chip edits and drawer entry", async ({ page }) => 
   await franceChip.dispatchEvent("click");
   releaseRerank?.();
   await expect(
-    page.locator(".contextual-refinement__question", {
-      hasText: "Replacement refinement?",
-    }),
+    page.getByRole("heading", { name: "Replacement refinement?" }),
   ).toBeVisible();
 
   expect(searchRequests[1].intent.constraints.location).toEqual({ country: "France" });
@@ -862,15 +918,11 @@ test("mobile board advances refinements in document flow without overflow", asyn
   await submitHomepageBrief(page, "March in France with easy lift access");
 
   await expect(
-    page.locator(".contextual-refinement__question", {
-      hasText: "What should break the tie?",
-    }),
+    page.getByRole("heading", { name: "What should break the tie?" }),
   ).toBeVisible();
   await page.getByRole("button", { name: /skip for now/i }).click();
   await expect(
-    page.locator(".contextual-refinement__question", {
-      hasText: "Which stay style fits?",
-    }),
+    page.getByRole("heading", { name: "Which stay style fits?" }),
   ).toBeVisible();
   expect(searchRequests).toHaveLength(1);
   await page

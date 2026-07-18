@@ -27,6 +27,7 @@ export type RefinementLifecycleStatus =
   | "idle"
   | "loading"
   | "slow"
+  | "retrying"
   | "questions_available"
   | "not_needed"
   | "skipped"

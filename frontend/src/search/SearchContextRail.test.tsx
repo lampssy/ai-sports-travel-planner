@@ -165,8 +165,8 @@ test.each([
     "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
   ],
   [
-    "temporarily_unavailable",
-    "Refinement is temporarily unavailable. Your ranking is still ready.",
+    "retrying",
+    "Snowcast is waiting a moment before checking for another useful question.",
   ],
   ["stale", "A newer ranking replaced this refinement check."],
 ] as const)("renders the %s refinement lifecycle state", (status, copy) => {
@@ -187,6 +187,30 @@ test.each([
   );
 
   expect(screen.getByRole("status")).toHaveTextContent(copy);
+});
+
+test("announces terminal optional failure without rendering a visible card", () => {
+  render(
+    <SearchContextRail
+      intent={intent}
+      refinement={null}
+      refinementStatus="temporarily_unavailable"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
+  expect(screen.queryByText(/refinement is temporarily unavailable/i)).toBeNull();
 });
 
 test("keeps the idle lifecycle state compact", () => {

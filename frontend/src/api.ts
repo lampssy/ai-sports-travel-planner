@@ -27,10 +27,18 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number | null,
+    readonly retryAfterSeconds: number | null = null,
   ) {
     super(message);
     this.name = "ApiError";
   }
+}
+
+function retryAfterSeconds(response: Response): number | null {
+  const value = response.headers.get("Retry-After");
+  if (!value || !/^[1-9]\d*$/.test(value)) return null;
+  const seconds = Number(value);
+  return Number.isSafeInteger(seconds) ? seconds : null;
 }
 
 interface ValidationIssue {
@@ -193,6 +201,7 @@ export async function fetchSearchRefinements(
         "Unable to check for a refinement.",
       ),
       response.status,
+      retryAfterSeconds(response),
     );
   }
 

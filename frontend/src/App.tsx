@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import {
+  ApiError,
   clearCurrentTrip,
   fetchSearchRefinements,
   getCurrentTrip,
@@ -56,6 +57,7 @@ import type {
   RefinementOption,
   SearchFilters,
   SearchObjective,
+  SearchV4RefinementResponse,
   SearchV4Configuration,
 } from "./types";
 import { AppShell, CurrentTripView } from "./ui/AppShell";
@@ -72,6 +74,27 @@ interface PreviousSearchState {
 interface PendingRerankScrollRestore {
   scrollY: number;
   response: SearchSession["response"] | null;
+}
+
+function waitForRefinementRetry(
+  delayMs: number,
+  signal: AbortSignal,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException("The operation was aborted.", "AbortError"));
+      return;
+    }
+    const onAbort = () => {
+      window.clearTimeout(timer);
+      reject(new DOMException("The operation was aborted.", "AbortError"));
+    };
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, delayMs);
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 function App() {
@@ -389,23 +412,61 @@ function App() {
 
     const controller = new AbortController();
     refinementAbortRef.current = controller;
-    setRefinementStatus("loading");
-    refinementSlowTimerRef.current = window.setTimeout(() => {
-      if (refinementRequestIdRef.current === requestId) {
-        setRefinementStatus("slow");
+    const clearSlowTimer = () => {
+      if (refinementSlowTimerRef.current !== null) {
+        window.clearTimeout(refinementSlowTimerRef.current);
+        refinementSlowTimerRef.current = null;
       }
-    }, 2_500);
+    };
+    const startAttempt = () => {
+      setRefinementStatus("loading");
+      clearSlowTimer();
+      refinementSlowTimerRef.current = window.setTimeout(() => {
+        if (
+          refinementRequestIdRef.current === requestId &&
+          !controller.signal.aborted
+        ) {
+          setRefinementStatus("slow");
+        }
+      }, 2_500);
+    };
+    const request = {
+      intent: rankingResponse.applied_intent,
+      brief: nextBrief.trim().slice(0, 2_000) || null,
+      baseline_fingerprint: rankingResponse.baseline_fingerprint,
+      already_answered_question_ids: nextAnsweredQuestionIds,
+    };
 
     try {
-      const refinementResponse = await fetchSearchRefinements(
-        {
-          intent: rankingResponse.applied_intent,
-          brief: nextBrief.trim().slice(0, 2_000) || null,
-          baseline_fingerprint: rankingResponse.baseline_fingerprint,
-          already_answered_question_ids: nextAnsweredQuestionIds,
-        },
-        controller.signal,
-      );
+      let refinementResponse: SearchV4RefinementResponse | undefined;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        startAttempt();
+        try {
+          refinementResponse = await fetchSearchRefinements(
+            request,
+            controller.signal,
+          );
+          break;
+        } catch (caught) {
+          clearSlowTimer();
+          const canRetry =
+            attempt === 0 &&
+            caught instanceof ApiError &&
+            caught.status === 429 &&
+            caught.retryAfterSeconds !== null &&
+            caught.retryAfterSeconds <= 15 &&
+            refinementRequestIdRef.current === requestId &&
+            !controller.signal.aborted;
+          if (!canRetry) throw caught;
+          setRefinementStatus("retrying");
+          await waitForRefinementRetry(
+            caught.retryAfterSeconds * 1_000,
+            controller.signal,
+          );
+          if (refinementRequestIdRef.current !== requestId) return;
+        }
+      }
+      if (!refinementResponse) return;
       if (refinementRequestIdRef.current !== requestId) return;
 
       if (refinementResponse.baseline_status === "unverified") {
@@ -460,10 +521,7 @@ function App() {
       setRefinementError(null);
     } finally {
       if (refinementRequestIdRef.current === requestId) {
-        if (refinementSlowTimerRef.current !== null) {
-          window.clearTimeout(refinementSlowTimerRef.current);
-          refinementSlowTimerRef.current = null;
-        }
+        clearSlowTimer();
         if (refinementAbortRef.current === controller) {
           refinementAbortRef.current = null;
         }

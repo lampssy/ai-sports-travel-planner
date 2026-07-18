@@ -119,4 +119,55 @@ describe("Search API request projection", () => {
     expect(signalCapture.current?.aborted).toBe(true);
     vi.useRealTimers();
   });
+
+  it("exposes a positive integer Retry-After delay for refinement admission limits", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ detail: "Too many refinement requests." }), {
+          status: 429,
+          headers: { "Retry-After": "10" },
+        }),
+      ),
+    );
+
+    await expect(
+      fetchSearchRefinements({
+        intent: responseShapedIntent,
+        brief: "March in France",
+        baseline_fingerprint: "a".repeat(64),
+        already_answered_question_ids: [],
+      }),
+    ).rejects.toMatchObject({
+      name: "ApiError",
+      status: 429,
+      retryAfterSeconds: 10,
+    });
+  });
+
+  it.each([undefined, "0", "-1", "1.5", "soon"])(
+    "rejects invalid Retry-After metadata (%s)",
+    async (retryAfter) => {
+      const headers = new Headers();
+      if (retryAfter !== undefined) headers.set("Retry-After", retryAfter);
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ detail: "Too many requests." }), {
+            status: 429,
+            headers,
+          }),
+        ),
+      );
+
+      await expect(
+        fetchSearchRefinements({
+          intent: responseShapedIntent,
+          brief: "March in France",
+          baseline_fingerprint: "a".repeat(64),
+          already_answered_question_ids: [],
+        }),
+      ).rejects.toMatchObject({ retryAfterSeconds: null });
+    },
+  );
 });

@@ -19,11 +19,19 @@ const REFINEMENT_STATUS_COPY: Partial<
   loading: "Checking whether one answer could improve this ranking.",
   slow:
     "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
-  temporarily_unavailable:
-    "Refinement is temporarily unavailable. Your ranking is still ready.",
+  retrying:
+    "Snowcast is waiting a moment before checking for another useful question.",
   stale: "A newer ranking replaced this refinement check.",
   not_needed: "No follow-up would materially change these results.",
   skipped: "Follow-up skipped. Results unchanged.",
+};
+
+const REFINEMENT_ANNOUNCEMENT_COPY: Partial<
+  Record<RefinementLifecycleStatus, string>
+> = {
+  ...REFINEMENT_STATUS_COPY,
+  temporarily_unavailable:
+    "No additional refinement is available right now. Your results are unchanged.",
 };
 
 function ContextGroup({
@@ -94,7 +102,7 @@ export function SearchContextRail({
   const lifecycleCopy = REFINEMENT_STATUS_COPY[refinementStatus];
   const refinementAnnouncement = refinement
     ? `A refinement question is ready. ${refinement.question}`
-    : lifecycleCopy;
+    : REFINEMENT_ANNOUNCEMENT_COPY[refinementStatus];
 
   return (
     <aside className="search-context" aria-label="Search context">
