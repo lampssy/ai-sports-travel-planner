@@ -61,10 +61,22 @@ _QUESTION_START = re.compile(
     r"^(?:What|Which|Would|How|Do|Does|Is|Are)\b",
     flags=re.IGNORECASE,
 )
-_WORD_TOKEN = re.compile(r"[^\W\d_]+(?:['’][^\W\d_]+)?", flags=re.UNICODE)
+_WORD_TOKEN = re.compile(r"[^\W\d_]+(?:['’‘][^\W\d_]+)?", flags=re.UNICODE)
+_ALLOWED_QUESTION_PUNCTUATION = frozenset({"?", "'", "’", "‘", "-", ","})
+_ALLOWED_PREFERENCE_QUESTION_FORMS = (
+    "importance_or_priority",
+    "preference",
+    "matter",
+    "desired_kind_type_or_pace",
+    "add_value_or_improve_trip",
+    "influence_choice",
+    "rather",
+    "ease",
+)
 _GENERIC_QUESTION_VOCABULARY = frozenset(
     {
         "a",
+        "add",
         "an",
         "and",
         "are",
@@ -72,30 +84,48 @@ _GENERIC_QUESTION_VOCABULARY = frozenset(
         "be",
         "by",
         "could",
+        "choice",
         "do",
         "does",
+        "easy",
+        "easier",
+        "ease",
         "even",
+        "favour",
+        "favor",
         "for",
         "from",
         "have",
         "how",
         "if",
+        "important",
+        "importance",
+        "improve",
         "in",
+        "influence",
         "is",
         "it",
+        "kind",
         "like",
         "matter",
+        "matters",
         "more",
         "of",
         "on",
         "or",
         "prefer",
+        "preference",
+        "priority",
         "rather",
         "should",
+        "suit",
         "than",
         "the",
         "this",
         "to",
+        "trip",
+        "type",
+        "value",
         "what",
         "when",
         "where",
@@ -105,6 +135,24 @@ _GENERIC_QUESTION_VOCABULARY = frozenset(
         "would",
         "you",
         "your",
+    }
+)
+_SENSITIVE_BRIEF_MARKERS = frozenset(
+    {
+        "address",
+        "bank",
+        "card",
+        "contact",
+        "credential",
+        "credentials",
+        "email",
+        "passport",
+        "password",
+        "payment",
+        "phone",
+        "secret",
+        "secrets",
+        "token",
     }
 )
 _UNSAFE_QUESTION_TERMS = frozenset(
@@ -149,11 +197,6 @@ _UNSAFE_QUESTION_TERMS = frozenset(
 _URL_PATTERN = re.compile(r"(?:https?://|www\.)\S+", flags=re.IGNORECASE)
 _EMAIL_PATTERN = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
 _PHONE_OR_PAYMENT_PATTERN = re.compile(r"(?:\d[\s().+-]*){7,}")
-_SENSITIVE_BRIEF_VALUE_PATTERN = re.compile(
-    r"\b(?:address|card|email|passport|password|payment|phone|secret|token)\b"
-    r"\s*(?:is|:|=)?\s*([^\s,;]+)",
-    flags=re.IGNORECASE,
-)
 _MULTI_TOPIC_FALLBACK = (
     "Which of these trip preferences matters most to you?",
     "Your answer can distinguish otherwise similar trip options.",
@@ -238,6 +281,9 @@ class RefinementPresentationPolicy(_PresentationModel):
                     sorted(self.approved_question_vocabulary((topic.topic_id,)))
                 ),
                 "grounding_terms": tuple(sorted(self.grounding_terms(topic.topic_id))),
+                "allowed_preference_question_forms": (
+                    _ALLOWED_PREFERENCE_QUESTION_FORMS
+                ),
                 "answers": tuple(
                     {
                         "answer_id": answer_id,
@@ -441,19 +487,24 @@ def _safe_question(
         len(question) <= _MAX_INTERACTION_QUESTION_CHARACTERS
         and question.endswith("?")
         and _QUESTION_START.match(question) is not None
+        and _matches_allowed_preference_question_form(question_tokens)
         and all(question_tokens & terms for terms in selected_grounding_terms)
         and question_tokens <= approved_vocabulary
         and not question_tokens & _UNSAFE_QUESTION_TERMS
+        and _has_only_allowed_question_characters(question)
         and not _contains_digit_or_percent(question)
         and not _contains_blocked_token(question, blocked_tokens)
         and not _contains_sensitive_pattern(question)
         and not _contains_control_character(question)
-        and not _echoes_sensitive_brief(question, untrusted_brief)
+        and not _brief_requires_registered_fallback(untrusted_brief)
     )
 
 
 def _tokens(text: str) -> tuple[str, ...]:
-    return tuple(match.group(0).casefold() for match in _WORD_TOKEN.finditer(text))
+    return tuple(
+        match.group(0).casefold().replace("’", "'").replace("‘", "'")
+        for match in _WORD_TOKEN.finditer(text)
+    )
 
 
 def _contains_sensitive_pattern(text: str) -> bool:
@@ -467,21 +518,51 @@ def _contains_control_character(text: str) -> bool:
     return any(unicodedata.category(character).startswith("C") for character in text)
 
 
-def _echoes_sensitive_brief(question: str, brief: str | None) -> bool:
+def _has_only_allowed_question_characters(question: str) -> bool:
+    return all(
+        unicodedata.category(character)[0] in {"L", "M"}
+        or character.isspace()
+        or character in _ALLOWED_QUESTION_PUNCTUATION
+        for character in question
+    )
+
+
+def _matches_allowed_preference_question_form(
+    question_tokens: frozenset[str],
+) -> bool:
+    if not question_tokens & {"you", "your", "trip", "choice", "dates"}:
+        return False
+    if question_tokens & {"important", "importance", "priority"}:
+        return True
+    if question_tokens & {"kind", "type", "pace"} and question_tokens & {
+        "prefer",
+        "like",
+        "suit",
+    }:
+        return True
+    if question_tokens & {"prefer", "preference", "like", "favour", "favor"}:
+        return True
+    if question_tokens & {"matter", "matters"}:
+        return True
+    if {"add", "value"} <= question_tokens or {"improve", "trip"} <= question_tokens:
+        return True
+    if {"influence", "choice"} <= question_tokens:
+        return True
+    if "rather" in question_tokens:
+        return True
+    return bool(
+        question_tokens & {"easy", "easier", "ease"}
+        and question_tokens & {"how", "should", "prefer", "suit", "would"}
+    )
+
+
+def _brief_requires_registered_fallback(brief: str | None) -> bool:
     if not brief:
         return False
-    normalized_question = question.casefold()
-    fragments = {
-        match.group(0).casefold()
-        for pattern in (_URL_PATTERN, _EMAIL_PATTERN, _PHONE_OR_PAYMENT_PATTERN)
-        for match in pattern.finditer(brief)
-    }
-    fragments.update(
-        match.group(1).casefold()
-        for match in _SENSITIVE_BRIEF_VALUE_PATTERN.finditer(brief)
-        if len(match.group(1)) >= 4
+    return bool(
+        frozenset(_tokens(brief)) & _SENSITIVE_BRIEF_MARKERS
+        or _contains_sensitive_pattern(brief)
     )
-    return any(fragment in normalized_question for fragment in fragments)
 
 
 def _contains_digit_or_percent(text: str) -> bool:

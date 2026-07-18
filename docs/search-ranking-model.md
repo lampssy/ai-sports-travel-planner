@@ -914,13 +914,16 @@ usable if question generation fails or no proposal has material impact.
 The provider-facing response schema deliberately contains only the compact
 topic/answer-ID structure and bounded question text supported by Gemini.
 Pydantic size and shape validation plus presentation-registry and deterministic
-policy validation remain authoritative. The server replaces unsafe or
-unselected-topic question wording with registry-backed traveller copy and
-always supplies the configured single-topic or multi-topic reason; candidate
-IDs, sensitive brief echoes, external actions, unsupported claims, internal
-policy terms, numeric claims, malformed questions, and overlong copy are never
-shown. Approved reasons, option labels, descriptions, and typed actions never
-come from the provider.
+policy validation remain authoritative. The server accepts provider question
+wording only when it uses an approved traveller-preference or priority form,
+selected-topic vocabulary, and the minimal allowed Unicode letter, mark,
+whitespace, and punctuation policy. Otherwise it uses registry-backed traveller
+copy and always supplies the configured single-topic or multi-topic reason. A
+bounded brief containing a configured sensitive, credential, payment, or
+contact marker forces that fallback for the request; candidate IDs, external
+actions, unsupported claims, internal policy terms, numeric claims, malformed
+questions, and overlong copy are also never shown. Approved reasons, option
+labels, descriptions, and typed actions never come from the provider.
 Questions are validated independently: an invalid or immaterial sibling is
 dropped without discarding a useful question that passed every gate. The
 refinement provider receives one attempt only; no retry can extend the request

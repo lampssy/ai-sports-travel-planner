@@ -220,6 +220,134 @@ def test_blocked_terms_and_candidate_ids_match_whole_tokens_only() -> None:
     )
 
 
+def test_factual_selected_topic_question_uses_registered_fallback() -> None:
+    presentation = load_refinement_presentation_policy()
+
+    assert resolve_interaction_copy(
+        "Is snowmaking backup dependable?",
+        ("snowmaking_availability", "trip_window_snow_fit"),
+        (),
+        presentation,
+    ) == (
+        "Which of these trip preferences matters most to you?",
+        "Your answer can distinguish otherwise similar trip options.",
+    )
+
+    assert (
+        resolve_interaction_copy(
+            "Is snowmaking backup important?",
+            ("snowmaking_availability",),
+            (),
+            presentation,
+        )[0]
+        == "Would snowmaking backup matter if natural snow looks weak?"
+    )
+
+
+@pytest.mark.parametrize(
+    ("topic_id", "question"),
+    [
+        (
+            "trip_window_snow_fit",
+            "Are dependable snow conditions a priority for your dates?",
+        ),
+        (
+            "snowmaking_availability",
+            "Does snowmaking backup matter for your trip when natural snow is weak?",
+        ),
+        (
+            "night_skiing",
+            "Would recurring night skiing improve your trip?",
+        ),
+        (
+            "pass_price_per_day",
+            "How much should lift-pass price influence your choice?",
+        ),
+        (
+            "local_pace",
+            "What pace would suit you around your accommodation base?",
+        ),
+        (
+            "stay_base_access",
+            "How easy should access from your accommodation base be?",
+        ),
+    ],
+)
+def test_registered_preference_question_forms_accept_safe_paraphrases(
+    topic_id: str,
+    question: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+
+    assert (
+        resolve_interaction_copy(
+            question,
+            (topic_id,),
+            (),
+            presentation,
+        )[0]
+        == question
+    )
+
+
+@pytest.mark.parametrize(
+    "symbol",
+    ["💳", "€", "$", "=", "→", "/"],
+)
+def test_dynamic_question_rejects_symbols_outside_the_character_policy(
+    symbol: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+
+    assert (
+        resolve_interaction_copy(
+            f"Would you prefer traditional mountain village {symbol} or resort?",
+            ("development_style",),
+            (),
+            presentation,
+        )[0]
+        == "What kind of place would you prefer to stay in?"
+    )
+
+
+@pytest.mark.parametrize("apostrophe", ["'", "’", "‘"])
+def test_dynamic_question_allows_registered_minimal_punctuation(
+    apostrophe: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    question = (
+        "Would you prefer traditional mountain village, or purpose-built ski resort?"
+    )
+
+    assert presentation_module._has_only_allowed_question_characters(
+        f"traveller{apostrophe}s preference?"
+    )
+    assert (
+        resolve_interaction_copy(
+            question,
+            ("development_style",),
+            (),
+            presentation,
+        )[0]
+        == question
+    )
+
+
+def test_sensitive_marker_anywhere_in_brief_forces_registered_fallback() -> None:
+    presentation = load_refinement_presentation_policy()
+
+    assert (
+        resolve_interaction_copy(
+            "What traditional mountain village would you prefer?",
+            ("development_style",),
+            (),
+            presentation,
+            untrusted_brief="password is blue traditional mountain village",
+        )[0]
+        == "What kind of place would you prefer to stay in?"
+    )
+
+
 def test_registry_fallback_uses_first_material_topic_and_authoritative_copy() -> None:
     presentation = load_refinement_presentation_policy()
     fallback = build_deterministic_refinement_fallback(

@@ -987,6 +987,7 @@ test("five-option mobile refinement disclosure preserves reachability and focus"
   await disclosure.click();
   await expect(disclosure).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByRole("radio")).toHaveCount(5);
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByRole("radio", { name: /snow reliability/i })).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await expect(page.getByRole("radio", { name: /shorter journey/i })).toBeChecked();
