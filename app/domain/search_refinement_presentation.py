@@ -233,81 +233,54 @@ _SENSITIVE_BRIEF_MARKERS = frozenset(
         "token",
     }
 )
-_UNSAFE_QUESTION_TERMS = frozenset(
+_SENSITIVE_PUBLIC_COPY_TERMS = _SENSITIVE_BRIEF_MARKERS
+_EXTERNAL_ACTION_PUBLIC_COPY_TERMS = frozenset(
     {
-        "address",
-        "bank",
-        "best",
-        "card",
-        "cheapest",
+        "book",
+        "buy",
         "click",
-        "closest",
-        "contact",
-        "credential",
-        "credentials",
-        "deepest",
-        "email",
-        "fastest",
+        "external",
         "follow",
+        "offer",
+        "pay",
+        "provide",
+        "send",
+        "share",
+        "submit",
+        "upload",
+        "visit",
+    }
+)
+_UNSUPPORTED_CLAIM_PUBLIC_COPY_TERMS = frozenset(
+    {
+        "best",
+        "cheapest",
+        "closest",
+        "deepest",
+        "fastest",
         "greatest",
+        "guarantee",
+        "guaranteed",
         "highest",
-        "home",
-        "instruction",
         "largest",
         "lowest",
         "most",
-        "passport",
-        "password",
-        "payment",
-        "phone",
-        "provide",
-        "secret",
-        "secrets",
-        "send",
-        "share",
-        "snowiest",
-        "token",
-        "upload",
-        "visit",
-        "worst",
-    }
-)
-_UNSAFE_PUBLIC_COPY_TERMS = frozenset(
-    {
-        "address",
-        "bank",
-        "book",
-        "buy",
-        "card",
-        "cheapest",
-        "click",
-        "contact",
-        "credential",
-        "credentials",
-        "email",
-        "guarantee",
-        "guaranteed",
-        "passport",
-        "password",
-        "pay",
-        "payment",
-        "phone",
-        "provide",
         "safest",
-        "secret",
-        "secrets",
-        "send",
-        "share",
         "snowiest",
-        "submit",
-        "token",
-        "upload",
-        "visit",
+        "worst",
     }
 )
 _URL_PATTERN = re.compile(r"(?:https?://|www\.)\S+", flags=re.IGNORECASE)
 _EMAIL_PATTERN = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
 _PHONE_OR_PAYMENT_PATTERN = re.compile(r"(?:\d[\s().+-]*){7,}")
+_MACHINE_SLUG_ID_PATTERN = re.compile(
+    r"(?<![\w-])[a-z0-9]+(?:-[a-z0-9]+){2,}(?![\w-])",
+    flags=re.IGNORECASE,
+)
+_MACHINE_KEY_ID_PATTERN = re.compile(
+    r"(?<!\w)[a-z0-9]+(?:[_:][a-z0-9]+)+(?!\w)",
+    flags=re.IGNORECASE,
+)
 _MULTI_TOPIC_FALLBACK = (
     "Which of these trip preferences matters most to you?",
     "Your answer can distinguish otherwise similar trip options.",
@@ -593,12 +566,12 @@ def _safe_question(
             topic_ids,
             presentation,
         )
-        and not question_tokens & _UNSAFE_QUESTION_TERMS
         and _has_only_allowed_question_characters(question)
-        and not _contains_digit_or_percent(question)
-        and not _contains_blocked_token(question, blocked_tokens)
-        and not _contains_sensitive_pattern(question)
-        and not _contains_control_character(question)
+        and _public_copy_safety_violation(
+            question,
+            blocked_tokens=blocked_tokens,
+        )
+        is None
         and not _brief_requires_registered_fallback(untrusted_brief)
     )
 
@@ -707,6 +680,69 @@ def _contains_blocked_token(text: str, tokens: Sequence[str]) -> bool:
         for token in tokens
         if token
     )
+
+
+def _public_copy_safety_violation(
+    text: str,
+    *,
+    blocked_tokens: Sequence[str] = (),
+) -> str | None:
+    """Return the first deterministic safety category for public copy."""
+
+    if _contains_control_character(text):
+        return "control"
+    if _contains_sensitive_pattern(text):
+        return "sensitive_pattern"
+    if _contains_digit_or_percent(text):
+        return "numeric_claim"
+    if _contains_machine_id_shape(text):
+        return "machine_id"
+    tokens = _tokens(text)
+    token_set = frozenset(tokens)
+    if token_set & _SENSITIVE_PUBLIC_COPY_TERMS:
+        return "sensitive_request"
+    if token_set & _EXTERNAL_ACTION_PUBLIC_COPY_TERMS:
+        return "external_action"
+    if _contains_unsupported_claim(tokens):
+        return "unsupported_claim"
+    if _contains_blocked_token(text, blocked_tokens):
+        return "blocked"
+    return None
+
+
+def _contains_machine_id_shape(text: str) -> bool:
+    return (
+        "--" in text
+        or _MACHINE_SLUG_ID_PATTERN.search(text) is not None
+        or _MACHINE_KEY_ID_PATTERN.search(text) is not None
+    )
+
+
+def _contains_unsupported_claim(tokens: Sequence[str]) -> bool:
+    for index, token in enumerate(tokens):
+        if token not in _UNSUPPORTED_CLAIM_PUBLIC_COPY_TERMS:
+            continue
+        if (
+            token == "best"
+            and index >= 2
+            and (tokens[index - 2], tokens[index - 1])
+            in {
+                ("fit", "you"),
+                ("fits", "you"),
+                ("suit", "you"),
+                ("suits", "you"),
+            }
+        ):
+            continue
+        if (
+            token == "most"
+            and index >= 1
+            and tokens[index - 1] == "matters"
+            and tuple(tokens[index + 1 : index + 3]) == ("to", "you")
+        ):
+            continue
+        return True
+    return False
 
 
 def load_refinement_presentation_policy(
@@ -853,15 +889,14 @@ def _validate_visible_copy(presentation: RefinementPresentationPolicy) -> None:
         ),
     )
     for field, text in visible_copy:
-        if (
-            _contains_sensitive_pattern(text)
-            or _contains_control_character(text)
-            or _contains_digit_or_percent(text)
-            or frozenset(_tokens(text)) & _UNSAFE_PUBLIC_COPY_TERMS
-        ):
-            raise ValueError(f"{field} contains unsafe traveller-facing copy")
-        if _contains_blocked_token(text, presentation.blocked_copy_terms):
+        violation = _public_copy_safety_violation(
+            text,
+            blocked_tokens=presentation.blocked_copy_terms,
+        )
+        if violation == "blocked":
             raise ValueError(f"{field} contains blocked traveller-facing copy")
+        if violation is not None:
+            raise ValueError(f"{field} contains unsafe traveller-facing copy")
 
 
 def _validate_registered_question_phrases(
@@ -874,7 +909,11 @@ def _validate_registered_question_phrases(
                 raise ValueError(
                     f"topic {topic.topic_id} question phrase must be normalized"
                 )
-            if _contains_control_character(phrase):
+            violation = _public_copy_safety_violation(
+                phrase,
+                blocked_tokens=presentation.blocked_copy_terms,
+            )
+            if violation == "control":
                 raise ValueError(
                     f"topic {topic.topic_id} question phrase contains control content"
                 )
@@ -883,17 +922,11 @@ def _validate_registered_question_phrases(
                     f"topic {topic.topic_id} question phrase contains unsupported "
                     "characters"
                 )
-            if _contains_digit_or_percent(phrase) or _contains_sensitive_pattern(
-                phrase
-            ):
+            if violation not in {None, "blocked"}:
                 raise ValueError(
                     f"topic {topic.topic_id} question phrase contains unsafe content"
                 )
-            if frozenset(_tokens(phrase)) & _UNSAFE_QUESTION_TERMS:
-                raise ValueError(
-                    f"topic {topic.topic_id} question phrase contains unsafe content"
-                )
-            if _contains_blocked_token(phrase, presentation.blocked_copy_terms):
+            if violation == "blocked":
                 raise ValueError(
                     f"topic {topic.topic_id} question phrase contains blocked content"
                 )

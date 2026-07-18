@@ -24,6 +24,80 @@ from app.domain.search_v4_models import SearchIntent
 
 pytestmark = pytest.mark.db_free
 
+_CONFIGURED_PUBLIC_COPY_FIELDS = (
+    ("topics", "fallback_question"),
+    ("topics", "fallback_reason"),
+    ("answers", "label"),
+    ("answers", "description"),
+)
+
+_ISOLATED_UNSAFE_PUBLIC_COPY = (
+    (
+        "url",
+        "Details at https://example.com",
+        "sensitive_pattern",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "external_action",
+        "Follow this external offer",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "credential",
+        "Password preference",
+        "sensitive_request",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "payment",
+        "Payment preference",
+        "sensitive_request",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "contact",
+        "Email preference",
+        "sensitive_request",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "sensitive",
+        "Passport preference",
+        "sensitive_request",
+        "unsafe traveller-facing copy",
+    ),
+    ("control", "Calm\0 choice", "control", "unsafe traveller-facing copy"),
+    ("bidi", "Calm\u202e choice", "control", "unsafe traveller-facing copy"),
+    (
+        "unsupported_claim",
+        "Best snow option",
+        "unsupported_claim",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "machine_id_whole",
+        "ischgl-ischgl--ischgl-ski-area--ischgl-vip-skipass",
+        "machine_id",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "machine_id_embedded",
+        "Prefer alps-region-premium-pass today",
+        "machine_id",
+        "unsafe traveller-facing copy",
+    ),
+    ("digit", "Option 2", "numeric_claim", "unsafe traveller-facing copy"),
+    (
+        "percent",
+        "More than half %",
+        "numeric_claim",
+        "unsafe traveller-facing copy",
+    ),
+    ("internal", "Ranking preference", "blocked", "blocked traveller-facing copy"),
+)
+
 
 def _evaluation(factor_id: str, utility: float, *, cap: float = 1) -> FactorEvaluation:
     return FactorEvaluation(
@@ -155,6 +229,73 @@ def test_registry_validation_rejects_unsafe_public_copy(
 
     with pytest.raises(ValueError, match="unsafe traveller-facing copy"):
         validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+@pytest.mark.parametrize(
+    ("section", "field"),
+    _CONFIGURED_PUBLIC_COPY_FIELDS,
+    ids=("fallback-question", "fallback-reason", "answer-label", "answer-description"),
+)
+@pytest.mark.parametrize(
+    ("category", "unsafe_copy", "expected_violation", "error"),
+    _ISOLATED_UNSAFE_PUBLIC_COPY,
+    ids=tuple(case[0] for case in _ISOLATED_UNSAFE_PUBLIC_COPY),
+)
+def test_every_configured_public_copy_field_rejects_each_isolated_unsafe_category(
+    section: str,
+    field: str,
+    category: str,
+    unsafe_copy: str,
+    expected_violation: str,
+    error: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    assert (
+        presentation_module._public_copy_safety_violation(
+            unsafe_copy,
+            blocked_tokens=presentation.blocked_copy_terms,
+        )
+        == expected_violation
+    ), category
+    payload = presentation.model_dump(mode="python")
+    payload[section][0][field] = unsafe_copy
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    with pytest.raises(ValueError, match=error):
+        validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "safe_copy"),
+    (
+        (
+            "topics",
+            "fallback_question",
+            "Would a purpose-built ski-day base suit you?",
+        ),
+        (
+            "topics",
+            "fallback_reason",
+            "A purpose-built ski-day base can shape your trip.",
+        ),
+        ("answers", "label", "Purpose-built ski-day base"),
+        (
+            "answers",
+            "description",
+            "Prefer a purpose-built base for the ski-day routine.",
+        ),
+    ),
+)
+def test_configured_public_copy_allows_natural_single_hyphen_words(
+    section: str,
+    field: str,
+    safe_copy: str,
+) -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload[section][0][field] = safe_copy
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    validate_refinement_presentation_policy(configured, load_search_policy())
 
 
 def test_registry_copy_resolves_to_typed_actions() -> None:
