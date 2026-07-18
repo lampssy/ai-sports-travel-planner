@@ -6,7 +6,7 @@ import re
 import time
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Literal, Protocol, Self
@@ -101,6 +101,8 @@ from app.domain.search_refinement_snapshot import (
     RefinementCandidateReplayState,
     RefinementFactorEvaluation,
     SearchRefinementSnapshotStore,
+    StaticEvaluationReplayContextTemplate,
+    WeatherEvaluationReplayContextTemplate,
     canonical_search_intent_digest,
 )
 from app.domain.search_v4_models import (
@@ -773,6 +775,14 @@ def _evaluate_search(
         pass_audience=audience,
         pass_season_label=season_label,
     )
+    static_replay_context_template = StaticEvaluationReplayContextTemplate(
+        policy=static_context.policy,
+        trust_resolver=static_context.trust_resolver,
+        numeric_bounds=static_context.numeric_bounds,
+        pass_duration_days=static_context.pass_duration_days,
+        pass_audience=static_context.pass_audience,
+        pass_season_label=static_context.pass_season_label,
+    )
     static_registry = build_static_factor_registry()
     with search_phase(phase="static_factor_evaluation", intent=intent):
         static_by_candidate = {
@@ -815,6 +825,10 @@ def _evaluate_search(
         policy=selected_policy,
         stale_run_ids=stale_run_ids,
     )
+    weather_replay_context_template = WeatherEvaluationReplayContextTemplate(
+        policy=weather_context.policy,
+        stale_run_ids=weather_context.stale_run_ids,
+    )
     weather_registry = build_weather_factor_registry()
     with search_phase(phase="weather_factor_evaluation", intent=intent):
         factor_evaluated: list[_FactorEvaluatedCandidate] = []
@@ -854,10 +868,13 @@ def _evaluate_search(
                     constraint_decision=decisions[record.candidate_id],
                     evaluations=evaluations,
                     replay_state=RefinementCandidateReplayState(
-                        static_context=static_context,
+                        static_context_template=static_replay_context_template,
                         static_candidate=static_candidate_by_id[record.candidate_id],
-                        weather_context=weather_context,
-                        weather_candidate=weather_candidate,
+                        weather_context_template=weather_replay_context_template,
+                        weather_candidate=replace(
+                            weather_candidate,
+                            snowmaking_evaluation=None,
+                        ),
                     ),
                 )
             )
@@ -958,6 +975,19 @@ def get_search_refinements(
         )
     selected_policy = baseline.policy
     validate_search_intent(intent, selected_policy)
+    if any(candidate.replay_state is None for candidate in baseline.candidates):
+        return _refinement_response(
+            policy=selected_policy,
+            presentation=presentation,
+            status="temporarily_unavailable",
+            baseline_fingerprint=baseline.fingerprint,
+            baseline_status="current",
+            fallback_used=False,
+            refinements=(),
+            reason="snapshot_replay_unavailable",
+            intent=intent,
+            duration_seconds=clock() - started,
+        )
     if selected_policy.refinement.max_questions == 0:
         return _refinement_response(
             policy=selected_policy,
@@ -1154,7 +1184,7 @@ def _refinement_baseline_candidates(
                 for evaluation in item.evaluations
             ),
             unscored=isinstance(item.ranking, UnscoredAllocation),
-            replay_state=getattr(item, "replay_state", None),
+            replay_state=item.replay_state,
         )
         for item in ordered
     )
@@ -1176,26 +1206,29 @@ def _compact_refinement_evaluation(
 def _refinement_states(
     candidates: Sequence[RefinementBaselineCandidate],
 ) -> tuple[RefinementCandidateState, ...]:
-    return tuple(
-        RefinementCandidateState(
-            candidate_id=item.candidate_id,
-            evaluations=tuple(
-                evaluation.materialize() for evaluation in item.evaluations
-            ),
-            eligibility_evaluator=(
-                lambda candidate_intent, facts=item.constraint_facts: (
-                    evaluate_search_constraints(
-                        candidate=facts,
-                        intent=candidate_intent,
-                    ).eligible
-                )
-            ),
-            evaluation_replayer=(
-                item.replay_state.evaluate if item.replay_state is not None else None
-            ),
+    states: list[RefinementCandidateState] = []
+    for item in candidates:
+        replay_state = item.replay_state
+        if replay_state is None:
+            raise ValueError("refinement baseline candidate lacks replay state")
+        states.append(
+            RefinementCandidateState(
+                candidate_id=item.candidate_id,
+                evaluations=tuple(
+                    evaluation.materialize() for evaluation in item.evaluations
+                ),
+                eligibility_evaluator=(
+                    lambda candidate_intent, facts=item.constraint_facts: (
+                        evaluate_search_constraints(
+                            candidate=facts,
+                            intent=candidate_intent,
+                        ).eligible
+                    )
+                ),
+                evaluation_replayer=replay_state.evaluate,
+            )
         )
-        for item in candidates
-    )
+    return tuple(states)
 
 
 def _serialized_refinements(

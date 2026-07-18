@@ -4,7 +4,7 @@ import hashlib
 import json
 import time
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from threading import RLock
 from typing import Literal
@@ -12,6 +12,8 @@ from typing import Literal
 from app.domain.search_constraints import ConstraintCandidateFacts
 from app.domain.search_factors.models import FactorEvaluation
 from app.domain.search_factors.static import (
+    CatalogEvidenceResolver,
+    NumericBounds,
     StaticEvaluationContext,
     StaticFactorCandidate,
     build_static_factor_registry,
@@ -49,16 +51,54 @@ class RefinementFactorEvaluation:
 
 
 @dataclass(frozen=True, slots=True)
+class StaticEvaluationReplayContextTemplate:
+    """Intent-free static evaluator context retained for bounded replay."""
+
+    policy: SearchPolicy
+    trust_resolver: CatalogEvidenceResolver
+    numeric_bounds: Mapping[str, NumericBounds]
+    pass_duration_days: int
+    pass_audience: str
+    pass_season_label: str | None
+
+    def materialize(self, intent: SearchIntent) -> StaticEvaluationContext:
+        return StaticEvaluationContext(
+            intent=intent,
+            policy=self.policy,
+            trust_resolver=self.trust_resolver,
+            numeric_bounds=self.numeric_bounds,
+            pass_duration_days=self.pass_duration_days,
+            pass_audience=self.pass_audience,
+            pass_season_label=self.pass_season_label,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class WeatherEvaluationReplayContextTemplate:
+    """Intent-free weather evaluator context retained for bounded replay."""
+
+    policy: SearchPolicy
+    stale_run_ids: frozenset[str]
+
+    def materialize(self, intent: SearchIntent) -> WeatherEvaluationContext:
+        return WeatherEvaluationContext(
+            intent=intent,
+            policy=self.policy,
+            stale_run_ids=self.stale_run_ids,
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class RefinementCandidateReplayState:
     """Exact evaluator inputs retained for one candidate in a bounded baseline."""
 
-    static_context: StaticEvaluationContext
+    static_context_template: StaticEvaluationReplayContextTemplate
     static_candidate: StaticFactorCandidate
-    weather_context: WeatherEvaluationContext
+    weather_context_template: WeatherEvaluationReplayContextTemplate
     weather_candidate: WeatherFactorCandidate
 
     def evaluate(self, intent: SearchIntent) -> tuple[FactorEvaluation, ...]:
-        static_context = replace(self.static_context, intent=intent)
+        static_context = self.static_context_template.materialize(intent)
         static_registry = build_static_factor_registry()
         static_evaluations = tuple(
             static_registry.get(factor_id).evaluate(
@@ -75,7 +115,7 @@ class RefinementCandidateReplayState:
             ),
             None,
         )
-        weather_context = replace(self.weather_context, intent=intent)
+        weather_context = self.weather_context_template.materialize(intent)
         weather_candidate = replace(
             self.weather_candidate,
             snowmaking_evaluation=snowmaking,

@@ -54,9 +54,10 @@ fingerprint, policy and compact baseline scores, constraint facts, and the exact
 in-memory static and weather evaluator inputs used for each retained candidate.
 Those replay inputs include immutable candidate catalog entities, trust
 resolver state, normalized weather rows, selected numeric bounds, and evaluator
-contexts. They do not include the full `SearchIntent` or origin text, trip
-brief, provider credentials, prompts, tokens, responses, or other provider
-secrets. The state is process-local and is not serialized or persisted.
+context templates with the intent field deliberately omitted. They do not
+include the full `SearchIntent` or origin text, trip brief, provider credentials,
+prompts, tokens, responses, or other provider secrets. The state is
+process-local and is not serialized or persisted.
 
 The store is thread-safe and process-local, uses LRU eviction, expires entries
 60 seconds after insertion, and holds at most 64 entries. The limit is a server
@@ -78,13 +79,15 @@ scores those replayed evaluations. Replayed static snowmaking evidence is
 supplied to the existing weather evaluator so cross-factor trip-window snow
 effects remain exact. Refinement never reruns candidate acquisition, catalog
 loading, climatology or forecast repository queries, routing, or any
-provider/network acquisition.
+provider/network acquisition. Ordinary evaluator contexts containing a variant
+intent exist only transiently during that replay.
 
 A cache miss, expired entry, fingerprint or canonical-intent digest mismatch,
-or process restart returns the typed `temporarily_unavailable` refinement
-outcome. These paths do not rerun deterministic search and do not invoke Gemini.
-The ranked response remains usable, and a deliberate ranking refresh creates a
-new snapshot and handoff.
+process restart, or retained candidate without the required replay state returns
+the typed `temporarily_unavailable` refinement outcome. These paths do not rerun
+deterministic search and do not invoke Gemini or fallback generation. The ranked
+response remains usable, and a deliberate ranking refresh creates a new snapshot
+and handoff.
 
 The complete refinement endpoint has a five-second monotonic deadline measured
 from ingress, including snapshot lookup, provider work, and fallback validation.

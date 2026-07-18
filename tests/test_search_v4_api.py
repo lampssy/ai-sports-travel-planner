@@ -8,13 +8,10 @@ from fastapi.testclient import TestClient
 from app.api.refinement_admission import RefinementAdmissionGuard
 from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
 from app.domain import search_v4_service
-from app.domain.search_constraints import CandidateLocation, ConstraintCandidateFacts
 from app.domain.search_intent_policy import SearchIntentPolicyError
 from app.domain.search_policy import load_search_policy
 from app.domain.search_refinement_snapshot import (
-    RefinementBaselineCandidate,
     RefinementBaselineSnapshot,
-    RefinementFactorEvaluation,
     SearchRefinementSnapshotStore,
     canonical_search_intent_digest,
 )
@@ -377,37 +374,13 @@ def test_post_search_refinements_skips_gemini_when_questions_are_disabled(
             "refinement": base_policy.refinement.model_copy(update={"max_questions": 0})
         }
     )
-    candidate_id = "candidate"
     snapshot_store = SearchRefinementSnapshotStore()
     snapshot_store.put(
         RefinementBaselineSnapshot(
             fingerprint=payload["baseline_fingerprint"],
             intent_digest=canonical_search_intent_digest(intent),
             policy=policy,
-            candidates=(
-                RefinementBaselineCandidate(
-                    candidate_id=candidate_id,
-                    ski_region_id="ski-region",
-                    constraint_facts=ConstraintCandidateFacts(
-                        candidate_id=candidate_id,
-                        location=CandidateLocation(
-                            country="France",
-                            region="Savoie",
-                            ski_region_ids=("ski-region",),
-                            destination_id="destination",
-                        ),
-                    ),
-                    evaluations=(
-                        RefinementFactorEvaluation(
-                            factor_id="accessible_terrain_scale",
-                            raw_utility=0.75,
-                            neutral_utility=0.5,
-                            effective_evidence_cap=1,
-                        ),
-                    ),
-                    unscored=False,
-                ),
-            ),
+            candidates=(),
         )
     )
     monkeypatch.setattr(

@@ -281,7 +281,8 @@ Invariants:
     comparison supplies equality binding and a fingerprint alone is not trusted;
   - resolved: retain no full `SearchIntent` or origin text, brief, or provider
     secrets in the baseline store; exact replay does retain referenced catalog,
-    trust-resolver, numeric-bound, and normalized weather evaluator inputs;
+    trust-resolver, numeric-bound, and normalized weather evaluator inputs in
+    frozen intent-free context templates;
   - resolved: a missing, expired, evicted, restarted, or mismatched baseline
     returns `temporarily_unavailable` without deterministic search or Gemini;
   - resolved: the 60-second TTL covers only the server handoff for generating a
@@ -393,9 +394,11 @@ Invariants:
   `temporarily_unavailable`; it triggers neither deterministic search nor
   Gemini.
 - Every option variant rebinds the retained inputs to its typed intent and calls
-  the registered static and weather evaluators. Multi-topic options are
-  symmetric, replayed materiality and previews share the same outcomes, and
-  `max_questions = 0` disables both provider and fallback generation.
+  the registered static and weather evaluators through transient ordinary
+  contexts. Multi-topic options are symmetric, replayed materiality and previews
+  share the same outcomes, and `max_questions = 0` disables both provider and
+  fallback generation. A candidate missing required replay state fails closed
+  before either generation path.
 - The process-local handoff is accepted only for the current single-instance
   deployment. Horizontal scaling requires sticky routing, shared state, or a
   redesigned handoff.

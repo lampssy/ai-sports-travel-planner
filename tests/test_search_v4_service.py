@@ -3,7 +3,8 @@ from __future__ import annotations
 import math
 import statistics
 import time
-from dataclasses import replace
+from collections.abc import Iterator, Mapping, Sequence
+from dataclasses import fields, is_dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from types import SimpleNamespace
 from typing import cast
@@ -11,17 +12,18 @@ from typing import cast
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
 from app.api.routes import router
 from app.data.audit_search_factor_readiness import DEFAULT_TRUST_MANIFEST_PATH
 from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
 from app.domain import search_v4_service
-from app.domain.catalog import AggregateTerrainMetrics
+from app.domain.catalog import AggregateTerrainMetrics, CatalogSnapshot
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.models import SnowClimatologyDaily
 from app.domain.search_factors.models import FactorEvaluation
-from app.domain.search_policy import load_search_policy
+from app.domain.search_policy import SearchPolicy, load_search_policy
 from app.domain.search_ranking import (
     RankedScore,
     UnscoredAllocation,
@@ -38,6 +40,7 @@ from app.domain.search_refinement import (
     validate_refinement_proposal,
 )
 from app.domain.search_refinement_snapshot import (
+    RefinementBaselineCandidate,
     SearchRefinementSnapshotStore,
     canonical_search_intent_digest,
 )
@@ -164,6 +167,112 @@ def _country_area_ids(snapshot, country: str) -> tuple[str, ...]:
             }
         )
     )
+
+
+def _walk_object_graph(root: object) -> Iterator[object]:
+    """Traverse retained snapshot data without invoking arbitrary properties."""
+
+    seen: set[int] = set()
+
+    def visit(value: object) -> Iterator[object]:
+        value_id = id(value)
+        if value_id in seen:
+            return
+        seen.add(value_id)
+        yield value
+        if is_dataclass(value) and not isinstance(value, type):
+            for field in fields(value):
+                yield from visit(getattr(value, field.name))
+        elif isinstance(value, BaseModel):
+            for field_name in type(value).model_fields:
+                yield from visit(getattr(value, field_name))
+        elif isinstance(value, Mapping):
+            for key, item in value.items():
+                yield from visit(key)
+                yield from visit(item)
+        elif isinstance(value, (tuple, list, set, frozenset)):
+            for item in value:
+                yield from visit(item)
+
+    yield from visit(root)
+
+
+def _assert_all_option_replay_matches_full_search(
+    *,
+    validated: ValidatedRefinementProposal,
+    intent: SearchIntent,
+    baseline_candidates: Sequence[RefinementBaselineCandidate],
+    catalog_snapshot: CatalogSnapshot,
+    trust_manifest: CatalogTrustManifest,
+    policy: SearchPolicy,
+    climatology_rows: tuple[SnowClimatologyDaily, ...] = (),
+    forecast_rows: tuple[ServedWeatherForecastDaily, ...] = (),
+    reference_time: datetime = datetime(2027, 1, 1, 12, tzinfo=UTC),
+) -> None:
+    serialized = search_v4_service._serialized_refinements(
+        validated=(validated,),
+        intent=intent,
+        candidates=baseline_candidates,
+    )[0]
+    baseline_ordered_candidate_ids = tuple(
+        candidate.candidate_id for candidate in baseline_candidates
+    )
+    baseline_unscored_candidate_ids = frozenset(
+        candidate.candidate_id
+        for candidate in baseline_candidates
+        if candidate.unscored
+    )
+    candidate_region_ids = {
+        candidate.candidate_id: candidate.ski_region_id
+        for candidate in baseline_candidates
+    }
+
+    for option, outcome, public_option in zip(
+        validated.proposal.options,
+        validated.variant_outcomes,
+        serialized.options,
+        strict=True,
+    ):
+        variant_intent = apply_refinement_option(
+            intent,
+            option,
+            policy,
+        )
+        expected = search_v4_service._evaluate_search(
+            intent=variant_intent,
+            catalog_snapshot=catalog_snapshot,
+            trust_manifest=trust_manifest,
+            climatology_repository=_ClimatologyRepository(climatology_rows),
+            forecast_repository=_ForecastRepository(forecast_rows),
+            reference_time=reference_time,
+            policy=policy,
+        )
+        expected_outcome = RefinementVariantOutcome(
+            ordered_candidate_ids=tuple(
+                item.record.candidate_id
+                for item in expected.ordered
+                if isinstance(item.ranking, RankedScore)
+            ),
+            eligible_candidate_ids=frozenset(
+                item.record.candidate_id for item in expected.ordered
+            ),
+            intent_changed=variant_intent != intent,
+        )
+        assert outcome.ordered_candidate_ids == expected_outcome.ordered_candidate_ids
+        assert outcome.eligible_candidate_ids == expected_outcome.eligible_candidate_ids
+        expected_preview = search_v4_service._refinement_preview(
+            intent=intent,
+            option=option,
+            baseline_ordered_candidate_ids=baseline_ordered_candidate_ids,
+            baseline_unscored_candidate_ids=baseline_unscored_candidate_ids,
+            candidate_region_ids=candidate_region_ids,
+            variant_outcome=expected_outcome,
+        )
+        assert public_option.model_dump(mode="json")["preview"] == (
+            expected_preview.model_dump(mode="json")
+            if expected_preview is not None
+            else None
+        )
 
 
 def _climatology_row(
@@ -477,6 +586,7 @@ def _ordered_candidate(
         ),
         evaluations=(),
         ranking=ranking if ranking is not None else SimpleNamespace(),
+        replay_state=SimpleNamespace(evaluate=lambda _intent: ()),
     )
 
 
@@ -1112,6 +1222,41 @@ def test_refinement_snapshot_compaction_preserves_scores() -> None:
                 )
 
 
+def test_refinement_snapshot_replay_graph_excludes_intent_and_origin_text() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    private_origin = "Flat 17, 991 Distinctive Private Avenue, Krakow"
+    intent = _intent().model_copy(
+        update={
+            "travel_context": TravelContext(
+                origin_text=private_origin,
+                mode="car",
+            )
+        }
+    )
+    store = SearchRefinementSnapshotStore()
+
+    baseline = search_trip_configurations(
+        intent=intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=store,
+    )
+    lookup = store.get(
+        baseline.baseline_fingerprint,
+        canonical_search_intent_digest(intent),
+    )
+
+    assert lookup.snapshot is not None
+    retained_values = tuple(_walk_object_graph(lookup.snapshot))
+    assert not any(isinstance(value, SearchIntent) for value in retained_values)
+    assert private_origin not in {
+        value for value in retained_values if isinstance(value, str)
+    }
+
+
 def test_apres_replay_matches_full_evaluator_reruns_without_acquisition() -> None:
     snapshot, manifest = _catalog_and_trust()
     snapshot = snapshot.model_copy(
@@ -1206,28 +1351,14 @@ def test_apres_replay_matches_full_evaluator_reruns_without_acquisition() -> Non
     )
 
     assert len({item.ordered_candidate_ids for item in validated.variant_outcomes}) > 1
-    for option, outcome in zip(
-        proposal.options,
-        validated.variant_outcomes,
-        strict=True,
-    ):
-        variant_intent = apply_refinement_option(
-            intent,
-            option,
-            lookup.snapshot.policy,
-        )
-        expected = search_v4_service._evaluate_search(
-            intent=variant_intent,
-            catalog_snapshot=snapshot,
-            trust_manifest=manifest,
-            climatology_repository=_ClimatologyRepository(),
-            forecast_repository=_ForecastRepository(),
-            reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
-            policy=lookup.snapshot.policy,
-        )
-        assert outcome.ordered_candidate_ids == tuple(
-            item.record.candidate_id for item in expected.ordered
-        )
+    _assert_all_option_replay_matches_full_search(
+        validated=validated,
+        intent=intent,
+        baseline_candidates=lookup.snapshot.candidates,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        policy=lookup.snapshot.policy,
+    )
     assert (
         len(climate_repository.calls),
         len(forecast_repository.calls),
@@ -1308,6 +1439,14 @@ def test_refinement_replay_makes_neutral_categorical_raw_variation_actionable() 
 
     assert validated.impact.material is True
     assert len({item.ordered_candidate_ids for item in validated.variant_outcomes}) > 1
+    _assert_all_option_replay_matches_full_search(
+        validated=validated,
+        intent=intent,
+        baseline_candidates=lookup.snapshot.candidates,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        policy=lookup.snapshot.policy,
+    )
 
 
 def test_exact_date_snowmaking_replay_updates_trip_window_snow_fit() -> None:
@@ -1375,11 +1514,38 @@ def test_exact_date_snowmaking_replay_updates_trip_window_snow_fit() -> None:
             ),
         ),
     )
+    proposal = RefinementProposal(
+        question_id="snowmaking-backup",
+        question="How important is snowmaking backup for these dates?",
+        reason="Trusted snowmaking support varies across the trip options.",
+        options=(prefer_option, ignore_option),
+    )
+    states = search_v4_service._refinement_states(lookup.snapshot.candidates)
+    validated = validate_refinement_proposal(
+        proposal=proposal,
+        intent=intent,
+        candidates=states,
+        policy=lookup.snapshot.policy,
+    )
+    _assert_all_option_replay_matches_full_search(
+        validated=validated,
+        intent=intent,
+        baseline_candidates=lookup.snapshot.candidates,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        policy=lookup.snapshot.policy,
+        climatology_rows=climate_rows,
+    )
+
     prefer_intent = apply_refinement_option(
-        intent, prefer_option, lookup.snapshot.policy
+        intent,
+        prefer_option,
+        lookup.snapshot.policy,
     )
     ignore_intent = apply_refinement_option(
-        intent, ignore_option, lookup.snapshot.policy
+        intent,
+        ignore_option,
+        lookup.snapshot.policy,
     )
     assert replay_candidate.replay_state is not None
 
@@ -1687,6 +1853,64 @@ def test_refinement_service_fails_closed_on_snapshot_miss_without_reevaluation(
     )
 
     assert response.baseline_status == "unverified"
+    assert response.refinement_status == "temporarily_unavailable"
+    assert response.fallback_used is False
+    assert response.refinements == ()
+
+
+def test_refinement_service_fails_closed_when_snapshot_lacks_replay_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    intent = _intent()
+    snapshot_store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=intent,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    lookup = snapshot_store.get(
+        baseline.baseline_fingerprint,
+        canonical_search_intent_digest(intent),
+    )
+    assert lookup.snapshot is not None
+    damaged_candidate = replace(
+        lookup.snapshot.candidates[0],
+        replay_state=None,
+    )
+    snapshot_store.put(
+        replace(
+            lookup.snapshot,
+            candidates=(damaged_candidate, *lookup.snapshot.candidates[1:]),
+        )
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "generate_refinement_proposals",
+        lambda **_kwargs: pytest.fail("missing replay must skip provider"),
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "build_deterministic_refinement_fallback",
+        lambda **_kwargs: pytest.fail("missing replay must skip fallback"),
+    )
+
+    response = get_search_refinements(
+        intent=intent,
+        brief="Help us decide.",
+        baseline_fingerprint=baseline.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        llm_client_factory=lambda _remaining: pytest.fail(
+            "missing replay must skip client construction"
+        ),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert response.baseline_status == "current"
     assert response.refinement_status == "temporarily_unavailable"
     assert response.fallback_used is False
     assert response.refinements == ()

@@ -1041,15 +1041,18 @@ ranking-policy versions, and the weather-selection policy revision. Ranking
 uses it as the key for a separate bounded snapshot containing the policy,
 compact candidate/constraint/scoring state, and exact evaluator inputs required
 by refinement. It retains immutable candidate catalog entities, trust resolver
-state, normalized weather rows, numeric bounds, and evaluator contexts, but not
-the trip brief, provider prompts, responses, or credentials. The caller's
-canonical intent digest must also match; the public fingerprint is never
-trusted alone.
+state, normalized weather rows, numeric bounds, and frozen intent-free evaluator
+context templates, but not a full `SearchIntent`, origin text, trip brief,
+provider prompts, responses, or credentials. Ordinary contexts containing a
+variant intent exist only for the duration of an evaluator replay. The caller's
+canonical intent digest must also match; the public fingerprint is never trusted
+alone.
 
 The snapshot expires 60 seconds after ranking and the process-local store holds
-at most 64 entries with LRU eviction. A miss, expiry, eviction, restart, or
-intent mismatch returns `temporarily_unavailable` without deterministic search
-or Gemini. This TTL covers only generation of the next question. Once a
+at most 64 entries with LRU eviction. A miss, expiry, eviction, restart, intent
+mismatch, or candidate missing its required replay state returns
+`temporarily_unavailable` without deterministic search, Gemini, or fallback
+generation. This TTL covers only generation of the next question. Once a
 question reaches the browser, its typed answer remains usable after expiry.
 Applying a material answer performs a full rerank, stores a new baseline and
 fingerprint, and requests the next refinement from that fresh baseline.

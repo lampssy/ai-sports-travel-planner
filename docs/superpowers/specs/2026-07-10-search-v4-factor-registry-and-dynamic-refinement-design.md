@@ -782,6 +782,8 @@ Each proposal must be rejected unless:
 - every answer variant is evaluated by replaying the registered static and
   weather evaluators from the captured baseline inputs under its variant intent,
   without fresh acquisition;
+- retained evaluator context templates are frozen and intent-free; ordinary
+  contexts containing the request variant exist only transiently during replay;
 - evidence-mode-specific actionability holds: positive-presence needs at least
   one trustworthy non-neutral outcome and two distinct effective utilities,
   categorical matching needs trusted utility variation, and comparative or
