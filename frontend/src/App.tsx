@@ -551,6 +551,14 @@ function App() {
       nextGroupPriorities,
       nextObjectives,
     );
+    refinementRequestIdRef.current += 1;
+    refinementAbortRef.current?.abort();
+    refinementAbortRef.current = null;
+    if (refinementSlowTimerRef.current !== null) {
+      window.clearTimeout(refinementSlowTimerRef.current);
+      refinementSlowTimerRef.current = null;
+    }
+    setRefinementStatus("idle");
     const response = await searchResorts({ intent });
     setAssumptions([...response.applied_intent.assumptions]);
     setPreferences([...response.applied_intent.factor_preferences]);

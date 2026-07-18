@@ -602,9 +602,10 @@ test("retries one admitted refinement request after Retry-After without replacin
   expect(bodies[1]).toEqual(bodies[0]);
 });
 
-test("a new ranking aborts a pending refinement retry", async () => {
+test("a new ranking aborts a pending refinement retry before its search resolves", async () => {
   vi.useFakeTimers();
   let searchCount = 0;
+  let resolveSecondSearch: ((response: Response) => void) | undefined;
   const refinementBodies: SearchV4RefinementRequest[] = [];
   vi.stubGlobal(
     "fetch",
@@ -616,7 +617,7 @@ test("a new ranking aborts a pending refinement retry", async () => {
       if (url === "/api/search") {
         searchCount += 1;
         const requestIntent = JSON.parse(String(init?.body)).intent as SearchIntent;
-        return new Response(
+        const searchResponse = new Response(
           JSON.stringify(
             response({
               baseline_fingerprint: `baseline-${searchCount}`,
@@ -625,15 +626,36 @@ test("a new ranking aborts a pending refinement retry", async () => {
           ),
           { status: 200 },
         );
+        if (searchCount === 2) {
+          return new Promise<Response>((resolve) => {
+            resolveSecondSearch = resolve;
+          });
+        }
+        return searchResponse;
       }
       if (url === "/api/search/refinements") {
         const body = JSON.parse(String(init?.body)) as SearchV4RefinementRequest;
         refinementBodies.push(body);
         if (body.baseline_fingerprint === "baseline-1") {
-          return new Response(JSON.stringify({ detail: "Admission limited." }), {
-            status: 429,
-            headers: { "Retry-After": "10" },
-          });
+          if (
+            refinementBodies.filter(
+              (candidate) => candidate.baseline_fingerprint === "baseline-1",
+            ).length === 1
+          ) {
+            return new Response(JSON.stringify({ detail: "Admission limited." }), {
+              status: 429,
+              headers: { "Retry-After": "10" },
+            });
+          }
+          return new Response(
+            JSON.stringify(
+              refinementResponse({
+                refinement_status: "questions_available",
+                refinements: [refinement("old-question", "Outdated question?")],
+              }),
+            ),
+            { status: 200 },
+          );
         }
         return new Response(
           JSON.stringify(
@@ -665,6 +687,26 @@ test("a new ranking aborts a pending refinement retry", async () => {
 
   expect(
     refinementBodies.filter((body) => body.baseline_fingerprint === "baseline-1"),
+  ).toHaveLength(1);
+  expect(screen.queryByText("Outdated question?")).not.toBeInTheDocument();
+
+  resolveSecondSearch?.(
+    new Response(
+      JSON.stringify(
+        response({
+          baseline_fingerprint: "baseline-2",
+          applied_intent: {
+            ...intent,
+            objectives: [],
+          },
+        }),
+      ),
+      { status: 200 },
+    ),
+  );
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  expect(
+    refinementBodies.filter((body) => body.baseline_fingerprint === "baseline-2"),
   ).toHaveLength(1);
 });
 
@@ -915,6 +957,47 @@ test("keeps ranking usable when a timed-out refinement baseline is unverified", 
   expect(
     screen.queryByText("A newer ranking replaced this refinement check."),
   ).not.toBeInTheDocument();
+});
+
+test("does not retry a current-baseline provider temporarily unavailable response", async () => {
+  let refinementCount = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementCount += 1;
+        return new Response(
+          JSON.stringify(
+            refinementResponse({
+              baseline_status: "current",
+              refinement_status: "temporarily_unavailable",
+              refinements: [],
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(refinementCount).toBe(1);
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
 });
 
 test("aborts and ignores a superseded refinement response", async () => {
