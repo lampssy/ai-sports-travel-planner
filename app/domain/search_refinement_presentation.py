@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 import tomllib
+import unicodedata
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -58,6 +59,99 @@ _RegistryDisplayText = Annotated[
 _MODEL_CONFIG = ConfigDict(frozen=True, extra="forbid")
 _QUESTION_START = re.compile(
     r"^(?:What|Which|Would|How|Do|Does|Is|Are)\b",
+    flags=re.IGNORECASE,
+)
+_WORD_TOKEN = re.compile(r"[^\W\d_]+(?:['’][^\W\d_]+)?", flags=re.UNICODE)
+_GENERIC_QUESTION_VOCABULARY = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "be",
+        "by",
+        "could",
+        "do",
+        "does",
+        "even",
+        "for",
+        "from",
+        "have",
+        "how",
+        "if",
+        "in",
+        "is",
+        "it",
+        "like",
+        "matter",
+        "more",
+        "of",
+        "on",
+        "or",
+        "prefer",
+        "rather",
+        "should",
+        "than",
+        "the",
+        "this",
+        "to",
+        "what",
+        "when",
+        "where",
+        "which",
+        "with",
+        "without",
+        "would",
+        "you",
+        "your",
+    }
+)
+_UNSAFE_QUESTION_TERMS = frozenset(
+    {
+        "address",
+        "bank",
+        "best",
+        "card",
+        "cheapest",
+        "click",
+        "closest",
+        "contact",
+        "credential",
+        "credentials",
+        "deepest",
+        "email",
+        "fastest",
+        "follow",
+        "greatest",
+        "highest",
+        "home",
+        "instruction",
+        "largest",
+        "lowest",
+        "most",
+        "passport",
+        "password",
+        "payment",
+        "phone",
+        "provide",
+        "secret",
+        "secrets",
+        "send",
+        "share",
+        "snowiest",
+        "token",
+        "upload",
+        "visit",
+        "worst",
+    }
+)
+_URL_PATTERN = re.compile(r"(?:https?://|www\.)\S+", flags=re.IGNORECASE)
+_EMAIL_PATTERN = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
+_PHONE_OR_PAYMENT_PATTERN = re.compile(r"(?:\d[\s().+-]*){7,}")
+_SENSITIVE_BRIEF_VALUE_PATTERN = re.compile(
+    r"\b(?:address|card|email|passport|password|payment|phone|secret|token)\b"
+    r"\s*(?:is|:|=)?\s*([^\s,;]+)",
     flags=re.IGNORECASE,
 )
 _MULTI_TOPIC_FALLBACK = (
@@ -140,6 +234,10 @@ class RefinementPresentationPolicy(_PresentationModel):
                 "topic_id": topic.topic_id,
                 "traveller_topic": topic.traveller_topic,
                 "fallback_question": topic.fallback_question,
+                "approved_question_vocabulary": tuple(
+                    sorted(self.approved_question_vocabulary((topic.topic_id,)))
+                ),
+                "grounding_terms": tuple(sorted(self.grounding_terms(topic.topic_id))),
                 "answers": tuple(
                     {
                         "answer_id": answer_id,
@@ -152,6 +250,30 @@ class RefinementPresentationPolicy(_PresentationModel):
             for topic in self.topics
             if topic.factor_id in allowed_factor_ids
         )
+
+    def approved_question_vocabulary(self, topic_ids: Sequence[str]) -> frozenset[str]:
+        return _GENERIC_QUESTION_VOCABULARY | frozenset(
+            token
+            for topic_id in topic_ids
+            for token in self._topic_question_tokens(topic_id)
+        )
+
+    def grounding_terms(self, topic_id: str) -> frozenset[str]:
+        return self._topic_question_tokens(topic_id) - _GENERIC_QUESTION_VOCABULARY
+
+    def _topic_question_tokens(self, topic_id: str) -> frozenset[str]:
+        try:
+            topic = self.topic_by_id[topic_id]
+        except KeyError as error:
+            raise KeyError(f"unknown refinement topic ID: {topic_id}") from error
+        answer_by_id = self.answer_by_id
+        presentation_text = (
+            topic.traveller_topic,
+            topic.fallback_question,
+            *(answer_by_id[answer_id].label for answer_id in topic.answer_ids),
+            *(answer_by_id[answer_id].description for answer_id in topic.answer_ids),
+        )
+        return frozenset(token for text in presentation_text for token in _tokens(text))
 
     def resolve_answer_ids(self, answer_ids: Sequence[str]) -> ResolvedRefinementAnswer:
         if not answer_ids:
@@ -188,22 +310,28 @@ class RefinementPresentationPolicy(_PresentationModel):
 
 def resolve_interaction_copy(
     question: str,
-    reason: str,
     topic_ids: Sequence[str],
     candidate_ids: Sequence[str],
     presentation: RefinementPresentationPolicy,
+    *,
+    untrusted_brief: str | None = None,
 ) -> tuple[str, str]:
-    """Keep bounded traveller-facing copy and replace unsafe fields independently."""
+    """Keep only selected-topic-grounded question copy; reason is server-owned."""
 
     fallback_question, fallback_reason = _fallback_copy(topic_ids, presentation)
     blocked_tokens = (*presentation.blocked_copy_terms, *candidate_ids)
     resolved_question = (
-        question if _safe_question(question, blocked_tokens) else fallback_question
+        question
+        if _safe_question(
+            question,
+            blocked_tokens,
+            topic_ids=topic_ids,
+            presentation=presentation,
+            untrusted_brief=untrusted_brief,
+        )
+        else fallback_question
     )
-    resolved_reason = (
-        reason if _safe_reason(reason, blocked_tokens) else fallback_reason
-    )
-    return resolved_question, resolved_reason
+    return resolved_question, fallback_reason
 
 
 def semantic_refinement_question_id(
@@ -296,22 +424,64 @@ def _fallback_copy(
     return topic.fallback_question, topic.fallback_reason
 
 
-def _safe_question(question: str, blocked_tokens: Sequence[str]) -> bool:
+def _safe_question(
+    question: str,
+    blocked_tokens: Sequence[str],
+    *,
+    topic_ids: Sequence[str],
+    presentation: RefinementPresentationPolicy,
+    untrusted_brief: str | None,
+) -> bool:
+    question_tokens = frozenset(_tokens(question))
+    approved_vocabulary = presentation.approved_question_vocabulary(topic_ids)
+    selected_grounding_terms = tuple(
+        presentation.grounding_terms(topic_id) for topic_id in topic_ids
+    )
     return (
         len(question) <= _MAX_INTERACTION_QUESTION_CHARACTERS
         and question.endswith("?")
         and _QUESTION_START.match(question) is not None
+        and all(question_tokens & terms for terms in selected_grounding_terms)
+        and question_tokens <= approved_vocabulary
+        and not question_tokens & _UNSAFE_QUESTION_TERMS
         and not _contains_digit_or_percent(question)
         and not _contains_blocked_token(question, blocked_tokens)
+        and not _contains_sensitive_pattern(question)
+        and not _contains_control_character(question)
+        and not _echoes_sensitive_brief(question, untrusted_brief)
     )
 
 
-def _safe_reason(reason: str, blocked_tokens: Sequence[str]) -> bool:
-    return (
-        len(reason) <= _MAX_INTERACTION_REASON_CHARACTERS
-        and not _contains_digit_or_percent(reason)
-        and not _contains_blocked_token(reason, blocked_tokens)
+def _tokens(text: str) -> tuple[str, ...]:
+    return tuple(match.group(0).casefold() for match in _WORD_TOKEN.finditer(text))
+
+
+def _contains_sensitive_pattern(text: str) -> bool:
+    return any(
+        pattern.search(text) is not None
+        for pattern in (_URL_PATTERN, _EMAIL_PATTERN, _PHONE_OR_PAYMENT_PATTERN)
     )
+
+
+def _contains_control_character(text: str) -> bool:
+    return any(unicodedata.category(character).startswith("C") for character in text)
+
+
+def _echoes_sensitive_brief(question: str, brief: str | None) -> bool:
+    if not brief:
+        return False
+    normalized_question = question.casefold()
+    fragments = {
+        match.group(0).casefold()
+        for pattern in (_URL_PATTERN, _EMAIL_PATTERN, _PHONE_OR_PAYMENT_PATTERN)
+        for match in pattern.finditer(brief)
+    }
+    fragments.update(
+        match.group(1).casefold()
+        for match in _SENSITIVE_BRIEF_VALUE_PATTERN.finditer(brief)
+        if len(match.group(1)) >= 4
+    )
+    return any(fragment in normalized_question for fragment in fragments)
 
 
 def _contains_digit_or_percent(text: str) -> bool:

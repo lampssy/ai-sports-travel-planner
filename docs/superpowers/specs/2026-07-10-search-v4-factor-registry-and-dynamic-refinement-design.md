@@ -35,10 +35,10 @@ quiet accommodation, or village character.
 When the initial brief leaves an important preference ambiguous, Snowcast may
 ask a small number of useful follow-up questions. The LLM may decide which
 registered concrete factor or objective topics are worth clarifying and
-dynamically compose the question and short reason. It selects approved answer
-IDs; server-owned presentation copy and validated typed intent actions are the
-only refinement output that may affect the deterministic search and ranking
-model.
+dynamically compose a selected-topic-grounded question from approved
+vocabulary. It selects approved answer IDs; server-owned reason and answer copy
+plus validated typed intent actions are the only refinement output that may
+affect the deterministic search and ranking model.
 
 The active ranking model must remain easy for the owner to inspect. One
 high-level document and one versioned policy file must show the active factors,
@@ -59,8 +59,8 @@ In scope:
 - factor roles for hard filtering, ranking, clarification, explanation, and
   diagnostic measurement;
 - LLM-selected registered concrete factor or objective topics and approved
-  answer IDs, with dynamic question/reason copy and server-owned option copy and
-  typed actions;
+  answer IDs, with constrained dynamic question copy and server-owned reason,
+  option copy, and typed actions;
 - deterministic validation and impact simulation before a question is shown;
 - automatic reranking after the user selects an answer;
 - support for static catalog, derived catalog, planning-evidence, weather, and
@@ -155,12 +155,12 @@ Durable terms:
   that changes the group's effective budget.
 - `SearchPreference`: a typed `prefer`, `avoid`, or `ignore` instruction for a
   registered factor; a `require` instruction is evaluated as a constraint.
-- `RefinementProposal`: LLM-generated question/reason text plus server-resolved
-  answer options and typed factor-preference or objective actions awaiting
-  deterministic validation.
+- `RefinementProposal`: a constrained LLM-generated question plus server-owned
+  reason, answer options, and typed factor-preference or objective actions
+  awaiting deterministic validation.
 - `RefinementPresentationPolicy`: a separately versioned registry of
   traveller-facing factor topics, approved answer IDs, authoritative option
-  copy, typed intent actions, safe question/reason fallback, and deterministic
+  reason and option copy, typed intent actions, safe question fallback, and deterministic
   fallback order. Presentation wording does not change score semantics.
 
 Invariants:
@@ -197,8 +197,8 @@ Invariants:
     - use stable factor groups with bounded contribution budgets;
     - keep constraints separate from ranking factors;
     - let the refinement LLM choose registered concrete factor or objective
-      topics, select approved answer IDs, and dynamically compose the question
-      and short reason;
+      topics, select approved answer IDs, and dynamically compose a constrained
+      selected-topic-grounded question;
     - keep deterministic validation, impact simulation, filtering, and ranking;
     - publish one easy-to-find exact equation and generated factor inventory;
     - accommodate future dynamic prediction factors through the same registry
@@ -709,15 +709,16 @@ models.
 
 ### LLM Ownership
 
-The LLM dynamically selects registered concrete factor or objective topics and
-writes the question and short reason from a bounded context. It selects approved
-answer IDs rather than emitting labels or raw patches. The server resolves each
-answer ID to authoritative presentation copy and typed factor-preference or
-objective patches, applies presentation safety fallback when generated
-question/reason copy is unsuitable, and then runs the existing legality,
-actionability, and materiality gates. Group-priority patches remain part of
-Search V4 and the parser's typed-patch capabilities, but group-priority
-refinement questions are not generated in this slice.
+The LLM dynamically selects registered concrete factor or objective topics,
+writes a question using only their approved vocabulary plus bounded generic
+question words, and selects approved answer IDs rather than emitting labels or
+raw patches. The server owns reason copy, resolves every answer ID to
+authoritative presentation copy and typed factor-preference or objective
+patches, and replaces unsafe, sensitive, unsupported, or ungrounded questions
+with deterministic fallback before the existing legality, actionability, and
+materiality gates run. Group-priority patches remain part of Search V4 and the
+parser's typed-patch capabilities, but group-priority refinement questions are
+not generated in this slice.
 
 The factor registry describes scoring capabilities and clarification legality.
 The separate `search-refinement-presentation-1` registry owns traveller-facing
@@ -730,9 +731,9 @@ The LLM may:
 - interpret ambiguity or missing priorities in the user's wording;
 - decide which one or more registered concrete factor or objective topics would
   be useful to contrast;
-- dynamically write the question and short reason;
+- dynamically write only a selected-topic-grounded question from the supplied
+  approved vocabulary;
 - select two to five options using only approved answer IDs;
-- explain why the proposed clarification is relevant.
 
 One option may combine approved answer IDs from several selected topics, with at
 most one answer for each factor. The server compiles those IDs into authoritative
@@ -900,7 +901,7 @@ Allowed LLM use:
 - identify useful concrete factor or objective clarification topics from the
   bounded registered set;
 - select approved refinement topic IDs and answer IDs and compose only the
-  dynamic question and short reason;
+  constrained dynamic question;
 - generate explanations only from supplied typed factor evaluations.
 
 Prompt and output boundaries:
@@ -917,11 +918,12 @@ Prompt and output boundaries:
 - cache only when privacy-safe and keyed without retaining raw sensitive text.
 
 The provider-facing structured-output schema contains only topic IDs, answer
-IDs, and bounded question/reason text. Full Pydantic bounds,
-presentation-registry resolution, safe-copy fallback, and deterministic policy
-validation remain application-owned. Approved labels, descriptions, and typed
-actions never come from the provider. Validate proposed questions independently
-so one invalid sibling cannot discard another question that passed every gate.
+IDs, and bounded question text. Full Pydantic bounds, selected-topic vocabulary
+and sensitive-copy gates, presentation-registry resolution, safe-copy fallback,
+and deterministic policy validation remain application-owned. Approved reasons,
+labels, descriptions, and typed actions never come from the provider. Validate
+proposed questions independently so one invalid sibling cannot discard another
+question that passed every gate.
 
 ## Security, Privacy, And Abuse
 
@@ -1070,8 +1072,8 @@ versioned policy.
   catalog facts.
 - The LLM can dynamically select any registered concrete factor or objective
   topic for a clarifiable runtime-ready factor, including factors inactive in
-  the initial search, and write its question/reason without emitting option copy
-  or raw patches.
+  the initial search, and write its constrained question without emitting
+  reason/option copy or raw patches.
 - Invalid, unsupported, non-actionable under their evidence mode, repetitive,
   or immaterial proposals are discarded deterministically.
 - Selecting a refinement answer applies visible typed preferences and reruns

@@ -223,6 +223,21 @@ function resultsResponse(): SearchResponse {
   return response;
 }
 
+function fiveOptionResultsResponse(): SearchResponse {
+  const response = resultsResponse();
+  const refinement = response.refinements[0];
+  const first = refinement.options[0];
+  const second = refinement.options[1];
+  refinement.options = [
+    first,
+    second,
+    { ...structuredClone(first), label: "A mix of old and new" },
+    { ...structuredClone(first), label: "Lively resort centre" },
+    { ...structuredClone(first), label: "No place-style preference" },
+  ];
+  return response;
+}
+
 function exactDateResponse(): SearchResponse {
   const response = structuredClone(monthSearchResponse);
   response.applied_intent.constraints.travel_window = {
@@ -394,6 +409,20 @@ for (const [name, viewport] of [
     });
   });
 }
+
+test("five-option mobile refinement", async ({ page }) => {
+  await page.setViewportSize(mobile);
+  await openResults(page, fiveOptionResultsResponse());
+  await page.getByRole("button", { name: "Choose a preference" }).click();
+  await expect(page.getByRole("radio")).toHaveCount(5);
+  await page.evaluate(() => window.scrollTo(0, 0));
+
+  await expect(page).toHaveScreenshot("refinement-five-option-mobile.png", {
+    animations: "disabled",
+    caret: "hide",
+    fullPage: true,
+  });
+});
 
 test("month dossier with expanded desktop navigator", async ({ page }) => {
   await page.setViewportSize(desktop);

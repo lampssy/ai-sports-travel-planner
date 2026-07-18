@@ -59,10 +59,12 @@ Search refinement is the first embedded assistant interaction. It will move
 toward a bounded clarification capability context and UI-independent validated
 opportunities with approved answer vocabulary and typed patches. The AI may
 dynamically choose which registered factor to clarify, compose legal answer
-variants, and phrase the question. Planning validates the proposal and its
-materiality, applies the selected patch, and reranks. This does not introduce a
-fixed registry of possible questions. The same validated interaction may later
-be rendered as a card or optional chat exchange.
+variants, and phrase a question using only selected-topic approved vocabulary.
+Planning owns the public reason, rejects unsafe or ungrounded wording to a
+deterministic fallback, validates materiality, applies the selected patch, and
+reranks. This does not introduce a fixed registry of possible questions. The
+same validated interaction may later be rendered as a card or optional chat
+exchange.
 
 Adoption remains incremental. This decision does not introduce a generic agent
 framework, vector database, persistent free-form memory, universal interaction

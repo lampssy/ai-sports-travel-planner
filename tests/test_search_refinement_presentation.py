@@ -128,15 +128,17 @@ def test_registry_copy_resolves_to_typed_actions() -> None:
 def test_safe_dynamic_interaction_copy_survives_unchanged() -> None:
     presentation = load_refinement_presentation_policy()
     question = "What kind of place would you prefer to stay in?"
-    reason = "Your preferred atmosphere can separate otherwise similar options."
 
     assert resolve_interaction_copy(
         question,
-        reason,
         ("development_style",),
         ("candidate-a", "candidate-b"),
         presentation,
-    ) == (question, reason)
+    ) == (
+        question,
+        "Your preferred village or resort style can change which stay base "
+        "fits you best.",
+    )
 
 
 @pytest.mark.parametrize(
@@ -158,7 +160,6 @@ def test_unsafe_dynamic_question_uses_topic_fallback(question: str) -> None:
 
     resolved = resolve_interaction_copy(
         question,
-        "Your preferred atmosphere can separate otherwise similar options.",
         ("development_style",),
         ("candidate-a", "candidate-b"),
         presentation,
@@ -166,17 +167,17 @@ def test_unsafe_dynamic_question_uses_topic_fallback(question: str) -> None:
 
     assert resolved == (
         "What kind of place would you prefer to stay in?",
-        "Your preferred atmosphere can separate otherwise similar options.",
+        "Your preferred village or resort style can change which stay base "
+        "fits you best.",
     )
 
 
-def test_unsafe_reason_falls_back_without_discarding_safe_question() -> None:
+def test_reason_is_always_server_owned_without_discarding_safe_question() -> None:
     presentation = load_refinement_presentation_policy()
     question = "What kind of place would you prefer to stay in?"
 
     resolved = resolve_interaction_copy(
         question,
-        "This ranking score separates candidate-a from candidate-b.",
         ("development_style",),
         ("candidate-a", "candidate-b"),
         presentation,
@@ -191,32 +192,32 @@ def test_unsafe_reason_falls_back_without_discarding_safe_question() -> None:
 
 def test_multiple_topics_use_generic_copy_only_for_unsafe_fields() -> None:
     presentation = load_refinement_presentation_policy()
-    safe_reason = "Your preferred balance can separate otherwise similar options."
 
     assert resolve_interaction_copy(
         "How should ranking weight affect candidate-a?",
-        safe_reason,
         ("accessible_terrain_scale", "stay_base_access"),
         ("candidate-a",),
         presentation,
     ) == (
         "Which of these trip preferences matters most to you?",
-        safe_reason,
+        "Your answer can distinguish otherwise similar trip options.",
     )
 
 
 def test_blocked_terms_and_candidate_ids_match_whole_tokens_only() -> None:
     presentation = load_refinement_presentation_policy()
-    question = "What kind of factory town or larger village would suit you?"
-    reason = "Your answer can distinguish otherwise similar trip options."
+    question = "What traditional mountain village or resort would you prefer?"
 
     assert resolve_interaction_copy(
         question,
-        reason,
         ("development_style",),
         ("large",),
         presentation,
-    ) == (question, reason)
+    ) == (
+        question,
+        "Your preferred village or resort style can change which stay base "
+        "fits you best.",
+    )
 
 
 def test_registry_fallback_uses_first_material_topic_and_authoritative_copy() -> None:
@@ -451,39 +452,43 @@ def test_registry_resolves_task_2_provider_answer_ids() -> None:
 def test_provider_topics_expose_only_approved_copy_for_allowed_factors() -> None:
     presentation = load_refinement_presentation_policy()
 
-    assert presentation.provider_topics(frozenset({"development_style"})) == (
+    topics = presentation.provider_topics(frozenset({"development_style"}))
+
+    assert len(topics) == 1
+    topic = topics[0]
+    assert topic["topic_id"] == "development_style"
+    assert topic["traveller_topic"] == "the village or resort development style"
+    assert topic["fallback_question"] == (
+        "What kind of place would you prefer to stay in?"
+    )
+    assert {"village", "resort", "development", "style"} <= set(
+        topic["grounding_terms"]
+    )
+    assert set(topic["grounding_terms"]) <= set(topic["approved_question_vocabulary"])
+    assert topic["answers"] == (
         {
-            "topic_id": "development_style",
-            "traveller_topic": "the village or resort development style",
-            "fallback_question": "What kind of place would you prefer to stay in?",
-            "answers": (
-                {
-                    "answer_id": "development_style.traditional",
-                    "label": "Traditional mountain village",
-                    "description": (
-                        "Prefer a base with traditional settlement character."
-                    ),
-                },
-                {
-                    "answer_id": "development_style.mixed",
-                    "label": "A mix of old and new",
-                    "description": (
-                        "Prefer a base with a mix of old and new settlement character."
-                    ),
-                },
-                {
-                    "answer_id": "development_style.planned_resort",
-                    "label": "Purpose-built ski resort",
-                    "description": "Prefer a purpose-built ski resort base.",
-                },
-                {
-                    "answer_id": "development_style.ignore",
-                    "label": "It doesn't matter",
-                    "description": (
-                        "Do not use the village or resort development style as an "
-                        "extra preference."
-                    ),
-                },
+            "answer_id": "development_style.traditional",
+            "label": "Traditional mountain village",
+            "description": ("Prefer a base with traditional settlement character."),
+        },
+        {
+            "answer_id": "development_style.mixed",
+            "label": "A mix of old and new",
+            "description": (
+                "Prefer a base with a mix of old and new settlement character."
+            ),
+        },
+        {
+            "answer_id": "development_style.planned_resort",
+            "label": "Purpose-built ski resort",
+            "description": "Prefer a purpose-built ski resort base.",
+        },
+        {
+            "answer_id": "development_style.ignore",
+            "label": "It doesn't matter",
+            "description": (
+                "Do not use the village or resort development style as an "
+                "extra preference."
             ),
         },
     )

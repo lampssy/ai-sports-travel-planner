@@ -129,7 +129,7 @@ function App() {
     useState<CurrentTripSummary | null>(null);
   const adjustFiltersRef = useRef<HTMLButtonElement>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
-  const refinementControlRef = useRef<HTMLInputElement>(null);
+  const refinementControlRef = useRef<HTMLElement>(null);
   const pendingRerankScrollRestoreRef =
     useRef<PendingRerankScrollRestore | null>(null);
   const routeRef = useRef(route);

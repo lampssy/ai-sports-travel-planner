@@ -377,6 +377,21 @@ function refinementResponse(): SearchResponse {
   return response;
 }
 
+function fiveOptionRefinementResponse(): SearchResponse {
+  const response = refinementResponse();
+  const refinement = response.refinements[0];
+  const snow = refinement.options[0];
+  const journey = refinement.options[1];
+  refinement.options = [
+    snow,
+    journey,
+    { ...structuredClone(snow), label: "Balanced snow and access" },
+    { ...structuredClone(snow), label: "High terrain coverage" },
+    { ...structuredClone(snow), label: "Flexible trip balance" },
+  ];
+  return response;
+}
+
 function rerankedResponse(): SearchResponse {
   const response = structuredClone(monthSearchResponse);
   response.results = [response.results[1], response.results[0]];
@@ -932,6 +947,7 @@ test("mobile board advances refinements in document flow without overflow", asyn
   await expect(
     page.getByRole("heading", { name: "What should break the tie?" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Choose a preference" }).click();
   await page.getByRole("button", { name: /skip for now/i }).click();
   await expect(
     page.getByRole("heading", { name: "Which stay style fits?" }),
@@ -948,6 +964,46 @@ test("mobile board advances refinements in document flow without overflow", asyn
     path: "../.superpowers/sdd/task-5-results-mobile-390.png",
     fullPage: true,
   });
+});
+
+test("five-option mobile refinement disclosure preserves reachability and focus", async ({
+  page,
+}) => {
+  await mockSearchV4Api(page, fiveOptionRefinementResponse(), []);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with easy lift access");
+
+  await expect(
+    page.getByRole("heading", { name: "What should break the tie?" }),
+  ).toBeVisible();
+  const disclosure = page.getByRole("button", { name: "Choose a preference" });
+  await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("radio")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: /tignes - val d'isere/i }),
+  ).toBeVisible();
+
+  await disclosure.click();
+  await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("radio")).toHaveCount(5);
+  await expect(page.getByRole("radio", { name: /snow reliability/i })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("radio", { name: /shorter journey/i })).toBeChecked();
+  await page.getByRole("button", { name: "Keep current ranking" }).click();
+
+  const nextDisclosure = page.getByRole("button", { name: "Choose a preference" });
+  await expect(
+    page.getByRole("heading", { name: "Which stay style fits?" }),
+  ).toBeVisible();
+  await expect(nextDisclosure).toBeFocused();
+  await expect(nextDisclosure).toHaveAttribute("aria-expanded", "false");
+  await nextDisclosure.click();
+  await page.getByRole("button", { name: "Skip for now" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Recommended ski trips" }),
+  ).toBeFocused();
+  await expectNoHorizontalOverflow(page);
 });
 
 test("desktop dossier switches without search and collapses to the compact rail", async ({

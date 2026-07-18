@@ -43,7 +43,7 @@ export function RecommendationBoard({
   saveError: string | null;
   refinementError: string | null;
   refinementStatus: RefinementLifecycleStatus;
-  refinementControlRef: RefObject<HTMLInputElement>;
+  refinementControlRef: RefObject<HTMLElement>;
   rankFeedback: string | null;
   changedRankGroupIds: Set<string>;
   canUndo: boolean;

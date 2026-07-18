@@ -371,10 +371,10 @@ Invariants:
   the versioned presentation registry and reuses the existing deterministic
   materiality validator.
 - The LLM selects registered factor topics and approved answer IDs and writes
-  only the bounded question and short reason. The server owns option labels,
-  descriptions, typed actions, and independent safe-copy fallback for unsuitable
-  question/reason text. Group-priority refinement questions are outside this
-  slice.
+  only a bounded question from selected-topic approved vocabulary. The server
+  owns reason copy, option labels, descriptions, typed actions, and deterministic
+  fallback for unsafe, sensitive, unsupported, or ungrounded question text.
+  Group-priority refinement questions are outside this slice.
 - After deterministic ranking, `POST /api/search` stores the minimum typed
   evaluated baseline needed for refinement validation and previews in a
   thread-safe, process-local LRU/TTL store. Entries live for 60 seconds and the
@@ -479,6 +479,13 @@ The primary refinement card shows:
 - selected option state;
 - structured impact preview when available;
 - `Apply and rerank` or truthful `Keep current ranking`, plus `Skip for now`.
+
+At the existing single-column breakpoint, the eyebrow and concrete question
+remain visible while the answer body starts collapsed behind a real `Choose a
+preference` disclosure. Opening it reveals the server-owned reason, options,
+preview, and actions and focuses the first radio. Desktop remains expanded.
+Replacing the current question resets the narrow disclosure to collapsed, and
+recommendations remain reachable without opening it.
 
 Search V4 may return several validated refinement questions. The results rail
 shows one primary question at a time and keeps the remaining questions in a
@@ -1153,22 +1160,22 @@ Deterministic code owns:
 - `Trip essentials` selection and formatting;
 - refinement option validation;
 - approved refinement answer labels, descriptions, and typed intent actions;
-- presentation safety fallback for unsuitable generated question/reason copy;
+- presentation safety fallback for unsuitable generated question copy;
 - per-option rank preview simulation;
 - impact-copy templates;
 - weather-evidence mode selection, aggregation, interpretation templates, and
   limitation labels;
 - evidence and estimate labels.
 
-The LLM dynamically selects registered factor topics and writes the question
-and short reason from a bounded context. It selects approved answer IDs rather
-than emitting labels or raw patches. The server resolves each answer ID to
-authoritative presentation copy and typed intent actions, applies presentation
-safety fallback when generated question/reason copy is unsuitable, and then
-runs the existing legality, actionability, and materiality gates. Group-priority
-patches remain part of Search V4 but are not generated as refinement questions
-in this slice. The LLM does not generate recommendation explanations, metric
-values, rank changes, dossier facts, option copy, or executable patches.
+The LLM dynamically selects registered factor topics, writes a question from
+the selected topics' approved vocabulary, and selects approved answer IDs rather
+than emitting labels or raw patches. The server owns reason copy, resolves each
+answer ID to authoritative presentation copy and typed intent actions, replaces
+unsafe or ungrounded wording with deterministic fallback, and then runs the
+existing legality, actionability, and materiality gates. Group-priority patches
+remain part of Search V4 but are not generated as refinement questions in this
+slice. The LLM does not generate recommendation explanations, metric values,
+rank changes, dossier facts, reason/option copy, or executable patches.
 
 Search results remain fully usable when refinement generation fails, times out,
 or is disabled.
@@ -1364,7 +1371,9 @@ deterministic search results.
 - Search remains usable without refinement generation or preview metadata.
 - Refinement presents a dynamic traveller-facing question as the heading, two
   to five keyboard-operable approved options, no internal factor/group/ranking
-  vocabulary, and no persistent terminal discovery-failure card.
+  vocabulary, and no persistent terminal discovery-failure card. Narrow
+  tablet/mobile layouts keep the question visible, collapse the optional answer
+  body by default, and preserve recommendation reachability.
 - Raw ranking internals and model versions are absent from primary result UI.
 - Pink is limited to brand/refinement accents; green and amber preserve their
   evidence and warning semantics.

@@ -831,14 +831,15 @@ not become a universal always-on definition of value.
 
 ## Dynamic Refinement Questions
 
-The LLM dynamically selects registered factor topics and writes the question
-and short reason from a bounded context. It selects approved answer IDs rather
-than emitting labels or raw patches. The server resolves each answer ID to
-authoritative presentation copy and typed intent actions, applies presentation
-safety fallback when generated question/reason copy is unsuitable, and then
-runs the existing legality, actionability, and materiality gates. Group-priority
-patches remain part of Search V4 but are not generated as refinement questions
-in this slice.
+The LLM dynamically selects registered factor topics, writes one constrained
+question grounded in those topics, and selects approved answer IDs rather than
+emitting labels or raw patches. Every question token must come from the
+selected topics' server-approved presentation vocabulary or the small generic
+question vocabulary. The server owns reason copy, answer copy, and typed intent
+actions. Unsafe or ungrounded questions use deterministic registry-backed
+fallback copy before the existing legality, actionability, and materiality
+gates run. Group-priority patches remain part of Search V4 but are not generated
+as refinement questions in this slice.
 
 After initial ranking, Snowcast supplies the LLM with a bounded summary of known
 intent, unresolved priorities, registered factor topics, approved answer IDs,
@@ -852,8 +853,7 @@ Example shape:
 ```json
 {
   "topic_ids": ["development_style"],
-  "question": "Which kind of place would feel right for this trip?",
-  "reason": "The leading places offer different village and resort styles.",
+  "question": "What kind of place would you prefer to stay in?",
   "options": [
     {
       "answer_ids": ["development_style.traditional"]
@@ -912,12 +912,14 @@ Only validated proposals are shown. Selecting an answer applies visible typed
 preferences and reruns deterministic search immediately. Search remains fully
 usable if question generation fails or no proposal has material impact.
 The provider-facing response schema deliberately contains only the compact
-topic/answer-ID structure and bounded question/reason text supported by Gemini.
+topic/answer-ID structure and bounded question text supported by Gemini.
 Pydantic size and shape validation plus presentation-registry and deterministic
-policy validation remain authoritative. The server replaces unsafe generated
-question and reason fields independently with registry-backed traveller copy;
-candidate IDs, internal policy terms, numeric claims, malformed questions, and
-overlong copy are never shown. Approved option labels and descriptions never
+policy validation remain authoritative. The server replaces unsafe or
+unselected-topic question wording with registry-backed traveller copy and
+always supplies the configured single-topic or multi-topic reason; candidate
+IDs, sensitive brief echoes, external actions, unsupported claims, internal
+policy terms, numeric claims, malformed questions, and overlong copy are never
+shown. Approved reasons, option labels, descriptions, and typed actions never
 come from the provider.
 Questions are validated independently: an invalid or immaterial sibling is
 dropped without discarding a useful question that passed every gate. The
@@ -933,8 +935,9 @@ their applicable coverage gate. Explicit user preferences may activate a
 runtime-ready factor even when the LLM would not independently choose to ask
 about it.
 
-The LLM owns semantic relevance and wording. Deterministic Planning owns
-validity, usefulness, candidate eligibility, and ranking.
+The LLM owns registered-topic selection and constrained question composition.
+Deterministic Planning owns public-copy safety, reasons, validity, usefulness,
+candidate eligibility, and ranking.
 
 A validated question may retain one option that reproduces the current intent
 when another option has material impact. The response marks each option with a

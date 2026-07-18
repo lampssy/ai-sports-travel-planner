@@ -1639,6 +1639,33 @@ textarea:focus-visible,
   font-size: 0.82rem;
 }
 
+.refinement-disclosure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  color: var(--alpine-blue);
+  background: var(--ice);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.refinement-disclosure svg {
+  flex: 0 0 auto;
+  transition: transform 160ms ease;
+}
+
+.refinement-disclosure[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
 .refinement-options {
   display: grid;
   gap: 0.6rem;

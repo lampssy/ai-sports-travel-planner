@@ -85,7 +85,7 @@ export function SearchContextRail({
   refinementStatus: RefinementLifecycleStatus;
   loading: boolean;
   refinementError: string | null;
-  refinementControlRef: RefObject<HTMLInputElement>;
+  refinementControlRef: RefObject<HTMLElement>;
   adjustFiltersRef: RefObject<HTMLButtonElement>;
   onOpenFilters: () => void;
   onRemoveChip: (chip: ParsedChip) => void;
@@ -150,7 +150,7 @@ export function SearchContextRail({
           refinement={refinement}
           loading={loading}
           error={refinementError}
-          firstOptionRef={refinementControlRef}
+          focusControlRef={refinementControlRef}
           onApply={onApplyRefinement}
           onSkip={onSkipRefinement}
         />

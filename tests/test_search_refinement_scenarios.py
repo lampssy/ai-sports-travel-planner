@@ -122,9 +122,6 @@ def _development_payload(*, question: str | None = None) -> dict[str, object]:
                 "topic_ids": ["development_style"],
                 "question": question
                 or "What kind of place would you prefer to stay in?",
-                "reason": (
-                    "Your preferred atmosphere can separate otherwise similar options."
-                ),
                 "options": [
                     {"answer_ids": ["development_style.traditional"]},
                     {"answer_ids": ["development_style.mixed"]},
@@ -193,7 +190,6 @@ def test_terrain_versus_access_compiles_distinct_typed_variants() -> None:
                     "Would you rather have more terrain on your pass or easier access "
                     "from where you stay?"
                 ),
-                "reason": "Your answer can distinguish otherwise similar trip options.",
                 "options": [
                     {"answer_ids": ["accessible_terrain_scale.as_much_as_possible"]},
                     {"answer_ids": ["stay_base_access.as_easy_as_possible"]},
@@ -250,7 +246,6 @@ def test_requested_glacier_feature_can_produce_material_question() -> None:
             {
                 "topic_ids": ["glacier_terrain"],
                 "question": "Does glacier terrain matter for this trip?",
-                "reason": "Your answer can distinguish otherwise similar trip options.",
                 "options": [
                     {"answer_ids": ["glacier_terrain.prefer"]},
                     {"answer_ids": ["glacier_terrain.ignore"]},
@@ -283,7 +278,6 @@ def test_no_trusted_factor_variation_produces_no_validated_question() -> None:
             {
                 "topic_ids": ["accessible_terrain_scale"],
                 "question": "How much terrain would you like your pass to cover?",
-                "reason": "Your answer can distinguish otherwise similar trip options.",
                 "options": [
                     {"answer_ids": ["accessible_terrain_scale.as_much_as_possible"]},
                     {"answer_ids": ["accessible_terrain_scale.low"]},
