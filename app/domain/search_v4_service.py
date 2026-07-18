@@ -150,7 +150,11 @@ BaselineFingerprint = Annotated[
     ),
 ]
 default_refinement_snapshot_store = SearchRefinementSnapshotStore(
-    cleanup_scheduler=ThreadedSnapshotCleanupScheduler()
+    cleanup_scheduler=ThreadedSnapshotCleanupScheduler(),
+    expiration_observer=lambda count: record_search_refinement_snapshot_outcome(
+        "expired",
+        count=count,
+    ),
 )
 
 
@@ -671,11 +675,6 @@ def search_trip_configurations(
             candidates=_refinement_baseline_candidates(evaluated.ordered),
         )
     )
-    if mutation.expired_count:
-        record_search_refinement_snapshot_outcome(
-            "expired",
-            count=mutation.expired_count,
-        )
     if mutation.evicted_count:
         record_search_refinement_snapshot_outcome(
             "evicted",
@@ -963,7 +962,8 @@ def get_search_refinements(
         baseline_fingerprint,
         canonical_search_intent_digest(intent),
     )
-    record_search_refinement_snapshot_outcome(lookup.outcome)
+    if not (lookup.outcome == "expired" and lookup.expiration_already_recorded):
+        record_search_refinement_snapshot_outcome(lookup.outcome)
     baseline = lookup.snapshot
     if baseline is None:
         selected_policy = policy or load_search_policy()

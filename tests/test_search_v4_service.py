@@ -2355,7 +2355,7 @@ def test_each_rerank_stores_a_fresh_refinement_snapshot_after_prior_expiry() -> 
             initial.baseline_fingerprint,
             canonical_search_intent_digest(initial_intent),
         ).outcome
-        == "miss"
+        == "expired"
     )
 
 

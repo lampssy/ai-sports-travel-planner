@@ -163,7 +163,9 @@ Important state transitions:
 6. The user applies the option, Search V4 reruns with the updated intent, stores
    a new evaluated baseline, and changed positions are announced without moving
    the viewport unexpectedly. The client immediately requests the next
-   refinement from that new baseline.
+   refinement from that new baseline. The rerank uses the displayed session's
+   applied filters, intent, and brief; unsubmitted drawer or header edits remain
+   drafts and cannot change the previewed action.
 7. The user may select an alternative trip configuration inside a ski-region
    group without changing the group's rank.
 8. The user opens a dossier for the selected configuration, switches among
@@ -177,6 +179,8 @@ Important state transitions:
 11. A failed search update keeps the previous ranked response visible and
     identifies it as the previous ranking; returning from a dossier does not
     issue another search request or surface unrelated stale errors.
+12. Refinement Undo is scoped to the immediately applied answer. Any later
+    successful ordinary search clears Undo and its rank-change feedback.
 
 Invariants:
 
@@ -189,6 +193,9 @@ Invariants:
   date evidence;
 - exact-date searches never imply forecast coverage beyond usable forecast
   dates, and historical evidence remains separately identifiable;
+- response-shaped exact-date windows may include `month: null`; clients select
+  exact-date cache and presentation behavior from non-null dates, not property
+  presence;
 - raw factor IDs, group budgets, contribution points, search-model versions,
   and ranking-policy versions stay behind `Show scoring details` or out of the
   user-facing web UI;

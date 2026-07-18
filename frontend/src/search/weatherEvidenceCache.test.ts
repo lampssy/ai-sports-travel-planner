@@ -74,6 +74,26 @@ test("builds a canonical key from only ski area and applied travel window", () =
   );
 });
 
+test("uses exact dates from the response-shaped window even when month is null", () => {
+  const firstWindow = {
+    month: null,
+    start_date: "2027-01-16",
+    end_date: "2027-01-20",
+  };
+  const secondWindow = {
+    month: null,
+    start_date: "2027-02-16",
+    end_date: "2027-02-20",
+  };
+
+  const firstKey = weatherEvidenceCacheKey("tignes-ski-area", firstWindow);
+  const secondKey = weatherEvidenceCacheKey("tignes-ski-area", secondWindow);
+
+  expect(firstKey).toBe("tignes-ski-area|dates:2027-01-16:2027-01-20");
+  expect(secondKey).toBe("tignes-ski-area|dates:2027-02-16:2027-02-20");
+  expect(secondKey).not.toBe(firstKey);
+});
+
 test("reuses available and unavailable responses only before server expiry", () => {
   const key = weatherEvidenceCacheKey("tignes-ski-area", { month: 3 });
   writeWeatherEvidenceCache(key, available);

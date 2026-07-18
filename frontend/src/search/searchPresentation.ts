@@ -99,11 +99,17 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
     });
   }
   if (constraints.travel_window) {
+    const { month, start_date: startDate, end_date: endDate } =
+      constraints.travel_window;
     const label =
-      "month" in constraints.travel_window
-        ? `${monthName(constraints.travel_window.month)} window`
-        : `${constraints.travel_window.start_date} to ${constraints.travel_window.end_date}`;
-    chips.push({ id: "travel-window", label, action: { kind: "travelWindow" } });
+      typeof month === "number"
+        ? `${monthName(month)} window`
+        : startDate && endDate
+          ? `${startDate} to ${endDate}`
+          : null;
+    if (label) {
+      chips.push({ id: "travel-window", label, action: { kind: "travelWindow" } });
+    }
   }
   if (constraints.lodging_budget) {
     chips.push({

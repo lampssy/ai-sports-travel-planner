@@ -48,12 +48,16 @@ export interface SearchObjective {
   importance: FactorImportance;
 }
 
+export interface TravelWindow {
+  month?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+}
+
 export interface SearchIntent {
   constraints: {
     location?: { country: string };
-    travel_window?:
-      | { month: number }
-      | { start_date: string; end_date: string };
+    travel_window?: TravelWindow;
     lodging_budget?: {
       mode: "lodging_nightly";
       maximum: number;

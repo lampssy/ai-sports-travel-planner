@@ -13,6 +13,10 @@ from pydantic import BaseModel
 from app.ai.gemini_client import GeminiClient
 from app.ai.parser import QueryParser, get_query_parser
 from app.api.refinement_admission import RefinementAdmissionGuard
+from app.api.refinement_workers import (
+    RefinementWorkerPool,
+    RefinementWorkerUnavailableError,
+)
 from app.auth.google import (
     GoogleAuthConfigurationError,
     GoogleIdentityTokenError,
@@ -82,6 +86,7 @@ refinement_executor = ThreadPoolExecutor(
     max_workers=2,
     thread_name_prefix="search-refinement",
 )
+refinement_worker_pool = RefinementWorkerPool(executor=refinement_executor)
 
 
 class HealthResponse(BaseModel):
@@ -155,7 +160,7 @@ def search_refinements(
         )
     worker_context = copy_context()
     try:
-        future = refinement_executor.submit(
+        future = refinement_worker_pool.submit(
             worker_context.run,
             get_search_refinements,
             intent=payload.intent,
@@ -169,6 +174,10 @@ def search_refinements(
             ),
             request_started_at=request_started_at,
         )
+    except RefinementWorkerUnavailableError:
+        admission.release()
+        record_search_refinement_route_outcome("worker_unavailable")
+        return _temporarily_unavailable_refinement(payload)
     except Exception as error:
         admission.release()
         record_search_refinement_route_outcome("executor_rejected")
@@ -176,7 +185,6 @@ def search_refinements(
             status_code=500,
             detail="Unable to load refinements.",
         ) from error
-    future.add_done_callback(lambda _future: admission.release())
     remaining_seconds = max(
         0.0,
         SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS
@@ -187,19 +195,9 @@ def search_refinements(
         record_search_refinement_route_outcome("completed")
         return response
     except FutureTimeoutError:
+        refinement_worker_pool.mark_timed_out(future)
         record_search_refinement_route_outcome("deadline_exceeded")
-        policy = load_search_policy()
-        presentation = load_refinement_presentation_policy()
-        return SearchV4RefinementResponse(
-            search_model_version=policy.search_model_version,
-            ranking_policy_version=policy.ranking_policy_version,
-            refinement_presentation_policy_version=(
-                presentation.presentation_policy_version
-            ),
-            baseline_fingerprint=payload.baseline_fingerprint,
-            baseline_status="unverified",
-            refinement_status="temporarily_unavailable",
-        )
+        return _temporarily_unavailable_refinement(payload)
     except SearchIntentPolicyError as error:
         record_search_refinement_route_outcome("invalid_intent")
         raise HTTPException(status_code=422, detail=str(error)) from error
@@ -209,6 +207,25 @@ def search_refinements(
             status_code=500,
             detail="Unable to load refinements.",
         ) from error
+    finally:
+        admission.release()
+
+
+def _temporarily_unavailable_refinement(
+    payload: SearchV4RefinementRequest,
+) -> SearchV4RefinementResponse:
+    policy = load_search_policy()
+    presentation = load_refinement_presentation_policy()
+    return SearchV4RefinementResponse(
+        search_model_version=policy.search_model_version,
+        ranking_policy_version=policy.ranking_policy_version,
+        refinement_presentation_policy_version=(
+            presentation.presentation_policy_version
+        ),
+        baseline_fingerprint=payload.baseline_fingerprint,
+        baseline_status="unverified",
+        refinement_status="temporarily_unavailable",
+    )
 
 
 def _refinement_client_key(request: Request) -> str:

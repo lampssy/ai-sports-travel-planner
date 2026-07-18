@@ -1070,6 +1070,10 @@ generation. This TTL covers only generation of the next question. Once a
 question reaches the browser, its typed answer remains usable after expiry.
 Applying a material answer performs a full rerank, stores a new baseline and
 fingerprint, and requests the next refinement from that fresh baseline.
+Active cleanup retains only bounded, data-free expired-fingerprint tombstones,
+at most the entry limit, so a later handoff lookup still reports `expired`
+rather than `miss`. Cleanup emits the expiry outcome once and the later lookup
+does not double-count it.
 
 Refinement requests are protected before snapshot lookup by app-local admission
 control: at most two concurrent requests and a per-client token bucket of six
@@ -1078,6 +1082,13 @@ when it is a syntactically valid fixed Fly header; otherwise it uses the direct
 request peer. Client identities are retained only in the bounded in-memory
 guard and are never emitted in metrics or logs. Rejected requests receive a
 generic `429` with `Retry-After`.
+
+The two-worker executor is guarded by a fail-fast circuit. An outer deadline
+releases endpoint admission immediately; if its worker is still unresolved,
+new refinement work is rejected without entering an executor queue until all
+timed-out workers finish. The Gemini transport itself uses the remaining
+deadline, while the circuit covers unexpected non-returning application or
+transport behavior without creating replacement threads.
 
 Endpoint metrics record only bounded final outcomes and `fallback_used`; the
 AI layer records provider-call health separately and does not emit public

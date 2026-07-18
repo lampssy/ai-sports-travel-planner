@@ -258,6 +258,27 @@ describe("trip essentials", () => {
   });
 });
 
+describe("applied travel-window presentation", () => {
+  test("shows response-shaped exact dates instead of treating month null as a month", () => {
+    const chips = buildParsedChips({
+      ...baseIntent,
+      constraints: {
+        travel_window: {
+          month: null,
+          start_date: "2027-01-16",
+          end_date: "2027-01-20",
+        },
+      },
+    });
+
+    expect(chips).toContainEqual({
+      id: "travel-window",
+      label: "2027-01-16 to 2027-01-20",
+      action: { kind: "travelWindow" },
+    });
+  });
+});
+
 describe("deterministic recommendation copy", () => {
   test("qualifies an accessible-terrain narrative to its ski-area evidence scope", () => {
     const candidate = configuration("bounded-terrain", {

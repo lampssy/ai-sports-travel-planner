@@ -1456,6 +1456,162 @@ test("previews a validated dynamic refinement before applying it", async () => {
   expect(screen.getByText(/prefer stay-base après: lively/i)).toBeInTheDocument();
 });
 
+test("applies a refinement to the displayed session instead of unsent drawer and brief edits", async () => {
+  const appliedBrief = "Applied March trip from Warsaw";
+  const appliedTravelIntent: SearchIntent = {
+    ...intent,
+    constraints: {
+      ...intent.constraints,
+      travel_limit: { maximum_duration_hours: 15, mode: "car" },
+    },
+    travel_context: { origin_text: "Warsaw", mode: "car" },
+  };
+  const pacePreference = {
+    factor_id: "local_pace",
+    mode: "prefer" as const,
+    values: ["quiet"],
+    importance: "normal" as const,
+  };
+  searchResponses = [
+    response({
+      applied_intent: appliedTravelIntent,
+      refinements: [
+        {
+          question_id: "pace",
+          question: "What pace should your accommodation base have?",
+          reason: "This can change the leading stay base.",
+          options: [
+            {
+              label: "Quiet and relaxed",
+              description: "Prefer a calm base.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [pacePreference],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+    response({
+      baseline_fingerprint: "baseline-2",
+      applied_intent: {
+        ...appliedTravelIntent,
+        factor_preferences: [pacePreference],
+      },
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(screen.getByLabelText("Describe your ski trip"), appliedBrief);
+  await openFilters(user);
+  await user.type(screen.getByLabelText("Origin"), "Warsaw");
+  await user.type(screen.getByLabelText("Hard drive limit"), "15");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("radio", { name: /quiet and relaxed/i }),
+  );
+
+  const tripBrief = screen.getByLabelText("Trip brief");
+  await user.clear(tripBrief);
+  await user.type(tripBrief, "Unsent Italy trip from Berlin");
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.clear(screen.getByLabelText("Country"));
+  await user.type(screen.getByLabelText("Country"), "Italy");
+  await user.clear(screen.getByLabelText("Origin"));
+  await user.type(screen.getByLabelText("Origin"), "Berlin");
+  await user.clear(screen.getByLabelText("Hard drive limit"));
+  await user.type(screen.getByLabelText("Hard drive limit"), "5");
+  await user.click(screen.getByRole("button", { name: "Glacier terrain" }));
+  await user.selectOptions(
+    screen.getByLabelText("Value objective"),
+    "pass_price_per_day",
+  );
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+
+  const rerankBody = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[1].init?.body),
+  );
+  expect(rerankBody.intent.constraints.location).toEqual({ country: "France" });
+  expect(rerankBody.intent.constraints.travel_limit).toEqual({
+    maximum_duration_hours: 15,
+    mode: "car",
+  });
+  expect(rerankBody.intent.travel_context).toEqual({
+    origin_text: "Warsaw",
+    mode: "car",
+  });
+  expect(rerankBody.intent.factor_preferences).toEqual([pacePreference]);
+  expect(rerankBody.intent.objectives).toEqual(intent.objectives);
+  const latestRefinementRequest = JSON.parse(
+    String(lastRequest("/api/search/refinements")?.init?.body),
+  );
+  expect(latestRefinementRequest.brief).toBe(appliedBrief);
+});
+
+test("an ordinary successful search clears refinement undo and rank feedback", async () => {
+  const pacePreference = {
+    factor_id: "local_pace",
+    mode: "prefer" as const,
+    values: ["quiet"],
+    importance: "normal" as const,
+  };
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "pace",
+          question: "Would you prefer a quieter base?",
+          reason: "This can change the leading stay base.",
+          options: [
+            {
+              label: "Quiet and relaxed",
+              description: "Prefer a calm base.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [pacePreference],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+    response({
+      baseline_fingerprint: "baseline-2",
+      applied_intent: { ...intent, factor_preferences: [pacePreference] },
+    }),
+    response({
+      baseline_fingerprint: "baseline-3",
+      applied_intent: { ...intent, factor_preferences: [pacePreference] },
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("radio", { name: /quiet and relaxed/i }),
+  );
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+
+  expect(await screen.findByRole("button", { name: "Undo" })).toBeVisible();
+  expect(screen.getAllByText("Ranking unchanged.")[0]).toBeVisible();
+
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument();
+  expect(screen.queryByText("Ranking unchanged.")).not.toBeInTheDocument();
+});
+
 test("preserves previous results and the refinement on a failed rerank", async () => {
   vi.stubGlobal(
     "fetch",

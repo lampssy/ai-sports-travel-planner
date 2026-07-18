@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.refinement_admission import RefinementAdmissionGuard
+from app.api.refinement_workers import RefinementWorkerUnavailableError
 from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
 from app.domain import search_v4_service
 from app.domain.search_intent_policy import SearchIntentPolicyError
@@ -487,17 +488,59 @@ def test_post_search_refinements_releases_capacity_when_executor_rejects_submit(
         def acquire(self, _client_key: str) -> _Admission:
             return _Admission()
 
-    class _RejectingExecutor:
+    class _RejectingWorkerPool:
         def submit(self, *_args: object, **_kwargs: object) -> object:
             raise RuntimeError("executor is shutting down")
 
     monkeypatch.setattr("app.api.routes.refinement_admission_guard", _Guard())
-    monkeypatch.setattr("app.api.routes.refinement_executor", _RejectingExecutor())
+    monkeypatch.setattr(
+        "app.api.routes.refinement_worker_pool",
+        _RejectingWorkerPool(),
+    )
 
     response = TestClient(app).post("/api/search/refinements", json=_request_payload())
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Unable to load refinements."}
+    assert releases == 1
+
+
+def test_post_search_refinements_fails_fast_while_timed_out_worker_is_unresolved(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    releases = 0
+
+    class _Admission:
+        accepted = True
+        retry_after_seconds = None
+
+        def release(self) -> None:
+            nonlocal releases
+            releases += 1
+
+    class _Guard:
+        def acquire(self, _client_key: str) -> _Admission:
+            return _Admission()
+
+    class _UnavailableWorkerPool:
+        def submit(self, *_args: object, **_kwargs: object) -> object:
+            raise RefinementWorkerUnavailableError("worker still running")
+
+    monkeypatch.setattr("app.api.routes.refinement_admission_guard", _Guard())
+    monkeypatch.setattr(
+        "app.api.routes.refinement_worker_pool",
+        _UnavailableWorkerPool(),
+    )
+    monkeypatch.setattr(
+        "app.api.routes.get_search_refinements",
+        lambda **_kwargs: pytest.fail("open worker circuit must skip evaluation"),
+    )
+
+    response = TestClient(app).post("/api/search/refinements", json=_request_payload())
+
+    assert response.status_code == 200
+    assert response.json()["baseline_status"] == "unverified"
+    assert response.json()["refinement_status"] == "temporarily_unavailable"
     assert releases == 1
 
 
@@ -530,7 +573,7 @@ def test_post_search_refinements_ignores_arbitrary_forwarded_for(
     assert captured_keys == ["client:testclient"]
 
 
-def test_refinement_deadline_holds_capacity_until_worker_finishes(
+def test_refinement_deadline_releases_endpoint_capacity_before_worker_finishes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     releases = 0
@@ -571,7 +614,7 @@ def test_refinement_deadline_holds_capacity_until_worker_finishes(
     assert response.json()["refinement_status"] == "temporarily_unavailable"
     assert response.json()["baseline_status"] == "unverified"
     assert elapsed < 0.07
-    assert releases == 0
+    assert releases == 1
 
     time.sleep(0.1)
     assert releases == 1

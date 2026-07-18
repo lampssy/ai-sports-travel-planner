@@ -230,6 +230,7 @@ class SnapshotPutResult:
 class SnapshotGetResult:
     outcome: Literal["hit", "miss", "expired", "intent_mismatch"]
     snapshot: RefinementBaselineSnapshot | None
+    expiration_already_recorded: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -319,6 +320,7 @@ class SearchRefinementSnapshotStore:
         clock: Callable[[], float] = time.monotonic,
         cleanup_scheduler: SnapshotCleanupScheduler | None = None,
         cleanup_interval_seconds: float = DEFAULT_CLEANUP_INTERVAL_SECONDS,
+        expiration_observer: Callable[[int], None] | None = None,
     ) -> None:
         if ttl_seconds <= 0:
             raise ValueError("ttl_seconds must be positive")
@@ -337,6 +339,8 @@ class SearchRefinementSnapshotStore:
         self._max_weather_rows = max_weather_rows
         self._clock = clock
         self._entries: OrderedDict[str, _StoredSnapshot] = OrderedDict()
+        self._expired_tombstones: OrderedDict[str, bool] = OrderedDict()
+        self._expiration_observer = expiration_observer
         self._lock = RLock()
         self._cleanup_handle = (
             cleanup_scheduler.start(
@@ -354,6 +358,7 @@ class SearchRefinementSnapshotStore:
             candidate_count = len(snapshot.candidates)
             weather_row_count = _snapshot_weather_row_count(snapshot)
             self._entries.pop(snapshot.fingerprint, None)
+            self._expired_tombstones.pop(snapshot.fingerprint, None)
             if (
                 candidate_count > self._max_candidate_replay_states
                 or weather_row_count > self._max_weather_rows
@@ -386,12 +391,23 @@ class SearchRefinementSnapshotStore:
             now = self._clock()
             stored = self._entries.get(fingerprint)
             if stored is not None and now >= stored.expires_at:
-                del self._entries[fingerprint]
                 self._purge_expired(now)
-                return SnapshotGetResult(outcome="expired", snapshot=None)
+                recorded = self._expired_tombstones.pop(fingerprint, False)
+                return SnapshotGetResult(
+                    outcome="expired",
+                    snapshot=None,
+                    expiration_already_recorded=recorded,
+                )
             self._purge_expired(now)
             stored = self._entries.get(fingerprint)
             if stored is None:
+                if fingerprint in self._expired_tombstones:
+                    recorded = self._expired_tombstones.pop(fingerprint)
+                    return SnapshotGetResult(
+                        outcome="expired",
+                        snapshot=None,
+                        expiration_already_recorded=recorded,
+                    )
                 return SnapshotGetResult(outcome="miss", snapshot=None)
 
             if stored.snapshot.intent_digest != intent_digest:
@@ -403,6 +419,7 @@ class SearchRefinementSnapshotStore:
     def clear(self) -> None:
         with self._lock:
             self._entries.clear()
+            self._expired_tombstones.clear()
 
     def cleanup_expired(self) -> int:
         with self._lock:
@@ -450,6 +467,18 @@ class SearchRefinementSnapshotStore:
         ]
         for fingerprint in expired:
             del self._entries[fingerprint]
+        expiration_recorded = False
+        if expired and self._expiration_observer is not None:
+            try:
+                self._expiration_observer(len(expired))
+                expiration_recorded = True
+            except Exception:
+                expiration_recorded = False
+        for fingerprint in expired:
+            self._expired_tombstones[fingerprint] = expiration_recorded
+            self._expired_tombstones.move_to_end(fingerprint)
+        while len(self._expired_tombstones) > self._max_entries:
+            self._expired_tombstones.popitem(last=False)
         return len(expired)
 
 

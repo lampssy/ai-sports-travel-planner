@@ -109,11 +109,23 @@ When the captured policy sets `max_questions = 0`, the endpoint returns
 `not_needed` before constructing a provider client or attempting deterministic
 fallback.
 
+Gemini also receives the remaining request budget as its transport timeout. If
+the outer deadline still expires while a worker remains unresolved, the route
+releases its admission slot immediately and opens a bounded worker circuit.
+Later refinement requests fail fast as `temporarily_unavailable` instead of
+queueing behind the occupied two-thread executor. The circuit closes only after
+every timed-out worker returns; Snowcast neither creates replacement executor
+generations nor accumulates threads.
+
 Once a question has been delivered, its typed answer remains applicable after
 the snapshot expires. Applying an answer reruns the full ranking search with the
 updated intent, stores a new evaluated-baseline snapshot, renders that ranking,
 and immediately requests the next refinement from the new snapshot. Unanswered
 questions from the previous baseline are not carried forward.
+The answer is applied to the exact displayed session intent, filters, and brief
+that produced the question. Unsubmitted drawer or trip-brief edits are drafts
+and cannot alter this rerank. Refinement Undo is available only until the next
+successful ordinary search.
 
 The anonymous endpoint has an application-local admission guard for the current
 single-machine deployment: at most two concurrent requests, at most six

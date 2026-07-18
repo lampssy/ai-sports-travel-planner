@@ -56,6 +56,7 @@ import type {
   GroupPriorityPatch,
   RefinementOption,
   SearchFilters,
+  SearchIntent,
   SearchObjective,
   SearchV4RefinementResponse,
   SearchV4Configuration,
@@ -63,7 +64,9 @@ import type {
 import { AppShell, CurrentTripView } from "./ui/AppShell";
 
 interface PreviousSearchState {
+  brief: string;
   filters: SearchFilters;
+  intent: SearchIntent;
   assumptions: string[];
   preferences: FactorPreferencePatch[];
   groupPriorities: GroupPriorityPatch[];
@@ -538,19 +541,22 @@ function App() {
     nextAnsweredQuestionIds: string[],
     nextBrief: string,
     focusResults: boolean,
+    exactIntent?: SearchIntent,
   ) {
     const validationError = validateSearchFilters(nextFilters);
     if (validationError) {
       setError(validationError);
       return null;
     }
-    const intent = buildSearchIntent(
-      nextFilters,
-      nextAssumptions,
-      nextPreferences,
-      nextGroupPriorities,
-      nextObjectives,
-    );
+    const intent =
+      exactIntent ??
+      buildSearchIntent(
+        nextFilters,
+        nextAssumptions,
+        nextPreferences,
+        nextGroupPriorities,
+        nextObjectives,
+      );
     refinementRequestIdRef.current += 1;
     refinementAbortRef.current?.abort();
     refinementAbortRef.current = null;
@@ -560,16 +566,20 @@ function App() {
     }
     setRefinementStatus("idle");
     const response = await searchResorts({ intent });
+    setFilters(nextFilters);
     setAssumptions([...response.applied_intent.assumptions]);
     setPreferences([...response.applied_intent.factor_preferences]);
     setGroupPriorities([...response.applied_intent.group_priorities]);
     setObjectives([...response.applied_intent.objectives]);
     setSession((current) => {
       const next = current
-        ? reconcileSearchSession(current, response)
-        : createSearchSession(nextBrief, response);
+        ? reconcileSearchSession(current, response, nextFilters)
+        : createSearchSession(nextBrief, response, nextFilters);
       return { ...next, brief: nextBrief };
     });
+    setUndoState(null);
+    setRankFeedback(null);
+    setChangedRankGroupIds(new Set());
     setError(null);
     if (focusResults) setFocusRequest((current) => current + 1);
     void loadRefinements(response, nextBrief, nextAnsweredQuestionIds);
@@ -613,7 +623,9 @@ function App() {
   }
 
   async function applyRefinement(questionId: string, option: RefinementOption) {
-    if (loading) return;
+    const baselineSession = session;
+    if (loading || !baselineSession) return;
+    const baselineIntent = baselineSession.response.applied_intent;
     const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
     if (!option.intent_changed) {
       const hasNextRefinement =
@@ -636,7 +648,7 @@ function App() {
       return;
     }
     const nextPreferences = upsertBy(
-      preferences.filter(
+      [...baselineIntent.factor_preferences].filter(
         (item) =>
           !option.objective_patches.some(
             (patch) => patch.factor_id === item.factor_id,
@@ -646,7 +658,7 @@ function App() {
       (item) => item.factor_id,
     );
     const nextObjectives = upsertBy(
-      objectives.filter(
+      [...baselineIntent.objectives].filter(
         (item) =>
           !option.factor_preference_patches.some(
             (patch) => patch.factor_id === item.factor_id,
@@ -656,19 +668,27 @@ function App() {
       (item) => item.factor_id,
     );
     const nextGroups = upsertBy(
-      groupPriorities,
+      [...baselineIntent.group_priorities],
       option.group_priority_patches,
       (item) => item.group_id,
     );
     const previousState: PreviousSearchState = {
-      filters,
-      assumptions,
-      preferences,
-      groupPriorities,
-      objectives,
+      brief: baselineSession.brief,
+      filters: baselineSession.appliedFilters,
+      intent: baselineIntent,
+      assumptions: [...baselineIntent.assumptions],
+      preferences: [...baselineIntent.factor_preferences],
+      groupPriorities: [...baselineIntent.group_priorities],
+      objectives: [...baselineIntent.objectives],
       answeredQuestionIds,
     };
-    const previousResponse = session?.response;
+    const nextIntent: SearchIntent = {
+      ...baselineIntent,
+      factor_preferences: nextPreferences,
+      group_priorities: nextGroups,
+      objectives: nextObjectives,
+    };
+    const previousResponse = baselineSession.response;
     const pendingScrollRestore: PendingRerankScrollRestore = {
       scrollY: window.scrollY,
       response: null,
@@ -678,14 +698,15 @@ function App() {
     setRefinementError(null);
     try {
       const nextResponse = await fetchSearch(
-        filters,
-        assumptions,
+        baselineSession.appliedFilters,
+        [...baselineIntent.assumptions],
         nextPreferences,
         nextGroups,
         nextObjectives,
         nextAnswered,
-        brief,
+        baselineSession.brief,
         false,
+        nextIntent,
       );
       if (!nextResponse) {
         if (pendingRerankScrollRestoreRef.current === pendingScrollRestore) {
@@ -747,10 +768,13 @@ function App() {
         undoState.groupPriorities,
         undoState.objectives,
         undoState.answeredQuestionIds,
-        brief,
+        undoState.brief,
         false,
+        undoState.intent,
       );
       setFilters(undoState.filters);
+      setBrief(undoState.brief);
+      setLastParsedBrief(undoState.brief.trim());
       setAnsweredQuestionIds(undoState.answeredQuestionIds);
       setUndoState(null);
       setFocusRequest((current) => current + 1);
@@ -851,13 +875,11 @@ function App() {
         lift_pass_product_id: configuration.selected_pass.lift_pass_product_id,
         lift_pass_product_name: configuration.selected_pass.name,
         travel_month:
-          travelWindow && "month" in travelWindow ? travelWindow.month : null,
+          typeof travelWindow?.month === "number" ? travelWindow.month : null,
         trip_start_date:
-          travelWindow && "start_date" in travelWindow
-            ? travelWindow.start_date
-            : null,
+          travelWindow?.start_date ?? null,
         trip_end_date:
-          travelWindow && "end_date" in travelWindow ? travelWindow.end_date : null,
+          travelWindow?.end_date ?? null,
         booking_status: "not_booked_yet",
       });
       setCurrentTrip(saved);

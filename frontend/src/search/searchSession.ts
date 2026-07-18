@@ -13,6 +13,7 @@ import type {
 
 export interface SearchSession {
   brief: string;
+  appliedFilters: SearchFilters;
   intent: SearchIntent;
   response: SearchResponse;
   expandedGroupIds: Set<string>;
@@ -213,10 +214,12 @@ function defaultSelections(response: SearchResponse): Record<string, string> {
 export function createSearchSession(
   brief: string,
   response: SearchResponse,
+  appliedFilters: SearchFilters = defaultSearchFilters,
 ): SearchSession {
   const winner = response.results[0]?.ski_region_id;
   return {
     brief,
+    appliedFilters,
     intent: response.applied_intent,
     response,
     expandedGroupIds: new Set(winner ? [winner] : []),
@@ -231,6 +234,7 @@ export function createSearchSession(
 export function reconcileSearchSession(
   current: SearchSession,
   response: SearchResponse,
+  appliedFilters: SearchFilters = current.appliedFilters,
 ): SearchSession {
   const availableCandidateIds = candidateIdsByGroup(response);
   const selectedCandidateIdByGroup = defaultSelections(response);
@@ -251,6 +255,7 @@ export function reconcileSearchSession(
 
   return {
     ...current,
+    appliedFilters,
     intent: response.applied_intent,
     response,
     expandedGroupIds,

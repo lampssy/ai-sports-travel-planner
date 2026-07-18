@@ -242,7 +242,7 @@ def test_put_purges_all_expired_entries_and_reports_count() -> None:
     assert mutation.expired_count == 1
     assert mutation.evicted_count == 0
     assert len(store) == 2
-    assert store.get(first.fingerprint, first.intent_digest).outcome == "miss"
+    assert store.get(first.fingerprint, first.intent_digest).outcome == "expired"
 
 
 def test_store_never_exceeds_max_entries() -> None:
@@ -349,9 +349,41 @@ def test_cleanup_scheduler_reclaims_expired_snapshot_without_another_request() -
     clock.now = 60
     assert scheduler.run_once() == 1
     assert store.usage().entry_count == 0
+    intent_digest = _snapshot("active-expiry").intent_digest
+    assert store.get("active-expiry", intent_digest).outcome == "expired"
 
     store.close()
     assert scheduler.handle.cancelled is True
+
+
+def test_scheduled_cleanup_reports_expiry_once_and_bounds_expired_tombstones() -> None:
+    clock = _Clock()
+    scheduler = _ManualCleanupScheduler()
+    expired_counts: list[int] = []
+    store = SearchRefinementSnapshotStore(
+        ttl_seconds=10,
+        max_entries=2,
+        clock=clock,
+        cleanup_scheduler=scheduler,
+        cleanup_interval_seconds=1,
+        expiration_observer=expired_counts.append,
+    )
+    snapshots = tuple(_snapshot(f"expired-{index}") for index in range(3))
+    for snapshot in snapshots:
+        store.put(snapshot)
+
+    clock.now = 10
+    assert scheduler.run_once() == 2
+    assert expired_counts == [2]
+    assert store.get(snapshots[0].fingerprint, snapshots[0].intent_digest).outcome == (
+        "miss"
+    )
+    retained_expiry = store.get(
+        snapshots[-1].fingerprint,
+        snapshots[-1].intent_digest,
+    )
+    assert retained_expiry.outcome == "expired"
+    assert retained_expiry.expiration_already_recorded is True
 
 
 def test_store_supports_basic_concurrent_puts_and_gets() -> None:

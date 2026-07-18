@@ -114,7 +114,9 @@ export function searchIntentRequestPayload(intent: SearchIntent): SearchIntent {
   if (constraints.travel_window) {
     const { mode: _mode, ski_day_count: _skiDayCount, ...travelWindow } =
       constraints.travel_window as ResponseTravelWindow;
-    constraints.travel_window = travelWindow;
+    constraints.travel_window = Object.fromEntries(
+      Object.entries(travelWindow).filter(([, value]) => value != null),
+    );
   }
 
   if (constraints.lodging_budget) {
