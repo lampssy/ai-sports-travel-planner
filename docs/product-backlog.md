@@ -1609,6 +1609,38 @@ Promotion trigger:
 - Promote before the next Search V4 performance sprint or when production-like
   telemetry can be collected from representative catalog and weather data.
 
+### Refinement Copy-Safety Particle Normalization
+
+Status: candidate
+Area: Search V4; AI Safety
+Source: assistant-ready refinement release review
+
+Why it matters:
+
+- The configured-copy safety boundary rejects current transaction and account
+  actions, but fused particles such as `into` and `onto` are not yet normalized
+  like their separated equivalents. No current registered refinement copy uses
+  these forms, so this is a bounded hardening follow-up rather than a release
+  blocker.
+
+First scope:
+
+- Normalize `into` and `onto` for reviewed account and transaction action forms,
+  with regression cases such as `opt into`, `sign into`, `log onto`, and
+  `check into`.
+- Preserve the current clause-bounded matching behavior so ordinary planning
+  language is not rejected.
+
+Not now:
+
+- Do not replace the reviewed safety predicate with an unrestricted keyword
+  blacklist or broaden it beyond configured refinement copy.
+
+Promotion trigger:
+
+- Promote before adding registered refinement wording that uses one of these
+  fused action forms, or before claiming generalized action-copy coverage.
+
 ## Recovered But Not Active
 
 These ideas appeared in older backlog or sprint notes but should not be treated
