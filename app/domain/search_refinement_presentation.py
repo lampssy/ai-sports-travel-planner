@@ -316,9 +316,9 @@ _ACCOUNT_CREDENTIAL_SHAPE_PATTERN = re.compile(
     r"\b(?:"
     r"accounts?|"
     r"user[-\s]?names?|"
-    r"(?:sign|log)[-\s]?(?:ins?|ons?)|"
-    r"sign(?:s|ed|ing)[-\s]+(?:in|on)|"
-    r"log(?:s|ged|ging)[-\s]+(?:in|on)|"
+    r"(?:sign|log)[-\s]?(?:ins?|ons?|outs?|offs?)|"
+    r"sign(?:s|ed|ing)[-\s]+(?:in|on|out|off)|"
+    r"log(?:s|ged|ging)[-\s]+(?:in|on|out|off)|"
     r"payment[-\s]+accounts?"
     r")\b",
     flags=re.IGNORECASE,
@@ -353,13 +353,28 @@ _TRANSACTION_ACTION_PATTERN = re.compile(
     r"install(?:s|ed|ing|ation|ations)?|"
     r"checkout(?:s)?|"
     r"signup(?:s)?|"
-    r"register(?:s|ed|ing)?|registration(?:s)?|"
-    r"check(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+){0,3}[-\s]+out(?:s)?|"
-    r"sign(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+){0,3}[-\s]+up|"
-    r"opt(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+){0,3}[-\s]+in"
+    r"register(?:s|ed|ing)?|registration(?:s)?"
     r")\b",
     flags=re.IGNORECASE,
 )
+_PHRASAL_ACTION_ROOT_PATTERN = re.compile(
+    r"(?:"
+    r"(?P<sign>sign(?:s|ed|ing)?)|"
+    r"(?P<log>log(?:s|ged|ging)?)|"
+    r"(?P<opt>opt(?:s|ed|ing)?)|"
+    r"(?P<check>check(?:s|ed|ing)?)"
+    r")",
+    flags=re.IGNORECASE,
+)
+_PHRASAL_ACTION_PARTICLES = MappingProxyType(
+    {
+        "sign": frozenset({"in", "off", "on", "out", "up"}),
+        "log": frozenset({"in", "off", "on", "out"}),
+        "opt": frozenset({"in", "out"}),
+        "check": frozenset({"in", "out"}),
+    }
+)
+_SEMANTIC_CLAUSE_BOUNDARY_PATTERN = re.compile(r"[.!?;:\r\n]+")
 _TRANSACTION_COMPOUND_PREFIX_PATTERN = re.compile(
     r"\b(?:pre|re|un)[-\s]?(?=[^\W\d_]+)",
     flags=re.IGNORECASE | re.UNICODE,
@@ -927,10 +942,26 @@ def _contains_external_action(text: str, tokens: Sequence[str]) -> bool:
 
 
 def _contains_transaction_action(text: str) -> bool:
+    if _contains_clause_bounded_phrasal_action(text):
+        return True
     if _TRANSACTION_ACTION_PATTERN.search(text) is not None:
         return True
     normalized_compounds = _TRANSACTION_COMPOUND_PREFIX_PATTERN.sub("", text)
     return _TRANSACTION_ACTION_PATTERN.search(normalized_compounds) is not None
+
+
+def _contains_clause_bounded_phrasal_action(text: str) -> bool:
+    for clause in _SEMANTIC_CLAUSE_BOUNDARY_PATTERN.split(text):
+        expected_particles: set[str] = set()
+        for token in _tokens(clause):
+            if token in expected_particles:
+                return True
+            root_match = _PHRASAL_ACTION_ROOT_PATTERN.fullmatch(token)
+            if root_match is not None:
+                expected_particles.update(
+                    _PHRASAL_ACTION_PARTICLES[root_match.lastgroup]
+                )
+    return False
 
 
 def _is_safe_non_directive_transaction_copy(text: str) -> bool:

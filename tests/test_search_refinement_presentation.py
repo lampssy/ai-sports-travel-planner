@@ -861,6 +861,96 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
         "unsafe traveller-facing copy",
     ),
     (
+        "sign_four_tokens_up",
+        "Sign yourself right back on up",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "sign_long_clause_up",
+        "Sign yourself very carefully right back on up for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "log_long_clause_out",
+        "Log yourself securely all the way out now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "opt_long_clause_in",
+        "Opt yourself whenever ready safely back in for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "check_long_clause_out",
+        "Check yourself very carefully securely on the way out now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_logout",
+        "Logout to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "sign_out",
+        "Sign out to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "log_out",
+        "Log out to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_signout",
+        "Signout preference",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_logoff",
+        "Logoff preference",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_signoff",
+        "Signoff preference",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "signing_out",
+        "Signing out to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "signed_off",
+        "Signed off to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "logging_out",
+        "Logging out to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "logged_off",
+        "Logged off to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
         "safe_context_checkout_tail",
         "Lift-pass purchase planning then checking out this pass",
         "external_action",
@@ -1206,6 +1296,31 @@ def test_every_configured_public_copy_field_allows_ordinary_dotted_language(
     field: str,
 ) -> None:
     safe_copy = "Would you compare terrain, e.g. by size?"
+    presentation = load_refinement_presentation_policy()
+    assert (
+        presentation_module._public_copy_safety_violation(
+            safe_copy,
+            blocked_tokens=presentation.blocked_copy_terms,
+        )
+        is None
+    )
+    payload = presentation.model_dump(mode="python")
+    payload[section][0][field] = safe_copy
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+@pytest.mark.parametrize(
+    ("section", "field"),
+    _CONFIGURED_PUBLIC_COPY_FIELDS,
+    ids=("fallback-question", "fallback-reason", "answer-label", "answer-description"),
+)
+def test_every_configured_public_copy_field_keeps_action_words_clause_bounded(
+    section: str,
+    field: str,
+) -> None:
+    safe_copy = "Review the piste sign. Plan the route up separately."
     presentation = load_refinement_presentation_policy()
     assert (
         presentation_module._public_copy_safety_violation(
@@ -1982,6 +2097,29 @@ def test_generated_question_rejects_registered_closed_signin_phrase() -> None:
 
     assert resolve_interaction_copy(
         "Would you prefer signin access?",
+        (topic.topic_id,),
+        (),
+        configured,
+    ) == (topic.fallback_question, topic.fallback_reason)
+
+
+def test_registry_rejects_long_phrasal_action_question_phrase() -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload["topics"][0]["question_phrases"] = ("sign yourself right back on up",)
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    with pytest.raises(ValueError, match="unsafe"):
+        validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+def test_generated_question_rejects_registered_long_phrasal_action() -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload["topics"][0]["question_phrases"] = ("sign yourself right back on up",)
+    configured = RefinementPresentationPolicy.model_validate(payload)
+    topic = configured.topics[0]
+
+    assert resolve_interaction_copy(
+        "Would you prefer sign yourself right back on up?",
         (topic.topic_id,),
         (),
         configured,
