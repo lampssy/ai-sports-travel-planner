@@ -4582,7 +4582,7 @@
       "latitude": 45.877,
       "longitude": 7.6228,
       "base_elevation_m": 1524,
-      "summit_elevation_m": 2860,
+      "summit_elevation_m": 3093,
       "season_start_month": 11,
       "season_end_month": 4,
       "season_windows": [
@@ -5802,7 +5802,7 @@
       "ski_area_access_id": "cervinia-valtournenche--valtournenche-ski-area",
       "stay_base_id": "cervinia-valtournenche",
       "ski_area_id": "valtournenche-ski-area",
-      "access_mode": "ski_bus",
+      "access_mode": "drive",
       "lift_distance": "medium",
       "nearest_lift_name": "Salette",
       "distance_m": 1255,
@@ -5813,9 +5813,8 @@
         "nearest_lift_osm_way_id": "30833737"
       },
       "source_urls": [
-        "https://www.cervinia.it/en",
         "https://www.cervinia.it/en/impianti",
-        "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+        "https://www.cervinia.it/en/cosa-fare/valtournenche-il-punto-di-accesso-ideale-al-cervino-ski-paradise-grazie-alla-nuova-seggiovia-gran-sometta",
         "https://www.openstreetmap.org/node/342786424",
         "https://www.openstreetmap.org/way/30833737"
       ]

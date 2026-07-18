@@ -2594,10 +2594,6 @@
           "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
           "Stay-base lift access is source-backed with OSM Breuil-Cervinia/Cretaz and Valtournenche/Salette geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
           "Source-aware v2 enrichment reviewed official Breuil-Cervinia weather and apres material on 2026-07-05.",
-          "The Super G source is on-slope ski-day evidence and no longer supports a Breuil-Cervinia base-local apres claim.",
-          "The Super G source is on-slope ski-day evidence and no longer supports a Breuil-Cervinia base-local apres claim.",
-          "The Super G source is on-slope ski-day evidence and no longer supports a Breuil-Cervinia base-local apres claim.",
-          "The Super G source is on-slope ski-day evidence and no longer supports a Breuil-Cervinia base-local apres claim.",
           "The Super G source is on-slope ski-day evidence and no longer supports a Breuil-Cervinia base-local apres claim."
         ]
       },
@@ -8424,10 +8420,6 @@
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence.",
           "Source-aware v2 enrichment reviewed official Zermatt ski-area and tourism material on 2026-07-05.",
           "The cross-border piste map is stored on the shared terrain domain.",
-          "The general skiing page does not establish a current recurring or season-scheduled lift-served night-skiing offer; availability is restored to unknown.",
-          "The general skiing page does not establish a current recurring or season-scheduled lift-served night-skiing offer; availability is restored to unknown.",
-          "The general skiing page does not establish a current recurring or season-scheduled lift-served night-skiing offer; availability is restored to unknown.",
-          "The general skiing page does not establish a current recurring or season-scheduled lift-served night-skiing offer; availability is restored to unknown.",
           "The general skiing page does not establish a current recurring or season-scheduled lift-served night-skiing offer; availability is restored to unknown."
         ]
       },
@@ -8448,15 +8440,16 @@
         },
         "field_source_refs": {
           "identity_coordinates": [
+            "https://cervinia-api.therocks.it/wp-content/uploads/2024/10/Skirama-Cervino-Ski-Paradise-Winter-25-25.pdf",
             "https://www.cervinia.it/en",
             "https://www.cervinia.it/en/impianti",
-            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
             "https://www.openstreetmap.org/node/5523734363"
           ],
           "elevation_season": [
-            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+            "https://cervinia-api.therocks.it/wp-content/uploads/2024/10/Skirama-Cervino-Ski-Paradise-Winter-25-25.pdf",
             "https://www.cervinia.it/en",
-            "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf"
+            "https://www.cervinia.it/en/cosa-fare/valtournenche-il-punto-di-accesso-ideale-al-cervino-ski-paradise-grazie-alla-nuova-seggiovia-gran-sometta",
+            "https://www.cervinia.it/en/impianti"
           ],
           "terrain_metrics": [],
           "skill_fit": [],
@@ -8471,7 +8464,7 @@
         "notes": [
           "Official status, timetable, and tariff scopes distinguish connected Valtournenche operations and a full local pass from Breuil-Cervinia.",
           "The new ID starts a separate weather history; no existing Cervinia weather rows are re-keyed.",
-          "The 1524 m base and 2860 m Bec Carre upper geometry are source-normalized; child-scoped terrain and fit facts remain unresolved."
+          "The 1,524 m base and 3,093 m Gran Sometta upper geometry are normalized from direct owner-scoped official terrain evidence; child-scoped terrain and fit facts remain unresolved."
         ]
       }
     },
@@ -9979,20 +9972,21 @@
         },
         "field_source_refs": {
           "relationship": [
+            "https://www.cervinia.it/en/cosa-fare/valtournenche-il-punto-di-accesso-ideale-al-cervino-ski-paradise-grazie-alla-nuova-seggiovia-gran-sometta",
             "https://www.cervinia.it/en/impianti",
-            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
             "https://www.openstreetmap.org/node/342786424",
             "https://www.openstreetmap.org/way/30833737"
           ],
           "access_mode_distance": [
-            "https://www.cervinia.it/en",
+            "https://www.cervinia.it/en/cosa-fare/valtournenche-il-punto-di-accesso-ideale-al-cervino-ski-paradise-grazie-alla-nuova-seggiovia-gran-sometta",
+            "https://www.cervinia.it/en/impianti",
             "https://www.openstreetmap.org/node/342786424",
             "https://www.openstreetmap.org/way/30833737"
           ]
         },
         "notes": [
           "The existing Salette edge is retargeted to the Valtournenche ski-area weather owner.",
-          "Distance remains the reviewed point-to-point village-to-station estimate; official Cervino material supports direct local lift access and bus service to Valtournenche."
+          "Official lift inventory and OSM geometry establish the local Salette relationship and the reviewed point-to-point distance; the operator identifies the gondola as starting directly from a large valley-bottom car park, so the unsupported ski-bus claim is normalized to drive access."
         ]
       }
     },
@@ -10068,14 +10062,23 @@
         },
         "field_source_refs": {
           "membership_connectivity": [
+            "https://www.cervinia.it/en",
             "https://www.matterhornparadise.ch/en/experience/skiing",
             "https://www.matterhornparadise.ch/en/information/lifts-and-pistes",
-            "https://www.cervinia.it/en"
+            "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
           ],
           "aggregate_terrain": [
-            "https://www.matterhornparadise.ch/en/experience/skiing"
+            "https://www.cervinia.it/en",
+            "https://www.matterhornparadise.ch/en/experience/skiing",
+            "https://www.matterhornparadise.ch/en/information/lifts-and-pistes",
+            "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
           ],
-          "season": [],
+          "season": [
+            "https://www.cervinia.it/en",
+            "https://www.matterhornparadise.ch/en/experience/skiing",
+            "https://www.matterhornparadise.ch/en/information/lifts-and-pistes",
+            "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          ],
           "official_documents": [
             "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf"
           ]
@@ -10168,14 +10171,20 @@
         },
         "field_source_refs": {
           "membership_connectivity": [
-            "https://www.cervinia.it/en/impianti",
-            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+            "https://www.cervinia.it/en",
+            "https://www.cervinia.it/en/impianti"
           ],
           "aggregate_terrain": [
+            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
             "https://www.cervinia.it/en",
-            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            "https://www.cervinia.it/en/impianti"
           ],
-          "season": [],
+          "season": [
+            "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+            "https://www.cervinia.it/en",
+            "https://www.cervinia.it/en/impianti"
+          ],
           "official_documents": []
         },
         "notes": [
