@@ -69,6 +69,7 @@ export type ParsedChipAction =
   | { kind: "lodgingBudget" }
   | { kind: "stayQuality" }
   | { kind: "travelLimit" }
+  | { kind: "travelOrigin" }
   | { kind: "skill" }
   | { kind: "objective"; id: string }
   | { kind: "group"; id: string }
@@ -132,6 +133,14 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
       id: "travel-limit",
       label: `Max ${constraints.travel_limit.maximum_duration_hours} hours by car`,
       action: { kind: "travelLimit" },
+    });
+  }
+  const originText = intent.travel_context.origin_text?.trim();
+  if (originText) {
+    chips.push({
+      id: "travel-origin",
+      label: `Prefer closer to ${originText}`,
+      action: { kind: "travelOrigin" },
     });
   }
   for (const skill of intent.party.skill_levels) {

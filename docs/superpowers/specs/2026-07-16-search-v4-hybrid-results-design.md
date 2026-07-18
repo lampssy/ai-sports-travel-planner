@@ -510,6 +510,13 @@ The rail contains:
 The rail is not a permanent filter form. On mobile it becomes normal document
 flow above the recommendations.
 
+Every active ranking input remains visible as a removable decision. An origin
+therefore appears separately from a hard drive limit because origin-only travel
+effort still affects ranking. Removing the limit preserves the origin decision;
+removing the origin also removes its dependent hard limit. Deactivating a travel
+window preserves the last entered month or exact dates as inactive drawer state
+so reselecting that mode cannot silently submit an empty window.
+
 ### Contextual Refinement
 
 The primary refinement card shows:

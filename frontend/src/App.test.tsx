@@ -388,6 +388,127 @@ test("renders removable parsed chips with user-language names", async () => {
   expect(screen.queryByRole("button", { name: "Remove France" })).not.toBeInTheDocument();
 });
 
+test("keeps origin-based travel ranking visible after removing the hard drive limit", async () => {
+  const originOnlyIntent: SearchIntent = {
+    ...intent,
+    travel_context: { origin_text: "Warsaw", mode: "car" },
+  };
+  const limitedIntent: SearchIntent = {
+    ...originOnlyIntent,
+    constraints: {
+      ...originOnlyIntent.constraints,
+      travel_limit: { maximum_duration_hours: 15, mode: "car" },
+    },
+  };
+  searchResponses = [
+    response({ applied_intent: limitedIntent }),
+    response({ applied_intent: originOnlyIntent }),
+    response(),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await openFilters(user);
+  await user.type(screen.getByLabelText("Origin"), "Warsaw");
+  await user.type(screen.getByLabelText("Hard drive limit"), "15");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByRole("button", { name: "Remove Prefer closer to Warsaw" }),
+  ).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.clear(screen.getByLabelText("Country"));
+  await user.type(screen.getByLabelText("Country"), "Italy");
+  await user.clear(screen.getByLabelText("Origin"));
+  await user.type(screen.getByLabelText("Origin"), "Berlin");
+  await user.selectOptions(screen.getByLabelText("Travel window"), "dates");
+  await user.type(screen.getByLabelText("Trip start date"), "2027-01-16");
+  await user.type(screen.getByLabelText("Trip end date"), "2027-01-20");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  await user.click(
+    screen.getByRole("button", { name: "Remove Max 15 hours by car" }),
+  );
+
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+  const withoutLimit = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[1].init?.body),
+  );
+  expect(withoutLimit.intent.constraints.travel_limit).toBeUndefined();
+  expect(withoutLimit.intent.constraints.location).toEqual({ country: "France" });
+  expect(withoutLimit.intent.constraints.travel_window).toEqual({ month: 3 });
+  expect(withoutLimit.intent.travel_context).toEqual({
+    origin_text: "Warsaw",
+    mode: "car",
+  });
+  expect(
+    screen.getByRole("button", { name: "Remove Prefer closer to Warsaw" }),
+  ).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Country")).toHaveValue("Italy");
+  expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("Hard drive limit")).toHaveValue(null);
+  expect(screen.getByLabelText("Travel window")).toHaveValue("dates");
+  expect(screen.getByLabelText("Trip start date")).toHaveValue("2027-01-16");
+  expect(screen.getByLabelText("Trip end date")).toHaveValue("2027-01-20");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  await user.click(
+    screen.getByRole("button", { name: "Remove Prefer closer to Warsaw" }),
+  );
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  const withoutOrigin = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[2].init?.body),
+  );
+  expect(withoutOrigin.intent.travel_context).toEqual({});
+  expect(withoutOrigin.intent.constraints.travel_limit).toBeUndefined();
+});
+
+test("restores the previous month when Month mode is selected again", async () => {
+  const { travel_window: _travelWindow, ...constraintsWithoutWindow } =
+    intent.constraints;
+  const anytimeIntent: SearchIntent = {
+    ...intent,
+    constraints: constraintsWithoutWindow,
+  };
+  searchResponses = [
+    response(),
+    response({ applied_intent: anytimeIntent }),
+    response(),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("button", { name: "Remove March window" }),
+  );
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.selectOptions(screen.getByLabelText("Travel window"), "month");
+  expect(screen.getByLabelText("Travel month")).toHaveValue("3");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  const restoredMonth = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[2].init?.body),
+  );
+  expect(restoredMonth.intent.constraints.travel_window).toEqual({ month: 3 });
+});
+
 test("posts one typed Search V4 request and renders fit and evidence", async () => {
   const user = userEvent.setup();
   render(<App />);

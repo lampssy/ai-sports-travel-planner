@@ -301,6 +301,29 @@ describe("applied travel-window presentation", () => {
   });
 });
 
+describe("applied travel-origin presentation", () => {
+  test("shows origin-driven travel ranking separately from a hard drive limit", () => {
+    const chips = buildParsedChips({
+      ...baseIntent,
+      constraints: {
+        travel_limit: { maximum_duration_hours: 15, mode: "car" },
+      },
+      travel_context: { origin_text: "Warsaw", mode: "car" },
+    });
+
+    expect(chips).toContainEqual({
+      id: "travel-origin",
+      label: "Prefer closer to Warsaw",
+      action: { kind: "travelOrigin" },
+    });
+    expect(chips).toContainEqual({
+      id: "travel-limit",
+      label: "Max 15 hours by car",
+      action: { kind: "travelLimit" },
+    });
+  });
+});
+
 describe("deterministic recommendation copy", () => {
   test("qualifies an accessible-terrain narrative to its ski-area evidence scope", () => {
     const candidate = configuration("bounded-terrain", {

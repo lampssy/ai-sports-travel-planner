@@ -40,6 +40,7 @@ import {
   defaultSearchFilters,
   dismissRefinement,
   findSelectedCandidate,
+  isPassValueObjective,
   mergeObjectivePatches,
   mergeParsedFilters,
   rankChangeSummary,
@@ -94,6 +95,13 @@ interface PendingRerankScrollRestore {
   response: SearchSession["response"] | null;
 }
 
+interface ChipEditorState {
+  filters: SearchFilters;
+  preferences: FactorPreferencePatch[];
+  groupPriorities: GroupPriorityPatch[];
+  objectives: SearchObjective[];
+}
+
 function waitForRefinementRetry(
   delayMs: number,
   signal: AbortSignal,
@@ -142,6 +150,64 @@ function restoreRefinementDraftItems<T>(
     if (beforeItem) restored.push(beforeItem);
   }
   return restored;
+}
+
+function removeChipFromEditor(
+  state: ChipEditorState,
+  action: ParsedChip["action"],
+): ChipEditorState {
+  const next = { ...state };
+  switch (action.kind) {
+    case "location":
+      return { ...next, filters: { ...state.filters, location: "" } };
+    case "travelWindow":
+      return {
+        ...next,
+        filters: { ...state.filters, travelWindowMode: "any" },
+      };
+    case "lodgingBudget":
+      return { ...next, filters: { ...state.filters, maxPrice: "" } };
+    case "stayQuality":
+      return { ...next, filters: { ...state.filters, stars: "" } };
+    case "travelLimit":
+      return { ...next, filters: { ...state.filters, maxDriveHours: "" } };
+    case "travelOrigin":
+      return {
+        ...next,
+        filters: { ...state.filters, originText: "", maxDriveHours: "" },
+      };
+    case "skill":
+      return { ...next, filters: { ...state.filters, skillLevel: "" } };
+    case "objective": {
+      const removesPassValueFamily = isPassValueObjective(action.id);
+      const keepObjective = (item: SearchObjective) =>
+        removesPassValueFamily
+          ? !isPassValueObjective(item.factor_id)
+          : item.factor_id !== action.id;
+      return {
+        ...next,
+        filters:
+          removesPassValueFamily || state.filters.valueObjective === action.id
+            ? { ...state.filters, valueObjective: "" }
+            : state.filters,
+        objectives: state.objectives.filter(keepObjective),
+      };
+    }
+    case "group":
+      return {
+        ...next,
+        groupPriorities: state.groupPriorities.filter(
+          (item) => item.group_id !== action.id,
+        ),
+      };
+    case "preference":
+      return {
+        ...next,
+        preferences: state.preferences.filter(
+          (item) => item.factor_id !== action.id,
+        ),
+      };
+  }
 }
 
 function App() {
@@ -922,68 +988,110 @@ function App() {
   }
 
   async function removeChip(chip: ParsedChip) {
+    const baselineSession = session;
     if (loading) return;
-    let nextFilters = filters;
-    let nextPreferences = preferences;
-    let nextGroups = groupPriorities;
-    let nextObjectives = objectives;
+    const nextEditor = removeChipFromEditor(
+      { filters, preferences, groupPriorities, objectives },
+      chip.action,
+    );
+    if (!baselineSession) {
+      setFilters(nextEditor.filters);
+      setPreferences(nextEditor.preferences);
+      setGroupPriorities(nextEditor.groupPriorities);
+      setObjectives(nextEditor.objectives);
+      return;
+    }
+    const baselineIntent = baselineSession.response.applied_intent;
+    let nextFilters = baselineSession.appliedFilters;
+    let nextConstraints = { ...baselineIntent.constraints };
+    let nextTravelContext = { ...baselineIntent.travel_context };
+    let nextSkillLevels = [...baselineIntent.party.skill_levels];
+    let nextPreferences = [...baselineIntent.factor_preferences];
+    let nextGroups = [...baselineIntent.group_priorities];
+    let nextObjectives = [...baselineIntent.objectives];
     const action = chip.action;
     switch (action.kind) {
       case "location":
-        nextFilters = { ...filters, location: "" };
+        delete nextConstraints.location;
+        nextFilters = { ...nextFilters, location: "" };
         break;
       case "travelWindow":
-        nextFilters = { ...filters, travelWindowMode: "any", travelMonth: "" };
+        delete nextConstraints.travel_window;
+        nextFilters = { ...nextFilters, travelWindowMode: "any" };
         break;
       case "lodgingBudget":
-        nextFilters = { ...filters, maxPrice: "" };
+        delete nextConstraints.lodging_budget;
+        nextFilters = { ...nextFilters, maxPrice: "" };
         break;
       case "stayQuality":
-        nextFilters = { ...filters, stars: "" };
+        delete nextConstraints.minimum_stay_quality;
+        nextFilters = { ...nextFilters, stars: "" };
         break;
       case "travelLimit":
-        nextFilters = { ...filters, maxDriveHours: "" };
+        delete nextConstraints.travel_limit;
+        nextFilters = { ...nextFilters, maxDriveHours: "" };
+        break;
+      case "travelOrigin":
+        delete nextConstraints.travel_limit;
+        nextTravelContext = {};
+        nextFilters = { ...nextFilters, originText: "", maxDriveHours: "" };
         break;
       case "skill":
-        nextFilters = { ...filters, skillLevel: "" };
+        nextSkillLevels = [];
+        nextFilters = { ...nextFilters, skillLevel: "" };
         break;
-      case "objective":
-        nextObjectives = objectives.filter(
-          (item) => item.factor_id !== action.id,
-        );
+      case "objective": {
+        const removesPassValueFamily = isPassValueObjective(action.id);
+        const keepObjective = (item: SearchObjective) =>
+          removesPassValueFamily
+            ? !isPassValueObjective(item.factor_id)
+            : item.factor_id !== action.id;
+        nextObjectives = nextObjectives.filter(keepObjective);
         nextFilters =
-          filters.valueObjective === action.id
-            ? { ...filters, valueObjective: "" }
-            : filters;
+          removesPassValueFamily || nextFilters.valueObjective === action.id
+            ? { ...nextFilters, valueObjective: "" }
+            : nextFilters;
         break;
+      }
       case "group":
-        nextGroups = groupPriorities.filter(
-          (item) => item.group_id !== action.id,
-        );
+        nextGroups = nextGroups.filter((item) => item.group_id !== action.id);
         break;
       case "preference":
-        nextPreferences = preferences.filter(
+        nextPreferences = nextPreferences.filter(
           (item) => item.factor_id !== action.id,
         );
         break;
     }
-    setFilters(nextFilters);
-    setPreferences(nextPreferences);
-    setGroupPriorities(nextGroups);
-    setObjectives(nextObjectives);
-    if (!session) return;
+    const nextIntent: SearchIntent = {
+      ...baselineIntent,
+      constraints: nextConstraints,
+      party: { skill_levels: nextSkillLevels },
+      travel_context: nextTravelContext,
+      factor_preferences: nextPreferences,
+      group_priorities: nextGroups,
+      objectives: nextObjectives,
+    };
     setLoading(true);
     try {
-      await fetchSearch(
+      const nextResponse = await fetchSearch(
         nextFilters,
-        assumptions,
+        [...baselineIntent.assumptions],
         nextPreferences,
         nextGroups,
         nextObjectives,
         answeredQuestionIds,
-        brief,
+        baselineSession.brief,
         false,
+        {
+          exactIntent: nextIntent,
+          syncEditorFromResponse: false,
+        },
       );
+      if (!nextResponse) return;
+      setFilters(nextEditor.filters);
+      setPreferences(nextEditor.preferences);
+      setGroupPriorities(nextEditor.groupPriorities);
+      setObjectives(nextEditor.objectives);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Search failed.");
     } finally {
