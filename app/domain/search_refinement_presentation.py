@@ -234,21 +234,44 @@ _SENSITIVE_BRIEF_MARKERS = frozenset(
     }
 )
 _SENSITIVE_PUBLIC_COPY_TERMS = _SENSITIVE_BRIEF_MARKERS
-_EXTERNAL_ACTION_PUBLIC_COPY_TERMS = frozenset(
+_EXTERNAL_ACTION_PUBLIC_COPY_MARKERS = frozenset({"external", "offer"})
+_EXTERNAL_ACTION_PUBLIC_COPY_VERBS = frozenset(
     {
         "book",
         "buy",
         "click",
-        "external",
+        "download",
         "follow",
-        "offer",
+        "install",
         "pay",
         "provide",
+        "purchase",
+        "reserve",
         "send",
         "share",
+        "subscribe",
         "submit",
         "upload",
         "visit",
+    }
+)
+_EXTERNAL_ACTION_CONTEXT_TERMS = frozenset(
+    {
+        "and",
+        "can",
+        "could",
+        "may",
+        "must",
+        "never",
+        "not",
+        "now",
+        "please",
+        "should",
+        "then",
+        "to",
+        "you",
+        "your",
+        "would",
     }
 )
 _UNSUPPORTED_CLAIM_PUBLIC_COPY_TERMS = frozenset(
@@ -270,9 +293,39 @@ _UNSUPPORTED_CLAIM_PUBLIC_COPY_TERMS = frozenset(
         "worst",
     }
 )
-_URL_PATTERN = re.compile(r"(?:https?://|www\.)\S+", flags=re.IGNORECASE)
+_PAYMENT_CREDENTIAL_PUBLIC_COPY_TERMS = frozenset(
+    {
+        "cvc",
+        "cvv",
+        "iban",
+        "pin",
+        "wallet",
+    }
+)
+_URI_SCHEME_PATTERN = re.compile(
+    r"(?<![\w.+-])[a-z][a-z0-9+.-]*:(?=\S)",
+    flags=re.IGNORECASE,
+)
+_WWW_PATTERN = re.compile(r"\bwww\.\S+", flags=re.IGNORECASE)
+_BARE_DOMAIN_PATTERN = re.compile(
+    r"(?<![@\w-])"
+    r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
+    r"(?:ai|app|at|biz|ch|co|com|de|dev|edu|eu|fr|gov|info|io|me|net|org|pl|travel|uk)"
+    r"(?![\w-])",
+    flags=re.IGNORECASE,
+)
 _EMAIL_PATTERN = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
 _PHONE_OR_PAYMENT_PATTERN = re.compile(r"(?:\d[\s().+-]*){7,}")
+_PAYMENT_CREDENTIAL_PATTERN = re.compile(
+    r"\b(?:"
+    r"bank[\s-]+account|"
+    r"account[\s-]+(?:details|number)|"
+    r"routing[\s-]+(?:details|number)|"
+    r"sort[\s-]+code|"
+    r"swift[\s-]+code"
+    r")\b",
+    flags=re.IGNORECASE,
+)
 _MACHINE_SLUG_ID_PATTERN = re.compile(
     r"(?<![\w-])[a-z0-9]+(?:-[a-z0-9]+){2,}(?![\w-])",
     flags=re.IGNORECASE,
@@ -586,7 +639,13 @@ def _tokens(text: str) -> tuple[str, ...]:
 def _contains_sensitive_pattern(text: str) -> bool:
     return any(
         pattern.search(text) is not None
-        for pattern in (_URL_PATTERN, _EMAIL_PATTERN, _PHONE_OR_PAYMENT_PATTERN)
+        for pattern in (
+            _URI_SCHEME_PATTERN,
+            _WWW_PATTERN,
+            _BARE_DOMAIN_PATTERN,
+            _EMAIL_PATTERN,
+            _PHONE_OR_PAYMENT_PATTERN,
+        )
     )
 
 
@@ -691,6 +750,13 @@ def _public_copy_safety_violation(
 
     if _contains_control_character(text):
         return "control"
+    if _URI_SCHEME_PATTERN.search(text) is not None:
+        return "uri"
+    if (
+        _WWW_PATTERN.search(text) is not None
+        or _BARE_DOMAIN_PATTERN.search(text) is not None
+    ):
+        return "bare_domain"
     if _contains_sensitive_pattern(text):
         return "sensitive_pattern"
     if _contains_digit_or_percent(text):
@@ -699,9 +765,14 @@ def _public_copy_safety_violation(
         return "machine_id"
     tokens = _tokens(text)
     token_set = frozenset(tokens)
+    if (
+        token_set & _PAYMENT_CREDENTIAL_PUBLIC_COPY_TERMS
+        or _PAYMENT_CREDENTIAL_PATTERN.search(text) is not None
+    ):
+        return "payment_credential"
     if token_set & _SENSITIVE_PUBLIC_COPY_TERMS:
         return "sensitive_request"
-    if token_set & _EXTERNAL_ACTION_PUBLIC_COPY_TERMS:
+    if _contains_external_action(tokens):
         return "external_action"
     if _contains_unsupported_claim(tokens):
         return "unsupported_claim"
@@ -715,6 +786,16 @@ def _contains_machine_id_shape(text: str) -> bool:
         "--" in text
         or _MACHINE_SLUG_ID_PATTERN.search(text) is not None
         or _MACHINE_KEY_ID_PATTERN.search(text) is not None
+    )
+
+
+def _contains_external_action(tokens: Sequence[str]) -> bool:
+    if frozenset(tokens) & _EXTERNAL_ACTION_PUBLIC_COPY_MARKERS:
+        return True
+    return any(
+        token in _EXTERNAL_ACTION_PUBLIC_COPY_VERBS
+        and (index == 0 or tokens[index - 1] in _EXTERNAL_ACTION_CONTEXT_TERMS)
+        for index, token in enumerate(tokens)
     )
 
 

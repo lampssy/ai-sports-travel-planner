@@ -35,7 +35,7 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
     (
         "url",
         "Details at https://example.com",
-        "sensitive_pattern",
+        "uri",
         "unsafe traveller-facing copy",
     ),
     (
@@ -96,6 +96,126 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
         "unsafe traveller-facing copy",
     ),
     ("internal", "Ranking preference", "blocked", "blocked traveller-facing copy"),
+    (
+        "ftp_uri",
+        "Would you use ftp://example.com?",
+        "uri",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "mailto_uri",
+        "Continue at mailto:planning",
+        "uri",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "custom_uri",
+        "Continue at snowcast:preferences",
+        "uri",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "bare_domain",
+        "Details at example.com",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "nested_bare_domain",
+        "Details at plans.example.co.uk",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "cvv",
+        "Enter your CVV to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "cvc",
+        "Enter your CVC to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "pin",
+        "Enter your PIN to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "iban",
+        "Enter your IBAN to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "bank_account",
+        "Enter your bank account to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "routing_number",
+        "Enter your routing number to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "wallet",
+        "Enter your wallet details to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "reserve_action",
+        "Reserve this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "book_action",
+        "Book this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "buy_action",
+        "Buy this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "purchase_action",
+        "Purchase this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "pay_action",
+        "Pay for this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "subscribe_action",
+        "Subscribe for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "download_action",
+        "Download this guide",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "install_action",
+        "Install this app",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
 )
 
 
@@ -292,6 +412,47 @@ def test_configured_public_copy_allows_natural_single_hyphen_words(
     safe_copy: str,
 ) -> None:
     payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload[section][0][field] = safe_copy
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "safe_copy"),
+    (
+        (
+            "topics",
+            "fallback_question",
+            "Would you compare pass choices for this trip?",
+        ),
+        (
+            "topics",
+            "fallback_reason",
+            "Your route choice can shape the ski-day plan.",
+        ),
+        ("answers", "label", "Compare travel options"),
+        (
+            "answers",
+            "description",
+            "Compare pass purchase timing as part of the ski-day plan.",
+        ),
+    ),
+)
+def test_configured_public_copy_allows_ordinary_planning_vocabulary(
+    section: str,
+    field: str,
+    safe_copy: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    assert (
+        presentation_module._public_copy_safety_violation(
+            safe_copy,
+            blocked_tokens=presentation.blocked_copy_terms,
+        )
+        is None
+    )
+    payload = presentation.model_dump(mode="python")
     payload[section][0][field] = safe_copy
     configured = RefinementPresentationPolicy.model_validate(payload)
 
