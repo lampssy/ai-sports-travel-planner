@@ -111,7 +111,8 @@ Accepted ADR 0016 supersedes and refines only this ADR's original
 provider-boundary clause; the endpoint deadline, snapshot lifecycle, and
 admission limits above remain unchanged. The refinement LLM emits bounded
 registered factor or objective topic IDs, approved answer IDs, and a dynamic
-question constrained to selected-topic vocabulary. The server rejects unsafe
+question whose semantic body uses exact registered topic phrases inside an
+approved outer grammar. The server rejects unsafe
 or ungrounded wording to deterministic fallback, owns all reason and option
 copy, and resolves the selected IDs to typed factor-preference or objective
 patches. Raw provider patches never cross this boundary, and group-priority

@@ -59,7 +59,8 @@ Search refinement is the first embedded assistant interaction. It will move
 toward a bounded clarification capability context and UI-independent validated
 opportunities with approved answer vocabulary and typed patches. The AI may
 dynamically choose which registered factor to clarify, compose legal answer
-variants, and phrase a question using only selected-topic approved vocabulary.
+variants, and phrase a question using exact registered selected-topic semantic
+phrases inside an approved outer grammar.
 Planning owns the public reason, rejects unsafe or ungrounded wording to a
 deterministic fallback, validates materiality, applies the selected patch, and
 reranks. This does not introduce a fixed registry of possible questions. The

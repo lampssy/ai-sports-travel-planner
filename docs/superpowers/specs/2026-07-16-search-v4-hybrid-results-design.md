@@ -371,7 +371,9 @@ Invariants:
   the versioned presentation registry and reuses the existing deterministic
   materiality validator.
 - The LLM selects registered factor topics and approved answer IDs and writes
-  only a bounded question from selected-topic approved vocabulary. The server
+  only a bounded question using exact registered semantic phrases inside the
+  approved outer grammar. Multi-topic bodies contain one phrase per selected
+  topic joined only by a controlled comparison connector. The server
   owns reason copy, option labels, descriptions, typed actions, and deterministic
   fallback for unsafe, sensitive, unsupported, or ungrounded question text.
   Group-priority refinement questions are outside this slice.
@@ -1167,14 +1169,14 @@ Deterministic code owns:
   limitation labels;
 - evidence and estimate labels.
 
-The LLM dynamically selects registered factor topics, writes a question from
-the selected topics' approved vocabulary, and selects approved answer IDs rather
-than emitting labels or raw patches. The server owns reason copy, resolves each
-answer ID to authoritative presentation copy and typed intent actions, replaces
-unsafe or ungrounded wording with deterministic fallback, and then runs the
-existing legality, actionability, and materiality gates. Group-priority patches
-remain part of Search V4 but are not generated as refinement questions in this
-slice. The LLM does not generate recommendation explanations, metric values,
+The LLM dynamically selects registered factor topics, writes a question using
+exact registered phrases for the selected topics, and selects approved answer
+IDs rather than emitting labels or raw patches. The server owns reason copy,
+resolves each answer ID to authoritative presentation copy and typed intent
+actions, replaces unsafe or ungrounded wording with deterministic fallback, and
+then runs the existing legality, actionability, and materiality gates.
+Group-priority patches remain part of Search V4 but are not generated as
+refinement questions in this slice. The LLM does not generate recommendation explanations, metric values,
 rank changes, dossier facts, reason/option copy, or executable patches.
 
 Search results remain fully usable when refinement generation fails, times out,

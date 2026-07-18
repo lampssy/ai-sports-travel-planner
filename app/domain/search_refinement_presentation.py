@@ -7,6 +7,7 @@ import tomllib
 import unicodedata
 from collections import Counter
 from collections.abc import Mapping, Sequence
+from itertools import permutations, product
 from pathlib import Path
 from types import MappingProxyType
 from typing import Annotated, Self
@@ -56,6 +57,10 @@ _RegistryDisplayText = Annotated[
         max_length=_MAX_INTERACTION_REASON_CHARACTERS,
     ),
 ]
+_RegistryQuestionPhrase = Annotated[
+    str,
+    StringConstraints(min_length=1, max_length=200),
+]
 _MODEL_CONFIG = ConfigDict(frozen=True, extra="forbid")
 _QUESTION_START = re.compile(
     r"^(?:What|Which|Would|How|Do|Does|Is|Are)\b",
@@ -63,6 +68,8 @@ _QUESTION_START = re.compile(
 )
 _WORD_TOKEN = re.compile(r"[^\W\d_]+(?:['’‘][^\W\d_]+)?", flags=re.UNICODE)
 _ALLOWED_QUESTION_PUNCTUATION = frozenset({"?", "'", "’", "‘", "-"})
+_ALLOWED_QUESTION_PHRASE_PUNCTUATION = frozenset({"'", "’", "‘", "-"})
+_MULTI_TOPIC_QUESTION_CONNECTORS = (" or ", " versus ", " rather than ")
 _ALLOWED_PREFERENCE_QUESTION_SHAPES = (
     "How important is/are <grounded topic> to you/for your trip?",
     "How much should/does <grounded topic> matter/influence your choice?",
@@ -114,7 +121,6 @@ _QUESTION_BODY_DISALLOWED_TOKENS = frozenset(
         "does",
         "had",
         "has",
-        "have",
         "if",
         "important",
         "importance",
@@ -130,7 +136,6 @@ _QUESTION_BODY_DISALLOWED_TOKENS = frozenset(
         "prefer",
         "preference",
         "priority",
-        "rather",
         "shall",
         "should",
         "was",
@@ -196,6 +201,7 @@ _GENERIC_QUESTION_VOCABULARY = frozenset(
         "trip",
         "type",
         "value",
+        "versus",
         "what",
         "when",
         "where",
@@ -311,6 +317,9 @@ class RefinementTopicPolicy(_PresentationModel):
     topic_id: _NonBlankText
     factor_id: _NonBlankText
     traveller_topic: _NonBlankText
+    question_phrases: tuple[_RegistryQuestionPhrase, ...] = Field(
+        min_length=1, max_length=8
+    )
     fallback_question: _RegistryQuestionText
     fallback_reason: _RegistryDisplayText
     fallback_answer_ids: tuple[_NonBlankText, ...] = Field(min_length=2, max_length=5)
@@ -347,12 +356,7 @@ class RefinementPresentationPolicy(_PresentationModel):
         return tuple(
             {
                 "topic_id": topic.topic_id,
-                "traveller_topic": topic.traveller_topic,
-                "fallback_question": topic.fallback_question,
-                "approved_question_vocabulary": tuple(
-                    sorted(self.approved_question_vocabulary((topic.topic_id,)))
-                ),
-                "grounding_terms": tuple(sorted(self.grounding_terms(topic.topic_id))),
+                "question_phrases": topic.question_phrases,
                 "allowed_preference_question_shapes": (
                     _ALLOWED_PREFERENCE_QUESTION_SHAPES
                 ),
@@ -376,22 +380,14 @@ class RefinementPresentationPolicy(_PresentationModel):
             for token in self._topic_question_tokens(topic_id)
         )
 
-    def grounding_terms(self, topic_id: str) -> frozenset[str]:
-        return self._topic_question_tokens(topic_id) - _GENERIC_QUESTION_VOCABULARY
-
     def _topic_question_tokens(self, topic_id: str) -> frozenset[str]:
         try:
             topic = self.topic_by_id[topic_id]
         except KeyError as error:
             raise KeyError(f"unknown refinement topic ID: {topic_id}") from error
-        answer_by_id = self.answer_by_id
-        presentation_text = (
-            topic.traveller_topic,
-            topic.fallback_question,
-            *(answer_by_id[answer_id].label for answer_id in topic.answer_ids),
-            *(answer_by_id[answer_id].description for answer_id in topic.answer_ids),
+        return frozenset(
+            token for phrase in topic.question_phrases for token in _tokens(phrase)
         )
-        return frozenset(token for text in presentation_text for token in _tokens(text))
 
     def resolve_answer_ids(self, answer_ids: Sequence[str]) -> ResolvedRefinementAnswer:
         if not answer_ids:
@@ -552,16 +548,18 @@ def _safe_question(
 ) -> bool:
     question_tokens = frozenset(_tokens(question))
     approved_vocabulary = presentation.approved_question_vocabulary(topic_ids)
-    selected_grounding_terms = tuple(
-        presentation.grounding_terms(topic_id) for topic_id in topic_ids
-    )
+    semantic_body = _preference_question_body(question)
     return (
         len(question) <= _MAX_INTERACTION_QUESTION_CHARACTERS
         and question.endswith("?")
         and _QUESTION_START.match(question) is not None
         and question_tokens <= approved_vocabulary
-        and _matches_allowed_preference_question_form(question)
-        and all(question_tokens & terms for terms in selected_grounding_terms)
+        and semantic_body is not None
+        and _matches_registered_question_phrases(
+            semantic_body,
+            topic_ids,
+            presentation,
+        )
         and not question_tokens & _UNSAFE_QUESTION_TERMS
         and _has_only_allowed_question_characters(question)
         and not _contains_digit_or_percent(question)
@@ -599,18 +597,57 @@ def _has_only_allowed_question_characters(question: str) -> bool:
     )
 
 
-def _matches_allowed_preference_question_form(
-    question: str,
-) -> bool:
+def _has_only_allowed_question_phrase_characters(phrase: str) -> bool:
+    return all(
+        unicodedata.category(character)[0] in {"L", "M"}
+        or character == " "
+        or character in _ALLOWED_QUESTION_PHRASE_PUNCTUATION
+        for character in phrase
+    )
+
+
+def _preference_question_body(question: str) -> str | None:
     if any(separator in question for separator in (",", ";", ":")):
-        return False
+        return None
     for pattern in _PREFERENCE_QUESTION_PATTERNS:
         match = pattern.fullmatch(question)
         if match is None:
             continue
         body_tokens = frozenset(_tokens(match.group("body")))
-        return bool(body_tokens) and not body_tokens & _QUESTION_BODY_DISALLOWED_TOKENS
+        if body_tokens and not body_tokens & _QUESTION_BODY_DISALLOWED_TOKENS:
+            return match.group("body")
+        return None
+    return None
+
+
+def _matches_registered_question_phrases(
+    semantic_body: str,
+    topic_ids: Sequence[str],
+    presentation: RefinementPresentationPolicy,
+) -> bool:
+    normalized_body = _normalize_question_phrase(semantic_body)
+    if len(topic_ids) == 1:
+        topic = presentation.topic_by_id[topic_ids[0]]
+        return normalized_body in topic.question_phrases
+
+    topics = tuple(presentation.topic_by_id[topic_id] for topic_id in topic_ids)
+    for ordered_topics in permutations(topics):
+        for phrases in product(*(topic.question_phrases for topic in ordered_topics)):
+            for connectors in product(
+                _MULTI_TOPIC_QUESTION_CONNECTORS,
+                repeat=len(phrases) - 1,
+            ):
+                composition = phrases[0] + "".join(
+                    connector + phrase
+                    for connector, phrase in zip(connectors, phrases[1:], strict=True)
+                )
+                if normalized_body == composition:
+                    return True
     return False
+
+
+def _normalize_question_phrase(text: str) -> str:
+    return unicodedata.normalize("NFC", " ".join(text.split())).casefold()
 
 
 def _brief_requires_registered_fallback(brief: str | None) -> bool:
@@ -664,6 +701,7 @@ def validate_refinement_presentation_policy(
         "fallback priority",
         [str(topic.fallback_priority) for topic in presentation.topics],
     )
+    _validate_registered_question_phrases(presentation)
 
     active_clarifiable = {
         factor.factor_id
@@ -784,6 +822,49 @@ def _validate_visible_copy(presentation: RefinementPresentationPolicy) -> None:
     for field, text in visible_copy:
         if _contains_blocked_token(text, presentation.blocked_copy_terms):
             raise ValueError(f"{field} contains blocked traveller-facing copy")
+
+
+def _validate_registered_question_phrases(
+    presentation: RefinementPresentationPolicy,
+) -> None:
+    phrase_owners: dict[str, str] = {}
+    for topic in presentation.topics:
+        for phrase in topic.question_phrases:
+            if phrase != _normalize_question_phrase(phrase):
+                raise ValueError(
+                    f"topic {topic.topic_id} question phrase must be normalized"
+                )
+            if _contains_control_character(phrase):
+                raise ValueError(
+                    f"topic {topic.topic_id} question phrase contains control content"
+                )
+            if not _has_only_allowed_question_phrase_characters(phrase):
+                raise ValueError(
+                    f"topic {topic.topic_id} question phrase contains unsupported "
+                    "characters"
+                )
+            if _contains_digit_or_percent(phrase) or _contains_sensitive_pattern(
+                phrase
+            ):
+                raise ValueError(
+                    f"topic {topic.topic_id} question phrase contains unsafe content"
+                )
+            if frozenset(_tokens(phrase)) & _UNSAFE_QUESTION_TERMS:
+                raise ValueError(
+                    f"topic {topic.topic_id} question phrase contains unsafe content"
+                )
+            if _contains_blocked_token(phrase, presentation.blocked_copy_terms):
+                raise ValueError(
+                    f"topic {topic.topic_id} question phrase contains blocked content"
+                )
+            previous_owner = phrase_owners.setdefault(phrase, topic.topic_id)
+            if previous_owner != topic.topic_id:
+                raise ValueError(
+                    "question phrases must be unique across topics: "
+                    f"{phrase!r} belongs to {previous_owner} and {topic.topic_id}"
+                )
+        if len(topic.question_phrases) != len(set(topic.question_phrases)):
+            raise ValueError(f"topic {topic.topic_id} question phrases must be unique")
 
 
 def _validate_fallback_copy_bounds(

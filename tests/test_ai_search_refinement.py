@@ -187,10 +187,7 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
     )
     assert set(topic) == {
         "topic_id",
-        "traveller_topic",
-        "fallback_question",
-        "approved_question_vocabulary",
-        "grounding_terms",
+        "question_phrases",
         "allowed_preference_question_shapes",
         "coverage_ratio",
         "trusted_non_neutral_count",
@@ -212,6 +209,7 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
         "How easy should <grounded access> be?",
     } == set(topic["allowed_preference_question_shapes"])
     assert "allowed_preference_question_shape" in str(call["system_prompt"])
+    assert "exact registered question_phrase" in str(call["system_prompt"])
 
 
 def test_refinement_uses_compact_answer_id_only_provider_schema() -> None:
@@ -337,6 +335,66 @@ def test_invalid_selection_is_temporarily_unavailable_after_one_attempt(
         proposals=(),
     )
     assert len(client.calls) == 1
+
+
+def test_visible_option_collision_drops_only_question_and_preserves_sibling() -> None:
+    payload = _valid_payload()
+    questions = payload["questions"]
+    assert isinstance(questions, list)
+    questions.insert(
+        0,
+        {
+            "topic_ids": ["ski_day_apres", "local_apres"],
+            "question": (
+                "Would you prefer ski-day apres atmosphere or evening atmosphere "
+                "near where you stay?"
+            ),
+            "options": [
+                {"answer_ids": ["ski_day_apres.lively"]},
+                {"answer_ids": ["local_apres.lively"]},
+            ],
+        },
+    )
+
+    result = _generate(_Client([json.dumps(payload)]))
+
+    assert result.outcome == "proposals_generated"
+    assert len(result.proposals) == 1
+    assert [option.label for option in result.proposals[0].proposal.options] == [
+        "As much as possible",
+        "As easy as possible",
+    ]
+
+
+def test_visible_option_collision_rejects_different_typed_actions() -> None:
+    presentation = load_refinement_presentation_policy()
+    selection = search_refinement_ai._RefinementQuestionSelection.model_validate(
+        {
+            "topic_ids": ["ski_day_apres", "local_apres"],
+            "question": (
+                "Would you prefer ski-day apres atmosphere or evening atmosphere "
+                "near where you stay?"
+            ),
+            "options": [
+                {"answer_ids": ["ski_day_apres.lively"]},
+                {"answer_ids": ["local_apres.lively"]},
+            ],
+        }
+    )
+
+    with pytest.raises(
+        search_refinement_ai.RefinementValidationError,
+        match="different actions must have distinct visible copy",
+    ):
+        search_refinement_ai.compile_refinement_selection(
+            selection,
+            presentation,
+            eligible_topic_answer_ids={
+                "ski_day_apres": frozenset({"ski_day_apres.lively"}),
+                "local_apres": frozenset({"local_apres.lively"}),
+            },
+            candidate_ids=(),
+        )
 
 
 def test_registered_but_unexposed_selection_is_rejected() -> None:

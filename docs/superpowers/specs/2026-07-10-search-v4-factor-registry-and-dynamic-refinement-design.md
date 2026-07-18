@@ -35,10 +35,10 @@ quiet accommodation, or village character.
 When the initial brief leaves an important preference ambiguous, Snowcast may
 ask a small number of useful follow-up questions. The LLM may decide which
 registered concrete factor or objective topics are worth clarifying and
-dynamically compose a selected-topic-grounded question from approved
-vocabulary. It selects approved answer IDs; server-owned reason and answer copy
-plus validated typed intent actions are the only refinement output that may
-affect the deterministic search and ranking model.
+dynamically compose a question whose semantic body uses exact registered
+traveller-facing phrases. It selects approved answer IDs; server-owned reason
+and answer copy plus validated typed intent actions are the only refinement
+output that may affect the deterministic search and ranking model.
 
 The active ranking model must remain easy for the owner to inspect. One
 high-level document and one versioned policy file must show the active factors,
@@ -710,8 +710,8 @@ models.
 ### LLM Ownership
 
 The LLM dynamically selects registered concrete factor or objective topics,
-writes a question using only their approved vocabulary plus bounded generic
-question words, and selects approved answer IDs rather than emitting labels or
+writes a question by placing exact registered topic phrases inside an approved
+outer grammar, and selects approved answer IDs rather than emitting labels or
 raw patches. The server owns reason copy, resolves every answer ID to
 authoritative presentation copy and typed factor-preference or objective
 patches, and replaces unsafe, sensitive, unsupported, or ungrounded questions
@@ -731,8 +731,8 @@ The LLM may:
 - interpret ambiguity or missing priorities in the user's wording;
 - decide which one or more registered concrete factor or objective topics would
   be useful to contrast;
-- dynamically write only a selected-topic-grounded question from the supplied
-  approved vocabulary;
+- dynamically write only a question whose semantic body is one exact registered
+  topic phrase or a controlled comparison with one phrase per selected topic;
 - select two to five options using only approved answer IDs;
 
 One option may combine approved answer IDs from several selected topics, with at
@@ -918,12 +918,12 @@ Prompt and output boundaries:
 - cache only when privacy-safe and keyed without retaining raw sensitive text.
 
 The provider-facing structured-output schema contains only topic IDs, answer
-IDs, and bounded question text. Full Pydantic bounds, selected-topic vocabulary
-and sensitive-copy gates, presentation-registry resolution, safe-copy fallback,
-and deterministic policy validation remain application-owned. Approved reasons,
-labels, descriptions, and typed actions never come from the provider. Validate
-proposed questions independently so one invalid sibling cannot discard another
-question that passed every gate.
+IDs, and bounded question text. Full Pydantic bounds, exact registered-phrase
+composition and sensitive-copy gates, presentation-registry resolution,
+safe-copy fallback, and deterministic policy validation remain
+application-owned. Approved reasons, labels, descriptions, and typed actions
+never come from the provider. Validate proposed questions independently so one
+invalid sibling cannot discard another question that passed every gate.
 
 ## Security, Privacy, And Abuse
 

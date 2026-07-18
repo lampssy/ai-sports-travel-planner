@@ -73,6 +73,16 @@ def test_default_registry_covers_every_active_clarifiable_factor() -> None:
     assert {topic.factor_id for topic in presentation.topics} == expected
 
 
+def test_default_registry_registers_safe_question_phrases_for_every_topic() -> None:
+    presentation = load_refinement_presentation_policy()
+
+    assert len(presentation.topics) == 18
+    assert all(topic.question_phrases for topic in presentation.topics)
+    assert len(
+        {phrase for topic in presentation.topics for phrase in topic.question_phrases}
+    ) == sum(len(topic.question_phrases) for topic in presentation.topics)
+
+
 def test_default_registry_visible_copy_rejects_blocked_audience_terms() -> None:
     presentation = load_refinement_presentation_policy()
     visible_copy = [
@@ -232,7 +242,6 @@ def test_factual_selected_topic_question_uses_registered_fallback() -> None:
         "Which of these trip preferences matters most to you?",
         "Your answer can distinguish otherwise similar trip options.",
     )
-
     assert (
         resolve_interaction_copy(
             "Is snowmaking backup important?",
@@ -241,6 +250,91 @@ def test_factual_selected_topic_question_uses_registered_fallback() -> None:
             presentation,
         )[0]
         == "Would snowmaking backup matter if natural snow looks weak?"
+    )
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Would you prefer only options?",
+        "Does dependable snow from glacier terrain matter for your trip?",
+        "Is dependable snow from glacier terrain important for your trip?",
+        "Are dependable snow conditions from glacier terrain important for your trip?",
+        "How important is dependable snow from glacier terrain for your trip?",
+        (
+            "How important are dependable snow conditions from glacier terrain for "
+            "your trip?"
+        ),
+        "Would dependable snow conditions from glacier terrain improve your trip?",
+        "Would glacier terrain for dependable snow conditions matter to you?",
+        "Would glacier terrain improve dependable snow conditions for your trip?",
+    ],
+)
+def test_dynamic_question_rejects_unregistered_semantic_compositions(
+    question: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+
+    assert (
+        resolve_interaction_copy(
+            question,
+            ("night_skiing", "glacier_terrain")
+            if question == "Would you prefer only options?"
+            else ("trip_window_snow_fit", "glacier_terrain"),
+            (),
+            presentation,
+        )[0]
+        == "Which of these trip preferences matters most to you?"
+    )
+
+
+def test_dynamic_question_accepts_registered_two_topic_comparison() -> None:
+    presentation = load_refinement_presentation_policy()
+    question = (
+        "Would you rather have more terrain on your selected pass or easier access "
+        "from where you stay?"
+    )
+
+    assert (
+        resolve_interaction_copy(
+            question,
+            ("accessible_terrain_scale", "stay_base_access"),
+            (),
+            presentation,
+        )[0]
+        == question
+    )
+
+
+@pytest.mark.parametrize("connector", ["or", "versus", "rather than"])
+def test_dynamic_question_accepts_only_controlled_comparison_connectors(
+    connector: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    question = (
+        f"Would you prefer selected pass terrain {connector} "
+        "access from your accommodation base?"
+    )
+
+    assert (
+        resolve_interaction_copy(
+            question,
+            ("accessible_terrain_scale", "stay_base_access"),
+            (),
+            presentation,
+        )[0]
+        == question
+    )
+
+    assert (
+        resolve_interaction_copy(
+            "Would you prefer selected pass terrain and access from your "
+            "accommodation base?",
+            ("accessible_terrain_scale", "stay_base_access"),
+            (),
+            presentation,
+        )[0]
+        == "Which of these trip preferences matters most to you?"
     )
 
 
@@ -698,14 +792,12 @@ def test_provider_topics_expose_only_approved_copy_for_allowed_factors() -> None
     assert len(topics) == 1
     topic = topics[0]
     assert topic["topic_id"] == "development_style"
-    assert topic["traveller_topic"] == "the village or resort development style"
-    assert topic["fallback_question"] == (
-        "What kind of place would you prefer to stay in?"
+    assert topic["question_phrases"] == (
+        "village or resort development style",
+        "traditional mountain village",
+        "a traditional mountain village",
+        "traditional mountain village or resort",
     )
-    assert {"village", "resort", "development", "style"} <= set(
-        topic["grounding_terms"]
-    )
-    assert set(topic["grounding_terms"]) <= set(topic["approved_question_vocabulary"])
     assert topic["answers"] == (
         {
             "answer_id": "development_style.traditional",
@@ -757,6 +849,53 @@ def test_registry_rejects_duplicate_topic_and_answer_ids() -> None:
         validate_refinement_presentation_policy(
             RefinementPresentationPolicy.model_validate(duplicate_answer), search_policy
         )
+
+
+@pytest.mark.parametrize(
+    ("phrase", "error"),
+    [
+        ("", "at least 1 character"),
+        (" Not normalized", "normalized"),
+        ("safe  phrase", "normalized"),
+        ("ranking preference", "blocked"),
+        ("share your password", "unsafe"),
+        ("terrain ‮ access", "control"),
+        ("terrain / access", "characters"),
+        ("terrain ☃ access", "characters"),
+    ],
+)
+def test_registry_rejects_invalid_registered_question_phrases(
+    phrase: str,
+    error: str,
+) -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload["topics"][0]["question_phrases"] = (phrase,)
+
+    if not phrase:
+        with pytest.raises(ValidationError, match=error):
+            RefinementPresentationPolicy.model_validate(payload)
+        return
+
+    configured = RefinementPresentationPolicy.model_validate(payload)
+    with pytest.raises(ValueError, match=error):
+        validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+def test_registry_bounds_registered_question_phrases() -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload["topics"][0]["question_phrases"] = ("x" * 201,)
+
+    with pytest.raises(ValidationError, match="at most 200 characters"):
+        RefinementPresentationPolicy.model_validate(payload)
+
+
+def test_registry_rejects_question_phrase_collisions_between_topics() -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload["topics"][1]["question_phrases"] = payload["topics"][0]["question_phrases"]
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    with pytest.raises(ValueError, match="question phrases must be unique"):
+        validate_refinement_presentation_policy(configured, load_search_policy())
 
 
 def test_registry_rejects_unknown_or_repeated_answers() -> None:

@@ -831,12 +831,14 @@ not become a universal always-on definition of value.
 
 ## Dynamic Refinement Questions
 
-The LLM dynamically selects registered factor topics, writes one constrained
-question grounded in those topics, and selects approved answer IDs rather than
-emitting labels or raw patches. Every question token must come from the
-selected topics' server-approved presentation vocabulary or the small generic
-question vocabulary. The server owns reason copy, answer copy, and typed intent
-actions. Unsafe or ungrounded questions use deterministic registry-backed
+The LLM dynamically selects registered factor topics, places registered
+traveller-facing semantic phrases inside one constrained question grammar, and
+selects approved answer IDs rather than emitting labels or raw patches. A
+single-topic semantic body must exactly equal one phrase registered for that
+topic. A multi-topic body is a controlled comparison containing exactly one
+registered phrase per selected topic, joined only by `or`, `versus`, or `rather
+than`. The server owns reason copy, answer copy, and typed intent actions.
+Unsafe or unregistered compositions use deterministic registry-backed
 fallback copy before the existing legality, actionability, and materiality
 gates run. Group-priority patches remain part of Search V4 but are not generated
 as refinement questions in this slice.
@@ -917,8 +919,9 @@ Pydantic size and shape validation plus presentation-registry and deterministic
 policy validation remain authoritative. The server accepts provider question
 wording only when it uses an approved traveller-preference or priority form,
 anchored as one complete question with no appended clause or comma, semicolon,
-or colon; uses selected-topic vocabulary; and follows the minimal allowed
-Unicode letter, mark, whitespace, and punctuation policy. Factual `have`, `is`,
+or colon; its extracted semantic body is an exact registered single-topic
+phrase or controlled multi-topic phrase comparison; and it follows the minimal
+allowed Unicode letter, mark, whitespace, and punctuation policy. Factual `is`,
 `are`, or `does` claims cannot be rescued by an incidental preference word or a
 conjoined preference clause. Otherwise the server uses registry-backed
 traveller copy, which is config-validated rather than passed through the
