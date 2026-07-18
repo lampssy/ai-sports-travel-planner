@@ -98,6 +98,71 @@ historical data, migration/backfill handoff, merge order, and rollback. Actual
 database migrations, catalog-schema changes, and production-code changes remain
 separate work and block readiness rather than proposal creation.
 
+### Matterhorn and Cervino Catalog Follow-ups
+
+Status: candidate
+Area: Data Trust
+Source: Matterhorn Ski Paradise graph review; PR #32
+
+Next bounded slice:
+
+- Curate Chamois and Torgnon as a separate related batch with destination,
+  base, complete ski-area/weather-owner, access, map, and local-pass evidence.
+
+Remaining slices:
+
+- Decide whether Täsch and Randa are useful transfer-based Snowcast stay
+  destinations or bases; neither has a reviewed direct ski-area access edge.
+- Add partial-area ticket modeling before representing beginner-only products,
+  and complete the regional graph before adding Aosta-wide products.
+
+Candidate inventory:
+
+- `stay_destination:chamois`, `stay_destination:torgnon`,
+  `stay_base:chamois-corgnolaz`, `stay_base:torgnon-mongnod`,
+  `ski_area:chamois`, `ski_area:torgnon`,
+  `ski_area_access:chamois-corgnolaz--chamois`, and
+  `ski_area_access:torgnon-mongnod--torgnon` form two complete future local
+  graphs supported by the Cervino tariff, accommodation inventory, and
+  skirama, but would exceed this three-destination connected-boundary batch.
+- `stay_destination:taesch`, `stay_destination:randa`, `stay_base:taesch`,
+  `stay_base:randa`, `stay_base:taesch-stay-base`,
+  `stay_base:randa-stay-base`,
+  `ski_area_access:taesch--zermatt-ski-area`, and
+  `ski_area_access:randa--zermatt-ski-area` require a transfer-access decision
+  and direct relationship evidence before catalog creation.
+- `lift_pass_product:chamois-pass`, `lift_pass_product:torgnon-pass`,
+  `lift_pass_product:valtournenche-torgnon-chamois`,
+  `lift_pass_product:torgnon-chamois`,
+  `lift_pass_product:breuil-cervinia-valtournenche-zermatt-torgnon-chamois-season`,
+  `lift_pass_product:breuil-cervinia-valtournenche-torgnon-chamois-season`,
+  `lift_pass_product:valtournenche-torgnon-chamois-season`, and
+  `lift_pass_product:torgnon-chamois-season` depend on those unmodeled local
+  graph nodes.
+- `ski_area:chamois-ski-area` and `ski_area:torgnon-ski-area` are the
+  report-unique typed aliases for the `ski_area:chamois` and
+  `ski_area:torgnon` source-inventory candidates above.
+- `lift_pass_product:zermatt-beginner-ski-pass` needs a partial-area ticket
+  scope so it does not falsely imply whole-area coverage.
+- `lift_pass_product:zermatt-international-aosta-ski-pass` and
+  `lift_pass_product:aosta-regionale-rosso` require a separately reviewed
+  Aosta regional-network inventory.
+- `lift_pass_product:unnamed-aosta-valley-area` preserves the tariff's generic
+  one-other-area entitlement as unresolved; do not invent a product or area
+  name without the controlling Aosta rules.
+
+Not now:
+
+- Do not create ski-area identities for named sectors whose operations,
+  weather, and pass evidence remains owned by the parent area.
+- Do not create separate products for duration, flex, extension, supplement,
+  season-length, or add-on variants of an already represented entitlement.
+
+Discovery progression:
+
+- Complete Chamois and Torgnon first, then revisit regional passes and the
+  transfer-based Mattertal village candidates.
+
 ### Jungfrau Region Catalog Extension
 
 Status: candidate

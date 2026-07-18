@@ -685,6 +685,19 @@
       "longitude": 7.7491,
       "trip_market_region_id": "zermatt",
       "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "valtournenche",
+      "name": "Valtournenche",
+      "country": "Italy",
+      "region": "Aosta Valley",
+      "price_level": "medium",
+      "latitude": 45.877,
+      "longitude": 7.6228,
+      "trip_market_region_id": "cervinia",
+      "regional_data_ids": {
+        "osm_node_id": "5523734363"
+      }
     }
   ],
   "stay_bases": [
@@ -806,14 +819,14 @@
         "local_pace": "unknown"
       },
       "local_apres_profile": {
-        "availability": "available",
-        "intensity": "lively",
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     },
     {
       "stay_base_id": "cervinia-valtournenche",
-      "stay_destination_id": "cervinia",
+      "stay_destination_id": "valtournenche",
       "name": "Valtournenche",
       "price_range": "EUR 160-240",
       "price_min": 160.0,
@@ -2478,13 +2491,9 @@
           "status": "planned"
         }
       ],
-      "total_piste_km": 150.0,
-      "total_lift_count": 22,
-      "piste_km_by_difficulty": {
-        "beginner": 54.0,
-        "intermediate": 87.0,
-        "advanced": 9.0
-      },
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
         "intermediate",
@@ -2516,7 +2525,7 @@
       "official_trail_map": null,
       "ski_day_apres_profile": {
         "availability": "available",
-        "intensity": "lively",
+        "intensity": "low_key",
         "season_label": null
       }
     },
@@ -4552,7 +4561,7 @@
         "season_label": "October to mid-May"
       },
       "night_skiing": {
-        "availability": "available",
+        "availability": "unknown",
         "season_label": null
       },
       "marked_freeride_routes": {
@@ -4564,6 +4573,57 @@
       "ski_day_apres_profile": {
         "availability": "available",
         "intensity": "lively",
+        "season_label": null
+      }
+    },
+    {
+      "ski_area_id": "valtournenche-ski-area",
+      "name": "Valtournenche",
+      "latitude": 45.877,
+      "longitude": 7.6228,
+      "base_elevation_m": 1524,
+      "summit_elevation_m": 2860,
+      "season_start_month": 11,
+      "season_end_month": 4,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-28",
+          "end_date": "2027-04-25",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     }
@@ -4657,26 +4717,6 @@
       "source_urls": [
         "https://www.cervinia.it/en/impianti",
         "https://www.openstreetmap.org/node/240324474"
-      ]
-    },
-    {
-      "ski_area_access_id": "cervinia-valtournenche--cervinia-ski-area",
-      "stay_base_id": "cervinia-valtournenche",
-      "ski_area_id": "cervinia-ski-area",
-      "access_mode": "ski_bus",
-      "lift_distance": "medium",
-      "nearest_lift_name": "Salette",
-      "distance_m": 1255,
-      "duration_minutes": null,
-      "is_direct": false,
-      "regional_data_ids": {
-        "nearest_lift_osm_node_id": "342786424",
-        "nearest_lift_osm_way_id": "30833737"
-      },
-      "source_urls": [
-        "https://www.cervinia.it/en/impianti",
-        "https://www.openstreetmap.org/node/342786424",
-        "https://www.openstreetmap.org/way/30833737"
       ]
     },
     {
@@ -5757,6 +5797,28 @@
         "https://www.matterhornparadise.ch/en/experience/skiing",
         "https://www.openstreetmap.org/way/22330086"
       ]
+    },
+    {
+      "ski_area_access_id": "cervinia-valtournenche--valtournenche-ski-area",
+      "stay_base_id": "cervinia-valtournenche",
+      "ski_area_id": "valtournenche-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Salette",
+      "distance_m": 1255,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "342786424",
+        "nearest_lift_osm_way_id": "30833737"
+      },
+      "source_urls": [
+        "https://www.cervinia.it/en",
+        "https://www.cervinia.it/en/impianti",
+        "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+        "https://www.openstreetmap.org/node/342786424",
+        "https://www.openstreetmap.org/way/30833737"
+      ]
     }
   ],
   "terrain_domains": [
@@ -5810,20 +5872,21 @@
       "name": "Matterhorn Ski Paradise",
       "ski_area_ids": [
         "zermatt-ski-area",
-        "cervinia-ski-area"
+        "cervinia-ski-area",
+        "valtournenche-ski-area"
       ],
       "metric_scope": "aggregate",
       "total_piste_km": 360.0,
       "total_lift_count": 52,
-      "base_elevation_m": 1620,
+      "base_elevation_m": 1524,
       "summit_elevation_m": 3883,
       "piste_km_by_difficulty": null,
       "season_windows": [],
       "source_urls": [
-        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
         "https://www.matterhornparadise.ch/en/experience/skiing",
-        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
-        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
+        "https://www.matterhornparadise.ch/en/information/lifts-and-pistes",
+        "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+        "https://www.cervinia.it/en"
       ],
       "official_trail_map": {
         "url": "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
@@ -5880,6 +5943,31 @@
         "https://en.tignes.net/skiing/ski-area",
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
         "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
+      ],
+      "official_trail_map": null
+    },
+    {
+      "terrain_domain_id": "cervinia-valtournenche",
+      "name": "Breuil-Cervinia and Valtournenche",
+      "ski_area_ids": [
+        "cervinia-ski-area",
+        "valtournenche-ski-area"
+      ],
+      "metric_scope": "aggregate",
+      "total_piste_km": 150.0,
+      "total_lift_count": 22,
+      "base_elevation_m": 1524,
+      "summit_elevation_m": 3480,
+      "piste_km_by_difficulty": {
+        "beginner": 54.0,
+        "intermediate": 87.0,
+        "advanced": 9.0
+      },
+      "season_windows": [],
+      "source_urls": [
+        "https://www.cervinia.it/en",
+        "https://www.cervinia.it/en/impianti",
+        "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
       ],
       "official_trail_map": null
     }
@@ -6043,17 +6131,21 @@
     {
       "lift_pass_product_id": "cervinia-valtournenche-skipass",
       "name": "Breuil-Cervinia Valtournenche Ski Pass",
-      "validity_scope": "single_ski_area",
+      "validity_scope": "local_multi_area",
       "available_from_stay_destination_ids": [
-        "cervinia"
+        "cervinia",
+        "valtournenche"
       ],
       "default_for_stay_destination_ids": [
         "cervinia"
       ],
       "valid_ski_area_ids": [
-        "cervinia-ski-area"
+        "cervinia-ski-area",
+        "valtournenche-ski-area"
       ],
-      "terrain_domain_ids": [],
+      "terrain_domain_ids": [
+        "cervinia-valtournenche"
+      ],
       "external_validity_summary": "Adult local pass covers Breuil-Cervinia and Valtournenche; from 3 days, official tariff notes limited use in another Aosta Valley ski area within the purchased period.",
       "pass_accessible_terrain": null,
       "prices": [
@@ -6086,11 +6178,13 @@
       "name": "Breuil-Cervinia Valtournenche Zermatt Ski Pass",
       "validity_scope": "regional_network",
       "available_from_stay_destination_ids": [
-        "cervinia"
+        "cervinia",
+        "valtournenche"
       ],
       "default_for_stay_destination_ids": [],
       "valid_ski_area_ids": [
-        "cervinia-ski-area"
+        "cervinia-ski-area",
+        "valtournenche-ski-area"
       ],
       "terrain_domain_ids": [
         "matterhorn-ski-paradise"
@@ -7745,6 +7839,47 @@
           "price_kind": "fixed",
           "season_label": "Winter 2026/27 Skipass Mayrhofen day ticket",
           "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "valtournenche-local-pass",
+      "name": "Valtournenche Ski Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "valtournenche"
+      ],
+      "default_for_stay_destination_ids": [
+        "valtournenche"
+      ],
+      "valid_ski_area_ids": [
+        "valtournenche-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 44.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 232.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
         }
       ]
     }
