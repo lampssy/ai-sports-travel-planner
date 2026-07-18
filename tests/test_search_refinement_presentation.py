@@ -429,6 +429,30 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
         "unsafe traveller-facing copy",
     ),
     (
+        "idna_devanagari_example_domain",
+        "Details at उदाहरण.भारत",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "idna_devanagari_maharashtra_domain",
+        "Details at महाराष्ट्र.भारत",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "idna_composed_latin_mark_domain",
+        "Details at mañana.example",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "idna_decomposed_latin_mark_domain",
+        "Details at man\u0303ana.example",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
         "wise_account",
         "Enter your Wise account to continue.",
         "payment_credential",
@@ -533,6 +557,42 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
     (
         "bare_log_in",
         "Log in preference",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_signin",
+        "Signin to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_signon",
+        "Signon to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_logon",
+        "Logon preference",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "closed_signins",
+        "Signins are unavailable",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "signed_on",
+        "Signed on to continue",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "logging_on",
+        "Logging on to continue",
         "payment_credential",
         "unsafe traveller-facing copy",
     ),
@@ -725,6 +785,78 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
     (
         "registering_outward",
         "Registering for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "unsubscribe_outward",
+        "Unsubscribe from updates now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "unsubscribes_outward",
+        "Unsubscribes from updates now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "unsubscribed_outward",
+        "Unsubscribed from updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "unsubscribing_outward",
+        "Unsubscribing from updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "unregister_outward",
+        "Unregister from updates now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "unregisters_outward",
+        "Unregisters from updates now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "unregistered_outward",
+        "Unregistered from updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "unregistering_outward",
+        "Unregistering from updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "sign_two_tokens_up",
+        "Sign yourself right up for updates now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "sign_three_tokens_up",
+        "Sign yourself right back up for updates now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "opt_two_tokens_in",
+        "Opt yourself back in for updates now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "check_two_tokens_out",
+        "Check yourself securely out now",
         "external_action",
         "unsafe traveller-facing copy",
     ),
@@ -1831,6 +1963,29 @@ def test_registry_rejects_duplicate_topic_and_answer_ids() -> None:
         validate_refinement_presentation_policy(
             RefinementPresentationPolicy.model_validate(duplicate_answer), search_policy
         )
+
+
+def test_registry_rejects_closed_signin_question_phrase() -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload["topics"][0]["question_phrases"] = ("signin access",)
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    with pytest.raises(ValueError, match="unsafe"):
+        validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+def test_generated_question_rejects_registered_closed_signin_phrase() -> None:
+    payload = load_refinement_presentation_policy().model_dump(mode="python")
+    payload["topics"][0]["question_phrases"] = ("signin access",)
+    configured = RefinementPresentationPolicy.model_validate(payload)
+    topic = configured.topics[0]
+
+    assert resolve_interaction_copy(
+        "Would you prefer signin access?",
+        (topic.topic_id,),
+        (),
+        configured,
+    ) == (topic.fallback_question, topic.fallback_reason)
 
 
 @pytest.mark.parametrize(

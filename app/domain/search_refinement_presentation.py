@@ -315,10 +315,10 @@ _PAYMENT_PROVIDER_TOKEN_PATTERN = re.compile(
 _ACCOUNT_CREDENTIAL_SHAPE_PATTERN = re.compile(
     r"\b(?:"
     r"accounts?|"
-    r"logins?|"
-    r"usernames?|"
-    r"sign[-\s]+ins?|"
-    r"log[-\s]+ins?|"
+    r"user[-\s]?names?|"
+    r"(?:sign|log)[-\s]?(?:ins?|ons?)|"
+    r"sign(?:s|ed|ing)[-\s]+(?:in|on)|"
+    r"log(?:s|ged|ging)[-\s]+(?:in|on)|"
     r"payment[-\s]+accounts?"
     r")\b",
     flags=re.IGNORECASE,
@@ -354,14 +354,14 @@ _TRANSACTION_ACTION_PATTERN = re.compile(
     r"checkout(?:s)?|"
     r"signup(?:s)?|"
     r"register(?:s|ed|ing)?|registration(?:s)?|"
-    r"check(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+)?[-\s]+out(?:s)?|"
-    r"sign(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+)?[-\s]+up|"
-    r"opt(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+)?[-\s]+in"
+    r"check(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+){0,3}[-\s]+out(?:s)?|"
+    r"sign(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+){0,3}[-\s]+up|"
+    r"opt(?:s|ed|ing)?(?:[-\s]+[^\W\d_]+){0,3}[-\s]+in"
     r")\b",
     flags=re.IGNORECASE,
 )
 _TRANSACTION_COMPOUND_PREFIX_PATTERN = re.compile(
-    r"\b(?:pre|re)[-\s]?(?=[^\W\d_]+)",
+    r"\b(?:pre|re|un)[-\s]?(?=[^\W\d_]+)",
     flags=re.IGNORECASE | re.UNICODE,
 )
 _URI_SCHEME_PATTERN = re.compile(
@@ -369,12 +369,6 @@ _URI_SCHEME_PATTERN = re.compile(
     flags=re.IGNORECASE,
 )
 _WWW_PATTERN = re.compile(r"\bwww\.\S+", flags=re.IGNORECASE)
-_HOSTNAME_CANDIDATE_PATTERN = re.compile(
-    r"(?<![@\w-])"
-    r"(?:[^\W_]|-)+(?:\.(?:[^\W_]|-)+)+"
-    r"(?![\w-])",
-    flags=re.UNICODE,
-)
 _IDNA_DOT_EQUIVALENTS = str.maketrans({"。": ".", "．": ".", "｡": "."})
 _EMAIL_PATTERN = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
 _PHONE_OR_PAYMENT_PATTERN = re.compile(r"(?:\d[\s().+-]*){7,}")
@@ -715,15 +709,46 @@ def _contains_valid_hostname(text: str) -> bool:
         _IDNA_DOT_EQUIVALENTS
     )
     return any(
-        _is_valid_hostname(match.group(0))
-        for match in _HOSTNAME_CANDIDATE_PATTERN.finditer(normalized_text)
+        _is_valid_hostname(candidate)
+        for candidate in _hostname_candidates(normalized_text)
     )
+
+
+def _hostname_candidates(text: str) -> tuple[str, ...]:
+    candidates: list[str] = []
+    run_start: int | None = None
+    for index, character in enumerate(text):
+        if character == "." or _is_hostname_label_character(character):
+            if run_start is None:
+                run_start = index
+            continue
+        if run_start is not None:
+            _append_hostname_candidate(candidates, text, run_start, index)
+            run_start = None
+    if run_start is not None:
+        _append_hostname_candidate(candidates, text, run_start, len(text))
+    return tuple(candidates)
+
+
+def _append_hostname_candidate(
+    candidates: list[str],
+    text: str,
+    start: int,
+    end: int,
+) -> None:
+    candidate = text[start:end].strip(".")
+    if "." in candidate and (start == 0 or text[start - 1] not in {"@", "_"}):
+        candidates.append(candidate)
+
+
+def _is_hostname_label_character(character: str) -> bool:
+    return character == "-" or unicodedata.category(character)[0] in {"L", "M", "N"}
 
 
 def _is_valid_hostname(candidate: str) -> bool:
     labels = candidate.split(".")
     final_label = labels[-1]
-    if not 2 <= len(final_label) <= 63 or not all(
+    if not 2 <= len(final_label) <= 63 or not any(
         unicodedata.category(character).startswith("L") for character in final_label
     ):
         return False
@@ -734,10 +759,7 @@ def _is_valid_hostname(candidate: str) -> bool:
             not label
             or label.startswith("-")
             or label.endswith("-")
-            or not all(
-                character == "-" or unicodedata.category(character)[0] in {"L", "N"}
-                for character in label
-            )
+            or not all(_is_hostname_label_character(character) for character in label)
         ):
             return False
         try:
