@@ -8,10 +8,14 @@ Superseded by: N/A
 
 Related specs:
 - `docs/superpowers/specs/2026-07-16-search-v4-hybrid-results-design.md`
+- `docs/superpowers/specs/2026-07-10-search-v4-factor-registry-and-dynamic-refinement-design.md`
 
 Related docs:
 - `docs/search-ranking-model.md`
 - `docs/superpowers/plans/2026-07-17-search-v4-trust-and-ui-polish.md`
+
+Related ADRs:
+- `docs/architecture/adr/0016-use-ai-as-a-cross-product-orchestration-layer.md`
 
 ## Context
 
@@ -103,9 +107,14 @@ request schema before posting them. This makes the compatibility boundary
 explicit on both sides instead of relying on structural similarity between
 response and request objects.
 
-The LLM may choose bounded typed patches, but visible refinement wording is
-regenerated from policy-owned labels after deterministic validation. Free-form
-provider copy never crosses the user-facing trust boundary.
+Accepted ADR 0016 supersedes and refines only this ADR's original
+provider-boundary clause; the endpoint deadline, snapshot lifecycle, and
+admission limits above remain unchanged. The refinement LLM emits bounded
+registered factor or objective topic IDs, approved answer IDs, and dynamic
+question/reason text. The server safety-filters the question and reason, owns
+all option copy, and resolves the selected IDs to typed factor-preference or
+objective patches. Raw provider patches never cross this boundary, and
+group-priority refinement questions are not generated in this slice.
 
 Deterministic zero-result recovery remains part of the ranking response because
 it is necessary to explain hard-constraint failure. Optional preference

@@ -21,6 +21,8 @@
 - Related ADRs:
   - `docs/architecture/adr/0012-versioned-search-factor-registry-and-ranking-policy.md`
   - `docs/architecture/adr/0013-versioned-forecast-runs-and-latest-run-serving.md`
+  - `docs/architecture/adr/0015-load-search-refinements-after-ranking.md`
+  - `docs/architecture/adr/0016-use-ai-as-a-cross-product-orchestration-layer.md`
 
 ## User Outcome
 
@@ -32,10 +34,11 @@ quiet accommodation, or village character.
 
 When the initial brief leaves an important preference ambiguous, Snowcast may
 ask a small number of useful follow-up questions. The LLM may decide which
-registered factors are worth clarifying and dynamically compose the question
-and short reason. It selects approved answer IDs; server-owned presentation copy
-and validated typed intent actions are the only refinement output that may
-affect the deterministic search and ranking model.
+registered concrete factor or objective topics are worth clarifying and
+dynamically compose the question and short reason. It selects approved answer
+IDs; server-owned presentation copy and validated typed intent actions are the
+only refinement output that may affect the deterministic search and ranking
+model.
 
 The active ranking model must remain easy for the owner to inspect. One
 high-level document and one versioned policy file must show the active factors,
@@ -55,8 +58,9 @@ In scope:
 - explicit trust, missing-data, lifecycle, and correlation policy;
 - factor roles for hard filtering, ranking, clarification, explanation, and
   diagnostic measurement;
-- LLM-selected registered factor topics and approved answer IDs, with dynamic
-  question/reason copy and server-owned option copy and typed actions;
+- LLM-selected registered concrete factor or objective topics and approved
+  answer IDs, with dynamic question/reason copy and server-owned option copy and
+  typed actions;
 - deterministic validation and impact simulation before a question is shown;
 - automatic reranking after the user selects an answer;
 - support for static catalog, derived catalog, planning-evidence, weather, and
@@ -192,8 +196,9 @@ Invariants:
     - use a declarative versioned policy plus typed factor evaluators;
     - use stable factor groups with bounded contribution budgets;
     - keep constraints separate from ranking factors;
-    - let the LLM choose which registered factors to clarify and dynamically
-      compose questions and options;
+    - let the refinement LLM choose registered concrete factor or objective
+      topics, select approved answer IDs, and dynamically compose the question
+      and short reason;
     - keep deterministic validation, impact simulation, filtering, and ranking;
     - publish one easy-to-find exact equation and generated factor inventory;
     - accommodate future dynamic prediction factors through the same registry
@@ -484,15 +489,18 @@ default-policy maximum or the actual contribution for the current intent.
 
 `M_g` is necessary because changing factor weight only inside Character, Value,
 or Ski Experience cannot express that the whole category is a major user
-priority. The LLM may emit only a controlled importance label; the policy maps
-that label to `M_g`. It cannot emit the multiplier itself.
+priority. The brief parser may emit only a controlled importance label; the
+policy maps that label to `M_g`. It cannot emit the multiplier itself.
 
 Group-priority patches and factor-preference patches are different typed
 contracts. A group patch contains a registered `group_id` and importance. A
 factor patch contains a registered `factor_id`, preference operation,
-controlled values where applicable, and factor importance. The parser and
-refinement LLM may produce either contract but never collapse them into one
-ambiguous weight.
+controlled values where applicable, and factor importance. The brief parser may
+produce either contract but never collapse them into one ambiguous weight. In
+this refinement slice, the refinement LLM emits neither patch contract: it
+selects registered concrete factor or objective topics and approved answer IDs,
+and the server resolves them to typed factor-preference or objective patches.
+Group-priority questions are not generated.
 
 An evaluator must preserve source trust, prediction confidence, calibration,
 and freshness as distinct inputs. A factor-specific evidence-cap policy derives
@@ -701,14 +709,15 @@ models.
 
 ### LLM Ownership
 
-The LLM dynamically selects registered factor topics and writes the question
-and short reason from a bounded context. It selects approved answer IDs rather
-than emitting labels or raw patches. The server resolves each answer ID to
-authoritative presentation copy and typed intent actions, applies presentation
-safety fallback when generated question/reason copy is unsuitable, and then
-runs the existing legality, actionability, and materiality gates. Group-priority
-patches remain part of Search V4 but are not generated as refinement questions
-in this slice.
+The LLM dynamically selects registered concrete factor or objective topics and
+writes the question and short reason from a bounded context. It selects approved
+answer IDs rather than emitting labels or raw patches. The server resolves each
+answer ID to authoritative presentation copy and typed factor-preference or
+objective patches, applies presentation safety fallback when generated
+question/reason copy is unsuitable, and then runs the existing legality,
+actionability, and materiality gates. Group-priority patches remain part of
+Search V4 and the parser's typed-patch capabilities, but group-priority
+refinement questions are not generated in this slice.
 
 The factor registry describes scoring capabilities and clarification legality.
 The separate `search-refinement-presentation-1` registry owns traveller-facing
@@ -719,8 +728,8 @@ score equation, active factor inventory, or ranking-policy weights.
 The LLM may:
 
 - interpret ambiguity or missing priorities in the user's wording;
-- decide which one or more registered factor topics would be useful to
-  contrast;
+- decide which one or more registered concrete factor or objective topics would
+  be useful to contrast;
 - dynamically write the question and short reason;
 - select two to five options using only approved answer IDs;
 - explain why the proposed clarification is relevant.
@@ -888,9 +897,10 @@ Deterministic logic that must not use an LLM:
 Allowed LLM use:
 
 - parse the brief into typed context and preferences;
-- identify useful clarification topics from the bounded registered factor set;
-- select approved refinement topics and answer IDs and compose only the dynamic
-  question and short reason;
+- identify useful concrete factor or objective clarification topics from the
+  bounded registered set;
+- select approved refinement topic IDs and answer IDs and compose only the
+  dynamic question and short reason;
 - generate explanations only from supplied typed factor evaluations.
 
 Prompt and output boundaries:
@@ -1058,9 +1068,10 @@ versioned policy.
 - Terrain explanations identify ski-area, domain, or pass scope.
 - Future predicted availability factors can use the registry without becoming
   catalog facts.
-- The LLM can dynamically select any registered factor topic for a clarifiable
-  runtime-ready factor, including factors inactive in the initial search, and
-  write its question/reason without emitting option copy or raw patches.
+- The LLM can dynamically select any registered concrete factor or objective
+  topic for a clarifiable runtime-ready factor, including factors inactive in
+  the initial search, and write its question/reason without emitting option copy
+  or raw patches.
 - Invalid, unsupported, non-actionable under their evidence mode, repetitive,
   or immaterial proposals are discarded deterministically.
 - Selecting a refinement answer applies visible typed preferences and reruns
