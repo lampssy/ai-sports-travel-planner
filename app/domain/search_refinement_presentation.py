@@ -312,47 +312,61 @@ _PAYMENT_PROVIDER_TOKEN_PATTERN = re.compile(
     r"(?:[a-z]+pay|pay[a-z]+)",
     flags=re.IGNORECASE,
 )
-_SAFE_NON_DIRECTIVE_TRANSACTION_PATTERNS = (
-    re.compile(r"\bpass\s+purchase\s+timing\b", flags=re.IGNORECASE),
+_ACCOUNT_CREDENTIAL_SHAPE_PATTERN = re.compile(
+    r"\b(?:"
+    r"accounts?|"
+    r"logins?|"
+    r"usernames?|"
+    r"sign[-\s]+ins?|"
+    r"log[-\s]+ins?|"
+    r"payment[-\s]+accounts?"
+    r")\b",
+    flags=re.IGNORECASE,
+)
+_ACCOUNT_REQUEST_DIRECTIVE_PATTERN = re.compile(
+    r"\b(?:"
+    r"enters?|entered|entering|"
+    r"provides?|provided|providing|"
+    r"shares?|shared|sharing|"
+    r"sends?|sent|sending|"
+    r"submits?|submitted|submitting|"
+    r"registers?|registered|registering|"
+    r"creates?|created|creating|"
+    r"continues?|continued|continuing"
+    r")\b",
+    flags=re.IGNORECASE,
+)
+_SAFE_NON_DIRECTIVE_TRANSACTION_COPY_PATTERNS = (
+    re.compile(r"pass\s+purchase\s+timing[.!?]?", flags=re.IGNORECASE),
     re.compile(
-        r"\blift[-\s]+pass\s+purchase\s+(?:planning|price\s+comparison)\b",
+        r"lift[-\s]+pass\s+purchase\s+(?:planning|price\s+comparison)[.!?]?",
         flags=re.IGNORECASE,
     ),
-)
-_TRANSACTION_DIRECTIVE_OR_URGENCY_TERMS = frozenset(
-    {
-        "complete",
-        "confirm",
-        "continue",
-        "enter",
-        "finalise",
-        "finalize",
-        "finish",
-        "immediate",
-        "immediately",
-        "make",
-        "now",
-        "place",
-        "proceed",
-        "start",
-        "submit",
-        "today",
-        "urgent",
-        "urgently",
-    }
+    re.compile(
+        r"how\s+important\s+is\s+pass\s+purchase\s+timing\s+"
+        r"for\s+your\s+trip\?",
+        flags=re.IGNORECASE,
+    ),
+    re.compile(
+        r"compare\s+pass\s+purchase\s+timing\s+as\s+part\s+of\s+the\s+"
+        r"ski[-\s]+day\s+plan\.?",
+        flags=re.IGNORECASE,
+    ),
 )
 _TRANSACTION_ACTION_PATTERN = re.compile(
     r"\b(?:"
     r"reserv(?:e|es|ed|ing|ation|ations)|"
-    r"book(?:s|ed|ing|ings)?|"
+    r"(?:re[-\s]?)?book(?:s|ed|ing|ings)?|"
     r"buy(?:s|ing)?|bought|"
     r"purchas(?:e|es|ed|ing)|"
     r"pay(?:s|ing|ment|ments)?|paid|"
-    r"order(?:s|ed|ing)?|"
+    r"(?:pre[-\s]?)?order(?:s|ed|ing)?|"
     r"subscrib(?:e|es|ed|ing)|subscription(?:s)?|"
     r"download(?:s|ed|ing)?|"
     r"install(?:s|ed|ing|ation|ations)?|"
-    r"checkout(?:s)?|check[-\s]+out(?:s)?"
+    r"checkout(?:s)?|"
+    r"check(?:s|ed|ing)?[-\s]+out(?:s)?|"
+    r"sign(?:s|ed|ing)?[-\s]+up"
     r")\b",
     flags=re.IGNORECASE,
 )
@@ -361,12 +375,11 @@ _URI_SCHEME_PATTERN = re.compile(
     flags=re.IGNORECASE,
 )
 _WWW_PATTERN = re.compile(r"\bwww\.\S+", flags=re.IGNORECASE)
-_BARE_DOMAIN_PATTERN = re.compile(
+_HOSTNAME_CANDIDATE_PATTERN = re.compile(
     r"(?<![@\w-])"
-    r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
-    r"[a-z]{2,63}"
+    r"(?:[^\W_]|-)+(?:\.(?:[^\W_]|-)+)+"
     r"(?![\w-])",
-    flags=re.IGNORECASE,
+    flags=re.UNICODE,
 )
 _EMAIL_PATTERN = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
 _PHONE_OR_PAYMENT_PATTERN = re.compile(r"(?:\d[\s().+-]*){7,}")
@@ -691,16 +704,53 @@ def _tokens(text: str) -> tuple[str, ...]:
 
 
 def _contains_sensitive_pattern(text: str) -> bool:
-    return any(
+    return _contains_valid_hostname(text) or any(
         pattern.search(text) is not None
         for pattern in (
             _URI_SCHEME_PATTERN,
             _WWW_PATTERN,
-            _BARE_DOMAIN_PATTERN,
             _EMAIL_PATTERN,
             _PHONE_OR_PAYMENT_PATTERN,
         )
     )
+
+
+def _contains_valid_hostname(text: str) -> bool:
+    normalized_text = unicodedata.normalize("NFC", text)
+    return any(
+        _is_valid_hostname(match.group(0))
+        for match in _HOSTNAME_CANDIDATE_PATTERN.finditer(normalized_text)
+    )
+
+
+def _is_valid_hostname(candidate: str) -> bool:
+    labels = candidate.split(".")
+    final_label = labels[-1]
+    if not 2 <= len(final_label) <= 63 or not all(
+        unicodedata.category(character).startswith("L") for character in final_label
+    ):
+        return False
+
+    encoded_labels: list[bytes] = []
+    for label in labels:
+        if (
+            not label
+            or label.startswith("-")
+            or label.endswith("-")
+            or not all(
+                character == "-" or unicodedata.category(character)[0] in {"L", "N"}
+                for character in label
+            )
+        ):
+            return False
+        try:
+            encoded_label = label.encode("idna")
+        except UnicodeError:
+            return False
+        if not 1 <= len(encoded_label) <= 63:
+            return False
+        encoded_labels.append(encoded_label)
+    return len(b".".join(encoded_labels)) <= 253
 
 
 def _contains_control_character(text: str) -> bool:
@@ -806,10 +856,7 @@ def _public_copy_safety_violation(
         return "control"
     if _URI_SCHEME_PATTERN.search(text) is not None:
         return "uri"
-    if (
-        _WWW_PATTERN.search(text) is not None
-        or _BARE_DOMAIN_PATTERN.search(text) is not None
-    ):
+    if _WWW_PATTERN.search(text) is not None or _contains_valid_hostname(text):
         return "bare_domain"
     if _contains_sensitive_pattern(text):
         return "sensitive_pattern"
@@ -824,6 +871,7 @@ def _public_copy_safety_violation(
         & (_PAYMENT_CREDENTIAL_PUBLIC_COPY_TERMS | _PAYMENT_PROVIDER_PUBLIC_COPY_TERMS)
         or any(_PAYMENT_PROVIDER_TOKEN_PATTERN.fullmatch(token) for token in tokens)
         or _PAYMENT_CREDENTIAL_PATTERN.search(text) is not None
+        or _contains_account_request(text)
     ):
         return "payment_credential"
     if token_set & _SENSITIVE_PUBLIC_COPY_TERMS:
@@ -845,23 +893,32 @@ def _contains_machine_id_shape(text: str) -> bool:
     )
 
 
+def _contains_account_request(text: str) -> bool:
+    return (
+        _ACCOUNT_CREDENTIAL_SHAPE_PATTERN.search(text) is not None
+        and _ACCOUNT_REQUEST_DIRECTIVE_PATTERN.search(text) is not None
+    )
+
+
 def _contains_external_action(text: str, tokens: Sequence[str]) -> bool:
     if frozenset(tokens) & _EXTERNAL_ACTION_PUBLIC_COPY_MARKERS:
         return True
-    has_transaction_shape = _TRANSACTION_ACTION_PATTERN.search(text) is not None
-    transaction_copy = text
-    for safe_pattern in _SAFE_NON_DIRECTIVE_TRANSACTION_PATTERNS:
-        transaction_copy = safe_pattern.sub(" ", transaction_copy)
-    if _TRANSACTION_ACTION_PATTERN.search(transaction_copy) is not None:
-        return True
-    if has_transaction_shape and (
-        frozenset(tokens) & _TRANSACTION_DIRECTIVE_OR_URGENCY_TERMS
+    if not _is_safe_non_directive_transaction_copy(text) and (
+        _TRANSACTION_ACTION_PATTERN.search(text) is not None
     ):
         return True
     return any(
         token in _NON_TRANSACTION_EXTERNAL_ACTION_VERBS
         and (index == 0 or tokens[index - 1] in _EXTERNAL_ACTION_CONTEXT_TERMS)
         for index, token in enumerate(tokens)
+    )
+
+
+def _is_safe_non_directive_transaction_copy(text: str) -> bool:
+    normalized_text = unicodedata.normalize("NFC", " ".join(text.split()))
+    return any(
+        pattern.fullmatch(normalized_text) is not None
+        for pattern in _SAFE_NON_DIRECTIVE_TRANSACTION_COPY_PATTERNS
     )
 
 

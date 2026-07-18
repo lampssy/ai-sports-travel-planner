@@ -35,6 +35,8 @@ _SAFE_NON_DIRECTIVE_TRANSACTION_COPY = (
     "Pass purchase timing",
     "Lift-pass purchase planning",
     "Lift-pass purchase price comparison",
+    "How important is pass purchase timing for your trip?",
+    "Compare pass purchase timing as part of the ski-day plan.",
 )
 
 _ISOLATED_UNSAFE_PUBLIC_COPY = (
@@ -378,6 +380,174 @@ _ISOLATED_UNSAFE_PUBLIC_COPY = (
         "external_action",
         "unsafe traveller-facing copy",
     ),
+    (
+        "snowcast_unicode_domain",
+        "Details at snowcast.рф",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "unicode_domain",
+        "Details at пример.рф",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "idna_unicode_domain",
+        "Details at bücher.example",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "decomposed_idna_unicode_domain",
+        "Details at bu\u0308cher.example",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "wise_account",
+        "Enter your Wise account to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "skrill_account",
+        "Enter your Skrill account to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "account_login",
+        "Enter your account login to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "provide_username",
+        "Provide your username to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "share_sign_in",
+        "Share your sign-in to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "create_account",
+        "Create an account to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "send_login",
+        "Send your login to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "submit_payment_account",
+        "Submit your payment-account to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "continue_with_account",
+        "Continue with your account.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "provide_log_in",
+        "Provide your log-in to continue.",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "preorder",
+        "Preorder this lift pass now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "rebook",
+        "Rebook this option now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "checking_out",
+        "Checking out this pass now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "sign_up",
+        "Sign up for updates now",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "register_account",
+        "Register this account now",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "preordered_inflection",
+        "Preordered this lift pass",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "rebooking_inflection",
+        "Rebooking this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "checked_out_inflection",
+        "Checked out this pass",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "signing_up_inflection",
+        "Signing up for updates",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "safe_context_checkout_tail",
+        "Lift-pass purchase planning then checking out this pass",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "safe_context_rebook_tail",
+        "Pass purchase timing plus rebook this option",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "safe_context_domain_tail",
+        "Pass purchase timing at snowcast.рф",
+        "bare_domain",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "safe_context_provider_tail",
+        "Lift-pass purchase planning with PayPal",
+        "payment_credential",
+        "unsafe traveller-facing copy",
+    ),
+    (
+        "safe_context_account_tail",
+        "Pass purchase timing with your account",
+        "external_action",
+        "unsafe traveller-facing copy",
+    ),
 )
 
 
@@ -628,6 +798,43 @@ def test_configured_public_copy_allows_ordinary_planning_vocabulary(
 )
 @pytest.mark.parametrize("safe_copy", _SAFE_NON_DIRECTIVE_TRANSACTION_COPY)
 def test_every_configured_public_copy_field_allows_narrow_purchase_planning_contexts(
+    section: str,
+    field: str,
+    safe_copy: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    assert (
+        presentation_module._public_copy_safety_violation(
+            safe_copy,
+            blocked_tokens=presentation.blocked_copy_terms,
+        )
+        is None
+    )
+    payload = presentation.model_dump(mode="python")
+    payload[section][0][field] = safe_copy
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    validate_refinement_presentation_policy(configured, load_search_policy())
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "safe_copy"),
+    (
+        ("topics", "fallback_question", "Would you compare terrain, e.g. by size?"),
+        (
+            "topics",
+            "fallback_reason",
+            "Your answer can compare the piste map and village plan.",
+        ),
+        ("answers", "label", "Compare pass planning"),
+        (
+            "answers",
+            "description",
+            "Review the ski-day plan before choosing a preference.",
+        ),
+    ),
+)
+def test_configured_public_copy_allows_safe_non_hostname_planning_copy(
     section: str,
     field: str,
     safe_copy: str,
