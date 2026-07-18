@@ -1601,6 +1601,94 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   expect(screen.queryByText(/prefer local pace: quiet/i)).not.toBeInTheDocument();
 });
 
+test("keeps pass-value objectives exclusive through refinement apply and undo", async () => {
+  const terrainObjective = {
+    factor_id: "pass_terrain_value",
+    importance: "normal" as const,
+  };
+  const priceObjective = {
+    factor_id: "pass_price_per_day",
+    importance: "high" as const,
+  };
+  const unrelatedObjective = {
+    factor_id: "terrain_scale",
+    importance: "high" as const,
+  };
+  const appliedIntent = {
+    ...intent,
+    objectives: [terrainObjective, unrelatedObjective],
+  };
+  searchResponses = [
+    response({
+      applied_intent: appliedIntent,
+      refinements: [
+        {
+          question_id: "pass-value",
+          question: "How should pass value influence your search?",
+          reason: "This can reorder the leading recommendations.",
+          options: [
+            {
+              label: "Prefer the lowest daily pass price",
+              description: "Prioritize price per ski day.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [priceObjective],
+            },
+          ],
+        },
+      ],
+    }),
+    response({
+      baseline_fingerprint: "baseline-2",
+      applied_intent: {
+        ...appliedIntent,
+        objectives: [unrelatedObjective, priceObjective],
+      },
+    }),
+    response({
+      baseline_fingerprint: "baseline-3",
+      applied_intent: appliedIntent,
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("radio", {
+      name: /prefer the lowest daily pass price/i,
+    }),
+  );
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+
+  const applyBody = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[1].init?.body),
+  );
+  expect(applyBody.intent.objectives).toEqual([unrelatedObjective, priceObjective]);
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Value objective")).toHaveValue(
+    "pass_price_per_day",
+  );
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  await user.click(screen.getByRole("button", { name: "Undo" }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  const undoBody = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[2].init?.body),
+  );
+  expect(undoBody.intent.objectives).toEqual([terrainObjective, unrelatedObjective]);
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Value objective")).toHaveValue(
+    "pass_terrain_value",
+  );
+});
+
 test("an ordinary successful search clears refinement undo and rank feedback", async () => {
   const pacePreference = {
     factor_id: "local_pace",

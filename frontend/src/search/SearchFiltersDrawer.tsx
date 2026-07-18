@@ -8,7 +8,11 @@ import type {
   TravelMonth,
 } from "../types";
 import { featureOptions, monthOptions } from "./searchPresentation";
-import { upsertBy } from "./searchSession";
+import {
+  isPassValueObjective,
+  mergeObjectivePatches,
+  upsertBy,
+} from "./searchSession";
 
 function Field({
   label,
@@ -334,16 +338,14 @@ export function SearchFiltersDrawer({
                 const factorId = event.target.value as SearchFilters["valueObjective"];
                 changeValueObjective(
                   { ...filters, valueObjective: factorId },
-                  [
-                    ...objectives.filter(
-                      (objective) =>
-                        objective.factor_id !== "pass_terrain_value" &&
-                        objective.factor_id !== "pass_price_per_day",
-                    ),
-                    ...(factorId
-                      ? [{ factor_id: factorId, importance: "normal" as const }]
-                      : []),
-                  ],
+                  factorId
+                    ? mergeObjectivePatches(objectives, [
+                        { factor_id: factorId, importance: "normal" as const },
+                      ])
+                    : objectives.filter(
+                        (objective) =>
+                          !isPassValueObjective(objective.factor_id),
+                      ),
                 );
               }}
               className="control"

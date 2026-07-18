@@ -188,6 +188,31 @@ export function upsertBy<T>(
   return [...current.filter((item) => !patchKeys.has(key(item))), ...patches];
 }
 
+const passValueObjectiveIds = new Set([
+  "pass_terrain_value",
+  "pass_price_per_day",
+]);
+
+export function isPassValueObjective(factorId: string): boolean {
+  return passValueObjectiveIds.has(factorId);
+}
+
+export function mergeObjectivePatches(
+  current: SearchObjective[],
+  patches: SearchObjective[],
+): SearchObjective[] {
+  const replacesPassValueFamily = patches.some((patch) =>
+    isPassValueObjective(patch.factor_id),
+  );
+  return upsertBy(
+    replacesPassValueFamily
+      ? current.filter((item) => !isPassValueObjective(item.factor_id))
+      : current,
+    patches,
+    (item) => item.factor_id,
+  );
+}
+
 function candidateIdsByGroup(
   response: SearchResponse,
 ): Record<string, Set<string>> {

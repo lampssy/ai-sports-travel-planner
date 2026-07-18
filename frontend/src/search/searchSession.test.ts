@@ -8,9 +8,28 @@ import type {
 import {
   createSearchSession,
   findSelectedCandidate,
+  mergeObjectivePatches,
   rankChangeSummary,
   reconcileSearchSession,
 } from "./searchSession";
+
+test("replaces the exclusive pass-value objective family but only exact unrelated IDs", () => {
+  expect(
+    mergeObjectivePatches(
+      [
+        { factor_id: "pass_terrain_value", importance: "normal" },
+        { factor_id: "terrain_scale", importance: "normal" },
+      ],
+      [
+        { factor_id: "pass_price_per_day", importance: "high" },
+        { factor_id: "terrain_scale", importance: "high" },
+      ],
+    ),
+  ).toEqual([
+    { factor_id: "pass_price_per_day", importance: "high" },
+    { factor_id: "terrain_scale", importance: "high" },
+  ]);
+});
 
 const intent: SearchIntent = {
   constraints: { location: { country: "France" } },

@@ -40,6 +40,7 @@ import {
   defaultSearchFilters,
   dismissRefinement,
   findSelectedCandidate,
+  mergeObjectivePatches,
   mergeParsedFilters,
   rankChangeSummary,
   reconcileSearchSession,
@@ -702,7 +703,7 @@ function App() {
       option.factor_preference_patches,
       (item) => item.factor_id,
     );
-    const nextObjectives = upsertBy(
+    const nextObjectives = mergeObjectivePatches(
       [...baselineIntent.objectives].filter(
         (item) =>
           !option.factor_preference_patches.some(
@@ -710,7 +711,6 @@ function App() {
           ),
       ),
       option.objective_patches,
-      (item) => item.factor_id,
     );
     const nextGroups = upsertBy(
       [...baselineIntent.group_priorities],
@@ -727,7 +727,7 @@ function App() {
       option.factor_preference_patches,
       (item) => item.factor_id,
     );
-    const nextEditorObjectives = upsertBy(
+    const nextEditorObjectives = mergeObjectivePatches(
       [...objectives].filter(
         (item) =>
           !option.factor_preference_patches.some(
@@ -735,7 +735,6 @@ function App() {
           ),
       ),
       option.objective_patches,
-      (item) => item.factor_id,
     );
     const nextEditorGroups = upsertBy(
       [...groupPriorities],
