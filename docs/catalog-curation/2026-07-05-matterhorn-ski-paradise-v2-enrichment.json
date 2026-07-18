@@ -1733,7 +1733,7 @@
       ],
       "after": [
         "The retained Cervinia ski-area ID continues to own Breuil-Cervinia weather and historical evidence; its geometry is unchanged.",
-        "The former 150 km, 22 lift, and difficulty inventory described the connected Breuil-Cervinia/Valtournenche product and now belongs to the local terrain domain.",
+        "The former 150 km, 22-lift, and difficulty metrics were removed from the Cervinia ski-area owner and remain null and unsupported pending direct owner-scoped evidence.",
         "One official on-slope venue establishes availability but is normalized conservatively to calm rather than a destination-wide lively scene."
       ],
       "trust_status": "verified_with_adjustment",
@@ -4854,7 +4854,7 @@
       "target_id": "ski_areas:cervinia-ski-area",
       "field_path": "notes",
       "status": "changed",
-      "notes": "Exact-base reconciliation records notes for trust_manifest:ski_areas:cervinia-ski-area as [\"The retained Cervinia ski-area ID continues to own Breuil-Cervinia weather and historical evidence; its geometry is unchanged.\", \"The former 150 km, 22 lift, and difficulty inventory described the connected Breuil-C...."
+      "notes": "Exact-base reconciliation records notes for trust_manifest:ski_areas:cervinia-ski-area, including that the former 150 km, 22-lift, and difficulty metrics were removed and remain null and unsupported pending direct owner-scoped evidence."
     },
     {
       "target_type": "trust_manifest",
@@ -5050,7 +5050,7 @@
       "target_id": "terrain_domains:cervinia-valtournenche",
       "field_path": "notes",
       "status": "changed",
-      "notes": "Exact-base reconciliation records notes for trust_manifest:terrain_domains:cervinia-valtournenche as [\"The local domain owns the published Italian-side connected aggregate formerly stored on the Cervinia child.\", \"The domain does not own weather evidence and stores no shared season window.\"]."
+      "notes": "Exact-base reconciliation records that the local domain preserves reviewed Cervinia-Valtournenche membership while unsupported 150 km, 22-lift, difficulty-split, elevation, and season claims remain null or omitted pending direct owner-scoped evidence."
     },
     {
       "target_type": "trust_manifest",
@@ -6680,10 +6680,10 @@
       "source_title": "Cervino Ski Paradise official catalog presentation",
       "source_value": [
         "The retained Cervinia ski-area ID continues to own Breuil-Cervinia weather and historical evidence; its geometry is unchanged.",
-        "The former 150 km, 22 lift, and difficulty inventory described the connected Breuil-Cervinia/Valtournenche product and now belongs to the local terrain domain.",
+        "The former 150 km, 22-lift, and difficulty metrics were removed from the Cervinia ski-area owner and remain null and unsupported pending direct owner-scoped evidence.",
         "One official on-slope venue establishes availability but is normalized conservatively to calm rather than a destination-wide lively scene."
       ],
-      "evidence_summary": "The cited owner-scoped source was checked for trust_manifest:ski_areas:cervinia-ski-area and the exact notes claim is recorded as [\"The retained Cervinia ski-area ID continues to own Breuil-Cervinia weather and historical evidence; its geometry is unchanged.\", \"The former 150 km, 22 lift, and difficulty inventory described the connected Breuil-C....",
+      "evidence_summary": "The direct owner-scope review preserves the Cervinia weather owner while the former child terrain metrics remain null and unsupported pending accepted owner-scoped evidence.",
       "normalization_note": "The source is normalized only to the stated field and owner; null or unknown values preserve uncertainty rather than infer unsupported facts."
     },
     {
@@ -7296,10 +7296,11 @@
       "source_url": "https://www.cervinia.it/en",
       "source_title": "Cervino Ski Paradise official catalog presentation",
       "source_value": [
-        "The local domain owns the published Italian-side connected aggregate formerly stored on the Cervinia child.",
+        "The local domain preserves the reviewed connected membership of the Cervinia and Valtournenche ski-area owners.",
+        "The reviewed tariff establishes pass scope, not terrain metrics; unsupported 150 km, 22-lift, difficulty-split, and elevation claims remain null and needs_source.",
         "The domain does not own weather evidence and stores no shared season window."
       ],
-      "evidence_summary": "The cited owner-scoped source was checked for trust_manifest:terrain_domains:cervinia-valtournenche and the exact notes claim is recorded as [\"The local domain owns the published Italian-side connected aggregate formerly stored on the Cervinia child.\", \"The domain does not own weather evidence and stores no shared season window.\"].",
+      "evidence_summary": "The reviewed source supports connected Cervinia-Valtournenche membership and pass scope, but not the former 150 km, 22-lift, difficulty-split, elevation, season, or weather claims.",
       "normalization_note": "The source is normalized only to the stated field and owner; null or unknown values preserve uncertainty rather than infer unsupported facts."
     },
     {
