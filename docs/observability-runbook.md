@@ -75,10 +75,15 @@ Minimum useful dashboard:
 - Search empty-result rate from `snowcast_search_empty_results_total`
 - Parser mode/status from `snowcast_parse_requests_total`
 - LLM request status and model from `snowcast_llm_requests_total`
+- Bounded LLM provider failure class from `snowcast_llm_failures_total`
 - LLM retries from `snowcast_llm_retries_total`
 - LLM fallback reason from `snowcast_llm_fallbacks_total`
-- Search refinement outcome from
-  `snowcast_search_refinement_outcomes_total`
+- Search refinement status and bounded reason from
+  `snowcast_search_refinement_requests_total`, plus admission and route outcomes
+  from `snowcast_search_refinement_route_outcomes_total`
+- Evaluated-baseline handoff health from
+  `snowcast_search_refinement_snapshot_outcomes_total`; watch the bounded
+  `hit`, `miss`, `expired`, `intent_mismatch`, and `evicted` outcomes
 - Forecast refresh status, incomplete-area count, head age, and valid-date
   count from the `snowcast_weather_forecast_*` metrics
 - Conditions freshness from
@@ -195,6 +200,8 @@ Likely causes:
 - cold Fly machine or cold database compute
 - accidental provider call in the hot search path
 - a slow optional refinement LLM request
+- repeated refinement snapshot misses after deploys, restarts, expiry, or
+  routing a request to a different process
 - large catalog growth without query/index review
 
 First response:
@@ -209,8 +216,10 @@ curl --fail --silent --show-error \
 ```
 
 If `weather_preload` is slow, inspect the climatology and forecast latest-head
-bulk queries before tuning ranking code. If `refinement` is slow, compare a
-request with `generate_refinements=false` and inspect LLM telemetry.
+bulk queries before tuning ranking code. If `refinement` is slow, inspect LLM
+telemetry and the refinement snapshot hit rate. A miss never reruns Search V4;
+it returns `temporarily_unavailable`, while a successful new ranking creates a
+fresh 60-second handoff.
 
 ## Parser/LLM Fallback Spike
 

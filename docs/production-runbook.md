@@ -310,7 +310,9 @@ domain, field group, status, elevation band, model, and baseline period.
 The `Product Canary` GitHub Actions workflow runs every 6 hours against
 production and can be started manually with an optional base URL override. It
 checks health, database readiness, search-specific readiness, and a
-representative anonymous search.
+representative anonymous search. It then exercises the separate post-ranking
+refinement boundary and accepts either a validated question, `not_needed`, or a
+bounded `temporarily_unavailable` outcome.
 
 Local canary:
 
@@ -367,9 +369,15 @@ policies yet because the Grafana policy API replaces the whole routing tree.
 curl --fail --silent --show-error \
   --request POST \
   --header 'Content-Type: application/json' \
-  --data '{"intent":{"constraints":{"location":{"country":"France"},"travel_window":{"month":3}},"party":{"skill_levels":["intermediate"]},"objectives":[{"factor_id":"pass_terrain_value","importance":"normal"}]},"generate_refinements":false}' \
+  --data '{"intent":{"constraints":{"location":{"country":"France"},"travel_window":{"month":3}},"party":{"skill_levels":["intermediate"]},"objectives":[{"factor_id":"pass_terrain_value","importance":"normal"}]}}' \
   "https://snowcast.fly.dev/api/search"
 ```
+
+Use `ops/canary/search_canary.py` for the complete ranking-plus-refinement smoke
+path because the refinement request must reuse the ranking response's canonical
+intent and baseline fingerprint within the same process-local 60-second
+handoff. A deploy or process restart between those calls may truthfully return
+`temporarily_unavailable`; the ranked response remains valid.
 
 ## Failure inspection
 

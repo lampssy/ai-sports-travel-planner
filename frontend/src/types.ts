@@ -48,12 +48,16 @@ export interface SearchObjective {
   importance: FactorImportance;
 }
 
+export interface TravelWindow {
+  month?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+}
+
 export interface SearchIntent {
   constraints: {
     location?: { country: string };
-    travel_window?:
-      | { month: number }
-      | { start_date: string; end_date: string };
+    travel_window?: TravelWindow;
     lodging_budget?: {
       mode: "lodging_nightly";
       maximum: number;
@@ -73,8 +77,12 @@ export interface SearchIntent {
 
 export interface SearchV4Request {
   intent: SearchIntent;
+}
+
+export interface SearchV4RefinementRequest {
+  intent: SearchIntent;
   brief: string | null;
-  generate_refinements: boolean;
+  baseline_fingerprint: string;
   already_answered_question_ids: string[];
 }
 
@@ -117,6 +125,8 @@ export interface SearchV4AccessSummary {
   distance_m: number | null;
   duration_minutes: number | null;
   is_direct: boolean;
+  relationship_trust_status: CatalogTrustStatus;
+  access_mode_distance_trust_status: CatalogTrustStatus;
 }
 
 export interface SearchV4PassPriceSummary {
@@ -130,13 +140,112 @@ export interface SearchV4PassPriceSummary {
   season_label: string | null;
 }
 
+export type CatalogTrustStatus =
+  | "verified"
+  | "verified_with_adjustment"
+  | "estimated"
+  | "needs_source";
+
+export interface SearchV4TerrainEvidence {
+  trust_status: CatalogTrustStatus;
+  scope: "pass" | "terrain_domain" | "ski_area";
+  source_entity_id: string;
+  field_group:
+    | "pass_accessible_terrain"
+    | "aggregate_terrain"
+    | "terrain_metrics";
+}
+
 export interface SearchV4PassSummary {
   lift_pass_product_id: string;
   name: string;
   validity_scope: string;
   covered_ski_area_ids: string[];
   accessible_piste_km: number | null;
+  accessible_piste_km_evidence: SearchV4TerrainEvidence | null;
   price: SearchV4PassPriceSummary | null;
+}
+
+export interface WeatherEvidencePoint {
+  date_or_month_day: string;
+  snow_depth_cm: number | null;
+  snow_depth_cm_p25: number | null;
+  snow_depth_cm_p50: number | null;
+  snow_depth_cm_p75: number | null;
+  snowfall_cm: number | null;
+  temperature_min_c: number | null;
+  temperature_max_c: number | null;
+  rain_risk: number | null;
+  thaw_risk: number | null;
+  wind_gust_kmh: number | null;
+}
+
+export interface HistoricalWeatherSource {
+  source_model: string;
+  computed_at: string;
+  baseline_period: "normal_30y" | "recent_15y";
+  baseline_start_year: number;
+  baseline_end_year: number;
+  evidence_seasons: number;
+  latest_archive_year: number | null;
+  elevation_m: number | null;
+  row_count: number;
+  profile_dates: string[];
+}
+
+export interface HistoricalWeatherEvidence {
+  source_label: string;
+  source_model: string | null;
+  computed_at: string | null;
+  baseline_start_year: number | null;
+  baseline_end_year: number | null;
+  evidence_seasons: number | null;
+  latest_archive_year: number | null;
+  provenance_status: "homogeneous" | "mixed";
+  sources: [HistoricalWeatherSource, ...HistoricalWeatherSource[]];
+  snow_depth_cm_p25: number | null;
+  snow_depth_cm_p50: number | null;
+  snow_depth_cm_p75: number | null;
+  probability_snow_depth_ge_30cm: number | null;
+  average_daily_snowfall_cm: number | null;
+  average_max_temperature_c: number | null;
+  daily_profile: WeatherEvidencePoint[];
+}
+
+export interface ForecastWeatherSource {
+  forecast_run_id: string;
+  forecast_source_key: string;
+  source_label: string;
+  source_model: string;
+  issued_at: string;
+  elevation_m: number;
+  row_count: number;
+  profile_dates: string[];
+}
+
+export interface ForecastWeatherEvidence {
+  source_label: string;
+  source_model: string | null;
+  issued_at: string | null;
+  provenance_status: "homogeneous" | "mixed";
+  sources: ForecastWeatherSource[];
+  coverage_status: "complete" | "partial";
+  usable_date_count: number;
+  requested_date_count: number;
+  average_forecast_share: number;
+  daily_profile: WeatherEvidencePoint[];
+}
+
+export interface SearchWeatherEvidence {
+  mode: "climatology" | "forecast_assisted";
+  window_label: string;
+  elevation_band: "mid_mountain";
+  elevation_m: number | null;
+  elevation_status: "exact" | "mixed" | "unavailable";
+  interpretation: string;
+  limitations: string[];
+  historical: HistoricalWeatherEvidence;
+  forecast: ForecastWeatherEvidence | null;
 }
 
 export interface SearchV4Configuration {
@@ -149,6 +258,10 @@ export interface SearchV4Configuration {
   stay_base_name: string;
   ski_area_id: string;
   ski_area_name: string;
+  evidence_profile:
+    | "archive_backed"
+    | "forecast_assisted"
+    | "fallback_heavy";
   access: SearchV4AccessSummary;
   selected_pass: SearchV4PassSummary;
   lodging_estimate: {
@@ -156,11 +269,7 @@ export interface SearchV4Configuration {
     minimum: number;
     maximum: number;
     currency: string;
-    trust_status:
-      | "verified"
-      | "verified_with_adjustment"
-      | "estimated"
-      | "needs_source";
+    trust_status: CatalogTrustStatus;
     provenance: string;
   } | null;
   ranking_status: "ranked" | "unscored";
@@ -169,6 +278,37 @@ export interface SearchV4Configuration {
   factors: FactorScoreBreakdown[];
   constraint_warnings: ConstraintIssue[];
 }
+
+export interface SearchWeatherEvidenceRequest {
+  intent: SearchIntent;
+  ski_area_id: string;
+}
+
+export interface SearchWeatherEvidenceResponseBase {
+  weather_evidence_version: "search-weather-evidence-v1";
+  ski_area_id: string;
+  evaluated_at: string;
+  cache_valid_until: string;
+}
+
+export interface SearchWeatherEvidenceAvailableResponse
+  extends SearchWeatherEvidenceResponseBase {
+  status: "available";
+  evidence: SearchWeatherEvidence;
+}
+
+export interface SearchWeatherEvidenceUnavailableResponse
+  extends SearchWeatherEvidenceResponseBase {
+  status: "unavailable";
+  unavailable_reason:
+    | "travel_window_missing"
+    | "historical_evidence_unavailable";
+  limitations: string[];
+}
+
+export type SearchWeatherEvidenceResponse =
+  | SearchWeatherEvidenceAvailableResponse
+  | SearchWeatherEvidenceUnavailableResponse;
 
 export interface SearchV4RecommendationGroup {
   ski_region_id: string;
@@ -179,12 +319,25 @@ export interface SearchV4RecommendationGroup {
   alternative_configurations: SearchV4Configuration[];
 }
 
+export interface RefinementRankChange {
+  ski_region_id: string;
+  previous_rank: number | null;
+  preview_rank: number | null;
+}
+
+export interface RefinementPreview {
+  top_rank_changes: RefinementRankChange[];
+  eligible_candidate_count_delta: number;
+}
+
 export interface RefinementOption {
   label: string;
   description: string;
+  intent_changed: boolean;
   group_priority_patches: GroupPriorityPatch[];
   factor_preference_patches: FactorPreferencePatch[];
   objective_patches: SearchObjective[];
+  preview?: RefinementPreview | null;
 }
 
 export interface RefinementProposal {
@@ -197,12 +350,27 @@ export interface RefinementProposal {
 export interface SearchResponse {
   search_model_version: "search-v4";
   ranking_policy_version: string;
+  baseline_fingerprint: string;
   ranking_status: "ranked" | "unscored";
   unscored_reason: string | null;
   applied_intent: SearchIntent;
   eligible_candidate_count: number;
   excluded_candidate_count: number;
   results: SearchV4RecommendationGroup[];
+  refinements: RefinementProposal[];
+}
+
+export interface SearchV4RefinementResponse {
+  search_model_version: "search-v4";
+  ranking_policy_version: string;
+  refinement_presentation_policy_version: string;
+  baseline_fingerprint: string;
+  baseline_status: "current" | "stale" | "unverified";
+  refinement_status:
+    | "questions_available"
+    | "not_needed"
+    | "temporarily_unavailable";
+  fallback_used: boolean;
   refinements: RefinementProposal[];
 }
 

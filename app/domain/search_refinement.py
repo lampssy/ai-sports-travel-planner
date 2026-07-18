@@ -101,6 +101,16 @@ class RefinementCandidateState:
     evaluations: tuple[FactorEvaluation, ...]
     eligible: bool = True
     eligibility_evaluator: Callable[[SearchIntent], bool] | None = None
+    evaluation_replayer: (
+        Callable[[SearchIntent], tuple[FactorEvaluation, ...]] | None
+    ) = None
+    cohort_evaluation_replayer: (
+        Callable[
+            [SearchIntent, tuple[str, ...]],
+            Mapping[str, tuple[FactorEvaluation, ...]],
+        ]
+        | None
+    ) = None
 
     def __post_init__(self) -> None:
         if not self.candidate_id.strip():
@@ -119,9 +129,16 @@ class RefinementImpact(_RefinementModel):
     top_five_score_changed: bool
 
 
+class RefinementVariantOutcome(_RefinementModel):
+    ordered_candidate_ids: tuple[str, ...]
+    eligible_candidate_ids: frozenset[str]
+    intent_changed: bool
+
+
 class ValidatedRefinementProposal(_RefinementModel):
     proposal: RefinementProposal
     impact: RefinementImpact
+    variant_outcomes: tuple[RefinementVariantOutcome, ...]
 
 
 @dataclass(frozen=True)
@@ -129,6 +146,7 @@ class _VariantRanking:
     eligible_ids: frozenset[str]
     ordered_ids: tuple[str, ...]
     scores: Mapping[str, float]
+    evaluations_by_candidate_id: Mapping[str, tuple[FactorEvaluation, ...]]
 
 
 def apply_refinement_option(
@@ -195,6 +213,10 @@ def validate_refinement_proposal(
     variant_intents: list[SearchIntent] = []
     for option in proposal.options:
         _validate_option_targets(option, policy)
+        if option_expands_synthesized_require(intent, option):
+            raise RefinementValidationError(
+                "refinement option would widen a synthesized require"
+            )
         signature = _option_signature(option)
         if signature in option_signatures:
             raise RefinementValidationError("refinement options must be distinct")
@@ -208,7 +230,6 @@ def validate_refinement_proposal(
         raise RefinementValidationError(
             "refinement options only repeat the current intent"
         )
-    _validate_factor_actionability(proposal, candidates, policy)
     variants = tuple(
         _rank_variant(
             intent=variant_intent,
@@ -217,12 +238,28 @@ def validate_refinement_proposal(
         )
         for variant_intent in variant_intents
     )
+    _validate_factor_actionability(
+        proposal,
+        variants,
+        policy,
+    )
     impact = _measure_impact(variants, policy)
     if not impact.material:
         raise RefinementValidationError(
             "refinement answer variants do not have material impact"
         )
-    return ValidatedRefinementProposal(proposal=proposal, impact=impact)
+    return ValidatedRefinementProposal(
+        proposal=proposal,
+        impact=impact,
+        variant_outcomes=tuple(
+            RefinementVariantOutcome(
+                ordered_candidate_ids=variant.ordered_ids,
+                eligible_candidate_ids=variant.eligible_ids,
+                intent_changed=not _same_intent(intent, variant_intent),
+            )
+            for variant, variant_intent in zip(variants, variant_intents, strict=True)
+        ),
+    )
 
 
 def _validate_text_and_option_bounds(
@@ -286,9 +323,48 @@ def _require_clarifiable_factor(factor: FactorPolicy) -> None:
         )
 
 
+def synthesized_require_factor_ids(intent: SearchIntent) -> frozenset[str]:
+    explicit_requirement_ids = {
+        requirement.factor_id for requirement in intent.constraints.factor_requirements
+    }
+    return frozenset(
+        preference.factor_id
+        for preference in intent.factor_preferences
+        if preference.mode == "require"
+        and preference.factor_id not in explicit_requirement_ids
+    )
+
+
+def option_expands_synthesized_require(
+    intent: SearchIntent,
+    option: RefinementOption,
+) -> bool:
+    synthesized_requires = {
+        preference.factor_id: preference
+        for preference in intent.factor_preferences
+        if preference.factor_id in synthesized_require_factor_ids(intent)
+    }
+    if any(
+        objective.factor_id in synthesized_requires
+        for objective in option.objective_patches
+    ):
+        return True
+    for patch in option.factor_preference_patches:
+        existing = synthesized_requires.get(patch.factor_id)
+        if existing is None:
+            continue
+        if patch.mode != "require":
+            return True
+        if existing.values and (
+            not patch.values or not set(patch.values).issubset(existing.values)
+        ):
+            return True
+    return False
+
+
 def _validate_factor_actionability(
     proposal: RefinementProposal,
-    candidates: Sequence[RefinementCandidateState],
+    variants: Sequence[_VariantRanking],
     policy: SearchPolicy,
 ) -> None:
     factor_ids = {
@@ -302,14 +378,34 @@ def _validate_factor_actionability(
     }
     for factor_id in factor_ids:
         factor = policy.factor(factor_id)
-        evaluations = tuple(
-            evaluation
-            for candidate in candidates
-            if candidate.eligible
-            for evaluation in candidate.evaluations
-            if evaluation.factor_id == factor_id
+        relevant_variants = (
+            variant
+            for option, variant in zip(
+                proposal.options,
+                variants,
+                strict=True,
+            )
+            if any(
+                patch.factor_id == factor_id and patch.mode != "ignore"
+                for patch in option.factor_preference_patches
+            )
+            or any(
+                objective.factor_id == factor_id
+                for objective in option.objective_patches
+            )
         )
-        if not _factor_is_actionable(factor, evaluations):
+        if not any(
+            _factor_is_actionable(
+                factor,
+                tuple(
+                    evaluation
+                    for evaluations in variant.evaluations_by_candidate_id.values()
+                    for evaluation in evaluations
+                    if evaluation.factor_id == factor_id
+                ),
+            )
+            for variant in relevant_variants
+        ):
             raise RefinementValidationError(
                 f"factor is not actionable for current candidates: {factor_id}"
             )
@@ -363,10 +459,36 @@ def _rank_variant(
         )
         if is_eligible:
             eligible.append(candidate)
+    cohort_replayers = [
+        candidate.cohort_evaluation_replayer
+        for candidate in eligible
+        if candidate.cohort_evaluation_replayer is not None
+    ]
+    if cohort_replayers:
+        cohort_replayer = cohort_replayers[0]
+        if len(cohort_replayers) != len(eligible) or any(
+            replayer is not cohort_replayer for replayer in cohort_replayers[1:]
+        ):
+            raise ValueError("eligible refinement candidates must share cohort replay")
+        eligible_candidate_ids = tuple(candidate.candidate_id for candidate in eligible)
+        evaluations_by_candidate_id = dict(
+            cohort_replayer(intent, eligible_candidate_ids)
+        )
+        if set(evaluations_by_candidate_id) != set(eligible_candidate_ids):
+            raise ValueError("cohort replay must evaluate every eligible candidate")
+    else:
+        evaluations_by_candidate_id = {
+            candidate.candidate_id: (
+                candidate.evaluation_replayer(intent)
+                if candidate.evaluation_replayer is not None
+                else candidate.evaluations
+            )
+            for candidate in eligible
+        }
     scores: dict[str, float] = {}
     for candidate in eligible:
         result = score_factor_evaluations(
-            evaluations=candidate.evaluations,
+            evaluations=evaluations_by_candidate_id[candidate.candidate_id],
             intent=intent,
             policy=policy,
         )
@@ -379,6 +501,7 @@ def _rank_variant(
         eligible_ids=frozenset(candidate.candidate_id for candidate in eligible),
         ordered_ids=ordered,
         scores=scores,
+        evaluations_by_candidate_id=evaluations_by_candidate_id,
     )
 
 

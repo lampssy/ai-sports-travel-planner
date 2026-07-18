@@ -1479,6 +1479,68 @@ Promotion trigger:
 - Promote when background acquisition or push/alert workflows become critical
   enough that failure cannot be diagnosed from current logs and metrics.
 
+### Search V4 Weather-Evidence Outcome Metrics
+
+Status: candidate
+Area: Ops / Observability
+Source: Search V4 advisory feature review
+
+Why it matters:
+
+- `POST /api/search/weather-evidence` intentionally returns typed
+  HTTP-200 `unavailable` responses for expected evidence gaps. Generic HTTP
+  success telemetry cannot distinguish those responses from usable evidence,
+  so a widespread data-coverage loss can appear healthy.
+
+First scope:
+
+- Add low-cardinality outcome metrics with `status=available|unavailable|error`,
+  a bounded unavailable reason, travel-window type, and endpoint duration.
+- Use an OTLP smoke check as the promotion and acceptance signal: exercise the
+  endpoint with OTEL enabled and confirm the bounded series reaches the
+  configured exporter.
+
+Not now:
+
+- Do not label metrics with ski area, dates, IDs, raw intent or brief content,
+  or raw weather values.
+- Do not add a server cache, provider call, or new readiness failure policy.
+
+Promotion trigger:
+
+- Promote before relying on dossier weather evidence for operational monitoring
+  or alerting.
+
+### Scope-Aware `pass_terrain_value` Wording
+
+Status: candidate
+Area: Data Trust; Web UX
+Source: Search V4 advisory feature review
+
+Why it matters:
+
+- The raw scoring factor can use pass terrain, a connected terrain-domain
+  aggregate, or a selected ski-area fallback as its numerator. A generic
+  `Terrain per pass price` label can therefore imply pass-wide coverage when
+  the evidence is narrower.
+
+First scope:
+
+- Make `pass_terrain_value` labels disclose pass, terrain-domain, or selected
+  ski-area numerator scope while preserving the existing `Estimated` and
+  `Needs source` wording.
+- Add scope assertions for all three numerator sources in the scoring-details
+  presentation tests.
+
+Not now:
+
+- Do not change ranking weights, factor formulas, factor eligibility, or the
+  ownership of terrain evidence.
+
+Promotion trigger:
+
+- Promote before the next scoring-details or pass-value presentation change.
+
 ### Client Maintainability Refactors
 
 Status: candidate
@@ -1507,6 +1569,77 @@ Promotion trigger:
 
 - Promote alongside the next sizable web or mobile feature, especially if the
   implementation would otherwise expand the all-in-one files further.
+
+### Search V4 Request-Path Latency Budget
+
+Status: candidate
+Area: Performance; Search V4
+Source: Search V4 trust and UI polish browser acceptance
+
+Why it matters:
+
+- Local live acceptance showed that removing refinement generation from the
+  ranking request improves failure isolation, but ranking can still take about
+  five seconds on the seeded development stack. Refinement and weather evidence
+  can each take a similar amount of time, so the next optimization should be
+  measurement-led rather than another UI-only loading treatment.
+
+First scope:
+
+- Break down cold and warm `POST /api/search`, `/api/search/refinements`, and
+  `/api/search/weather-evidence` durations into ranking evaluation, database,
+  evaluated-baseline lookup, provider/fallback, and serialization phases as
+  applicable.
+- Track the approved 60-second/64-entry evaluated-baseline store's bounded hit,
+  miss, expired, and evicted outcomes alongside memory and endpoint latency.
+- Define a local benchmark fixture and an initial p50/p95 product budget before
+  selecting an index, cache, query-shape, or background-execution change.
+
+Not now:
+
+- Do not expand the approved lightweight process-local handoff into a general
+  search-response cache, full catalog/trust snapshot, persisted/shared state,
+  new database index, or parallel provider work from one manual timing
+  observation.
+- Do not weaken ranking, evidence, exact-baseline binding, or typed
+  unavailability semantics to reduce time.
+
+Promotion trigger:
+
+- Promote before the next Search V4 performance sprint or when production-like
+  telemetry can be collected from representative catalog and weather data.
+
+### Refinement Copy-Safety Particle Normalization
+
+Status: candidate
+Area: Search V4; AI Safety
+Source: assistant-ready refinement release review
+
+Why it matters:
+
+- The configured-copy safety boundary rejects current transaction and account
+  actions, but fused particles such as `into` and `onto` are not yet normalized
+  like their separated equivalents. No current registered refinement copy uses
+  these forms, so this is a bounded hardening follow-up rather than a release
+  blocker.
+
+First scope:
+
+- Normalize `into` and `onto` for reviewed account and transaction action forms,
+  with regression cases such as `opt into`, `sign into`, `log onto`, and
+  `check into`.
+- Preserve the current clause-bounded matching behavior so ordinary planning
+  language is not rejected.
+
+Not now:
+
+- Do not replace the reviewed safety predicate with an unrestricted keyword
+  blacklist or broaden it beyond configured refinement copy.
+
+Promotion trigger:
+
+- Promote before adding registered refinement wording that uses one of these
+  fused action forms, or before claiming generalized action-copy coverage.
 
 ## Recovered But Not Active
 

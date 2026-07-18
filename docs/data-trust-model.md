@@ -119,6 +119,10 @@ actual external source reviewed by the owner.
 - Domain totals and pass-accessible totals remain aggregates even when they do
   not equal the arithmetic sum of child facts from different source scopes.
 - Pass availability and defaults are explicit per stay destination.
+- Search V4 terrain summaries preserve the owning manifest field status and
+  source scope. A pass summary may retain a ski-area or terrain-domain fallback,
+  but the API and UI must not promote that fallback into unqualified
+  pass-accessible terrain.
 - A regional-network pass may reference modeled terrain but does not create a
   terrain domain unless the member areas are physically ski-connected.
 - Stay-base lodging estimates and rental examples are separate.

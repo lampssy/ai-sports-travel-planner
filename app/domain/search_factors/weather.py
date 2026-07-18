@@ -209,7 +209,7 @@ def _trip_window_snow_fit(
         )
         for valid_date in requested_dates
     }
-    forecast_rows = _forecast_rows_by_date(context, candidate)
+    forecast_rows = select_usable_forecast_rows_by_date(context, candidate)
     snowmaking_support = _snowmaking_support(context, candidate)
     day_details: list[dict[str, Any]] = []
     day_utilities: list[float] = []
@@ -381,7 +381,7 @@ def _trip_window_snowpack_outlook(
             warning="exact travel dates unavailable",
         )
     requested_dates = _requested_dates(window)
-    selected = _forecast_rows_by_date(context, candidate)
+    selected = select_usable_forecast_rows_by_date(context, candidate)
     outlooks = tuple(
         snowpack_outlook(selected[item].daily, context.policy.weather)
         for item in requested_dates
@@ -413,7 +413,7 @@ def _trip_window_snowpack_outlook(
     )
 
 
-def _forecast_rows_by_date(
+def select_usable_forecast_rows_by_date(
     context: WeatherEvaluationContext,
     candidate: WeatherFactorCandidate,
 ) -> dict[date, ServedWeatherForecastDaily]:

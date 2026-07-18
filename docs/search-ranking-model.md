@@ -7,6 +7,7 @@ ranking, factor policy, and adaptive refinement.
 
 - Active search contract: `search-v4`
 - Active ranking policy: `search-v4-policy-1`
+- Active refinement presentation policy: `search-refinement-presentation-1`
 - Search V4 architecture: ADR 0012
 - Forecast evidence architecture: ADR 0013
 - Search V4 feature design:
@@ -15,6 +16,8 @@ ranking, factor policy, and adaptive refinement.
   `docs/superpowers/specs/2026-07-13-trip-window-weather-forecast-evidence-design.md`
 - Planning and forecast evidence details: `docs/planning-model.md`
 - Executable policy: `app/config/search-ranking/search-v4.toml`
+- Executable refinement presentation registry:
+  `app/config/search-refinement/presentation-v1.toml`
 - Policy inspection: `uv run python -m app.data.explain_search_policy --check`
 
 This document and its generated inventory describe the active behavior. The
@@ -66,6 +69,14 @@ app/domain/search_ranking.py
 
 app/domain/search_refinement.py
   refinement context, proposal validation, and impact simulation
+
+app/config/search-refinement/presentation-v1.toml
+  traveller-facing refinement topics, approved answers, authoritative option
+  copy, typed intent actions, and deterministic fallback order
+
+app/domain/search_refinement_presentation.py
+  presentation-registry validation, answer-ID resolution, safe-copy fallback,
+  and registry-backed deterministic fallback
 ```
 
 The TOML policy is authoritative for numeric policy and active inventory. Typed
@@ -807,60 +818,74 @@ Source-needed price or terrain facts do not participate in numeric comparison
 bounds. If multiple otherwise applicable seasons disagree and the request does
 not identify one, no arbitrary season is selected.
 
+Scoring and result summaries share one accessible-terrain source policy. It
+selects the first trust-usable source in this order: pass aggregate, exactly
+one matching terrain-domain aggregate, then selected ski-area terrain only for
+a pass without terrain-domain ownership. A numeric source with a zero trust cap
+is skipped, so scoring values, summary scope, entity, field group, and trust
+always describe the same evidence owner.
+
 Search may support separate objectives for maximum accessible terrain, lowest
 pass price, and best terrain value. A raw piste-kilometres-per-price ratio must
 not become a universal always-on definition of value.
 
 ## Dynamic Refinement Questions
 
-Question variants are not predefined in the registry.
+The LLM dynamically selects registered factor topics, places registered
+traveller-facing semantic phrases inside one constrained question grammar, and
+selects approved answer IDs rather than emitting labels or raw patches. A
+single-topic semantic body must exactly equal one phrase registered for that
+topic. A multi-topic body is a controlled comparison containing exactly one
+registered phrase per selected topic, joined only by `or`, `versus`, or `rather
+than`. The server owns reason copy, answer copy, and typed intent actions.
+Every option in a multi-topic question contains exactly one registered answer
+for every selected topic. An asymmetric option set is invalid, while a valid
+sibling question can still survive independently.
+Unsafe or unregistered compositions use deterministic registry-backed
+fallback copy before the existing legality, actionability, and materiality
+gates run. Group-priority patches remain part of Search V4 but are not generated
+as refinement questions in this slice.
 
-After initial ranking, Snowcast supplies an LLM with a bounded summary of known
-intent, unresolved priorities, the complete runtime-ready clarifiable registry,
-allowed values, top-result differences, coverage, and already answered
-questions. This includes groups and preference/objective factors inactive in
-the initial score. The LLM may choose one or more registered groups or factors,
-compose a question dynamically, and attach typed group-priority or
-factor-preference patches to each answer.
+After initial ranking, Snowcast supplies the LLM with a bounded summary of known
+intent, unresolved priorities, registered factor topics, approved answer IDs,
+top-result differences, coverage, and already answered questions. This includes
+preference and objective factors that were inactive in the initial score.
+Question wording remains dynamic; answer labels, descriptions, and typed intent
+actions are owned by the versioned presentation registry.
 
 Example shape:
 
 ```json
 {
-  "question": "Which atmosphere would suit you better?",
-  "reason": "The strongest matches differ between slope-side apres and quiet bases.",
+  "topic_ids": ["development_style"],
+  "question": "What kind of place would you prefer to stay in?",
   "options": [
     {
-      "label": "Lively after skiing",
-      "preference_patches": [
-        {
-          "factor_id": "ski_day_apres",
-          "mode": "prefer",
-          "values": ["lively", "destination_defining"]
-        }
-      ]
+      "answer_ids": ["development_style.traditional"]
     },
     {
-      "label": "Quiet evenings",
-      "preference_patches": [
-        {
-          "factor_id": "local_pace",
-          "mode": "prefer",
-          "values": ["quiet"]
-        }
-      ]
+      "answer_ids": ["development_style.mixed"]
+    },
+    {
+      "answer_ids": ["development_style.planned_resort"]
+    },
+    {
+      "answer_ids": ["development_style.ignore"]
     }
   ]
 }
 ```
 
-A priority answer may instead include, for example,
-`{"group_id":"travel_effort","importance":"primary"}`. It still contains no
-numeric multiplier.
+The provider never supplies the labels or patches implied by those IDs. For
+example, the registry resolves the four selections above to `Traditional
+mountain village`, `A mix of old and new`, `Purpose-built ski resort`, and `It
+doesn't matter`, plus their typed `development_style` actions. One option may
+combine approved answer IDs from several selected topics, but at most one
+answer may target each factor.
 
 Deterministic code then validates:
 
-- group and factor IDs, importance labels, operations, and values;
+- topic and answer IDs, factor operations, controlled values, and objectives;
 - clarification role and applicable scope;
 - evidence-mode-specific readiness, trust, and actionability within the
   candidate set;
@@ -892,23 +917,51 @@ Only validated proposals are shown. Selecting an answer applies visible typed
 preferences and reruns deterministic search immediately. Search remains fully
 usable if question generation fails or no proposal has material impact.
 The provider-facing response schema deliberately contains only the compact
-structural types and controlled enums supported by Gemini. Pydantic size and
-shape validation plus deterministic policy validation remain authoritative.
+topic/answer-ID structure and bounded question text supported by Gemini.
+Pydantic size and shape validation plus presentation-registry and deterministic
+policy validation remain authoritative. The server accepts provider question
+wording only when it uses an approved traveller-preference or priority form,
+anchored as one complete question with no appended clause or comma, semicolon,
+or colon; its extracted semantic body is an exact registered single-topic
+phrase or controlled multi-topic phrase comparison; and it follows the minimal
+allowed Unicode letter, mark, whitespace, and punctuation policy. Factual `is`,
+`are`, or `does` claims cannot be rescued by an incidental preference word or a
+conjoined preference clause. Otherwise the server uses registry-backed
+traveller copy, which is config-validated rather than passed through the
+generated-copy grammar, and always supplies the configured single-topic or
+multi-topic reason. A
+bounded brief containing a configured sensitive, credential, payment, or
+contact marker forces that fallback for the request; candidate IDs, external
+actions, unsupported claims, internal policy terms, numeric claims, malformed
+questions, and overlong copy are also never shown. Approved reasons, option
+labels, descriptions, and typed actions never come from the provider.
 Questions are validated independently: an invalid or immaterial sibling is
-dropped without discarding a useful question that passed every gate. The one
-bounded retry is used only when no proposed question survives.
+dropped without discarding a useful question that passed every gate. The
+refinement provider receives one attempt only; no retry can extend the request
+budget.
 
-For `positive_presence`, a clarification needs at least one trustworthy
+Before actionability and materiality validation, every answer variant reruns
+the registered static and weather evaluators from the exact captured baseline
+inputs under that variant intent. For `positive_presence`, a clarification
+needs at least one trustworthy
 non-neutral candidate outcome, at least two distinct effective utilities, and
 the normal hybrid impact result; broad verified-negative coverage is not
 required. For `categorical_match`, it needs trusted variation that creates at
 least two utilities. Comparative and objective factors continue to enforce
-their applicable coverage gate. Explicit user preferences may activate a
-runtime-ready factor even when the LLM would not independently choose to ask
-about it.
+their applicable coverage gate. Each selected non-ignore factor must pass this
+gate from its replayed outcomes; a material sibling topic cannot rescue a
+meaningless factor. Explicit user preferences may activate a runtime-ready
+factor even when the LLM would not independently choose to ask about it.
 
-The LLM owns semantic relevance and wording. Deterministic Planning owns
-validity, usefulness, candidate eligibility, and ranking.
+The LLM owns registered-topic selection and constrained question composition.
+Deterministic Planning owns public-copy safety, reasons, validity, usefulness,
+candidate eligibility, and ranking.
+
+A validated question may retain one option that reproduces the current intent
+when another option has material impact. The response marks each option with a
+typed intent-change flag. Applying an unchanged baseline option records the
+question as answered and preserves the current ranking without a search
+request or changed-ranking announcement.
 
 The brief is untrusted planning text, not an instruction source. Embedded
 instructions cannot expand the supplied factor registry, allowed values, or
@@ -920,6 +973,130 @@ characters. Exact travel windows are capped at 366 days, request collections
 are size-limited, and every refinement question has bounded options and typed
 patches. Invalid or oversized refinement output produces no question and never
 changes deterministic search results.
+
+Each returned `SearchV4Configuration` carries a backend-owned
+`evidence_profile`: `forecast_assisted` when selected trip-window evidence
+uses usable forecast coverage, `archive_backed` when complete requested-window
+climatology coverage supports the snow factor, and `fallback_heavy` otherwise.
+The frontend presents this typed source profile and does not reconstruct it
+from generic score-factor internals.
+
+## Post-Search Refinement Contract
+
+`POST /api/search` is ranking-only. It never constructs or calls Gemini and
+returns an immediately usable ranking with an empty `refinements` list during
+the client migration. The legacy `brief`, `generate_refinements`, and answered
+question-ID fields remain accepted on that endpoint only for mobile/web
+compatibility; they are ignored.
+
+`POST /api/search/refinements` accepts the canonical intent, a bounded brief,
+unique bounded answered question IDs, and the ranking response's
+`baseline_fingerprint`. Ranking stores compact baseline scores plus the exact
+static and weather evaluator inputs needed by refinement in a thread-safe
+process-local LRU/TTL store. Refinement accepts only the exact stored
+fingerprint plus canonical intent digest. It replays the same registered
+evaluators under every variant intent without catalog, weather, routing,
+repository, provider, or network acquisition. The whole endpoint has a
+five-second monotonic deadline: snapshot lookup and validation consume from that
+budget, the provider receives only the remaining timeout, and deterministic
+fallback is skipped once the deadline is exhausted.
+
+The refinement response has exactly one public status:
+
+- `questions_available`: a non-empty validated queue is available;
+- `not_needed`: no material question is needed, including a zero-result
+  baseline or a captured policy with `max_questions = 0`;
+- `temporarily_unavailable`: provider/output failure, an exhausted deadline,
+  or a missing, expired, evicted, restarted, or intent-mismatched baseline left
+  no valid queue.
+
+Admission rejection is an HTTP `429`, not a refinement response. Its generic
+error body is `{"detail": "Refinement is temporarily unavailable."}` and a
+`Retry-After` header supplies the bounded retry delay. The browser waits for a
+valid delay of at most 15 seconds and retries that admitted request once. It
+shows a compact `retrying` lifecycle message while the ranked results remain
+usable; a second `429` or any other terminal discovery failure ends the cycle.
+Terminal optional failure is announced politely to assistive technology and
+does not leave a visible error or refinement card in the results rail.
+
+`fallback_used` is orthogonal to status. When the provider has no usable
+proposal or is unavailable, Snowcast may return one fallback question only if
+the existing typed proposal validator confirms materiality. It tries registered
+factor topics in configured fallback order, resolves their approved answer IDs
+to the same authoritative option copy and typed actions as provider-selected
+questions, derives a semantic question ID from the presentation-policy version,
+and suppresses already answered IDs. It never creates a group-priority question
+or duplicates ranking or materiality logic.
+
+`search-refinement-presentation-1` versions presentation ownership separately
+from `search-v4` and `search-v4-policy-1`. Copy-only changes under a new
+presentation-policy version may change what travellers read, but they do not
+change factor weights, score equations, candidate eligibility, or ranking
+semantics. Every configured fallback question and reason, plus every approved
+answer label and description, passes deterministic public-copy validation when
+the registry loads; unsafe copy cannot become either provider-resolved or
+fallback output.
+
+The fingerprint remains a public SHA-256 integrity digest. Its canonical inputs
+include the applied intent, complete catalog snapshot, trust manifest, ordered
+evaluated candidate states and ranking allocations, Search V4 and
+ranking-policy versions, and the weather-selection policy revision. Ranking
+uses it as the key for a separate bounded snapshot containing the policy,
+compact candidate/constraint/scoring state, and exact evaluator inputs required
+by refinement for every initially eligible configuration, subject to capacity.
+It retains immutable candidate catalog entities, normalized weather rows,
+frozen candidate-scoped trust evidence, and intent-free evaluator context
+templates, but not a full trust manifest, `SearchIntent`, origin text, trip
+brief, provider prompts, responses, or credentials. Ordinary contexts
+containing a variant intent exist only for the duration of an evaluator replay.
+The caller's canonical intent digest must also match; the public fingerprint is
+never trusted alone.
+
+Replay is narrow-only. A proposal is rejected if any option could relax an
+existing synthesized factor `require`; explicit constraint requirements remain
+authoritative, while a new requirement may narrow the retained cohort. For each
+accepted variant, eligibility is resolved before numeric normalization. The
+numeric bounds are then derived exactly once across the variant-eligible cohort
+and shared by every replayed registered evaluator.
+
+The snapshot is actively reclaimed 60 seconds after ranking. The process-local
+LRU store holds at most 64 entries, 2,048 candidate replay states, and 8,192
+unique climatology/forecast rows. A snapshot that cannot fit by itself is not
+retained; this affects optional refinement only, never the ranking. A miss,
+expiry, eviction, capacity rejection, restart, intent mismatch, or candidate
+missing its required replay state returns
+`temporarily_unavailable` without deterministic search, Gemini, or fallback
+generation. This TTL covers only generation of the next question. Once a
+question reaches the browser, its typed answer remains usable after expiry.
+Applying a material answer performs a full rerank, stores a new baseline and
+fingerprint, and requests the next refinement from that fresh baseline.
+Active cleanup retains only bounded, data-free expired-fingerprint tombstones,
+at most the entry limit, so a later handoff lookup still reports `expired`
+rather than `miss`. Cleanup emits the expiry outcome once and the later lookup
+does not double-count it.
+
+Refinement requests are protected before snapshot lookup by app-local admission
+control: at most two concurrent requests and a per-client token bucket of six
+requests per minute with a burst of two. The route uses `Fly-Client-IP` only
+when it is a syntactically valid fixed Fly header; otherwise it uses the direct
+request peer. Client identities are retained only in the bounded in-memory
+guard and are never emitted in metrics or logs. Rejected requests receive a
+generic `429` with `Retry-After`.
+
+The two-worker executor is guarded by a fail-fast circuit. An outer deadline
+releases endpoint admission immediately; if its worker is still unresolved,
+new refinement work is rejected without entering an executor queue until all
+timed-out workers finish. The Gemini transport itself uses the remaining
+deadline, while the circuit covers unexpected non-returning application or
+transport behavior without creating replacement threads.
+
+Endpoint metrics record only bounded final outcomes and `fallback_used`; the
+AI layer records provider-call health separately and does not emit public
+refinement status before fallback handling. Snapshot metrics record only
+bounded lookup, eviction, and capacity-rejection outcomes.
+The store is intentionally valid only for the current single-process
+deployment; multiple web processes require sticky routing, shared state, or a
+redesigned handoff.
 
 ## Factor Policy Visibility
 
@@ -982,12 +1159,10 @@ code changes.
 ## Search V4 Cutover
 
 Search V4 directly replaced the unused Search V3 implementation through
-`POST /api/search`. The web and mobile clients and their tests moved in the same
-cutover. The old GET contract, hardcoded V3 scorer, model-selection flags,
-compatibility code, and V3-only ranking tests were deleted. There is no
-parallel endpoint, shadow comparison, or runtime V3 rollback path. Normal
-source-control revert remains sufficient while the product has no users or
-external consumers.
+`POST /api/search`. The old GET contract, hardcoded V3 scorer, model-selection
+flags, and V3-only ranking tests were deleted. There is no parallel endpoint,
+shadow comparison, or runtime V3 rollback path. The narrow Search V4 request
+field compatibility noted above is temporary and does not preserve V3 behavior.
 
 Golden scenarios define correct V4 behavior; preserving V3 ordering is not an
 acceptance criterion.

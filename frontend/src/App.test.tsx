@@ -1,18 +1,29 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import App from "./App";
 import type {
   SearchIntent,
+  RefinementProposal,
   SearchResponse,
+  SearchV4RefinementRequest,
+  SearchV4RefinementResponse,
   SearchV4Configuration,
+  SearchWeatherEvidenceResponse,
 } from "./types";
 
 const intent: SearchIntent = {
   constraints: {
     location: { country: "France" },
     travel_window: { month: 3 },
+    lodging_budget: {
+      mode: "lodging_nightly",
+      maximum: 320,
+      currency: "EUR",
+      budget_flex: 0.1,
+    },
+    minimum_stay_quality: { minimum_score: (2 / 3) * 10 },
   },
   party: { skill_levels: ["intermediate"] },
   travel_context: {},
@@ -22,7 +33,7 @@ const intent: SearchIntent = {
   assumptions: [],
 };
 
-const configuration: SearchV4Configuration = {
+const tignesConfiguration: SearchV4Configuration = {
   candidate_id: "tignes-access--tignes-pass",
   ski_region_id: "tignes-val-disere",
   ski_region_name: "Tignes - Val d'Isere",
@@ -32,6 +43,7 @@ const configuration: SearchV4Configuration = {
   stay_base_name: "Le Lac",
   ski_area_id: "tignes-ski-area",
   ski_area_name: "Tignes",
+  evidence_profile: "fallback_heavy",
   access: {
     ski_area_access_id: "tignes-access",
     access_mode: "walk",
@@ -40,6 +52,8 @@ const configuration: SearchV4Configuration = {
     distance_m: 250,
     duration_minutes: 4,
     is_direct: true,
+    relationship_trust_status: "verified",
+    access_mode_distance_trust_status: "verified",
   },
   selected_pass: {
     lift_pass_product_id: "tignes-pass",
@@ -47,6 +61,12 @@ const configuration: SearchV4Configuration = {
     validity_scope: "local_multi_area",
     covered_ski_area_ids: ["tignes-ski-area", "val-disere-ski-area"],
     accessible_piste_km: 300,
+    accessible_piste_km_evidence: {
+      trust_status: "verified",
+      scope: "pass",
+      source_entity_id: "tignes-pass",
+      field_group: "pass_accessible_terrain",
+    },
     price: {
       duration_days: 6,
       audience: "adult",
@@ -119,6 +139,7 @@ function response(
   return {
     search_model_version: "search-v4",
     ranking_policy_version: "search-v4-policy-1",
+    baseline_fingerprint: "baseline-1",
     ranking_status: "ranked",
     unscored_reason: null,
     applied_intent: intent,
@@ -126,11 +147,11 @@ function response(
     excluded_candidate_count: 3,
     results: [
       {
-        ski_region_id: configuration.ski_region_id,
-        ski_region_name: configuration.ski_region_name,
+        ski_region_id: tignesConfiguration.ski_region_id,
+        ski_region_name: tignesConfiguration.ski_region_name,
         rank: 1,
-        fit_score: configuration.fit_score,
-        top_configuration: configuration,
+        fit_score: tignesConfiguration.fit_score,
+        top_configuration: tignesConfiguration,
         alternative_configurations: [],
       },
     ],
@@ -139,12 +160,68 @@ function response(
   };
 }
 
+function refinementResponse(
+  updates: Partial<SearchV4RefinementResponse> = {},
+): SearchV4RefinementResponse {
+  return {
+    search_model_version: "search-v4",
+    ranking_policy_version: "search-v4-policy-1",
+    baseline_fingerprint: "baseline-1",
+    baseline_status: "current",
+    refinement_status: "not_needed",
+    fallback_used: false,
+    refinements: [],
+    ...updates,
+    refinement_presentation_policy_version:
+      updates.refinement_presentation_policy_version ??
+      "search-refinement-presentation-1",
+  };
+}
+
+function refinement(questionId: string, question: string): RefinementProposal {
+  return {
+    question_id: questionId,
+    question,
+    reason: "One answer could reorder the top results.",
+    options: [
+      {
+        label: "Prefer this",
+        description: "Apply this preference.",
+        intent_changed: true,
+        group_priority_patches: [],
+        factor_preference_patches: [],
+        objective_patches: [],
+      },
+    ],
+  };
+}
+
 let searchResponses: SearchResponse[];
+let refinementResponses: SearchV4RefinementResponse[];
 let requests: Array<{ url: string; init?: RequestInit }>;
+let pendingLegacyRefinements: SearchResponse["refinements"];
+
+function lastRequest(url: string) {
+  const matching = requests.filter((item) => item.url === url);
+  return matching[matching.length - 1];
+}
+
+const weatherResponse: SearchWeatherEvidenceResponse = {
+  weather_evidence_version: "search-weather-evidence-v1",
+  status: "unavailable",
+  ski_area_id: "tignes-ski-area",
+  evaluated_at: "2026-07-16T12:00:00Z",
+  cache_valid_until: "2099-07-16T12:05:00Z",
+  unavailable_reason: "historical_evidence_unavailable",
+  limitations: ["No supported historical evidence covers this ski area."],
+};
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
+  vi.stubGlobal("scrollTo", vi.fn());
   searchResponses = [response()];
+  refinementResponses = [];
+  pendingLegacyRefinements = [];
   requests = [];
   vi.stubGlobal(
     "fetch",
@@ -155,9 +232,28 @@ beforeEach(() => {
         return new Response(JSON.stringify({ trip: null }), { status: 200 });
       }
       if (url === "/api/search") {
-        return new Response(JSON.stringify(searchResponses.shift() ?? response()), {
+        const nextResponse = searchResponses.shift() ?? response();
+        pendingLegacyRefinements = nextResponse.refinements;
+        return new Response(JSON.stringify(nextResponse), {
           status: 200,
         });
+      }
+      if (url === "/api/search/refinements") {
+        const nextResponse =
+          refinementResponses.shift() ??
+          refinementResponse(
+            pendingLegacyRefinements.length
+              ? {
+                  refinement_status: "questions_available",
+                  refinements: pendingLegacyRefinements,
+                }
+              : {},
+          );
+        pendingLegacyRefinements = [];
+        return new Response(JSON.stringify(nextResponse), { status: 200 });
+      }
+      if (url === "/api/search/weather-evidence") {
+        return new Response(JSON.stringify(weatherResponse), { status: 200 });
       }
       if (url === "/api/parse-query") {
         return new Response(
@@ -183,40 +279,1083 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+async function openFilters(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Adjust filters" }));
+  return screen.getByRole("dialog", { name: "Adjust filters" });
+}
+
+test("renders the accepted homepage command stage", () => {
+  render(<App />);
+
+  expect(
+    screen.getByRole("heading", {
+      name: /conditions-aware ski trips, planned around your window/i,
+    }),
+  ).toBeInTheDocument();
+  expect(screen.getByLabelText("Describe your ski trip")).toBeInTheDocument();
+  expect(screen.getAllByText("Example recommendation")).toHaveLength(1);
+  expect(screen.queryByText(/^Describe$/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/^Review$/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/^Compare$/i)).not.toBeInTheDocument();
+});
+
+test("parses and submits the brief, preserves it, and focuses results", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+
+  const brief = "A snow-reliable intermediate trip in France for March";
+  await user.type(screen.getByLabelText("Describe your ski trip"), brief);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  const resultsHeading = await screen.findByRole("heading", {
+    name: /recommended ski trips/i,
+  });
+  expect(resultsHeading).toHaveFocus();
+  expect(screen.getByLabelText("Trip brief")).toHaveValue(brief);
+  expect(requests.filter((item) => item.url === "/api/parse-query")).toHaveLength(1);
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+});
+
+test("names loading work and disables duplicate homepage submission", async () => {
+  let resolveSearch: ((response: Response) => void) | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ trip: null }), { status: 200 }),
+        );
+      }
+      if (url === "/api/parse-query") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ filters: {}, confidence: 1, unknown_parts: [] }),
+            { status: 200 },
+          ),
+        );
+      }
+      if (url === "/api/search") {
+        return new Promise<Response>((resolve) => {
+          resolveSearch = resolve;
+        });
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(screen.getByLabelText("Describe your ski trip"), "March in France");
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  const loadingButton = await screen.findByRole("button", {
+    name: /finding resorts for your trip/i,
+  });
+  expect(loadingButton).toBeDisabled();
+  await user.click(loadingButton);
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+
+  resolveSearch?.(new Response(JSON.stringify(response()), { status: 200 }));
+  await screen.findByRole("heading", { name: /recommended ski trips/i });
+});
+
+test("opens the labelled filter drawer and restores focus after Escape", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+
+  const trigger = screen.getByRole("button", { name: "Adjust filters" });
+  await user.click(trigger);
+  expect(screen.getByRole("dialog", { name: "Adjust filters" })).toBeInTheDocument();
+
+  await user.keyboard("{Escape}");
+  expect(screen.queryByRole("dialog", { name: "Adjust filters" })).not.toBeInTheDocument();
+  expect(trigger).toHaveFocus();
+});
+
+test("renders removable parsed chips with user-language names", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+
+  const franceChip = screen.getByRole("button", { name: "Remove France" });
+  await user.click(franceChip);
+
+  expect(screen.queryByRole("button", { name: "Remove France" })).not.toBeInTheDocument();
+});
+
+test("keeps origin-based travel ranking visible after removing the hard drive limit", async () => {
+  const originOnlyIntent: SearchIntent = {
+    ...intent,
+    travel_context: { origin_text: "Warsaw", mode: "car" },
+  };
+  const limitedIntent: SearchIntent = {
+    ...originOnlyIntent,
+    constraints: {
+      ...originOnlyIntent.constraints,
+      travel_limit: { maximum_duration_hours: 15, mode: "car" },
+    },
+  };
+  searchResponses = [
+    response({ applied_intent: limitedIntent }),
+    response({ applied_intent: originOnlyIntent }),
+    response(),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await openFilters(user);
+  await user.type(screen.getByLabelText("Origin"), "Warsaw");
+  await user.type(screen.getByLabelText("Hard drive limit"), "15");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByRole("button", { name: "Remove Prefer closer to Warsaw" }),
+  ).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.clear(screen.getByLabelText("Country"));
+  await user.type(screen.getByLabelText("Country"), "Italy");
+  await user.clear(screen.getByLabelText("Origin"));
+  await user.type(screen.getByLabelText("Origin"), "Berlin");
+  await user.selectOptions(screen.getByLabelText("Travel window"), "dates");
+  await user.type(screen.getByLabelText("Trip start date"), "2027-01-16");
+  await user.type(screen.getByLabelText("Trip end date"), "2027-01-20");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  await user.click(
+    screen.getByRole("button", { name: "Remove Max 15 hours by car" }),
+  );
+
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+  const withoutLimit = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[1].init?.body),
+  );
+  expect(withoutLimit.intent.constraints.travel_limit).toBeUndefined();
+  expect(withoutLimit.intent.constraints.location).toEqual({ country: "France" });
+  expect(withoutLimit.intent.constraints.travel_window).toEqual({ month: 3 });
+  expect(withoutLimit.intent.travel_context).toEqual({
+    origin_text: "Warsaw",
+    mode: "car",
+  });
+  expect(
+    screen.getByRole("button", { name: "Remove Prefer closer to Warsaw" }),
+  ).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Country")).toHaveValue("Italy");
+  expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("Hard drive limit")).toHaveValue(null);
+  expect(screen.getByLabelText("Travel window")).toHaveValue("dates");
+  expect(screen.getByLabelText("Trip start date")).toHaveValue("2027-01-16");
+  expect(screen.getByLabelText("Trip end date")).toHaveValue("2027-01-20");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  await user.click(
+    screen.getByRole("button", { name: "Remove Prefer closer to Warsaw" }),
+  );
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  const withoutOrigin = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[2].init?.body),
+  );
+  expect(withoutOrigin.intent.travel_context).toEqual({});
+  expect(withoutOrigin.intent.constraints.travel_limit).toBeUndefined();
+});
+
+test("restores the previous month when Month mode is selected again", async () => {
+  const { travel_window: _travelWindow, ...constraintsWithoutWindow } =
+    intent.constraints;
+  const anytimeIntent: SearchIntent = {
+    ...intent,
+    constraints: constraintsWithoutWindow,
+  };
+  searchResponses = [
+    response(),
+    response({ applied_intent: anytimeIntent }),
+    response(),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("button", { name: "Remove March window" }),
+  );
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.selectOptions(screen.getByLabelText("Travel window"), "month");
+  expect(screen.getByLabelText("Travel month")).toHaveValue("3");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  const restoredMonth = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[2].init?.body),
+  );
+  expect(restoredMonth.intent.constraints.travel_window).toEqual({ month: 3 });
 });
 
 test("posts one typed Search V4 request and renders fit and evidence", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /search and rank/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeInTheDocument();
   expect(screen.getByText("82.4")).toBeInTheDocument();
-  expect(screen.getByText(/300 km pass coverage/i)).toBeInTheDocument();
-  expect(screen.getByText(/EUR 180-255 nightly \(estimated\)/i)).toBeInTheDocument();
+  expect(screen.getByText(/300 km pass-accessible terrain/i)).toBeInTheDocument();
+  expect(screen.getByText(/estimated EUR 180-255\/night/i)).toBeInTheDocument();
   const searchRequest = requests.find((item) => item.url === "/api/search");
   expect(searchRequest?.init?.method).toBe("POST");
   const body = JSON.parse(String(searchRequest?.init?.body));
-  expect(body.intent.constraints.location).toEqual({ country: "France" });
-  expect(body.intent.party.skill_levels).toEqual(["intermediate"]);
-  expect(body.intent.objectives[0].factor_id).toBe("pass_terrain_value");
-  expect(body.generate_refinements).toBe(true);
+  expect(body).toEqual({ intent });
 
-  await user.click(screen.getByRole("button", { name: /why this fit/i }));
-  expect(screen.getByText(/source-backed piste difficulty/i)).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/show scoring details/i)).toBeInTheDocument();
   expect(screen.getByText("Unknown")).toBeInTheDocument();
+});
+
+test("renders ranking before a separate refinement request resolves", async () => {
+  let resolveRefinement: ((response: Response) => void) | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ trip: null }), { status: 200 }),
+        );
+      }
+      if (url === "/api/search") {
+        return Promise.resolve(
+          new Response(JSON.stringify(response()), { status: 200 }),
+        );
+      }
+      if (url === "/api/search/refinements") {
+        return new Promise<Response>((resolve) => {
+          resolveRefinement = resolve;
+        });
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(
+    screen.getByText("Checking whether one answer could improve this ranking.", {
+      selector: ".contextual-refinement > p",
+    }),
+  ).toBeVisible();
+  const searchRequest = requests.find((item) => item.url === "/api/search");
+  expect(JSON.parse(String(searchRequest?.init?.body))).toEqual({ intent });
+  const refinementRequest = requests.find(
+    (item) => item.url === "/api/search/refinements",
+  );
+  expect(JSON.parse(String(refinementRequest?.init?.body))).toEqual({
+    intent,
+    brief: null,
+    baseline_fingerprint: "baseline-1",
+    already_answered_question_ids: [],
+  });
+
+  resolveRefinement?.(
+    new Response(
+      JSON.stringify(
+        refinementResponse({
+          refinement_status: "questions_available",
+          refinements: [refinement("focus-safe", "What matters most?")],
+        }),
+      ),
+      { status: 200 },
+    ),
+  );
+  await waitFor(() => {
+    expect(
+      screen.queryByText("Checking whether one answer could improve this ranking."),
+    ).not.toBeInTheDocument();
+  });
+  expect(
+    screen.getByRole("heading", { level: 2, name: "What matters most?" }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("heading", { name: "Recommended ski trips" }),
+  ).toHaveFocus();
+});
+
+test("skips refinement discovery when no result is eligible", async () => {
+  searchResponses = [
+    response({ eligible_candidate_count: 0, results: [] }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByRole("heading", {
+      name: /no trip matches every hard constraint/i,
+    }),
+  ).toBeVisible();
+  expect(
+    requests.some((item) => item.url === "/api/search/refinements"),
+  ).toBe(false);
+  expect(screen.queryByText(/no follow-up/i)).toBeNull();
+});
+
+test("keeps ranked results when refinement discovery is rate limited", async () => {
+  refinementResponses = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        return new Response(
+          JSON.stringify({ detail: "Too many refinement requests." }),
+          { status: 429 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
+  expect(
+    screen.queryByText(/snowcast is temporarily unavailable/i),
+  ).not.toBeInTheDocument();
+});
+
+test("retries one admitted refinement request after Retry-After without replacing results", async () => {
+  vi.useFakeTimers();
+  let refinementCount = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementCount += 1;
+        if (refinementCount === 1) {
+          return new Response(JSON.stringify({ detail: "Admission limited." }), {
+            status: 429,
+            headers: { "Retry-After": "10" },
+          });
+        }
+        return new Response(
+          JSON.stringify(
+            refinementResponse({
+              refinement_status: "questions_available",
+              refinements: [refinement("retry-question", "Which trade-off matters?")],
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  render(<App />);
+
+  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  await act(() => vi.advanceTimersByTimeAsync(0));
+
+  expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(
+    screen.getByText(
+      "Snowcast is waiting a moment before checking for another useful question.",
+      { selector: ".contextual-refinement > p" },
+    ),
+  ).toBeVisible();
+  expect(screen.getByRole("button", { name: "Adjust" })).toBeEnabled();
+  expect(refinementCount).toBe(1);
+
+  await act(() => vi.advanceTimersByTimeAsync(9_999));
+  expect(refinementCount).toBe(1);
+  await act(() => vi.advanceTimersByTimeAsync(1));
+
+  expect(screen.getByRole("heading", { name: "Which trade-off matters?" })).toBeVisible();
+  expect(refinementCount).toBe(2);
+  const bodies = requests
+    .filter((item) => item.url === "/api/search/refinements")
+    .map((item) => JSON.parse(String(item.init?.body)));
+  expect(bodies).toHaveLength(2);
+  expect(bodies[1]).toEqual(bodies[0]);
+});
+
+test("a new ranking aborts a pending refinement retry before its search resolves", async () => {
+  vi.useFakeTimers();
+  let searchCount = 0;
+  let resolveSecondSearch: ((response: Response) => void) | undefined;
+  const refinementBodies: SearchV4RefinementRequest[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        searchCount += 1;
+        const requestIntent = JSON.parse(String(init?.body)).intent as SearchIntent;
+        const searchResponse = new Response(
+          JSON.stringify(
+            response({
+              baseline_fingerprint: `baseline-${searchCount}`,
+              applied_intent: requestIntent,
+            }),
+          ),
+          { status: 200 },
+        );
+        if (searchCount === 2) {
+          return new Promise<Response>((resolve) => {
+            resolveSecondSearch = resolve;
+          });
+        }
+        return searchResponse;
+      }
+      if (url === "/api/search/refinements") {
+        const body = JSON.parse(String(init?.body)) as SearchV4RefinementRequest;
+        refinementBodies.push(body);
+        if (body.baseline_fingerprint === "baseline-1") {
+          if (
+            refinementBodies.filter(
+              (candidate) => candidate.baseline_fingerprint === "baseline-1",
+            ).length === 1
+          ) {
+            return new Response(JSON.stringify({ detail: "Admission limited." }), {
+              status: 429,
+              headers: { "Retry-After": "10" },
+            });
+          }
+          return new Response(
+            JSON.stringify(
+              refinementResponse({
+                refinement_status: "questions_available",
+                refinements: [refinement("old-question", "Outdated question?")],
+              }),
+            ),
+            { status: 200 },
+          );
+        }
+        return new Response(
+          JSON.stringify(
+            refinementResponse({
+              baseline_fingerprint: "baseline-2",
+              refinement_status: "not_needed",
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  render(<App />);
+
+  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  screen.getByText(
+    "Snowcast is waiting a moment before checking for another useful question.",
+    { selector: ".contextual-refinement > p" },
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /remove optimize terrain per pass price/i }),
+  );
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  expect(searchCount).toBe(2);
+  await act(() => vi.advanceTimersByTimeAsync(10_000));
+
+  expect(
+    refinementBodies.filter((body) => body.baseline_fingerprint === "baseline-1"),
+  ).toHaveLength(1);
+  expect(screen.queryByText("Outdated question?")).not.toBeInTheDocument();
+
+  resolveSecondSearch?.(
+    new Response(
+      JSON.stringify(
+        response({
+          baseline_fingerprint: "baseline-2",
+          applied_intent: {
+            ...intent,
+            objectives: [],
+          },
+        }),
+      ),
+      { status: 200 },
+    ),
+  );
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  expect(
+    refinementBodies.filter((body) => body.baseline_fingerprint === "baseline-2"),
+  ).toHaveLength(1);
+});
+
+test("unmount aborts a pending refinement retry", async () => {
+  vi.useFakeTimers();
+  let refinementCount = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementCount += 1;
+        return new Response(JSON.stringify({ detail: "Admission limited." }), {
+          status: 429,
+          headers: { "Retry-After": "10" },
+        });
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const view = render(<App />);
+
+  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  screen.getByText(
+    "Snowcast is waiting a moment before checking for another useful question.",
+    { selector: ".contextual-refinement > p" },
+  );
+  view.unmount();
+  await act(() => vi.advanceTimersByTimeAsync(10_000));
+
+  expect(refinementCount).toBe(1);
+});
+
+test("a second admission limit terminates the single retry cycle", async () => {
+  vi.useFakeTimers();
+  let refinementCount = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementCount += 1;
+        return new Response(JSON.stringify({ detail: "Admission limited." }), {
+          status: 429,
+          headers: { "Retry-After": "1" },
+        });
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  render(<App />);
+
+  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  screen.getByText(
+    "Snowcast is waiting a moment before checking for another useful question.",
+    { selector: ".contextual-refinement > p" },
+  );
+  await act(() => vi.advanceTimersByTimeAsync(1_000));
+
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(refinementCount).toBe(2);
+  await act(() => vi.advanceTimersByTimeAsync(20_000));
+  expect(refinementCount).toBe(2);
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
+});
+
+test.each(["long Retry-After", "network failure"] as const)(
+  "does not retry a terminal %s",
+  async (failure) => {
+    let refinementCount = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === "/api/current-trip") {
+          return new Response(JSON.stringify({ trip: null }), { status: 200 });
+        }
+        if (url === "/api/search") {
+          return new Response(JSON.stringify(response()), { status: 200 });
+        }
+        if (url === "/api/search/refinements") {
+          refinementCount += 1;
+          if (failure === "network failure") throw new TypeError("offline");
+          return new Response(JSON.stringify({ detail: "Admission limited." }), {
+            status: 429,
+            headers: { "Retry-After": "16" },
+          });
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "No additional refinement is available right now. Your results are unchanged.",
+    );
+    expect(refinementCount).toBe(1);
+    expect(document.querySelector(".contextual-refinement")).toBeNull();
+  },
+);
+
+test("keeps refinement validation details out of the traveller-facing UI", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        return new Response(
+          JSON.stringify({
+            detail: [
+              {
+                loc: ["body", "intent", "constraints", "travel_window", "mode"],
+                msg: "Extra inputs are not permitted",
+              },
+            ],
+          }),
+          { status: 422 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
+  expect(screen.queryByText(/extra inputs are not permitted/i)).not.toBeInTheDocument();
+});
+
+test("shows the slow refinement message without blocking the ranking", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  let resolveRefinement: ((response: Response) => void) | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ trip: null }), { status: 200 }),
+        );
+      }
+      if (url === "/api/search") {
+        return Promise.resolve(
+          new Response(JSON.stringify(response()), { status: 200 }),
+        );
+      }
+      if (url === "/api/search/refinements") {
+        return new Promise<Response>((resolve) => {
+          resolveRefinement = resolve;
+        });
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    }),
+  );
+  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+
+  await act(() => vi.advanceTimersByTimeAsync(2_500));
+
+  expect(
+    screen.getByText(
+      "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
+      { selector: ".contextual-refinement > p" },
+    ),
+  ).toBeVisible();
+  resolveRefinement?.(
+    new Response(JSON.stringify(refinementResponse()), { status: 200 }),
+  );
+  await act(() => vi.runAllTimersAsync());
+});
+
+test("suppresses questions for a stale baseline or ranking policy", async () => {
+  refinementResponses = [
+    refinementResponse({
+      ranking_policy_version: "search-v4-policy-newer",
+      baseline_fingerprint: "baseline-stale",
+      baseline_status: "stale",
+      refinement_status: "questions_available",
+      refinements: [refinement("stale-question", "Should not appear?")],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(
+    await screen.findByText("A newer ranking replaced this refinement check.", {
+      selector: ".contextual-refinement > p",
+    }),
+  ).toBeVisible();
+  expect(screen.queryByText("Should not appear?")).not.toBeInTheDocument();
+});
+
+test("keeps ranking usable when a timed-out refinement baseline is unverified", async () => {
+  refinementResponses = [
+    refinementResponse({
+      baseline_status: "unverified",
+      refinement_status: "temporarily_unavailable",
+      refinements: [],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
+  expect(
+    screen.queryByText("A newer ranking replaced this refinement check."),
+  ).not.toBeInTheDocument();
+});
+
+test("does not retry a current-baseline provider temporarily unavailable response", async () => {
+  let refinementCount = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementCount += 1;
+        return new Response(
+          JSON.stringify(
+            refinementResponse({
+              baseline_status: "current",
+              refinement_status: "temporarily_unavailable",
+              refinements: [],
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "No additional refinement is available right now. Your results are unchanged.",
+  );
+  expect(refinementCount).toBe(1);
+  expect(document.querySelector(".contextual-refinement")).toBeNull();
+});
+
+test("aborts and ignores a superseded refinement response", async () => {
+  let firstRefinementResolve: ((response: Response) => void) | undefined;
+  const refinementSignals: AbortSignal[] = [];
+  let searchCount = 0;
+  let refinementCount = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ trip: null }), { status: 200 }),
+        );
+      }
+      if (url === "/api/search") {
+        searchCount += 1;
+        const requestIntent = JSON.parse(String(init?.body)).intent as SearchIntent;
+        return Promise.resolve(
+          new Response(
+            JSON.stringify(
+              response({
+                baseline_fingerprint: `baseline-${searchCount}`,
+                applied_intent: requestIntent,
+              }),
+            ),
+            { status: 200 },
+          ),
+        );
+      }
+      if (url === "/api/search/refinements") {
+        refinementCount += 1;
+        if (refinementCount === 1) {
+          if (init?.signal) refinementSignals.push(init.signal);
+          return new Promise<Response>((resolve) => {
+            firstRefinementResolve = resolve;
+          });
+        }
+        return Promise.resolve(
+          new Response(
+            JSON.stringify(
+              refinementResponse({
+                baseline_fingerprint: "baseline-2",
+                refinement_status: "questions_available",
+                refinements: [refinement("new-question", "Newest question?")],
+              }),
+            ),
+            { status: 200 },
+          ),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  await user.click(
+    screen.getByRole("button", {
+      name: /remove optimize terrain per pass price/i,
+    }),
+  );
+
+  expect(await screen.findByText("Newest question?")).toBeVisible();
+  expect(refinementSignals[0]?.aborted).toBe(true);
+
+  firstRefinementResolve?.(
+    new Response(
+      JSON.stringify(
+        refinementResponse({
+          refinement_status: "questions_available",
+          refinements: [refinement("old-question", "Outdated question?")],
+        }),
+      ),
+      { status: 200 },
+    ),
+  );
+  await waitFor(() => {
+    expect(screen.queryByText("Outdated question?")).not.toBeInTheDocument();
+  });
+});
+
+test("renders readable FastAPI validation details for a failed search", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(
+          JSON.stringify({
+            detail: [
+              {
+                loc: ["body", "intent", "constraints", "travel_window"],
+                msg: "Choose a valid travel window",
+                type: "value_error",
+              },
+            ],
+          }),
+          { status: 422 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByRole("alert"),
+  ).toHaveTextContent("Travel window: Choose a valid travel window");
+});
+
+test("bounds the separate refinement brief at 2000 characters", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+  fireEvent.change(screen.getByLabelText("Describe your ski trip"), {
+    target: { value: "x".repeat(2_100) },
+  });
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  await waitFor(() => {
+    expect(
+      requests.some((item) => item.url === "/api/search/refinements"),
+    ).toBe(true);
+  });
+  const request = requests.find(
+    (item) => item.url === "/api/search/refinements",
+  );
+  expect(JSON.parse(String(request?.init?.body)).brief).toHaveLength(2_000);
+});
+
+test("opens the selected candidate dossier without rerunning search and saves it", async () => {
+  const alternative = {
+    ...tignesConfiguration,
+    candidate_id: "tignes-access--local-pass",
+    selected_pass: {
+      ...tignesConfiguration.selected_pass,
+      lift_pass_product_id: "local-pass",
+      name: "Tignes local pass",
+    },
+  };
+  searchResponses = [
+    response({
+      results: [
+        {
+          ...response().results[0],
+          alternative_configurations: [alternative],
+        },
+      ],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    screen.getByRole("button", { name: /select le lac with tignes local pass/i }),
+  );
+  await user.click(screen.getByRole("link", { name: "View dossier" }));
+
+  expect(window.location.pathname).toBe("/recommendations/tignes-val-disere");
+  expect(window.location.search).toBe("?candidate=tignes-access--local-pass");
+  expect(
+    await screen.findByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
+  ).toBeInTheDocument();
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+  await screen.findByRole("heading", { name: "Snow evidence unavailable" });
+  const weatherRequest = requests.find(
+    (item) => item.url === "/api/search/weather-evidence",
+  );
+  expect(weatherRequest?.init?.method).toBe("POST");
+  expect(JSON.parse(String(weatherRequest?.init?.body))).toEqual({
+    intent,
+    ski_area_id: "tignes-ski-area",
+  });
+
+  await user.click(screen.getByRole("button", { name: "Save as current trip" }));
+  const saveRequest = requests.find(
+    (item) => item.url === "/api/current-trip" && item.init?.method === "PUT",
+  );
+  expect(JSON.parse(String(saveRequest?.init?.body)).lift_pass_product_id).toBe(
+    "local-pass",
+  );
+});
+
+test("restores result state and scroll after returning from a dossier", async () => {
+  const user = userEvent.setup();
+  Object.defineProperty(window, "scrollY", { configurable: true, value: 428 });
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("link", { name: "View dossier" }));
+  await screen.findByRole("heading", { name: /tignes - val d'isere - le lac/i });
+  await user.click(screen.getByRole("button", { name: "All results" }));
+
+  expect(await screen.findByRole("heading", { name: /recommended ski trips/i })).toBeVisible();
+  await waitFor(() => expect(window.scrollTo).toHaveBeenCalledWith(0, 428));
+  expect(
+    screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
+  ).toHaveAttribute("aria-expanded", "true");
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+});
+
+test("recovers a direct dossier route without browser-session search state", async () => {
+  window.history.replaceState(
+    null,
+    "",
+    "/recommendations/tignes-val-disere?candidate=missing",
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Run a search first" })).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Return to search" }));
+  expect(window.location.pathname).toBe("/");
+  expect(screen.getByLabelText("Describe your ski trip")).toBeVisible();
+  expect(requests.some((item) => item.url === "/api/search")).toBe(false);
 });
 
 test("exact dates take precedence in the POST intent", async () => {
   const user = userEvent.setup();
   render(<App />);
 
+  await openFilters(user);
   await user.selectOptions(screen.getByLabelText("Travel window"), "dates");
   await user.type(screen.getByLabelText("Trip start date"), "2027-01-16");
   await user.type(screen.getByLabelText("Trip end date"), "2027-01-20");
-  await user.click(screen.getByRole("button", { name: /search and rank/i }));
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   await screen.findByText("Tignes - Val d'Isere");
   const searchRequest = requests.find((item) => item.url === "/api/search");
@@ -229,49 +1368,62 @@ test("exact dates take precedence in the POST intent", async () => {
 });
 
 test("rejects invalid hard numeric filters instead of silently omitting them", async () => {
+  const user = userEvent.setup();
   render(<App />);
 
+  await openFilters(user);
   const maxNightly = screen.getByLabelText("Max nightly");
   const maxDriveHours = screen.getByLabelText("Hard drive limit");
-  const searchForm = screen
-    .getByRole("button", { name: /search and rank/i })
-    .closest("form");
-  expect(searchForm).not.toBeNull();
   expect(maxNightly).toHaveAttribute("min", "0.01");
   expect(maxNightly).toHaveAttribute("step", "0.01");
   expect(maxDriveHours).toHaveAttribute("min", "0.1");
   expect(maxDriveHours).toHaveAttribute("step", "0.1");
 
   fireEvent.change(maxNightly, { target: { value: "0" } });
-  fireEvent.submit(searchForm as HTMLFormElement);
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
     await screen.findByText("Maximum nightly price must be greater than 0."),
   ).toBeInTheDocument();
   expect(requests.some((item) => item.url === "/api/search")).toBe(false);
 
-  fireEvent.change(maxNightly, { target: { value: "250" } });
-  fireEvent.change(maxDriveHours, { target: { value: "12.5" } });
-  fireEvent.submit(searchForm as HTMLFormElement);
+  await openFilters(user);
+  fireEvent.change(screen.getByLabelText("Max nightly"), {
+    target: { value: "250" },
+  });
+  fireEvent.change(screen.getByLabelText("Hard drive limit"), {
+    target: { value: "12.5" },
+  });
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
     await screen.findByText("Provide an origin to use a hard drive limit."),
   ).toBeInTheDocument();
   expect(requests.some((item) => item.url === "/api/search")).toBe(false);
 
+  await openFilters(user);
   fireEvent.change(screen.getByLabelText("Origin"), {
     target: { value: "Berlin" },
   });
-  fireEvent.change(maxDriveHours, { target: { value: "-1" } });
-  fireEvent.submit(searchForm as HTMLFormElement);
+  fireEvent.change(screen.getByLabelText("Hard drive limit"), {
+    target: { value: "-1" },
+  });
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
     await screen.findByText("Hard drive limit must be greater than 0 hours."),
   ).toBeInTheDocument();
   expect(requests.some((item) => item.url === "/api/search")).toBe(false);
 
-  fireEvent.change(maxDriveHours, { target: { value: "12.5" } });
-  fireEvent.submit(searchForm as HTMLFormElement);
+  await openFilters(user);
+  fireEvent.change(screen.getByLabelText("Hard drive limit"), {
+    target: { value: "12.5" },
+  });
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   await screen.findByText("Tignes - Val d'Isere");
   const searchRequest = requests.find((item) => item.url === "/api/search");
@@ -280,7 +1432,7 @@ test("rejects invalid hard numeric filters instead of silently omitting them", a
   expect(body.intent.constraints.travel_limit.maximum_duration_hours).toBe(12.5);
 });
 
-test("applies a validated dynamic refinement and immediately reruns", async () => {
+test("previews a validated dynamic refinement before applying it", async () => {
   searchResponses = [
     response({
       refinements: [
@@ -292,6 +1444,7 @@ test("applies a validated dynamic refinement and immediately reruns", async () =
             {
               label: "Lively après",
               description: "Prefer a lively local après profile.",
+              intent_changed: true,
               group_priority_patches: [],
               factor_preference_patches: [
                 {
@@ -306,6 +1459,7 @@ test("applies a validated dynamic refinement and immediately reruns", async () =
             {
               label: "Quiet base",
               description: "Prefer a quiet local pace.",
+              intent_changed: true,
               group_priority_patches: [],
               factor_preference_patches: [
                 {
@@ -321,12 +1475,30 @@ test("applies a validated dynamic refinement and immediately reruns", async () =
         },
       ],
     }),
+    response({
+      applied_intent: {
+        ...intent,
+        factor_preferences: [
+          {
+            factor_id: "local_apres",
+            mode: "prefer",
+            values: ["lively"],
+            importance: "normal",
+          },
+        ],
+      },
+    }),
     response(),
   ];
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /search and rank/i }));
-  expect(await screen.findByText(/would you prefer lively après/i)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  expect(
+    await screen.findByRole("heading", {
+      level: 2,
+      name: /would you prefer lively après/i,
+    }),
+  ).toBeInTheDocument();
 
   let resolveRefinedSearch: ((value: Response) => void) | undefined;
   vi.stubGlobal(
@@ -344,15 +1516,47 @@ test("applies a validated dynamic refinement and immediately reruns", async () =
       );
     }),
   );
-  const livelyOption = screen.getByRole("button", { name: "Lively après" });
+  const livelyOption = screen.getByRole("radio", { name: /lively après/i });
   await user.click(livelyOption);
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+  expect(
+    screen.getByText("This changes how your current matches are evaluated."),
+  ).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
   expect(livelyOption).toBeDisabled();
+  expect(screen.getByRole("heading", { name: /tignes - val d'isere/i })).toBeVisible();
+  expect(
+    screen.getByText(/reranking these recommendations/i),
+  ).toBeInTheDocument();
+  expect(
+    requests.filter((item) => item.url === "/api/search/refinements"),
+  ).toHaveLength(1);
   resolveRefinedSearch?.(
-    new Response(JSON.stringify(response()), { status: 200 }),
+    new Response(
+      JSON.stringify(
+        response({
+          applied_intent: {
+            ...intent,
+            factor_preferences: [
+              {
+                factor_id: "local_apres",
+                mode: "prefer",
+                values: ["lively"],
+                importance: "normal",
+              },
+            ],
+          },
+        }),
+      ),
+      { status: 200 },
+    ),
   );
 
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+    expect(
+      requests.filter((item) => item.url === "/api/search/refinements"),
+    ).toHaveLength(2);
   });
   const body = JSON.parse(
     String(requests.filter((item) => item.url === "/api/search")[1].init?.body),
@@ -365,8 +1569,601 @@ test("applies a validated dynamic refinement and immediately reruns", async () =
       importance: "normal",
     },
   ]);
-  expect(body.already_answered_question_ids).toEqual(["evening-style"]);
+  const latestRefinementRequest = lastRequest("/api/search/refinements");
+  expect(
+    JSON.parse(String(latestRefinementRequest?.init?.body))
+      .already_answered_question_ids,
+  ).toEqual(["evening-style"]);
   expect(screen.getByText(/prefer stay-base après: lively/i)).toBeInTheDocument();
+});
+
+test("applies a refinement to the displayed session instead of unsent drawer and brief edits", async () => {
+  const appliedBrief = "Applied March trip from Warsaw";
+  const appliedTravelIntent: SearchIntent = {
+    ...intent,
+    constraints: {
+      ...intent.constraints,
+      travel_limit: { maximum_duration_hours: 15, mode: "car" },
+    },
+    travel_context: { origin_text: "Warsaw", mode: "car" },
+  };
+  const pacePreference = {
+    factor_id: "local_pace",
+    mode: "prefer" as const,
+    values: ["quiet"],
+    importance: "normal" as const,
+  };
+  searchResponses = [
+    response({
+      applied_intent: appliedTravelIntent,
+      refinements: [
+        {
+          question_id: "pace",
+          question: "What pace should your accommodation base have?",
+          reason: "This can change the leading stay base.",
+          options: [
+            {
+              label: "Quiet and relaxed",
+              description: "Prefer a calm base.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [pacePreference],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+    response({
+      baseline_fingerprint: "baseline-2",
+      applied_intent: {
+        ...appliedTravelIntent,
+        factor_preferences: [pacePreference],
+      },
+    }),
+    response({
+      baseline_fingerprint: "baseline-3",
+      applied_intent: appliedTravelIntent,
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(screen.getByLabelText("Describe your ski trip"), appliedBrief);
+  await openFilters(user);
+  await user.type(screen.getByLabelText("Origin"), "Warsaw");
+  await user.type(screen.getByLabelText("Hard drive limit"), "15");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("radio", { name: /quiet and relaxed/i }),
+  );
+
+  const tripBrief = screen.getByLabelText("Trip brief");
+  await user.clear(tripBrief);
+  await user.type(tripBrief, "Unsent Italy trip from Berlin");
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.clear(screen.getByLabelText("Country"));
+  await user.type(screen.getByLabelText("Country"), "Italy");
+  await user.clear(screen.getByLabelText("Origin"));
+  await user.type(screen.getByLabelText("Origin"), "Berlin");
+  await user.clear(screen.getByLabelText("Hard drive limit"));
+  await user.type(screen.getByLabelText("Hard drive limit"), "5");
+  await user.click(screen.getByRole("button", { name: "Glacier terrain" }));
+  await user.selectOptions(
+    screen.getByLabelText("Value objective"),
+    "pass_price_per_day",
+  );
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+
+  const rerankBody = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[1].init?.body),
+  );
+  expect(rerankBody.intent.constraints.location).toEqual({ country: "France" });
+  expect(rerankBody.intent.constraints.travel_limit).toEqual({
+    maximum_duration_hours: 15,
+    mode: "car",
+  });
+  expect(rerankBody.intent.travel_context).toEqual({
+    origin_text: "Warsaw",
+    mode: "car",
+  });
+  expect(rerankBody.intent.factor_preferences).toEqual([pacePreference]);
+  expect(rerankBody.intent.objectives).toEqual(intent.objectives);
+  const latestRefinementRequest = JSON.parse(
+    String(lastRequest("/api/search/refinements")?.init?.body),
+  );
+  expect(latestRefinementRequest.brief).toBe(appliedBrief);
+
+  expect(screen.getByLabelText("Trip brief")).toHaveValue(
+    "Unsent Italy trip from Berlin",
+  );
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Country")).toHaveValue("Italy");
+  expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("Hard drive limit")).toHaveValue(5);
+  expect(screen.getByLabelText("Value objective")).toHaveValue(
+    "pass_price_per_day",
+  );
+  expect(screen.getByRole("button", { name: "Glacier terrain" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  expect(screen.getByText(/prefer local pace: quiet/i)).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Undo" }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  const undoBody = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[2].init?.body),
+  );
+  expect(undoBody.intent).toEqual(appliedTravelIntent);
+  expect(screen.getByLabelText("Trip brief")).toHaveValue(
+    "Unsent Italy trip from Berlin",
+  );
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Country")).toHaveValue("Italy");
+  expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("Hard drive limit")).toHaveValue(5);
+  expect(screen.getByLabelText("Value objective")).toHaveValue(
+    "pass_price_per_day",
+  );
+  expect(screen.getByRole("button", { name: "Glacier terrain" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.queryByText(/prefer local pace: quiet/i)).not.toBeInTheDocument();
+});
+
+test("keeps pass-value objectives exclusive through refinement apply and undo", async () => {
+  const terrainObjective = {
+    factor_id: "pass_terrain_value",
+    importance: "normal" as const,
+  };
+  const priceObjective = {
+    factor_id: "pass_price_per_day",
+    importance: "high" as const,
+  };
+  const unrelatedObjective = {
+    factor_id: "terrain_scale",
+    importance: "high" as const,
+  };
+  const appliedIntent = {
+    ...intent,
+    objectives: [terrainObjective, unrelatedObjective],
+  };
+  searchResponses = [
+    response({
+      applied_intent: appliedIntent,
+      refinements: [
+        {
+          question_id: "pass-value",
+          question: "How should pass value influence your search?",
+          reason: "This can reorder the leading recommendations.",
+          options: [
+            {
+              label: "Prefer the lowest daily pass price",
+              description: "Prioritize price per ski day.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [priceObjective],
+            },
+          ],
+        },
+      ],
+    }),
+    response({
+      baseline_fingerprint: "baseline-2",
+      applied_intent: {
+        ...appliedIntent,
+        objectives: [unrelatedObjective, priceObjective],
+      },
+    }),
+    response({
+      baseline_fingerprint: "baseline-3",
+      applied_intent: appliedIntent,
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("radio", {
+      name: /prefer the lowest daily pass price/i,
+    }),
+  );
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+
+  const applyBody = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[1].init?.body),
+  );
+  expect(applyBody.intent.objectives).toEqual([unrelatedObjective, priceObjective]);
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Value objective")).toHaveValue(
+    "pass_price_per_day",
+  );
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  await user.click(screen.getByRole("button", { name: "Undo" }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  const undoBody = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[2].init?.body),
+  );
+  expect(undoBody.intent.objectives).toEqual([terrainObjective, unrelatedObjective]);
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Value objective")).toHaveValue(
+    "pass_terrain_value",
+  );
+});
+
+test("an ordinary successful search clears refinement undo and rank feedback", async () => {
+  const pacePreference = {
+    factor_id: "local_pace",
+    mode: "prefer" as const,
+    values: ["quiet"],
+    importance: "normal" as const,
+  };
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "pace",
+          question: "Would you prefer a quieter base?",
+          reason: "This can change the leading stay base.",
+          options: [
+            {
+              label: "Quiet and relaxed",
+              description: "Prefer a calm base.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [pacePreference],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+    response({
+      baseline_fingerprint: "baseline-2",
+      applied_intent: { ...intent, factor_preferences: [pacePreference] },
+    }),
+    response({
+      baseline_fingerprint: "baseline-3",
+      applied_intent: { ...intent, factor_preferences: [pacePreference] },
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("radio", { name: /quiet and relaxed/i }),
+  );
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+
+  expect(await screen.findByRole("button", { name: "Undo" })).toBeVisible();
+  expect(screen.getAllByText("Ranking unchanged.")[0]).toBeVisible();
+
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument();
+  expect(screen.queryByText("Ranking unchanged.")).not.toBeInTheDocument();
+});
+
+test("preserves previous results and the refinement on a failed rerank", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        return new Response(
+          JSON.stringify(
+            refinementResponse({
+              refinement_status: "questions_available",
+              refinements: [
+                refinement("rerank-question", "Change the ranking?"),
+              ],
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await waitFor(() => {
+    expect(
+      requests.filter((item) => item.url === "/api/search/refinements"),
+    ).toHaveLength(1);
+  });
+  await user.click(await screen.findByRole("radio", { name: /prefer this/i }));
+
+  const refinementRequestsBefore = requests.filter(
+    (item) => item.url === "/api/search/refinements",
+  ).length;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/search") {
+        return new Response(JSON.stringify({ detail: "internal stack trace" }), {
+          status: 500,
+        });
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(screen.getByText("Change the ranking?")).toBeVisible();
+  expect(
+    await screen.findByText(/snowcast is temporarily unavailable/i),
+  ).toBeVisible();
+  expect(
+    requests.filter((item) => item.url === "/api/search/refinements"),
+  ).toHaveLength(refinementRequestsBefore);
+});
+
+test("shows save failures separately while keeping ranked results", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await screen.findByText("Tignes - Val d'Isere");
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip" && init?.method === "PUT") {
+        return new Response(JSON.stringify({ detail: "internal stack trace" }), {
+          status: 500,
+        });
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const card = screen.getByText("Tignes - Val d'Isere").closest("article");
+  await user.click(
+    within(card as HTMLElement).getByRole("button", {
+      name: /save as current trip/i,
+    }),
+  );
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Snowcast is temporarily unavailable. Try again shortly.",
+  );
+  expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(screen.queryByText(/unable to load resort results/i)).not.toBeInTheDocument();
+});
+
+test("preserves refinement objectives and answered state when pass priority changes", async () => {
+  const refinedIntent: SearchIntent = {
+    ...intent,
+    objectives: [
+      ...intent.objectives,
+      { factor_id: "trip_window_snow_fit", importance: "high" },
+    ],
+  };
+  const passPriceIntent: SearchIntent = {
+    ...refinedIntent,
+    objectives: [
+      { factor_id: "trip_window_snow_fit", importance: "high" },
+      { factor_id: "pass_price_per_day", importance: "normal" },
+    ],
+  };
+  const snowOnlyIntent: SearchIntent = {
+    ...refinedIntent,
+    objectives: [{ factor_id: "trip_window_snow_fit", importance: "high" }],
+  };
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "snow-priority",
+          question: "How important is trip-window snow confidence?",
+          reason: "The answer can change the result order.",
+          options: [
+            {
+              label: "Very important",
+              description: "Give snow evidence high importance.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [
+                { factor_id: "trip_window_snow_fit", importance: "high" },
+              ],
+            },
+          ],
+        },
+      ],
+    }),
+    response({ applied_intent: refinedIntent }),
+    response({ applied_intent: passPriceIntent }),
+    response({ applied_intent: snowOnlyIntent }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(await screen.findByRole("radio", { name: /very important/i }));
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.selectOptions(
+    screen.getByLabelText("Value objective"),
+    "pass_price_per_day",
+  );
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.selectOptions(screen.getByLabelText("Value objective"), "");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(4);
+  });
+  const searchBodies = requests
+    .filter((item) => item.url === "/api/search")
+    .map((item) => JSON.parse(String(item.init?.body)));
+  expect(searchBodies[1].intent.objectives).toEqual(refinedIntent.objectives);
+  expect(searchBodies[2].intent.objectives).toEqual(passPriceIntent.objectives);
+  expect(searchBodies[3].intent.objectives).toEqual(snowOnlyIntent.objectives);
+  const latestRefinementRequest = lastRequest("/api/search/refinements");
+  expect(
+    JSON.parse(String(latestRefinementRequest?.init?.body))
+      .already_answered_question_ids,
+  ).toEqual(["snow-priority"]);
+});
+
+test("keeps a no-op refinement local and records it as answered", async () => {
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "pass-balance",
+          question: "Keep the current pass-value balance?",
+          reason: "The baseline remains a valid choice.",
+          options: [
+            {
+              label: "Keep current balance",
+              description: "Keep the current pass-value objective.",
+              intent_changed: false,
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [
+                { factor_id: "pass_terrain_value", importance: "normal" },
+              ],
+              preview: {
+                top_rank_changes: [],
+                eligible_candidate_count_delta: 0,
+              },
+            },
+          ],
+        },
+      ],
+    }),
+    response(),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("radio", { name: /keep current balance/i }),
+  );
+  await user.click(screen.getByRole("button", { name: /keep current ranking/i }));
+
+  expect(screen.getAllByText("Current ranking kept.")[0]).toBeVisible();
+  expect(screen.queryByText(/keep the current pass-value balance/i)).toBeNull();
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+  await waitFor(() => {
+    expect(
+      screen.getByRole("heading", { name: "Recommended ski trips" }),
+    ).toHaveFocus();
+  });
+
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+  const latestRefinementRequest = lastRequest("/api/search/refinements");
+  expect(
+    JSON.parse(String(latestRefinementRequest?.init?.body))
+      .already_answered_question_ids,
+  ).toEqual(["pass-balance"]);
+});
+
+test("guards drawer entry and chip mutations during a delayed rerank", async () => {
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "snow-priority",
+          question: "How important is trip-window snow confidence?",
+          reason: "The answer changes the result order.",
+          options: [
+            {
+              label: "Very important",
+              description: "Give trip viability very high importance.",
+              intent_changed: true,
+              group_priority_patches: [
+                { group_id: "trip_viability", importance: "very_high" },
+              ],
+              factor_preference_patches: [],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(await screen.findByRole("radio", { name: /very important/i }));
+
+  let resolveRerank: ((value: Response) => void) | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/search") {
+        return new Promise<Response>((resolve) => {
+          resolveRerank = resolve;
+        });
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ detail: "Not found" }), { status: 404 }),
+      );
+    }),
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  expect(await screen.findByText(/reranking these recommendations/i)).toBeVisible();
+  expect(screen.getByRole("button", { name: "Adjust" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Remove France" })).toBeDisabled();
+
+  resolveRerank?.(new Response(JSON.stringify(response()), { status: 200 }));
+  await waitFor(() => {
+    expect(screen.queryByText(/reranking these recommendations/i)).not.toBeInTheDocument();
+  });
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  expect(screen.getByLabelText("Country")).toHaveValue("France");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  expect(screen.getByRole("button", { name: "Remove France" })).toBeInTheDocument();
 });
 
 test("lets users remove selected objectives and refinement group priorities", async () => {
@@ -381,6 +2178,7 @@ test("lets users remove selected objectives and refinement group priorities", as
             {
               label: "Very important",
               description: "Give trip viability very high importance.",
+              intent_changed: true,
               group_priority_patches: [
                 { group_id: "trip_viability", importance: "very_high" },
               ],
@@ -390,6 +2188,7 @@ test("lets users remove selected objectives and refinement group priorities", as
             {
               label: "Normal",
               description: "Keep the normal trip viability importance.",
+              intent_changed: false,
               group_priority_patches: [
                 { group_id: "trip_viability", importance: "normal" },
               ],
@@ -400,7 +2199,14 @@ test("lets users remove selected objectives and refinement group priorities", as
         },
       ],
     }),
-    response(),
+    response({
+      applied_intent: {
+        ...intent,
+        group_priorities: [
+          { group_id: "trip_viability", importance: "very_high" },
+        ],
+      },
+    }),
     response(),
   ];
   const user = userEvent.setup();
@@ -411,11 +2217,12 @@ test("lets users remove selected objectives and refinement group priorities", as
   );
   expect(screen.queryByText(/optimize terrain per pass price/i)).not.toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: /search and rank/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
   const firstSearch = requests.find((item) => item.url === "/api/search");
   expect(JSON.parse(String(firstSearch?.init?.body)).intent.objectives).toEqual([]);
 
-  await user.click(await screen.findByRole("button", { name: "Very important" }));
+  await user.click(await screen.findByRole("radio", { name: /very important/i }));
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
   expect(screen.getByText(/trip viability: very_high/i)).toBeInTheDocument();
   await user.click(
     screen.getByRole("button", { name: /remove trip viability: very_high/i }),
@@ -433,10 +2240,14 @@ test("lets users remove selected objectives and refinement group priorities", as
 test("saving a V4 configuration preserves trip entity identities", async () => {
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /search and rank/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
   const card = (await screen.findByText("Tignes - Val d'Isere")).closest("article");
   expect(card).not.toBeNull();
-  await user.click(within(card as HTMLElement).getByRole("button", { name: /save trip/i }));
+  await user.click(
+    within(card as HTMLElement).getByRole("button", {
+      name: /save as current trip/i,
+    }),
+  );
 
   await waitFor(() => {
     expect(
@@ -456,6 +2267,42 @@ test("saving a V4 configuration preserves trip entity identities", async () => {
   });
 });
 
+test("saving displayed results ignores unapplied draft travel dates", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.selectOptions(screen.getByLabelText("Travel window"), "dates");
+  await user.type(screen.getByLabelText("Trip start date"), "2027-04-10");
+  await user.type(screen.getByLabelText("Trip end date"), "2027-04-17");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  const card = (await screen.findByText("Tignes - Val d'Isere")).closest("article");
+  expect(card).not.toBeNull();
+  await user.click(
+    within(card as HTMLElement).getByRole("button", {
+      name: /save as current trip/i,
+    }),
+  );
+
+  await waitFor(() => {
+    expect(
+      requests.some(
+        (item) => item.url === "/api/current-trip" && item.init?.method === "PUT",
+      ),
+    ).toBe(true);
+  });
+  const saveRequest = requests.find(
+    (item) => item.url === "/api/current-trip" && item.init?.method === "PUT",
+  );
+  expect(JSON.parse(String(saveRequest?.init?.body))).toMatchObject({
+    travel_month: 3,
+    trip_start_date: null,
+    trip_end_date: null,
+  });
+});
+
 test("does not present stable unscored order as recommendation strength", async () => {
   searchResponses = [
     response({
@@ -463,12 +2310,12 @@ test("does not present stable unscored order as recommendation strength", async 
       unscored_reason: "no_active_groups",
       results: [
         {
-          ski_region_id: configuration.ski_region_id,
-          ski_region_name: configuration.ski_region_name,
+          ski_region_id: tignesConfiguration.ski_region_id,
+          ski_region_name: tignesConfiguration.ski_region_name,
           rank: 1,
           fit_score: null,
           top_configuration: {
-            ...configuration,
+            ...tignesConfiguration,
             ranking_status: "unscored",
             fit_score: null,
             groups: [],
@@ -482,10 +2329,166 @@ test("does not present stable unscored order as recommendation strength", async 
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /search and rank/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(await screen.findByText("Unranked option")).toBeInTheDocument();
+  expect(await screen.findByText("Unranked")).toBeInTheDocument();
   expect(screen.queryByText("#1")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Show evidence" })).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /why this fit/i })).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /expand tignes/i })).not.toBeInTheDocument();
+});
+
+test("renders grouped recommendations with independent expansion and no raw metadata", async () => {
+  const secondConfiguration: SearchV4Configuration = {
+    ...tignesConfiguration,
+    candidate_id: "les-arcs--paradiski",
+    ski_region_id: "paradiski",
+    ski_region_name: "Les Arcs",
+    stay_destination_id: "les-arcs",
+    stay_destination_name: "Les Arcs",
+    stay_base_id: "arc-1800",
+    stay_base_name: "Arc 1800",
+    ski_area_id: "les-arcs-area",
+    ski_area_name: "Les Arcs",
+    selected_pass: {
+      ...tignesConfiguration.selected_pass,
+      lift_pass_product_id: "paradiski-pass",
+      name: "Paradiski pass",
+    },
+    fit_score: 78.2,
+  };
+  searchResponses = [
+    response({
+      results: [
+        response().results[0],
+        {
+          ski_region_id: "paradiski",
+          ski_region_name: "Les Arcs",
+          rank: 2,
+          fit_score: 78.2,
+          top_configuration: secondConfiguration,
+          alternative_configurations: [],
+        },
+      ],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  const firstToggle = await screen.findByRole("button", {
+    name: /collapse tignes - val d'isere/i,
+  });
+  const secondToggle = screen.getByRole("button", { name: /expand les arcs/i });
+  expect(firstToggle).toHaveAttribute("aria-expanded", "true");
+  expect(secondToggle).toHaveAttribute("aria-expanded", "false");
+
+  await user.click(secondToggle);
+  expect(firstToggle).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByRole("button", { name: /collapse les arcs/i })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  expect(screen.queryByText("search-v4-policy-1")).not.toBeInTheDocument();
+  expect(screen.queryByText(/filtered out/i)).not.toBeInTheDocument();
+});
+
+test("skipping advances the refinement queue without a request", async () => {
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "first",
+          question: "First refinement?",
+          reason: "First reason.",
+          options: [
+            {
+              label: "First option",
+              description: "First tradeoff.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [],
+            },
+          ],
+        },
+        {
+          question_id: "second",
+          question: "Second refinement?",
+          reason: "Second reason.",
+          options: [
+            {
+              label: "Second option",
+              description: "Second tradeoff.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+    response(),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  expect(await screen.findByText("First refinement?")).toBeInTheDocument();
+  expect(screen.queryByText("Second refinement?")).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: /skip for now/i }));
+  expect(screen.queryByText("First refinement?")).not.toBeInTheDocument();
+  expect(screen.getByText("Second refinement?")).toBeInTheDocument();
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+  const latestRefinementRequest = lastRequest("/api/search/refinements");
+  expect(
+    JSON.parse(String(latestRefinementRequest?.init?.body))
+      .already_answered_question_ids,
+  ).toEqual(["first"]);
+});
+
+test("skipping the final refinement returns focus to the results heading", async () => {
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "only-question",
+          question: "What should matter more?",
+          reason: "This choice could change the order.",
+          options: [
+            {
+              label: "Lift access",
+              description: "Prefer closer lifts.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await screen.findByText("What should matter more?");
+
+  await user.click(screen.getByRole("button", { name: /skip for now/i }));
+
+  expect(screen.getByRole("status")).toHaveTextContent(
+    /follow-up skipped. results unchanged/i,
+  );
+  await waitFor(() => {
+    expect(
+      screen.getByRole("heading", { name: "Recommended ski trips" }),
+    ).toHaveFocus();
+  });
 });

@@ -425,13 +425,16 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 ### Routeable app routes vs public stay-destination pages
 - The React app has lightweight client-side routes for `/`,
   `/recommendations/:skiRegionId`, and `/current-trip` without adding a routing
-  dependency.
+  dependency. Navigation uses the browser History API while the active search,
+  selected alternatives, expansions, dossier navigator state, and return scroll
+  position remain in the in-memory React search session.
 - A recommendation route is an app-state route, not a public SEO page. It uses
   the latest search context because detail includes the selected configuration,
   alternatives, travel window, ranking evidence, and parser-derived filters.
-- The latest search context is cached in `sessionStorage` for demo-friendly
-  reloads. Opening a recommendation route without cached context shows a "Run a
-  search first" fallback instead of inventing a generic market detail.
+- Dossier routes are intentionally not reloadable or transferable yet. A reload,
+  direct navigation, or new tab has no in-memory ranked search context and shows
+  the explicit "Run a search first" recovery state instead of reconstructing or
+  inventing a recommendation.
 - Public, crawler-friendly stay-destination pages use
   `/ski-destinations/{stay_destination_id}`.
 - FastAPI registers destination pages, `/sitemap.xml`, and `/robots.txt` before
@@ -461,6 +464,10 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 
 ### Target web UI route boundaries
 - The React web app remains the anonymous planning and demo surface, not the authenticated mobile companion.
+- `lucide-react` is the presentation icon system for the web experience. Icons
+  inside labelled controls are decorative; icon-only controls carry an
+  accessible name and tooltip. Domain charts remain semantic application UI,
+  not Lucide illustrations.
 - Search should open as an editorial command surface, then collapse into a compact command bar after results exist.
 - Manual filter editing belongs in a refine drawer; the primary post-search workspace belongs to recommendation comparison, evidence, and tradeoffs.
 - The post-search decision rail is the place for parsed context, active chips, assumptions, evidence mode, travel effort, and "why this leads" context. This keeps the result board readable while still making the ranking inputs auditable.
@@ -477,6 +484,36 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - Accommodation-option UI requires provider/freshness evidence. Without provider-backed lodging data, show a stay-base estimate and booking handoff rather than property cards.
 - User-facing percentages should be labeled `Trip fit` or `Match score`, not primary `Confidence`. Explanation and evidence quality should carry trust before the score does.
 - Trust language should use one evidence-quality framework: Archive-backed, Forecast-assisted, and Fallback-heavy. Use `Snow reliability` for archive-backed/history views and `Snow outlook` for current/forecast views.
+
+### On-demand dossier weather evidence
+
+- Detailed historical and target-date weather profiles belong to the selected
+  recommendation dossier, not to every configuration in the grouped Search V4
+  response. The full-catalog response duplicated ski-area profiles and exceeded
+  the accepted payload and construction guardrails without changing ranking.
+- `POST /api/search/weather-evidence` accepts the applied typed intent and one
+  canonical ski-area ID. It reuses Search V4's stored climatology and latest
+  complete forecast-head policy, but it does not rerun ranking, call a provider,
+  or invoke an LLM.
+- Refinement impact previews and weather interpretation/provenance summaries
+  are server-owned typed presentation contracts. The browser renders those
+  summaries and never derives rank movement from scores or parses raw factor
+  values to create weather claims.
+- The dossier caches available and typed unavailable responses only for the
+  current browser session by travel window and ski area and only until the
+  server-declared validity time. Forecast-assisted validity follows the earliest
+  selected run expiry; responses without usable forecast evidence revalidate
+  after five minutes. Transport failures remain retryable. Evidence loaded
+  later may be fresher than the original ranking request, so issue times and
+  provenance stay visible.
+- Snow charts use bounded semantic inline SVG with labelled chart roles and an
+  equivalent expandable structured-value table. The visual trend is therefore
+  not the only way to access the underlying dates, depth, snowfall,
+  temperature, and risk values.
+- The representative maximum-shape one-area route measured 32,809 serialized
+  bytes and 7.273 ms warm-domain p95 construction time. This remains the
+  reference measurement for the accepted on-demand boundary.
+- ADR 0014 owns this API and request-path boundary.
 
 ### Direct Gemini API vs LangChain / LangGraph
 - Direct Gemini API behind a small local `LLMClient` seam is the current choice
@@ -1102,6 +1139,65 @@ normalization. Live open lifts, open piste kilometers, snow depth, and current
 operating status should remain a separate operational-status concern with its
 own freshness, observation, and trust model rather than being mixed into static
 catalog curation.
+
+## Search V4 Client And API Boundaries
+
+Search ranking and optional refinement generation are separate request
+lifecycles. `POST /api/search` returns a complete usable ranking and never waits
+for an LLM. After deterministic ranking it stores a typed, lightweight
+evaluated-baseline snapshot in a thread-safe process-local LRU/TTL store. The
+store holds at most 64 entries for 60 seconds and retains only the canonical
+intent SHA-256 digest, not a full `SearchIntent`, origin text, full
+`CatalogSnapshot` or `CatalogTrustManifest`, brief, or provider secrets.
+This exact-view consistency may retain evaluated baseline data for the full
+60-second window; deploy or process restart clears it.
+
+The browser then requests `POST /api/search/refinements` from the canonical
+applied intent and public baseline fingerprint. The endpoint accepts only the
+exact stored snapshot bound to both that fingerprint and the SHA-256 digest
+recomputed from canonical request intent. Canonical serialization supplies the
+equality binding; the store retains neither the full intent nor origin text, and
+no separate typed-equality check occurs. The caller-visible fingerprint is not
+trusted by itself. It never reruns deterministic search. Miss, expiry, eviction,
+process restart, or canonical-intent digest mismatch returns typed
+`temporarily_unavailable` and invokes neither deterministic search nor Gemini.
+Ranking remains usable, and a deliberate ranking refresh creates a new snapshot.
+
+The 60-second TTL is the ranking-to-refinement server handoff window for
+generating a question, not a user answer timeout. A delivered question remains
+answerable after expiry. Applying its typed answer reruns full search with the
+updated intent, stores a new baseline, and immediately requests the next
+refinement from that new snapshot. The process-local design is accepted for the
+current single-instance deployment; horizontal scaling requires sticky routing,
+shared state, or a redesigned handoff. Bounded `hit`, `miss`, `expired`, and
+`evicted` outcomes make the handoff observable without recording intent, brief,
+fingerprint, candidate, or client identifiers. ADR 0015 owns these handoff,
+deadline, local admission, and compatibility rules.
+
+Derived travel-window and lodging-budget values remain plain domain properties,
+not Pydantic request or response fields. The web API client also projects typed
+objects back to request-shaped payloads before search, refinement, or weather
+requests. This explicit boundary prevents a response object from being posted
+back as an accidentally broader request contract.
+
+The LLM may identify useful typed refinement patches, but validated patches are
+the only trusted output. User-visible question, reason, label, and description
+copy is regenerated deterministically from policy-owned labels after validation.
+Access claims likewise require both relationship and distance/mode trust; a
+`needs_source` component cannot render as a positive near-lift claim.
+Recommendation evidence mode is also backend-owned. Search V4 emits
+`archive_backed`, `forecast_assisted`, or `fallback_heavy` from the evaluated
+trip-window snow evidence; React only maps that typed value to traveller copy.
+
+Repeated React interaction semantics live in a deliberately small internal UI
+foundation under `frontend/src/ui`. It owns actions, alerts, async states,
+badges, disclosures, metric tiles, section headers, and segmented tabs. Search
+components retain domain composition and copy; there is no generic card layer
+or full component-framework migration. Snow evidence uses a lazy Recharts
+module over typed API rows, preserves null gaps, and pairs every chart with an
+accessible data table. A failed chart chunk falls back to a compact table of the
+same values. The browser must not interpolate observations or derive new
+weather claims.
 
 ## Concepts Clarified
 

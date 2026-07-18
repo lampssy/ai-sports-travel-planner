@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Literal, Protocol
 
 from app.domain.catalog import (
@@ -92,6 +93,62 @@ class ManifestCatalogEvidenceResolver:
         )
 
 
+CatalogEvidenceKey = tuple[str, str, str]
+
+
+@dataclass(frozen=True)
+class ScopedCatalogEvidenceResolver:
+    """Immutable evidence retained only for fields touched by one search cohort."""
+
+    evidence_by_key: Mapping[CatalogEvidenceKey, ResolvedCatalogEvidence]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "evidence_by_key",
+            MappingProxyType(dict(self.evidence_by_key)),
+        )
+
+    def resolve(
+        self,
+        entity_type: str,
+        entity_id: str,
+        field_group: str,
+    ) -> ResolvedCatalogEvidence:
+        try:
+            return self.evidence_by_key[(entity_type, entity_id, field_group)]
+        except KeyError as error:
+            raise KeyError(
+                "catalog evidence was not captured for refinement replay: "
+                f"{entity_type}/{entity_id}/{field_group}"
+            ) from error
+
+
+class RecordingCatalogEvidenceResolver:
+    """Record exact manifest-backed evidence used by initial evaluation."""
+
+    def __init__(self, delegate: CatalogEvidenceResolver) -> None:
+        self._delegate = delegate
+        self._evidence_by_key: dict[
+            CatalogEvidenceKey,
+            ResolvedCatalogEvidence,
+        ] = {}
+
+    def resolve(
+        self,
+        entity_type: str,
+        entity_id: str,
+        field_group: str,
+    ) -> ResolvedCatalogEvidence:
+        key = (entity_type, entity_id, field_group)
+        evidence = self._delegate.resolve(*key)
+        self._evidence_by_key[key] = evidence
+        return evidence
+
+    def freeze(self) -> ScopedCatalogEvidenceResolver:
+        return ScopedCatalogEvidenceResolver(self._evidence_by_key)
+
+
 @dataclass(frozen=True)
 class StaticFactorCandidate:
     region: SkiRegion
@@ -144,6 +201,19 @@ class _NumericSource:
     entity_type: str | None
     entity_id: str | None
     field_group: str | None
+    warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class AccessibleTerrainSelection:
+    value: float | None
+    scoring_scope: str
+    scoring_entity_ids: tuple[str, ...]
+    source_entity_type: str | None
+    source_entity_id: str | None
+    field_group: str | None
+    summary_scope: Literal["pass", "terrain_domain", "ski_area"] | None
+    evidence: ResolvedCatalogEvidence
     warnings: tuple[str, ...] = ()
 
 
@@ -854,73 +924,118 @@ def _raw_numeric_value(
 
 def _accessible_terrain_source(
     candidate: StaticFactorCandidate,
-    trust_resolver: CatalogEvidenceResolver | None = None,
+    trust_resolver: CatalogEvidenceResolver,
 ) -> _NumericSource:
-    product = candidate.selected_pass
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=trust_resolver,
+    )
+    return _NumericSource(
+        value=selection.value,
+        scope=selection.scoring_scope,
+        entity_ids=selection.scoring_entity_ids,
+        entity_type=selection.source_entity_type,
+        entity_id=selection.source_entity_id,
+        field_group=selection.field_group,
+        warnings=selection.warnings,
+    )
+
+
+def select_accessible_terrain_source(
+    *,
+    product: LiftPassProduct,
+    ski_area: SkiArea,
+    terrain_domains: tuple[TerrainDomain, ...],
+    trust_resolver: CatalogEvidenceResolver,
+) -> AccessibleTerrainSelection:
+    candidates: list[
+        tuple[_NumericSource, Literal["pass", "terrain_domain", "ski_area"]]
+    ] = []
     aggregate = product.pass_accessible_terrain
     if aggregate is not None and aggregate.total_piste_km is not None:
-        source = _NumericSource(
-            value=aggregate.total_piste_km,
-            scope="ski_area_pass_terrain_domain",
-            entity_ids=(
-                product.lift_pass_product_id,
-                candidate.ski_area.ski_area_id,
-            ),
-            entity_type="lift_pass_products",
-            entity_id=product.lift_pass_product_id,
-            field_group="pass_accessible_terrain",
+        candidates.append(
+            (
+                _NumericSource(
+                    value=aggregate.total_piste_km,
+                    scope="ski_area_pass_terrain_domain",
+                    entity_ids=(product.lift_pass_product_id, ski_area.ski_area_id),
+                    entity_type="lift_pass_products",
+                    entity_id=product.lift_pass_product_id,
+                    field_group="pass_accessible_terrain",
+                ),
+                "pass",
+            )
         )
-        if _source_is_usable(source, trust_resolver):
-            return source
     domains = [
         domain
-        for domain in candidate.terrain_domains
+        for domain in terrain_domains
         if domain.terrain_domain_id in product.terrain_domain_ids
         and domain.total_piste_km is not None
     ]
     if len(domains) == 1:
         domain = domains[0]
-        source = _NumericSource(
-            value=domain.total_piste_km,
-            scope="ski_area_pass_terrain_domain",
-            entity_ids=(
-                product.lift_pass_product_id,
-                domain.terrain_domain_id,
-            ),
-            entity_type="terrain_domains",
-            entity_id=domain.terrain_domain_id,
-            field_group="aggregate_terrain",
+        candidates.append(
+            (
+                _NumericSource(
+                    value=domain.total_piste_km,
+                    scope="ski_area_pass_terrain_domain",
+                    entity_ids=(
+                        product.lift_pass_product_id,
+                        domain.terrain_domain_id,
+                    ),
+                    entity_type="terrain_domains",
+                    entity_id=domain.terrain_domain_id,
+                    field_group="aggregate_terrain",
+                ),
+                "terrain_domain",
+            )
         )
-        if _source_is_usable(source, trust_resolver):
-            return source
     if (
         not product.terrain_domain_ids
-        and candidate.ski_area.ski_area_id in product.valid_ski_area_ids
+        and ski_area.ski_area_id in product.valid_ski_area_ids
+        and ski_area.total_piste_km is not None
     ):
-        source = _NumericSource(
-            value=candidate.ski_area.total_piste_km,
-            scope="ski_area_pass_terrain_domain",
-            entity_ids=(
-                product.lift_pass_product_id,
-                candidate.ski_area.ski_area_id,
-            ),
-            entity_type="ski_areas",
-            entity_id=candidate.ski_area.ski_area_id,
-            field_group="terrain_metrics",
-            warnings=("pass aggregate unavailable; selected ski-area terrain used",),
+        candidates.append(
+            (
+                _NumericSource(
+                    value=ski_area.total_piste_km,
+                    scope="ski_area_pass_terrain_domain",
+                    entity_ids=(product.lift_pass_product_id, ski_area.ski_area_id),
+                    entity_type="ski_areas",
+                    entity_id=ski_area.ski_area_id,
+                    field_group="terrain_metrics",
+                    warnings=(
+                        "pass aggregate unavailable; selected ski-area terrain used",
+                    ),
+                ),
+                "ski_area",
+            )
         )
-        if _source_is_usable(source, trust_resolver):
-            return source
-    return _NumericSource(
+    for source, summary_scope in candidates:
+        evidence = _source_evidence_for_resolver(trust_resolver, source)
+        if evidence.cap > 0:
+            return AccessibleTerrainSelection(
+                value=source.value,
+                scoring_scope=source.scope,
+                scoring_entity_ids=source.entity_ids,
+                source_entity_type=source.entity_type,
+                source_entity_id=source.entity_id,
+                field_group=source.field_group,
+                summary_scope=summary_scope,
+                evidence=evidence,
+                warnings=source.warnings,
+            )
+    return AccessibleTerrainSelection(
         value=None,
-        scope="ski_area_pass_terrain_domain",
-        entity_ids=(
-            product.lift_pass_product_id,
-            candidate.ski_area.ski_area_id,
-        ),
-        entity_type=None,
-        entity_id=None,
+        scoring_scope="ski_area_pass_terrain_domain",
+        scoring_entity_ids=(product.lift_pass_product_id, ski_area.ski_area_id),
+        source_entity_type=None,
+        source_entity_id=None,
         field_group=None,
+        summary_scope=None,
+        evidence=ResolvedCatalogEvidence(status="needs_source", source_refs=()),
         warnings=("pass-accessible terrain unresolved",),
     )
 
@@ -1143,16 +1258,6 @@ def _numeric_bounds_evidence_cap(
         ).cap
         return min(price_cap, terrain_cap)
     raise KeyError(factor_id)
-
-
-def _source_is_usable(
-    source: _NumericSource,
-    trust_resolver: CatalogEvidenceResolver | None,
-) -> bool:
-    return (
-        trust_resolver is None
-        or _source_evidence_for_resolver(trust_resolver, source).cap > 0
-    )
 
 
 def _requested_values(intent: SearchIntent, factor_id: str) -> tuple[str, ...]:

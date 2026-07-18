@@ -10,12 +10,16 @@ from app.domain.search_refinement import (
     RefinementOption,
     RefinementProposal,
     RefinementValidationError,
+    _rank_variant,
     apply_refinement_option,
+    option_expands_synthesized_require,
     validate_refinement_proposal,
 )
 from app.domain.search_v4_models import (
     FactorPreferencePatch,
+    FactorRequirement,
     GroupPriorityPatch,
+    SearchConstraints,
     SearchIntent,
     SearchObjective,
 )
@@ -117,6 +121,327 @@ def test_material_group_question_passes_deterministic_impact_gate() -> None:
     assert result.proposal.question_id == "terrain-vs-access"
     assert result.impact.winner_changed is True
     assert result.impact.material is True
+
+
+def test_planning_validation_preserves_precompiled_presentation_copy() -> None:
+    proposal = _material_proposal().model_copy(
+        update={
+            "question": "Verified live snowfall guarantees this result.",
+            "reason": "Invented evidence says this trip is risk free.",
+            "options": (
+                _material_proposal()
+                .options[0]
+                .model_copy(
+                    update={
+                        "label": "Guaranteed powder",
+                        "description": "An unsupported weather promise.",
+                    }
+                ),
+                _material_proposal()
+                .options[1]
+                .model_copy(
+                    update={
+                        "label": "Zero travel effort",
+                        "description": "An unsupported travel promise.",
+                    }
+                ),
+            ),
+        }
+    )
+
+    result = validate_refinement_proposal(
+        proposal=proposal,
+        intent=SearchIntent(),
+        candidates=_candidates(),
+        policy=load_search_policy(),
+    )
+
+    assert result.proposal == proposal
+
+
+def test_validated_refinement_preserves_each_variant_ranking() -> None:
+    validated = validate_refinement_proposal(
+        proposal=_material_proposal(),
+        intent=SearchIntent(),
+        candidates=_candidates(),
+        policy=load_search_policy(),
+    )
+
+    assert len(validated.variant_outcomes) == len(validated.proposal.options)
+    assert validated.variant_outcomes[0].ordered_candidate_ids[0] == "large-far"
+    assert validated.variant_outcomes[1].ordered_candidate_ids[0] == "small-near"
+    assert not hasattr(validated.variant_outcomes[0], "scores")
+
+
+def test_validated_refinement_marks_a_baseline_option_as_intent_unchanged() -> None:
+    current = SearchIntent(
+        group_priorities=(
+            GroupPriorityPatch(group_id="ski_experience", importance="normal"),
+        )
+    )
+    proposal = RefinementProposal(
+        question_id="terrain-priority",
+        question="How much should terrain influence the ranking?",
+        reason="The leading candidates trade terrain against access.",
+        options=(
+            RefinementOption(
+                label="Keep current balance",
+                description="Keep the current ski-experience importance.",
+                group_priority_patches=(
+                    GroupPriorityPatch(
+                        group_id="ski_experience",
+                        importance="normal",
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="Prioritize terrain",
+                description="Give ski experience much more influence.",
+                group_priority_patches=(
+                    GroupPriorityPatch(
+                        group_id="ski_experience",
+                        importance="very_high",
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    validated = validate_refinement_proposal(
+        proposal=proposal,
+        intent=current,
+        candidates=_candidates(),
+        policy=load_search_policy(),
+    )
+
+    assert validated.variant_outcomes[0].intent_changed is False
+    assert validated.variant_outcomes[1].intent_changed is True
+
+
+def test_rank_variant_uses_stored_evaluations_after_false_to_true_eligibility() -> None:
+    candidate = RefinementCandidateState(
+        candidate_id="newly-eligible",
+        evaluations=(
+            _evaluation("trip_window_snow_fit", 0.7),
+            _evaluation("accessible_terrain_scale", 0.8),
+            _evaluation("stay_base_access", 0.6),
+        ),
+        eligible=False,
+        eligibility_evaluator=lambda _intent: True,
+    )
+
+    variant = _rank_variant(
+        intent=SearchIntent(),
+        candidates=(candidate,),
+        policy=load_search_policy(),
+    )
+
+    assert variant.eligible_ids == frozenset({"newly-eligible"})
+    assert variant.ordered_ids == ("newly-eligible",)
+    assert variant.evaluations_by_candidate_id == {
+        "newly-eligible": candidate.evaluations
+    }
+
+
+def test_rank_variant_does_not_replay_true_to_false_excluded_candidate() -> None:
+    replayed_intents: list[SearchIntent] = []
+
+    def replay(intent: SearchIntent) -> tuple[FactorEvaluation, ...]:
+        replayed_intents.append(intent)
+        return (_evaluation("accessible_terrain_scale", 0.8),)
+
+    candidate = RefinementCandidateState(
+        candidate_id="newly-excluded",
+        evaluations=(_evaluation("accessible_terrain_scale", 0.8),),
+        eligible=True,
+        eligibility_evaluator=lambda _intent: False,
+        evaluation_replayer=replay,
+    )
+
+    variant = _rank_variant(
+        intent=SearchIntent(),
+        candidates=(candidate,),
+        policy=load_search_policy(),
+    )
+
+    assert variant.eligible_ids == frozenset()
+    assert variant.ordered_ids == ()
+    assert variant.evaluations_by_candidate_id == {}
+    assert replayed_intents == []
+
+
+def test_refinement_rejects_relaxing_a_synthesized_require() -> None:
+    intent = SearchIntent(
+        factor_preferences=(
+            FactorPreferencePatch(factor_id="night_skiing", mode="require"),
+        )
+    )
+    proposal = RefinementProposal(
+        question_id="relax-night-skiing",
+        question="How important is recurring night skiing?",
+        reason="This preference changes which options remain available.",
+        options=(
+            RefinementOption(
+                label="Prefer it",
+                description="Prefer recurring night skiing.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="night_skiing",
+                        mode="prefer",
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="Keep it required",
+                description="Only keep options with recurring night skiing.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="night_skiing",
+                        mode="require",
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    with pytest.raises(RefinementValidationError, match="widen"):
+        validate_refinement_proposal(
+            proposal=proposal,
+            intent=intent,
+            candidates=_candidates(),
+            policy=load_search_policy(),
+        )
+
+
+def test_explicit_factor_requirement_is_not_treated_as_synthesized_widening() -> None:
+    intent = SearchIntent(
+        constraints=SearchConstraints(
+            factor_requirements=(
+                FactorRequirement(
+                    factor_id="night_skiing",
+                    minimum_trust="verified_with_adjustment",
+                ),
+            )
+        ),
+        factor_preferences=(
+            FactorPreferencePatch(factor_id="night_skiing", mode="require"),
+        ),
+    )
+    proposal = RefinementProposal(
+        question_id="explicit-night-skiing",
+        question="How important is recurring night skiing?",
+        reason="The explicit trip requirement remains authoritative.",
+        options=(
+            RefinementOption(
+                label="Prefer it",
+                description="Prefer recurring night skiing.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="night_skiing",
+                        mode="prefer",
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="Keep it required",
+                description="Only keep options with recurring night skiing.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="night_skiing",
+                        mode="require",
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    try:
+        validate_refinement_proposal(
+            proposal=proposal,
+            intent=intent,
+            candidates=_candidates(),
+            policy=load_search_policy(),
+        )
+    except RefinementValidationError as error:
+        assert "widen" not in str(error)
+
+
+@pytest.mark.parametrize(
+    "option",
+    (
+        RefinementOption(
+            label="Prefer it",
+            description="Prefer a quiet or balanced local pace.",
+            factor_preference_patches=(
+                FactorPreferencePatch(factor_id="local_pace", mode="prefer"),
+            ),
+        ),
+        RefinementOption(
+            label="Ignore it",
+            description="Do not use local pace as a preference.",
+            factor_preference_patches=(
+                FactorPreferencePatch(factor_id="local_pace", mode="ignore"),
+            ),
+        ),
+        RefinementOption(
+            label="Broaden it",
+            description="Allow quiet, balanced, or lively local pace.",
+            factor_preference_patches=(
+                FactorPreferencePatch(
+                    factor_id="local_pace",
+                    mode="require",
+                    values=("quiet", "balanced", "lively"),
+                ),
+            ),
+        ),
+        RefinementOption(
+            label="Optimize it",
+            description="Turn local pace into an objective.",
+            objective_patches=(
+                SearchObjective(factor_id="local_pace", importance="normal"),
+            ),
+        ),
+    ),
+)
+def test_synthesized_require_widening_covers_modes_values_and_objectives(
+    option: RefinementOption,
+) -> None:
+    intent = SearchIntent(
+        factor_preferences=(
+            FactorPreferencePatch(
+                factor_id="local_pace",
+                mode="require",
+                values=("quiet", "balanced"),
+            ),
+        )
+    )
+
+    assert option_expands_synthesized_require(intent, option) is True
+
+
+def test_narrower_require_values_do_not_expand_synthesized_require() -> None:
+    intent = SearchIntent(
+        factor_preferences=(
+            FactorPreferencePatch(
+                factor_id="local_pace",
+                mode="require",
+                values=("quiet", "balanced"),
+            ),
+        )
+    )
+    option = RefinementOption(
+        label="Quiet only",
+        description="Only keep quiet accommodation bases.",
+        factor_preference_patches=(
+            FactorPreferencePatch(
+                factor_id="local_pace",
+                mode="require",
+                values=("quiet",),
+            ),
+        ),
+    )
+
+    assert option_expands_synthesized_require(intent, option) is False
 
 
 def test_apply_option_upserts_typed_patches_without_mutating_original() -> None:

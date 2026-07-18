@@ -156,26 +156,48 @@ Boundaries:
 - Does not make Snowcast a hotel marketplace or inventory owner.
 - Provider-specific behavior stays behind the redirect/link boundary.
 
-### AI Assistance
+### AI Orchestration And Assistance
 
-Owns optional LLM-assisted interpretation at the user-input boundary.
+Owns optional cross-product AI interaction and orchestration across structured
+Snowcast surfaces. It binds registered domain capabilities together without
+absorbing their business logic or becoming a chat-centric product shell.
 
 Primary concepts:
 
 - parsed trip context
+- assistant context
+- assistant interaction
+- clarification opportunity
 - clarification
 - refinement proposal
+- typed capability invocation
+- explicit preference customization
+- retrieved explanatory material
 - deterministic fallback
 - prompt boundary
 
 Boundaries:
 
-- May transform user text into structured context or explain ranked output.
+- May transform user text into structured context, select registered
+  capabilities, explain grounded output, and present typed actions.
+- Structured search, result, dossier, trip, and companion surfaces remain
+  first-class; optional chat is only one possible interaction surface.
 - May dynamically propose which registered factors to clarify, including
   question wording, answer options, and typed preference patches.
 - Does not own ranking, catalog truth, source trust, or provider data fetching.
+- Does not own weather derivation, companion event or alert eligibility,
+  booking handoff, or durable trip and preference persistence.
 - Does not create factor IDs, controlled values, weights, trust, utilities, or
   candidate scores; Planning validates proposed patches and their impact.
+- Retrieves structured current data through typed domain capabilities. Uses
+  document retrieval only for relevant unstructured, source-attributed
+  explanatory material.
+- Reads durable preferences from explicit assistant customization. Search
+  refinements remain search-scoped by default and do not silently update that
+  profile; deliberate trip choices may be trip-scoped. Persistent preferences
+  are user-visible, editable, deletable, and scoped to the authenticated owner.
+- Uses the minimum task-relevant context rather than sending all available user,
+  search, trip, or conversation state to an LLM.
 - Must keep prompts, raw model responses, raw trip briefs, and sensitive user
   data out of logs, metrics, and traces.
 

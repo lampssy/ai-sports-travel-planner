@@ -1,103 +1,218 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 
 import {
+  ApiError,
   clearCurrentTrip,
+  fetchSearchRefinements,
   getCurrentTrip,
   getCurrentTripSummary,
   parseTripBrief,
   saveCurrentTrip,
   searchResorts,
 } from "./api";
-import { SnowcastLogo } from "./ui/SnowcastLogo";
+import {
+  APP_NAVIGATION_EVENT,
+  buildDossierHref,
+  navigate,
+  parseAppRoute,
+  type AppRoute,
+} from "./navigation";
+import { Homepage } from "./search/Homepage";
+import { RecommendationDossier } from "./search/RecommendationDossier";
+import {
+  SearchCommandHeader,
+} from "./search/SearchCommandHeader";
+import { RecommendationBoard } from "./search/RecommendationBoard";
+import { SearchFiltersDrawer } from "./search/SearchFiltersDrawer";
+import {
+  buildParsedChips,
+  type ParsedChip,
+} from "./search/searchPresentation";
+import {
+  buildSearchIntent,
+  createSearchSession,
+  defaultSearchFilters,
+  dismissRefinement,
+  findSelectedCandidate,
+  isPassValueObjective,
+  mergeObjectivePatches,
+  mergeParsedFilters,
+  rankChangeSummary,
+  reconcileSearchSession,
+  replaceRefinements,
+  upsertBy,
+  validateSearchFilters,
+  type SearchSession,
+  type RefinementLifecycleStatus,
+} from "./search/searchSession";
 import type {
   CurrentTrip,
   CurrentTripSummary,
   FactorPreferencePatch,
   GroupPriorityPatch,
-  ParsedQueryResponse,
   RefinementOption,
   SearchFilters,
   SearchIntent,
   SearchObjective,
-  SearchResponse,
+  SearchV4RefinementResponse,
   SearchV4Configuration,
-  SearchV4RecommendationGroup,
-  TravelMonth,
 } from "./types";
+import { AppShell, CurrentTripView } from "./ui/AppShell";
 
-const monthOptions = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+interface PreviousSearchState {
+  brief: string;
+  filters: SearchFilters;
+  intent: SearchIntent;
+  assumptions: string[];
+  preferences: FactorPreferencePatch[];
+  groupPriorities: GroupPriorityPatch[];
+  objectives: SearchObjective[];
+  answeredQuestionIds: string[];
+  editorBefore: RefinementEditorPatchState;
+  editorAfter: RefinementEditorPatchState;
+}
 
-const featureOptions = [
-  ["marked_freeride_routes", "Marked freeride routes"],
-  ["snow_park", "Snow park"],
-  ["night_skiing", "Night skiing"],
-  ["glacier_terrain", "Glacier terrain"],
-  ["snowmaking_availability", "Snowmaking resilience"],
-  ["terrain_potential_scale", "Largest connected terrain"],
-  ["lift_network_scale", "Large lift network"],
-] as const;
+interface RefinementEditorPatchState {
+  valueObjective: SearchFilters["valueObjective"];
+  preferences: FactorPreferencePatch[];
+  groupPriorities: GroupPriorityPatch[];
+  objectives: SearchObjective[];
+}
 
-const factorLabels: Record<string, string> = {
-  accessible_terrain_scale: "Pass-accessible terrain",
-  party_skill_coverage: "Party skill fit",
-  terrain_potential_scale: "Connected terrain",
-  lift_network_scale: "Lift network",
-  marked_freeride_routes: "Marked freeride routes",
-  snow_park: "Snow park",
-  night_skiing: "Night skiing",
-  glacier_terrain: "Glacier terrain",
-  snowmaking_availability: "Snowmaking resilience",
-  stay_base_access: "Stay-base access",
-  pass_price_per_day: "Pass price per day",
-  pass_terrain_value: "Terrain per pass price",
-  ski_day_apres: "On-mountain après",
-  local_apres: "Stay-base après",
-  local_pace: "Local pace",
-  development_style: "Development style",
-  base_type: "Base type",
-  travel_effort: "Travel effort",
-  trip_window_snow_fit: "Trip-window snow fit",
-};
+interface FetchSearchOptions {
+  exactIntent?: SearchIntent;
+  syncEditorFromResponse?: boolean;
+}
 
-const groupLabels: Record<string, string> = {
-  trip_viability: "Trip viability",
-  ski_experience: "Ski experience",
-  stay_practicality: "Stay practicality",
-  value: "Value",
-  character: "Character",
-  travel_effort: "Travel effort",
-};
+interface PendingRerankScrollRestore {
+  scrollY: number;
+  response: SearchSession["response"] | null;
+}
 
-const defaultFilters: SearchFilters = {
-  location: "France",
-  maxPrice: "320",
-  stars: "2",
-  skillLevel: "intermediate",
-  budgetFlex: "0.10",
-  travelWindowMode: "month",
-  travelMonth: 3,
-  tripStartDate: "",
-  tripEndDate: "",
-  originText: "",
-  maxDriveHours: "",
-  valueObjective: "pass_terrain_value",
-};
+interface ChipEditorState {
+  filters: SearchFilters;
+  preferences: FactorPreferencePatch[];
+  groupPriorities: GroupPriorityPatch[];
+  objectives: SearchObjective[];
+}
+
+function waitForRefinementRetry(
+  delayMs: number,
+  signal: AbortSignal,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException("The operation was aborted.", "AbortError"));
+      return;
+    }
+    const onAbort = () => {
+      window.clearTimeout(timer);
+      reject(new DOMException("The operation was aborted.", "AbortError"));
+    };
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, delayMs);
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+function restoreRefinementDraftItems<T>(
+  current: T[],
+  before: T[],
+  after: T[],
+  key: (item: T) => string,
+): T[] {
+  const beforeByKey = new Map(before.map((item) => [key(item), item]));
+  const afterByKey = new Map(after.map((item) => [key(item), item]));
+  const currentByKey = new Map(current.map((item) => [key(item), item]));
+  const touchedKeys = new Set([...beforeByKey.keys(), ...afterByKey.keys()]);
+  const changedKeys = [...touchedKeys].filter(
+    (itemKey) =>
+      JSON.stringify(beforeByKey.get(itemKey)) !==
+      JSON.stringify(afterByKey.get(itemKey)),
+  );
+  const restored = current.filter((item) => !changedKeys.includes(key(item)));
+  for (const itemKey of changedKeys) {
+    const currentItem = currentByKey.get(itemKey);
+    const afterItem = afterByKey.get(itemKey);
+    if (JSON.stringify(currentItem) !== JSON.stringify(afterItem)) {
+      if (currentItem) restored.push(currentItem);
+      continue;
+    }
+    const beforeItem = beforeByKey.get(itemKey);
+    if (beforeItem) restored.push(beforeItem);
+  }
+  return restored;
+}
+
+function removeChipFromEditor(
+  state: ChipEditorState,
+  action: ParsedChip["action"],
+): ChipEditorState {
+  const next = { ...state };
+  switch (action.kind) {
+    case "location":
+      return { ...next, filters: { ...state.filters, location: "" } };
+    case "travelWindow":
+      return {
+        ...next,
+        filters: { ...state.filters, travelWindowMode: "any" },
+      };
+    case "lodgingBudget":
+      return { ...next, filters: { ...state.filters, maxPrice: "" } };
+    case "stayQuality":
+      return { ...next, filters: { ...state.filters, stars: "" } };
+    case "travelLimit":
+      return { ...next, filters: { ...state.filters, maxDriveHours: "" } };
+    case "travelOrigin":
+      return {
+        ...next,
+        filters: { ...state.filters, originText: "", maxDriveHours: "" },
+      };
+    case "skill":
+      return { ...next, filters: { ...state.filters, skillLevel: "" } };
+    case "objective": {
+      const removesPassValueFamily = isPassValueObjective(action.id);
+      const keepObjective = (item: SearchObjective) =>
+        removesPassValueFamily
+          ? !isPassValueObjective(item.factor_id)
+          : item.factor_id !== action.id;
+      return {
+        ...next,
+        filters:
+          removesPassValueFamily || state.filters.valueObjective === action.id
+            ? { ...state.filters, valueObjective: "" }
+            : state.filters,
+        objectives: state.objectives.filter(keepObjective),
+      };
+    }
+    case "group":
+      return {
+        ...next,
+        groupPriorities: state.groupPriorities.filter(
+          (item) => item.group_id !== action.id,
+        ),
+      };
+    case "preference":
+      return {
+        ...next,
+        preferences: state.preferences.filter(
+          (item) => item.factor_id !== action.id,
+        ),
+      };
+  }
+}
 
 function App() {
-  const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
+  const [route, setRoute] = useState<AppRoute>(() => parseAppRoute(window.location));
+  const [filters, setFilters] = useState<SearchFilters>(defaultSearchFilters);
   const [brief, setBrief] = useState("");
   const [lastParsedBrief, setLastParsedBrief] = useState("");
   const [assumptions, setAssumptions] = useState<string[]>([]);
@@ -107,198 +222,888 @@ function App() {
     { factor_id: "pass_terrain_value", importance: "normal" },
   ]);
   const [answeredQuestionIds, setAnsweredQuestionIds] = useState<string[]>([]);
-  const [response, setResponse] = useState<SearchResponse | null>(null);
-  const [expandedCandidateId, setExpandedCandidateId] = useState<string | null>(
-    null,
-  );
+  const [session, setSession] = useState<SearchSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [refinementError, setRefinementError] = useState<string | null>(null);
+  const [refinementStatus, setRefinementStatus] =
+    useState<RefinementLifecycleStatus>("idle");
+  const [rankFeedback, setRankFeedback] = useState<string | null>(null);
+  const [changedRankGroupIds, setChangedRankGroupIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [undoState, setUndoState] = useState<PreviousSearchState | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [focusRequest, setFocusRequest] = useState(0);
+  const [refinementFocusRequest, setRefinementFocusRequest] = useState(0);
   const [currentTrip, setCurrentTrip] = useState<CurrentTrip | null>(null);
   const [currentTripSummary, setCurrentTripSummary] =
     useState<CurrentTripSummary | null>(null);
-  const [showCurrentTrip, setShowCurrentTrip] = useState(
-    window.location.pathname === "/current-trip",
+  const adjustFiltersRef = useRef<HTMLButtonElement>(null);
+  const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const refinementControlRef = useRef<HTMLElement>(null);
+  const pendingRerankScrollRestoreRef =
+    useRef<PendingRerankScrollRestore | null>(null);
+  const routeRef = useRef(route);
+  const pendingDossierScrollRestoreRef = useRef(false);
+  const pendingDossierFocusHrefRef = useRef<string | null>(null);
+  const refinementAbortRef = useRef<AbortController | null>(null);
+  const refinementRequestIdRef = useRef(0);
+  const refinementSlowTimerRef = useRef<number | null>(null);
+  const [rerankRestoreRequest, setRerankRestoreRequest] = useState(0);
+
+  useEffect(
+    () => () => {
+      refinementRequestIdRef.current += 1;
+      refinementAbortRef.current?.abort();
+      if (refinementSlowTimerRef.current !== null) {
+        window.clearTimeout(refinementSlowTimerRef.current);
+      }
+    },
+    [],
   );
 
   useEffect(() => {
-    void getCurrentTrip()
-      .then(setCurrentTrip)
-      .catch(() => setCurrentTrip(null));
+    const syncRoute = () => {
+      const nextRoute = parseAppRoute(window.location);
+      if (nextRoute.name === "search" && window.location.pathname !== "/") {
+        window.history.replaceState(null, "", "/");
+      }
+      if (nextRoute.name !== "search") {
+        pendingRerankScrollRestoreRef.current = null;
+      }
+      if (nextRoute.name === "search" && routeRef.current.name === "dossier") {
+        pendingDossierScrollRestoreRef.current = true;
+      }
+      routeRef.current = nextRoute;
+      setRoute(nextRoute);
+    };
+    window.addEventListener(APP_NAVIGATION_EVENT, syncRoute);
+    window.addEventListener("popstate", syncRoute);
+    syncRoute();
+    return () => {
+      window.removeEventListener(APP_NAVIGATION_EVENT, syncRoute);
+      window.removeEventListener("popstate", syncRoute);
+    };
   }, []);
 
   useEffect(() => {
-    if (!showCurrentTrip || !currentTrip) {
+    const handleDossierLinkClick = (event: MouseEvent) => {
+      if (
+        route.name !== "search" ||
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        !(event.target instanceof Element)
+      ) {
+        return;
+      }
+      const anchor = event.target.closest<HTMLAnchorElement>(
+        'a[href^="/recommendations/"]',
+      );
+      if (!anchor || anchor.target === "_blank") return;
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+
+      event.preventDefault();
+      const resultsScrollY = window.scrollY;
+      pendingDossierFocusHrefRef.current = `${destination.pathname}${destination.search}`;
+      const nextRoute = parseAppRoute(destination as unknown as Location);
+      setSession((current) =>
+        current
+          ? {
+              ...current,
+              resultsScrollY,
+              dossierGroupId:
+                nextRoute.name === "dossier" ? nextRoute.skiRegionId : null,
+            }
+          : current,
+      );
+      navigate(`${destination.pathname}${destination.search}`);
+      window.scrollTo(0, 0);
+    };
+
+    document.addEventListener("click", handleDossierLinkClick);
+    return () => document.removeEventListener("click", handleDossierLinkClick);
+  }, [route.name]);
+
+  useEffect(() => {
+    void getCurrentTrip()
+      .then((trip) => {
+        if (trip) setCurrentTrip(trip);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (route.name !== "currentTrip" || !currentTrip) {
       setCurrentTripSummary(null);
       return;
     }
     void getCurrentTripSummary()
       .then(setCurrentTripSummary)
       .catch(() => setCurrentTripSummary(null));
-  }, [showCurrentTrip, currentTrip]);
+  }, [route.name, currentTrip]);
 
-  const appliedIntent = useMemo(
-    () => buildIntent(filters, assumptions, preferences, groupPriorities, objectives),
+  useEffect(() => {
+    if (focusRequest > 0 && session) {
+      resultsHeadingRef.current?.focus({ preventScroll: true });
+    }
+  }, [focusRequest]);
+
+  useEffect(() => {
+    if (refinementFocusRequest > 0) {
+      refinementControlRef.current?.focus({ preventScroll: true });
+    }
+  }, [refinementFocusRequest]);
+
+  useEffect(() => {
+    if (route.name !== "search" || !pendingDossierScrollRestoreRef.current) {
+      return;
+    }
+    if (!session) {
+      pendingDossierScrollRestoreRef.current = false;
+      return;
+    }
+    let focusFrame = 0;
+    let focusTimer = 0;
+    const scrollFrame = window.requestAnimationFrame(() => {
+      if (routeRef.current.name !== "search") return;
+      window.scrollTo(0, session.resultsScrollY);
+      focusFrame = window.requestAnimationFrame(() => {
+        if (routeRef.current.name !== "search") return;
+        const originHref = pendingDossierFocusHrefRef.current;
+        const restoreFocus = () => {
+          if (routeRef.current.name !== "search") return;
+          const origin = originHref
+            ? [
+                ...document.querySelectorAll<HTMLAnchorElement>(
+                  'a[href^="/recommendations/"]',
+                ),
+              ].find((anchor) => anchor.getAttribute("href") === originHref)
+            : null;
+          (origin ?? resultsHeadingRef.current)?.focus({ preventScroll: true });
+        };
+        restoreFocus();
+        focusTimer = window.setTimeout(() => {
+          if (
+            document.activeElement === document.body ||
+            document.activeElement === document.documentElement
+          ) {
+            restoreFocus();
+          }
+        }, 100);
+        pendingDossierFocusHrefRef.current = null;
+        pendingDossierScrollRestoreRef.current = false;
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(scrollFrame);
+      window.cancelAnimationFrame(focusFrame);
+      window.clearTimeout(focusTimer);
+    };
+  }, [route.name, session]);
+
+  useEffect(() => {
+    const pending = pendingRerankScrollRestoreRef.current;
+    if (
+      route.name !== "search" ||
+      !pending ||
+      pending.response !== session?.response
+    ) {
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      if (
+        route.name !== "search" ||
+        pendingRerankScrollRestoreRef.current !== pending
+      ) {
+        return;
+      }
+      window.scrollTo(0, pending.scrollY);
+      pendingRerankScrollRestoreRef.current = null;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [route.name, session, rerankRestoreRequest]);
+
+  const draftIntent = useMemo(
+    () =>
+      buildSearchIntent(
+        filters,
+        assumptions,
+        preferences,
+        groupPriorities,
+        objectives,
+      ),
     [filters, assumptions, preferences, groupPriorities, objectives],
   );
 
-  async function runSearch(
+  const dossierSelection = useMemo(() => {
+    if (route.name !== "dossier" || !session) return null;
+    const group =
+      session.response.results.find(
+        (item) => item.ski_region_id === route.skiRegionId,
+      ) ?? session.response.results[0];
+    if (!group) return null;
+    const configuration = findSelectedCandidate(
+      group,
+      group.ski_region_id === route.skiRegionId
+        ? route.candidateId ?? undefined
+        : undefined,
+    );
+    return { group, configuration };
+  }, [route, session]);
+
+  useEffect(() => {
+    if (route.name !== "dossier" || !dossierSelection) return;
+    const { group, configuration } = dossierSelection;
+    const canonicalHref = buildDossierHref(
+      group.ski_region_id,
+      configuration.candidate_id,
+    );
+    if (`${window.location.pathname}${window.location.search}` !== canonicalHref) {
+      window.history.replaceState(null, "", canonicalHref);
+      const canonicalRoute = parseAppRoute(window.location);
+      routeRef.current = canonicalRoute;
+      setRoute(canonicalRoute);
+    }
+    setSession((current) => {
+      if (
+        !current ||
+        (current.dossierGroupId === group.ski_region_id &&
+          current.selectedCandidateIdByGroup[group.ski_region_id] ===
+            configuration.candidate_id)
+      ) {
+        return current;
+      }
+      return {
+        ...current,
+        dossierGroupId: group.ski_region_id,
+        selectedCandidateIdByGroup: {
+          ...current.selectedCandidateIdByGroup,
+          [group.ski_region_id]: configuration.candidate_id,
+        },
+      };
+    });
+  }, [route, dossierSelection]);
+
+  async function loadRefinements(
+    rankingResponse: SearchSession["response"],
+    nextBrief: string,
+    nextAnsweredQuestionIds: string[],
+  ) {
+    const belongsToRanking = (current: SearchSession | null) =>
+      current?.response.baseline_fingerprint ===
+        rankingResponse.baseline_fingerprint &&
+      current.response.ranking_policy_version ===
+        rankingResponse.ranking_policy_version;
+    const requestId = refinementRequestIdRef.current + 1;
+    refinementRequestIdRef.current = requestId;
+    refinementAbortRef.current?.abort();
+    if (refinementSlowTimerRef.current !== null) {
+      window.clearTimeout(refinementSlowTimerRef.current);
+      refinementSlowTimerRef.current = null;
+    }
+    setRefinementError(null);
+    setSession((current) =>
+      belongsToRanking(current) && current
+        ? replaceRefinements(current, [])
+        : current,
+    );
+
+    if (
+      rankingResponse.eligible_candidate_count === 0 ||
+      rankingResponse.results.length === 0
+    ) {
+      setRefinementStatus("idle");
+      return;
+    }
+
+    const controller = new AbortController();
+    refinementAbortRef.current = controller;
+    const clearSlowTimer = () => {
+      if (refinementSlowTimerRef.current !== null) {
+        window.clearTimeout(refinementSlowTimerRef.current);
+        refinementSlowTimerRef.current = null;
+      }
+    };
+    const startAttempt = () => {
+      setRefinementStatus("loading");
+      clearSlowTimer();
+      refinementSlowTimerRef.current = window.setTimeout(() => {
+        if (
+          refinementRequestIdRef.current === requestId &&
+          !controller.signal.aborted
+        ) {
+          setRefinementStatus("slow");
+        }
+      }, 2_500);
+    };
+    const request = {
+      intent: rankingResponse.applied_intent,
+      brief: nextBrief.trim().slice(0, 2_000) || null,
+      baseline_fingerprint: rankingResponse.baseline_fingerprint,
+      already_answered_question_ids: nextAnsweredQuestionIds,
+    };
+
+    try {
+      let refinementResponse: SearchV4RefinementResponse | undefined;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        startAttempt();
+        try {
+          refinementResponse = await fetchSearchRefinements(
+            request,
+            controller.signal,
+          );
+          break;
+        } catch (caught) {
+          clearSlowTimer();
+          const canRetry =
+            attempt === 0 &&
+            caught instanceof ApiError &&
+            caught.status === 429 &&
+            caught.retryAfterSeconds !== null &&
+            caught.retryAfterSeconds <= 15 &&
+            refinementRequestIdRef.current === requestId &&
+            !controller.signal.aborted;
+          if (!canRetry) throw caught;
+          setRefinementStatus("retrying");
+          await waitForRefinementRetry(
+            caught.retryAfterSeconds * 1_000,
+            controller.signal,
+          );
+          if (refinementRequestIdRef.current !== requestId) return;
+        }
+      }
+      if (!refinementResponse) return;
+      if (refinementRequestIdRef.current !== requestId) return;
+
+      if (refinementResponse.baseline_status === "unverified") {
+        setRefinementStatus("temporarily_unavailable");
+        setSession((current) =>
+          belongsToRanking(current) && current
+            ? replaceRefinements(current, [])
+            : current,
+        );
+        return;
+      }
+
+      const baselineMatches =
+        refinementResponse.baseline_status === "current" &&
+        refinementResponse.baseline_fingerprint ===
+          rankingResponse.baseline_fingerprint &&
+        refinementResponse.ranking_policy_version ===
+          rankingResponse.ranking_policy_version;
+      if (!baselineMatches) {
+        setRefinementStatus("stale");
+        setSession((current) =>
+          belongsToRanking(current) && current
+            ? replaceRefinements(current, [])
+            : current,
+        );
+        return;
+      }
+
+      const refinements =
+        refinementResponse.refinement_status === "questions_available"
+          ? refinementResponse.refinements
+          : [];
+      const status = refinements.length
+        ? "questions_available"
+        : refinementResponse.refinement_status === "questions_available"
+          ? "not_needed"
+          : refinementResponse.refinement_status;
+      setSession((current) =>
+        belongsToRanking(current) && current
+          ? replaceRefinements(current, refinements)
+          : current,
+      );
+      setRefinementStatus(status);
+    } catch {
+      if (
+        controller.signal.aborted ||
+        refinementRequestIdRef.current !== requestId
+      ) {
+        return;
+      }
+      setRefinementStatus("temporarily_unavailable");
+      setRefinementError(null);
+    } finally {
+      if (refinementRequestIdRef.current === requestId) {
+        clearSlowTimer();
+        if (refinementAbortRef.current === controller) {
+          refinementAbortRef.current = null;
+        }
+      }
+    }
+  }
+
+  async function fetchSearch(
     nextFilters: SearchFilters,
     nextAssumptions: string[],
     nextPreferences: FactorPreferencePatch[],
     nextGroupPriorities: GroupPriorityPatch[],
     nextObjectives: SearchObjective[],
     nextAnsweredQuestionIds: string[],
+    nextBrief: string,
+    focusResults: boolean,
+    options: FetchSearchOptions = {},
   ) {
-    const validationError = validateFilters(nextFilters);
+    const validationError = validateSearchFilters(nextFilters);
     if (validationError) {
       setError(validationError);
-      setResponse(null);
-      return;
+      return null;
     }
-    setLoading(true);
+    const intent =
+      options.exactIntent ??
+      buildSearchIntent(
+        nextFilters,
+        nextAssumptions,
+        nextPreferences,
+        nextGroupPriorities,
+        nextObjectives,
+      );
+    refinementRequestIdRef.current += 1;
+    refinementAbortRef.current?.abort();
+    refinementAbortRef.current = null;
+    if (refinementSlowTimerRef.current !== null) {
+      window.clearTimeout(refinementSlowTimerRef.current);
+      refinementSlowTimerRef.current = null;
+    }
+    setRefinementStatus("idle");
+    const response = await searchResorts({ intent });
+    if (options.syncEditorFromResponse !== false) {
+      setFilters(nextFilters);
+      setAssumptions([...response.applied_intent.assumptions]);
+      setPreferences([...response.applied_intent.factor_preferences]);
+      setGroupPriorities([...response.applied_intent.group_priorities]);
+      setObjectives([...response.applied_intent.objectives]);
+    }
+    setSession((current) => {
+      const next = current
+        ? reconcileSearchSession(current, response, nextFilters)
+        : createSearchSession(nextBrief, response, nextFilters);
+      return { ...next, brief: nextBrief };
+    });
+    setUndoState(null);
+    setRankFeedback(null);
+    setChangedRankGroupIds(new Set());
     setError(null);
-    try {
-      const result = await searchResorts({
-        intent: buildIntent(
-          nextFilters,
-          nextAssumptions,
-          nextPreferences,
-          nextGroupPriorities,
-          nextObjectives,
-        ),
-        brief: brief.trim() || null,
-        generate_refinements: true,
-        already_answered_question_ids: nextAnsweredQuestionIds,
-      });
-      setResponse(result);
-      setExpandedCandidateId(null);
-    } catch (caught) {
-      setResponse(null);
-      setError(caught instanceof Error ? caught.message : "Search failed.");
-    } finally {
-      setLoading(false);
-    }
+    if (focusResults) setFocusRequest((current) => current + 1);
+    void loadRefinements(response, nextBrief, nextAnsweredQuestionIds);
+    return response;
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    setError(null);
     let nextFilters = filters;
     let nextAssumptions = assumptions;
     const trimmedBrief = brief.trim();
-    if (trimmedBrief && trimmedBrief !== lastParsedBrief) {
-      try {
+    try {
+      if (trimmedBrief && trimmedBrief !== lastParsedBrief) {
         const parsed = await parseTripBrief(trimmedBrief);
         nextFilters = mergeParsedFilters(filters, parsed);
         nextAssumptions = parsed.assumptions ?? [];
         setFilters(nextFilters);
         setAssumptions(nextAssumptions);
         setLastParsedBrief(trimmedBrief);
-      } catch (caught) {
-        setError(
-          caught instanceof Error ? caught.message : "Could not parse the brief.",
-        );
-        return;
       }
+      await fetchSearch(
+        nextFilters,
+        nextAssumptions,
+        preferences,
+        groupPriorities,
+        objectives,
+        answeredQuestionIds,
+        brief,
+        true,
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Could not complete the search.",
+      );
+    } finally {
+      setLoading(false);
     }
-    await runSearch(
-      nextFilters,
-      nextAssumptions,
-      preferences,
-      groupPriorities,
-      objectives,
-      answeredQuestionIds,
-    );
   }
 
   async function applyRefinement(questionId: string, option: RefinementOption) {
+    const baselineSession = session;
+    if (loading || !baselineSession) return;
+    const baselineIntent = baselineSession.response.applied_intent;
+    const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
+    if (!option.intent_changed) {
+      const hasNextRefinement =
+        session?.refinementQueue.some(
+          (refinement) => refinement.question_id !== questionId,
+        ) ?? false;
+      setAnsweredQuestionIds(nextAnswered);
+      setSession((current) =>
+        current ? dismissRefinement(current, questionId) : current,
+      );
+      setRefinementError(null);
+      setRefinementStatus(hasNextRefinement ? "questions_available" : "not_needed");
+      setRankFeedback("Current ranking kept.");
+      setChangedRankGroupIds(new Set());
+      if (hasNextRefinement) {
+        setRefinementFocusRequest((current) => current + 1);
+      } else {
+        setFocusRequest((current) => current + 1);
+      }
+      return;
+    }
     const nextPreferences = upsertBy(
-      preferences.filter(
-        (item) => !option.objective_patches.some((patch) => patch.factor_id === item.factor_id),
+      [...baselineIntent.factor_preferences].filter(
+        (item) =>
+          !option.objective_patches.some(
+            (patch) => patch.factor_id === item.factor_id,
+          ),
       ),
       option.factor_preference_patches,
       (item) => item.factor_id,
     );
-    const nextObjectives = upsertBy(
-      objectives.filter(
+    const nextObjectives = mergeObjectivePatches(
+      [...baselineIntent.objectives].filter(
         (item) =>
           !option.factor_preference_patches.some(
             (patch) => patch.factor_id === item.factor_id,
           ),
       ),
       option.objective_patches,
-      (item) => item.factor_id,
     );
     const nextGroups = upsertBy(
-      groupPriorities,
+      [...baselineIntent.group_priorities],
       option.group_priority_patches,
       (item) => item.group_id,
     );
-    const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
-    setPreferences(nextPreferences);
-    setObjectives(nextObjectives);
-    setGroupPriorities(nextGroups);
-    setAnsweredQuestionIds(nextAnswered);
-    await runSearch(
-      filters,
-      assumptions,
-      nextPreferences,
-      nextGroups,
-      nextObjectives,
-      nextAnswered,
+    const nextEditorPreferences = upsertBy(
+      [...preferences].filter(
+        (item) =>
+          !option.objective_patches.some(
+            (patch) => patch.factor_id === item.factor_id,
+          ),
+      ),
+      option.factor_preference_patches,
+      (item) => item.factor_id,
     );
-  }
-
-  async function removePreference(factorId: string) {
-    const next = preferences.filter((item) => item.factor_id !== factorId);
-    setPreferences(next);
-    if (response) {
-      await runSearch(
-        filters,
-        assumptions,
-        next,
-        groupPriorities,
-        objectives,
-        answeredQuestionIds,
+    const nextEditorObjectives = mergeObjectivePatches(
+      [...objectives].filter(
+        (item) =>
+          !option.factor_preference_patches.some(
+            (patch) => patch.factor_id === item.factor_id,
+          ),
+      ),
+      option.objective_patches,
+    );
+    const nextEditorGroups = upsertBy(
+      [...groupPriorities],
+      option.group_priority_patches,
+      (item) => item.group_id,
+    );
+    const selectedValueObjective = option.objective_patches.find(
+      (patch) =>
+        patch.factor_id === "pass_terrain_value" ||
+        patch.factor_id === "pass_price_per_day",
+    )?.factor_id as SearchFilters["valueObjective"] | undefined;
+    const nextEditorValueObjective = selectedValueObjective
+      ? selectedValueObjective
+      : option.factor_preference_patches.some(
+            (patch) => patch.factor_id === filters.valueObjective,
+          )
+        ? ""
+        : filters.valueObjective;
+    const previousState: PreviousSearchState = {
+      brief: baselineSession.brief,
+      filters: baselineSession.appliedFilters,
+      intent: baselineIntent,
+      assumptions: [...baselineIntent.assumptions],
+      preferences: [...baselineIntent.factor_preferences],
+      groupPriorities: [...baselineIntent.group_priorities],
+      objectives: [...baselineIntent.objectives],
+      answeredQuestionIds,
+      editorBefore: {
+        valueObjective: filters.valueObjective,
+        preferences: [...preferences],
+        groupPriorities: [...groupPriorities],
+        objectives: [...objectives],
+      },
+      editorAfter: {
+        valueObjective: nextEditorValueObjective,
+        preferences: nextEditorPreferences,
+        groupPriorities: nextEditorGroups,
+        objectives: nextEditorObjectives,
+      },
+    };
+    const nextIntent: SearchIntent = {
+      ...baselineIntent,
+      factor_preferences: nextPreferences,
+      group_priorities: nextGroups,
+      objectives: nextObjectives,
+    };
+    const previousResponse = baselineSession.response;
+    const pendingScrollRestore: PendingRerankScrollRestore = {
+      scrollY: window.scrollY,
+      response: null,
+    };
+    pendingRerankScrollRestoreRef.current = pendingScrollRestore;
+    setLoading(true);
+    setRefinementError(null);
+    try {
+      const nextResponse = await fetchSearch(
+        baselineSession.appliedFilters,
+        [...baselineIntent.assumptions],
+        nextPreferences,
+        nextGroups,
+        nextObjectives,
+        nextAnswered,
+        baselineSession.brief,
+        false,
+        {
+          exactIntent: nextIntent,
+          syncEditorFromResponse: false,
+        },
       );
+      if (!nextResponse) {
+        if (pendingRerankScrollRestoreRef.current === pendingScrollRestore) {
+          pendingRerankScrollRestoreRef.current = null;
+        }
+        return;
+      }
+      pendingScrollRestore.response = nextResponse;
+      setRerankRestoreRequest((current) => current + 1);
+      setAnsweredQuestionIds(nextAnswered);
+      setFilters((current) => ({
+        ...current,
+        valueObjective: nextEditorValueObjective,
+      }));
+      setPreferences(nextEditorPreferences);
+      setGroupPriorities(nextEditorGroups);
+      setObjectives(nextEditorObjectives);
+      setUndoState(previousState);
+      setFocusRequest((current) => current + 1);
+      if (previousResponse) {
+        const summary = rankChangeSummary(previousResponse, nextResponse);
+        setRankFeedback(summary.announcement);
+        setChangedRankGroupIds(summary.changedGroupIds);
+        window.setTimeout(() => setChangedRankGroupIds(new Set()), 2400);
+      }
+    } catch (caught) {
+      if (pendingRerankScrollRestoreRef.current === pendingScrollRestore) {
+        pendingRerankScrollRestoreRef.current = null;
+      }
+      setRefinementError(
+        caught instanceof Error ? caught.message : "Could not rerank these results.",
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
-  async function removeObjective(factorId: string) {
-    const nextObjectives = objectives.filter((item) => item.factor_id !== factorId);
-    const nextFilters =
-      filters.valueObjective === factorId
-        ? { ...filters, valueObjective: "" as const }
-        : filters;
-    setObjectives(nextObjectives);
-    setFilters(nextFilters);
-    if (response) {
-      await runSearch(
+  function skipRefinement(questionId: string) {
+    const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
+    const hasNextRefinement =
+      session?.refinementQueue.some(
+        (refinement) => refinement.question_id !== questionId,
+      ) ?? false;
+    setAnsweredQuestionIds(nextAnswered);
+    setSession((current) =>
+      current ? dismissRefinement(current, questionId) : current,
+    );
+    setRefinementError(null);
+    setRefinementStatus(hasNextRefinement ? "questions_available" : "skipped");
+    if (hasNextRefinement) {
+      setRefinementFocusRequest((current) => current + 1);
+    } else {
+      setFocusRequest((current) => current + 1);
+    }
+  }
+
+  async function undoRefinement() {
+    if (!undoState || loading) return;
+    setLoading(true);
+    setRefinementError(null);
+    try {
+      await fetchSearch(
+        undoState.filters,
+        undoState.assumptions,
+        undoState.preferences,
+        undoState.groupPriorities,
+        undoState.objectives,
+        undoState.answeredQuestionIds,
+        undoState.brief,
+        false,
+        {
+          exactIntent: undoState.intent,
+          syncEditorFromResponse: false,
+        },
+      );
+      setFilters((current) => ({
+        ...current,
+        valueObjective:
+          current.valueObjective === undoState.editorAfter.valueObjective
+            ? undoState.editorBefore.valueObjective
+            : current.valueObjective,
+      }));
+      setPreferences((current) =>
+        restoreRefinementDraftItems(
+          current,
+          undoState.editorBefore.preferences,
+          undoState.editorAfter.preferences,
+          (item) => item.factor_id,
+        ),
+      );
+      setGroupPriorities((current) =>
+        restoreRefinementDraftItems(
+          current,
+          undoState.editorBefore.groupPriorities,
+          undoState.editorAfter.groupPriorities,
+          (item) => item.group_id,
+        ),
+      );
+      setObjectives((current) =>
+        restoreRefinementDraftItems(
+          current,
+          undoState.editorBefore.objectives,
+          undoState.editorAfter.objectives,
+          (item) => item.factor_id,
+        ),
+      );
+      setAnsweredQuestionIds(undoState.answeredQuestionIds);
+      setUndoState(null);
+      setFocusRequest((current) => current + 1);
+      setRankFeedback("Previous trip decisions restored.");
+      setChangedRankGroupIds(new Set());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not restore results.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function removeChip(chip: ParsedChip) {
+    const baselineSession = session;
+    if (loading) return;
+    const nextEditor = removeChipFromEditor(
+      { filters, preferences, groupPriorities, objectives },
+      chip.action,
+    );
+    if (!baselineSession) {
+      setFilters(nextEditor.filters);
+      setPreferences(nextEditor.preferences);
+      setGroupPriorities(nextEditor.groupPriorities);
+      setObjectives(nextEditor.objectives);
+      return;
+    }
+    const baselineIntent = baselineSession.response.applied_intent;
+    let nextFilters = baselineSession.appliedFilters;
+    let nextConstraints = { ...baselineIntent.constraints };
+    let nextTravelContext = { ...baselineIntent.travel_context };
+    let nextSkillLevels = [...baselineIntent.party.skill_levels];
+    let nextPreferences = [...baselineIntent.factor_preferences];
+    let nextGroups = [...baselineIntent.group_priorities];
+    let nextObjectives = [...baselineIntent.objectives];
+    const action = chip.action;
+    switch (action.kind) {
+      case "location":
+        delete nextConstraints.location;
+        nextFilters = { ...nextFilters, location: "" };
+        break;
+      case "travelWindow":
+        delete nextConstraints.travel_window;
+        nextFilters = { ...nextFilters, travelWindowMode: "any" };
+        break;
+      case "lodgingBudget":
+        delete nextConstraints.lodging_budget;
+        nextFilters = { ...nextFilters, maxPrice: "" };
+        break;
+      case "stayQuality":
+        delete nextConstraints.minimum_stay_quality;
+        nextFilters = { ...nextFilters, stars: "" };
+        break;
+      case "travelLimit":
+        delete nextConstraints.travel_limit;
+        nextFilters = { ...nextFilters, maxDriveHours: "" };
+        break;
+      case "travelOrigin":
+        delete nextConstraints.travel_limit;
+        nextTravelContext = {};
+        nextFilters = { ...nextFilters, originText: "", maxDriveHours: "" };
+        break;
+      case "skill":
+        nextSkillLevels = [];
+        nextFilters = { ...nextFilters, skillLevel: "" };
+        break;
+      case "objective": {
+        const removesPassValueFamily = isPassValueObjective(action.id);
+        const keepObjective = (item: SearchObjective) =>
+          removesPassValueFamily
+            ? !isPassValueObjective(item.factor_id)
+            : item.factor_id !== action.id;
+        nextObjectives = nextObjectives.filter(keepObjective);
+        nextFilters =
+          removesPassValueFamily || nextFilters.valueObjective === action.id
+            ? { ...nextFilters, valueObjective: "" }
+            : nextFilters;
+        break;
+      }
+      case "group":
+        nextGroups = nextGroups.filter((item) => item.group_id !== action.id);
+        break;
+      case "preference":
+        nextPreferences = nextPreferences.filter(
+          (item) => item.factor_id !== action.id,
+        );
+        break;
+    }
+    const nextIntent: SearchIntent = {
+      ...baselineIntent,
+      constraints: nextConstraints,
+      party: { skill_levels: nextSkillLevels },
+      travel_context: nextTravelContext,
+      factor_preferences: nextPreferences,
+      group_priorities: nextGroups,
+      objectives: nextObjectives,
+    };
+    setLoading(true);
+    try {
+      const nextResponse = await fetchSearch(
         nextFilters,
-        assumptions,
-        preferences,
-        groupPriorities,
+        [...baselineIntent.assumptions],
+        nextPreferences,
+        nextGroups,
         nextObjectives,
         answeredQuestionIds,
+        baselineSession.brief,
+        false,
+        {
+          exactIntent: nextIntent,
+          syncEditorFromResponse: false,
+        },
       );
+      if (!nextResponse) return;
+      setFilters(nextEditor.filters);
+      setPreferences(nextEditor.preferences);
+      setGroupPriorities(nextEditor.groupPriorities);
+      setObjectives(nextEditor.objectives);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Search failed.");
+    } finally {
+      setLoading(false);
     }
   }
 
-  async function removeGroupPriority(groupId: string) {
-    const nextGroups = groupPriorities.filter((item) => item.group_id !== groupId);
-    setGroupPriorities(nextGroups);
-    if (response) {
-      await runSearch(
-        filters,
-        assumptions,
-        preferences,
-        nextGroups,
-        objectives,
-        answeredQuestionIds,
-      );
-    }
-  }
-
-  async function saveConfiguration(configuration: SearchV4Configuration) {
+  async function saveConfiguration(
+    configuration: SearchV4Configuration,
+    appliedIntent: SearchSession["response"]["applied_intent"],
+  ) {
+    const travelWindow = appliedIntent.constraints.travel_window;
     try {
       const saved = await saveCurrentTrip({
         ski_region_id: configuration.ski_region_id,
@@ -312,863 +1117,235 @@ function App() {
         lift_pass_product_id: configuration.selected_pass.lift_pass_product_id,
         lift_pass_product_name: configuration.selected_pass.name,
         travel_month:
-          filters.travelWindowMode === "month" ? filters.travelMonth || null : null,
+          typeof travelWindow?.month === "number" ? travelWindow.month : null,
         trip_start_date:
-          filters.travelWindowMode === "dates" ? filters.tripStartDate : null,
+          travelWindow?.start_date ?? null,
         trip_end_date:
-          filters.travelWindowMode === "dates" ? filters.tripEndDate : null,
+          travelWindow?.end_date ?? null,
         booking_status: "not_booked_yet",
       });
       setCurrentTrip(saved);
-      setError(null);
+      setSaveError(null);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save trip.");
+      setSaveError(caught instanceof Error ? caught.message : "Could not save trip.");
     }
   }
 
-  function navigateCurrentTrip(show: boolean) {
-    window.history.pushState(null, "", show ? "/current-trip" : "/");
-    setShowCurrentTrip(show);
-  }
+  const goToSearch = () => navigate("/");
+  const goToCurrentTrip = () => navigate("/current-trip");
+  const switchDossier = (skiRegionId: string, candidateId: string) => {
+    setSession((current) =>
+      current
+        ? {
+            ...current,
+            dossierGroupId: skiRegionId,
+            selectedCandidateIdByGroup: {
+              ...current.selectedCandidateIdByGroup,
+              [skiRegionId]: candidateId,
+            },
+          }
+        : current,
+    );
+    navigate(buildDossierHref(skiRegionId, candidateId));
+    window.scrollTo(0, 0);
+  };
+  const openFilters = () => {
+    if (loading) return;
+    setDrawerOpen(true);
+  };
 
-  if (showCurrentTrip) {
+  if (route.name === "currentTrip") {
     return (
-      <Shell currentTrip={currentTrip} onCurrentTrip={() => navigateCurrentTrip(false)}>
+      <AppShell
+        active="currentTrip"
+        onSearch={goToSearch}
+        onCurrentTrip={goToCurrentTrip}
+      >
         <CurrentTripView
           trip={currentTrip}
           summary={currentTripSummary}
-          onBack={() => navigateCurrentTrip(false)}
-          onClear={async () => {
-            await clearCurrentTrip();
-            setCurrentTrip(null);
+          onBack={goToSearch}
+          onClear={() => {
+            void clearCurrentTrip().then(() => setCurrentTrip(null));
           }}
         />
-      </Shell>
+      </AppShell>
+    );
+  }
+
+  if (route.name === "dossier") {
+    if (!session || !dossierSelection) {
+      return (
+        <AppShell
+          active="search"
+          onSearch={goToSearch}
+          onCurrentTrip={goToCurrentTrip}
+        >
+          <main className="app-canvas dossier-recovery">
+            <p className="eyebrow">Recommendation context unavailable</p>
+            <h1>Run a search first</h1>
+            <p>
+              This recommendation needs the ranked results from your current browser
+              session.
+            </p>
+            <button type="button" className="primary-command" onClick={goToSearch}>
+              Return to search
+            </button>
+          </main>
+        </AppShell>
+      );
+    }
+    return (
+      <AppShell
+        active="search"
+        onSearch={goToSearch}
+        onCurrentTrip={goToCurrentTrip}
+        header={
+          <SearchCommandHeader
+            brief={brief}
+            loading={loading}
+            onBriefChange={setBrief}
+            onSubmit={handleSubmit}
+            onSearch={goToSearch}
+            onCurrentTrip={goToCurrentTrip}
+          />
+        }
+      >
+        {saveError ? <p className="error-copy" role="alert">{saveError}</p> : null}
+        <RecommendationDossier
+          session={session}
+          skiRegionId={dossierSelection.group.ski_region_id}
+          candidateId={dossierSelection.configuration.candidate_id}
+          onSwitch={switchDossier}
+          onReturn={goToSearch}
+          onSave={(configuration) =>
+            void saveConfiguration(configuration, session.response.applied_intent)
+          }
+          onSelectCandidate={switchDossier}
+          onToggleNavigator={() =>
+            setSession((current) =>
+              current
+                ? {
+                    ...current,
+                    dossierNavigatorCollapsed:
+                      !current.dossierNavigatorCollapsed,
+                  }
+                : current,
+            )
+          }
+        />
+      </AppShell>
+    );
+  }
+
+  const drawer = (
+    <SearchFiltersDrawer
+      open={drawerOpen}
+      disabled={loading}
+      filters={filters}
+      preferences={preferences}
+      objectives={objectives}
+      returnFocusRef={adjustFiltersRef}
+      onFiltersChange={(nextFilters) => {
+        if (!loading) setFilters(nextFilters);
+      }}
+      onPreferencesChange={(nextPreferences) => {
+        if (!loading) setPreferences(nextPreferences);
+      }}
+      onObjectivesChange={(nextObjectives) => {
+        if (!loading) setObjectives(nextObjectives);
+      }}
+      onClose={() => setDrawerOpen(false)}
+    />
+  );
+
+  if (session) {
+    return (
+      <AppShell
+        active="search"
+        onSearch={goToSearch}
+        onCurrentTrip={goToCurrentTrip}
+        header={
+          <SearchCommandHeader
+            brief={brief}
+            loading={loading}
+            onBriefChange={setBrief}
+            onSubmit={handleSubmit}
+            onSearch={goToSearch}
+            onCurrentTrip={goToCurrentTrip}
+          />
+        }
+      >
+        <RecommendationBoard
+          session={session}
+          loading={loading}
+          error={error}
+          saveError={saveError}
+          refinementError={refinementError}
+          refinementStatus={refinementStatus}
+          refinementControlRef={refinementControlRef}
+          rankFeedback={rankFeedback}
+          changedRankGroupIds={changedRankGroupIds}
+          canUndo={undoState !== null}
+          headingRef={resultsHeadingRef}
+          adjustFiltersRef={adjustFiltersRef}
+          onOpenFilters={openFilters}
+          onRemoveChip={(chip) => void removeChip(chip)}
+          onApplyRefinement={(questionId, option) =>
+            void applyRefinement(questionId, option)
+          }
+          onSkipRefinement={skipRefinement}
+          onToggleGroup={(skiRegionId) =>
+            setSession((current) => {
+              if (!current) return current;
+              const expandedGroupIds = new Set(current.expandedGroupIds);
+              if (expandedGroupIds.has(skiRegionId)) {
+                expandedGroupIds.delete(skiRegionId);
+              } else {
+                expandedGroupIds.add(skiRegionId);
+              }
+              return { ...current, expandedGroupIds };
+            })
+          }
+          onSelectCandidate={(skiRegionId, candidateId) =>
+            setSession((current) =>
+              current
+                ? {
+                    ...current,
+                    selectedCandidateIdByGroup: {
+                      ...current.selectedCandidateIdByGroup,
+                      [skiRegionId]: candidateId,
+                    },
+                  }
+                : current,
+            )
+          }
+          onSave={(configuration) =>
+            void saveConfiguration(configuration, session.response.applied_intent)
+          }
+          onUndo={() => void undoRefinement()}
+        />
+        {drawer}
+      </AppShell>
     );
   }
 
   return (
-    <Shell currentTrip={currentTrip} onCurrentTrip={() => navigateCurrentTrip(true)}>
-      <main className="mx-auto grid w-full max-w-[92rem] gap-6 px-4 py-8 lg:grid-cols-[24rem_minmax(0,1fr)] lg:px-8">
-        <form
-          onSubmit={handleSubmit}
-          className="h-fit rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50"
-        >
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-            Search V4
-          </p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
-            Find your best ski trip
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Start broad. Snowcast will ask only questions that can materially
-            change the result.
-          </p>
-
-          <label className="mt-6 block text-sm font-semibold">
-            What matters to you?
-            <textarea
-              value={brief}
-              onChange={(event) => setBrief(event.target.value)}
-              className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 p-3 font-normal"
-              placeholder="A snow-reliable intermediate trip with lively après…"
-            />
-          </label>
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <Field label="Country">
-              <input
-                value={filters.location}
-                onChange={(event) =>
-                  setFilters({ ...filters, location: event.target.value })
-                }
-                className="control"
-              />
-            </Field>
-            <Field label="Skill">
-              <select
-                value={filters.skillLevel}
-                onChange={(event) =>
-                  setFilters({
-                    ...filters,
-                    skillLevel: event.target.value as SearchFilters["skillLevel"],
-                  })
-                }
-                className="control"
-              >
-                <option value="">Not specified</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-            </Field>
-            <Field label="Max nightly">
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={filters.maxPrice}
-                onChange={(event) =>
-                  setFilters({ ...filters, maxPrice: event.target.value })
-                }
-                className="control"
-              />
-            </Field>
-            <Field label="Minimum stay tier">
-              <select
-                value={filters.stars}
-                onChange={(event) =>
-                  setFilters({
-                    ...filters,
-                    stars: event.target.value as SearchFilters["stars"],
-                  })
-                }
-                className="control"
-              >
-                <option value="">Any</option>
-                <option value="1">Budget+</option>
-                <option value="2">Standard+</option>
-                <option value="3">Premium</option>
-              </select>
-            </Field>
-          </div>
-
-          <Field label="Travel window" className="mt-4">
-            <select
-              value={filters.travelWindowMode}
-              onChange={(event) =>
-                setFilters({
-                  ...filters,
-                  travelWindowMode: event.target
-                    .value as SearchFilters["travelWindowMode"],
-                })
-              }
-              className="control"
-            >
-              <option value="any">Any time</option>
-              <option value="month">Month</option>
-              <option value="dates">Exact dates</option>
-            </select>
-          </Field>
-          {filters.travelWindowMode === "month" ? (
-            <select
-              aria-label="Travel month"
-              value={filters.travelMonth}
-              onChange={(event) =>
-                setFilters({
-                  ...filters,
-                  travelMonth: Number(event.target.value) as TravelMonth,
-                })
-              }
-              className="control mt-2"
-            >
-              {monthOptions.map((month, index) => (
-                <option key={month} value={index + 1}>
-                  {month}
-                </option>
-              ))}
-            </select>
-          ) : null}
-          {filters.travelWindowMode === "dates" ? (
-            <div className="mt-2 grid grid-cols-2 gap-3">
-              <input
-                aria-label="Trip start date"
-                type="date"
-                value={filters.tripStartDate}
-                onChange={(event) =>
-                  setFilters({ ...filters, tripStartDate: event.target.value })
-                }
-                className="control"
-              />
-              <input
-                aria-label="Trip end date"
-                type="date"
-                value={filters.tripEndDate}
-                onChange={(event) =>
-                  setFilters({ ...filters, tripEndDate: event.target.value })
-                }
-                className="control"
-              />
-            </div>
-          ) : null}
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <Field label="Origin">
-              <input
-                value={filters.originText}
-                onChange={(event) =>
-                  setFilters({ ...filters, originText: event.target.value })
-                }
-                placeholder="Berlin"
-                className="control"
-              />
-            </Field>
-            <Field label="Hard drive limit">
-              <input
-                type="number"
-                min="0.1"
-                step="0.1"
-                value={filters.maxDriveHours}
-                onChange={(event) =>
-                  setFilters({ ...filters, maxDriveHours: event.target.value })
-                }
-                placeholder="hours"
-                className="control"
-              />
-            </Field>
-          </div>
-
-          <Field label="Value objective" className="mt-4">
-            <select
-              value={filters.valueObjective}
-              onChange={(event) => {
-                const factorId = event.target
-                  .value as SearchFilters["valueObjective"];
-                setFilters({ ...filters, valueObjective: factorId });
-                setObjectives(
-                  factorId
-                    ? [{ factor_id: factorId, importance: "normal" }]
-                    : [],
-                );
-              }}
-              className="control"
-            >
-              <option value="">No pass-value priority</option>
-              <option value="pass_terrain_value">Most terrain for pass price</option>
-              <option value="pass_price_per_day">Lowest pass price per day</option>
-            </select>
-          </Field>
-
-          <fieldset className="mt-5">
-            <legend className="text-sm font-semibold">Extra preferences</legend>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {featureOptions.map(([factorId, label]) => {
-                const active = preferences.some(
-                  (item) => item.factor_id === factorId && item.mode === "prefer",
-                );
-                return (
-                  <button
-                    type="button"
-                    key={factorId}
-                    aria-pressed={active}
-                    onClick={() => {
-                      const next = active
-                        ? preferences.filter((item) => item.factor_id !== factorId)
-                        : upsertBy(
-                            preferences,
-                            [
-                              {
-                                factor_id: factorId,
-                                mode: "prefer",
-                                values: [],
-                                importance: "normal",
-                              },
-                            ],
-                            (item) => item.factor_id,
-                          );
-                      setPreferences(next);
-                    }}
-                    className={`rounded-full border px-3 py-2 text-xs font-semibold ${
-                      active
-                        ? "border-blue-700 bg-blue-700 text-white"
-                        : "border-slate-300 bg-white text-slate-700"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-6 w-full rounded-2xl bg-blue-700 px-5 py-3 font-bold text-white shadow-lg shadow-blue-700/20 disabled:opacity-60"
-          >
-            {loading ? "Ranking trips…" : "Search and rank"}
-          </button>
-          {error ? (
-            <p role="alert" className="mt-3 text-sm font-medium text-red-700">
-              {error}
-            </p>
-          ) : null}
-        </form>
-
-        <section aria-live="polite">
-          <AppliedIntent
-            intent={appliedIntent}
-            onRemovePreference={(factorId) => void removePreference(factorId)}
-            onRemoveObjective={(factorId) => void removeObjective(factorId)}
-            onRemoveGroupPriority={(groupId) => void removeGroupPriority(groupId)}
-          />
-          {response ? (
-            <>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-600">
-                    {response.eligible_candidate_count} eligible configurations ·{" "}
-                    {response.excluded_candidate_count} filtered out
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {response.search_model_version} · {response.ranking_policy_version}
-                  </p>
-                </div>
-                {response.ranking_status === "unscored" ? (
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-900">
-                    Unranked: {response.unscored_reason}
-                  </span>
-                ) : null}
-              </div>
-              <Refinements
-                response={response}
-                loading={loading}
-                onApply={(questionId, option) =>
-                  void applyRefinement(questionId, option)
-                }
-              />
-              {response.results.length ? (
-                <div className="space-y-4">
-                  {response.results.map((result) => (
-                    <ResultCard
-                      key={result.ski_region_id}
-                      result={result}
-                      expandedCandidateId={expandedCandidateId}
-                      onExpand={setExpandedCandidateId}
-                      onSave={(configuration) => void saveConfiguration(configuration)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState text="No configuration satisfies all hard constraints." />
-              )}
-            </>
-          ) : loading ? (
-            <EmptyState text="Evaluating catalog, pass, climate, and forecast evidence…" />
-          ) : (
-            <EmptyState text="Your ranked trip configurations will appear here." />
-          )}
-        </section>
-      </main>
-    </Shell>
+    <AppShell active="search" onSearch={goToSearch} onCurrentTrip={goToCurrentTrip}>
+      <Homepage
+        brief={brief}
+        loading={loading}
+        error={error}
+        chips={buildParsedChips(draftIntent)}
+        adjustFiltersRef={adjustFiltersRef}
+        onBriefChange={setBrief}
+        onSubmit={handleSubmit}
+        onOpenFilters={openFilters}
+        onRemoveChip={(chip) => void removeChip(chip)}
+      />
+      {drawer}
+    </AppShell>
   );
-}
-
-function Shell({
-  children,
-  currentTrip,
-  onCurrentTrip,
-}: {
-  children: React.ReactNode;
-  currentTrip: CurrentTrip | null;
-  onCurrentTrip: () => void;
-}) {
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="bg-gradient-to-r from-[#07182f] to-[#0b5fb8] px-4 py-4 lg:px-8">
-        <div className="mx-auto flex max-w-[92rem] items-center justify-between">
-          <SnowcastLogo compact />
-          <button
-            onClick={onCurrentTrip}
-            className="rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-white"
-          >
-            {currentTrip ? "Current trip" : "Trip companion"}
-          </button>
-        </div>
-      </header>
-      {children}
-    </div>
-  );
-}
-
-function Field({
-  label,
-  className = "",
-  children,
-}: {
-  label: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className={`block text-sm font-semibold ${className}`}>
-      {label}
-      <span className="mt-2 block font-normal">{children}</span>
-    </label>
-  );
-}
-
-function AppliedIntent({
-  intent,
-  onRemovePreference,
-  onRemoveObjective,
-  onRemoveGroupPriority,
-}: {
-  intent: SearchIntent;
-  onRemovePreference: (factorId: string) => void;
-  onRemoveObjective: (factorId: string) => void;
-  onRemoveGroupPriority: (groupId: string) => void;
-}) {
-  const chips = [
-    ...intent.objectives.map((item) => ({
-      id: `objective-${item.factor_id}`,
-      label: `Optimize ${factorLabels[item.factor_id] ?? item.factor_id}`,
-      removalKind: "objective" as const,
-      factorId: item.factor_id,
-    })),
-    ...intent.group_priorities.map((item) => ({
-      id: `group-${item.group_id}`,
-      label: `${groupLabels[item.group_id] ?? item.group_id}: ${item.importance}`,
-      removalKind: "group" as const,
-      factorId: item.group_id,
-    })),
-    ...intent.factor_preferences.map((item) => ({
-      id: `factor-${item.factor_id}`,
-      label: `${item.mode} ${factorLabels[item.factor_id] ?? item.factor_id}${
-        item.values.length ? `: ${item.values.join(", ")}` : ""
-      }`,
-      removalKind: "preference" as const,
-      factorId: item.factor_id,
-    })),
-  ];
-  if (!chips.length) return null;
-  return (
-    <div className="mb-4 flex flex-wrap gap-2" aria-label="Applied search intent">
-      {chips.map((chip) => (
-        <span
-          key={chip.id}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold"
-        >
-          {chip.label}
-          <button
-            aria-label={`Remove ${chip.label}`}
-            onClick={() => {
-              if (chip.removalKind === "objective") {
-                onRemoveObjective(chip.factorId);
-              } else if (chip.removalKind === "group") {
-                onRemoveGroupPriority(chip.factorId);
-              } else {
-                onRemovePreference(chip.factorId);
-              }
-            }}
-            className="text-slate-500"
-          >
-            ×
-          </button>
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function Refinements({
-  response,
-  loading,
-  onApply,
-}: {
-  response: SearchResponse;
-  loading: boolean;
-  onApply: (questionId: string, option: RefinementOption) => void;
-}) {
-  if (!response.refinements.length) return null;
-  return (
-    <div className="mb-5 grid gap-3 xl:grid-cols-2">
-      {response.refinements.map((item) => (
-        <article
-          key={item.question_id}
-          className="rounded-3xl border border-blue-200 bg-blue-50 p-5"
-        >
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
-            This can reorder your results
-          </p>
-          <h2 className="mt-2 text-lg font-bold">{item.question}</h2>
-          <p className="mt-1 text-sm text-slate-600">{item.reason}</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {item.options.map((option) => (
-              <button
-                key={option.label}
-                onClick={() => onApply(item.question_id, option)}
-                disabled={loading}
-                title={option.description}
-                className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-blue-800 shadow-sm disabled:cursor-wait disabled:opacity-60"
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function ResultCard({
-  result,
-  expandedCandidateId,
-  onExpand,
-  onSave,
-}: {
-  result: SearchV4RecommendationGroup;
-  expandedCandidateId: string | null;
-  onExpand: (candidateId: string | null) => void;
-  onSave: (configuration: SearchV4Configuration) => void;
-}) {
-  const configuration = result.top_configuration;
-  const expanded = expandedCandidateId === configuration.candidate_id;
-  return (
-    <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg shadow-slate-200/40">
-      <div className="grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_9rem]">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-bold text-white">
-              {configuration.ranking_status === "ranked"
-                ? `#${result.rank}`
-                : "Unranked option"}
-            </span>
-            <span className="text-sm font-semibold text-slate-500">
-              {configuration.stay_destination_name} · {configuration.stay_base_name}
-            </span>
-          </div>
-          <h2 className="mt-3 font-display text-2xl font-semibold">
-            {result.ski_region_name}
-          </h2>
-          <p className="mt-1 text-slate-600">
-            Ski {configuration.ski_area_name} with {configuration.selected_pass.name}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-            <Pill>{formatAccess(configuration)}</Pill>
-            <Pill>
-              {configuration.selected_pass.accessible_piste_km != null
-                ? `${configuration.selected_pass.accessible_piste_km} km pass coverage`
-                : "Pass terrain unresolved"}
-            </Pill>
-            <Pill>{formatPassPrice(configuration)}</Pill>
-            <Pill>{formatLodging(configuration)}</Pill>
-          </div>
-        </div>
-        <div className="flex flex-col items-end justify-between">
-          {configuration.fit_score != null ? (
-            <div className="text-right">
-              <p className="text-4xl font-bold text-blue-700">
-                {configuration.fit_score.toFixed(1)}
-              </p>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                fit / 100
-              </p>
-            </div>
-          ) : (
-            <p className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold">
-              Unranked
-            </p>
-          )}
-          <button
-            onClick={() => onSave(configuration)}
-            className="mt-4 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white"
-          >
-            Save trip
-          </button>
-        </div>
-      </div>
-      <button
-        onClick={() => onExpand(expanded ? null : configuration.candidate_id)}
-        className="w-full border-t border-slate-200 px-6 py-3 text-left text-sm font-bold text-blue-800"
-      >
-        {expanded
-          ? "Hide evidence"
-          : configuration.ranking_status === "ranked"
-            ? "Why this fit?"
-            : "Show evidence"}
-      </button>
-      {expanded ? <RankingExplanation configuration={configuration} /> : null}
-    </article>
-  );
-}
-
-function RankingExplanation({
-  configuration,
-}: {
-  configuration: SearchV4Configuration;
-}) {
-  return (
-    <div className="border-t border-slate-200 bg-slate-50 p-6">
-      <h3 className="font-bold">Group contributions</h3>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {configuration.groups.map((group) => (
-          <div key={group.group_id} className="rounded-2xl bg-white p-3">
-            <p className="text-sm font-bold">
-              {groupLabels[group.group_id] ?? group.group_id}
-            </p>
-            <p className="mt-1 text-xs text-slate-600">
-              {(group.normalized_share * 100).toFixed(0)}% budget ·{" "}
-              {group.contribution_points.toFixed(1)} points
-            </p>
-          </div>
-        ))}
-      </div>
-      <h3 className="mt-6 font-bold">Factor evidence</h3>
-      <div className="mt-3 space-y-2">
-        {configuration.factors.map((factor) => (
-          <div
-            key={factor.factor_id}
-            className="grid gap-2 rounded-2xl bg-white p-3 sm:grid-cols-[12rem_1fr_8rem]"
-          >
-            <p className="text-sm font-bold">
-              {factorLabels[factor.factor_id] ?? factor.factor_id}
-            </p>
-            <div>
-              <p className="text-xs text-slate-600">{factor.provenance_summary}</p>
-              {factor.warnings.length ? (
-                <p className="mt-1 text-xs font-semibold text-amber-800">
-                  {factor.warnings.join(" · ")}
-                </p>
-              ) : null}
-            </div>
-            <p className="text-right text-xs font-bold">
-              {factor.effective_evidence_cap === 0
-                ? "Unknown"
-                : `${factor.contribution_points.toFixed(1)} points`}
-            </p>
-          </div>
-        ))}
-      </div>
-      {configuration.constraint_warnings.length ? (
-        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-bold">Constraint uncertainty</p>
-          {configuration.constraint_warnings.map((warning) => (
-            <p key={`${warning.constraint_id}-${warning.code}`} className="mt-1 text-sm">
-              {warning.message}
-            </p>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
-      {children}
-    </span>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <div className="flex min-h-72 items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white/70 p-8 text-center text-slate-500">
-      {text}
-    </div>
-  );
-}
-
-function CurrentTripView({
-  trip,
-  summary,
-  onBack,
-  onClear,
-}: {
-  trip: CurrentTrip | null;
-  summary: CurrentTripSummary | null;
-  onBack: () => void;
-  onClear: () => void;
-}) {
-  return (
-    <main className="mx-auto max-w-4xl px-4 py-10">
-      <button onClick={onBack} className="text-sm font-bold text-blue-700">
-        ← Back to search
-      </button>
-      <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-7 shadow-xl">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
-          Trip companion
-        </p>
-        {trip ? (
-          <>
-            <h1 className="mt-2 text-3xl font-bold">{trip.ski_region_name}</h1>
-            <p className="mt-2 text-slate-600">
-              {trip.stay_base_name} · {trip.focus_ski_area_name} ·{" "}
-              {trip.lift_pass_product_name}
-            </p>
-            {summary ? (
-              <div className="mt-6 rounded-2xl bg-blue-50 p-5">
-                <p className="font-bold">Current conditions</p>
-                <p className="mt-2">{summary.current_conditions.weather_summary}</p>
-                <p className="mt-2 text-sm text-slate-600">{summary.delta.summary}</p>
-              </div>
-            ) : null}
-            <button
-              onClick={onClear}
-              className="mt-6 rounded-xl border border-red-200 px-4 py-2 text-sm font-bold text-red-700"
-            >
-              Clear current trip
-            </button>
-          </>
-        ) : (
-          <p className="mt-4 text-slate-600">
-            Save a ranked configuration in the authenticated mobile app to track it.
-          </p>
-        )}
-      </div>
-    </main>
-  );
-}
-
-function buildIntent(
-  filters: SearchFilters,
-  assumptions: string[],
-  preferences: FactorPreferencePatch[],
-  groupPriorities: GroupPriorityPatch[],
-  objectives: SearchObjective[],
-): SearchIntent {
-  const constraints: SearchIntent["constraints"] = {};
-  if (filters.location.trim()) {
-    constraints.location = { country: filters.location.trim() };
-  }
-  if (filters.travelWindowMode === "month" && filters.travelMonth) {
-    constraints.travel_window = { month: filters.travelMonth };
-  } else if (
-    filters.travelWindowMode === "dates" &&
-    filters.tripStartDate &&
-    filters.tripEndDate
-  ) {
-    constraints.travel_window = {
-      start_date: filters.tripStartDate,
-      end_date: filters.tripEndDate,
-    };
-  }
-  const maximum = Number(filters.maxPrice);
-  if (Number.isFinite(maximum) && maximum > 0) {
-    constraints.lodging_budget = {
-      mode: "lodging_nightly",
-      maximum,
-      currency: "EUR",
-      budget_flex: Number(filters.budgetFlex) || 0,
-    };
-  }
-  if (filters.stars) {
-    constraints.minimum_stay_quality = {
-      minimum_score: (Number(filters.stars) / 3) * 10,
-    };
-  }
-  const maximumDrive = Number(filters.maxDriveHours);
-  if (
-    filters.originText.trim() &&
-    Number.isFinite(maximumDrive) &&
-    maximumDrive > 0
-  ) {
-    constraints.travel_limit = {
-      maximum_duration_hours: maximumDrive,
-      mode: "car",
-    };
-  }
-  return {
-    constraints,
-    party: {
-      skill_levels: filters.skillLevel ? [filters.skillLevel] : [],
-    },
-    travel_context: filters.originText.trim()
-      ? { origin_text: filters.originText.trim(), mode: "car" }
-      : {},
-    objectives,
-    group_priorities: groupPriorities,
-    factor_preferences: preferences,
-    assumptions,
-  };
-}
-
-function mergeParsedFilters(
-  current: SearchFilters,
-  parsed: ParsedQueryResponse,
-): SearchFilters {
-  const next = { ...current };
-  if (parsed.filters.location) next.location = parsed.filters.location;
-  if (parsed.filters.max_price != null) {
-    next.maxPrice = String(parsed.filters.max_price);
-  }
-  if (parsed.filters.stars != null && parsed.filters.stars >= 1) {
-    next.stars = String(Math.min(3, parsed.filters.stars)) as SearchFilters["stars"];
-  }
-  if (parsed.filters.skill_level) next.skillLevel = parsed.filters.skill_level;
-  if (parsed.filters.trip_start_date && parsed.filters.trip_end_date) {
-    next.travelWindowMode = "dates";
-    next.tripStartDate = parsed.filters.trip_start_date;
-    next.tripEndDate = parsed.filters.trip_end_date;
-  } else if (parsed.filters.travel_month) {
-    next.travelWindowMode = "month";
-    next.travelMonth = parsed.filters.travel_month;
-  }
-  if (parsed.trip_context?.origin_text) {
-    next.originText = parsed.trip_context.origin_text;
-  }
-  return next;
-}
-
-function validateFilters(filters: SearchFilters): string | null {
-  if (!filters.location.trim()) return "Choose a country.";
-  if (
-    filters.travelWindowMode === "dates" &&
-    (!filters.tripStartDate || !filters.tripEndDate)
-  ) {
-    return "Provide both trip dates.";
-  }
-  if (
-    filters.travelWindowMode === "dates" &&
-    filters.tripEndDate < filters.tripStartDate
-  ) {
-    return "The end date must be on or after the start date.";
-  }
-  const maximumText = filters.maxPrice.trim();
-  const maximum = Number(maximumText);
-  if (maximumText && (!Number.isFinite(maximum) || maximum <= 0)) {
-    return "Maximum nightly price must be greater than 0.";
-  }
-  const maximumDriveText = filters.maxDriveHours.trim();
-  const maximumDrive = Number(maximumDriveText);
-  if (
-    maximumDriveText &&
-    (!Number.isFinite(maximumDrive) || maximumDrive <= 0)
-  ) {
-    return "Hard drive limit must be greater than 0 hours.";
-  }
-  if (maximumDriveText && !filters.originText.trim()) {
-    return "Provide an origin to use a hard drive limit.";
-  }
-  const flex = Number(filters.budgetFlex);
-  if (filters.budgetFlex && (!Number.isFinite(flex) || flex < 0 || flex > 0.5)) {
-    return "Budget flexibility must be between 0 and 0.5.";
-  }
-  return null;
-}
-
-function upsertBy<T>(
-  current: T[],
-  patches: T[],
-  key: (item: T) => string,
-): T[] {
-  const patchKeys = new Set(patches.map(key));
-  return [...current.filter((item) => !patchKeys.has(key(item))), ...patches];
-}
-
-function formatAccess(configuration: SearchV4Configuration): string {
-  const value = configuration.access.access_mode.replaceAll("_", " ");
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function formatPassPrice(configuration: SearchV4Configuration): string {
-  const price = configuration.selected_pass.price;
-  if (!price) return "Comparable pass price unavailable";
-  if (price.amount != null) {
-    return `${price.currency} ${price.amount} / ${price.duration_days} days`;
-  }
-  if (price.amount_max != null) {
-    return `${price.currency} ${price.amount_min}-${price.amount_max} / ${price.duration_days} days`;
-  }
-  return "Pass price unresolved";
-}
-
-function formatLodging(configuration: SearchV4Configuration): string {
-  const estimate = configuration.lodging_estimate;
-  if (!estimate) return "Lodging estimate unavailable";
-  return `${estimate.currency} ${estimate.minimum}-${estimate.maximum} nightly (${estimate.trust_status})`;
 }
 
 export default App;

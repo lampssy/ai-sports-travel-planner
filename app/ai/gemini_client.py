@@ -100,6 +100,12 @@ class GeminiClient(LLMClient):
                 "Gemini request failed due to a network error.",
                 reason="network_error",
             ) from error
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise LLMClientError(
+                "Gemini returned a malformed response.",
+                reason="provider_error",
+                provider_status="MALFORMED_RESPONSE",
+            ) from error
 
         try:
             content = body["candidates"][0]["content"]["parts"][0]["text"]

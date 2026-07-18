@@ -497,11 +497,19 @@ curl --request POST http://127.0.0.1:8000/api/search \
       "objectives": [
         {"factor_id": "pass_terrain_value", "importance": "normal"}
       ]
-    },
-    "generate_refinements": false
+    }
   }'
 ```
 
+- `POST /api/search/refinements` after a successful ranking. Send the returned
+  canonical `applied_intent`, `baseline_fingerprint`, the optional trip brief,
+  and answered question IDs. The endpoint returns one explicit status:
+  `questions_available`, `not_needed`, or `temporarily_unavailable`. The
+  ranking-to-refinement handoff is process-local and expires after 60 seconds;
+  delivered questions do not expire, and applying an answer creates a fresh
+  ranked baseline before Snowcast asks the next question.
+- `POST /api/search/weather-evidence` with the returned `applied_intent` and one
+  canonical `ski_area_id` to load typed dossier weather evidence on demand.
 - `POST /api/parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate in March" }`
 - `POST /api/parse-query` can also extract exact date windows such as `{ "query": "France intermediate ski trip 9 Apr to 16 Apr" }`
 - The fallback parser also handles compact numeric date ranges such as `21-27.01.2027` and common origin phrasing such as `from Munich`.
@@ -539,8 +547,13 @@ as HTTP status, provider status, and a short normalized message.
 - selected pass coverage and comparable price slice
 - source-aware group/factor contributions, evidence caps, warnings, and
   provenance scoped to the selected ski area
-- optional validated dynamic refinement questions whose answers are typed
-  intent patches
+- a public `baseline_fingerprint` used with the canonical intent digest to look
+  up the exact short-lived evaluated baseline for a later refinement request
+
+`/search/refinements` returns optional validated questions whose answers are
+typed intent patches. Visible question and option copy is grounded
+deterministically from those validated patches; the LLM does not supply
+recommendation facts or ranking claims.
 
 Contract hardening in this phase keeps the API semantics close to the code:
 - request and response semantics are described in the Pydantic models
@@ -608,7 +621,11 @@ npm run test:e2e
 npm run build
 ```
 
-GitHub Actions runs lint, formatting checks, and tests on pushes and pull requests. A separate deploy workflow runs on push to `main`.
+GitHub Actions preserves the Linux Python lint/test job and runs the locked
+frontend unit, production-build, and full Chromium E2E/visual suite in a
+dedicated macOS job. The visual baselines are Darwin-specific and are not
+treated as portable Ubuntu snapshots. A separate deploy workflow runs on push
+to `main`.
 
 ## Deployment
 Snowcast uses a single public app shape with FastAPI serving the built frontend and API together.
