@@ -400,15 +400,6 @@ def _rank_variant(
     candidates: Sequence[RefinementCandidateState],
     policy: SearchPolicy,
 ) -> _VariantRanking:
-    evaluations_by_candidate_id = {
-        candidate.candidate_id: (
-            candidate.evaluation_replayer(intent)
-            if candidate.evaluation_replayer is not None
-            else candidate.evaluations
-        )
-        for candidate in candidates
-        if candidate.eligible
-    }
     eligible: list[RefinementCandidateState] = []
     for candidate in candidates:
         is_eligible = (
@@ -418,6 +409,14 @@ def _rank_variant(
         )
         if is_eligible:
             eligible.append(candidate)
+    evaluations_by_candidate_id = {
+        candidate.candidate_id: (
+            candidate.evaluation_replayer(intent)
+            if candidate.evaluation_replayer is not None
+            else candidate.evaluations
+        )
+        for candidate in eligible
+    }
     scores: dict[str, float] = {}
     for candidate in eligible:
         result = score_factor_evaluations(

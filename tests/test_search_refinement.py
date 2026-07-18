@@ -10,6 +10,7 @@ from app.domain.search_refinement import (
     RefinementOption,
     RefinementProposal,
     RefinementValidationError,
+    _rank_variant,
     apply_refinement_option,
     validate_refinement_proposal,
 )
@@ -212,6 +213,58 @@ def test_validated_refinement_marks_a_baseline_option_as_intent_unchanged() -> N
 
     assert validated.variant_outcomes[0].intent_changed is False
     assert validated.variant_outcomes[1].intent_changed is True
+
+
+def test_rank_variant_uses_stored_evaluations_after_false_to_true_eligibility() -> None:
+    candidate = RefinementCandidateState(
+        candidate_id="newly-eligible",
+        evaluations=(
+            _evaluation("trip_window_snow_fit", 0.7),
+            _evaluation("accessible_terrain_scale", 0.8),
+            _evaluation("stay_base_access", 0.6),
+        ),
+        eligible=False,
+        eligibility_evaluator=lambda _intent: True,
+    )
+
+    variant = _rank_variant(
+        intent=SearchIntent(),
+        candidates=(candidate,),
+        policy=load_search_policy(),
+    )
+
+    assert variant.eligible_ids == frozenset({"newly-eligible"})
+    assert variant.ordered_ids == ("newly-eligible",)
+    assert variant.evaluations_by_candidate_id == {
+        "newly-eligible": candidate.evaluations
+    }
+
+
+def test_rank_variant_does_not_replay_true_to_false_excluded_candidate() -> None:
+    replayed_intents: list[SearchIntent] = []
+
+    def replay(intent: SearchIntent) -> tuple[FactorEvaluation, ...]:
+        replayed_intents.append(intent)
+        return (_evaluation("accessible_terrain_scale", 0.8),)
+
+    candidate = RefinementCandidateState(
+        candidate_id="newly-excluded",
+        evaluations=(_evaluation("accessible_terrain_scale", 0.8),),
+        eligible=True,
+        eligibility_evaluator=lambda _intent: False,
+        evaluation_replayer=replay,
+    )
+
+    variant = _rank_variant(
+        intent=SearchIntent(),
+        candidates=(candidate,),
+        policy=load_search_policy(),
+    )
+
+    assert variant.eligible_ids == frozenset()
+    assert variant.ordered_ids == ()
+    assert variant.evaluations_by_candidate_id == {}
+    assert replayed_intents == []
 
 
 def test_apply_option_upserts_typed_patches_without_mutating_original() -> None:
