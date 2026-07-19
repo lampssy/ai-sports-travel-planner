@@ -122,4 +122,56 @@ describe("DecisionEvidenceLedger", () => {
       ).toBeNull();
     },
   );
+
+  test.each([
+    [
+      "keeps the catalog stay-base relationship when distance needs verification",
+      "estimated",
+      "The catalog links Breuil-Cervinia to Cervinia.",
+    ],
+    [
+      "identifies a stay-base relationship that needs verification",
+      "needs_source",
+      "The link between Breuil-Cervinia and Cervinia needs verification.",
+    ],
+  ] as const)(
+    "%s in the opened access disclosure",
+    async (_case, relationshipTrustStatus, relationshipBasis) => {
+      const user = userEvent.setup();
+      const candidate = configuration();
+      candidate.access = {
+        ...candidate.access,
+        nearest_lift_name: "Plan Maison",
+        distance_m: 250,
+        relationship_trust_status: relationshipTrustStatus,
+        access_mode_distance_trust_status: "needs_source",
+      };
+
+      render(<DecisionEvidenceLedger configuration={candidate} />);
+      await user.click(screen.getByText("Sources and calculation details"));
+
+      const accessRow = screen
+        .getByRole("heading", { name: "Stay base and lift access" })
+        .closest("article");
+      expect(accessRow).not.toBeNull();
+      expect(
+        within(accessRow as HTMLElement).getByText(
+          "Source confirmation is still needed.",
+          { exact: false },
+        ),
+      ).toBeVisible();
+      expect(
+        within(accessRow as HTMLElement).getByText(relationshipBasis, {
+          exact: false,
+        }),
+      ).toBeVisible();
+      expect(
+        within(accessRow as HTMLElement).getByText(
+          "The lift-access mode and distance need verification.",
+          { exact: false },
+        ),
+      ).toBeVisible();
+      expect(within(accessRow as HTMLElement).queryByText(/Plan Maison|250 m/i)).toBeNull();
+    },
+  );
 });

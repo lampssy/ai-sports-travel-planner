@@ -1,3 +1,5 @@
+import type { CatalogTrustStatus } from "../types";
+
 export const snowRiskSignal = {
   title: "April is risky below 1,800m",
   body: "Use archive snow evidence before you commit.",
@@ -25,3 +27,25 @@ export const evidenceQualityCopy = {
 } as const;
 
 export type EvidenceQualityMode = keyof typeof evidenceQualityCopy;
+
+export const catalogTrustStatusCopy = {
+  verified: {
+    primary: "Based on source data",
+    technical: "Based on source data.",
+  },
+  verified_with_adjustment: {
+    primary: "Estimated from source data for this trip",
+    technical: "Estimated from source data for this trip configuration.",
+  },
+  estimated: {
+    primary: "Estimated from available data",
+    technical: "Estimated from available catalog data.",
+  },
+  needs_source: {
+    primary: "Source confirmation needed",
+    technical: "Source confirmation is still needed.",
+  },
+} as const satisfies Record<
+  CatalogTrustStatus,
+  { primary: string; technical: string }
+>;

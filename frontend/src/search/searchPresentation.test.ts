@@ -696,7 +696,8 @@ describe("why this trip presentation", () => {
     );
     expect(technicalAccess).toMatchObject({
       evidenceLabel: "Source confirmation needed",
-      provenance: "Source confirmation is still needed.",
+      provenance:
+        "Source confirmation is still needed. The catalog links Base unverified-access to Area unverified-access. The lift-access mode and distance need verification.",
     });
     expect(JSON.stringify(technicalAccess)).not.toMatch(/Plan Maison|250 m/i);
   });

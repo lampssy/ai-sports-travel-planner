@@ -1,6 +1,11 @@
 import {
+  clearCurrentTrip,
   fetchSearchRefinements,
   fetchSearchWeatherEvidence,
+  getCurrentTrip,
+  getCurrentTripEvents,
+  getCurrentTripSummary,
+  markCurrentTripChecked,
   parseTripBrief,
   saveCurrentTrip,
   searchIntentRequestPayload,
@@ -176,6 +181,31 @@ describe("Search API request projection", () => {
           booking_status: "not_booked_yet",
         }),
       "Unable to save current trip. Check your connection and try again.",
+    ],
+    [
+      "saved current trip",
+      () => getCurrentTrip(),
+      "Unable to load current trip. Check your connection and try again.",
+    ],
+    [
+      "current trip activity",
+      () => getCurrentTripEvents(),
+      "Unable to load current trip activity. Check your connection and try again.",
+    ],
+    [
+      "current trip removal",
+      () => clearCurrentTrip(),
+      "Unable to remove current trip. Check your connection and try again.",
+    ],
+    [
+      "current trip summary",
+      () => getCurrentTripSummary(),
+      "Unable to load current trip summary. Check your connection and try again.",
+    ],
+    [
+      "current trip check",
+      () => markCurrentTripChecked(),
+      "Unable to mark current trip as checked. Check your connection and try again.",
     ],
   ])("uses an action-scoped fetch failure for %s", async (_action, request, message) => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));

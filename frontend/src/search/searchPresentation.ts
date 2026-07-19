@@ -6,7 +6,10 @@ import type {
   SearchV4PassSummary,
   SearchV4RecommendationGroup,
 } from "../types";
-import type { EvidenceQualityMode } from "../ui/snowcastCopy";
+import {
+  catalogTrustStatusCopy,
+  type EvidenceQualityMode,
+} from "../ui/snowcastCopy";
 
 export const monthOptions = [
   "January",
@@ -274,16 +277,7 @@ export function formatLodging(configuration: SearchV4Configuration): string {
 export function lodgingTrustLabel(
   trustStatus: NonNullable<SearchV4Configuration["lodging_estimate"]>["trust_status"],
 ): string {
-  switch (trustStatus) {
-    case "verified":
-      return "Verified";
-    case "verified_with_adjustment":
-      return "Verified with adjustment";
-    case "estimated":
-      return "Estimated";
-    case "needs_source":
-      return "Needs source";
-  }
+  return catalogTrustStatusCopy[trustStatus].primary;
 }
 
 export function formatAccommodationEstimate(
@@ -419,16 +413,7 @@ function approximatePrefix(
 function trustProvenance(
   trust: CatalogTrustStatus,
 ): string {
-  switch (trust) {
-    case "verified":
-      return "Based on source data.";
-    case "verified_with_adjustment":
-      return "Estimated from source data for this trip configuration.";
-    case "estimated":
-      return "Estimated from available catalog data.";
-    case "needs_source":
-      return "Source confirmation is still needed.";
-  }
+  return catalogTrustStatusCopy[trust].technical;
 }
 
 const catalogTrustStatuses = [
@@ -458,6 +443,28 @@ function technicalProvenance(provenance: string): string {
     .trim();
 
   return detail ? `${trustProvenance(trust)} ${detail}` : trustProvenance(trust);
+}
+
+function accessProvenance(configuration: SearchV4Configuration): string {
+  const { access } = configuration;
+  const details = [trustProvenance(accessTrustState(configuration))];
+
+  details.push(
+    access.relationship_trust_status === "needs_source"
+      ? `The link between ${configuration.stay_base_name} and ${configuration.ski_area_name} needs verification.`
+      : `The catalog links ${configuration.stay_base_name} to ${configuration.ski_area_name}.`,
+  );
+
+  if (access.access_mode_distance_trust_status === "needs_source") {
+    details.push("The lift-access mode and distance need verification.");
+  } else if (
+    access.relationship_trust_status !== "needs_source" &&
+    access.nearest_lift_name
+  ) {
+    details.push(`Nearest lift: ${access.nearest_lift_name}.`);
+  }
+
+  return details.join(" ");
 }
 
 const accessModeLabels: Record<string, string | null> = {
@@ -767,15 +774,13 @@ export function decisionEvidencePresentation(
       ? {
           id: "catalog-access",
           label: "Stay base and lift access",
-          provenance: trustProvenance(accessTrust),
+          provenance: accessProvenance(configuration),
           evidenceLabel: "Source confirmation needed",
         }
       : {
           id: "catalog-access",
           label: "Stay base and lift access",
-          provenance: configuration.access.nearest_lift_name
-            ? `${trustProvenance(accessTrust)} Nearest lift: ${configuration.access.nearest_lift_name}.`
-            : trustProvenance(accessTrust),
+          provenance: accessProvenance(configuration),
           evidenceLabel:
             configuration.access.distance_m != null
               ? `${accessTrustPrefix(configuration)}${configuration.access.distance_m} m`

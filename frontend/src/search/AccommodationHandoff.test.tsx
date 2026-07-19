@@ -65,7 +65,7 @@ test("renders an honest stay-base estimate and selected-base handoff URL", () =>
   expect(screen.getByText("Stay-base estimate, not live hotel inventory")).toBeVisible();
   expect(screen.getByRole("heading", { name: "Find a stay in Le Lac" })).toBeVisible();
   expect(screen.getByText("EUR 180-255/night")).toBeVisible();
-  expect(screen.getByText("Estimated")).toBeVisible();
+  expect(screen.getByText("Estimated from available data")).toBeVisible();
   expect(screen.getByText(/toviere.*250 m walk/i)).toBeVisible();
   const link = screen.getByRole("link", { name: "Open accommodation search" });
   expect(link).toHaveAttribute(
@@ -76,20 +76,22 @@ test("renders an honest stay-base estimate and selected-base handoff URL", () =>
 });
 
 test.each([
-  ["verified", "Verified"],
-  ["verified_with_adjustment", "Verified with adjustment"],
-  ["estimated", "Estimated"],
-] as const)("preserves %s trust wording", (status, label) => {
+  ["verified", "Based on source data"],
+  ["verified_with_adjustment", "Estimated from source data for this trip"],
+  ["estimated", "Estimated from available data"],
+] as const)("presents %s lodging evidence in plain language", (status, label) => {
   render(<AccommodationHandoff configuration={configuration(status)} />);
   expect(screen.getByText(label)).toBeVisible();
+  expect(document.body.textContent).not.toMatch(/verified with adjustment/i);
 });
 
 test("does not render a numeric lodging estimate when sourcing is required", () => {
   render(<AccommodationHandoff configuration={configuration("needs_source")} />);
 
-  expect(screen.getByText("Needs source")).toBeVisible();
+  expect(screen.getByText("Source confirmation needed")).toBeVisible();
   expect(screen.getByText(/no supported lodging estimate is available/i)).toBeVisible();
   expect(screen.queryByText(/180|255/)).toBeNull();
+  expect(document.body.textContent).not.toMatch(/needs source/i);
 });
 
 test("does not expose unverified lift-access details", () => {

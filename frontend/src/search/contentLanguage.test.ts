@@ -6,6 +6,7 @@ import {
   buildCandidateNarrative,
   decisionEvidencePresentation,
   formatTripEssential,
+  lodgingTrustLabel,
   terrainPresentation,
 } from "./searchPresentation";
 
@@ -17,6 +18,8 @@ const INTERNAL_PRIMARY_PHRASES = [
   "closer terrain review",
   "fallback-heavy",
   "backend api",
+  "verified with adjustment",
+  "needs source",
 ];
 
 function configuration(): SearchV4Configuration {
@@ -103,6 +106,8 @@ describe("content language contracts", () => {
       ...decisionEvidencePresentation(candidate).supports.map((item) => item.detail),
       ...decisionEvidencePresentation(candidate).uncertainties.map((item) => item.detail),
       evidenceQualityCopy.fallbackHeavy.label,
+      lodgingTrustLabel("verified_with_adjustment"),
+      lodgingTrustLabel("needs_source"),
     ]
       .filter((value): value is string => Boolean(value))
       .join(" ")
@@ -111,6 +116,20 @@ describe("content language contracts", () => {
     for (const phrase of INTERNAL_PRIMARY_PHRASES) {
       expect(primaryCopy).not.toContain(phrase);
     }
+  });
+
+  test("uses plain lodging evidence statuses", () => {
+    expect([
+      lodgingTrustLabel("verified"),
+      lodgingTrustLabel("verified_with_adjustment"),
+      lodgingTrustLabel("estimated"),
+      lodgingTrustLabel("needs_source"),
+    ]).toEqual([
+      "Based on source data",
+      "Estimated from source data for this trip",
+      "Estimated from available data",
+      "Source confirmation needed",
+    ]);
   });
 
   test("keeps estimates visible while giving terrain and lift access plain labels", () => {
@@ -140,7 +159,7 @@ describe("content language contracts", () => {
         expect.objectContaining({
           id: "catalog-access",
           provenance:
-            "Estimated from source data for this trip configuration. Nearest lift: Silvrettabahn.",
+            "Estimated from source data for this trip configuration. The catalog links Ischgl to Ischgl. Nearest lift: Silvrettabahn.",
         }),
       ]),
     );

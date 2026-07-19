@@ -254,7 +254,12 @@ export async function parseTripBrief(
 }
 
 export async function getCurrentTrip(): Promise<CurrentTrip | null> {
-  const response = await fetch(`${API_PREFIX}/current-trip`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/current-trip`);
+  } catch {
+    throw new Error(fetchFailureMessage("Unable to load current trip."));
+  }
 
   if (response.status === 401) {
     return null;
@@ -314,7 +319,12 @@ export async function saveCurrentTrip(input: {
 }
 
 export async function getCurrentTripEvents(): Promise<CompanionEvent[]> {
-  const response = await fetch(`${API_PREFIX}/current-trip/events`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/current-trip/events`);
+  } catch {
+    throw new Error(fetchFailureMessage("Unable to load current trip activity."));
+  }
 
   if (response.status === 401 || response.status === 404) {
     return [];
@@ -332,9 +342,14 @@ export async function getCurrentTripEvents(): Promise<CompanionEvent[]> {
 }
 
 export async function clearCurrentTrip(): Promise<void> {
-  const response = await fetch(`${API_PREFIX}/current-trip`, {
-    method: "DELETE",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/current-trip`, {
+      method: "DELETE",
+    });
+  } catch {
+    throw new Error(fetchFailureMessage("Unable to remove current trip."));
+  }
 
   if (response.status === 401) {
     throw new Error(MOBILE_AUTH_REQUIRED_MESSAGE);
@@ -349,7 +364,12 @@ export async function clearCurrentTrip(): Promise<void> {
 }
 
 export async function getCurrentTripSummary(): Promise<CurrentTripSummary | null> {
-  const response = await fetch(`${API_PREFIX}/current-trip/summary`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/current-trip/summary`);
+  } catch {
+    throw new Error(fetchFailureMessage("Unable to load current trip summary."));
+  }
 
   if (response.status === 401 || response.status === 404) {
     return null;
@@ -366,9 +386,16 @@ export async function getCurrentTripSummary(): Promise<CurrentTripSummary | null
 }
 
 export async function markCurrentTripChecked(): Promise<CurrentTrip> {
-  const response = await fetch(`${API_PREFIX}/current-trip/mark-checked`, {
-    method: "POST",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/current-trip/mark-checked`, {
+      method: "POST",
+    });
+  } catch {
+    throw new Error(
+      fetchFailureMessage("Unable to mark current trip as checked."),
+    );
+  }
 
   if (response.status === 401) {
     throw new Error(MOBILE_AUTH_REQUIRED_MESSAGE);
