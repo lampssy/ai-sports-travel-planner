@@ -205,6 +205,7 @@ decision.
 | Catalog/source acquisition | data-trust-source-integrity, backend-api, ai-llm-reliability when LLM extraction changes |
 | Parser/narrative/LLM | ai-llm-reliability, backend-api, security-privacy when user text/logging is involved |
 | Web planning UI | ui-ux, accessibility, product-strategy |
+| Content / language changes | content-language, ui-ux, data-trust-source-integrity when evidence wording changes |
 | Public resort pages | growth-seo, data-trust-source-integrity, accessibility |
 | Auth/current-trip/user data | security-privacy, backend-api, mobile-companion when mobile is affected |
 | Mobile companion | mobile-companion, security-privacy, backend-api |

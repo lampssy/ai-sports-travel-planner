@@ -14,6 +14,15 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 
 ## Architecture
 
+### User-facing content ownership
+
+- B2 English is the maximum product-language complexity; simpler is preferred.
+- Refinement vocabulary is server-owned and versioned.
+- Data-dependent recommendation and dossier sentences are built from typed view models.
+- Reusable actions, statuses, and empty states use the shared frontend copy module.
+- Components do not translate raw trust enums or reconstruct domain meaning.
+- Human Content & Language review remains authoritative; readability scores and blocked-word checks are supporting tools only.
+
 ### Current shape
 - Backend-first architecture using FastAPI.
 - Deterministic domain logic is kept separate from AI helpers and integrations.

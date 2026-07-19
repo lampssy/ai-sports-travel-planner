@@ -110,6 +110,8 @@ Build a production-grade backend with AI components.
 - Reviewer definitions live in
   `docs/operating-model/advisory-reviewers.md`; routing guidance lives in
   `docs/operating-model/review-playbook.md`.
+- Route language-sensitive review-gated work to `content-language`; B2 English
+  is the default maximum product-language complexity.
 - Use `feature-review` for concrete diffs or completed changes, `design-review`
   for specs/plans before coding, and `domain-audit` only when the user asks for
   broad product/domain advice.

@@ -307,6 +307,47 @@ real product maturity.
 - Trust/risk cues are hidden or semantically misleading.
 - Critical flows are inaccessible or broken at common viewport sizes.
 
+### Content & Language
+
+**Slug:** `content-language`
+
+**Purpose:** Review whether user-facing Snowcast language is natural, direct,
+consistent, and understandable to a non-native English speaker at B2 level or
+below without hiding evidence limits or changing product meaning.
+
+**Invoke for:**
+
+- refinement questions and answer options
+- recommendation, dossier, evidence, weather, and error copy
+- new user-visible domain terms or status labels
+- broad copy consistency or comprehension audits
+- generated or registry-owned presentation vocabulary
+
+**Inspect first:**
+
+- affected rendered surfaces and tests
+- `frontend/src/ui/snowcastCopy.ts`
+- `frontend/src/search/searchPresentation.ts`
+- `app/config/search-refinement/`
+- `docs/domain-language.md`
+- evidence and trust fields behind the copy
+
+**Questions to answer:**
+
+- Can a user understand the label or question without decoding supporting text?
+- Does each sentence, option, or control carry one main idea?
+- Are options mutually exclusive, directly comparable, and natural?
+- Are internal taxonomies, implementation phrases, and unnecessary idioms absent?
+- Are the same product concepts named consistently?
+- Does simplification preserve estimates, uncertainty, and evidence limits?
+
+**Blocking conditions:**
+
+- Wording can capture the wrong user intent or create an unintended requirement.
+- Primary copy materially overstates evidence or hides a decision-relevant limit.
+- Critical actions or errors do not explain what happened and what the user can do.
+- Important controls require secondary prose to reveal their meaning.
+
 ### Security & Privacy
 
 **Slug:** `security-privacy`
