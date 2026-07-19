@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import threading
 
 import pytest
@@ -70,8 +71,79 @@ def test_refinement_openapi_documents_admission_rejection() -> None:
         "minimum": 1,
     }
     assert response["content"]["application/json"]["schema"] == {
-        "$ref": "#/components/schemas/ApiErrorResponse"
+        "$ref": "#/components/schemas/PublicErrorResponse"
     }
+
+
+def test_public_error_registry_matches_accepted_adr() -> None:
+    try:
+        public_errors = importlib.import_module("app.api.public_errors")
+    except ModuleNotFoundError:
+        pytest.fail("the public error registry has not been implemented")
+
+    expected_statuses = {
+        "invalid_request": 422,
+        "authentication_required": 401,
+        "session_expired": 401,
+        "sign_in_failed": 401,
+        "sign_in_unavailable": 503,
+        "search_request_invalid": 422,
+        "weather_area_not_found": 422,
+        "refinement_rate_limited": 429,
+        "trip_option_invalid": 422,
+        "current_trip_not_found": 404,
+        "trip_option_not_found": 404,
+        "not_found": 404,
+        "request_failed": 500,
+    }
+
+    assert {
+        code.value: public_errors.public_error_status(code)
+        for code in public_errors.PublicErrorCode
+    } == expected_statuses
+
+
+def test_customer_openapi_declares_the_public_error_envelope() -> None:
+    app.openapi_schema = None
+    schema = app.openapi()
+    expected_responses = {
+        ("/api/search", "post"): {"422", "500"},
+        ("/api/search/refinements", "post"): {"422", "429", "500"},
+        ("/api/search/weather-evidence", "post"): {"422", "500"},
+        ("/api/parse-query", "post"): {"422", "500"},
+        ("/api/auth/google/sign-in", "post"): {"401", "422", "500", "503"},
+        ("/api/current-trip", "get"): {"401", "500"},
+        ("/api/current-trip", "put"): {"401", "422", "500"},
+        ("/api/current-trip", "delete"): {"401", "500"},
+        ("/api/current-trip/summary", "get"): {"401", "404", "500"},
+        ("/api/current-trip/mark-checked", "post"): {"401", "404", "500"},
+        ("/api/current-trip/events", "get"): {"401", "500"},
+        ("/api/devices/register", "post"): {"401", "422", "500"},
+    }
+
+    for (path, method), expected_statuses in expected_responses.items():
+        responses = schema["paths"][path][method]["responses"]
+        assert expected_statuses <= responses.keys()
+        for status in expected_statuses:
+            assert responses[status]["content"]["application/json"]["schema"] == {
+                "$ref": "#/components/schemas/PublicErrorResponse"
+            }
+
+    assert schema["components"]["schemas"]["PublicErrorCode"]["enum"] == [
+        "invalid_request",
+        "authentication_required",
+        "session_expired",
+        "sign_in_failed",
+        "sign_in_unavailable",
+        "search_request_invalid",
+        "weather_area_not_found",
+        "refinement_rate_limited",
+        "trip_option_invalid",
+        "current_trip_not_found",
+        "trip_option_not_found",
+        "not_found",
+        "request_failed",
+    ]
 
 
 def test_refinement_openapi_bounds_the_public_queue_to_one_proposal() -> None:
@@ -264,7 +336,7 @@ def test_post_search_refinements_rejects_invalid_intent_with_safe_422(
     response = TestClient(app).post("/api/search/refinements", json=_request_payload())
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "unknown factor ID: invented"
+    assert response.json() == {"error": {"code": "search_request_invalid"}}
 
 
 def test_post_search_refinements_hides_provider_failure_details(
@@ -278,7 +350,7 @@ def test_post_search_refinements_hides_provider_failure_details(
     response = TestClient(app).post("/api/search/refinements", json=_request_payload())
 
     assert response.status_code == 500
-    assert response.json() == {"detail": "Unable to load refinements."}
+    assert response.json() == {"error": {"code": "request_failed"}}
 
 
 def test_post_search_refinements_fails_closed_when_snapshot_is_missing(
@@ -451,7 +523,7 @@ def test_post_search_refinements_rejects_before_evaluation_when_admission_denies
     )
 
     assert response.status_code == 429
-    assert response.json() == {"detail": "Refinement is temporarily unavailable."}
+    assert response.json() == {"error": {"code": "refinement_rate_limited"}}
     assert response.headers["Retry-After"] == "7"
     assert captured_keys == ["fly:203.0.113.7"]
 
@@ -515,7 +587,7 @@ def test_post_search_refinements_releases_capacity_when_executor_rejects_submit(
     response = TestClient(app).post("/api/search/refinements", json=_request_payload())
 
     assert response.status_code == 500
-    assert response.json() == {"detail": "Unable to load refinements."}
+    assert response.json() == {"error": {"code": "request_failed"}}
     assert releases == 1
 
 
@@ -702,6 +774,18 @@ def test_post_search_rejects_untyped_raw_weights() -> None:
     response = TestClient(app).post("/api/search", json=payload)
 
     assert response.status_code == 422
+    assert response.json() == {"error": {"code": "invalid_request"}}
+
+
+def test_post_search_rejects_malformed_json_without_validation_details() -> None:
+    response = TestClient(app).post(
+        "/api/search",
+        content='{"intent":',
+        headers={"content-type": "application/json"},
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {"error": {"code": "invalid_request"}}
 
 
 def test_post_search_maps_unregistered_intent_to_validation_error(monkeypatch) -> None:
@@ -713,4 +797,23 @@ def test_post_search_maps_unregistered_intent_to_validation_error(monkeypatch) -
     response = TestClient(app).post("/api/search", json=_ranking_request_payload())
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "unknown factor ID: invented"
+    assert response.json() == {"error": {"code": "search_request_invalid"}}
+
+
+def test_unexpected_customer_failure_uses_bounded_public_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.api.routes.search_trip_configurations",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            RuntimeError("provider token traceback internal-id")
+        ),
+    )
+
+    response = TestClient(app, raise_server_exceptions=False).post(
+        "/api/search",
+        json=_ranking_request_payload(),
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {"error": {"code": "request_failed"}}

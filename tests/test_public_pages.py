@@ -81,6 +81,13 @@ def test_public_destination_page_unknown_destination_returns_404() -> None:
         response = client.get("/ski-destinations/not-a-destination")
 
     assert response.status_code == 404
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>Destination not found | Snowcast</title>" in response.text
+    assert "<main" in response.text
+    assert "<h1>We could not find this ski destination</h1>" in response.text
+    assert "Return to search" in response.text
+    assert 'href="/"' in response.text
+    assert "Unknown stay_destination_id" not in response.text
 
 
 def test_sitemap_lists_every_public_destination_page() -> None:

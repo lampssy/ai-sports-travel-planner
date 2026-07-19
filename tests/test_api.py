@@ -4,7 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.ai.parser import HeuristicQueryParser, get_query_parser
-from app.auth.google import GoogleIdentity, GoogleIdentityTokenError
+from app.auth.google import (
+    GoogleAuthConfigurationError,
+    GoogleIdentity,
+    GoogleIdentityTokenError,
+)
 from app.data.catalog_loader import load_catalog
 from app.data.catalog_repository import CatalogRepository
 from app.data.catalog_sync import sync_catalog_snapshot
@@ -466,7 +470,7 @@ def test_search_weather_evidence_endpoint_rejects_bounded_errors(
     )
 
     assert unknown_response.status_code == 422
-    assert unknown_response.json() == {"detail": "Unknown ski area ID."}
+    assert unknown_response.json() == {"error": {"code": "weather_area_not_found"}}
 
     def invalid_intent(**_kwargs):
         raise SearchIntentPolicyError("unknown factor ID: invalid")
@@ -478,7 +482,7 @@ def test_search_weather_evidence_endpoint_rejects_bounded_errors(
     )
 
     assert invalid_response.status_code == 422
-    assert invalid_response.json() == {"detail": "unknown factor ID: invalid"}
+    assert invalid_response.json() == {"error": {"code": "search_request_invalid"}}
 
 
 def test_search_weather_evidence_endpoint_records_bounded_http_route_metric(
@@ -712,11 +716,26 @@ def test_outbound_accommodation_redirect_rejects_unknown_destination_id() -> Non
             "focus_ski_area_id": "tignes-ski-area",
             "source_surface": "selected_result_details",
         },
+        headers={
+            "referer": (
+                "http://testserver/recommendations/tignes-val-disere"
+                "?candidate=tignes-access--local-pass"
+            )
+        },
         follow_redirects=False,
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Unknown trip configuration"
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>Trip option unavailable | Snowcast</title>" in response.text
+    assert "<main" in response.text
+    assert "<h1>This trip option is no longer available</h1>" in response.text
+    assert "Return to trip details" in response.text
+    assert (
+        'href="/recommendations/tignes-val-disere'
+        '?candidate=tignes-access--local-pass"' in response.text
+    )
+    assert "Unknown trip configuration" not in response.text
 
 
 def test_outbound_accommodation_redirect_rejects_invalid_access_pair() -> None:
@@ -731,7 +750,8 @@ def test_outbound_accommodation_redirect_rejects_invalid_access_pair() -> None:
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Unknown trip configuration"
+    assert "text/html" in response.headers["content-type"]
+    assert "Return to Snowcast" in response.text
 
 
 def test_google_sign_in_creates_session_and_reuses_user(monkeypatch) -> None:
@@ -781,21 +801,52 @@ def test_google_sign_in_rejects_invalid_token(monkeypatch) -> None:
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "google identity token is invalid"
+    assert response.json() == {"error": {"code": "sign_in_failed"}}
+
+
+def test_google_sign_in_reports_provider_configuration_failure(monkeypatch) -> None:
+    def _fail_verification(_identity_token: str) -> None:
+        raise GoogleAuthConfigurationError("GOOGLE_OAUTH_CLIENT_IDS missing")
+
+    monkeypatch.setattr(
+        "app.api.routes.verify_google_identity_token",
+        _fail_verification,
+    )
+
+    response = client.post(
+        "/api/auth/google/sign-in",
+        json={"identity_token": "google-token"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"error": {"code": "sign_in_unavailable"}}
 
 
 def test_current_trip_endpoints_require_authentication() -> None:
-    assert client.get("/api/current-trip").status_code == 401
-    assert (
+    responses = (
+        client.get("/api/current-trip"),
         client.put(
             "/api/current-trip",
             json=_tignes_trip_payload(),
-        ).status_code
-        == 401
+        ),
+        client.get("/api/current-trip/summary"),
+        client.post("/api/current-trip/mark-checked"),
+        client.delete("/api/current-trip"),
     )
-    assert client.get("/api/current-trip/summary").status_code == 401
-    assert client.post("/api/current-trip/mark-checked").status_code == 401
-    assert client.delete("/api/current-trip").status_code == 401
+
+    for response in responses:
+        assert response.status_code == 401
+        assert response.json() == {"error": {"code": "authentication_required"}}
+
+
+def test_current_trip_rejects_expired_session() -> None:
+    response = client.get(
+        "/api/current-trip",
+        headers={"Authorization": "Bearer expired-token"},
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {"error": {"code": "session_expired"}}
 
 
 def test_current_trip_endpoints_save_read_and_clear(monkeypatch) -> None:
@@ -878,43 +929,30 @@ def test_current_trip_rejects_base_owned_by_another_destination(monkeypatch) -> 
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "Invalid trip configuration"
+    assert response.json() == {"error": {"code": "trip_option_invalid"}}
 
 
 @pytest.mark.parametrize(
-    ("updates", "expected_detail"),
+    "updates",
     [
-        (
-            {
-                "ski_region_id": "cervinia",
-                "ski_region_name": "Cervinia",
-            },
-            "Invalid trip configuration",
-        ),
-        (
-            {
-                "focus_ski_area_id": "val-disere-ski-area",
-                "focus_ski_area_name": "Val d'Isere",
-            },
-            "Invalid trip configuration",
-        ),
-        (
-            {
-                "lift_pass_product_id": "cervinia-valtournenche-skipass",
-                "lift_pass_product_name": "Breuil-Cervinia Valtournenche Ski Pass",
-            },
-            "Invalid trip configuration",
-        ),
-        (
-            {"stay_base_name": "Not Le Lac"},
-            "Trip display names do not match",
-        ),
+        {
+            "ski_region_id": "cervinia",
+            "ski_region_name": "Cervinia",
+        },
+        {
+            "focus_ski_area_id": "val-disere-ski-area",
+            "focus_ski_area_name": "Val d'Isere",
+        },
+        {
+            "lift_pass_product_id": "cervinia-valtournenche-skipass",
+            "lift_pass_product_name": "Breuil-Cervinia Valtournenche Ski Pass",
+        },
+        {"stay_base_name": "Not Le Lac"},
     ],
 )
 def test_current_trip_rejects_inconsistent_configuration(
     monkeypatch,
     updates: dict[str, str],
-    expected_detail: str,
 ) -> None:
     _install_google_verifier(
         monkeypatch,
@@ -936,7 +974,7 @@ def test_current_trip_rejects_inconsistent_configuration(
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == expected_detail
+    assert response.json() == {"error": {"code": "trip_option_invalid"}}
 
 
 def test_current_trip_rejects_partial_trip_window(monkeypatch) -> None:
@@ -1123,7 +1161,7 @@ def test_current_trip_summary_returns_404_without_saved_trip(monkeypatch) -> Non
     response = client.get("/api/current-trip/summary", headers=headers)
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "No current trip saved"
+    assert response.json() == {"error": {"code": "current_trip_not_found"}}
 
 
 def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
@@ -1466,6 +1504,32 @@ def test_search_readiness_checks_search_dependencies() -> None:
     assert "fresh_forecast_head_count" in payload["checks"]
     assert "missing_forecast_head_count" in payload["checks"]
     assert "stale_forecast_head_count" in payload["checks"]
+
+
+def test_search_readiness_keeps_operational_diagnostics(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.api.routes.CatalogRepository.get_snapshot",
+        lambda _self: (_ for _ in ()).throw(RuntimeError("catalog unavailable")),
+    )
+
+    response = client.get("/api/search-readiness")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["database"] == "ok"
+    assert response.json()["detail"]["error"] == "RuntimeError"
+
+
+def test_unknown_customer_api_route_uses_bounded_public_error(tmp_path) -> None:
+    dist_dir = tmp_path / "dist"
+    dist_dir.mkdir()
+    (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    app_with_frontend = create_app(frontend_dist_dir=dist_dir)
+
+    with TestClient(app_with_frontend) as frontend_client:
+        response = frontend_client.get("/api/current-trip/not-a-route")
+
+    assert response.status_code == 404
+    assert response.json() == {"error": {"code": "not_found"}}
 
 
 def test_app_serves_built_frontend_from_single_url(tmp_path, monkeypatch) -> None:
