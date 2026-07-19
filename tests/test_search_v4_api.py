@@ -74,6 +74,16 @@ def test_refinement_openapi_documents_admission_rejection() -> None:
     }
 
 
+def test_refinement_openapi_bounds_the_public_queue_to_one_proposal() -> None:
+    app.openapi_schema = None
+
+    refinements = app.openapi()["components"]["schemas"]["SearchV4RefinementResponse"][
+        "properties"
+    ]["refinements"]
+
+    assert refinements["maxItems"] == 1
+
+
 def test_post_search_is_ranking_only_and_never_constructs_gemini(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

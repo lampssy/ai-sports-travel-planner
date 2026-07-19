@@ -351,7 +351,9 @@ class SearchV4RefinementResponse(_SearchV4Model):
         "temporarily_unavailable",
     ]
     fallback_used: bool = False
-    refinements: tuple[SearchV4RefinementProposal, ...] = ()
+    refinements: tuple[SearchV4RefinementProposal, ...] = Field(
+        default=(), max_length=1
+    )
 
     @model_validator(mode="after")
     def require_status_consistent_queue(self) -> Self:
@@ -1282,7 +1284,7 @@ def _serialized_refinements(
             baseline_unscored_candidate_ids=baseline_unscored_candidate_ids,
             candidate_region_ids=candidate_region_ids,
         )
-        for item in validated
+        for item in validated[:1]
     )
 
 

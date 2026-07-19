@@ -603,6 +603,25 @@ def _validated_refinement(
     )
 
 
+def test_serialized_refinements_bounds_legacy_supplied_queue() -> None:
+    validated = _validated_refinement(
+        (("first", "second"), frozenset({"first", "second"})),
+        (("second", "first"), frozenset({"first", "second"})),
+    )
+    candidates = (
+        SimpleNamespace(candidate_id="first", unscored=False, ski_region_id="region"),
+        SimpleNamespace(candidate_id="second", unscored=False, ski_region_id="region"),
+    )
+
+    serialized = search_v4_service._serialized_refinements(
+        validated=(validated, validated),
+        intent=_intent(),
+        candidates=candidates,
+    )
+
+    assert len(serialized) == 1
+
+
 def _ordered_candidate(
     candidate_id: str,
     ski_region_id: str,

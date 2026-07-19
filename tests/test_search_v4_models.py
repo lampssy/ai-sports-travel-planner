@@ -13,7 +13,11 @@ from app.domain.search_v4_models import (
     SearchObjective,
     TravelWindow,
 )
-from app.domain.search_v4_service import SearchV4RefinementRequest, SearchV4Request
+from app.domain.search_v4_service import (
+    SearchV4RefinementRequest,
+    SearchV4RefinementResponse,
+    SearchV4Request,
+)
 
 pytestmark = pytest.mark.db_free
 
@@ -165,4 +169,35 @@ def test_search_v4_requests_bound_resolved_topic_history() -> None:
         SearchV4Request(
             intent=SearchIntent(),
             resolved_topic_ids=tuple(f"topic-{index}" for index in range(51)),
+        )
+
+
+def test_public_refinement_response_rejects_multiple_proposals() -> None:
+    proposal = {
+        "topic_id": "night_skiing",
+        "target_factor_id": "night_skiing",
+        "question_id": "night-skiing-priority",
+        "question": "How important is night skiing for your trip?",
+        "reason": "Your answer can change which trip option fits you best.",
+        "options": (
+            {
+                "label": "Nice to have",
+                "description": "Prefer recurring night skiing.",
+                "intent_changed": True,
+            },
+            {
+                "label": "Not important for this trip",
+                "description": "Do not use night skiing as an extra preference.",
+                "intent_changed": True,
+            },
+        ),
+    }
+
+    with pytest.raises(ValidationError):
+        SearchV4RefinementResponse(
+            search_model_version="search-v4",
+            ranking_policy_version="search-v4-policy-1",
+            refinement_presentation_policy_version="search-refinement-presentation-2",
+            refinement_status="questions_available",
+            refinements=(proposal, proposal),
         )
