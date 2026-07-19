@@ -45,7 +45,7 @@ export function DossierVerdict({
           {configuration.ski_region_name} - {configuration.stay_base_name}
         </h1>
         <p className="dossier-verdict__selection">
-          Selected configuration - stay in {configuration.stay_base_name}
+          Recommended stay: {configuration.stay_base_name}
         </p>
         <p className="dossier-verdict__summary">{narrative.verdict}</p>
       </div>

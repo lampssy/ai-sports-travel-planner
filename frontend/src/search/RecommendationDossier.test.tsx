@@ -367,21 +367,23 @@ test("qualifies estimated terrain in dossier essentials, evidence, and scoring",
     />,
   );
 
-  expect(screen.getByText("Estimated 31 km (ski area only)")).toBeVisible();
+  expect(
+    screen.getAllByText("About 31 km in the selected ski area"),
+  ).not.toHaveLength(0);
   await user.click(screen.getByText("Sources and calculation details"));
   expect(
-    screen.getByText(
-      "Estimated 31 km in selected ski area; pass-wide coverage needs source",
-    ),
-  ).toBeVisible();
-  expect(screen.getAllByText("Selected ski-area terrain")).toHaveLength(2);
+    screen.getAllByText("About 31 km in the selected ski area"),
+  ).not.toHaveLength(0);
+  expect(screen.getAllByText("Terrain in the selected ski area")).toHaveLength(2);
   expect(screen.queryByText("Pass-accessible terrain")).toBeNull();
   expect(screen.queryByText("31 km accessible")).toBeNull();
 
   const scoring = screen.getByText("Show scoring details").closest("details");
   expect(scoring).not.toHaveAttribute("open");
   await user.click(screen.getByText("Show scoring details"));
-  expect(within(scoring as HTMLElement).getByText("Estimated")).toBeVisible();
+  expect(
+    within(scoring as HTMLElement).getByText("Estimated from catalog data"),
+  ).toBeVisible();
 });
 
 test("keeps domain terrain aligned across dossier evidence and scoring", async () => {
@@ -422,16 +424,18 @@ test("keeps domain terrain aligned across dossier evidence and scoring", async (
     />,
   );
 
-  expect(screen.getByText("Adjusted 300 km (covered domain)")).toBeVisible();
+  expect(
+    screen.getAllByText("About 300 km in the connected area covered by this pass"),
+  ).not.toHaveLength(0);
   await user.click(screen.getByText("Sources and calculation details"));
   expect(
-    screen.getByText("Adjusted 300 km in covered terrain domain"),
-  ).toBeVisible();
-  expect(screen.getAllByText("Covered terrain-domain scale")).toHaveLength(2);
+    screen.getAllByText("About 300 km in the connected area covered by this pass"),
+  ).not.toHaveLength(0);
+  expect(screen.getAllByText("Connected terrain covered by this pass")).toHaveLength(2);
 
   const scoring = screen.getByText("Show scoring details").closest("details");
   await user.click(screen.getByText("Show scoring details"));
-  expect(within(scoring as HTMLElement).getByText("Verified with adjustment")).toBeVisible();
+  expect(within(scoring as HTMLElement).getByText("Estimated from source data")).toBeVisible();
 });
 
 test("exposes desktop collapse and the bounded mobile switcher", async () => {

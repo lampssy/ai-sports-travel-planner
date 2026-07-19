@@ -18,7 +18,7 @@ export function TripConfigurationDetails({
 
   return (
     <section className="dossier-section trip-configuration" id="trip-configuration">
-      <p className="section-label">Selected trip configuration</p>
+      <p className="section-label">Trip details</p>
       <h2>{configuration.stay_base_name} and {configuration.selected_pass.name}</h2>
       <dl className="dossier-facts">
         <div><dt>Destination</dt><dd>{configuration.stay_destination_name}</dd></div>

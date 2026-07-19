@@ -199,18 +199,42 @@ function accessTrustState(
 
 function accessTrustPrefix(configuration: SearchV4Configuration): string {
   const trust = accessTrustState(configuration);
-  if (trust === "estimated") return "Estimated ";
-  if (trust === "verified_with_adjustment") return "Adjusted ";
+  if (trust === "estimated" || trust === "verified_with_adjustment") {
+    return "About ";
+  }
   return "";
+}
+
+function accessDescription(
+  configuration: SearchV4Configuration,
+): string | null {
+  const { access } = configuration;
+  const mode = accessModeLabels[access.access_mode];
+  if (!mode) return null;
+  const prefix = accessTrustPrefix(configuration);
+
+  if (access.distance_m != null) {
+    if (mode === "walk") return `${prefix}${access.distance_m} m walk to the lifts`;
+    if (mode === "ski bus") return `${prefix}${access.distance_m} m to the ski bus`;
+    return `${prefix}${access.distance_m} m ${mode} to the lifts`;
+  }
+  if (access.duration_minutes != null) {
+    if (mode === "ski bus") return `${prefix}${access.duration_minutes} min by ski bus`;
+    if (mode === "walk") return `${prefix}${access.duration_minutes} min walk to the lifts`;
+    return `${prefix}${access.duration_minutes} min by ${mode}`;
+  }
+  if (access.is_direct || access.access_mode === "ski_in_ski_out") {
+    return "Ski-in/ski-out access";
+  }
+  const distance = liftDistanceLabels[access.lift_distance];
+  return distance ? `${distance} ${mode} to the lifts` : `${titleCase(mode)} to the lifts`;
 }
 
 export function formatAccess(configuration: SearchV4Configuration): string {
   if (accessTrustState(configuration) === "needs_source") {
-    return "Access details need source verification";
+    return "Lift access needs source confirmation";
   }
-  const mode = accessModeLabels[configuration.access.access_mode];
-  if (!mode) return "Access mode unavailable";
-  return `${accessTrustPrefix(configuration)}${titleCase(mode)}`;
+  return accessDescription(configuration) ?? "Lift access details are unavailable";
 }
 
 export function formatAccommodationAccessContext(
@@ -218,22 +242,11 @@ export function formatAccommodationAccessContext(
 ): string | null {
   if (accessTrustState(configuration) === "needs_source") return null;
   const { access } = configuration;
-  const mode = accessModeLabels[access.access_mode];
-  if (!mode) return null;
-  const detail =
-    access.distance_m != null
-      ? `${access.distance_m} m ${mode}`
-      : access.duration_minutes != null
-        ? `${access.duration_minutes} min ${mode}`
-        : access.is_direct
-          ? "direct access"
-          : null;
-  const context = detail
-    ? access.nearest_lift_name
-      ? `${access.nearest_lift_name} - ${detail}`
-      : detail
-    : access.nearest_lift_name;
-  return context ? `${accessTrustPrefix(configuration)}${context}` : null;
+  const detail = accessDescription(configuration);
+  if (!detail) return access.nearest_lift_name;
+  return access.nearest_lift_name
+    ? `${access.nearest_lift_name} - ${detail}`
+    : detail;
 }
 
 export function formatPassPrice(configuration: SearchV4Configuration): string {
@@ -308,36 +321,30 @@ export function terrainPresentation(
   const evidence = selectedPass.accessible_piste_km_evidence;
   if (kilometres == null || !evidence) return null;
 
-  const prefix =
-    evidence.trust_status === "estimated"
-      ? "Estimated "
-      : evidence.trust_status === "verified_with_adjustment"
-        ? "Adjusted "
-        : "";
+  const prefix = approximatePrefix(evidence.trust_status);
   const needsSource = evidence.trust_status === "needs_source";
-  const unresolvedSuffix = needsSource ? " (needs source)" : "";
 
   if (evidence.scope === "ski_area") {
     return {
-      essentialValue: `${prefix}${kilometres} km (ski area only${
-        needsSource ? "; needs source" : ""
-      })`,
-      evidenceLabel: `${prefix}${kilometres} km in selected ski area${
-        needsSource ? " (needs source)" : ""
-      }; pass-wide coverage ${needsSource ? "unresolved" : "needs source"}`,
+      essentialValue: `${prefix}${kilometres} km in the selected ski area`,
+      evidenceLabel: needsSource
+        ? `${kilometres} km in the selected ski area; source confirmation is still needed`
+        : `${prefix}${kilometres} km in the selected ski area`,
     };
   }
   if (evidence.scope === "terrain_domain") {
     return {
-      essentialValue: `${prefix}${kilometres} km (covered domain${
-        needsSource ? "; needs source" : ""
-      })`,
-      evidenceLabel: `${prefix}${kilometres} km in covered terrain domain${unresolvedSuffix}`,
+      essentialValue: `${prefix}${kilometres} km in the connected area covered by this pass`,
+      evidenceLabel: needsSource
+        ? `${kilometres} km in the connected area; source confirmation is still needed`
+        : `${prefix}${kilometres} km in the connected area covered by this pass`,
     };
   }
   return {
-    essentialValue: `${prefix}${kilometres} km${unresolvedSuffix}`,
-    evidenceLabel: `${prefix}${kilometres} km pass-accessible terrain${unresolvedSuffix}`,
+    essentialValue: `${prefix}${kilometres} km covered by this pass`,
+    evidenceLabel: needsSource
+      ? `${kilometres} km covered by this pass; source confirmation is still needed`
+      : `${prefix}${kilometres} km covered by this pass`,
   };
 }
 
@@ -347,8 +354,8 @@ export function factorLabelForConfiguration(
 ): string | undefined {
   if (factorId !== "accessible_terrain_scale") return factorLabels[factorId];
   const scope = configuration.selected_pass.accessible_piste_km_evidence?.scope;
-  if (scope === "ski_area") return "Selected ski-area terrain";
-  if (scope === "terrain_domain") return "Covered terrain-domain scale";
+  if (scope === "ski_area") return "Terrain in the selected ski area";
+  if (scope === "terrain_domain") return "Connected terrain covered by this pass";
   if (scope === "pass") return factorLabels[factorId];
   return "Terrain scale";
 }
@@ -366,13 +373,13 @@ export function factorTrustLabelForConfiguration(
   const status = configuration.selected_pass.accessible_piste_km_evidence?.trust_status;
   switch (status) {
     case "verified":
-      return "Verified";
+      return "Based on source data";
     case "verified_with_adjustment":
-      return "Verified with adjustment";
+      return "Estimated from source data";
     case "estimated":
-      return "Estimated";
+      return "Estimated from catalog data";
     case "needs_source":
-      return "Needs source";
+      return "Source confirmation needed";
     default:
       return null;
   }
@@ -398,6 +405,29 @@ const factorEssentialCategories: Record<string, TripEssentialCategory> = {
 
 function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function approximatePrefix(
+  trust: "verified" | "verified_with_adjustment" | "estimated" | "needs_source",
+): string {
+  return trust === "estimated" || trust === "verified_with_adjustment"
+    ? "About "
+    : "";
+}
+
+function trustProvenance(
+  trust: "verified" | "verified_with_adjustment" | "estimated" | "needs_source",
+): string {
+  switch (trust) {
+    case "verified":
+      return "Based on source data.";
+    case "verified_with_adjustment":
+      return "Estimated from source data for this trip configuration.";
+    case "estimated":
+      return "Estimated from available catalog data.";
+    case "needs_source":
+      return "Source confirmation is still needed.";
+  }
 }
 
 const accessModeLabels: Record<string, string | null> = {
@@ -430,31 +460,18 @@ function passValue(configuration: SearchV4Configuration): string | null {
 }
 
 function accessValue(configuration: SearchV4Configuration): string | null {
-  const { access } = configuration;
   if (accessTrustState(configuration) === "needs_source") return null;
-  const mode = accessModeLabels[access.access_mode];
-  if (!mode) return null;
-  const prefix = accessTrustPrefix(configuration);
-  if (access.distance_m != null) return `${prefix}${access.distance_m} m ${mode}`;
-  if (access.duration_minutes != null) {
-    return `${prefix}${access.duration_minutes} min ${mode}`;
-  }
-  if (access.is_direct || access.access_mode === "ski_in_ski_out") {
-    return `${prefix}Ski-in/out`;
-  }
-  const distance = liftDistanceLabels[access.lift_distance];
-  return distance ? `${prefix}${distance} ${mode}` : `${prefix}${titleCase(mode)}`;
+  return accessDescription(configuration);
 }
 
 function lodgingValue(configuration: SearchV4Configuration): string | null {
   const estimate = configuration.lodging_estimate;
   if (!estimate || estimate.trust_status === "needs_source") return null;
   const prefix =
-    estimate.trust_status === "estimated"
+    estimate.trust_status === "estimated" ||
+    estimate.trust_status === "verified_with_adjustment"
       ? "Estimated "
-      : estimate.trust_status === "verified_with_adjustment"
-        ? "Adjusted "
-        : "";
+      : "";
   return `${prefix}${estimate.currency} ${estimate.minimum}-${estimate.maximum}/night`;
 }
 
@@ -546,7 +563,7 @@ const strengthCopy: Record<string, string> = {
 
 const watchoutCopy: Record<string, string> = {
   accessible_terrain_scale: "Terrain-scale evidence is limited for this pass.",
-  party_skill_coverage: "Party skill coverage needs a closer terrain review.",
+  party_skill_coverage: "Some terrain may not suit every skier in your group.",
   terrain_potential_scale: "Connected terrain evidence is limited.",
   lift_network_scale: "Lift-network evidence is limited.",
   glacier_terrain: "Glacier access can still be disrupted by weather.",
@@ -637,7 +654,7 @@ export function decisionEvidencePresentation(
     addSupport(
       "terrain",
       "Terrain choice",
-      `${terrain.essentialValue} is covered by the selected pass context.`,
+      terrain.essentialValue,
     );
   } else {
     addUncertainty(
@@ -652,7 +669,7 @@ export function decisionEvidencePresentation(
     addSupport(
       "lift-access",
       "Lift access",
-      `${configuration.stay_base_name} offers ${access.toLowerCase()} for this configuration.`,
+      `${configuration.stay_base_name}: ${access}`,
     );
   } else if (accessNeedsSource) {
     addUncertainty(
@@ -715,43 +732,33 @@ export function decisionEvidencePresentation(
       }));
 
   const accessTrust = accessTrustState(configuration);
-  const accessProvenanceLabel =
-    accessTrust === "estimated"
-      ? "Estimated access"
-      : accessTrust === "verified_with_adjustment"
-        ? "Adjusted access"
-        : "Selected access";
-  const accessEvidencePrefix =
-    accessTrust === "estimated"
-      ? "Estimated "
-      : accessTrust === "verified_with_adjustment"
-        ? "Adjusted "
-        : "";
   technicalDetails.push(
     accessTrust === "needs_source"
       ? {
           id: "catalog-access",
           label: "Stay base and lift access",
-          provenance:
-            "Lift-access relationship and distance need source verification.",
-          evidenceLabel: "Needs source",
+          provenance: trustProvenance(accessTrust),
+          evidenceLabel: "Source confirmation needed",
         }
       : {
           id: "catalog-access",
           label: "Stay base and lift access",
           provenance: configuration.access.nearest_lift_name
-            ? `${accessProvenanceLabel} is anchored to ${configuration.access.nearest_lift_name}.`
-            : `${accessProvenanceLabel} uses the catalog stay-base relationship.`,
+            ? `${trustProvenance(accessTrust)} Nearest lift: ${configuration.access.nearest_lift_name}.`
+            : trustProvenance(accessTrust),
           evidenceLabel:
             configuration.access.distance_m != null
-              ? `${accessEvidencePrefix}${configuration.access.distance_m} m`
-              : `${accessEvidencePrefix}Catalog context`,
+              ? `${accessTrustPrefix(configuration)}${configuration.access.distance_m} m`
+              : trustProvenance(accessTrust).replace(/\.$/, ""),
         },
   );
+  const terrainTrust = configuration.selected_pass.accessible_piste_km_evidence?.trust_status;
   technicalDetails.push({
     id: "selected-pass",
     label: "Selected pass",
-    provenance: `${configuration.selected_pass.name} is selected for this configuration.`,
+    provenance: terrainTrust
+      ? `${trustProvenance(terrainTrust)} ${configuration.selected_pass.name} is the pass used for this trip.`
+      : `${configuration.selected_pass.name} is the pass used for this trip.`,
     evidenceLabel: terrain?.evidenceLabel ?? "Coverage unresolved",
   });
   if (configuration.lodging_estimate?.provenance) {
@@ -808,7 +815,7 @@ export function buildCandidateNarrative(
       ? accessTrust === "estimated"
         ? "An estimated practical lift-access match for this trip."
         : accessTrust === "verified_with_adjustment"
-          ? "An adjusted practical lift-access match for this trip."
+          ? "A practical lift-access match based on estimated data."
           : "A practical lift-access match for this trip."
       : `A strong ${supportedLabel?.toLowerCase() ?? "trip"} match.`
     : "A complete trip configuration for comparison.";
@@ -822,7 +829,7 @@ export function buildCandidateNarrative(
               ? accessTrust === "estimated"
                 ? "Catalog estimates suggest the stay base keeps access practical."
                 : accessTrust === "verified_with_adjustment"
-                  ? "Adjusted access evidence supports the stay base as a practical choice."
+                  ? "Estimated source data supports the stay base as a practical choice."
                   : strengthCopy[supported.factor_id]
               : strengthCopy[supported.factor_id],
         }

@@ -19,8 +19,8 @@ export const evidenceQualityCopy = {
     description: "Current forecast supports the recommendation.",
   },
   fallbackHeavy: {
-    label: "Fallback-heavy",
-    description: "Sparse data means seasonal traits carry more of the answer.",
+    label: "Limited evidence",
+    description: "Some parts of this recommendation rely on limited data.",
   },
 } as const;
 

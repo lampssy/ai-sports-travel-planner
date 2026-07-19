@@ -120,6 +120,14 @@ describe("Search API request projection", () => {
     vi.useRealTimers();
   });
 
+  it("uses a clear action-focused message when results cannot be updated", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+
+    await expect(searchResorts({ intent: responseShapedIntent })).rejects.toThrow(
+      "Snowcast could not update these results. Check your connection and try again.",
+    );
+  });
+
   it("exposes a positive integer Retry-After delay for refinement admission limits", async () => {
     vi.stubGlobal(
       "fetch",

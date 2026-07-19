@@ -18,7 +18,7 @@ const API_PREFIX = "/api";
 const MOBILE_AUTH_REQUIRED_MESSAGE =
   "Current trip is available in the authenticated mobile app.";
 const API_UNREACHABLE_MESSAGE =
-  "Could not connect to Snowcast. Check that the local service is running, then try again.";
+  "Snowcast could not update these results. Check your connection and try again.";
 const API_UNAVAILABLE_MESSAGE =
   "Snowcast is temporarily unavailable. Try again shortly.";
 const REFINEMENT_CLIENT_DEADLINE_MS = 6_500;

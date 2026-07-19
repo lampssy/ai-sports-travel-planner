@@ -220,7 +220,7 @@ describe("trip essentials", () => {
     });
 
     expect(formatTripEssential("terrain", estimatedTerrain)?.value).toBe(
-      "Estimated 31 km (ski area only)",
+      "About 31 km in the selected ski area",
     );
   });
 
@@ -237,7 +237,7 @@ describe("trip essentials", () => {
     };
 
     expect(terrainPresentation(selectedPass)?.evidenceLabel).toBe(
-      "31 km in selected ski area (needs source); pass-wide coverage unresolved",
+      "31 km in the selected ski area; source confirmation is still needed",
     );
   });
 
@@ -358,9 +358,8 @@ describe("deterministic recommendation copy", () => {
     });
 
     expect(buildCandidateNarrative(candidate)).toEqual({
-      verdict: "A strong selected ski-area terrain match.",
-      strength:
-        "Estimated 31 km in selected ski area; pass-wide coverage needs source.",
+      verdict: "A strong terrain in the selected ski area match.",
+      strength: "About 31 km in the selected ski area.",
     });
   });
 
@@ -503,9 +502,9 @@ describe("deterministic recommendation copy", () => {
       verdict: "A complete trip configuration for comparison.",
     });
     expect(buildCandidateNarrative(adjusted)).toEqual({
-      verdict: "An adjusted practical lift-access match for this trip.",
+      verdict: "A practical lift-access match based on estimated data.",
       strength:
-        "Adjusted access evidence supports the stay base as a practical choice.",
+        "Estimated source data supports the stay base as a practical choice.",
     });
     expect(buildCandidateNarrative(missingEvidence)).toEqual({
       verdict: "A complete trip configuration for comparison.",
@@ -690,14 +689,14 @@ describe("why this trip presentation", () => {
     );
     expect(formatTripEssential("liftAccess", candidate)).toBeNull();
     expect(formatAccess(candidate)).toBe(
-      "Access details need source verification",
+      "Lift access needs source confirmation",
     );
     const technicalAccess = presentation.technicalDetails.find(
       (item) => item.id === "catalog-access",
     );
     expect(technicalAccess).toMatchObject({
-      evidenceLabel: "Needs source",
-      provenance: "Lift-access relationship and distance need source verification.",
+      evidenceLabel: "Source confirmation needed",
+      provenance: "Source confirmation is still needed.",
     });
     expect(JSON.stringify(technicalAccess)).not.toMatch(/Plan Maison|250 m/i);
   });

@@ -19,7 +19,7 @@ export function DecisionEvidenceLedger({
       <SectionHeader
         eyebrow="Decision evidence"
         title="Why this trip"
-        description="The clearest evidence supporting this configuration, with uncertainty kept explicit."
+        description="Why Snowcast recommends this trip, including important limits."
       />
 
       {presentation.supports.length ? (
