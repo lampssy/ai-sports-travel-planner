@@ -182,7 +182,7 @@ describe("RecommendationCard", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(within(card).getByRole("heading", { name: /stay in valtournenche/i })).toBeVisible();
     expect(within(card).getAllByText("Local pass")).toHaveLength(2);
-    expect(within(card).getByText("160 km")).toBeVisible();
+    expect(within(card).getAllByText("160 km covered by this pass")).toHaveLength(2);
     expect(within(card).getByRole("link", { name: /view dossier/i })).toHaveAttribute(
       "href",
       "/recommendations/region-a?candidate=alternative",
@@ -259,18 +259,15 @@ describe("RecommendationCard", () => {
       />,
     );
 
-    expect(screen.getByText("Estimated 31 km (ski area only)")).toBeVisible();
-    expect(
-      screen.getByText(
-        "Estimated 31 km in selected ski area; pass-wide coverage needs source",
-      ),
-    ).toBeVisible();
+    expect(screen.getAllByText("About 31 km in the selected ski area")).toHaveLength(2);
     expect(screen.queryByText("31 km accessible terrain")).toBeNull();
 
     const scoring = screen.getByText("Show scoring details").closest("details");
     expect(scoring).not.toHaveAttribute("open");
     await user.click(screen.getByText("Show scoring details"));
-    expect(within(scoring as HTMLElement).getByText("Estimated")).toBeVisible();
+    expect(
+      within(scoring as HTMLElement).getByText("Estimated from catalog data"),
+    ).toBeVisible();
   });
 
   test("labels needs-source terrain in the result scoring row", async () => {
@@ -320,6 +317,8 @@ describe("RecommendationCard", () => {
     const scoring = screen.getByText("Show scoring details").closest("details");
     expect(scoring).not.toHaveAttribute("open");
     await user.click(screen.getByText("Show scoring details"));
-    expect(within(scoring as HTMLElement).getByText("Needs source")).toBeVisible();
+    expect(
+      within(scoring as HTMLElement).getByText("Source confirmation needed"),
+    ).toBeVisible();
   });
 });
