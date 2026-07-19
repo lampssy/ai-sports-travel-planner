@@ -96,13 +96,13 @@ export function RecommendationNavigator({
                 key={group.ski_region_id}
                 aria-current={selected ? "page" : undefined}
                 aria-label={`${group.ski_region_name}, ${
-                  rowUnscored ? "fit comparison unavailable" : `rank ${group.rank}`
+                  rowUnscored ? "Fit comparison unavailable" : `rank ${group.rank}`
                 }, ${selected ? "viewing" : "open option"}. Stay in ${
                   configuration.stay_base_name
                 }. ${
                   rowUnscored
-                    ? "Trip fit not scored"
-                  : `${configuration.fit_score?.toFixed(0)} trip fit`
+                    ? "Fit comparison unavailable"
+                    : `${configuration.fit_score?.toFixed(0)} trip fit`
                 }. ${snowFit.label}: ${snowFit.value}.`}
                 onClick={() =>
                   onSwitch(

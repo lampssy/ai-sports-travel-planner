@@ -207,6 +207,14 @@ test("does not present unscored options as ranked recommendations", () => {
   expect(screen.queryByText(/complete ranked trip configuration/i)).toBeNull();
   expect(screen.getByText("Alternative trip option")).toBeVisible();
   expect(screen.queryByText("#4")).toBeNull();
+  const navigator = screen.getByRole("navigation", {
+    name: "Trip option results",
+  });
+  const unavailableRow = within(navigator).getByRole("button", {
+    name: /region 4.*fit comparison unavailable/i,
+  });
+  expect(unavailableRow).toHaveAccessibleName(/fit comparison unavailable/i);
+  expect(unavailableRow).not.toHaveAccessibleName(/trip fit not scored/i);
 });
 
 test("prompts for travel dates instead of narrating a snow fit without a window", () => {
@@ -233,8 +241,18 @@ test("prompts for travel dates instead of narrating a snow fit without a window"
   );
 
   expect(screen.getAllByText("Add travel dates to assess snow fit").length).toBeGreaterThan(0);
-  expect(screen.queryByText(/A strong snow fit/i)).toBeNull();
+  expect(screen.getAllByText("Not assessed").length).toBeGreaterThan(0);
+  expect(screen.queryByText("Strong fit")).toBeNull();
+  expect(screen.queryByText("Some concerns")).toBeNull();
   expect(screen.queryByText(/supports this travel window/i)).toBeNull();
+  const navigator = screen.getByRole("navigation", {
+    name: "Trip option results",
+  });
+  expect(
+    within(navigator).getByRole("button", {
+      name: /region 4.*add travel dates to assess snow fit: not assessed/i,
+    }),
+  ).toBeVisible();
 });
 
 test("shows the top two plus an out-of-band current recommendation", () => {

@@ -509,7 +509,7 @@ async function scrollYAfterLayout(page: Page) {
 async function submitHomepageBrief(page: Page, brief: string) {
   await page.getByLabel("Describe your ski trip").fill(brief);
   await page.getByRole("button", { name: "Find resorts" }).click();
-  const heading = page.getByRole("heading", { name: "Recommended ski trips" });
+  const heading = page.getByRole("heading", { name: "Trip options for you" });
   await expect(heading).toBeVisible();
   await expect(heading).toBeFocused();
   await expect(page.getByLabel("Trip brief")).toHaveValue(brief);
@@ -627,7 +627,7 @@ for (const [name, viewport] of [
     await page
       .locator("article.recommendation-card")
       .first()
-      .getByRole("link", { name: "View dossier" })
+      .getByRole("link", { name: "View trip details" })
       .click();
     await expect(currentTrip).toBeVisible();
     await currentTrip.click();
@@ -832,7 +832,7 @@ test("desktop board compares, selects alternatives, and reranks in place", async
       .getByText("150 km covered by this pass", { exact: true })
       .first(),
   ).toBeVisible();
-  await expect(firstCard.getByRole("link", { name: "View dossier" })).toHaveAttribute(
+  await expect(firstCard.getByRole("link", { name: "View trip details" })).toHaveAttribute(
     "href",
     "/recommendations/tignes-val-disere?candidate=tignes-access--tignes-local-pass",
   );
@@ -854,7 +854,7 @@ test("desktop board compares, selects alternatives, and reranks in place", async
     page.locator(".rerank-feedback").getByText(/2 recommendations changed position/i),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
   await expect(
     page.getByRole("heading", { name: "Replacement refinement?" }),
@@ -1018,7 +1018,7 @@ test("keyboard refinement selection keeps Apply and Skip focus predictable", asy
   ).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
 });
 
@@ -1224,7 +1224,7 @@ test("refinement retry keeps keyboard focus while the request is pending", async
     ),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
   expect(attempts).toBe(2);
 });
@@ -1296,7 +1296,7 @@ test("five-option mobile refinement disclosure preserves reachability and focus"
   await nextDisclosure.click();
   await page.getByRole("button", { name: "Skip this question" }).click();
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
   await expectNoHorizontalOverflow(page);
 });
@@ -1311,7 +1311,7 @@ test("desktop dossier switches without search and collapses to the compact rail"
   await submitHomepageBrief(page, "March in France with reliable snow");
 
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
   await expect(page).toHaveURL(
     /\/recommendations\/tignes-val-disere\?candidate=tignes-access--tignes-val-disere-pass$/,
@@ -1323,7 +1323,7 @@ test("desktop dossier switches without search and collapses to the compact rail"
   expect(searchRequests).toHaveLength(1);
 
   const navigator = page.getByRole("navigation", {
-    name: "Recommendation results",
+    name: "Trip option results",
   });
   await expect(navigator).toHaveCSS("width", "260px");
   await scrollYAfterLayout(page);
@@ -1404,12 +1404,12 @@ for (const [name, viewport] of [
     await page
       .locator("article.recommendation-card")
       .first()
-      .getByRole("link", { name: "View dossier" })
+      .getByRole("link", { name: "View trip details" })
       .click();
 
     if (name === "desktop navigator") {
       const navigator = page.getByRole("navigation", {
-        name: "Recommendation results",
+        name: "Trip option results",
       });
       await expect(navigator.getByText("Peisey 2000")).toBeVisible();
       await navigator
@@ -1462,7 +1462,7 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with reliable snow");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
 
   await expect(page.getByText("Historical pattern")).toBeVisible();
@@ -1502,7 +1502,7 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
 
   await page.getByRole("button", { name: "All results" }).click();
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
   await expect(page.getByText("Historical pattern")).toBeVisible();
   expect(weatherRequests).toHaveLength(1);
@@ -1529,7 +1529,7 @@ test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alt
   await page.goto("/");
   await submitHomepageBrief(page, "Tignes from 20 to 22 July");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
 
   await expect(page.getByText("Forecast-assisted")).toBeVisible();
@@ -1610,7 +1610,7 @@ test("stale fallback and typed unavailable states keep dossier controls intact",
   await page.goto("/");
   await submitHomepageBrief(page, "March in France");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
   const snowAnchor = page.getByRole("link", { name: "Snow & weather" });
   await snowAnchor.focus();
@@ -1635,7 +1635,7 @@ test("stale fallback and typed unavailable states keep dossier controls intact",
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("navigation", { name: "Recommendation results" }),
+    page.getByRole("navigation", { name: "Trip option results" }),
   ).toBeVisible();
   expect(weatherRequests).toHaveLength(2);
 });
@@ -1658,7 +1658,7 @@ test("transport failure is not cached and retry announces recovered evidence", a
   await page.goto("/");
   await submitHomepageBrief(page, "March in France");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
 
   await expect(
@@ -1671,7 +1671,7 @@ test("transport failure is not cached and retry announces recovered evidence", a
     page.getByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("navigation", { name: "Recommendation results" }),
+    page.getByRole("navigation", { name: "Trip option results" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Retry snow evidence" }).click();
   await expect(page.getByText("Historical pattern")).toBeVisible();
@@ -1712,7 +1712,7 @@ test("weather retry keeps focus while pending and after repeated unavailability"
   await page.goto("/");
   await submitHomepageBrief(page, "March in France");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
 
   const retry = page.getByRole("button", { name: "Check again" });
@@ -1773,7 +1773,7 @@ test("weather retry state does not cross a cached dossier context", async ({
   const lesArcsCard = page.locator("article.recommendation-card").nth(1);
   await lesArcsCard.getByRole("button", { name: /expand les arcs/i }).click();
   await lesArcsCard.getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
   await expect(
     page.getByRole("heading", {
@@ -1835,7 +1835,7 @@ test("expired forecast cache refetches and replaces the selected run head", asyn
   await submitHomepageBrief(page, "March in France");
   const openDossier = () =>
     page.locator("article.recommendation-card").first().getByRole("link", {
-      name: "View dossier",
+      name: "View trip details",
     }).click();
   const openSourceDetails = () =>
     page
@@ -1884,7 +1884,7 @@ test("late weather response cannot cross the selected ski-area context", async (
   await page.goto("/");
   await submitHomepageBrief(page, "March in France");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
   await expect(
     page.getByRole("heading", { name: "Loading snow evidence for Tignes" }),
@@ -1925,7 +1925,7 @@ test("All results restores selected candidates, expansion state, and exact scrol
   await page.evaluate(() => window.scrollTo(0, 360));
   const expectedScroll = await page.evaluate(() => window.scrollY);
   expect(expectedScroll).toBeGreaterThan(0);
-  await firstCard.getByRole("link", { name: "View dossier" }).dispatchEvent("click");
+  await firstCard.getByRole("link", { name: "View trip details" }).dispatchEvent("click");
   await expect(page).toHaveURL(/candidate=tignes-access--tignes-local-pass$/);
 
   await page.getByRole("button", { name: "All results" }).click();
@@ -1937,7 +1937,7 @@ test("All results restores selected candidates, expansion state, and exact scrol
     page.getByRole("button", { name: /collapse les arcs - peisey vallandry/i }),
   ).toHaveAttribute("aria-expanded", "true");
   await expect.poll(() => scrollYAfterLayout(page)).toBe(expectedScroll);
-  await expect(firstCard.getByRole("link", { name: "View dossier" })).toBeFocused();
+  await expect(firstCard.getByRole("link", { name: "View trip details" })).toBeFocused();
   expect(searchRequests).toHaveLength(1);
 });
 
@@ -1958,10 +1958,10 @@ test("browser Back restores the exact results scroll without rerunning search", 
   }).click();
   await page.evaluate(() => window.scrollTo(0, 320));
   const expectedScroll = await page.evaluate(() => window.scrollY);
-  await firstCard.getByRole("link", { name: "View dossier" }).dispatchEvent("click");
+  await firstCard.getByRole("link", { name: "View trip details" }).dispatchEvent("click");
 
   await page.goBack();
-  await expect(page.getByRole("heading", { name: "Recommended ski trips" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Trip options for you" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: /select le lac with tignes local pass/i }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -1969,7 +1969,7 @@ test("browser Back restores the exact results scroll without rerunning search", 
     page.getByRole("button", { name: /collapse les arcs - peisey vallandry/i }),
   ).toHaveAttribute("aria-expanded", "true");
   await expect.poll(() => scrollYAfterLayout(page)).toBe(expectedScroll);
-  await expect(firstCard.getByRole("link", { name: "View dossier" })).toBeFocused();
+  await expect(firstCard.getByRole("link", { name: "View trip details" })).toBeFocused();
   expect(searchRequests).toHaveLength(1);
 });
 
@@ -1982,7 +1982,7 @@ test("dossier return focuses the results heading when the originating control no
   await page
     .locator("article.recommendation-card")
     .first()
-    .getByRole("link", { name: "View dossier" })
+    .getByRole("link", { name: "View trip details" })
     .click();
   await page
     .getByRole("button", { name: /select le lac with tignes local pass/i })
@@ -1990,7 +1990,7 @@ test("dossier return focuses the results heading when the originating control no
   await page.getByRole("button", { name: "Back to results" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
 });
 
@@ -2043,11 +2043,11 @@ test("mobile dossier uses a keyboard-operable bounded switcher", async ({ page }
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with easy lift access");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
 
   await expect(
-    page.getByRole("navigation", { name: "Recommendation results" }),
+    page.getByRole("navigation", { name: "Trip option results" }),
   ).toBeHidden();
   const switcher = page.getByRole("button", { name: /recommendation 1 of 2/i });
   await expect(switcher).toBeVisible();
@@ -2111,7 +2111,7 @@ test("keyboard-only core flow keeps focus and route announcements logical", asyn
   await expect(page.getByRole("button", { name: "Find resorts" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
 
   const secondCardToggle = page.getByRole("button", {
@@ -2133,7 +2133,7 @@ test("keyboard-only core flow keeps focus and route announcements logical", asyn
   const dossier = page
     .locator("article.recommendation-card")
     .first()
-    .getByRole("link", { name: "View dossier" });
+    .getByRole("link", { name: "View trip details" });
   await dossier.focus();
   await page.keyboard.press("Enter");
   await expect(
@@ -2194,7 +2194,7 @@ test("failed initial search can be resubmitted without losing the brief", async 
 
   await page.getByRole("button", { name: "Find resorts" }).click();
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
   expect(searchRequests).toHaveLength(2);
 });
@@ -2226,7 +2226,7 @@ test("no results and missing metrics remain explicit and overflow-free", async (
 
   await page.getByLabel("Trip brief").press("Enter");
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeVisible();
   await expect(page.locator("article.recommendation-card").first()).toContainText("—");
   await expect(page.locator("body")).not.toContainText(/undefined|NaN|\[object Object\]/);

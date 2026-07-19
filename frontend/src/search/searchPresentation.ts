@@ -720,6 +720,13 @@ export interface TechnicalEvidenceDetail {
   evidenceLabel: string;
 }
 
+function hasAppliedTravelWindow(travelWindow?: TravelWindow): boolean {
+  return Boolean(
+    (travelWindow?.start_date && travelWindow.end_date) ||
+      typeof travelWindow?.month === "number",
+  );
+}
+
 function supportedFactor(
   configuration: SearchV4Configuration,
   factorId: string,
@@ -750,13 +757,14 @@ export function decisionEvidencePresentation(
   const snowFactor = configuration.factors.find(
     (item) => item.factor_id === "trip_window_snow_fit",
   );
-  if (supportedFactor(configuration, "trip_window_snow_fit")) {
+  if (hasAppliedTravelWindow(travelWindow) && supportedFactor(configuration, "trip_window_snow_fit")) {
     addSupport(
       "snow-window",
       snowFitPresentation(configuration, travelWindow).label,
       "Available snow evidence supports the requested travel window.",
     );
   } else if (
+    hasAppliedTravelWindow(travelWindow) &&
     snowFactor &&
     (snowFactor.effective_evidence_cap === 0 || snowFactor.warnings.length > 0)
   ) {
@@ -916,10 +924,7 @@ export function buildCandidateNarrative(
   travelWindow?: TravelWindow,
 ): CandidateNarrative {
   const accessTrust = accessTrustState(configuration);
-  const hasTravelWindow = Boolean(
-    (travelWindow?.start_date && travelWindow.end_date) ||
-      typeof travelWindow?.month === "number",
-  );
+  const hasTravelWindow = hasAppliedTravelWindow(travelWindow);
   const snowPromptRequired =
     !hasTravelWindow &&
     configuration.factors.some((factor) => factor.factor_id === "trip_window_snow_fit");
@@ -1002,11 +1007,17 @@ export function snowFitPresentation(
   travelWindow: TravelWindow | undefined,
 ): { label: string; value: string } {
   const hasExactDates = Boolean(travelWindow?.start_date && travelWindow?.end_date);
+  if (!hasAppliedTravelWindow(travelWindow)) {
+    return {
+      label: "Add travel dates to assess snow fit",
+      value: "Not assessed",
+    };
+  }
   const label = hasExactDates
     ? "Snow fit for your dates"
     : typeof travelWindow?.month === "number"
       ? `Snow fit for ${monthName(travelWindow.month)}`
-      : "Add travel dates to assess snow fit";
+      : "Snow fit for your dates";
   return { label, value: snowFitLabel(configuration) };
 }
 

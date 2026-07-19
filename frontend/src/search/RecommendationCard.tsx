@@ -54,6 +54,10 @@ export function RecommendationCard({
   const narrative = buildCandidateNarrative(configuration, travelWindow);
   const evidenceMode = evidenceQualityMode(configuration);
   const snowFit = snowFitPresentation(configuration, travelWindow);
+  const fitComparison =
+    configuration.ranking_status === "unscored"
+      ? "Fit comparison unavailable"
+      : `Trip fit ${configuration.fit_score?.toFixed(1) ?? "—"}`;
   const candidates = [result.top_configuration, ...result.alternative_configurations];
 
   return (
@@ -94,7 +98,7 @@ export function RecommendationCard({
         <button
           type="button"
           className="recommendation-card__toggle"
-          aria-label={`${expanded ? "Collapse" : "Expand"} ${result.ski_region_name}. Stay in ${configuration.stay_base_name}. Trip fit ${configuration.fit_score != null ? configuration.fit_score.toFixed(1) : "not scored"}. ${snowFit.label}: ${snowFit.value}.`}
+          aria-label={`${expanded ? "Collapse" : "Expand"} ${result.ski_region_name}. Stay in ${configuration.stay_base_name}. ${fitComparison}. ${snowFit.label}: ${snowFit.value}.`}
           aria-expanded={expanded}
           aria-controls={detailsId}
           title={`${expanded ? "Collapse" : "Expand"} trip option details`}

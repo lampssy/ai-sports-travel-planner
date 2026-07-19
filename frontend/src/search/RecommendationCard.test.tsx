@@ -154,7 +154,7 @@ describe("RecommendationCard", () => {
     });
     expect(toggle).not.toContainElement(heading);
     expect(toggle).toHaveAccessibleName(
-      /breuil-cervinia.*trip fit 94\.8.*add travel dates to assess snow fit: not enough evidence/i,
+      /breuil-cervinia.*trip fit 94\.8.*add travel dates to assess snow fit: not assessed/i,
     );
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(toggle).toHaveAttribute("aria-controls", "recommendation-region-a");
@@ -197,9 +197,37 @@ describe("RecommendationCard", () => {
     render(<StatefulCard recommendation={snowResult} travelWindow={undefined} />);
 
     expect(screen.getAllByText("Add travel dates to assess snow fit").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Not assessed").length).toBeGreaterThan(0);
     expect(screen.queryByText("Snow fit for your dates")).toBeNull();
-    expect(screen.queryByText(/A strong snow fit/i)).toBeNull();
+    expect(screen.queryByText("Strong fit")).toBeNull();
+    expect(screen.queryByText("Some concerns")).toBeNull();
     expect(screen.queryByText(/supports this travel window/i)).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /collapse matterhorn ski paradise/i }),
+    ).toHaveAccessibleName(
+      /add travel dates to assess snow fit: not assessed/i,
+    );
+  });
+
+  test("uses fit comparison unavailable in the unscored card control name", () => {
+    const unscoredCandidate = {
+      ...primary,
+      ranking_status: "unscored" as const,
+      fit_score: null,
+    };
+    const unscoredResult = {
+      ...result,
+      fit_score: null,
+      top_configuration: unscoredCandidate,
+    };
+
+    render(<StatefulCard recommendation={unscoredResult} travelWindow={{ month: 3 }} />);
+
+    const toggle = screen.getByRole("button", {
+      name: /collapse matterhorn ski paradise/i,
+    });
+    expect(toggle).toHaveAccessibleName(/fit comparison unavailable/i);
+    expect(toggle).not.toHaveAccessibleName(/trip fit not scored/i);
   });
 
   test("keeps trip-details, save, and alternative controls isolated from expansion", async () => {

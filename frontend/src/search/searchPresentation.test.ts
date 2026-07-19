@@ -341,13 +341,45 @@ describe("snow fit presentation", () => {
     [
       { start_date: "2027-01-16", end_date: "2027-01-20" },
       "Snow fit for your dates",
+      "Not enough evidence",
     ],
-    [{ month: 3 }, "Snow fit for March"],
-    [undefined, "Add travel dates to assess snow fit"],
-  ] as const)("uses the applied travel window %o", (travelWindow, label) => {
+    [{ month: 3 }, "Snow fit for March", "Not enough evidence"],
+    [undefined, "Add travel dates to assess snow fit", "Not assessed"],
+  ] as const)("uses the applied travel window %o", (travelWindow, label, value) => {
     expect(
       snowFitPresentation(configuration("snow"), travelWindow),
-    ).toEqual({ label, value: "Not enough evidence" });
+    ).toEqual({ label, value });
+  });
+
+  test.each([
+    [0.8, "Strong fit"],
+    [0.4, "Some concerns"],
+  ])("does not present %s without an applied travel window", (utility) => {
+    const candidate = configuration("snow-without-window", {
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: utility,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: utility,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Historical snow evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(snowFitPresentation(candidate, undefined)).toEqual({
+      label: "Add travel dates to assess snow fit",
+      value: "Not assessed",
+    });
   });
 });
 
@@ -838,7 +870,7 @@ describe("why this trip presentation", () => {
       ],
     });
 
-    const presentation = decisionEvidencePresentation(candidate);
+    const presentation = decisionEvidencePresentation(candidate, { month: 3 });
     const primaryCopy = JSON.stringify({
       supports: presentation.supports,
       uncertainties: presentation.uncertainties,
@@ -846,7 +878,7 @@ describe("why this trip presentation", () => {
 
     expect(presentation.supports).toHaveLength(4);
     expect(presentation.supports.map((item) => item.title)).toEqual([
-      "Add travel dates to assess snow fit",
+      "Snow fit for March",
       "Skill match",
       "Terrain choice",
       "Lift access",
@@ -884,7 +916,7 @@ describe("why this trip presentation", () => {
       ],
     });
 
-    const presentation = decisionEvidencePresentation(candidate);
+    const presentation = decisionEvidencePresentation(candidate, { month: 3 });
 
     expect(presentation.uncertainties.map((item) => item.detail)).toEqual(
       expect.arrayContaining([

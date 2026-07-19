@@ -88,4 +88,37 @@ describe("DecisionEvidenceLedger", () => {
     expect(screen.queryByText("Show technical calculation details")).toBeNull();
     expect(screen.queryByText(/Catalog field-group evidence/i)).toBeNull();
   });
+
+  test.each([
+    [0.8, 1, [], "positive"],
+    [0.4, 0, ["climatology unavailable"], "limited"],
+  ])(
+    "does not add a %s snow-window claim without travel dates",
+    (utility, evidenceCap, warnings) => {
+      const candidate = configuration();
+      candidate.factors = [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: utility,
+          neutral_utility: 0.5,
+          effective_evidence_cap: evidenceCap,
+          effective_utility: utility,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings,
+          provenance_summary: "Historical snow evidence.",
+          explanation_inputs: {},
+        },
+      ];
+
+      render(<DecisionEvidenceLedger configuration={candidate} />);
+
+      expect(screen.queryByText(/requested travel window/i)).toBeNull();
+      expect(screen.queryByText(/snow fit/i)).toBeNull();
+    },
+  );
 });

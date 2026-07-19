@@ -3547,7 +3547,10 @@ test("asks for travel dates when results have no applied travel window", async (
   const card = document.querySelector<HTMLElement>(".recommendation-card");
   if (!card) throw new Error("Snow label must render inside a recommendation card.");
   expect(within(card).getAllByText("Add travel dates to assess snow fit")).not.toHaveLength(0);
+  expect(within(card).getAllByText("Not assessed")).not.toHaveLength(0);
   expect(within(card).queryByText("Snow fit for your dates")).toBeNull();
+  expect(within(card).queryByText("Strong fit")).toBeNull();
+  expect(within(card).queryByText("Some concerns")).toBeNull();
 });
 
 test("renders grouped recommendations with independent expansion and no raw metadata", async () => {
