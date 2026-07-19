@@ -172,3 +172,11 @@ context-and-attempt-scoped implementation.
 The verification commands continue to emit the existing npm `always-auth`
 configuration deprecation warning and Playwright's existing `NO_COLOR` warning.
 Neither affected unit, typecheck, build, or Chromium results.
+
+## Final Review
+
+Exact-head independent task, UI/UX, and Accessibility reviews approved
+`23b354c` with no Critical, Important, Minor, Blocker, High, Medium, or Low
+findings. The task review also confirmed that the existing pending-refinement
+Chromium journey directly asserts the option label's wait cursor and reduced
+opacity.
