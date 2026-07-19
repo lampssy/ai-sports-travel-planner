@@ -2123,10 +2123,9 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   expect(screen.getByLabelText("Value objective")).toHaveValue(
     "pass_price_per_day",
   );
-  expect(screen.getByRole("button", { name: "Glacier terrain" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  expect(
+    screen.getByRole("button", { name: "Prefer Glacier terrain" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
   expect(screen.getByText(/prefer local pace: quiet/i)).toBeInTheDocument();
 
@@ -2153,10 +2152,9 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   expect(screen.getByLabelText("Value objective")).toHaveValue(
     "pass_price_per_day",
   );
-  expect(screen.getByRole("button", { name: "Glacier terrain" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  expect(
+    screen.getByRole("button", { name: "Prefer Glacier terrain" }),
+  ).toHaveAttribute("aria-pressed", "true");
   expect(screen.queryByText(/prefer local pace: quiet/i)).not.toBeInTheDocument();
 });
 

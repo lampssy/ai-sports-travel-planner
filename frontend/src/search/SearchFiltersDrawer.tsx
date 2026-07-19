@@ -37,18 +37,10 @@ const featureOptionIds = new Set<string>(
   featureOptions.map(([factorId]) => factorId),
 );
 
-function factorLabel(factorId: string): string {
-  const label = factorLabels[factorId] ?? factorId.replaceAll("_", " ");
-  return label.charAt(0).toUpperCase() + label.slice(1);
-}
-
 function preferenceLabel(preference: FactorPreferencePatch): string {
   const mode =
     preference.mode.charAt(0).toUpperCase() + preference.mode.slice(1);
-  const values = preference.values.length
-    ? `: ${preference.values.join(", ")}`
-    : "";
-  return `${mode} ${factorLabel(preference.factor_id)}${values}`;
+  return `${mode} ${factorLabels[preference.factor_id]}`;
 }
 
 export function SearchFiltersDrawer({
@@ -78,13 +70,22 @@ export function SearchFiltersDrawer({
   const dialogRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  const additionalPreferences = preferences.filter(
-    (preference) =>
-      !featureOptionIds.has(preference.factor_id) ||
-      preference.mode !== "prefer" ||
-      preference.values.length > 0,
+  const preferencesByFactor = new Map<string, FactorPreferencePatch>();
+  for (const preference of preferences) {
+    if (factorLabels[preference.factor_id]) {
+      preferencesByFactor.set(preference.factor_id, preference);
+    }
+  }
+  const additionalPreferences = [...preferencesByFactor.values()].filter(
+    (preference) => !featureOptionIds.has(preference.factor_id),
   );
-  const additionalObjectives = objectives.filter(
+  const objectivesByFactor = new Map<string, SearchObjective>();
+  for (const objective of objectives) {
+    if (factorLabels[objective.factor_id]) {
+      objectivesByFactor.set(objective.factor_id, objective);
+    }
+  }
+  const additionalObjectives = [...objectivesByFactor.values()].filter(
     (objective) => !isPassValueObjective(objective.factor_id),
   );
 
@@ -411,7 +412,7 @@ export function SearchFiltersDrawer({
                     }
                     className="preference-option"
                   >
-                    Optimize {factorLabel(objective.factor_id)}
+                    Optimize {factorLabels[objective.factor_id]}
                   </button>
                 ))}
               </div>
@@ -422,18 +423,16 @@ export function SearchFiltersDrawer({
             <legend>Extra preferences</legend>
             <div className="preference-options">
               {featureOptions.map(([factorId, label]) => {
-                const active = preferences.some(
-                  (item) => item.factor_id === factorId && item.mode === "prefer",
-                );
+                const activePreference = preferencesByFactor.get(factorId);
                 return (
                   <button
                     type="button"
                     key={factorId}
-                    aria-pressed={active}
+                    aria-pressed={Boolean(activePreference)}
                     disabled={disabled}
                     onClick={() =>
                       changePreferences(
-                        active
+                        activePreference
                           ? preferences.filter((item) => item.factor_id !== factorId)
                           : upsertBy(
                               preferences,
@@ -451,7 +450,9 @@ export function SearchFiltersDrawer({
                     }
                     className="preference-option"
                   >
-                    {label}
+                    {activePreference
+                      ? preferenceLabel(activePreference)
+                      : label}
                   </button>
                 );
               })}
