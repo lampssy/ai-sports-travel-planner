@@ -2202,7 +2202,13 @@ test("recovers a direct dossier route without browser-session search state", asy
   const user = userEvent.setup();
   render(<App />);
 
+  expect(screen.getByText("Trip details unavailable")).toBeVisible();
   expect(screen.getByRole("heading", { name: "Run a search first" })).toBeVisible();
+  expect(
+    screen.getByText(
+      "Trip details are available from the trip options in your current browser session.",
+    ),
+  ).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Return to search" }));
   expect(window.location.pathname).toBe("/");
   expect(screen.getByLabelText("Describe your ski trip")).toBeVisible();

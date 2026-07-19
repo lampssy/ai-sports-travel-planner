@@ -1466,10 +1466,10 @@ function App() {
           onCurrentTrip={goToCurrentTrip}
         >
           <main className="app-canvas dossier-recovery">
-            <p className="eyebrow">Recommendation context unavailable</p>
+            <p className="eyebrow">Trip details unavailable</p>
             <h1>Run a search first</h1>
             <p>
-              This recommendation needs the ranked results from your current browser
+              Trip details are available from the trip options in your current browser
               session.
             </p>
             <button type="button" className="primary-command" onClick={goToSearch}>
