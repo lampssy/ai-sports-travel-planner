@@ -116,7 +116,7 @@ def public_error_responses(
 
 def is_customer_api_path(path: str) -> bool:
     return (
-        path.startswith("/api/")
+        (path == "/api" or path.startswith("/api/"))
         and path not in _OPERATIONAL_PATHS
         and not is_accommodation_path(path)
     )

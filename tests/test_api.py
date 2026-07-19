@@ -755,18 +755,24 @@ def test_outbound_accommodation_redirect_rejects_invalid_access_pair() -> None:
 
 
 @pytest.mark.parametrize(
-    ("referer", "expected_label"),
+    ("referer", "expected_label", "expected_href"),
     [
-        ("https://attacker.example/recommendations/tignes", "Return to Snowcast"),
+        (
+            "https://attacker.example/recommendations/tignes",
+            "Return to Snowcast",
+            'href="/"',
+        ),
         (
             "http://testserver/recommendations/tignes?candidate=%22%3E%3Cscript%3E",
             "Return to trip details",
+            'href="/recommendations/tignes?candidate=%22%3E%3Cscript%3E"',
         ),
     ],
 )
 def test_outbound_accommodation_recovery_keeps_return_links_safe(
     referer: str,
     expected_label: str,
+    expected_href: str,
 ) -> None:
     response = client.get(
         "/api/outbound/accommodation/unknown-resort",
@@ -781,6 +787,7 @@ def test_outbound_accommodation_recovery_keeps_return_links_safe(
 
     assert response.status_code == 404
     assert expected_label in response.text
+    assert expected_href in response.text
     assert "attacker.example" not in response.text
     assert "<script>" not in response.text
 
@@ -1612,7 +1619,29 @@ def test_operational_wrong_method_keeps_framework_diagnostics() -> None:
 
 @pytest.mark.parametrize("frontend_built", [False, True])
 @pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize("path", ["/api", "/api/not-a-snowcast-route"])
 def test_unknown_customer_api_route_uses_bounded_public_error(
+    tmp_path,
+    frontend_built: bool,
+    method: str,
+    path: str,
+) -> None:
+    dist_dir = tmp_path / "dist"
+    if frontend_built:
+        dist_dir.mkdir()
+        (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    test_app = create_app(frontend_dist_dir=dist_dir)
+
+    with TestClient(test_app) as test_client:
+        response = test_client.request(method, path)
+
+    assert response.status_code == 404
+    assert response.json() == {"error": {"code": "not_found"}}
+
+
+@pytest.mark.parametrize("frontend_built", [False, True])
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_customer_api_trailing_slash_redirect_is_deployment_independent(
     tmp_path,
     frontend_built: bool,
     method: str,
@@ -1624,25 +1653,11 @@ def test_unknown_customer_api_route_uses_bounded_public_error(
     test_app = create_app(frontend_dist_dir=dist_dir)
 
     with TestClient(test_app) as test_client:
-        response = test_client.request(method, "/api/not-a-snowcast-route")
-
-    assert response.status_code == 404
-    assert response.json() == {"error": {"code": "not_found"}}
-
-
-@pytest.mark.parametrize("frontend_built", [False, True])
-def test_customer_api_trailing_slash_redirect_is_deployment_independent(
-    tmp_path,
-    frontend_built: bool,
-) -> None:
-    dist_dir = tmp_path / "dist"
-    if frontend_built:
-        dist_dir.mkdir()
-        (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
-    test_app = create_app(frontend_dist_dir=dist_dir)
-
-    with TestClient(test_app) as test_client:
-        response = test_client.get("/api/search//", follow_redirects=False)
+        response = test_client.request(
+            method,
+            "/api/search//",
+            follow_redirects=False,
+        )
 
     assert response.status_code == 307
     assert response.headers["location"] == "http://testserver/api/search"

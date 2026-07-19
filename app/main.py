@@ -112,7 +112,9 @@ def create_app(frontend_dist_dir: Path | None = None) -> FastAPI:
 
 class _FrontendCatchAllRoute(APIRoute):
     def matches(self, scope: Scope) -> tuple[Match, Scope]:
-        if scope["type"] == "http" and scope["path"].startswith("/api/"):
+        if scope["type"] == "http" and (
+            scope["path"] == "/api" or scope["path"].startswith("/api/")
+        ):
             return Match.NONE, {}
         return super().matches(scope)
 
