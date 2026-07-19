@@ -495,8 +495,11 @@ test("filter drawer preserves edited-control focus, traps focus, and restores th
   await expect(skill).toBeFocused();
 
   await lastControl.click();
-  await expect(lastControl).toHaveAttribute("aria-pressed", "true");
-  await expect(lastControl).toBeFocused();
+  const activeLastControl = dialog.getByRole("button", {
+    name: "Prefer Lift network",
+  });
+  await expect(activeLastControl).toHaveAttribute("aria-pressed", "true");
+  await expect(activeLastControl).toBeFocused();
   expect(
     await page.locator(".app-shell > :not(.drawer-layer)").evaluateAll((elements) =>
       elements.every((element) => (element as HTMLElement).inert),
@@ -506,7 +509,7 @@ test("filter drawer preserves edited-control focus, traps focus, and restores th
   await page.keyboard.press("Tab");
   await expect(close).toBeFocused();
   await page.keyboard.press("Shift+Tab");
-  await expect(lastControl).toBeFocused();
+  await expect(activeLastControl).toBeFocused();
   await page.keyboard.press("Escape");
 
   await expect(dialog).toBeHidden();

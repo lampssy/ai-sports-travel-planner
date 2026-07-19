@@ -8,6 +8,7 @@ import type {
   TravelMonth,
 } from "../types";
 import {
+  factorPreferenceLabel,
   factorLabels,
   featureOptions,
   monthOptions,
@@ -36,12 +37,6 @@ function Field({
 const featureOptionIds = new Set<string>(
   featureOptions.map(([factorId]) => factorId),
 );
-
-function preferenceLabel(preference: FactorPreferencePatch): string {
-  const mode =
-    preference.mode.charAt(0).toUpperCase() + preference.mode.slice(1);
-  return `${mode} ${factorLabels[preference.factor_id]}`;
-}
 
 export function SearchFiltersDrawer({
   open,
@@ -451,7 +446,7 @@ export function SearchFiltersDrawer({
                     className="preference-option"
                   >
                     {activePreference
-                      ? preferenceLabel(activePreference)
+                      ? factorPreferenceLabel(activePreference)
                       : label}
                   </button>
                 );
@@ -471,7 +466,7 @@ export function SearchFiltersDrawer({
                   }
                   className="preference-option"
                 >
-                  {preferenceLabel(preference)}
+                  {factorPreferenceLabel(preference)}
                 </button>
               ))}
             </div>

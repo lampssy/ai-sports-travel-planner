@@ -1,5 +1,6 @@
 import type {
   CatalogTrustStatus,
+  FactorPreferencePatch,
   RefinementPreview,
   SearchIntent,
   SearchV4Configuration,
@@ -67,6 +68,27 @@ export const groupLabels: Record<string, string> = {
   travel_effort: "Travel effort",
 };
 
+const preferenceValueLabels: Record<string, string> = {
+  "ski_day_apres:low_key": "Quiet",
+  "ski_day_apres:moderate": "Some atmosphere",
+  "ski_day_apres:lively": "Lively",
+  "ski_day_apres:destination_defining": "A major après destination",
+  "local_apres:low_key": "Quiet",
+  "local_apres:moderate": "Some atmosphere",
+  "local_apres:lively": "Lively",
+  "local_apres:destination_defining": "A major après destination",
+  "local_pace:quiet": "Quiet and relaxed",
+  "local_pace:balanced": "Balanced",
+  "local_pace:lively": "Lively",
+  "development_style:traditional": "Traditional mountain village",
+  "development_style:mixed": "A mix of old and new",
+  "development_style:planned_resort": "Purpose-built ski resort",
+  "base_type:town": "Ski town",
+  "base_type:village|hamlet": "Village or hamlet",
+  "base_type:resort_station": "Purpose-built resort base",
+  "base_type:neighbourhood|resort_sector": "Resort neighbourhood or sector",
+};
+
 export type ParsedChipAction =
   | { kind: "location" }
   | { kind: "travelWindow" }
@@ -87,6 +109,22 @@ export interface ParsedChip {
 
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
+}
+
+export function factorPreferenceLabel(
+  preference: FactorPreferencePatch,
+): string | null {
+  const factorLabel = factorLabels[preference.factor_id];
+  if (!factorLabel) return null;
+  const valuesLabel = preferenceValueLabels[
+    `${preference.factor_id}:${preference.values.join("|")}`
+  ];
+  if (valuesLabel) {
+    const modePrefix =
+      preference.mode === "prefer" ? "" : `${titleCase(preference.mode)} `;
+    return `${modePrefix}${factorLabel}: ${valuesLabel}`;
+  }
+  return `${titleCase(preference.mode)} ${factorLabel}`;
 }
 
 function monthName(month: number): string {
@@ -173,13 +211,11 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
     });
   }
   for (const item of intent.factor_preferences) {
-    const label = factorLabels[item.factor_id];
+    const label = factorPreferenceLabel(item);
     if (!label) continue;
     chips.push({
       id: `factor-${item.factor_id}`,
-      label: `${titleCase(item.mode)} ${label}${
-        item.values.length ? `: ${item.values.join(", ")}` : ""
-      }`,
+      label,
       action: { kind: "preference", id: item.factor_id },
     });
   }

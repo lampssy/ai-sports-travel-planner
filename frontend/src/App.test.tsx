@@ -2005,7 +2005,7 @@ test("previews a validated dynamic refinement before applying it", async () => {
   expect(
     JSON.parse(String(latestRefinementRequest?.init?.body)).resolved_topic_ids,
   ).toEqual(["local_apres"]);
-  expect(screen.getByText(/prefer stay-base après: lively/i)).toBeInTheDocument();
+  expect(screen.getByText(/stay-base après: lively/i)).toBeInTheDocument();
 });
 
 test("applies a refinement to the displayed session instead of unsent drawer and brief edits", async () => {
@@ -2127,7 +2127,7 @@ test("applies a refinement to the displayed session instead of unsent drawer and
     screen.getByRole("button", { name: "Prefer Glacier terrain" }),
   ).toHaveAttribute("aria-pressed", "true");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  expect(screen.getByText(/prefer local pace: quiet/i)).toBeInTheDocument();
+  expect(screen.getByText(/local pace: quiet and relaxed/i)).toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Undo" }));
   await waitFor(() => {
@@ -2155,7 +2155,9 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   expect(
     screen.getByRole("button", { name: "Prefer Glacier terrain" }),
   ).toHaveAttribute("aria-pressed", "true");
-  expect(screen.queryByText(/prefer local pace: quiet/i)).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/local pace: quiet and relaxed/i),
+  ).not.toBeInTheDocument();
 });
 
 test("keeps pass-value objectives exclusive through refinement apply and undo", async () => {

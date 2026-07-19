@@ -566,6 +566,32 @@ describe("deterministic recommendation copy", () => {
       "Intermediate",
     ]);
   });
+
+  test("uses approved public labels for controlled preference values", () => {
+    const intent: SearchIntent = {
+      ...baseIntent,
+      factor_preferences: [
+        {
+          factor_id: "development_style",
+          mode: "prefer",
+          values: ["planned_resort"],
+          importance: "normal",
+        },
+        {
+          factor_id: "base_type",
+          mode: "prefer",
+          values: ["village", "hamlet"],
+          importance: "normal",
+        },
+      ],
+    };
+
+    expect(buildParsedChips(intent).map((chip) => chip.label)).toEqual([
+      "Intermediate",
+      "Development style: Purpose-built ski resort",
+      "Base type: Village or hamlet",
+    ]);
+  });
 });
 
 describe("why this trip presentation", () => {
