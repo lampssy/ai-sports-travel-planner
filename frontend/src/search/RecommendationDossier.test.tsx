@@ -198,6 +198,7 @@ test("does not present unscored options as ranked recommendations", () => {
   );
 
   expect(screen.getAllByText("Fit comparison unavailable").length).toBeGreaterThan(0);
+  expect(screen.queryByText("Unscored")).toBeNull();
   expect(screen.getByText("Why it fits")).toBeVisible();
   expect(screen.getByText("Main concern")).toBeVisible();
   expect(
@@ -206,6 +207,34 @@ test("does not present unscored options as ranked recommendations", () => {
   expect(screen.queryByText(/complete ranked trip configuration/i)).toBeNull();
   expect(screen.getByText("Alternative trip option")).toBeVisible();
   expect(screen.queryByText("#4")).toBeNull();
+});
+
+test("prompts for travel dates instead of narrating a snow fit without a window", () => {
+  const noWindowSession = session();
+  noWindowSession.response = {
+    ...noWindowSession.response,
+    applied_intent: {
+      ...noWindowSession.response.applied_intent,
+      constraints: { location: { country: "France" } },
+    },
+  };
+
+  render(
+    <RecommendationDossier
+      session={noWindowSession}
+      skiRegionId="region-4"
+      candidateId="region-4-alternative"
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(screen.getAllByText("Add travel dates to assess snow fit").length).toBeGreaterThan(0);
+  expect(screen.queryByText(/A strong snow fit/i)).toBeNull();
+  expect(screen.queryByText(/supports this travel window/i)).toBeNull();
 });
 
 test("shows the top two plus an out-of-band current recommendation", () => {

@@ -116,9 +116,11 @@ const result: SearchV4RecommendationGroup = {
 function StatefulCard({
   onSave = vi.fn(),
   travelWindow,
+  recommendation = result,
 }: {
   onSave?: (configuration: SearchV4Configuration) => void;
   travelWindow?: TravelWindow;
+  recommendation?: SearchV4RecommendationGroup;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [selectedCandidateId, setSelectedCandidateId] = useState(
@@ -126,7 +128,7 @@ function StatefulCard({
   );
   return (
     <RecommendationCard
-      result={result}
+      result={recommendation}
       travelWindow={travelWindow}
       expanded={expanded}
       selectedCandidateId={selectedCandidateId}
@@ -165,10 +167,39 @@ describe("RecommendationCard", () => {
   });
 
   test("asks for travel dates before presenting a snow fit", () => {
-    render(<StatefulCard travelWindow={undefined} />);
+    const snowCandidate = {
+      ...primary,
+      factors: [
+        ...primary.factors,
+        {
+          factor_id: "trip_window_snow_fit" as const,
+          group_id: "trip_viability",
+          direction: "prefer" as const,
+          raw_value: null,
+          raw_utility: 0.8,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.8,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Historical snow evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    };
+    const snowResult = {
+      ...result,
+      top_configuration: snowCandidate,
+    };
 
-    expect(screen.getByText("Add travel dates to assess snow fit")).toBeVisible();
+    render(<StatefulCard recommendation={snowResult} travelWindow={undefined} />);
+
+    expect(screen.getAllByText("Add travel dates to assess snow fit").length).toBeGreaterThan(0);
     expect(screen.queryByText("Snow fit for your dates")).toBeNull();
+    expect(screen.queryByText(/A strong snow fit/i)).toBeNull();
+    expect(screen.queryByText(/supports this travel window/i)).toBeNull();
   });
 
   test("keeps trip-details, save, and alternative controls isolated from expansion", async () => {

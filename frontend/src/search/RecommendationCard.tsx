@@ -51,7 +51,7 @@ export function RecommendationCard({
   const configuration = findSelectedCandidate(result, selectedCandidateId);
   const terrain = terrainPresentation(configuration.selected_pass);
   const detailsId = `recommendation-${result.ski_region_id}`;
-  const narrative = buildCandidateNarrative(configuration);
+  const narrative = buildCandidateNarrative(configuration, travelWindow);
   const evidenceMode = evidenceQualityMode(configuration);
   const snowFit = snowFitPresentation(configuration, travelWindow);
   const candidates = [result.top_configuration, ...result.alternative_configurations];

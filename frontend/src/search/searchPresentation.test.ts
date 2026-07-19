@@ -533,7 +533,72 @@ describe("deterministic recommendation copy", () => {
     expect(buildCandidateNarrative(candidate)).toEqual({
       verdict: "A practical lift-access match for this trip.",
       strength: "The recommended place to stay keeps lift access practical.",
-      watchout: "Snow evidence is limited for the requested travel window.",
+      watchout: "Add travel dates to assess snow fit.",
+    });
+  });
+
+  test.each([
+    [{ month: 3 }, "Snow fit for March"],
+    [
+      { start_date: "2027-01-16", end_date: "2027-01-20" },
+      "Snow fit for your dates",
+    ],
+  ] as const)(
+    "uses %s in a snow-led narrative",
+    (travelWindow, snowLabel) => {
+      const candidate = configuration("supported-snow-narrative", {
+        factors: [
+          {
+            factor_id: "trip_window_snow_fit",
+            group_id: "trip_viability",
+            direction: "prefer",
+            raw_value: null,
+            raw_utility: 0.8,
+            neutral_utility: 0.5,
+            effective_evidence_cap: 1,
+            effective_utility: 0.8,
+            effective_weight: 1,
+            contribution_points: 10,
+            evidence_cap_components: {},
+            warnings: [],
+            provenance_summary: "Historical snow evidence.",
+            explanation_inputs: {},
+          },
+        ],
+      });
+
+      expect(buildCandidateNarrative(candidate, travelWindow)).toEqual({
+        verdict: `A strong ${snowLabel.toLowerCase()} match.`,
+        strength: `${snowLabel}: Available snow evidence supports this travel window.`,
+      });
+    },
+  );
+
+  test("prompts for dates instead of assessing snow fit without a travel window", () => {
+    const candidate = configuration("supported-snow-without-window", {
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: 0.8,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.8,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Historical snow evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(buildCandidateNarrative(candidate)).toEqual({
+      verdict: "A complete trip option for comparison.",
+      watchout: "Add travel dates to assess snow fit.",
     });
   });
 

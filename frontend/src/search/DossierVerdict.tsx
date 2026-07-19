@@ -33,7 +33,7 @@ export function DossierVerdict({
   onSave: (configuration: SearchV4Configuration) => void;
   saveError: string | null;
 }) {
-  const narrative = buildCandidateNarrative(configuration);
+  const narrative = buildCandidateNarrative(configuration, travelWindow);
   const evidenceMode = evidenceQualityMode(configuration);
   const unscored = configuration.ranking_status === "unscored";
   const snowFit = snowFitPresentation(configuration, travelWindow);
@@ -56,7 +56,7 @@ export function DossierVerdict({
 
       <div className="dossier-verdict__signals" aria-label="Recommendation verdict">
         <div>
-          <strong>{configuration.fit_score?.toFixed(1) ?? "Unscored"}</strong>
+          <strong>{configuration.fit_score?.toFixed(1) ?? "—"}</strong>
           <span>Trip fit</span>
         </div>
         <div>

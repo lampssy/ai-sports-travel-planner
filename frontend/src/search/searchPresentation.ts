@@ -913,8 +913,16 @@ export function technicalEvidenceDetails(
 
 export function buildCandidateNarrative(
   configuration: SearchV4Configuration,
+  travelWindow?: TravelWindow,
 ): CandidateNarrative {
   const accessTrust = accessTrustState(configuration);
+  const hasTravelWindow = Boolean(
+    (travelWindow?.start_date && travelWindow.end_date) ||
+      typeof travelWindow?.month === "number",
+  );
+  const snowPromptRequired =
+    !hasTravelWindow &&
+    configuration.factors.some((factor) => factor.factor_id === "trip_window_snow_fit");
   const supported = configuration.factors
     .filter(
       (factor) =>
@@ -924,24 +932,30 @@ export function buildCandidateNarrative(
         !(
           factor.factor_id === "stay_base_access" &&
           accessTrust === "needs_source"
-        ),
+        ) &&
+        (factor.factor_id !== "trip_window_snow_fit" || hasTravelWindow),
     )
     .sort((left, right) => right.effective_utility - left.effective_utility)[0];
   const caution = configuration.factors.find(
     (factor) =>
       watchoutCopy[factor.factor_id] &&
+      (factor.factor_id !== "trip_window_snow_fit" || hasTravelWindow) &&
       (factor.effective_evidence_cap === 0 || factor.warnings.length > 0),
   );
   const supportedLabel = supported
-    ? factorLabelForConfiguration(configuration, supported.factor_id)
+    ? factorLabelForConfiguration(configuration, supported.factor_id, travelWindow)
     : undefined;
   const supportedTerrain =
     supported?.factor_id === "accessible_terrain_scale"
       ? terrainPresentation(configuration.selected_pass)
       : null;
-  const watchout = caution
+  const watchout = snowPromptRequired
+    ? "Add travel dates to assess snow fit."
+    : caution
     ? caution.factor_id === "stay_base_access" && accessTrust === "needs_source"
       ? "Lift-access details need source verification."
+      : caution.factor_id === "trip_window_snow_fit"
+        ? `${snowFitPresentation(configuration, travelWindow).label}: Snow evidence is limited for this travel window.`
       : watchoutCopy[caution.factor_id]
     : undefined;
   const verdict = supported
@@ -965,6 +979,8 @@ export function buildCandidateNarrative(
                 : accessTrust === "verified_with_adjustment"
                   ? "Estimated source data supports the recommended place to stay as a practical choice."
                   : strengthCopy[supported.factor_id]
+              : supported.factor_id === "trip_window_snow_fit"
+                ? `${snowFitPresentation(configuration, travelWindow).label}: Available snow evidence supports this travel window.`
               : strengthCopy[supported.factor_id],
         }
       : {}),
