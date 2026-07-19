@@ -6,6 +6,8 @@ import type { RefinementProposal } from "../types";
 import { RefinementCard } from "./RefinementCard";
 
 const refinement: RefinementProposal = {
+  topic_id: "snow_priority",
+  target_factor_id: "trip_window_snow_fit",
   question_id: "snow-priority",
   question: "What should break the tie?",
   reason: "One answer could reorder your top results.",
@@ -105,17 +107,17 @@ test("supports keyboard-only radio selection, apply, and skip focus", async () =
   const apply = screen.getByRole("button", { name: /keep current ranking/i });
   expect(document.activeElement).toBe(apply);
   await user.keyboard("{Enter}");
-  expect(onApply).toHaveBeenCalledWith(refinement.question_id, refinement.options[1]);
+  expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[1]);
 
   await user.tab();
   expect(document.activeElement).toBe(
     screen.getByRole("button", { name: "Clear" }),
   );
   await user.tab();
-  const skip = screen.getByRole("button", { name: /skip for now/i });
+  const skip = screen.getByRole("button", { name: /skip this question/i });
   expect(document.activeElement).toBe(skip);
   await user.keyboard("{Enter}");
-  expect(onSkip).toHaveBeenCalledWith(refinement.question_id);
+  expect(onSkip).toHaveBeenCalledWith(refinement);
 });
 
 test("previews a selected option before apply and supports clear and skip", async () => {
@@ -144,10 +146,10 @@ test("previews a selected option before apply and supports clear and skip", asyn
     screen.getByText("Keeps your current trip decisions and ranking."),
   ).toBeVisible();
   await user.click(screen.getByRole("button", { name: /keep current ranking/i }));
-  expect(onApply).toHaveBeenCalledWith(refinement.question_id, refinement.options[1]);
+  expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[1]);
 
-  await user.click(screen.getByRole("button", { name: /skip for now/i }));
-  expect(onSkip).toHaveBeenCalledWith(refinement.question_id);
+  await user.click(screen.getByRole("button", { name: /skip this question/i }));
+  expect(onSkip).toHaveBeenCalledWith(refinement);
 });
 
 test("preserves the selected option after apply failure for retry", async () => {

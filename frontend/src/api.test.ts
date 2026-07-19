@@ -79,6 +79,7 @@ describe("Search API request projection", () => {
           brief: "March in France",
           baseline_fingerprint: "a".repeat(64),
           already_answered_question_ids: [],
+          resolved_topic_ids: [],
         }),
     ],
     [
@@ -120,6 +121,7 @@ describe("Search API request projection", () => {
       brief: "March in France",
       baseline_fingerprint: "a".repeat(64),
       already_answered_question_ids: [],
+      resolved_topic_ids: [],
     });
     const rejection = expect(request).rejects.toMatchObject({
       name: "AbortError",
@@ -146,6 +148,7 @@ describe("Search API request projection", () => {
           brief: "March in France",
           baseline_fingerprint: "a".repeat(64),
           already_answered_question_ids: [],
+          resolved_topic_ids: [],
         }),
       "Unable to check for a refinement. Check your connection and try again.",
     ],
@@ -230,6 +233,7 @@ describe("Search API request projection", () => {
         brief: "March in France",
         baseline_fingerprint: "a".repeat(64),
         already_answered_question_ids: [],
+        resolved_topic_ids: [],
       }),
     ).rejects.toMatchObject({
       name: "ApiError",
@@ -259,6 +263,7 @@ describe("Search API request projection", () => {
           brief: "March in France",
           baseline_fingerprint: "a".repeat(64),
           already_answered_question_ids: [],
+          resolved_topic_ids: [],
         }),
       ).rejects.toMatchObject({ retryAfterSeconds: null });
     },

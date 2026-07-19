@@ -1,17 +1,50 @@
 import { expect, test } from "vitest";
 
 import type {
+  ResolvedRefinementTopic,
   SearchIntent,
   SearchResponse,
   SearchV4RecommendationGroup,
 } from "../types";
 import {
   createSearchSession,
+  clearResolvedTopicsForManualChange,
   findSelectedCandidate,
   mergeObjectivePatches,
   rankChangeSummary,
   reconcileSearchSession,
 } from "./searchSession";
+
+const resolvedTopics: ResolvedRefinementTopic[] = [
+  {
+    topicId: "night_skiing",
+    targetFactorId: "night_skiing",
+    questionId: "night-skiing-question",
+  },
+  {
+    topicId: "glacier_terrain",
+    targetFactorId: "glacier_terrain",
+    questionId: "glacier-question",
+  },
+];
+
+test("changing one related preference re-enables only its topic", () => {
+  expect(
+    clearResolvedTopicsForManualChange(resolvedTopics, {
+      changedFactorIds: new Set(["night_skiing"]),
+      startsNewContext: false,
+    }).map((item) => item.topicId),
+  ).toEqual(["glacier_terrain"]);
+});
+
+test("a changed hard constraint starts a new refinement context", () => {
+  expect(
+    clearResolvedTopicsForManualChange(resolvedTopics, {
+      changedFactorIds: new Set(),
+      startsNewContext: true,
+    }),
+  ).toEqual([]);
+});
 
 test("replaces the exclusive pass-value objective family but only exact unrelated IDs", () => {
   expect(
@@ -104,6 +137,8 @@ test("creates an in-memory session with the winner expanded and selected", () =>
 
 test("does not hydrate or reconcile the refinement queue from the legacy search field", () => {
   const legacyRefinement = {
+    topic_id: "legacy-topic",
+    target_factor_id: "legacy-factor",
     question_id: "legacy-question",
     question: "Legacy question?",
     reason: "Returned only for compatibility.",

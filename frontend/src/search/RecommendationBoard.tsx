@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 
 import type {
   RefinementOption,
+  RefinementProposal,
   SearchV4Configuration,
 } from "../types";
 import { RecommendationCard } from "./RecommendationCard";
@@ -51,8 +52,11 @@ export function RecommendationBoard({
   adjustFiltersRef: RefObject<HTMLButtonElement>;
   onOpenFilters: () => void;
   onRemoveChip: (chip: ParsedChip) => void;
-  onApplyRefinement: (questionId: string, option: RefinementOption) => void;
-  onSkipRefinement: (questionId: string) => void;
+  onApplyRefinement: (
+    refinement: RefinementProposal,
+    option: RefinementOption,
+  ) => void;
+  onSkipRefinement: (refinement: RefinementProposal) => void;
   onToggleGroup: (skiRegionId: string) => void;
   onSelectCandidate: (skiRegionId: string, candidateId: string) => void;
   onSave: (configuration: SearchV4Configuration) => void;

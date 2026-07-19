@@ -16,8 +16,8 @@ export function RefinementCard({
   loading: boolean;
   error: string | null;
   focusControlRef?: Ref<HTMLElement>;
-  onApply: (questionId: string, option: RefinementOption) => void;
-  onSkip: (questionId: string) => void;
+  onApply: (refinement: RefinementProposal, option: RefinementOption) => void;
+  onSkip: (refinement: RefinementProposal) => void;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -100,7 +100,7 @@ export function RefinementCard({
             type="button"
             className="primary-refinement-action"
             disabled={!selected || loading}
-            onClick={() => selected && onApply(refinement.question_id, selected)}
+            onClick={() => selected && onApply(refinement, selected)}
           >
             {error ? <RotateCcw aria-hidden="true" size={17} /> : null}
             {error
@@ -124,9 +124,9 @@ export function RefinementCard({
             type="button"
             className="text-action"
             disabled={loading}
-            onClick={() => onSkip(refinement.question_id)}
+            onClick={() => onSkip(refinement)}
           >
-            Skip for now
+            Skip this question
           </button>
         </div>
       </div>

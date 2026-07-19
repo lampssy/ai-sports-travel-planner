@@ -32,6 +32,8 @@ const intent: SearchIntent = {
 };
 
 const refinement: RefinementProposal = {
+  topic_id: "tie_break",
+  target_factor_id: "stay_base_access",
   question_id: "tie-break",
   question: "What should break the tie?",
   reason: "One answer could reorder your top results.",

@@ -182,6 +182,8 @@ function refinementResponse(
 
 function refinement(questionId: string, question: string): RefinementProposal {
   return {
+    topic_id: `${questionId}-topic`,
+    target_factor_id: `${questionId}-factor`,
     question_id: questionId,
     question,
     reason: "One answer could reorder the top results.",
@@ -659,6 +661,7 @@ test("renders ranking before a separate refinement request resolves", async () =
     brief: null,
     baseline_fingerprint: "baseline-1",
     already_answered_question_ids: [],
+    resolved_topic_ids: [],
   });
 
   resolveRefinement?.(
@@ -1808,6 +1811,8 @@ test("previews a validated dynamic refinement before applying it", async () => {
     response({
       refinements: [
         {
+          topic_id: "local_apres",
+          target_factor_id: "local_apres",
           question_id: "evening-style",
           question: "Would you prefer lively après or a quieter base?",
           reason: "The answer changes the leading stay base.",
@@ -1945,6 +1950,9 @@ test("previews a validated dynamic refinement before applying it", async () => {
     JSON.parse(String(latestRefinementRequest?.init?.body))
       .already_answered_question_ids,
   ).toEqual(["evening-style"]);
+  expect(
+    JSON.parse(String(latestRefinementRequest?.init?.body)).resolved_topic_ids,
+  ).toEqual(["local_apres"]);
   expect(screen.getByText(/prefer stay-base après: lively/i)).toBeInTheDocument();
 });
 
@@ -1969,6 +1977,8 @@ test("applies a refinement to the displayed session instead of unsent drawer and
       applied_intent: appliedTravelIntent,
       refinements: [
         {
+          topic_id: "local_pace",
+          target_factor_id: "local_pace",
           question_id: "pace",
           question: "What pace should your accommodation base have?",
           reason: "This can change the leading stay base.",
@@ -2076,6 +2086,11 @@ test("applies a refinement to the displayed session instead of unsent drawer and
     String(requests.filter((item) => item.url === "/api/search")[2].init?.body),
   );
   expect(undoBody.intent).toEqual(appliedTravelIntent);
+  const undoRefinementBody = JSON.parse(
+    String(lastRequest("/api/search/refinements")?.init?.body),
+  );
+  expect(undoRefinementBody.already_answered_question_ids).toEqual([]);
+  expect(undoRefinementBody.resolved_topic_ids).toEqual([]);
   expect(screen.getByLabelText("Trip brief")).toHaveValue(
     "Unsent Italy trip from Berlin",
   );
@@ -2115,6 +2130,8 @@ test("keeps pass-value objectives exclusive through refinement apply and undo", 
       applied_intent: appliedIntent,
       refinements: [
         {
+          topic_id: "pass_value",
+          target_factor_id: "pass_price_per_day",
           question_id: "pass-value",
           question: "How should pass value influence your search?",
           reason: "This can reorder the leading recommendations.",
@@ -2192,6 +2209,8 @@ test("an ordinary successful search clears refinement undo and rank feedback", a
     response({
       refinements: [
         {
+          topic_id: "local_pace",
+          target_factor_id: "local_pace",
           question_id: "pace",
           question: "Would you prefer a quieter base?",
           reason: "This can change the leading stay base.",
@@ -2360,6 +2379,8 @@ test("preserves refinement objectives and answered state when pass priority chan
     response({
       refinements: [
         {
+          topic_id: "snow_priority",
+          target_factor_id: "trip_window_snow_fit",
           question_id: "snow-priority",
           question: "How important is trip-window snow confidence?",
           reason: "The answer can change the result order.",
@@ -2416,6 +2437,76 @@ test("preserves refinement objectives and answered state when pass priority chan
     JSON.parse(String(latestRefinementRequest?.init?.body))
       .already_answered_question_ids,
   ).toEqual(["snow-priority"]);
+  expect(
+    JSON.parse(String(latestRefinementRequest?.init?.body)).resolved_topic_ids,
+  ).toEqual(["snow_priority"]);
+});
+
+test("changing a hard constraint starts a new refinement context", async () => {
+  const quietPreference = {
+    factor_id: "local_pace",
+    mode: "prefer" as const,
+    values: ["quiet"],
+    importance: "normal" as const,
+  };
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          ...refinement("pace", "Would you prefer a quieter base?"),
+          topic_id: "local_pace",
+          target_factor_id: "local_pace",
+          options: [
+            {
+              label: "Quiet and relaxed",
+              description: "Prefer a calm base.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [quietPreference],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+    response({
+      baseline_fingerprint: "baseline-2",
+      applied_intent: { ...intent, factor_preferences: [quietPreference] },
+    }),
+    response({
+      baseline_fingerprint: "baseline-3",
+      applied_intent: {
+        ...intent,
+        constraints: {
+          ...intent.constraints,
+          location: { country: "Italy" },
+        },
+        factor_preferences: [quietPreference],
+      },
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(await screen.findByRole("radio", { name: /quiet and relaxed/i }));
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await screen.findByRole("button", { name: "Undo" });
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.clear(screen.getByLabelText("Country"));
+  await user.type(screen.getByLabelText("Country"), "Italy");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
+  });
+  const latestBody = JSON.parse(
+    String(lastRequest("/api/search/refinements")?.init?.body),
+  );
+  expect(latestBody.already_answered_question_ids).toEqual([]);
+  expect(latestBody.resolved_topic_ids).toEqual([]);
 });
 
 test("keeps a no-op refinement local and records it as answered", async () => {
@@ -2423,6 +2514,8 @@ test("keeps a no-op refinement local and records it as answered", async () => {
     response({
       refinements: [
         {
+          topic_id: "pass_balance",
+          target_factor_id: "pass_terrain_value",
           question_id: "pass-balance",
           question: "Keep the current pass-value balance?",
           reason: "The baseline remains a valid choice.",
@@ -2460,6 +2553,14 @@ test("keeps a no-op refinement local and records it as answered", async () => {
   expect(screen.queryByText(/keep the current pass-value balance/i)).toBeNull();
   expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
   await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search/refinements")).toHaveLength(2);
+  });
+  const followUpBody = JSON.parse(
+    String(lastRequest("/api/search/refinements")?.init?.body),
+  );
+  expect(followUpBody.already_answered_question_ids).toEqual(["pass-balance"]);
+  expect(followUpBody.resolved_topic_ids).toEqual(["pass_balance"]);
+  await waitFor(() => {
     expect(
       screen.getByRole("heading", { name: "Recommended ski trips" }),
     ).toHaveFocus();
@@ -2481,6 +2582,8 @@ test("guards drawer entry and chip mutations during a delayed rerank", async () 
     response({
       refinements: [
         {
+          topic_id: "snow_priority",
+          target_factor_id: "trip_window_snow_fit",
           question_id: "snow-priority",
           question: "How important is trip-window snow confidence?",
           reason: "The answer changes the result order.",
@@ -2542,6 +2645,8 @@ test("lets users remove selected objectives and refinement group priorities", as
     response({
       refinements: [
         {
+          topic_id: "snow_priority",
+          target_factor_id: "trip_window_snow_fit",
           question_id: "snow-priority",
           question: "How important is trip-window snow confidence?",
           reason: "The answer changes the result order.",
@@ -2765,43 +2870,17 @@ test("renders grouped recommendations with independent expansion and no raw meta
   expect(screen.queryByText(/filtered out/i)).not.toBeInTheDocument();
 });
 
-test("skipping advances the refinement queue without a request", async () => {
-  searchResponses = [
-    response({
-      refinements: [
-        {
-          question_id: "first",
-          question: "First refinement?",
-          reason: "First reason.",
-          options: [
-            {
-              label: "First option",
-              description: "First tradeoff.",
-              intent_changed: true,
-              group_priority_patches: [],
-              factor_preference_patches: [],
-              objective_patches: [],
-            },
-          ],
-        },
-        {
-          question_id: "second",
-          question: "Second refinement?",
-          reason: "Second reason.",
-          options: [
-            {
-              label: "Second option",
-              description: "Second tradeoff.",
-              intent_changed: true,
-              group_priority_patches: [],
-              factor_preference_patches: [],
-              objective_patches: [],
-            },
-          ],
-        },
-      ],
+test("skipping a topic requests the next question from the same baseline", async () => {
+  searchResponses = [response()];
+  refinementResponses = [
+    refinementResponse({
+      refinement_status: "questions_available",
+      refinements: [refinement("first", "First refinement?")],
     }),
-    response(),
+    refinementResponse({
+      refinement_status: "questions_available",
+      refinements: [refinement("second", "Second refinement?")],
+    }),
   ];
   const user = userEvent.setup();
   render(<App />);
@@ -2809,20 +2888,16 @@ test("skipping advances the refinement queue without a request", async () => {
   expect(await screen.findByText("First refinement?")).toBeInTheDocument();
   expect(screen.queryByText("Second refinement?")).not.toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: /skip for now/i }));
+  await user.click(screen.getByRole("button", { name: /skip this question/i }));
   expect(screen.queryByText("First refinement?")).not.toBeInTheDocument();
-  expect(screen.getByText("Second refinement?")).toBeInTheDocument();
+  expect(await screen.findByText("Second refinement?")).toBeInTheDocument();
   expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
-
-  await user.click(screen.getByRole("button", { name: /update results/i }));
-  await waitFor(() => {
-    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
-  });
+  expect(requests.filter((item) => item.url === "/api/search/refinements")).toHaveLength(2);
   const latestRefinementRequest = lastRequest("/api/search/refinements");
-  expect(
-    JSON.parse(String(latestRefinementRequest?.init?.body))
-      .already_answered_question_ids,
-  ).toEqual(["first"]);
+  const latestBody = JSON.parse(String(latestRefinementRequest?.init?.body));
+  expect(latestBody.baseline_fingerprint).toBe("baseline-1");
+  expect(latestBody.already_answered_question_ids).toEqual(["first"]);
+  expect(latestBody.resolved_topic_ids).toEqual(["first-topic"]);
 });
 
 test("skipping the final refinement returns focus to the results heading", async () => {
@@ -2830,6 +2905,8 @@ test("skipping the final refinement returns focus to the results heading", async
     response({
       refinements: [
         {
+          topic_id: "only-topic",
+          target_factor_id: "only-factor",
           question_id: "only-question",
           question: "What should matter more?",
           reason: "This choice could change the order.",
@@ -2852,10 +2929,10 @@ test("skipping the final refinement returns focus to the results heading", async
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   await screen.findByText("What should matter more?");
 
-  await user.click(screen.getByRole("button", { name: /skip for now/i }));
+  await user.click(screen.getByRole("button", { name: /skip this question/i }));
 
   expect(screen.getByRole("status")).toHaveTextContent(
-    /follow-up skipped. results unchanged/i,
+    /no follow-up would materially change these results/i,
   );
   await waitFor(() => {
     expect(

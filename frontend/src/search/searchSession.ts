@@ -6,6 +6,7 @@ import type {
   SearchIntent,
   SearchObjective,
   RefinementProposal,
+  ResolvedRefinementTopic,
   SearchResponse,
   SearchV4Configuration,
   SearchV4RecommendationGroup,
@@ -306,6 +307,30 @@ export function dismissRefinement(
       (item) => item.question_id !== questionId,
     ),
   };
+}
+
+export function upsertResolvedRefinementTopic(
+  current: ResolvedRefinementTopic[],
+  refinement: RefinementProposal,
+): ResolvedRefinementTopic[] {
+  return [
+    ...current.filter((item) => item.topicId !== refinement.topic_id),
+    {
+      topicId: refinement.topic_id,
+      targetFactorId: refinement.target_factor_id,
+      questionId: refinement.question_id,
+    },
+  ];
+}
+
+export function clearResolvedTopicsForManualChange(
+  current: ResolvedRefinementTopic[],
+  change: { changedFactorIds: Set<string>; startsNewContext: boolean },
+): ResolvedRefinementTopic[] {
+  if (change.startsNewContext) return [];
+  return current.filter(
+    (item) => !change.changedFactorIds.has(item.targetFactorId),
+  );
 }
 
 export interface RankChangeSummary {

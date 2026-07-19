@@ -89,8 +89,11 @@ export function SearchContextRail({
   adjustFiltersRef: RefObject<HTMLButtonElement>;
   onOpenFilters: () => void;
   onRemoveChip: (chip: ParsedChip) => void;
-  onApplyRefinement: (questionId: string, option: RefinementOption) => void;
-  onSkipRefinement: (questionId: string) => void;
+  onApplyRefinement: (
+    refinement: RefinementProposal,
+    option: RefinementOption,
+  ) => void;
+  onSkipRefinement: (refinement: RefinementProposal) => void;
 }) {
   const chips = buildParsedChips(intent);
   const hard = chips.filter((chip) =>
