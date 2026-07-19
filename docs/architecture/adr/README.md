@@ -77,6 +77,8 @@ Use one of:
 Prefer adding a new ADR when a decision changes. Update the old ADR status and
 link to the replacement instead of rewriting history.
 
+The current highest ADR number is `0017`.
+
 ## Workflow
 
 1. During brainstorming or feature-spec work, identify durable decisions that
