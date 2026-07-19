@@ -406,6 +406,8 @@ for (const [name, viewport] of [
     await expect(page).toHaveScreenshot(`results-expanded-${name}.png`, {
       animations: "disabled",
       caret: "hide",
+      // Chromium can vary the bottom-edge text antialiasing at 1024x768.
+      maxDiffPixels: name === "tablet" ? 300 : 0,
     });
   });
 }
