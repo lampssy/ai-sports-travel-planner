@@ -211,16 +211,20 @@ export function SearchContextRail({
               type="button"
               ref={refinementControlRef as RefObject<HTMLButtonElement>}
               className="primary-refinement-action"
-              disabled={loading || refinementRetrying}
-              onClick={onRetryRefinement}
+              aria-disabled={loading || refinementRetrying || undefined}
+              onClick={() => {
+                if (!loading && !refinementRetrying) onRetryRefinement?.();
+              }}
             >
               Try again
             </button>
             <button
               type="button"
               className="text-action"
-              disabled={loading || refinementRetrying}
-              onClick={onKeepResults}
+              aria-disabled={loading || refinementRetrying || undefined}
+              onClick={() => {
+                if (!loading && !refinementRetrying) onKeepResults?.();
+              }}
             >
               Keep these results
             </button>

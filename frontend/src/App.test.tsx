@@ -1237,12 +1237,15 @@ test("keeps terminal refinement failure visible and retries without replacing re
   await user.click(retry);
 
   expect(retry).toHaveFocus();
-  expect(retry).toBeDisabled();
+  expect(retry).toHaveAttribute("aria-disabled", "true");
   expect(retry.closest(".contextual-refinement")).toHaveAttribute(
     "aria-busy",
     "true",
   );
-  expect(screen.getByRole("button", { name: "Keep these results" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Keep these results" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
   expect(screen.getByRole("alert")).toBeVisible();
 
   resolveRetry?.(
@@ -1549,6 +1552,62 @@ test("uses safe client copy for a failed search", async () => {
   expect(document.body).not.toHaveTextContent("Choose a valid travel window");
 });
 
+test("keeps current results and update focus when a manual search update fails", async () => {
+  let searchAttempts = 0;
+  let rejectUpdate: ((reason: Error) => void) | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        searchAttempts += 1;
+        if (searchAttempts === 1) {
+          return new Response(JSON.stringify(response()), { status: 200 });
+        }
+        return new Promise<Response>((_resolve, reject) => {
+          rejectUpdate = reject;
+        });
+      }
+      if (url === "/api/search/refinements") {
+        return new Response(
+          JSON.stringify(
+            refinementResponse({
+              refinement_status: "not_needed",
+              refinements: [],
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+
+  const update = screen.getByRole("button", { name: "Update results" });
+  update.focus();
+  await user.click(update);
+
+  expect(update).toHaveFocus();
+  expect(update).toHaveAttribute("aria-disabled", "true");
+  rejectUpdate?.(new TypeError("Failed to fetch"));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Results could not be updated. Your current results are still available. Try again.",
+  );
+  expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Update results" })).toHaveFocus();
+  expect(searchAttempts).toBe(2);
+});
+
 test("bounds the separate refinement brief at 2000 characters", async () => {
   const user = userEvent.setup();
   render(<App />);
@@ -1692,7 +1751,7 @@ test("shows and retries a failed saved-trip load", async () => {
   await user.click(retry);
 
   expect(retry).toHaveFocus();
-  expect(retry).toBeDisabled();
+  expect(retry).toHaveAttribute("aria-disabled", "true");
   expect(screen.getByRole("alert")).toHaveAttribute("aria-busy", "true");
   expect(screen.queryByText(/save a trip option/i)).toBeNull();
 
@@ -1776,7 +1835,7 @@ test("keeps current conditions visible when refresh fails and retries them", asy
   await user.click(retry);
 
   expect(retry).toHaveFocus();
-  expect(retry).toBeDisabled();
+  expect(retry).toHaveAttribute("aria-disabled", "true");
   expect(screen.getByRole("alert")).toHaveAttribute("aria-busy", "true");
   expect(screen.getByText("Light snow is expected this week.")).toBeVisible();
 

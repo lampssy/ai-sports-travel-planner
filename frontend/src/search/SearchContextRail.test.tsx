@@ -319,7 +319,9 @@ test("keeps a terminal refinement failure visible with recovery actions", () => 
   expect(onKeepResults).toHaveBeenCalledOnce();
 });
 
-test("keeps the terminal recovery card busy and disables both actions during retry", () => {
+test("keeps the terminal recovery card busy and guards both actions during retry", () => {
+  const onRetryRefinement = vi.fn();
+  const onKeepResults = vi.fn();
   render(
     <SearchContextRail
       intent={intent}
@@ -334,15 +336,21 @@ test("keeps the terminal recovery card busy and disables both actions during ret
       onRemoveChip={vi.fn()}
       onApplyRefinement={vi.fn()}
       onSkipRefinement={vi.fn()}
-      onRetryRefinement={vi.fn()}
-      onKeepResults={vi.fn()}
+      onRetryRefinement={onRetryRefinement}
+      onKeepResults={onKeepResults}
     />,
   );
 
   const recovery = screen.getByText("One more question").closest("div");
   expect(recovery).toHaveAttribute("aria-busy", "true");
-  expect(screen.getByRole("button", { name: "Try again" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Keep these results" })).toBeDisabled();
+  const retry = screen.getByRole("button", { name: "Try again" });
+  const keep = screen.getByRole("button", { name: "Keep these results" });
+  expect(retry).toHaveAttribute("aria-disabled", "true");
+  expect(keep).toHaveAttribute("aria-disabled", "true");
+  retry.click();
+  keep.click();
+  expect(onRetryRefinement).not.toHaveBeenCalled();
+  expect(onKeepResults).not.toHaveBeenCalled();
 });
 
 test("keeps the idle lifecycle state compact", () => {

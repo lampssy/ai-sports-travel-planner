@@ -1,6 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
 import type {
+  CurrentTrip,
+  CurrentTripSummary,
   SearchResponse,
   SearchWeatherEvidenceRequest,
   SearchWeatherEvidenceResponse,
@@ -85,6 +87,62 @@ const historicalProfile: WeatherEvidencePoint[] = [
     wind_gust_kmh: null,
   },
 ];
+
+const savedTrip: CurrentTrip = {
+  ski_region_id: "tignes-val-disere",
+  ski_region_name: "Tignes - Val d'Isere",
+  stay_destination_id: "tignes",
+  stay_destination_name: "Tignes",
+  stay_base_id: "tignes-le-lac",
+  stay_base_name: "Le Lac",
+  focus_ski_area_id: "tignes-ski-area",
+  focus_ski_area_name: "Tignes",
+  lift_pass_product_id: "tignes-pass",
+  lift_pass_product_name: "Tignes - Val d'Isere pass",
+  travel_month: 3,
+  booking_status: "not_booked_yet",
+  created_at: "2026-07-15T00:00:00Z",
+  updated_at: "2026-07-15T00:00:00Z",
+  last_checked_at: null,
+};
+
+const savedTripSummary: CurrentTripSummary = {
+  trip: savedTrip,
+  current_conditions: {
+    resort_name: "Tignes",
+    snow_confidence_score: 78,
+    snow_confidence_label: "good",
+    availability_status: "open",
+    weather_summary: "Light snow is expected this week.",
+    conditions_score: 76,
+    updated_at: "2026-07-19T08:00:00Z",
+    source: "Historical weather model",
+  },
+  current_conditions_provenance: {
+    source_name: "Historical weather model",
+    source_type: "estimated",
+    updated_at: "2026-07-19T08:00:00Z",
+    freshness_status: "fresh",
+    basis_summary: "Weather evidence for the saved trip window.",
+  },
+  comparison_basis: {
+    kind: "since_trip_saved",
+    baseline_at: "2026-07-15T00:00:00Z",
+    label: "Since this trip was saved",
+  },
+  delta: {
+    status: "unchanged",
+    summary: "No important change since this trip was saved.",
+    changes: [],
+  },
+  companion_status: {
+    trip_window_status: "upcoming",
+    trip_window_label: "Upcoming trip",
+    notification_eligible: true,
+    eligibility_reason: "The trip is upcoming.",
+    actionable_change_available: false,
+  },
+};
 
 function monthWeatherResponse(
   skiAreaId = "tignes-ski-area",
@@ -588,6 +646,124 @@ test("anonymous current-trip route remains available", async ({ page }) => {
   await expect(page).toHaveURL(/\/$/);
 });
 
+test("saved-trip retry keeps keyboard focus while the request is pending", async ({
+  page,
+}) => {
+  await mockSearchV4Api(page, monthSearchResponse, []);
+  let attempts = 0;
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>((resolve) => {
+    releaseRetry = resolve;
+  });
+  await page.route(/\/api\/current-trip$/, async (route) => {
+    attempts += 1;
+    if (attempts === 1) {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "request_failed" } }),
+      });
+      return;
+    }
+    await retryGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ trip: savedTrip }),
+    });
+  });
+  await page.route(/\/api\/current-trip\/summary$/, async (route) => {
+    await route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: "current_trip_not_found" } }),
+    });
+  });
+
+  await page.goto("/current-trip");
+  const retry = page.getByRole("button", { name: "Retry saved trip" });
+  await expect(retry).toBeVisible();
+  await retry.focus();
+  await retry.click();
+
+  await expect(retry).toBeFocused();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).not.toHaveAttribute("disabled");
+  releaseRetry?.();
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere" }),
+  ).toBeVisible();
+  expect(attempts).toBe(2);
+});
+
+test("current-conditions retry keeps keyboard focus while the request is pending", async ({
+  page,
+}) => {
+  await mockSearchV4Api(page, monthSearchResponse, []);
+  let summaryAttempts = 0;
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>((resolve) => {
+    releaseRetry = resolve;
+  });
+  await page.route(/\/api\/current-trip$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ trip: savedTrip }),
+    });
+  });
+  await page.route(/\/api\/current-trip\/summary$/, async (route) => {
+    summaryAttempts += 1;
+    if (summaryAttempts === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(savedTripSummary),
+      });
+      return;
+    }
+    if (summaryAttempts === 2) {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "request_failed" } }),
+      });
+      return;
+    }
+    await retryGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...savedTripSummary,
+        current_conditions: {
+          ...savedTripSummary.current_conditions,
+          weather_summary: "Fresh snow is now expected before the trip.",
+        },
+      }),
+    });
+  });
+
+  await page.goto("/current-trip");
+  await expect(page.getByText("Light snow is expected this week.")).toBeVisible();
+  await page.getByRole("button", { name: "Back to search" }).click();
+  await page.getByRole("button", { name: "Current trip", exact: true }).click();
+
+  const retry = page.getByRole("button", { name: "Retry current conditions" });
+  await expect(retry).toBeVisible();
+  await retry.focus();
+  await retry.click();
+
+  await expect(retry).toBeFocused();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).not.toHaveAttribute("disabled");
+  releaseRetry?.();
+  await expect(
+    page.getByText("Fresh snow is now expected before the trip."),
+  ).toBeVisible();
+  expect(summaryAttempts).toBe(3);
+});
+
 test("desktop board compares, selects alternatives, and reranks in place", async ({
   page,
 }) => {
@@ -960,6 +1136,59 @@ test("failed refinement apply preserves results and the selected option", async 
   await expect(
     searchContext.getByRole("button", { name: "Keep these results" }),
   ).toBeEnabled();
+});
+
+test("refinement retry keeps keyboard focus while the request is pending", async ({
+  page,
+}) => {
+  await mockSearchV4Api(page, monthSearchResponse, []);
+  let attempts = 0;
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>((resolve) => {
+    releaseRetry = resolve;
+  });
+  await page.route(/\/api\/search\/refinements$/, async (route) => {
+    attempts += 1;
+    if (attempts === 1) {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "request_failed" } }),
+      });
+      return;
+    }
+    await retryGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...refinementPayloadFor(monthSearchResponse),
+        refinement_status: "not_needed",
+        refinements: [],
+      }),
+    });
+  });
+
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  const retry = page.getByRole("button", { name: "Try again" });
+  await expect(retry).toBeVisible();
+  await retry.focus();
+  await retry.click();
+
+  await expect(retry).toBeFocused();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).not.toHaveAttribute("disabled");
+  await expect(
+    page.getByRole("button", { name: "Keep these results" }),
+  ).toHaveAttribute("aria-disabled", "true");
+  releaseRetry?.();
+  await expect(
+    page.locator(".contextual-refinement").getByText(
+      "No more questions would materially change these results.",
+    ),
+  ).toBeVisible();
+  expect(attempts).toBe(2);
 });
 
 test("mobile board advances refinements in document flow without overflow", async ({

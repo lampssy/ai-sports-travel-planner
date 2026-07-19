@@ -41,8 +41,10 @@ export function AsyncState({
         <Action
           variant="secondary"
           size="sm"
-          disabled={retrying}
-          onClick={onRetry}
+          aria-disabled={retrying || undefined}
+          onClick={() => {
+            if (!retrying) onRetry();
+          }}
         >
           {retryLabel}
         </Action>

@@ -38,7 +38,7 @@ export function SearchCommandHeader({
             value={brief}
             onChange={(event) => onBriefChange(event.target.value)}
           />
-          <button type="submit" disabled={loading}>
+          <button type="submit" aria-disabled={loading || undefined}>
             <Search aria-hidden="true" size={18} />
             {loading ? "Updating recommendations" : "Update results"}
           </button>
