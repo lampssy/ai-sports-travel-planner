@@ -39,34 +39,34 @@ export const featureOptions = [
 ] as const;
 
 export const factorLabels: Record<string, string> = {
-  accessible_terrain_scale: "Pass-accessible terrain",
-  party_skill_coverage: "Party skill fit",
-  terrain_potential_scale: "Connected terrain",
-  lift_network_scale: "Lift network",
+  accessible_terrain_scale: "Terrain covered by your pass",
+  party_skill_coverage: "Skiing level fit",
+  terrain_potential_scale: "Connected ski area",
+  lift_network_scale: "Lift access",
   marked_freeride_routes: "Marked freeride routes",
   snow_park: "Snow park",
   night_skiing: "Night skiing",
   glacier_terrain: "Glacier terrain",
   snowmaking_availability: "Snowmaking resilience",
-  stay_base_access: "Stay-base access",
-  pass_price_per_day: "Lowest pass price per day",
-  pass_terrain_value: "Terrain per pass price",
-  ski_day_apres: "On-mountain après",
-  local_apres: "Stay-base après",
+  stay_base_access: "Access to the slopes",
+  pass_price_per_day: "Lift-pass price per day",
+  pass_terrain_value: "Terrain for lift-pass price",
+  ski_day_apres: "Après after skiing",
+  local_apres: "Evening atmosphere",
   local_pace: "Local pace",
-  development_style: "Development style",
-  base_type: "Base type",
-  travel_effort: "Travel effort",
-  trip_window_snow_fit: "Trip-window snow fit",
+  development_style: "Place style",
+  base_type: "Place type",
+  travel_effort: "Drive time and ease",
+  trip_window_snow_fit: "Snow fit for your dates",
 };
 
 export const groupLabels: Record<string, string> = {
-  trip_viability: "Trip viability",
-  ski_experience: "Ski experience",
-  stay_practicality: "Stay practicality",
+  trip_viability: "Trip timing",
+  ski_experience: "Skiing",
+  stay_practicality: "Where you stay",
   value: "Value",
   character: "Character",
-  travel_effort: "Travel effort",
+  travel_effort: "Drive time and ease",
 };
 
 const importanceLabels: Record<string, string> = {
@@ -104,7 +104,7 @@ const preferenceValueLabels: Record<string, string> = {
   "base_type:town": "Ski town",
   "base_type:village|hamlet": "Village or hamlet",
   "base_type:resort_station": "Purpose-built resort base",
-  "base_type:neighbourhood|resort_sector": "Resort neighbourhood or sector",
+  "base_type:neighbourhood|resort_sector": "Resort neighborhood or area",
 };
 
 export type ParsedChipAction =
@@ -181,7 +181,8 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
   }
   if (constraints.minimum_stay_quality) {
     const score = constraints.minimum_stay_quality.minimum_score;
-    const tier = score >= 10 ? "Premium" : score >= 6 ? "Standard+" : "Budget+";
+    const tier =
+      score >= 10 ? "Higher comfort" : score >= 6 ? "Standard comfort" : "Basic comfort";
     chips.push({
       id: "stay-quality",
       label: `${tier} stay`,
@@ -215,7 +216,7 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
     if (!label) continue;
     chips.push({
       id: `objective-${item.factor_id}`,
-      label: `Optimize ${label}`,
+      label: `Prefer ${label}`,
       action: { kind: "objective", id: item.factor_id },
     });
   }
@@ -645,7 +646,7 @@ const strengthCopy: Record<string, string> = {
   lift_network_scale: "The lift network supports varied ski-day plans.",
   glacier_terrain: "Glacier terrain adds resilience for the selected window.",
   snowmaking_availability: "Snowmaking adds resilience for the selected window.",
-  stay_base_access: "The selected stay base keeps lift access practical.",
+  stay_base_access: "The recommended place to stay keeps lift access practical.",
   pass_price_per_day: "The selected pass offers competitive daily value.",
   pass_terrain_value: "The selected pass balances terrain access and price.",
   travel_effort: "The route keeps travel effort within the requested plan.",
@@ -765,12 +766,12 @@ export function decisionEvidencePresentation(
   } else if (accessNeedsSource) {
     addUncertainty(
       "lift-access",
-      "Lift access from this stay base still needs source verification.",
+      "Lift access from this place to stay still needs source verification.",
     );
   } else {
     addUncertainty(
       "lift-access",
-      "Lift access may require additional local travel from the selected stay base.",
+      "Lift access may require additional local travel from the recommended place to stay.",
     );
   }
 
@@ -827,13 +828,13 @@ export function decisionEvidencePresentation(
     accessTrust === "needs_source"
       ? {
           id: "catalog-access",
-          label: "Stay base and lift access",
+          label: "Place to stay and lift access",
           provenance: accessProvenance(configuration),
           evidenceLabel: "Source confirmation needed",
         }
       : {
           id: "catalog-access",
-          label: "Stay base and lift access",
+          label: "Place to stay and lift access",
           provenance: accessProvenance(configuration),
           evidenceLabel:
             configuration.access.distance_m != null
@@ -855,7 +856,7 @@ export function decisionEvidencePresentation(
         id: "lodging-estimate",
         label: "Lodging estimate",
         provenance: technicalProvenance(configuration.lodging_estimate.provenance),
-        evidenceLabel: "Stay-base estimate",
+        evidenceLabel: "Place to stay estimate",
       });
   }
 
@@ -916,9 +917,9 @@ export function buildCandidateNarrative(
             ? `${supportedTerrain.evidenceLabel}.`
             : supported.factor_id === "stay_base_access"
               ? accessTrust === "estimated"
-                ? "Catalog estimates suggest the stay base keeps access practical."
+                ? "Catalog estimates suggest the recommended place to stay keeps access practical."
                 : accessTrust === "verified_with_adjustment"
-                  ? "Estimated source data supports the stay base as a practical choice."
+                  ? "Estimated source data supports the recommended place to stay as a practical choice."
                   : strengthCopy[supported.factor_id]
               : strengthCopy[supported.factor_id],
         }
@@ -953,7 +954,7 @@ export function refinementPreviewCopy(
   preview?: RefinementPreview | null,
   intentChanged = true,
 ): string {
-  if (!intentChanged) return "Keeps your current trip decisions and ranking.";
+  if (!intentChanged) return "Keeps your current trip decisions unchanged.";
   if (!preview) return "This changes how your current matches are evaluated.";
   const changes = preview.top_rank_changes;
   if (changes.length === 1) {
@@ -978,7 +979,7 @@ export function refinementPreviewCopy(
   if (preview.eligible_candidate_count_delta !== 0) {
     return `This choice may change eligibility for ${Math.abs(
       preview.eligible_candidate_count_delta,
-    )} trip configurations.`;
+    )} trip options.`;
   }
   return "This changes how your current matches are evaluated.";
 }

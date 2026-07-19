@@ -23,7 +23,7 @@ export function TripConfigurationDetails({
       <dl className="dossier-facts">
         <div><dt>Destination</dt><dd>{configuration.stay_destination_name}</dd></div>
         <div><dt>Ski area</dt><dd>{configuration.ski_area_name}</dd></div>
-        <div><dt>Stay base</dt><dd>{configuration.stay_base_name}</dd></div>
+        <div><dt>Recommended place to stay</dt><dd>{configuration.stay_base_name}</dd></div>
         <div><dt>Selected pass</dt><dd>{configuration.selected_pass.name}</dd></div>
         <div><dt>Pass price</dt><dd>{formatPassPrice(configuration)}</dd></div>
         <div><dt>Access</dt><dd>{formatAccess(configuration)}</dd></div>

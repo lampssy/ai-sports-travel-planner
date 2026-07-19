@@ -8,7 +8,7 @@ export const snowRiskSignal = {
 export const initialHeroCopy = {
   heading: "Book the mountain, not the guesswork.",
   body:
-    "Search by trip intent. Snowcast ranks ski resorts by snow window, stay fit, travel effort, and evidence.",
+    "Search by trip intent. Snowcast compares Trip options using snow fit for your dates, where to stay, travel effort, and evidence.",
 };
 
 export const evidenceQualityCopy = {

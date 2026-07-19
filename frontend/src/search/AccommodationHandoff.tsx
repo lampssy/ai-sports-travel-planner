@@ -27,10 +27,10 @@ export function AccommodationHandoff({
 
   return (
     <section className="dossier-section accommodation-handoff" id="accommodation">
-      <p className="section-label">Stay-base estimate, not live hotel inventory</p>
-      <h2>Find a stay in {configuration.stay_base_name}</h2>
+      <p className="section-label">Recommended place to stay</p>
+      <h2>{configuration.stay_base_name}</h2>
       <p className="accommodation-handoff__intro">
-        Continue with the selected stay-base context for this trip configuration.
+        {configuration.stay_base_name} is planning guidance, not live hotel inventory.
       </p>
       <div className="accommodation-handoff__panel">
         <div>
@@ -53,10 +53,13 @@ export function AccommodationHandoff({
         </div>
         <div className="accommodation-handoff__action">
           <a className="primary-command" href={url}>
-            Open accommodation search
+            Search stays in {configuration.stay_destination_name}
             <ExternalLink aria-hidden="true" size={17} />
           </a>
-          <small>Opens a search using this stay base, without claiming live inventory.</small>
+          <small>
+            The provider searches {configuration.stay_destination_name}, not a
+            specific place to stay.
+          </small>
         </div>
       </div>
     </section>

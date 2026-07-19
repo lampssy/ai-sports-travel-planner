@@ -59,18 +59,21 @@ function configuration(
   };
 }
 
-test("renders an honest stay-base estimate and selected-base handoff URL", () => {
+test("keeps recommended stay-base guidance separate from destination-level search", () => {
   render(<AccommodationHandoff configuration={configuration()} />);
 
-  expect(screen.getByText("Stay-base estimate, not live hotel inventory")).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Find a stay in Le Lac" })).toBeVisible();
+  expect(screen.getByText("Recommended place to stay")).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Le Lac" })).toBeVisible();
+  expect(
+    screen.getByText(/Le Lac is planning guidance, not live hotel inventory/i),
+  ).toBeVisible();
   expect(screen.getByText("EUR 180-255/night")).toBeVisible();
   expect(screen.getByText("Estimated from available data")).toBeVisible();
   expect(document.body.textContent).not.toMatch(
     /catalog lodging range|estimate-aware constraint/i,
   );
   expect(screen.getByText(/toviere.*250 m walk/i)).toBeVisible();
-  const link = screen.getByRole("link", { name: "Open accommodation search" });
+  const link = screen.getByRole("link", { name: "Search stays in Tignes" });
   expect(link).toHaveAttribute(
     "href",
     "/api/outbound/accommodation/tignes?stay_base_id=tignes-le-lac&focus_ski_area_id=tignes-ski-area&source_surface=recommendation_dossier",

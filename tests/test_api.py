@@ -1285,6 +1285,9 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
     assert payload["delta"]["status"] == "changed"
     assert payload["companion_status"]["trip_window_status"] == "unscheduled"
     assert payload["companion_status"]["notification_eligible"] is False
+    assert payload["companion_status"]["eligibility_reason"] == (
+        "Exact trip dates are not available."
+    )
     assert any(
         "Snow confidence improved" in change for change in payload["delta"]["changes"]
     )
@@ -1428,6 +1431,9 @@ def test_current_trip_summary_classifies_upcoming_trip_as_notification_eligible(
     assert payload["companion_status"]["trip_window_status"] == "upcoming"
     assert payload["companion_status"]["notification_eligible"] is True
     assert payload["companion_status"]["actionable_change_available"] is True
+    assert payload["companion_status"]["eligibility_reason"] == (
+        "Trip dates are in the future."
+    )
 
 
 def test_current_trip_summary_suppresses_notifications_for_past_trip(
@@ -1464,6 +1470,7 @@ def test_current_trip_summary_suppresses_notifications_for_past_trip(
     assert payload["companion_status"]["trip_window_status"] == "past"
     assert payload["companion_status"]["notification_eligible"] is False
     assert payload["companion_status"]["actionable_change_available"] is False
+    assert payload["companion_status"]["eligibility_reason"] == "Trip dates have ended."
 
 
 def test_current_trip_events_record_meaningful_change_once(monkeypatch) -> None:

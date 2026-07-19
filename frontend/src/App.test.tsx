@@ -399,7 +399,7 @@ test("parses and submits the brief, preserves it, and focuses results", async ()
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   const resultsHeading = await screen.findByRole("heading", {
-    name: /recommended ski trips/i,
+    name: /trip options/i,
   });
   expect(resultsHeading).toHaveFocus();
   expect(screen.getByLabelText("Trip brief")).toHaveValue(brief);
@@ -449,7 +449,7 @@ test("names loading work and disables duplicate homepage submission", async () =
   expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
 
   resolveSearch?.(new Response(JSON.stringify(response()), { status: 200 }));
-  await screen.findByRole("heading", { name: /recommended ski trips/i });
+  await screen.findByRole("heading", { name: /trip options/i });
 });
 
 test("opens the labelled filter drawer and restores focus after Escape", async () => {
@@ -561,22 +561,22 @@ test("keeps an overflow group priority reachable and removable in the drawer", a
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   expect(
-    screen.queryByRole("button", { name: "Trip viability: Highest priority" }),
+    screen.queryByRole("button", { name: "Trip timing: Highest priority" }),
   ).not.toBeInTheDocument();
   await user.click(
     await screen.findByRole("button", { name: "View all 7 preferences" }),
   );
   const priority = screen.getByRole("button", {
-    name: "Trip viability: Highest priority",
+    name: "Trip timing: Highest priority",
   });
   expect(priority).toHaveAttribute("aria-pressed", "true");
   await user.click(priority);
   expect(
-    screen.queryByRole("button", { name: "Trip viability: Highest priority" }),
+    screen.queryByRole("button", { name: "Trip timing: Highest priority" }),
   ).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Close filters" }));
-  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await user.click(screen.getByRole("button", { name: "Search trip" }));
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
   });
@@ -704,7 +704,7 @@ test("restores the previous month when Month mode is selected again", async () =
   await user.selectOptions(screen.getByLabelText("Travel window"), "month");
   expect(screen.getByLabelText("Travel month")).toHaveValue("3");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await user.click(screen.getByRole("button", { name: "Search trip" }));
 
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
@@ -769,7 +769,7 @@ test("renders ranking before a separate refinement request resolves", async () =
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(
-    screen.getByText("Checking whether one answer could improve this ranking.", {
+    screen.getByText("Checking whether one answer could improve these trip options.", {
       selector: ".contextual-refinement > p",
     }),
   ).toBeVisible();
@@ -799,14 +799,14 @@ test("renders ranking before a separate refinement request resolves", async () =
   );
   await waitFor(() => {
     expect(
-      screen.queryByText("Checking whether one answer could improve this ranking."),
+      screen.queryByText("Checking whether one answer could improve these trip options."),
     ).not.toBeInTheDocument();
   });
   expect(
     screen.getByRole("heading", { level: 2, name: "What matters most?" }),
   ).toBeVisible();
   expect(
-    screen.getByRole("heading", { name: "Recommended ski trips" }),
+    screen.getByRole("heading", { name: "Trip options" }),
   ).toHaveFocus();
 });
 
@@ -821,7 +821,7 @@ test("skips refinement discovery when no result is eligible", async () => {
 
   expect(
     await screen.findByRole("heading", {
-      name: /no trip matches every hard constraint/i,
+      name: /no trip option matches all of your must-haves/i,
     }),
   ).toBeVisible();
   expect(
@@ -1006,7 +1006,7 @@ test("a new ranking aborts a pending refinement retry before its search resolves
     { selector: ".contextual-refinement > p" },
   );
   fireEvent.click(
-    screen.getByRole("button", { name: /remove optimize terrain per pass price/i }),
+    screen.getByRole("button", { name: /remove prefer terrain for lift-pass price/i }),
   );
   await act(() => vi.advanceTimersByTimeAsync(0));
   expect(searchCount).toBe(2);
@@ -1259,7 +1259,7 @@ test("keeps terminal refinement failure visible and retries without replacing re
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
   await waitFor(() => {
-    expect(screen.getByRole("heading", { name: "Recommended ski trips" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Trip options" })).toHaveFocus();
   });
   expect(refinementAttempts).toBe(2);
 });
@@ -1310,7 +1310,7 @@ test("clears the terminal failure when a refinement retry finds a stale baseline
   await user.click(screen.getByRole("button", { name: "Try again" }));
 
   expect(
-    (await screen.findAllByText("A newer ranking replaced this refinement check."))[0],
+    (await screen.findAllByText("New trip options replaced this question."))[0],
   ).toBeVisible();
   expect(screen.queryByText(failureCopy)).not.toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -1392,7 +1392,7 @@ test("shows the slow refinement message without blocking the ranking", async () 
 
   expect(
     screen.getByText(
-      "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
+      "Your trip options are ready. Snowcast is checking whether one answer could improve them.",
       { selector: ".contextual-refinement > p" },
     ),
   ).toBeVisible();
@@ -1419,7 +1419,7 @@ test("suppresses questions for a stale baseline or ranking policy", async () => 
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(
-    await screen.findByText("A newer ranking replaced this refinement check.", {
+    await screen.findByText("New trip options replaced this question.", {
       selector: ".contextual-refinement > p",
     }),
   ).toBeVisible();
@@ -1447,7 +1447,7 @@ test("keeps ranking usable when a timed-out refinement baseline is unverified", 
   expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
   expect(screen.getByRole("button", { name: "Keep these results" })).toBeVisible();
   expect(
-    screen.queryByText("A newer ranking replaced this refinement check."),
+    screen.queryByText("New trip options replaced this question."),
   ).not.toBeInTheDocument();
 });
 
@@ -1554,7 +1554,7 @@ test("aborts and ignores a superseded refinement response", async () => {
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   await user.click(
     screen.getByRole("button", {
-      name: /remove optimize terrain per pass price/i,
+      name: /remove prefer terrain for lift-pass price/i,
     }),
   );
 
@@ -1648,7 +1648,7 @@ test("keeps current results and update focus when a manual search update fails",
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
 
-  const update = screen.getByRole("button", { name: "Update results" });
+  const update = screen.getByRole("button", { name: "Search trip" });
   update.focus();
   await user.click(update);
 
@@ -1660,7 +1660,7 @@ test("keeps current results and update focus when a manual search update fails",
     "Results could not be updated. Your current results are still available. Try again.",
   );
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(screen.getByRole("button", { name: "Update results" })).toHaveFocus();
+  expect(screen.getByRole("button", { name: "Search trip" })).toHaveFocus();
   expect(searchAttempts).toBe(2);
 });
 
@@ -2168,7 +2168,7 @@ test("restores result state and scroll after returning from a dossier", async ()
   await screen.findByRole("heading", { name: /tignes - val d'isere - le lac/i });
   await user.click(screen.getByRole("button", { name: "All results" }));
 
-  expect(await screen.findByRole("heading", { name: /recommended ski trips/i })).toBeVisible();
+  expect(await screen.findByRole("heading", { name: /trip options/i })).toBeVisible();
   await waitFor(() => expect(window.scrollTo).toHaveBeenCalledWith(0, 428));
   expect(
     screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
@@ -2372,12 +2372,12 @@ test("previews a validated dynamic refinement before applying it", async () => {
   expect(
     screen.getByText("This changes how your current matches are evaluated."),
   ).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
   expect(livelyOption).toHaveAttribute("aria-disabled", "true");
   expect(livelyOption).not.toBeDisabled();
   expect(screen.getByRole("heading", { name: /tignes - val d'isere/i })).toBeVisible();
   expect(
-    screen.getByText(/reranking these recommendations/i),
+    screen.getByText(/updating trip options with your new choice/i),
   ).toBeInTheDocument();
   expect(
     requests.filter((item) => item.url === "/api/search/refinements"),
@@ -2428,7 +2428,7 @@ test("previews a validated dynamic refinement before applying it", async () => {
   expect(
     JSON.parse(String(latestRefinementRequest?.init?.body)).resolved_topic_ids,
   ).toEqual(["local_apres"]);
-  expect(screen.getByText(/stay-base après: lively/i)).toBeInTheDocument();
+  expect(screen.getByText(/evening atmosphere: lively/i)).toBeInTheDocument();
 });
 
 test("applies a refinement to the displayed session instead of unsent drawer and brief edits", async () => {
@@ -2507,12 +2507,12 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   await user.type(screen.getByLabelText("Hard drive limit"), "5");
   await user.click(screen.getByRole("button", { name: "Glacier terrain" }));
   await user.selectOptions(
-    screen.getByLabelText("Value objective"),
+    screen.getByLabelText("Value preference"),
     "pass_price_per_day",
   );
   await user.click(screen.getByRole("button", { name: /close filters/i }));
 
-  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
   });
@@ -2543,7 +2543,7 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   expect(screen.getByLabelText("Country")).toHaveValue("Italy");
   expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
   expect(screen.getByLabelText("Hard drive limit")).toHaveValue(5);
-  expect(screen.getByLabelText("Value objective")).toHaveValue(
+  expect(screen.getByLabelText("Value preference")).toHaveValue(
     "pass_price_per_day",
   );
   expect(
@@ -2572,7 +2572,7 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   expect(screen.getByLabelText("Country")).toHaveValue("Italy");
   expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
   expect(screen.getByLabelText("Hard drive limit")).toHaveValue(5);
-  expect(screen.getByLabelText("Value objective")).toHaveValue(
+  expect(screen.getByLabelText("Value preference")).toHaveValue(
     "pass_price_per_day",
   );
   expect(
@@ -2644,7 +2644,7 @@ test("keeps pass-value objectives exclusive through refinement apply and undo", 
       name: /prefer the lowest daily pass price/i,
     }),
   );
-  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
   });
@@ -2654,7 +2654,7 @@ test("keeps pass-value objectives exclusive through refinement apply and undo", 
   );
   expect(applyBody.intent.objectives).toEqual([unrelatedObjective, priceObjective]);
   await user.click(screen.getByRole("button", { name: "Adjust" }));
-  expect(screen.getByLabelText("Value objective")).toHaveValue(
+  expect(screen.getByLabelText("Value preference")).toHaveValue(
     "pass_price_per_day",
   );
   await user.click(screen.getByRole("button", { name: /close filters/i }));
@@ -2668,7 +2668,7 @@ test("keeps pass-value objectives exclusive through refinement apply and undo", 
   );
   expect(undoBody.intent.objectives).toEqual([terrainObjective, unrelatedObjective]);
   await user.click(screen.getByRole("button", { name: "Adjust" }));
-  expect(screen.getByLabelText("Value objective")).toHaveValue(
+  expect(screen.getByLabelText("Value preference")).toHaveValue(
     "pass_terrain_value",
   );
 });
@@ -2718,17 +2718,17 @@ test("an ordinary successful search clears refinement undo and rank feedback", a
   await user.click(
     await screen.findByRole("radio", { name: /quiet and relaxed/i }),
   );
-  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
 
   expect(await screen.findByRole("button", { name: "Undo" })).toBeVisible();
-  expect(screen.getAllByText("Ranking unchanged.")[0]).toBeVisible();
+  expect(screen.getAllByText("Trip options unchanged.")[0]).toBeVisible();
 
-  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await user.click(screen.getByRole("button", { name: "Search trip" }));
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
   });
   expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument();
-  expect(screen.queryByText("Ranking unchanged.")).not.toBeInTheDocument();
+  expect(screen.queryByText("Trip options unchanged.")).not.toBeInTheDocument();
 });
 
 test("preserves previous results and the refinement on a failed rerank", async () => {
@@ -2749,7 +2749,7 @@ test("preserves previous results and the refinement on a failed rerank", async (
             refinementResponse({
               refinement_status: "questions_available",
               refinements: [
-                refinement("rerank-question", "Change the ranking?"),
+                refinement("rerank-question", "Change your trip options?"),
               ],
             }),
           ),
@@ -2790,10 +2790,10 @@ test("preserves previous results and the refinement on a failed rerank", async (
     }),
   );
 
-  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(screen.getByText("Change the ranking?")).toBeVisible();
+  expect(screen.getByText("Change your trip options?")).toBeVisible();
   expect(
     await screen.findByText(
       "Results could not be updated. Your current results and answer are still available. Try again.",
@@ -2804,7 +2804,7 @@ test("preserves previous results and the refinement on a failed rerank", async (
     requests.filter((item) => item.url === "/api/search/refinements"),
   ).toHaveLength(refinementRequestsBefore);
   expect(screen.getByRole("radio", { name: /prefer this/i })).toBeChecked();
-  const refinementCard = screen.getByText("Change the ranking?").closest("article");
+  const refinementCard = screen.getByText("Change your trip options?").closest("article");
   expect(
     within(refinementCard as HTMLElement).getByRole("button", {
       name: "Update results",
@@ -2820,8 +2820,8 @@ test("preserves previous results and the refinement on a failed rerank", async (
     }),
   );
 
-  expect(screen.queryByText("Change the ranking?")).toBeNull();
-  expect(screen.getByRole("heading", { name: "Recommended ski trips" })).toHaveFocus();
+  expect(screen.queryByText("Change your trip options?")).toBeNull();
+  expect(screen.getByRole("heading", { name: "Trip options" })).toHaveFocus();
   expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(
     searchRequestsBeforeExit,
   );
@@ -2934,7 +2934,7 @@ test("shows a lower-card save failure beside only the initiating result", async 
       });
     }),
   );
-  await user.click(screen.getByRole("button", { name: "Update results" }));
+  await user.click(screen.getByRole("button", { name: "Search trip" }));
   await waitFor(() =>
     expect(
       screen.queryByText("Your trip could not be saved. Try again."),
@@ -2994,20 +2994,20 @@ test("preserves refinement objectives and answered state when pass priority chan
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   await user.click(await screen.findByRole("radio", { name: /very important/i }));
-  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
 
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   await user.selectOptions(
-    screen.getByLabelText("Value objective"),
+    screen.getByLabelText("Value preference"),
     "pass_price_per_day",
   );
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await user.click(screen.getByRole("button", { name: "Search trip" }));
 
   await user.click(screen.getByRole("button", { name: "Adjust" }));
-  await user.selectOptions(screen.getByLabelText("Value objective"), "");
+  await user.selectOptions(screen.getByLabelText("Value preference"), "");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await user.click(screen.getByRole("button", { name: "Search trip" }));
 
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(4);
@@ -3076,14 +3076,14 @@ test("changing a hard constraint starts a new refinement context", async () => {
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   await user.click(await screen.findByRole("radio", { name: /quiet and relaxed/i }));
-  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
   await screen.findByRole("button", { name: "Undo" });
 
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   await user.clear(screen.getByLabelText("Country"));
   await user.type(screen.getByLabelText("Country"), "Italy");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await user.click(screen.getByRole("button", { name: "Search trip" }));
 
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
@@ -3133,9 +3133,9 @@ test("keeps a no-op refinement local and records it as answered", async () => {
   await user.click(
     await screen.findByRole("radio", { name: /keep current balance/i }),
   );
-  await user.click(screen.getByRole("button", { name: /keep current ranking/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
 
-  expect(screen.getAllByText("Current ranking kept.")[0]).toBeVisible();
+  expect(screen.getAllByText("Current trip choices kept.")[0]).toBeVisible();
   expect(screen.queryByText(/keep the current pass-value balance/i)).toBeNull();
   expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
   await waitFor(() => {
@@ -3148,11 +3148,11 @@ test("keeps a no-op refinement local and records it as answered", async () => {
   expect(followUpBody.resolved_topic_ids).toEqual(["pass_balance"]);
   await waitFor(() => {
     expect(
-      screen.getByRole("heading", { name: "Recommended ski trips" }),
+      screen.getByRole("heading", { name: "Trip options" }),
     ).toHaveFocus();
   });
 
-  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await user.click(screen.getByRole("button", { name: "Search trip" }));
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
   });
@@ -3233,10 +3233,10 @@ test("keeps keyboard focus stable while refinement follow-ups load", async () =>
   await user.click(
     await screen.findByRole("radio", { name: /keep current balance/i }),
   );
-  await user.click(screen.getByRole("button", { name: /keep current ranking/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
 
   const resultsHeading = screen.getByRole("heading", {
-    name: "Recommended ski trips",
+    name: "Trip options",
   });
   expect(resultsHeading).toHaveFocus();
 
@@ -3280,7 +3280,7 @@ test("guards drawer entry and chip mutations during a delayed rerank", async () 
           options: [
             {
               label: "Very important",
-              description: "Give trip viability very high importance.",
+              description: "Make trip timing a high priority.",
               intent_changed: true,
               group_priority_patches: [
                 { group_id: "trip_viability", importance: "very_high" },
@@ -3317,14 +3317,14 @@ test("guards drawer entry and chip mutations during a delayed rerank", async () 
     }),
   );
 
-  fireEvent.click(screen.getByRole("button", { name: /apply and rerank/i }));
-  expect(await screen.findByText(/reranking these recommendations/i)).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Update results" }));
+  expect(await screen.findByText(/updating trip options with your new choice/i)).toBeVisible();
   expect(screen.getByRole("button", { name: "Adjust" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Remove France" })).toBeDisabled();
 
   resolveRerank?.(new Response(JSON.stringify(response()), { status: 200 }));
   await waitFor(() => {
-    expect(screen.queryByText(/reranking these recommendations/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/updating trip options with your new choice/i)).not.toBeInTheDocument();
   });
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   expect(screen.getByLabelText("Country")).toHaveValue("France");
@@ -3345,7 +3345,7 @@ test("lets users remove selected objectives and refinement group priorities", as
           options: [
             {
               label: "Very important",
-              description: "Give trip viability very high importance.",
+              description: "Make trip timing a high priority.",
               intent_changed: true,
               group_priority_patches: [
                 { group_id: "trip_viability", importance: "very_high" },
@@ -3355,7 +3355,7 @@ test("lets users remove selected objectives and refinement group priorities", as
             },
             {
               label: "Normal",
-              description: "Keep the normal trip viability importance.",
+              description: "Keep trip timing at normal priority.",
               intent_changed: false,
               group_priority_patches: [
                 { group_id: "trip_viability", importance: "normal" },
@@ -3381,19 +3381,19 @@ test("lets users remove selected objectives and refinement group priorities", as
   render(<App />);
 
   await user.click(
-    screen.getByRole("button", { name: /remove optimize terrain per pass price/i }),
+    screen.getByRole("button", { name: /remove prefer terrain for lift-pass price/i }),
   );
-  expect(screen.queryByText(/optimize terrain per pass price/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/prefer terrain for lift-pass price/i)).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   const firstSearch = requests.find((item) => item.url === "/api/search");
   expect(JSON.parse(String(firstSearch?.init?.body)).intent.objectives).toEqual([]);
 
   await user.click(await screen.findByRole("radio", { name: /very important/i }));
-  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
-  expect(screen.getByText(/trip viability: highest priority/i)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Update results" }));
+  expect(screen.getByText(/trip timing: highest priority/i)).toBeInTheDocument();
   await user.click(
-    screen.getByRole("button", { name: /remove trip viability: highest priority/i }),
+    screen.getByRole("button", { name: /remove trip timing: highest priority/i }),
   );
 
   await waitFor(() => {
@@ -3628,7 +3628,7 @@ test("skipping the final refinement returns focus to the results heading", async
   );
   await waitFor(() => {
     expect(
-      screen.getByRole("heading", { name: "Recommended ski trips" }),
+      screen.getByRole("heading", { name: "Trip options" }),
     ).toHaveFocus();
   });
 });

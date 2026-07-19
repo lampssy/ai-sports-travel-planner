@@ -96,15 +96,15 @@ test("separates hard constraints from preferences and renders one refinement", (
     />,
   );
 
-  const hard = screen.getByRole("group", { name: "Hard constraints" });
+  const hard = screen.getByRole("group", { name: "Must-haves" });
   expect(within(hard).getByText("France")).toBeVisible();
   expect(within(hard).getByText("March window")).toBeVisible();
   expect(within(hard).getByText("Intermediate")).toBeVisible();
   expect(within(hard).getByText("Max EUR 320/night")).toBeVisible();
 
   const preferences = screen.getByRole("group", { name: "Preferences" });
-  expect(within(preferences).getByText(/terrain per pass price/i)).toBeVisible();
-  expect(within(preferences).getByText(/stay-base access/i)).toBeVisible();
+  expect(within(preferences).getByText(/terrain for lift-pass price/i)).toBeVisible();
+  expect(within(preferences).getByText(/access to the slopes/i)).toBeVisible();
   expect(screen.getByRole("button", { name: "Adjust" })).toBeVisible();
   expect(screen.getAllByText("What should break the tie?")).toHaveLength(1);
   expect(screen.getByRole("status")).toHaveTextContent(
@@ -168,7 +168,7 @@ test("keeps required factor preferences visible with hard constraints", () => {
     />,
   );
 
-  const hard = screen.getByRole("group", { name: "Hard constraints" });
+  const hard = screen.getByRole("group", { name: "Must-haves" });
   expect(
     within(hard).getByRole("button", {
       name: "Remove Require Snowmaking resilience",
@@ -227,7 +227,7 @@ test("announces initial and replacement refinement questions", () => {
   );
 
   expect(screen.getByRole("status")).toHaveTextContent(
-    "Checking whether one answer could improve this ranking.",
+    "Checking whether one answer could improve these trip options.",
   );
 
   rerender(
@@ -258,16 +258,16 @@ test("announces initial and replacement refinement questions", () => {
 });
 
 test.each([
-  ["loading", "Checking whether one answer could improve this ranking."],
+    ["loading", "Checking whether one answer could improve these trip options."],
   [
     "slow",
-    "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
+      "Your trip options are ready. Snowcast is checking whether one answer could improve them.",
   ],
   [
     "retrying",
     "Snowcast is waiting a moment before checking for another useful question.",
   ],
-  ["stale", "A newer ranking replaced this refinement check."],
+    ["stale", "New trip options replaced this question."],
 ] as const)("renders the %s refinement lifecycle state", (status, copy) => {
   render(
     <SearchContextRail

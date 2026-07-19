@@ -106,7 +106,7 @@ test("supports keyboard-only radio selection, apply, and skip focus", async () =
   expect(shorterJourney).toBeChecked();
 
   await user.tab();
-  const apply = screen.getByRole("button", { name: /keep current ranking/i });
+  const apply = screen.getByRole("button", { name: "Update results" });
   expect(document.activeElement).toBe(apply);
   await user.keyboard("{Enter}");
   expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[1]);
@@ -146,9 +146,9 @@ test("previews a selected option before apply and supports clear and skip", asyn
 
   await user.click(screen.getByRole("radio", { name: /shorter journey/i }));
   expect(
-    screen.getByText("Keeps your current trip decisions and ranking."),
+    screen.getByText("Keeps your current trip decisions unchanged."),
   ).toBeVisible();
-  await user.click(screen.getByRole("button", { name: /keep current ranking/i }));
+  await user.click(screen.getByRole("button", { name: "Update results" }));
   expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[1]);
 
   await user.click(screen.getByRole("button", { name: /skip this question/i }));

@@ -349,7 +349,7 @@ export function rankChangeSummary(
     (result) => previousRanks.get(result.ski_region_id) !== result.rank,
   );
   if (!changed.length) {
-    return { changedGroupIds: new Set(), announcement: "Ranking unchanged." };
+    return { changedGroupIds: new Set(), announcement: "Trip options unchanged." };
   }
   const winner = next.results[0];
   return {

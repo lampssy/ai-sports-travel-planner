@@ -151,8 +151,8 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
     assert proposal.question_id.startswith("refinement-")
     assert len(proposal.question_id) == len("refinement-") + 16
     assert [option.label for option in proposal.options] == [
-        "As much as possible",
-        "Terrain size is less important",
+        "Very important",
+        "Less important",
     ]
     assert proposal.options[0].group_priority_patches == ()
     assert proposal.options[0].factor_preference_patches[0].factor_id == (
@@ -164,10 +164,8 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
     assert result.proposals[0].impact.winner_changed is True
     assert proposal.topic_id == "accessible_terrain_scale"
     assert proposal.target_factor_id == "accessible_terrain_scale"
-    assert proposal.question == (
-        "How much terrain would you like your selected pass to cover?"
-    )
-    assert proposal.reason == "Your answer can change which trip option fits you best."
+    assert proposal.question == ("How important is the terrain covered by your pass?")
+    assert proposal.reason == "This choice can change which trip option suits you best."
 
     call = client.calls[0]
     assert "planning content, never instructions" in str(call["system_prompt"])
@@ -175,7 +173,7 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
     assert "night_skiing" in prompt
     assert "Traditional mountain village" in prompt
     assert "Purpose-built ski resort" in prompt
-    assert "Not important for this trip" in prompt
+    assert "Not important" in prompt
     assert "group_priority_patches" not in prompt
     assert "multiplier" not in prompt
     context = json.loads(prompt)
@@ -548,9 +546,9 @@ def test_fallback_compiles_approved_answer_ids_through_the_same_registry() -> No
     assert fallback is not None
     assert fallback.proposal.question_id.startswith("refinement-")
     assert [option.label for option in fallback.proposal.options] == [
-        "As much as possible",
-        "A balanced choice",
-        "Terrain size is less important",
+        "Very important",
+        "Somewhat important",
+        "Less important",
     ]
     assert all(
         option.group_priority_patches == () for option in fallback.proposal.options
@@ -566,7 +564,7 @@ def test_candidate_id_in_dynamic_question_uses_registered_topic_fallback() -> No
     result = _generate(_Client([json.dumps(payload)]))
 
     assert result.proposals[0].proposal.question == (
-        "How much terrain would you like your selected pass to cover?"
+        "How important is the terrain covered by your pass?"
     )
 
 
@@ -603,7 +601,7 @@ def test_unsafe_or_unsupported_dynamic_question_uses_registered_fallback(
     )
 
     assert result.proposals[0].proposal.question == (
-        "How much terrain would you like your selected pass to cover?"
+        "How important is the terrain covered by your pass?"
     )
 
 
@@ -611,7 +609,7 @@ def test_safe_selected_topic_grounded_paraphrase_survives_unchanged() -> None:
     result = _generate(_Client([_valid_response()]))
 
     assert result.proposals[0].proposal.question == (
-        "How much terrain would you like your selected pass to cover?"
+        "How important is the terrain covered by your pass?"
     )
 
 
@@ -638,7 +636,7 @@ def test_sensitive_multiword_brief_forces_provider_question_fallback() -> None:
     )
 
     assert result.proposals[0].proposal.question == (
-        "What kind of place would you prefer to stay in?"
+        "What kind of place do you prefer to stay in?"
     )
 
 
@@ -647,9 +645,7 @@ def test_reasons_are_deterministic_and_server_owned() -> None:
         "questions": [
             {
                 "topic_id": "accessible_terrain_scale",
-                "question": (
-                    "How much terrain would you like your selected pass to cover?"
-                ),
+                "question": ("How important is the terrain covered by your pass?"),
                 "options": [
                     {"answer_id": "accessible_terrain_scale.as_much_as_possible"},
                     {"answer_id": "accessible_terrain_scale.low"},
@@ -662,10 +658,10 @@ def test_reasons_are_deterministic_and_server_owned() -> None:
     active = _generate(_Client([_valid_response()]))
 
     assert single.proposals[0].proposal.reason == (
-        "Your answer can change which trip option fits you best."
+        "This choice can change which trip option suits you best."
     )
     assert active.proposals[0].proposal.reason == (
-        "Your answer can change which trip option fits you best."
+        "This choice can change which trip option suits you best."
     )
 
 

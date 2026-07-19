@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 
 import type { SearchV4Configuration } from "../types";
-import { evidenceQualityCopy } from "../ui/snowcastCopy";
+import { evidenceQualityCopy, initialHeroCopy } from "../ui/snowcastCopy";
 import { AccommodationHandoff } from "./AccommodationHandoff";
 import {
   buildCandidateNarrative,
@@ -98,6 +98,12 @@ function configuration(): SearchV4Configuration {
 }
 
 describe("content language contracts", () => {
+  test("uses public trip-option language in the initial search copy", () => {
+    expect(initialHeroCopy.body).toContain("Trip options");
+    expect(initialHeroCopy.body).toContain("snow fit for your dates");
+    expect(initialHeroCopy.body.toLowerCase()).not.toContain("ranks ski resorts");
+  });
+
   test("keeps internal language out of primary recommendation copy", () => {
     const candidate = configuration();
     const terrain = terrainPresentation(candidate.selected_pass);
@@ -163,7 +169,7 @@ describe("content language contracts", () => {
           id: "lodging-estimate",
           label: "Lodging estimate",
           provenance: "Catalog lodging range; estimate-aware constraint only.",
-          evidenceLabel: "Stay-base estimate",
+          evidenceLabel: "Place to stay estimate",
         }),
       ]),
     );

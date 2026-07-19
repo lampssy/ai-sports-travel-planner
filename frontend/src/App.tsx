@@ -940,7 +940,7 @@ function App() {
         current ? dismissRefinement(current, refinement.question_id) : current,
       );
       setRefinementError(null);
-      setRankFeedback("Current ranking kept.");
+      setRankFeedback("Current trip choices kept.");
       setChangedRankGroupIds(new Set());
       const hasNextRefinement = await loadRefinements(
         baselineSession.response,

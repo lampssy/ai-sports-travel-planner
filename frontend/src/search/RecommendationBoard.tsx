@@ -101,20 +101,20 @@ export function RecommendationBoard({
       <section className="results-board" aria-busy={loading || undefined}>
         <div className="results-board__heading">
           <div>
-            <p className="eyebrow">Conditions-aware ranking</p>
-            <h1 ref={headingRef} tabIndex={-1} aria-label="Recommended ski trips">
-              Recommended for you
+            <p className="eyebrow">Conditions-aware trip options</p>
+            <h1 ref={headingRef} tabIndex={-1} aria-label="Trip options">
+              Trip options for you
             </h1>
           </div>
           <p className="eligible-count">
-            {response.eligible_candidate_count} eligible configurations
+            {response.eligible_candidate_count} trip options match your Must-haves
           </p>
         </div>
 
         {response.ranking_status === "unscored" ? (
           <p className="warning-status">
             <AlertTriangle aria-hidden="true" size={17} />
-            Unranked options: comparable scoring is unavailable
+            Trip options are shown without a fit comparison because key details are unavailable
           </p>
         ) : null}
         {rankFeedback ? (
@@ -133,7 +133,7 @@ export function RecommendationBoard({
         </p>
         {loading ? (
           <p className="results-loading" role="status">
-            Reranking these recommendations with your updated trip decisions.
+            Updating trip options with your new choice.
           </p>
         ) : null}
         {error ? (
@@ -170,7 +170,7 @@ export function RecommendationBoard({
         ) : (
           <section className="empty-state" aria-labelledby="no-results-heading">
             <div>
-              <h2 id="no-results-heading">No trip matches every hard constraint</h2>
+              <h2 id="no-results-heading">No trip option matches all of your Must-haves</h2>
               <p>
                 Review {hardConstraints.map((chip) => chip.label).join(", ") || "your trip limits"}.
               </p>
@@ -179,7 +179,7 @@ export function RecommendationBoard({
                 className="secondary-command"
                 onClick={(event) => onOpenFilters(event.currentTarget)}
               >
-                Adjust hard constraints
+                Adjust Must-haves
               </button>
             </div>
           </section>

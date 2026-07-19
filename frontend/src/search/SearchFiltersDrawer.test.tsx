@@ -82,7 +82,7 @@ test("changes only the drawer-owned pass objective", async () => {
   const { rerender } = render(<SearchFiltersDrawer {...props} />);
 
   await user.selectOptions(
-    screen.getByLabelText("Value objective"),
+    screen.getByLabelText("Value preference"),
     "pass_price_per_day",
   );
   expect(onObjectivesChange).toHaveBeenLastCalledWith([
@@ -100,7 +100,7 @@ test("changes only the drawer-owned pass objective", async () => {
       ]}
     />,
   );
-  await user.selectOptions(screen.getByLabelText("Value objective"), "");
+  await user.selectOptions(screen.getByLabelText("Value preference"), "");
   expect(onObjectivesChange).toHaveBeenLastCalledWith([
     { factor_id: "trip_window_snow_fit", importance: "high" },
   ]);
@@ -144,10 +144,10 @@ test("shows and removes active factor and objective choices outside the defaults
   );
 
   const factorChoice = screen.getByRole("button", {
-    name: "Prefer Stay-base access",
+    name: "Prefer Access to the slopes",
   });
   const objectiveChoice = screen.getByRole("button", {
-    name: "Optimize Trip-window snow fit",
+    name: "Prefer Snow fit for your dates",
   });
   expect(factorChoice).toHaveAttribute("aria-pressed", "true");
   expect(objectiveChoice).toHaveAttribute("aria-pressed", "true");
@@ -265,7 +265,7 @@ test("hides unknown factors, objectives, and raw controlled values", () => {
     screen.getByRole("button", { name: "Prefer Local pace" }),
   ).toBeVisible();
   expect(
-    screen.getByRole("button", { name: "Optimize Trip-window snow fit" }),
+    screen.getByRole("button", { name: "Prefer Snow fit for your dates" }),
   ).toBeVisible();
   expect(document.body).not.toHaveTextContent("sensitive_controlled_value");
   expect(document.body).not.toHaveTextContent("private_value");

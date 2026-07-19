@@ -415,7 +415,7 @@ def _render_html(page: PublicDestinationPage) -> str:
         <aside class="card">
           <div class="eyebrow">Destination facts</div>
           <div class="metrics">
-            <div class="metric"><div class="label">Stay bases</div><div class="value">{len(page.stay_bases)}</div></div>
+            <div class="metric"><div class="label">Recommended places to stay</div><div class="value">{len(page.stay_bases)}</div></div>
             <div class="metric"><div class="label">Accessible ski areas</div><div class="value">{len(page.ski_area_sections)}</div></div>
             <div class="metric"><div class="label">Trip market</div><div class="value">{_html(page.ski_region_name)}</div></div>
             <div class="metric"><div class="label">Price level</div><div class="value">{_html(destination.price_level.title())}</div></div>
@@ -424,10 +424,10 @@ def _render_html(page: PublicDestinationPage) -> str:
       </section>
       {_render_ski_area_sections(page.ski_area_sections)}
       <section class="grid">
-        <div class="card"><div class="eyebrow">Stay bases</div><h2>Where Snowcast can place you</h2><div class="list">{_render_stay_bases(page.stay_bases)}</div></div>
-        <div class="card"><div class="eyebrow">Rental display facts</div><h2>Equipment options</h2><div class="list">{_render_rentals(page.rentals)}</div></div>
+        <div class="card"><div class="eyebrow">Recommended places to stay</div><h2>Recommended places to stay</h2><div class="list">{_render_stay_bases(page.stay_bases)}</div></div>
+        <div class="card"><div class="eyebrow">Equipment rentals</div><h2>Equipment options</h2><div class="list">{_render_rentals(page.rentals)}</div></div>
       </section>
-      <section class="card" style="margin-top: 22px;"><div class="eyebrow">Trust and provenance</div><h2>What this guide is based on</h2><p class="muted">This page combines curated destination and access metadata with current conditions and archive weather stored under each stable ski-area ID. It does not blend several ski areas into one weather score.</p></section>
+      <section class="card" style="margin-top: 22px;"><div class="eyebrow">Trust and provenance</div><h2>What this guide is based on</h2><p class="muted">This page combines curated destination and access details with current conditions and archive weather for each ski area. It does not blend several ski areas into one weather score.</p></section>
     </main>
   </body>
 </html>
@@ -453,7 +453,7 @@ def _render_ski_area_sections(
         <div class="area-header">
           <div><div class="eyebrow">Current snow signal</div><h2>{_html(area.name)} ski-area conditions</h2><p>{_html(current.weather_summary)}</p></div>
           <div class="metrics">
-            <div class="metric"><div class="label">Snow confidence</div><div class="value">{_html(current.snow_confidence_label.title())}</div></div>
+            <div class="metric"><div class="label">Snow fit</div><div class="value">{_html(_snow_fit_label(current.snow_confidence_label))}</div></div>
             <div class="metric"><div class="label">Disruption signal</div><div class="value">{_html(_availability_label(current.availability_status))}</div></div>
             <div class="metric"><div class="label">Elevation</div><div class="value">{area.base_elevation_m}-{area.summit_elevation_m}m</div></div>
             <div class="metric"><div class="label">Season</div><div class="value">{_html(_season_label(area))}</div></div>
@@ -474,7 +474,7 @@ def _render_calendar(months: tuple[PublicCalendarMonth, ...]) -> str:
     return "\n".join(
         f"""
           <article class="month {"good" if month.snow_confidence_label == "good" else ""}">
-            <span class="badge">{_html(month.snow_confidence_label)}</span>
+            <span class="badge">{_html(_snow_fit_label(month.snow_confidence_label))}</span>
             <h3>{_html(month.month_name)}</h3>
             <p>{_html(_calendar_summary(month))}</p>
             {_render_weather_metrics(month.weather_metrics)}
@@ -532,7 +532,7 @@ def _render_stay_bases(stay_bases: tuple[PublicStayBaseView, ...]) -> str:
         f"""
         <div class="list-item">
           <strong>{_html(view.stay_base.name)}</strong>
-          <div class="muted">{_html(view.stay_base.price_range)} nightly stay estimate · {_html(view.stay_base.quality.title())} quality tier · access to {_html(", ".join(view.ski_area_names))}</div>
+          <div class="muted">{_html(view.stay_base.price_range)} nightly stay estimate · access to {_html(", ".join(view.ski_area_names))}</div>
         </div>
         """
         for view in stay_bases
@@ -546,7 +546,7 @@ def _render_rentals(rentals: tuple[RentalDisplayFact, ...]) -> str:
         f"""
         <div class="list-item">
           <strong>{_html(rental.name)}</strong>
-          <div class="muted">{_html(rental.price_range)} daily rental estimate · {_html(rental.quality.title())} quality tier · {_html(rental.lift_distance.title())} lift access</div>
+          <div class="muted">{_html(rental.price_range)} daily rental estimate · {_html(rental.lift_distance.title())} lift access</div>
         </div>
         """
         for rental in rentals
@@ -567,6 +567,14 @@ def _availability_label(value: str) -> str:
         "temporarily_closed": "High disruption risk",
         "out_of_season": "Out of season",
     }.get(value, value.replace("_", " ").title())
+
+
+def _snow_fit_label(value: str) -> str:
+    return {
+        "good": "Strong fit",
+        "fair": "Some concerns",
+        "poor": "Not enough evidence",
+    }.get(value, "Not enough evidence")
 
 
 def _calendar_summary(month: PublicCalendarMonth) -> str:

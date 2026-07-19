@@ -1,15 +1,14 @@
 # Snowcast
 
 ## Project Overview
-Snowcast helps skiers plan conditions-smart trips with structured destination recommendations, stay-base options, ski-area-aware conditions, and rental suggestions. The backend exposes deterministic APIs for search and trip companion flows, leaving AI-specific features as thin supporting layers rather than ranking owners.
+Snowcast helps skiers compare clear Trip options for their dates, Must-haves, and Preferences. Each option explains snow conditions, a Recommended place to stay, and practical travel details; searching for stays is kept separate from that planning guidance.
 
 ## Features
-- Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
-- Add an optional travel window, either month-level or exact dates, so resort ranking can reflect planning confidence for a selected window
+- Search Trip options by country, budget, stay quality, skill level, and lift-access preference
+- Add an optional travel window, either month-level or exact dates, so Trip options can reflect planning confidence for that window
 - Add optional car-first travel effort from a user origin, with max-drive filtering, travel tolerance, result badges, and provider/provenance caveats
-- Return ranked trip-market groups with a concrete stay destination, stay base,
-  selected ski area, access edge, and pass plus reviewable alternatives
-- Keep actual hotels and apartments as an optional suggested-stay layer under the selected stay base, with provider/freshness evidence when property-level data exists
+- Return Trip options with a destination, Recommended place to stay, selected ski area, access details, lift pass, and alternatives
+- Keep actual hotels and apartments as an optional suggested-stay layer under the Recommended place to stay, with provider and freshness evidence when property-level data exists
 - Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
 - Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
 - Save one authenticated current trip per user from the mobile selected-result flow with a booking status for later companion features

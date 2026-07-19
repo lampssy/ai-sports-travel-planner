@@ -259,7 +259,7 @@ export function SearchFiltersDrawer({
                 className="control"
               />
             </Field>
-            <Field label="Minimum stay tier">
+            <Field label="Minimum stay quality">
               <select
                 value={filters.stars}
                 disabled={disabled}
@@ -272,9 +272,9 @@ export function SearchFiltersDrawer({
                 className="control"
               >
                 <option value="">Any</option>
-                <option value="1">Budget+</option>
-                <option value="2">Standard+</option>
-                <option value="3">Premium</option>
+                <option value="1">Basic comfort</option>
+                <option value="2">Standard comfort</option>
+                <option value="3">Higher comfort</option>
               </select>
             </Field>
           </div>
@@ -372,7 +372,7 @@ export function SearchFiltersDrawer({
             </Field>
           </div>
 
-          <Field label="Value objective">
+          <Field label="Value preference">
             <select
               value={filters.valueObjective}
               disabled={disabled}
@@ -400,7 +400,7 @@ export function SearchFiltersDrawer({
 
           {additionalObjectives.length ? (
             <fieldset className="preference-fieldset">
-              <legend>Other active objectives</legend>
+              <legend>Other preferences</legend>
               <div className="preference-options">
                 {additionalObjectives.map((objective) => (
                   <button
@@ -417,7 +417,7 @@ export function SearchFiltersDrawer({
                     }
                     className="preference-option"
                   >
-                    Optimize {factorLabels[objective.factor_id]}
+                    Prefer {factorLabels[objective.factor_id]}
                   </button>
                 ))}
               </div>

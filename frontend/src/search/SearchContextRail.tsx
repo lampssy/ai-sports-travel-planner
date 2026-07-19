@@ -16,12 +16,12 @@ import type { RefinementLifecycleStatus } from "./searchSession";
 const REFINEMENT_STATUS_COPY: Partial<
   Record<RefinementLifecycleStatus, string>
 > = {
-  loading: "Checking whether one answer could improve this ranking.",
+  loading: "Checking whether one answer could improve these trip options.",
   slow:
-    "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
+    "Your trip options are ready. Snowcast is checking whether one answer could improve them.",
   retrying:
     "Snowcast is waiting a moment before checking for another useful question.",
-  stale: "A newer ranking replaced this refinement check.",
+  stale: "New trip options replaced this question.",
   not_needed: "No more questions would materially change these results.",
   skipped: "Question skipped. Results unchanged.",
 };
@@ -160,7 +160,7 @@ export function SearchContextRail({
         </button>
       </div>
       <ContextGroup
-        label="Hard constraints"
+        label="Must-haves"
         chips={hard}
         disabled={loading}
         onRemove={onRemoveChip}

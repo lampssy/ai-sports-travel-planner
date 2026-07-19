@@ -132,7 +132,7 @@ export function CurrentTripView({
         Back to search
       </button>
       <section className="current-trip-panel">
-        <p className="eyebrow">Trip companion</p>
+        <p className="eyebrow">Trip updates</p>
         {tripAnnouncementRequest !== null ? (
           <p
             key={`trip-recovery-${tripAnnouncementRequest}`}

@@ -439,7 +439,7 @@ describe("deterministic recommendation copy", () => {
 
     expect(buildCandidateNarrative(candidate)).toEqual({
       verdict: "A practical lift-access match for this trip.",
-      strength: "The selected stay base keeps lift access practical.",
+      strength: "The recommended place to stay keeps lift access practical.",
       watchout: "Snow evidence is limited for the requested travel window.",
     });
   });
@@ -496,7 +496,7 @@ describe("deterministic recommendation copy", () => {
 
     expect(buildCandidateNarrative(estimated)).toEqual({
       verdict: "An estimated practical lift-access match for this trip.",
-      strength: "Catalog estimates suggest the stay base keeps access practical.",
+      strength: "Catalog estimates suggest the recommended place to stay keeps access practical.",
     });
     expect(buildCandidateNarrative(needsSource)).toEqual({
       verdict: "A complete trip configuration for comparison.",
@@ -504,7 +504,7 @@ describe("deterministic recommendation copy", () => {
     expect(buildCandidateNarrative(adjusted)).toEqual({
       verdict: "A practical lift-access match based on estimated data.",
       strength:
-        "Estimated source data supports the stay base as a practical choice.",
+        "Estimated source data supports the recommended place to stay as a practical choice.",
     });
     expect(buildCandidateNarrative(missingEvidence)).toEqual({
       verdict: "A complete trip configuration for comparison.",
@@ -588,8 +588,8 @@ describe("deterministic recommendation copy", () => {
 
     expect(buildParsedChips(intent).map((chip) => chip.label)).toEqual([
       "Intermediate",
-      "Development style: Purpose-built ski resort",
-      "Base type: Village or hamlet",
+      "Place style: Purpose-built ski resort",
+      "Place type: Village or hamlet",
     ]);
   });
 
@@ -603,7 +603,7 @@ describe("deterministic recommendation copy", () => {
 
     expect(buildParsedChips(intent)).toContainEqual({
       id: "group-trip_viability",
-      label: "Trip viability: Highest priority",
+      label: "Trip timing: Highest priority",
       action: { kind: "group", id: "trip_viability" },
     });
     expect(
@@ -729,7 +729,7 @@ describe("why this trip presentation", () => {
       "Lift access",
     );
     expect(presentation.uncertainties.map((item) => item.detail)).toContain(
-      "Lift access from this stay base still needs source verification.",
+      "Lift access from this place to stay still needs source verification.",
     );
     expect(formatTripEssential("liftAccess", candidate)).toBeNull();
     expect(formatAccess(candidate)).toBe(
@@ -782,7 +782,7 @@ describe("refinement preview copy", () => {
     [
       "eligibility only",
       { top_rank_changes: [], eligible_candidate_count_delta: -4 },
-      "This choice may change eligibility for 4 trip configurations.",
+      "This choice may change eligibility for 4 trip options.",
     ],
     [
       "absent",
@@ -799,6 +799,6 @@ describe("refinement preview copy", () => {
         { top_rank_changes: [], eligible_candidate_count_delta: 0 },
         false,
       ),
-    ).toBe("Keeps your current trip decisions and ranking.");
+    ).toBe("Keeps your current trip decisions unchanged.");
   });
 });

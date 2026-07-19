@@ -92,9 +92,7 @@ def _trip_window_status(
             trip_window_status="unscheduled",
             trip_window_label="Trip dates not set",
             notification_eligible=False,
-            eligibility_reason=(
-                "Set exact trip dates to make companion alerts relevant."
-            ),
+            eligibility_reason="Exact trip dates are not available.",
             actionable_change_available=False,
         )
 
@@ -103,17 +101,17 @@ def _trip_window_status(
         status = "upcoming"
         label = "Trip upcoming"
         eligible = True
-        reason = "Companion alerts are eligible because the trip is upcoming."
+        reason = "Trip dates are in the future."
     elif today > trip.trip_end_date:
         status = "past"
         label = "Trip finished"
         eligible = False
-        reason = "Companion alerts are suppressed because the trip window has passed."
+        reason = "Trip dates have ended."
     else:
         status = "active"
         label = "Trip active"
         eligible = True
-        reason = "Companion alerts are eligible because the trip is currently active."
+        reason = "Trip dates include today."
 
     return CompanionStatus(
         trip_window_status=status,
@@ -177,13 +175,13 @@ def _delta_from_conditions(
     if not changes:
         return CurrentTripDelta(
             status="unchanged",
-            summary="No material conditions changes since the comparison baseline.",
+            summary="Conditions have not changed since the last comparison.",
             changes=[],
         )
 
     return CurrentTripDelta(
         status="changed",
-        summary="Conditions changed since the comparison baseline.",
+        summary="Conditions have changed since the last comparison.",
         changes=changes,
     )
 
@@ -288,17 +286,15 @@ def build_current_trip_summary(
         delta = CurrentTripDelta(
             status="insufficient_history",
             summary=(
-                "Current conditions have not been refreshed yet, so there is not "
-                "enough history to compare."
+                "Current conditions are not available yet, so there is not enough "
+                "history to compare."
             ),
             changes=[],
         )
     elif current_updated_at <= baseline_at:
         delta = CurrentTripDelta(
             status="unchanged",
-            summary=(
-                "No newer conditions refresh has landed since the comparison baseline."
-            ),
+            summary=("No newer conditions are available since the last comparison."),
             changes=[],
         )
     else:
@@ -307,8 +303,8 @@ def build_current_trip_summary(
             delta = CurrentTripDelta(
                 status="insufficient_history",
                 summary=(
-                    "Conditions were refreshed after the comparison baseline, "
-                    "but there is not enough earlier history to compare yet."
+                    "Conditions are newer than the last comparison, but there is "
+                    "not enough earlier history to compare."
                 ),
                 changes=[],
             )

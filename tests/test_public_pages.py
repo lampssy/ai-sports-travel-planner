@@ -72,6 +72,9 @@ def test_public_destination_page_returns_server_rendered_html() -> None:
     assert "+00:00" not in response.text
     assert "Le Lac" in response.text
     assert "Tignes ski-area conditions" in response.text
+    lower_response = response.text.lower()
+    assert "quality tier" not in lower_response
+    assert "stay base" not in lower_response
 
 
 def test_public_destination_page_unknown_destination_returns_404() -> None:
