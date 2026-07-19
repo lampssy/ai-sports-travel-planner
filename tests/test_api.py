@@ -1458,7 +1458,7 @@ def test_search_readiness_checks_search_dependencies() -> None:
     assert payload["checks"]["factor_count"] > 0
     assert payload["checks"]["factor_registry"] == "ok"
     assert payload["checks"]["refinement_presentation_policy"] == (
-        "search-refinement-presentation-1"
+        "search-refinement-presentation-2"
     )
     assert "Traditional mountain village" not in response.text
     assert payload["checks"]["expected_forecast_head_count"] > 0
