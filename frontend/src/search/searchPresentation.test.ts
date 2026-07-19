@@ -592,6 +592,24 @@ describe("deterministic recommendation copy", () => {
       "Base type: Village or hamlet",
     ]);
   });
+
+  test("uses public labels for group-priority values", () => {
+    const intent: SearchIntent = {
+      ...baseIntent,
+      group_priorities: [
+        { group_id: "trip_viability", importance: "very_high" },
+      ],
+    };
+
+    expect(buildParsedChips(intent)).toContainEqual({
+      id: "group-trip_viability",
+      label: "Trip viability: Highest priority",
+      action: { kind: "group", id: "trip_viability" },
+    });
+    expect(
+      buildParsedChips(intent).some((chip) => chip.label.includes("very_high")),
+    ).toBe(false);
+  });
 });
 
 describe("why this trip presentation", () => {

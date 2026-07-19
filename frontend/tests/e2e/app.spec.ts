@@ -22,19 +22,25 @@ type WeatherResponder = (
 
 function refinementPayloadFor(
   ranking: SearchResponse,
+  request?: SearchV4RefinementRequest,
 ): SearchV4RefinementResponse {
+  const resolvedTopicIds = new Set(request?.resolved_topic_ids ?? []);
+  const refinement = ranking.refinements.find(
+    (candidate) =>
+      !resolvedTopicIds.has(candidate.topic_id ?? candidate.question_id),
+  );
   return {
     search_model_version: "search-v4",
     ranking_policy_version: ranking.ranking_policy_version,
     baseline_fingerprint: ranking.baseline_fingerprint,
     baseline_status: "current",
-    refinement_status: ranking.refinements.length
+    refinement_status: refinement
       ? "questions_available"
       : "not_needed",
     fallback_used: false,
-    refinements: ranking.refinements,
+    refinements: refinement ? [refinement] : [],
     refinement_presentation_policy_version:
-      "search-refinement-presentation-1",
+      "search-refinement-presentation-2",
   };
 }
 
@@ -276,9 +282,9 @@ async function mockSearchV4Api(
   });
 
   await page.route(/\/api\/search\/refinements$/, async (route) => {
-    refinementRequests.push(
-      route.request().postDataJSON() as SearchV4RefinementRequest,
-    );
+    const refinementRequest =
+      route.request().postDataJSON() as SearchV4RefinementRequest;
+    refinementRequests.push(refinementRequest);
     const ranking = responses[
       Math.min(Math.max(responseIndex - 1, 0), responses.length - 1)
     ];
@@ -290,7 +296,7 @@ async function mockSearchV4Api(
       });
       return;
     }
-    const payload = refinementPayloadFor(ranking);
+    const payload = refinementPayloadFor(ranking, refinementRequest);
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -324,6 +330,8 @@ function refinementResponse(): SearchResponse {
   const response = structuredClone(monthSearchResponse);
   response.refinements = [
     {
+      topic_id: "trip_window_snow_fit",
+      target_factor_id: "trip_window_snow_fit",
       question_id: "snow-priority",
       question: "What should break the tie?",
       reason: "One answer could reorder your top results.",
@@ -359,6 +367,8 @@ function refinementResponse(): SearchResponse {
       ],
     },
     {
+      topic_id: "development_style",
+      target_factor_id: "development_style",
       question_id: "stay-style",
       question: "Which stay style fits?",
       reason: "Your stay preference can change the leading base.",
@@ -399,6 +409,8 @@ function rerankedResponse(): SearchResponse {
   response.results[1].rank = 2;
   response.refinements = [
     {
+      topic_id: "local_pace",
+      target_factor_id: "local_pace",
       question_id: "replacement",
       question: "Replacement refinement?",
       reason: "The reranked result has one remaining decision.",
@@ -618,7 +630,11 @@ test("desktop board compares, selects alternatives, and reranks in place", async
     .getByRole("button", { name: /select le lac with tignes local pass/i })
     .click();
   await expect(firstCard.getByText("Tignes local pass", { exact: true }).first()).toBeVisible();
-  await expect(firstCard.getByText("150 km", { exact: true })).toBeVisible();
+  await expect(
+    firstCard
+      .getByText("150 km covered by this pass", { exact: true })
+      .first(),
+  ).toBeVisible();
   await expect(firstCard.getByRole("link", { name: "View dossier" })).toHaveAttribute(
     "href",
     "/recommendations/tignes-val-disere?candidate=tignes-access--tignes-local-pass",
@@ -800,7 +816,9 @@ test("keyboard refinement selection keeps Apply and Skip focus predictable", asy
   await expect.poll(() => scrollYAfterLayout(page)).toBe(scrollBeforeApply);
 
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: "Skip for now" })).toBeFocused();
+  await expect(
+    page.getByRole("button", { name: "Skip this question" }),
+  ).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(
     page.getByRole("heading", { name: "Recommended ski trips" }),
@@ -951,7 +969,7 @@ test("mobile board advances refinements in document flow without overflow", asyn
     page.getByRole("heading", { name: "What should break the tie?" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Choose a preference" }).click();
-  await page.getByRole("button", { name: /skip for now/i }).click();
+  await page.getByRole("button", { name: /skip this question/i }).click();
   await expect(
     page.getByRole("heading", { name: "Which stay style fits?" }),
   ).toBeVisible();
@@ -1003,7 +1021,7 @@ test("five-option mobile refinement disclosure preserves reachability and focus"
   await expect(nextDisclosure).toBeFocused();
   await expect(nextDisclosure).toHaveAttribute("aria-expanded", "false");
   await nextDisclosure.click();
-  await page.getByRole("button", { name: "Skip for now" }).click();
+  await page.getByRole("button", { name: "Skip this question" }).click();
   await expect(
     page.getByRole("heading", { name: "Recommended ski trips" }),
   ).toBeFocused();
@@ -1816,7 +1834,7 @@ test("results reflow at a 1440 viewport equivalent to 200 percent zoom", async (
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with reliable snow");
 
-  await expect(page.getByText("Fallback-heavy", { exact: true })).toBeVisible();
+  await expect(page.getByText("Limited evidence", { exact: true })).toBeVisible();
   await expect(page.getByText("Snow evidence is limited for the requested travel window.")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   const motion = await page.locator(".recommendation-card__toggle").first().evaluate(

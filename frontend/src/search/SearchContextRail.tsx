@@ -99,10 +99,17 @@ export function SearchContextRail({
   onSkipRefinement: (refinement: RefinementProposal) => void;
 }) {
   const chips = buildParsedChips(intent);
+  const requiredFactorIds = new Set(
+    intent.factor_preferences
+      .filter((preference) => preference.mode === "require")
+      .map((preference) => preference.factor_id),
+  );
   const hard = chips.filter((chip) =>
     ["location", "travelWindow", "lodgingBudget", "stayQuality", "travelLimit", "skill"].includes(
       chip.action.kind,
-    ),
+    ) ||
+      (chip.action.kind === "preference" &&
+        requiredFactorIds.has(chip.action.id)),
   );
   const preferences = chips.filter((chip) => !hard.includes(chip));
   const visiblePreferences = preferences.slice(0, 3);

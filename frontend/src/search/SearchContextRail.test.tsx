@@ -138,6 +138,45 @@ test("shows three preferences and a full-list count", () => {
   ).toBeVisible();
 });
 
+test("keeps required factor preferences visible with hard constraints", () => {
+  render(
+    <SearchContextRail
+      intent={{
+        ...intentWithFivePreferences,
+        factor_preferences: [
+          ...intentWithFivePreferences.factor_preferences,
+          {
+            factor_id: "snowmaking_availability",
+            mode: "require",
+            values: [],
+            importance: "high",
+          },
+        ],
+      }}
+      refinement={null}
+      refinementStatus="idle"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  const hard = screen.getByRole("group", { name: "Hard constraints" });
+  expect(
+    within(hard).getByRole("button", {
+      name: "Remove Require Snowmaking resilience",
+    }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "View all 5 preferences" }),
+  ).toBeVisible();
+});
+
 test("disables context mutations while recommendations are loading", () => {
   const onOpenFilters = vi.fn();
   const onRemoveChip = vi.fn();

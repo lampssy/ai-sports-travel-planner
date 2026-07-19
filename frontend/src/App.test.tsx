@@ -2780,9 +2780,9 @@ test("lets users remove selected objectives and refinement group priorities", as
 
   await user.click(await screen.findByRole("radio", { name: /very important/i }));
   await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
-  expect(screen.getByText(/trip viability: very_high/i)).toBeInTheDocument();
+  expect(screen.getByText(/trip viability: highest priority/i)).toBeInTheDocument();
   await user.click(
-    screen.getByRole("button", { name: /remove trip viability: very_high/i }),
+    screen.getByRole("button", { name: /remove trip viability: highest priority/i }),
   );
 
   await waitFor(() => {

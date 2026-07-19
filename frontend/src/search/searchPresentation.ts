@@ -68,6 +68,15 @@ export const groupLabels: Record<string, string> = {
   travel_effort: "Travel effort",
 };
 
+const importanceLabels: Record<string, string> = {
+  ignore: "Not a priority",
+  secondary: "Lower priority",
+  normal: "Balanced",
+  important: "Important",
+  primary: "Top priority",
+  very_high: "Highest priority",
+};
+
 const preferenceValueLabels: Record<string, string> = {
   "ski_day_apres:low_key": "Quiet",
   "ski_day_apres:moderate": "Some atmosphere",
@@ -203,10 +212,11 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
   }
   for (const item of intent.group_priorities) {
     const label = groupLabels[item.group_id];
-    if (!label) continue;
+    const importanceLabel = importanceLabels[item.importance];
+    if (!label || !importanceLabel) continue;
     chips.push({
       id: `group-${item.group_id}`,
-      label: `${label}: ${item.importance}`,
+      label: `${label}: ${importanceLabel}`,
       action: { kind: "group", id: item.group_id },
     });
   }

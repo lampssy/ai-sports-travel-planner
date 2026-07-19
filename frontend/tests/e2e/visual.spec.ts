@@ -296,14 +296,14 @@ async function mockApi(
     const payload: SearchV4RefinementResponse = {
       search_model_version: "search-v4",
       ranking_policy_version: response.ranking_policy_version,
-      refinement_presentation_policy_version: "search-refinement-presentation-1",
+      refinement_presentation_policy_version: "search-refinement-presentation-2",
       baseline_fingerprint: response.baseline_fingerprint,
       baseline_status: "current",
       refinement_status: response.refinements.length
         ? "questions_available"
         : "not_needed",
       fallback_used: false,
-      refinements: response.refinements,
+      refinements: response.refinements.slice(0, 1),
     };
     return route.fulfill({
       status: 200,
