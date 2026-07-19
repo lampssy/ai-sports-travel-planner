@@ -17,8 +17,6 @@ import type {
 const API_PREFIX = "/api";
 const MOBILE_AUTH_REQUIRED_MESSAGE =
   "Current trip is available in the authenticated mobile app.";
-const API_UNREACHABLE_MESSAGE =
-  "Snowcast could not update these results. Check your connection and try again.";
 const API_UNAVAILABLE_MESSAGE =
   "Snowcast is temporarily unavailable. Try again shortly.";
 const REFINEMENT_CLIENT_DEADLINE_MS = 6_500;
@@ -81,17 +79,8 @@ async function errorMessageFromResponse(
   return fallback;
 }
 
-function errorMessageFromFetchFailure(
-  error: unknown,
-  fallback: string,
-): string {
-  if (error instanceof TypeError) {
-    return API_UNREACHABLE_MESSAGE;
-  }
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return fallback;
+function fetchFailureMessage(action: string): string {
+  return `${action} Check your connection and try again.`;
 }
 
 type ResponseTravelWindow = NonNullable<
@@ -142,9 +131,7 @@ export async function searchResorts(request: SearchV4Request): Promise<SearchRes
       body: JSON.stringify({ intent: searchIntentRequestPayload(request.intent) }),
     });
   } catch (error) {
-    throw new Error(
-      errorMessageFromFetchFailure(error, "Unable to load resort results."),
-    );
+    throw new Error(fetchFailureMessage("Unable to load resort results."));
   }
 
   if (!response.ok) {
@@ -188,7 +175,7 @@ export async function fetchSearchRefinements(
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
     throw new ApiError(
-      errorMessageFromFetchFailure(error, "Unable to check for a refinement."),
+      fetchFailureMessage("Unable to check for a refinement."),
       null,
     );
   } finally {
@@ -229,9 +216,7 @@ export async function fetchSearchWeatherEvidence(
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new Error(
-      errorMessageFromFetchFailure(error, "Unable to load snow evidence."),
-    );
+    throw new Error(fetchFailureMessage("Unable to load snow evidence."));
   }
 
   if (!response.ok) {
@@ -256,9 +241,7 @@ export async function parseTripBrief(
       body: JSON.stringify({ query }),
     });
   } catch (error) {
-    throw new Error(
-      errorMessageFromFetchFailure(error, "Unable to interpret trip brief."),
-    );
+    throw new Error(fetchFailureMessage("Unable to interpret trip brief."));
   }
 
   if (!response.ok) {
@@ -314,9 +297,7 @@ export async function saveCurrentTrip(input: {
       body: JSON.stringify(input),
     });
   } catch (error) {
-    throw new Error(
-      errorMessageFromFetchFailure(error, "Unable to save current trip."),
-    );
+    throw new Error(fetchFailureMessage("Unable to save current trip."));
   }
 
   if (response.status === 401) {

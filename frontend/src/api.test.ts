@@ -1,4 +1,11 @@
-import { fetchSearchRefinements, fetchSearchWeatherEvidence, searchIntentRequestPayload, searchResorts } from "./api";
+import {
+  fetchSearchRefinements,
+  fetchSearchWeatherEvidence,
+  parseTripBrief,
+  saveCurrentTrip,
+  searchIntentRequestPayload,
+  searchResorts,
+} from "./api";
 import type { SearchIntent } from "./types";
 
 const responseShapedIntent = {
@@ -120,12 +127,60 @@ describe("Search API request projection", () => {
     vi.useRealTimers();
   });
 
-  it("uses a clear action-focused message when results cannot be updated", async () => {
+  it.each([
+    [
+      "resort results",
+      () => searchResorts({ intent: responseShapedIntent }),
+      "Unable to load resort results. Check your connection and try again.",
+    ],
+    [
+      "a refinement",
+      () =>
+        fetchSearchRefinements({
+          intent: responseShapedIntent,
+          brief: "March in France",
+          baseline_fingerprint: "a".repeat(64),
+          already_answered_question_ids: [],
+        }),
+      "Unable to check for a refinement. Check your connection and try again.",
+    ],
+    [
+      "snow evidence",
+      () =>
+        fetchSearchWeatherEvidence({
+          intent: responseShapedIntent,
+          ski_area_id: "tignes-ski-area",
+        }),
+      "Unable to load snow evidence. Check your connection and try again.",
+    ],
+    [
+      "trip brief",
+      () => parseTripBrief("March in France"),
+      "Unable to interpret trip brief. Check your connection and try again.",
+    ],
+    [
+      "current trip",
+      () =>
+        saveCurrentTrip({
+          ski_region_id: "tignes",
+          ski_region_name: "Tignes",
+          stay_destination_id: "tignes",
+          stay_destination_name: "Tignes",
+          stay_base_id: "tignes-le-lac",
+          stay_base_name: "Tignes le Lac",
+          focus_ski_area_id: "tignes-ski-area",
+          focus_ski_area_name: "Tignes",
+          lift_pass_product_id: "tignes-pass",
+          lift_pass_product_name: "Tignes Pass",
+          travel_month: 3,
+          booking_status: "not_booked_yet",
+        }),
+      "Unable to save current trip. Check your connection and try again.",
+    ],
+  ])("uses an action-scoped fetch failure for %s", async (_action, request, message) => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
 
-    await expect(searchResorts({ intent: responseShapedIntent })).rejects.toThrow(
-      "Snowcast could not update these results. Check your connection and try again.",
-    );
+    await expect(request()).rejects.toThrow(message);
   });
 
   it("exposes a positive integer Retry-After delay for refinement admission limits", async () => {

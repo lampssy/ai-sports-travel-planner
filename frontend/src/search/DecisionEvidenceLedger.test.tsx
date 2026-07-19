@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 
 import type { SearchV4Configuration } from "../types";
@@ -61,4 +62,64 @@ describe("DecisionEvidenceLedger", () => {
       ),
     ).toBeVisible();
   });
+
+  test.each([
+    ["verified", "Based on source data."],
+    [
+      "verified_with_adjustment",
+      "Estimated from source data for this trip configuration.",
+    ],
+    ["estimated", "Estimated from available catalog data."],
+    ["needs_source", "Source confirmation is still needed."],
+  ] as const)(
+    "translates %s in the opened technical disclosure",
+    async (trustStatus, expectedStatus) => {
+      const user = userEvent.setup();
+      const candidate = configuration();
+      candidate.factors = [
+        {
+          factor_id: "party_skill_coverage",
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: 0.8,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.8,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: `Catalog field-group evidence: ${trustStatus}; 4 source reference(s).`,
+          explanation_inputs: {},
+        },
+      ];
+
+      render(<DecisionEvidenceLedger configuration={candidate} />);
+
+      const details = screen
+        .getByText("Sources and calculation details")
+        .closest("details");
+      expect(details).not.toHaveAttribute("open");
+
+      await user.click(screen.getByText("Sources and calculation details"));
+
+      expect(details).toHaveAttribute("open");
+      const factorRow = within(details as HTMLElement)
+        .getByRole("heading", { name: "Party skill fit" })
+        .closest("article");
+      expect(factorRow).not.toBeNull();
+      expect(within(factorRow as HTMLElement).getByText(new RegExp(expectedStatus))).toBeVisible();
+      expect(
+        within(factorRow as HTMLElement).getByText(
+          /Catalog field-group evidence; 4 source reference/,
+        ),
+      ).toBeVisible();
+      expect(
+        within(factorRow as HTMLElement).queryByText(
+          new RegExp(`\\b${trustStatus}\\b`),
+        ),
+      ).toBeNull();
+    },
+  );
 });

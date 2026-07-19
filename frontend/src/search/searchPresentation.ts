@@ -1,4 +1,5 @@
 import type {
+  CatalogTrustStatus,
   RefinementPreview,
   SearchIntent,
   SearchV4Configuration,
@@ -416,7 +417,7 @@ function approximatePrefix(
 }
 
 function trustProvenance(
-  trust: "verified" | "verified_with_adjustment" | "estimated" | "needs_source",
+  trust: CatalogTrustStatus,
 ): string {
   switch (trust) {
     case "verified":
@@ -428,6 +429,35 @@ function trustProvenance(
     case "needs_source":
       return "Source confirmation is still needed.";
   }
+}
+
+const catalogTrustStatuses = [
+  "verified",
+  "verified_with_adjustment",
+  "estimated",
+  "needs_source",
+] as const satisfies readonly CatalogTrustStatus[];
+
+function trustStatusFromProvenance(provenance: string): CatalogTrustStatus | null {
+  return (
+    catalogTrustStatuses.find((status) =>
+      new RegExp(`\\b${status}\\b`, "i").test(provenance),
+    ) ?? null
+  );
+}
+
+function technicalProvenance(provenance: string): string {
+  const trust = trustStatusFromProvenance(provenance);
+  if (!trust) return provenance;
+
+  const detail = provenance
+    .replace(new RegExp(`\\b${trust}\\b`, "i"), "")
+    .replace(/:\s*;/g, ";")
+    .replace(/[:;,]\s*\./g, ".")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return detail ? `${trustProvenance(trust)} ${detail}` : trustProvenance(trust);
 }
 
 const accessModeLabels: Record<string, string | null> = {
@@ -726,7 +756,7 @@ export function decisionEvidencePresentation(
         label:
           factorLabelForConfiguration(configuration, factor.factor_id) ??
           "Ranking factor",
-        provenance: factor.provenance_summary,
+        provenance: technicalProvenance(factor.provenance_summary),
         evidenceLabel:
           factor.effective_evidence_cap > 0 ? "Supported" : "Limited evidence",
       }));
@@ -762,12 +792,12 @@ export function decisionEvidencePresentation(
     evidenceLabel: terrain?.evidenceLabel ?? "Coverage unresolved",
   });
   if (configuration.lodging_estimate?.provenance) {
-    technicalDetails.push({
-      id: "lodging-estimate",
-      label: "Lodging estimate",
-      provenance: configuration.lodging_estimate.provenance,
-      evidenceLabel: "Stay-base estimate",
-    });
+      technicalDetails.push({
+        id: "lodging-estimate",
+        label: "Lodging estimate",
+        provenance: technicalProvenance(configuration.lodging_estimate.provenance),
+        evidenceLabel: "Stay-base estimate",
+      });
   }
 
   return {
