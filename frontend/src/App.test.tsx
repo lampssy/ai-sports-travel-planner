@@ -2321,6 +2321,37 @@ test("preserves previous results and the refinement on a failed rerank", async (
   expect(
     requests.filter((item) => item.url === "/api/search/refinements"),
   ).toHaveLength(refinementRequestsBefore);
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        return new Response(
+          JSON.stringify(refinementResponse({ refinement_status: "not_needed" })),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await waitFor(() => {
+    expect(
+      requests.filter((item) => item.url === "/api/search/refinements"),
+    ).toHaveLength(refinementRequestsBefore + 1);
+  });
+  const latestRefinementRequest = requests
+    .filter((item) => item.url === "/api/search/refinements")
+    .at(-1);
+  expect(
+    JSON.parse(String(latestRefinementRequest?.init?.body)).resolved_topic_ids,
+  ).toEqual([]);
 });
 
 test("shows save failures separately while keeping ranked results", async () => {

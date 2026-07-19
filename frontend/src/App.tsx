@@ -884,8 +884,8 @@ function App() {
       resolvedTopics,
       refinement,
     );
-    setResolvedTopics(nextResolvedTopics);
     if (!option.intent_changed) {
+      setResolvedTopics(nextResolvedTopics);
       setSession((current) =>
         current ? dismissRefinement(current, refinement.question_id) : current,
       );
