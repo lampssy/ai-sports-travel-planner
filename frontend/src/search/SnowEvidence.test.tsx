@@ -520,6 +520,10 @@ test("preserves the section during retryable failure and announces a successful 
   );
 
   expect(await screen.findByText("Snow evidence could not be loaded")).toBeVisible();
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Snow and weather could not be loaded. Try again.",
+  );
+  expect(screen.getByRole("alert")).not.toHaveTextContent("Stored weather evidence");
   expect(screen.getByRole("status")).toHaveTextContent(/could not be loaded/i);
   const retry = screen.getByRole("button", { name: "Retry snow evidence" });
   await user.click(retry);

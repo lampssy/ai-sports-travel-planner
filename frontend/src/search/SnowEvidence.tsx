@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { fetchSearchWeatherEvidence } from "../api";
+import { apiErrorMessage } from "../apiErrors";
 import type {
   SearchIntent,
   SearchWeatherEvidenceRequest,
@@ -447,8 +448,7 @@ export function SnowEvidence({
         setState({
           kind: "error",
           contextKey: key,
-          message:
-            caught instanceof Error ? caught.message : "Unable to load snow evidence.",
+          message: apiErrorMessage("weather", caught),
         });
       });
 

@@ -177,6 +177,7 @@ test("preserves the selected option after apply failure for retry", async () => 
 
   expect(screen.getByRole("radio", { name: /snow reliability/i })).toBeChecked();
   expect(screen.getByRole("alert")).toHaveTextContent("Could not rerank.");
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: /retry apply and rerank/i })).toBeEnabled();
 });
 

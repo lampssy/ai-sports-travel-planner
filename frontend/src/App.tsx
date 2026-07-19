@@ -16,6 +16,7 @@ import {
   saveCurrentTrip,
   searchResorts,
 } from "./api";
+import { apiErrorMessage, type ApiOperation } from "./apiErrors";
 import {
   APP_NAVIGATION_EVENT,
   buildDossierHref,
@@ -69,8 +70,6 @@ import type {
 } from "./types";
 import { AppShell, CurrentTripView } from "./ui/AppShell";
 
-const CURRENT_TRIP_RETRY_MESSAGE = "Check your connection and try again.";
-
 interface PreviousSearchState {
   brief: string;
   filters: SearchFilters;
@@ -94,6 +93,10 @@ interface RefinementEditorPatchState {
 interface FetchSearchOptions {
   exactIntent?: SearchIntent;
   syncEditorFromResponse?: boolean;
+  errorOperation?: Extract<
+    ApiOperation,
+    "search" | "searchUpdate" | "refinementApply"
+  >;
 }
 
 interface PendingRerankScrollRestore {
@@ -430,9 +433,9 @@ function App() {
         currentTripRef.current = trip;
         setCurrentTrip(trip);
       })
-      .catch(() => {
+      .catch((caught) => {
         if (identity === currentTripLoadIdentityRef.current) {
-          setCurrentTripLoadError(CURRENT_TRIP_RETRY_MESSAGE);
+          setCurrentTripLoadError(apiErrorMessage("currentTripLoad", caught));
         }
       });
     return () => {
@@ -457,9 +460,11 @@ function App() {
           setCurrentTripSummary(summary);
         }
       })
-      .catch(() => {
+      .catch((caught) => {
         if (identity === currentTripSummaryLoadIdentityRef.current) {
-          setCurrentTripSummaryLoadError(CURRENT_TRIP_RETRY_MESSAGE);
+          setCurrentTripSummaryLoadError(
+            apiErrorMessage("currentTripSummary", caught),
+          );
         }
       });
     return () => {
@@ -745,7 +750,7 @@ function App() {
       );
       setRefinementStatus(status);
       return refinements.length > 0;
-    } catch {
+    } catch (caught) {
       if (
         controller.signal.aborted ||
         refinementRequestIdRef.current !== requestId
@@ -753,7 +758,7 @@ function App() {
         return false;
       }
       setRefinementStatus("temporarily_unavailable");
-      setRefinementError(null);
+      setRefinementError(apiErrorMessage("refinementDiscovery", caught));
       return false;
     } finally {
       if (refinementRequestIdRef.current === requestId) {
@@ -798,7 +803,10 @@ function App() {
       refinementSlowTimerRef.current = null;
     }
     setRefinementStatus("idle");
-    const response = await searchResorts({ intent });
+    const response = await searchResorts(
+      { intent },
+      options.errorOperation ?? (session ? "searchUpdate" : "search"),
+    );
     if (options.syncEditorFromResponse !== false) {
       setFilters(nextFilters);
       setAssumptions([...response.applied_intent.assumptions]);
@@ -866,9 +874,7 @@ function App() {
       );
       if (nextResponse) setResolvedTopics(nextResolvedTopics);
     } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Could not complete the search.",
-      );
+      setError(apiErrorMessage(session ? "searchUpdate" : "search", caught));
     } finally {
       setLoading(false);
     }
@@ -1015,6 +1021,7 @@ function App() {
         {
           exactIntent: nextIntent,
           syncEditorFromResponse: false,
+          errorOperation: "refinementApply",
         },
       );
       if (!nextResponse) {
@@ -1045,9 +1052,7 @@ function App() {
       if (pendingRerankScrollRestoreRef.current === pendingScrollRestore) {
         pendingRerankScrollRestoreRef.current = null;
       }
-      setRefinementError(
-        caught instanceof Error ? caught.message : "Could not rerank these results.",
-      );
+      setRefinementError(apiErrorMessage("refinementApply", caught));
     } finally {
       setLoading(false);
     }
@@ -1077,6 +1082,28 @@ function App() {
     } else {
       setFocusRequest((current) => current + 1);
     }
+  }
+
+  async function retryRefinementDiscovery() {
+    const currentSession = session;
+    if (!currentSession || loading) return;
+    const hasRefinement = await loadRefinements(
+      currentSession.response,
+      currentSession.brief,
+      resolvedTopics,
+    );
+    if (hasRefinement) {
+      setRefinementFocusRequest((current) => current + 1);
+    }
+  }
+
+  function keepCurrentResults() {
+    refinementRequestIdRef.current += 1;
+    refinementAbortRef.current?.abort();
+    refinementAbortRef.current = null;
+    setRefinementError(null);
+    setRefinementStatus("skipped");
+    setFocusRequest((current) => current + 1);
   }
 
   async function undoRefinement() {
@@ -1135,7 +1162,7 @@ function App() {
       setRankFeedback("Previous trip decisions restored.");
       setChangedRankGroupIds(new Set());
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not restore results.");
+      setError(apiErrorMessage("searchUpdate", caught));
     } finally {
       setLoading(false);
     }
@@ -1255,7 +1282,7 @@ function App() {
       setObjectives(nextEditor.objectives);
       setResolvedTopics(nextResolvedTopics);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Search failed.");
+      setError(apiErrorMessage("searchUpdate", caught));
     } finally {
       setLoading(false);
     }
@@ -1295,7 +1322,7 @@ function App() {
       setCurrentTripSummaryLoadError(null);
       setSaveError(null);
     } catch (caught) {
-      setSaveError(caught instanceof Error ? caught.message : "Could not save trip.");
+      setSaveError(apiErrorMessage("currentTripSave", caught));
     }
   }
 
@@ -1311,11 +1338,7 @@ function App() {
       setCurrentTripLoadError(null);
       setCurrentTripSummaryLoadError(null);
     } catch (caught) {
-      setCurrentTripClearError(
-        caught instanceof Error
-          ? caught.message
-          : "Unable to remove current trip. Check your connection and try again.",
-      );
+      setCurrentTripClearError(apiErrorMessage("currentTripClear", caught));
     }
   }
 
@@ -1497,6 +1520,8 @@ function App() {
             void applyRefinement(refinement, option)
           }
           onSkipRefinement={(refinement) => void skipRefinement(refinement)}
+          onRetryRefinement={() => void retryRefinementDiscovery()}
+          onKeepResults={keepCurrentResults}
           onToggleGroup={(skiRegionId) =>
             setSession((current) => {
               if (!current) return current;

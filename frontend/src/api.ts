@@ -13,74 +13,37 @@ import type {
   SearchV4RefinementResponse,
   SearchV4Request,
 } from "./types";
+import {
+  ApiError,
+  apiErrorForCause,
+  apiErrorForResponse,
+  decodeApiJson,
+  type ApiOperation,
+} from "./apiErrors";
+
+export { ApiError } from "./apiErrors";
 
 const API_PREFIX = "/api";
-const MOBILE_AUTH_REQUIRED_MESSAGE =
-  "Current trip is available in the authenticated mobile app.";
-const API_UNAVAILABLE_MESSAGE =
-  "Snowcast is temporarily unavailable. Try again shortly.";
 const REFINEMENT_CLIENT_DEADLINE_MS = 6_500;
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number | null,
-    readonly retryAfterSeconds: number | null = null,
-  ) {
-    super(message);
-    this.name = "ApiError";
+async function fetchForOperation(
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  operation: ApiOperation,
+): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (caught) {
+    throw apiErrorForCause(caught, operation);
   }
 }
 
-function retryAfterSeconds(response: Response): number | null {
-  const value = response.headers.get("Retry-After");
-  if (!value || !/^[1-9]\d*$/.test(value)) return null;
-  const seconds = Number(value);
-  return Number.isSafeInteger(seconds) ? seconds : null;
-}
-
-interface ValidationIssue {
-  loc?: Array<string | number>;
-  msg?: string;
-}
-
-function validationIssueMessage(issue: ValidationIssue): string | null {
-  if (!issue.msg) return null;
-  const field = (issue.loc ?? [])
-    .filter((part) => !["body", "intent", "constraints"].includes(String(part)))
-    .map((part) => String(part).replaceAll("_", " "))
-    .join(" ");
-  if (!field) return issue.msg;
-  return `${field.charAt(0).toUpperCase()}${field.slice(1)}: ${issue.msg}`;
-}
-
-async function errorMessageFromResponse(
+async function checkedJson<T>(
   response: Response,
-  fallback: string,
-): Promise<string> {
-  if (response.status >= 500) {
-    return API_UNAVAILABLE_MESSAGE;
-  }
-
-  const payload = (await response.json().catch(() => null)) as
-    | { detail?: string | ValidationIssue[] }
-    | null;
-
-  if (typeof payload?.detail === "string" && payload.detail) {
-    return payload.detail;
-  }
-  if (Array.isArray(payload?.detail)) {
-    const messages = payload.detail
-      .map(validationIssueMessage)
-      .filter((message): message is string => Boolean(message));
-    if (messages.length) return messages.join("; ");
-  }
-
-  return fallback;
-}
-
-function fetchFailureMessage(action: string): string {
-  return `${action} Check your connection and try again.`;
+  operation: ApiOperation,
+): Promise<T> {
+  if (!response.ok) throw await apiErrorForResponse(response, operation);
+  return decodeApiJson<T>(response, operation);
 }
 
 type ResponseTravelWindow = NonNullable<
@@ -120,28 +83,22 @@ export function searchIntentRequestPayload(intent: SearchIntent): SearchIntent {
   return { ...intent, constraints };
 }
 
-export async function searchResorts(request: SearchV4Request): Promise<SearchResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_PREFIX}/search`, {
+export async function searchResorts(
+  request: SearchV4Request,
+  operation: "search" | "searchUpdate" | "refinementApply" = "search",
+): Promise<SearchResponse> {
+  const response = await fetchForOperation(
+    `${API_PREFIX}/search`,
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ intent: searchIntentRequestPayload(request.intent) }),
-    });
-  } catch (error) {
-    throw new Error(fetchFailureMessage("Unable to load resort results."));
-  }
-
-  if (!response.ok) {
-    throw new ApiError(
-      await errorMessageFromResponse(response, "Unable to load resort results."),
-      response.status,
-    );
-  }
-
-  return (await response.json()) as SearchResponse;
+    },
+    operation,
+  );
+  return checkedJson<SearchResponse>(response, operation);
 }
 
 export async function fetchSearchRefinements(
@@ -173,37 +130,28 @@ export async function fetchSearchRefinements(
       signal: transportController.signal,
     });
   } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new ApiError(
-      fetchFailureMessage("Unable to check for a refinement."),
-      null,
-    );
+    throw apiErrorForCause(error, "refinementDiscovery");
   } finally {
     globalThis.clearTimeout(deadlineTimer);
     signal?.removeEventListener("abort", abortFromCaller);
   }
 
   if (!response.ok) {
-    throw new ApiError(
-      await errorMessageFromResponse(
-        response,
-        "Unable to check for a refinement.",
-      ),
-      response.status,
-      retryAfterSeconds(response),
-    );
+    throw await apiErrorForResponse(response, "refinementDiscovery");
   }
-
-  return (await response.json()) as SearchV4RefinementResponse;
+  return decodeApiJson<SearchV4RefinementResponse>(
+    response,
+    "refinementDiscovery",
+  );
 }
 
 export async function fetchSearchWeatherEvidence(
   request: SearchWeatherEvidenceRequest,
   signal?: AbortSignal,
 ): Promise<SearchWeatherEvidenceResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_PREFIX}/search/weather-evidence`, {
+  const response = await fetchForOperation(
+    `${API_PREFIX}/search/weather-evidence`,
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -213,66 +161,39 @@ export async function fetchSearchWeatherEvidence(
         intent: searchIntentRequestPayload(request.intent),
       }),
       signal,
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new Error(fetchFailureMessage("Unable to load snow evidence."));
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      await errorMessageFromResponse(response, "Unable to load snow evidence."),
-    );
-  }
-
-  return (await response.json()) as SearchWeatherEvidenceResponse;
+    },
+    "weather",
+  );
+  return checkedJson<SearchWeatherEvidenceResponse>(response, "weather");
 }
 
 export async function parseTripBrief(
   query: string,
 ): Promise<ParsedQueryResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_PREFIX}/parse-query`, {
+  const response = await fetchForOperation(
+    `${API_PREFIX}/parse-query`,
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ query }),
-    });
-  } catch (error) {
-    throw new Error(fetchFailureMessage("Unable to interpret trip brief."));
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      await errorMessageFromResponse(response, "Unable to interpret trip brief."),
-    );
-  }
-
-  return (await response.json()) as ParsedQueryResponse;
+    },
+    "parseTripBrief",
+  );
+  return checkedJson<ParsedQueryResponse>(response, "parseTripBrief");
 }
 
 export async function getCurrentTrip(): Promise<CurrentTrip | null> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_PREFIX}/current-trip`);
-  } catch {
-    throw new Error(fetchFailureMessage("Unable to load current trip."));
-  }
-
-  if (response.status === 401) {
-    return null;
-  }
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? "Unable to load current trip.");
-  }
-
-  const payload = (await response.json()) as CurrentTripResponse;
+  const response = await fetchForOperation(
+    `${API_PREFIX}/current-trip`,
+    undefined,
+    "currentTripLoad",
+  );
+  const payload = await checkedJson<CurrentTripResponse>(
+    response,
+    "currentTripLoad",
+  );
   return payload.trip;
 }
 
@@ -292,123 +213,67 @@ export async function saveCurrentTrip(input: {
   trip_end_date?: string | null;
   booking_status: BookingStatus;
 }): Promise<CurrentTrip> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_PREFIX}/current-trip`, {
+  const response = await fetchForOperation(
+    `${API_PREFIX}/current-trip`,
+    {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(input),
-    });
-  } catch (error) {
-    throw new Error(fetchFailureMessage("Unable to save current trip."));
-  }
-
-  if (response.status === 401) {
-    throw new Error(MOBILE_AUTH_REQUIRED_MESSAGE);
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      await errorMessageFromResponse(response, "Unable to save current trip."),
-    );
-  }
-
-  return (await response.json()) as CurrentTrip;
+    },
+    "currentTripSave",
+  );
+  return checkedJson<CurrentTrip>(response, "currentTripSave");
 }
 
 export async function getCurrentTripEvents(): Promise<CompanionEvent[]> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_PREFIX}/current-trip/events`);
-  } catch {
-    throw new Error(fetchFailureMessage("Unable to load current trip activity."));
-  }
-
-  if (response.status === 401 || response.status === 404) {
-    return [];
-  }
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? "Unable to load current trip events.");
-  }
-
-  const payload = (await response.json()) as { events: CompanionEvent[] };
+  const response = await fetchForOperation(
+    `${API_PREFIX}/current-trip/events`,
+    undefined,
+    "currentTripEvents",
+  );
+  const payload = await checkedJson<{ events: CompanionEvent[] }>(
+    response,
+    "currentTripEvents",
+  );
   return payload.events;
 }
 
 export async function clearCurrentTrip(): Promise<void> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_PREFIX}/current-trip`, {
+  const response = await fetchForOperation(
+    `${API_PREFIX}/current-trip`,
+    {
       method: "DELETE",
-    });
-  } catch {
-    throw new Error(fetchFailureMessage("Unable to remove current trip."));
-  }
-
-  if (response.status === 401) {
-    throw new Error(MOBILE_AUTH_REQUIRED_MESSAGE);
-  }
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? "Unable to clear current trip.");
-  }
+    },
+    "currentTripClear",
+  );
+  if (!response.ok) throw await apiErrorForResponse(response, "currentTripClear");
 }
 
 export async function getCurrentTripSummary(): Promise<CurrentTripSummary | null> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_PREFIX}/current-trip/summary`);
-  } catch {
-    throw new Error(fetchFailureMessage("Unable to load current trip summary."));
-  }
-
-  if (response.status === 401 || response.status === 404) {
-    return null;
-  }
-
+  const response = await fetchForOperation(
+    `${API_PREFIX}/current-trip/summary`,
+    undefined,
+    "currentTripSummary",
+  );
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? "Unable to load current trip summary.");
+    const error = await apiErrorForResponse(response, "currentTripSummary");
+    if (error.code === "current_trip_not_found") return null;
+    throw error;
   }
-
-  return (await response.json()) as CurrentTripSummary;
+  return decodeApiJson<CurrentTripSummary>(response, "currentTripSummary");
 }
 
 export async function markCurrentTripChecked(): Promise<CurrentTrip> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_PREFIX}/current-trip/mark-checked`, {
+  const response = await fetchForOperation(
+    `${API_PREFIX}/current-trip/mark-checked`,
+    {
       method: "POST",
-    });
-  } catch {
-    throw new Error(
-      fetchFailureMessage("Unable to mark current trip as checked."),
-    );
-  }
-
-  if (response.status === 401) {
-    throw new Error(MOBILE_AUTH_REQUIRED_MESSAGE);
-  }
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? "Unable to mark current trip as checked.");
-  }
-
-  return (await response.json()) as CurrentTrip;
+    },
+    "currentTripMarkChecked",
+  );
+  return checkedJson<CurrentTrip>(response, "currentTripMarkChecked");
 }
 
 export function buildAccommodationBookingRedirectUrl(

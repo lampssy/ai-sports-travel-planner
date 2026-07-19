@@ -85,7 +85,7 @@ export function RefinementCard({
             </label>
           ))}
         </fieldset>
-        {selected ? (
+        {selected && !error ? (
           <p className="refinement-preview" role="status">
             {refinementPreviewCopy(selected.preview, selected.intent_changed)}
           </p>

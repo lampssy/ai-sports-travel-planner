@@ -33,6 +33,8 @@ export function RecommendationBoard({
   onRemoveChip,
   onApplyRefinement,
   onSkipRefinement,
+  onRetryRefinement,
+  onKeepResults,
   onToggleGroup,
   onSelectCandidate,
   onSave,
@@ -57,6 +59,8 @@ export function RecommendationBoard({
     option: RefinementOption,
   ) => void;
   onSkipRefinement: (refinement: RefinementProposal) => void;
+  onRetryRefinement: () => void;
+  onKeepResults: () => void;
   onToggleGroup: (skiRegionId: string) => void;
   onSelectCandidate: (skiRegionId: string, candidateId: string) => void;
   onSave: (configuration: SearchV4Configuration) => void;
@@ -87,6 +91,8 @@ export function RecommendationBoard({
         onRemoveChip={onRemoveChip}
         onApplyRefinement={onApplyRefinement}
         onSkipRefinement={onSkipRefinement}
+        onRetryRefinement={onRetryRefinement}
+        onKeepResults={onKeepResults}
       />
 
       <section className="results-board" aria-busy={loading || undefined}>

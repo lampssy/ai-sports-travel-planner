@@ -82,6 +82,8 @@ export function SearchContextRail({
   onRemoveChip,
   onApplyRefinement,
   onSkipRefinement,
+  onRetryRefinement,
+  onKeepResults,
 }: {
   intent: SearchIntent;
   refinement: RefinementProposal | null;
@@ -97,6 +99,8 @@ export function SearchContextRail({
     option: RefinementOption,
   ) => void;
   onSkipRefinement: (refinement: RefinementProposal) => void;
+  onRetryRefinement?: () => void;
+  onKeepResults?: () => void;
 }) {
   const chips = buildParsedChips(intent);
   const requiredFactorIds = new Set(
@@ -115,9 +119,15 @@ export function SearchContextRail({
   const visiblePreferences = preferences.slice(0, 3);
   const hasHiddenPreferences = preferences.length > visiblePreferences.length;
   const lifecycleCopy = REFINEMENT_STATUS_COPY[refinementStatus];
-  const refinementAnnouncement = refinement
-    ? `A refinement question is ready. ${refinement.question}`
-    : REFINEMENT_ANNOUNCEMENT_COPY[refinementStatus];
+  const terminalFailure =
+    !refinement &&
+    refinementStatus === "temporarily_unavailable" &&
+    refinementError;
+  const refinementAnnouncement = terminalFailure
+    ? null
+    : refinement
+      ? `A refinement question is ready. ${refinement.question}`
+      : REFINEMENT_ANNOUNCEMENT_COPY[refinementStatus];
 
   return (
     <aside className="search-context" aria-label="Search context">
@@ -184,7 +194,33 @@ export function SearchContextRail({
           onSkip={onSkipRefinement}
         />
       ) : null}
-      {!refinement && lifecycleCopy ? (
+      {terminalFailure ? (
+        <div className="contextual-refinement contextual-refinement--error">
+          <p className="contextual-refinement__eyebrow">Follow-up unavailable</p>
+          <p className="refinement-error" role="alert">
+            {refinementError}
+          </p>
+          <div className="refinement-actions">
+            <button
+              type="button"
+              className="primary-refinement-action"
+              disabled={loading}
+              onClick={onRetryRefinement}
+            >
+              Try again
+            </button>
+            <button
+              type="button"
+              className="text-action"
+              disabled={loading}
+              onClick={onKeepResults}
+            >
+              Keep these results
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {!refinement && !terminalFailure && lifecycleCopy ? (
         <div className="contextual-refinement">
           <p>{lifecycleCopy}</p>
           {refinementError ? (

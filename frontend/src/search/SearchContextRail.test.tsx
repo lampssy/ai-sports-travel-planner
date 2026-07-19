@@ -91,6 +91,8 @@ test("separates hard constraints from preferences and renders one refinement", (
       onRemoveChip={vi.fn()}
       onApplyRefinement={vi.fn()}
       onSkipRefinement={vi.fn()}
+      onRetryRefinement={vi.fn()}
+      onKeepResults={vi.fn()}
     />,
   );
 
@@ -286,28 +288,35 @@ test.each([
   expect(screen.getByRole("status")).toHaveTextContent(copy);
 });
 
-test("announces terminal optional failure without rendering a visible card", () => {
+test("keeps a terminal refinement failure visible with recovery actions", () => {
+  const onRetryRefinement = vi.fn();
+  const onKeepResults = vi.fn();
   render(
     <SearchContextRail
       intent={intent}
       refinement={null}
       refinementStatus="temporarily_unavailable"
       loading={false}
-      refinementError={null}
+      refinementError="Snowcast could not check for another useful question. Your results are unchanged."
       refinementControlRef={createRef<HTMLInputElement>()}
       adjustFiltersRef={createRef<HTMLButtonElement>()}
       onOpenFilters={vi.fn()}
       onRemoveChip={vi.fn()}
       onApplyRefinement={vi.fn()}
       onSkipRefinement={vi.fn()}
+      onRetryRefinement={onRetryRefinement}
+      onKeepResults={onKeepResults}
     />,
   );
 
-  expect(screen.getByRole("status")).toHaveTextContent(
-    "No additional refinement is available right now. Your results are unchanged.",
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Snowcast could not check for another useful question. Your results are unchanged.",
   );
-  expect(document.querySelector(".contextual-refinement")).toBeNull();
-  expect(screen.queryByText(/refinement is temporarily unavailable/i)).toBeNull();
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  screen.getByRole("button", { name: "Try again" }).click();
+  screen.getByRole("button", { name: "Keep these results" }).click();
+  expect(onRetryRefinement).toHaveBeenCalledOnce();
+  expect(onKeepResults).toHaveBeenCalledOnce();
 });
 
 test("keeps the idle lifecycle state compact", () => {

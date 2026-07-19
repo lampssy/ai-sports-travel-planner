@@ -357,7 +357,9 @@ beforeEach(() => {
           { status: 200 },
         );
       }
-      return new Response(JSON.stringify({ detail: "Not found" }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: "not_found" } }), {
+        status: 404,
+      });
     }),
   );
 });
@@ -842,7 +844,7 @@ test("keeps ranked results when refinement discovery is rate limited", async () 
       }
       if (url === "/api/search/refinements") {
         return new Response(
-          JSON.stringify({ detail: "Too many refinement requests." }),
+          JSON.stringify({ error: { code: "refinement_rate_limited" } }),
           { status: 429 },
         );
       }
@@ -855,13 +857,12 @@ test("keeps ranked results when refinement discovery is rate limited", async () 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(await screen.findByRole("status")).toHaveTextContent(
-    "No additional refinement is available right now. Your results are unchanged.",
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Snowcast needs a little more time before checking for another useful question.",
   );
-  expect(document.querySelector(".contextual-refinement")).toBeNull();
-  expect(
-    screen.queryByText(/snowcast is temporarily unavailable/i),
-  ).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Keep these results" })).toBeVisible();
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });
 
 test("retries one admitted refinement request after Retry-After without replacing results", async () => {
@@ -881,7 +882,7 @@ test("retries one admitted refinement request after Retry-After without replacin
       if (url === "/api/search/refinements") {
         refinementCount += 1;
         if (refinementCount === 1) {
-          return new Response(JSON.stringify({ detail: "Admission limited." }), {
+          return new Response(JSON.stringify({ error: { code: "refinement_rate_limited" } }), {
             status: 429,
             headers: { "Retry-After": "10" },
           });
@@ -967,7 +968,7 @@ test("a new ranking aborts a pending refinement retry before its search resolves
               (candidate) => candidate.baseline_fingerprint === "baseline-1",
             ).length === 1
           ) {
-            return new Response(JSON.stringify({ detail: "Admission limited." }), {
+            return new Response(JSON.stringify({ error: { code: "refinement_rate_limited" } }), {
               status: 429,
               headers: { "Retry-After": "10" },
             });
@@ -1050,7 +1051,7 @@ test("unmount aborts a pending refinement retry", async () => {
       }
       if (url === "/api/search/refinements") {
         refinementCount += 1;
-        return new Response(JSON.stringify({ detail: "Admission limited." }), {
+        return new Response(JSON.stringify({ error: { code: "refinement_rate_limited" } }), {
           status: 429,
           headers: { "Retry-After": "10" },
         });
@@ -1087,7 +1088,7 @@ test("a second admission limit terminates the single retry cycle", async () => {
       }
       if (url === "/api/search/refinements") {
         refinementCount += 1;
-        return new Response(JSON.stringify({ detail: "Admission limited." }), {
+        return new Response(JSON.stringify({ error: { code: "refinement_rate_limited" } }), {
           status: 429,
           headers: { "Retry-After": "1" },
         });
@@ -1105,13 +1106,14 @@ test("a second admission limit terminates the single retry cycle", async () => {
   );
   await act(() => vi.advanceTimersByTimeAsync(1_000));
 
-  expect(screen.getByRole("status")).toHaveTextContent(
-    "No additional refinement is available right now. Your results are unchanged.",
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Snowcast needs a little more time before checking for another useful question.",
   );
   expect(refinementCount).toBe(2);
   await act(() => vi.advanceTimersByTimeAsync(20_000));
   expect(refinementCount).toBe(2);
-  expect(document.querySelector(".contextual-refinement")).toBeNull();
+  expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Keep these results" })).toBeVisible();
 });
 
 test.each(["long Retry-After", "network failure"] as const)(
@@ -1131,7 +1133,7 @@ test.each(["long Retry-After", "network failure"] as const)(
         if (url === "/api/search/refinements") {
           refinementCount += 1;
           if (failure === "network failure") throw new TypeError("offline");
-          return new Response(JSON.stringify({ detail: "Admission limited." }), {
+          return new Response(JSON.stringify({ error: { code: "refinement_rate_limited" } }), {
             status: 429,
             headers: { "Retry-After": "16" },
           });
@@ -1144,11 +1146,11 @@ test.each(["long Retry-After", "network failure"] as const)(
 
     await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "No additional refinement is available right now. Your results are unchanged.",
-    );
+    expect(await screen.findByRole("alert")).toBeVisible();
     expect(refinementCount).toBe(1);
-    expect(document.querySelector(".contextual-refinement")).toBeNull();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Keep these results" })).toBeVisible();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   },
 );
 
@@ -1166,12 +1168,8 @@ test("keeps refinement validation details out of the traveller-facing UI", async
       if (url === "/api/search/refinements") {
         return new Response(
           JSON.stringify({
-            detail: [
-              {
-                loc: ["body", "intent", "constraints", "travel_window", "mode"],
-                msg: "Extra inputs are not permitted",
-              },
-            ],
+            error: { code: "search_request_invalid" },
+            detail: "Extra inputs are not permitted",
           }),
           { status: 422 },
         );
@@ -1185,11 +1183,101 @@ test("keeps refinement validation details out of the traveller-facing UI", async
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(await screen.findByRole("status")).toHaveTextContent(
-    "No additional refinement is available right now. Your results are unchanged.",
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Snowcast could not check for another useful question. Your results are unchanged.",
   );
-  expect(document.querySelector(".contextual-refinement")).toBeNull();
+  expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
   expect(screen.queryByText(/extra inputs are not permitted/i)).not.toBeInTheDocument();
+});
+
+test("keeps terminal refinement failure visible and retries without replacing results", async () => {
+  let refinementAttempts = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementAttempts += 1;
+        if (refinementAttempts === 1) {
+          return new Response(
+            JSON.stringify({ error: { code: "request_failed" } }),
+            { status: 500 },
+          );
+        }
+        return new Response(JSON.stringify(refinementResponse()), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: { code: "not_found" } }), {
+        status: 404,
+      });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Snowcast could not check for another useful question. Your results are unchanged.",
+  );
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+
+  await user.click(screen.getByRole("button", { name: "Try again" }));
+
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "No follow-up would materially change these results.",
+  );
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(refinementAttempts).toBe(2);
+});
+
+test("lets the user keep usable results after terminal refinement failure", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        return new Response(
+          JSON.stringify({
+            error: { code: "request_failed" },
+            detail: "backend stack detail",
+          }),
+          { status: 500 },
+        );
+      }
+      return new Response(JSON.stringify({ error: { code: "not_found" } }), {
+        status: 404,
+      });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await screen.findByRole("alert");
+  await user.click(screen.getByRole("button", { name: "Keep these results" }));
+
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Follow-up skipped. Results unchanged.",
+  );
+  expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
+  expect(document.body).not.toHaveTextContent("backend stack detail");
 });
 
 test("shows the slow refinement message without blocking the ranking", async () => {
@@ -1409,7 +1497,7 @@ test("aborts and ignores a superseded refinement response", async () => {
   });
 });
 
-test("renders readable FastAPI validation details for a failed search", async () => {
+test("uses safe client copy for a failed search", async () => {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
@@ -1420,13 +1508,8 @@ test("renders readable FastAPI validation details for a failed search", async ()
       if (url === "/api/search") {
         return new Response(
           JSON.stringify({
-            detail: [
-              {
-                loc: ["body", "intent", "constraints", "travel_window"],
-                msg: "Choose a valid travel window",
-                type: "value_error",
-              },
-            ],
+            error: { code: "search_request_invalid" },
+            detail: "Choose a valid travel window",
           }),
           { status: 422 },
         );
@@ -1439,9 +1522,10 @@ test("renders readable FastAPI validation details for a failed search", async ()
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(
-    await screen.findByRole("alert"),
-  ).toHaveTextContent("Travel window: Choose a valid travel window");
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Review your trip choices and try again.",
+  );
+  expect(document.body).not.toHaveTextContent("Choose a valid travel window");
 });
 
 test("bounds the separate refinement brief at 2000 characters", async () => {
@@ -1530,7 +1614,10 @@ test("shows and retries a failed saved-trip load", async () => {
         return new Response(JSON.stringify({ trip: savedTrip }), { status: 200 });
       }
       if (url === "/api/current-trip/summary") {
-        return new Response(null, { status: 404 });
+        return new Response(
+          JSON.stringify({ error: { code: "current_trip_not_found" } }),
+          { status: 404 },
+        );
       }
       return new Response(null, { status: 404 });
     }),
@@ -1541,7 +1628,7 @@ test("shows and retries a failed saved-trip load", async () => {
 
   const error = await screen.findByRole("alert");
   expect(error).toHaveTextContent("Saved trip could not be loaded");
-  expect(error).toHaveTextContent("Check your connection and try again.");
+  expect(error).toHaveTextContent("Your current trip could not be loaded. Try again.");
   expect(error).not.toHaveTextContent(/failed to fetch|api|backend/i);
 
   await user.click(screen.getByRole("button", { name: "Retry saved trip" }));
@@ -1610,7 +1697,7 @@ test("keeps current conditions visible when refresh fails and retries them", asy
 
   const error = await screen.findByRole("alert");
   expect(error).toHaveTextContent("Current conditions could not be updated");
-  expect(error).toHaveTextContent("Check your connection and try again.");
+  expect(error).toHaveTextContent("Current conditions could not be updated. Try again.");
   expect(error).not.toHaveTextContent(/failed to fetch|api|backend/i);
   expect(screen.getByText("Light snow is expected this week.")).toBeVisible();
 
@@ -1775,6 +1862,12 @@ test("keeps the current trip and handles a failed clear action", async () => {
       if (url === "/api/current-trip" && init?.method === "DELETE") {
         throw new TypeError("Failed to fetch");
       }
+      if (url === "/api/current-trip/summary") {
+        return new Response(
+          JSON.stringify({ error: { code: "current_trip_not_found" } }),
+          { status: 404 },
+        );
+      }
       return new Response(null, { status: 404 });
     }),
   );
@@ -1791,7 +1884,7 @@ test("keeps the current trip and handles a failed clear action", async () => {
     await user.click(screen.getByRole("button", { name: "Clear current trip" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Unable to remove current trip. Check your connection and try again.",
+      "Your current trip could not be removed. Try again.",
     );
     expect(
       screen.getByRole("heading", { name: "Tignes - Val d'Isere" }),
@@ -2007,7 +2100,9 @@ test("previews a validated dynamic refinement before applying it", async () => {
         });
       }
       return Promise.resolve(
-        new Response(JSON.stringify({ detail: "Not found" }), { status: 404 }),
+        new Response(JSON.stringify({ error: { code: "not_found" } }), {
+          status: 404,
+        }),
       );
     }),
   );
@@ -2422,9 +2517,13 @@ test("preserves previous results and the refinement on a failed rerank", async (
       const url = String(input);
       requests.push({ url, init });
       if (url === "/api/search") {
-        return new Response(JSON.stringify({ detail: "internal stack trace" }), {
-          status: 500,
-        });
+        return new Response(
+          JSON.stringify({
+            error: { code: "request_failed" },
+            detail: "internal stack trace",
+          }),
+          { status: 500 },
+        );
       }
       return new Response(null, { status: 404 });
     }),
@@ -2435,8 +2534,11 @@ test("preserves previous results and the refinement on a failed rerank", async (
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(screen.getByText("Change the ranking?")).toBeVisible();
   expect(
-    await screen.findByText(/snowcast is temporarily unavailable/i),
+    await screen.findByText(
+      "Results could not be updated. Your current results and answer are still available. Try again.",
+    ),
   ).toBeVisible();
+  expect(document.body).not.toHaveTextContent("internal stack trace");
   expect(
     requests.filter((item) => item.url === "/api/search/refinements"),
   ).toHaveLength(refinementRequestsBefore);
@@ -2483,9 +2585,13 @@ test("shows save failures separately while keeping ranked results", async () => 
       const url = String(input);
       requests.push({ url, init });
       if (url === "/api/current-trip" && init?.method === "PUT") {
-        return new Response(JSON.stringify({ detail: "internal stack trace" }), {
-          status: 500,
-        });
+        return new Response(
+          JSON.stringify({
+            error: { code: "request_failed" },
+            detail: "internal stack trace",
+          }),
+          { status: 500 },
+        );
       }
       return new Response(null, { status: 404 });
     }),
@@ -2498,8 +2604,9 @@ test("shows save failures separately while keeping ranked results", async () => 
   );
 
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Snowcast is temporarily unavailable. Try again shortly.",
+    "Your trip could not be saved. Try again.",
   );
+  expect(document.body).not.toHaveTextContent("internal stack trace");
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
   expect(screen.queryByText(/unable to load resort results/i)).not.toBeInTheDocument();
 });
@@ -2872,7 +2979,9 @@ test("guards drawer entry and chip mutations during a delayed rerank", async () 
         });
       }
       return Promise.resolve(
-        new Response(JSON.stringify({ detail: "Not found" }), { status: 404 }),
+        new Response(JSON.stringify({ error: { code: "not_found" } }), {
+          status: 404,
+        }),
       );
     }),
   );
