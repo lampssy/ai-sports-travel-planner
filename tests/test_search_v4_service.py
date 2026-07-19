@@ -295,6 +295,8 @@ def _registered_positive_presence_proposal(factor_id: str) -> RefinementProposal
             )
         )
     return RefinementProposal(
+        topic_id=factor_id,
+        target_factor_id=factor_id,
         question_id=f"{factor_id}-require-equivalence",
         question=topic.fallback_question,
         reason=topic.fallback_reason,
@@ -552,6 +554,8 @@ def _validated_refinement(
     *outcomes: tuple[tuple[str, ...], frozenset[str]],
 ) -> ValidatedRefinementProposal:
     proposal = RefinementProposal(
+        topic_id="accessible_terrain_scale",
+        target_factor_id="accessible_terrain_scale",
         question_id="terrain-vs-access",
         question="Which tradeoff should lead the ranking?",
         reason="The leading regions trade terrain scale against base access.",
@@ -652,6 +656,11 @@ def test_refinement_previews_group_candidate_ranks_and_preserve_patches(
         already_answered_question_ids=frozenset(),
     )
 
+    assert refinements[0].topic_id == "accessible_terrain_scale"
+    assert refinements[0].target_factor_id == "accessible_terrain_scale"
+    serialized = refinements[0].model_dump(mode="json")
+    assert serialized["topic_id"] == "accessible_terrain_scale"
+    assert serialized["target_factor_id"] == "accessible_terrain_scale"
     assert refinements[0].options[0].group_priority_patches == (
         GroupPriorityPatch(group_id="ski_experience", importance="very_high"),
     )
@@ -872,6 +881,8 @@ def test_refinement_previews_omit_expanding_require_changes_only(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     proposal = RefinementProposal(
+        topic_id="local_pace",
+        target_factor_id="local_pace",
         question_id="pace-requirement",
         question="How strict should the local pace requirement be?",
         reason="The current requirement can be narrowed or relaxed.",
@@ -1136,6 +1147,8 @@ def test_refinement_response_requires_status_consistent_queue() -> None:
             refinement_status="not_needed",
             refinements=(
                 search_v4_service.SearchV4RefinementProposal(
+                    topic_id="accessible_terrain_scale",
+                    target_factor_id="accessible_terrain_scale",
                     question_id="question",
                     question="Which option?",
                     reason="The leading options differ.",
@@ -1329,6 +1342,8 @@ def test_apres_replay_matches_full_evaluator_reruns_without_acquisition() -> Non
     assert lookup.snapshot is not None
     states = search_v4_service._refinement_states(lookup.snapshot.candidates)
     proposal = RefinementProposal(
+        topic_id="local_apres",
+        target_factor_id="local_apres",
         question_id="local-apres-intensity",
         question="What evening atmosphere would you prefer near where you stay?",
         reason="The trusted local atmosphere varies between the trip options.",
@@ -1419,6 +1434,8 @@ def test_refinement_replay_makes_neutral_categorical_raw_variation_actionable() 
     assert lookup.snapshot is not None
     states = search_v4_service._refinement_states(lookup.snapshot.candidates)
     proposal = RefinementProposal(
+        topic_id="development_style",
+        target_factor_id="development_style",
         question_id="development-style",
         question="What kind of place would you prefer to stay in?",
         reason="Trusted development styles vary between the trip options.",
@@ -1672,6 +1689,8 @@ def test_exact_date_snowmaking_replay_updates_trip_window_snow_fit() -> None:
         ),
     )
     proposal = RefinementProposal(
+        topic_id="snowmaking_availability",
+        target_factor_id="snowmaking_availability",
         question_id="snowmaking-backup",
         question="How important is snowmaking backup for these dates?",
         reason="Trusted snowmaking support varies across the trip options.",
@@ -1834,7 +1853,7 @@ def test_refinement_service_uses_fallback_and_records_bounded_outcome(
 
     assert response.refinement_status == "questions_available"
     assert response.refinement_presentation_policy_version == (
-        "search-refinement-presentation-1"
+        "search-refinement-presentation-2"
     )
     assert response.fallback_used is True
     assert len(response.refinements) == 1

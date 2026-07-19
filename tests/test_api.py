@@ -145,6 +145,8 @@ def test_search_refinements_serializes_previews_and_preserves_patch_fields(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     refinement = SearchV4RefinementProposal(
+        topic_id="accessible_terrain_scale",
+        target_factor_id="accessible_terrain_scale",
         question_id="terrain-vs-access",
         question="Which tradeoff should lead the ranking?",
         reason="The leading regions trade terrain scale against base access.",

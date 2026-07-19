@@ -1,0 +1,634 @@
+presentation_policy_version = "search-refinement-presentation-2"
+blocked_copy_terms = ["candidate", "evidence cap", "factor", "group priority", "objective", "optimisation", "optimization", "ranking", "score", "ski experience", "stay practicality", "trip viability", "utility", "weight"]
+
+[[topics]]
+topic_id = "trip_window_snow_fit"
+factor_id = "trip_window_snow_fit"
+traveller_topic = "dependable snow conditions for the requested dates"
+question_phrases = ["dependable snow conditions"]
+fallback_question = "How important are dependable snow conditions for your dates?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["trip_window_snow_fit.high", "trip_window_snow_fit.normal", "trip_window_snow_fit.low"]
+answer_ids = ["trip_window_snow_fit.high", "trip_window_snow_fit.normal", "trip_window_snow_fit.low"]
+fallback_priority = 6
+
+[[topics]]
+topic_id = "accessible_terrain_scale"
+factor_id = "accessible_terrain_scale"
+traveller_topic = "the amount of terrain covered by the selected pass"
+question_phrases = ["more terrain covered by the selected pass", "selected pass terrain", "have more terrain on your selected pass"]
+fallback_question = "How much terrain would you like your selected pass to cover?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["accessible_terrain_scale.as_much_as_possible", "accessible_terrain_scale.normal", "accessible_terrain_scale.low"]
+answer_ids = ["accessible_terrain_scale.as_much_as_possible", "accessible_terrain_scale.normal", "accessible_terrain_scale.low"]
+fallback_priority = 7
+
+[[topics]]
+topic_id = "terrain_potential_scale"
+factor_id = "terrain_potential_scale"
+traveller_topic = "access to a wider ski area"
+question_phrases = ["access to a wider ski area"]
+fallback_question = "Does access to a wider ski area matter, even if another pass may be needed?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["terrain_potential_scale.high", "terrain_potential_scale.normal", "terrain_potential_scale.ignore"]
+answer_ids = ["terrain_potential_scale.high", "terrain_potential_scale.normal", "terrain_potential_scale.ignore"]
+fallback_priority = 8
+
+[[topics]]
+topic_id = "lift_network_scale"
+factor_id = "lift_network_scale"
+traveller_topic = "a large lift network"
+question_phrases = ["a large lift network", "having a large lift network"]
+fallback_question = "How important is having a large lift network?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["lift_network_scale.high", "lift_network_scale.normal", "lift_network_scale.ignore"]
+answer_ids = ["lift_network_scale.high", "lift_network_scale.normal", "lift_network_scale.ignore"]
+fallback_priority = 9
+
+[[topics]]
+topic_id = "marked_freeride_routes"
+factor_id = "marked_freeride_routes"
+traveller_topic = "marked freeride or ski routes"
+question_phrases = ["marked freeride or ski routes"]
+fallback_question = "Would marked freeride or ski routes improve your trip?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["marked_freeride_routes.prefer", "marked_freeride_routes.require", "marked_freeride_routes.ignore"]
+answer_ids = ["marked_freeride_routes.prefer", "marked_freeride_routes.require", "marked_freeride_routes.ignore"]
+fallback_priority = 13
+
+[[topics]]
+topic_id = "snow_park"
+factor_id = "snow_park"
+traveller_topic = "a snow park"
+question_phrases = ["a snow park", "having a snow park"]
+fallback_question = "How important is having a snow park?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["snow_park.prefer", "snow_park.require", "snow_park.ignore"]
+answer_ids = ["snow_park.prefer", "snow_park.require", "snow_park.ignore"]
+fallback_priority = 14
+
+[[topics]]
+topic_id = "night_skiing"
+factor_id = "night_skiing"
+traveller_topic = "recurring night skiing"
+question_phrases = ["recurring night skiing"]
+fallback_question = "Would recurring night skiing add value to your trip?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["night_skiing.prefer", "night_skiing.require", "night_skiing.ignore"]
+answer_ids = ["night_skiing.prefer", "night_skiing.require", "night_skiing.ignore"]
+fallback_priority = 15
+
+[[topics]]
+topic_id = "glacier_terrain"
+factor_id = "glacier_terrain"
+traveller_topic = "glacier terrain"
+question_phrases = ["glacier terrain"]
+fallback_question = "Does glacier terrain matter for this trip?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["glacier_terrain.prefer", "glacier_terrain.require", "glacier_terrain.ignore"]
+answer_ids = ["glacier_terrain.prefer", "glacier_terrain.require", "glacier_terrain.ignore"]
+fallback_priority = 16
+
+[[topics]]
+topic_id = "snowmaking_availability"
+factor_id = "snowmaking_availability"
+traveller_topic = "snowmaking backup when natural snow is weak"
+question_phrases = ["snowmaking backup"]
+fallback_question = "Would snowmaking backup matter if natural snow looks weak?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["snowmaking_availability.prefer", "snowmaking_availability.require", "snowmaking_availability.ignore"]
+answer_ids = ["snowmaking_availability.prefer", "snowmaking_availability.require", "snowmaking_availability.ignore"]
+fallback_priority = 17
+
+[[topics]]
+topic_id = "stay_base_access"
+factor_id = "stay_base_access"
+traveller_topic = "easy access from the accommodation base to the slopes"
+question_phrases = ["access from your accommodation base", "easier access from where you stay"]
+fallback_question = "How easy should it be to reach the slopes from where you stay?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["stay_base_access.as_easy_as_possible", "stay_base_access.normal", "stay_base_access.low"]
+answer_ids = ["stay_base_access.as_easy_as_possible", "stay_base_access.normal", "stay_base_access.low"]
+fallback_priority = 5
+
+[[topics]]
+topic_id = "pass_price_per_day"
+factor_id = "pass_price_per_day"
+traveller_topic = "a lower comparable lift-pass price per ski day"
+question_phrases = ["lift-pass price"]
+fallback_question = "How much should lift-pass price influence your choice?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["pass_price_per_day.high", "pass_price_per_day.normal", "pass_price_per_day.ignore"]
+answer_ids = ["pass_price_per_day.high", "pass_price_per_day.normal", "pass_price_per_day.ignore"]
+fallback_priority = 12
+
+[[topics]]
+topic_id = "pass_terrain_value"
+factor_id = "pass_terrain_value"
+traveller_topic = "more pass-covered terrain for the pass price"
+question_phrases = ["maximise terrain covered for the pass price"]
+fallback_question = "Would you rather maximise terrain covered for the pass price?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["pass_terrain_value.high", "pass_terrain_value.normal", "pass_terrain_value.ignore"]
+answer_ids = ["pass_terrain_value.high", "pass_terrain_value.normal", "pass_terrain_value.ignore"]
+fallback_priority = 11
+
+[[topics]]
+topic_id = "ski_day_apres"
+factor_id = "ski_day_apres"
+traveller_topic = "the ski-day après atmosphere"
+question_phrases = ["ski-day après atmosphere", "ski-day apres atmosphere"]
+fallback_question = "What kind of après atmosphere would you like around the ski day?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["ski_day_apres.low_key", "ski_day_apres.moderate", "ski_day_apres.lively", "ski_day_apres.destination_defining", "ski_day_apres.ignore"]
+answer_ids = ["ski_day_apres.low_key", "ski_day_apres.moderate", "ski_day_apres.lively", "ski_day_apres.destination_defining", "ski_day_apres.ignore"]
+fallback_priority = 4
+
+[[topics]]
+topic_id = "local_apres"
+factor_id = "local_apres"
+traveller_topic = "the evening atmosphere near the accommodation base"
+question_phrases = ["evening atmosphere near where you stay"]
+fallback_question = "What kind of evening atmosphere would you like near where you stay?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["local_apres.low_key", "local_apres.moderate", "local_apres.lively", "local_apres.destination_defining", "local_apres.ignore"]
+answer_ids = ["local_apres.low_key", "local_apres.moderate", "local_apres.lively", "local_apres.destination_defining", "local_apres.ignore"]
+fallback_priority = 3
+
+[[topics]]
+topic_id = "local_pace"
+factor_id = "local_pace"
+traveller_topic = "the pace around the accommodation base"
+question_phrases = ["pace around your accommodation base"]
+fallback_question = "What pace would you prefer around your accommodation base?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["local_pace.quiet", "local_pace.balanced", "local_pace.lively", "local_pace.ignore"]
+answer_ids = ["local_pace.quiet", "local_pace.balanced", "local_pace.lively", "local_pace.ignore"]
+fallback_priority = 2
+
+[[topics]]
+topic_id = "development_style"
+factor_id = "development_style"
+traveller_topic = "the village or resort development style"
+question_phrases = ["village or resort development style", "traditional mountain village", "a traditional mountain village", "traditional mountain village or resort"]
+fallback_question = "What kind of place would you prefer to stay in?"
+fallback_reason = "Your preferred village or resort style can change which stay base fits you best."
+fallback_answer_ids = ["development_style.traditional", "development_style.mixed", "development_style.planned_resort", "development_style.ignore"]
+answer_ids = ["development_style.traditional", "development_style.mixed", "development_style.planned_resort", "development_style.ignore"]
+fallback_priority = 1
+
+[[topics]]
+topic_id = "base_type"
+factor_id = "base_type"
+traveller_topic = "the structural type of accommodation base"
+question_phrases = ["accommodation base"]
+fallback_question = "What type of accommodation base would suit you best?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["base_type.town", "base_type.village_or_hamlet", "base_type.resort_station", "base_type.neighbourhood_or_sector", "base_type.ignore"]
+answer_ids = ["base_type.town", "base_type.village_or_hamlet", "base_type.resort_station", "base_type.neighbourhood_or_sector", "base_type.ignore"]
+fallback_priority = 18
+
+[[topics]]
+topic_id = "travel_effort"
+factor_id = "travel_effort"
+traveller_topic = "a shorter or easier car journey"
+question_phrases = ["a shorter or easier drive"]
+fallback_question = "How much should Snowcast favour a shorter or easier drive?"
+fallback_reason = "Your answer can change which trip option fits you best."
+fallback_answer_ids = ["travel_effort.high", "travel_effort.normal", "travel_effort.low"]
+answer_ids = ["travel_effort.high", "travel_effort.normal", "travel_effort.low"]
+fallback_priority = 10
+
+[[answers]]
+answer_id = "trip_window_snow_fit.high"
+factor_id = "trip_window_snow_fit"
+label = "A major priority"
+description = "Make dependable snow conditions for the requested dates a major priority."
+factor_preference_patch = { factor_id = "trip_window_snow_fit", mode = "prefer", importance = "high" }
+
+[[answers]]
+answer_id = "trip_window_snow_fit.normal"
+factor_id = "trip_window_snow_fit"
+label = "A balanced choice"
+description = "Use dependable snow conditions for the requested dates as one consideration."
+factor_preference_patch = { factor_id = "trip_window_snow_fit", mode = "prefer", importance = "normal" }
+
+[[answers]]
+answer_id = "trip_window_snow_fit.low"
+factor_id = "trip_window_snow_fit"
+label = "Keep it secondary"
+description = "Give dependable snow conditions less influence than your other preferences."
+factor_preference_patch = { factor_id = "trip_window_snow_fit", mode = "prefer", importance = "low" }
+
+[[answers]]
+answer_id = "accessible_terrain_scale.as_much_as_possible"
+factor_id = "accessible_terrain_scale"
+label = "As much as possible"
+description = "Make the amount of terrain covered by the selected pass a major priority."
+factor_preference_patch = { factor_id = "accessible_terrain_scale", mode = "prefer", importance = "high" }
+
+[[answers]]
+answer_id = "accessible_terrain_scale.normal"
+factor_id = "accessible_terrain_scale"
+label = "A balanced choice"
+description = "Use the amount of terrain covered by the selected pass as one consideration."
+factor_preference_patch = { factor_id = "accessible_terrain_scale", mode = "prefer", importance = "normal" }
+
+[[answers]]
+answer_id = "accessible_terrain_scale.low"
+factor_id = "accessible_terrain_scale"
+label = "Terrain size is less important"
+description = "Give terrain size less influence than your other preferences."
+factor_preference_patch = { factor_id = "accessible_terrain_scale", mode = "prefer", importance = "low" }
+
+[[answers]]
+answer_id = "terrain_potential_scale.high"
+factor_id = "terrain_potential_scale"
+label = "Yes, a wider area matters"
+description = "Make access to a wider ski area a major priority."
+factor_preference_patch = { factor_id = "terrain_potential_scale", mode = "prefer", importance = "high" }
+
+[[answers]]
+answer_id = "terrain_potential_scale.normal"
+factor_id = "terrain_potential_scale"
+label = "It would be a bonus"
+description = "Use access to a wider ski area as one consideration."
+factor_preference_patch = { factor_id = "terrain_potential_scale", mode = "prefer", importance = "normal" }
+
+[[answers]]
+answer_id = "terrain_potential_scale.ignore"
+factor_id = "terrain_potential_scale"
+label = "No wider-area preference"
+description = "Do not use access to a wider ski area as an extra preference."
+factor_preference_patch = { factor_id = "terrain_potential_scale", mode = "ignore" }
+
+[[answers]]
+answer_id = "lift_network_scale.high"
+factor_id = "lift_network_scale"
+label = "A major priority"
+description = "Make a large lift network a major priority."
+factor_preference_patch = { factor_id = "lift_network_scale", mode = "prefer", importance = "high" }
+
+[[answers]]
+answer_id = "lift_network_scale.normal"
+factor_id = "lift_network_scale"
+label = "A useful bonus"
+description = "Use a large lift network as one consideration."
+factor_preference_patch = { factor_id = "lift_network_scale", mode = "prefer", importance = "normal" }
+
+[[answers]]
+answer_id = "lift_network_scale.ignore"
+factor_id = "lift_network_scale"
+label = "Not important for this trip"
+description = "Do not use a large lift network as an extra preference."
+factor_preference_patch = { factor_id = "lift_network_scale", mode = "ignore" }
+
+[[answers]]
+answer_id = "marked_freeride_routes.prefer"
+factor_id = "marked_freeride_routes"
+label = "Nice to have"
+description = "Prefer marked freeride or ski routes."
+factor_preference_patch = { factor_id = "marked_freeride_routes", mode = "prefer" }
+
+[[answers]]
+answer_id = "marked_freeride_routes.require"
+factor_id = "marked_freeride_routes"
+label = "Must have"
+description = "Only keep options with marked freeride or ski routes."
+factor_preference_patch = { factor_id = "marked_freeride_routes", mode = "require" }
+
+[[answers]]
+answer_id = "marked_freeride_routes.ignore"
+factor_id = "marked_freeride_routes"
+label = "Not important for this trip"
+description = "Do not use marked freeride or ski routes as an extra preference."
+factor_preference_patch = { factor_id = "marked_freeride_routes", mode = "ignore" }
+
+[[answers]]
+answer_id = "snow_park.prefer"
+factor_id = "snow_park"
+label = "Nice to have"
+description = "Prefer a snow park."
+factor_preference_patch = { factor_id = "snow_park", mode = "prefer" }
+
+[[answers]]
+answer_id = "snow_park.require"
+factor_id = "snow_park"
+label = "Must have"
+description = "Only keep options with a snow park."
+factor_preference_patch = { factor_id = "snow_park", mode = "require" }
+
+[[answers]]
+answer_id = "snow_park.ignore"
+factor_id = "snow_park"
+label = "Not important for this trip"
+description = "Do not use a snow park as an extra preference."
+factor_preference_patch = { factor_id = "snow_park", mode = "ignore" }
+
+[[answers]]
+answer_id = "night_skiing.prefer"
+factor_id = "night_skiing"
+label = "Nice to have"
+description = "Prefer recurring night skiing."
+factor_preference_patch = { factor_id = "night_skiing", mode = "prefer" }
+
+[[answers]]
+answer_id = "night_skiing.require"
+factor_id = "night_skiing"
+label = "Must have"
+description = "Only keep options with recurring night skiing."
+factor_preference_patch = { factor_id = "night_skiing", mode = "require" }
+
+[[answers]]
+answer_id = "night_skiing.ignore"
+factor_id = "night_skiing"
+label = "Not important for this trip"
+description = "Do not use recurring night skiing as an extra preference."
+factor_preference_patch = { factor_id = "night_skiing", mode = "ignore" }
+
+[[answers]]
+answer_id = "glacier_terrain.prefer"
+factor_id = "glacier_terrain"
+label = "Nice to have"
+description = "Prefer glacier terrain."
+factor_preference_patch = { factor_id = "glacier_terrain", mode = "prefer" }
+
+[[answers]]
+answer_id = "glacier_terrain.require"
+factor_id = "glacier_terrain"
+label = "Must have"
+description = "Only keep options with glacier terrain."
+factor_preference_patch = { factor_id = "glacier_terrain", mode = "require" }
+
+[[answers]]
+answer_id = "glacier_terrain.ignore"
+factor_id = "glacier_terrain"
+label = "Not important for this trip"
+description = "Do not use glacier terrain as an extra preference."
+factor_preference_patch = { factor_id = "glacier_terrain", mode = "ignore" }
+
+[[answers]]
+answer_id = "snowmaking_availability.prefer"
+factor_id = "snowmaking_availability"
+label = "Useful backup"
+description = "Prefer snowmaking backup when natural snow is weak."
+factor_preference_patch = { factor_id = "snowmaking_availability", mode = "prefer" }
+
+[[answers]]
+answer_id = "snowmaking_availability.require"
+factor_id = "snowmaking_availability"
+label = "Must have"
+description = "Only keep options with snowmaking backup when natural snow is weak."
+factor_preference_patch = { factor_id = "snowmaking_availability", mode = "require" }
+
+[[answers]]
+answer_id = "snowmaking_availability.ignore"
+factor_id = "snowmaking_availability"
+label = "Not important for this trip"
+description = "Do not use snowmaking backup when natural snow is weak as an extra preference."
+factor_preference_patch = { factor_id = "snowmaking_availability", mode = "ignore" }
+
+[[answers]]
+answer_id = "stay_base_access.as_easy_as_possible"
+factor_id = "stay_base_access"
+label = "As easy as possible"
+description = "Make easy access from the accommodation base to the slopes a major priority."
+factor_preference_patch = { factor_id = "stay_base_access", mode = "prefer", importance = "high" }
+
+[[answers]]
+answer_id = "stay_base_access.normal"
+factor_id = "stay_base_access"
+label = "Convenient is enough"
+description = "Use easy access from the accommodation base to the slopes as one consideration."
+factor_preference_patch = { factor_id = "stay_base_access", mode = "prefer", importance = "normal" }
+
+[[answers]]
+answer_id = "stay_base_access.low"
+factor_id = "stay_base_access"
+label = "Access can be secondary"
+description = "Give easy slope access less influence than your other preferences."
+factor_preference_patch = { factor_id = "stay_base_access", mode = "prefer", importance = "low" }
+
+[[answers]]
+answer_id = "pass_price_per_day.high"
+factor_id = "pass_price_per_day"
+label = "Keep it as low as possible"
+description = "Make a lower comparable lift-pass price per ski day a major priority."
+objective_patch = { factor_id = "pass_price_per_day", importance = "high" }
+
+[[answers]]
+answer_id = "pass_price_per_day.normal"
+factor_id = "pass_price_per_day"
+label = "Consider the price"
+description = "Consider a lower comparable lift-pass price per ski day alongside your other trip preferences."
+objective_patch = { factor_id = "pass_price_per_day", importance = "normal" }
+
+[[answers]]
+answer_id = "pass_price_per_day.ignore"
+factor_id = "pass_price_per_day"
+label = "No pass-price priority"
+description = "Do not use a lower comparable lift-pass price per ski day as an extra preference."
+factor_preference_patch = { factor_id = "pass_price_per_day", mode = "ignore" }
+
+[[answers]]
+answer_id = "pass_terrain_value.high"
+factor_id = "pass_terrain_value"
+label = "Yes, maximise terrain value"
+description = "Make getting more pass-covered terrain for the pass price a major priority."
+objective_patch = { factor_id = "pass_terrain_value", importance = "high" }
+
+[[answers]]
+answer_id = "pass_terrain_value.normal"
+factor_id = "pass_terrain_value"
+label = "Use it as one consideration"
+description = "Consider pass-covered terrain for the pass price alongside your other trip preferences."
+objective_patch = { factor_id = "pass_terrain_value", importance = "normal" }
+
+[[answers]]
+answer_id = "pass_terrain_value.ignore"
+factor_id = "pass_terrain_value"
+label = "No terrain-value priority"
+description = "Do not use more pass-covered terrain for the pass price as an extra preference."
+factor_preference_patch = { factor_id = "pass_terrain_value", mode = "ignore" }
+
+[[answers]]
+answer_id = "ski_day_apres.low_key"
+factor_id = "ski_day_apres"
+label = "Quiet"
+description = "Prefer a quiet atmosphere after skiing."
+factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values = ["low_key"] }
+
+[[answers]]
+answer_id = "ski_day_apres.moderate"
+factor_id = "ski_day_apres"
+label = "Some atmosphere"
+description = "Prefer some ski-day après atmosphere."
+factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values = ["moderate"] }
+
+[[answers]]
+answer_id = "ski_day_apres.lively"
+factor_id = "ski_day_apres"
+label = "Lively"
+description = "Prefer lively ski-day après."
+factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values = ["lively"] }
+
+[[answers]]
+answer_id = "ski_day_apres.destination_defining"
+factor_id = "ski_day_apres"
+label = "A major après destination"
+description = "Prefer a ski-day atmosphere that defines the destination."
+factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values = ["destination_defining"] }
+
+[[answers]]
+answer_id = "ski_day_apres.ignore"
+factor_id = "ski_day_apres"
+label = "Not important for this trip"
+description = "Do not use the ski-day après atmosphere as an extra preference."
+factor_preference_patch = { factor_id = "ski_day_apres", mode = "ignore" }
+
+[[answers]]
+answer_id = "local_apres.low_key"
+factor_id = "local_apres"
+label = "Quiet"
+description = "Prefer a quiet evening near where you stay."
+factor_preference_patch = { factor_id = "local_apres", mode = "prefer", values = ["low_key"] }
+
+[[answers]]
+answer_id = "local_apres.moderate"
+factor_id = "local_apres"
+label = "Some atmosphere"
+description = "Prefer some evening atmosphere near the accommodation base."
+factor_preference_patch = { factor_id = "local_apres", mode = "prefer", values = ["moderate"] }
+
+[[answers]]
+answer_id = "local_apres.lively"
+factor_id = "local_apres"
+label = "Lively"
+description = "Prefer a lively evening near the accommodation base."
+factor_preference_patch = { factor_id = "local_apres", mode = "prefer", values = ["lively"] }
+
+[[answers]]
+answer_id = "local_apres.destination_defining"
+factor_id = "local_apres"
+label = "A major après destination"
+description = "Prefer an evening atmosphere that defines the accommodation base."
+factor_preference_patch = { factor_id = "local_apres", mode = "prefer", values = ["destination_defining"] }
+
+[[answers]]
+answer_id = "local_apres.ignore"
+factor_id = "local_apres"
+label = "Not important for this trip"
+description = "Do not use the evening atmosphere near the accommodation base as an extra preference."
+factor_preference_patch = { factor_id = "local_apres", mode = "ignore" }
+
+[[answers]]
+answer_id = "local_pace.quiet"
+factor_id = "local_pace"
+label = "Quiet and relaxed"
+description = "Prefer a calm base rather than a lively one."
+factor_preference_patch = { factor_id = "local_pace", mode = "prefer", values = ["quiet"] }
+
+[[answers]]
+answer_id = "local_pace.balanced"
+factor_id = "local_pace"
+label = "Balanced"
+description = "Prefer balanced."
+factor_preference_patch = { factor_id = "local_pace", mode = "prefer", values = ["balanced"] }
+
+[[answers]]
+answer_id = "local_pace.lively"
+factor_id = "local_pace"
+label = "Lively"
+description = "Prefer lively."
+factor_preference_patch = { factor_id = "local_pace", mode = "prefer", values = ["lively"] }
+
+[[answers]]
+answer_id = "local_pace.ignore"
+factor_id = "local_pace"
+label = "Not important for this trip"
+description = "Do not use the pace around the accommodation base as an extra preference."
+factor_preference_patch = { factor_id = "local_pace", mode = "ignore" }
+
+[[answers]]
+answer_id = "development_style.traditional"
+factor_id = "development_style"
+label = "Traditional mountain village"
+description = "Prefer a base with traditional settlement character."
+factor_preference_patch = { factor_id = "development_style", mode = "prefer", values = ["traditional"] }
+
+[[answers]]
+answer_id = "development_style.mixed"
+factor_id = "development_style"
+label = "A mix of old and new"
+description = "Prefer a base with a mix of old and new settlement character."
+factor_preference_patch = { factor_id = "development_style", mode = "prefer", values = ["mixed"] }
+
+[[answers]]
+answer_id = "development_style.planned_resort"
+factor_id = "development_style"
+label = "Purpose-built ski resort"
+description = "Prefer a purpose-built ski resort base."
+factor_preference_patch = { factor_id = "development_style", mode = "prefer", values = ["planned_resort"] }
+
+[[answers]]
+answer_id = "development_style.ignore"
+factor_id = "development_style"
+label = "Not important for this trip"
+description = "Do not use the village or resort development style as an extra preference."
+factor_preference_patch = { factor_id = "development_style", mode = "ignore" }
+
+[[answers]]
+answer_id = "base_type.town"
+factor_id = "base_type"
+label = "Ski town"
+description = "Prefer ski town."
+factor_preference_patch = { factor_id = "base_type", mode = "prefer", values = ["town"] }
+
+[[answers]]
+answer_id = "base_type.village_or_hamlet"
+factor_id = "base_type"
+label = "Village or hamlet"
+description = "Prefer village or hamlet."
+factor_preference_patch = { factor_id = "base_type", mode = "prefer", values = ["village", "hamlet"] }
+
+[[answers]]
+answer_id = "base_type.resort_station"
+factor_id = "base_type"
+label = "Purpose-built resort base"
+description = "Prefer purpose-built resort base."
+factor_preference_patch = { factor_id = "base_type", mode = "prefer", values = ["resort_station"] }
+
+[[answers]]
+answer_id = "base_type.neighbourhood_or_sector"
+factor_id = "base_type"
+label = "Resort neighbourhood or sector"
+description = "Prefer resort neighbourhood or sector."
+factor_preference_patch = { factor_id = "base_type", mode = "prefer", values = ["neighbourhood", "resort_sector"] }
+
+[[answers]]
+answer_id = "base_type.ignore"
+factor_id = "base_type"
+label = "Not important for this trip"
+description = "Do not use the structural type of accommodation base as an extra preference."
+factor_preference_patch = { factor_id = "base_type", mode = "ignore" }
+
+[[answers]]
+answer_id = "travel_effort.high"
+factor_id = "travel_effort"
+label = "Keep the journey as easy as possible"
+description = "Make a shorter or easier car journey a major priority."
+factor_preference_patch = { factor_id = "travel_effort", mode = "prefer", importance = "high" }
+
+[[answers]]
+answer_id = "travel_effort.normal"
+factor_id = "travel_effort"
+label = "A balanced choice"
+description = "Use a shorter or easier car journey as one consideration."
+factor_preference_patch = { factor_id = "travel_effort", mode = "prefer", importance = "normal" }
+
+[[answers]]
+answer_id = "travel_effort.low"
+factor_id = "travel_effort"
+label = "Travel time can be secondary"
+description = "Give a shorter or easier drive less influence than your other preferences."
+factor_preference_patch = { factor_id = "travel_effort", mode = "prefer", importance = "low" }

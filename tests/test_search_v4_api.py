@@ -193,6 +193,7 @@ def test_post_search_refinements_uses_separate_typed_contract(
     monkeypatch.setattr("app.api.routes.get_search_refinements", fake_refinements)
     payload = _request_payload()
     payload["already_answered_question_ids"] = ["fallback-group-ski_experience"]
+    payload["resolved_topic_ids"] = ["night_skiing", "retired_topic"]
 
     response = TestClient(app).post("/api/search/refinements", json=payload)
 
@@ -210,6 +211,9 @@ def test_post_search_refinements_uses_separate_typed_contract(
     assert captured["brief"] == "A good-value intermediate trip in France."
     assert captured["already_answered_question_ids"] == frozenset(
         {"fallback-group-ski_experience"}
+    )
+    assert captured["resolved_topic_ids"] == frozenset(
+        {"night_skiing", "retired_topic"}
     )
 
 

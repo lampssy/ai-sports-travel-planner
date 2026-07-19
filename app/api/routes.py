@@ -169,6 +169,7 @@ def search_refinements(
             already_answered_question_ids=frozenset(
                 payload.already_answered_question_ids
             ),
+            resolved_topic_ids=frozenset(payload.resolved_topic_ids),
             llm_client_factory=lambda timeout_seconds: GeminiClient(
                 timeout_seconds=timeout_seconds
             ),

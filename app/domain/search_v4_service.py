@@ -278,6 +278,8 @@ class SearchV4RefinementOption(_SearchV4Model):
 
 
 class SearchV4RefinementProposal(_SearchV4Model):
+    topic_id: str
+    target_factor_id: str
     question_id: str
     question: str
     reason: str
@@ -304,6 +306,7 @@ class SearchV4Request(_SearchV4Model):
     already_answered_question_ids: tuple[SearchIdentifier, ...] = Field(
         default=(), max_length=50
     )
+    resolved_topic_ids: tuple[SearchIdentifier, ...] = Field(default=(), max_length=50)
 
     @model_validator(mode="after")
     def require_unique_answered_question_ids(self) -> Self:
@@ -311,6 +314,8 @@ class SearchV4Request(_SearchV4Model):
             set(self.already_answered_question_ids)
         ):
             raise ValueError("answered refinement question IDs must be unique")
+        if len(self.resolved_topic_ids) != len(set(self.resolved_topic_ids)):
+            raise ValueError("resolved topic IDs must be unique")
         return self
 
 
@@ -321,6 +326,7 @@ class SearchV4RefinementRequest(_SearchV4Model):
     already_answered_question_ids: tuple[SearchIdentifier, ...] = Field(
         default=(), max_length=50
     )
+    resolved_topic_ids: tuple[SearchIdentifier, ...] = Field(default=(), max_length=50)
 
     @model_validator(mode="after")
     def require_unique_answered_question_ids(self) -> Self:
@@ -328,6 +334,8 @@ class SearchV4RefinementRequest(_SearchV4Model):
             set(self.already_answered_question_ids)
         ):
             raise ValueError("answered refinement question IDs must be unique")
+        if len(self.resolved_topic_ids) != len(set(self.resolved_topic_ids)):
+            raise ValueError("resolved topic IDs must be unique")
         return self
 
 
@@ -944,6 +952,7 @@ def get_search_refinements(
     baseline_fingerprint: str,
     already_answered_question_ids: frozenset[str],
     llm_client_factory: Callable[[float], LLMClient],
+    resolved_topic_ids: frozenset[str] = frozenset(),
     policy: SearchPolicy | None = None,
     refinement_snapshot_store: SearchRefinementSnapshotStore | None = None,
     clock: Callable[[], float] = time.monotonic,
@@ -1036,6 +1045,7 @@ def get_search_refinements(
                 presentation=presentation,
                 client=llm_client_factory(remaining_seconds),
                 already_answered_question_ids=already_answered_question_ids,
+                resolved_topic_ids=resolved_topic_ids,
             )
     else:
         generated = RefinementGenerationResult(
@@ -1050,6 +1060,7 @@ def get_search_refinements(
             policy=selected_policy,
             presentation=presentation,
             already_answered_question_ids=already_answered_question_ids,
+            resolved_topic_ids=resolved_topic_ids,
         )
         if not generated.proposals
         and clock() - started < SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS
@@ -1879,6 +1890,7 @@ def _refinements(
     policy: SearchPolicy,
     client: LLMClient | None,
     already_answered_question_ids: frozenset[str],
+    resolved_topic_ids: frozenset[str] = frozenset(),
 ) -> tuple[SearchV4RefinementProposal, ...]:
     if not include or client is None:
         return ()
@@ -1893,6 +1905,7 @@ def _refinements(
         presentation=presentation,
         client=client,
         already_answered_question_ids=already_answered_question_ids,
+        resolved_topic_ids=resolved_topic_ids,
     )
     validated = (
         generated.proposals
@@ -1916,6 +1929,8 @@ def _response_refinement_proposal(
 ) -> SearchV4RefinementProposal:
     proposal = validated.proposal
     return SearchV4RefinementProposal(
+        topic_id=proposal.topic_id,
+        target_factor_id=proposal.target_factor_id,
         question_id=proposal.question_id,
         question=proposal.question,
         reason=proposal.reason,

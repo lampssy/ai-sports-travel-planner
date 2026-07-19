@@ -1358,10 +1358,8 @@ def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:
     ski_day = presentation.answer_by_id["ski_day_apres.low_key"]
     local = presentation.answer_by_id["local_apres.low_key"]
 
-    assert ski_day.description == "Prefer low-key ski-day après."
-    assert local.description == (
-        "Prefer a low-key evening near the accommodation base."
-    )
+    assert ski_day.description == "Prefer a quiet atmosphere after skiing."
+    assert local.description == "Prefer a quiet evening near where you stay."
 
 
 def test_safe_dynamic_interaction_copy_survives_unchanged() -> None:
@@ -1813,7 +1811,7 @@ def test_registry_fallback_uses_first_material_topic_and_authoritative_copy() ->
         "Traditional mountain village",
         "A mix of old and new",
         "Purpose-built ski resort",
-        "It doesn't matter",
+        "Not important for this trip",
     ]
     assert fallback.impact.material is True
 
@@ -1863,6 +1861,29 @@ def test_registry_fallback_suppresses_answered_semantic_id() -> None:
 
     assert next_fallback is None or next_fallback.proposal.question_id != (
         first.proposal.question_id
+    )
+
+
+def test_registry_fallback_suppresses_resolved_topic_with_new_question_shape() -> None:
+    presentation = load_refinement_presentation_policy()
+    first = build_deterministic_refinement_fallback(
+        intent=SearchIntent(),
+        candidates=_fallback_candidates(),
+        policy=load_search_policy(),
+        presentation=presentation,
+    )
+    assert first is not None
+
+    next_fallback = build_deterministic_refinement_fallback(
+        intent=SearchIntent(),
+        candidates=_fallback_candidates(),
+        policy=load_search_policy(),
+        presentation=presentation,
+        resolved_topic_ids=frozenset({first.proposal.topic_id}),
+    )
+
+    assert next_fallback is None or next_fallback.proposal.topic_id != (
+        first.proposal.topic_id
     )
 
 
@@ -2047,12 +2068,30 @@ def test_provider_topics_expose_only_approved_copy_for_allowed_factors() -> None
         },
         {
             "answer_id": "development_style.ignore",
-            "label": "It doesn't matter",
+            "label": "Not important for this trip",
             "description": (
                 "Do not use the village or resort development style as an "
                 "extra preference."
             ),
         },
+    )
+
+
+def test_version_two_is_default_and_version_one_remains_loadable() -> None:
+    current = load_refinement_presentation_policy()
+    version_one = load_refinement_presentation_policy(
+        presentation_module.DEFAULT_REFINEMENT_PRESENTATION_PATH.with_name(
+            "presentation-v1.toml"
+        )
+    )
+
+    assert current.presentation_policy_version == "search-refinement-presentation-2"
+    assert version_one.presentation_policy_version == "search-refinement-presentation-1"
+    assert current.answer_by_id["accessible_terrain_scale.normal"].label == (
+        "A balanced choice"
+    )
+    assert version_one.answer_by_id["accessible_terrain_scale.normal"].label == (
+        "Use the standard balance"
     )
 
 

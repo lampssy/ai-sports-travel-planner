@@ -61,19 +61,13 @@ _ProviderDisplayText = Annotated[
 class _RefinementOptionSelection(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    answer_ids: Annotated[
-        tuple[_ProviderIdentifier, ...],
-        Field(min_length=1, max_length=3),
-    ]
+    answer_id: _ProviderIdentifier
 
 
 class _RefinementQuestionSelection(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    topic_ids: Annotated[
-        tuple[_ProviderIdentifier, ...],
-        Field(min_length=1, max_length=3),
-    ]
+    topic_id: _ProviderIdentifier
     question: _ProviderDisplayText
     options: Annotated[
         tuple[_RefinementOptionSelection, ...],
@@ -86,7 +80,7 @@ class _RefinementOutput(BaseModel):
 
     questions: Annotated[
         tuple[_RefinementQuestionSelection, ...],
-        Field(max_length=3),
+        Field(max_length=1),
     ]
 
 
@@ -95,7 +89,7 @@ class _RefinementOutputEnvelope(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    questions: Annotated[tuple[object, ...], Field(max_length=3)]
+    questions: Annotated[tuple[object, ...], Field(max_length=1)]
 
 
 def _compact_response_schema() -> dict[str, object]:
@@ -153,61 +147,42 @@ def compile_refinement_selection(
 ) -> RefinementProposal:
     """Compile provider-selected IDs into the stable public refinement contract."""
 
-    topic_ids = selection.topic_ids
-    if len(topic_ids) != len(set(topic_ids)):
-        raise RefinementValidationError("refinement topic IDs must be unique")
+    topic_id = selection.topic_id
     topics_by_id = presentation.topic_by_id
-    selected_topics = []
-    for topic_id in topic_ids:
-        if topic_id not in eligible_topic_answer_ids:
-            raise RefinementValidationError(
-                f"refinement topic ID is not eligible for this request: {topic_id}"
-            )
-        try:
-            selected_topics.append(topics_by_id[topic_id])
-        except KeyError as error:
-            raise RefinementValidationError(
-                f"unknown refinement topic ID: {topic_id}"
-            ) from error
+    if topic_id not in eligible_topic_answer_ids:
+        raise RefinementValidationError(
+            f"refinement topic ID is not eligible for this request: {topic_id}"
+        )
+    try:
+        selected_topic = topics_by_id[topic_id]
+    except KeyError as error:
+        raise RefinementValidationError(
+            f"unknown refinement topic ID: {topic_id}"
+        ) from error
 
-    selected_factor_ids = {topic.factor_id for topic in selected_topics}
-    option_signatures: set[tuple[str, ...]] = set()
+    option_signatures: set[str] = set()
     visible_option_actions: dict[
         tuple[str, str],
         tuple[tuple[str, ...], tuple[str, ...]],
     ] = {}
     compiled_options: list[RefinementOption] = []
-    eligible_answer_ids = frozenset().union(
-        *(eligible_topic_answer_ids[topic_id] for topic_id in topic_ids)
-    )
+    eligible_answer_ids = eligible_topic_answer_ids[topic_id]
     for option in selection.options:
-        signature = tuple(sorted(option.answer_ids))
+        signature = option.answer_id
         if signature in option_signatures:
             raise RefinementValidationError("refinement answer variants must be unique")
         option_signatures.add(signature)
-        unexposed_answer_ids = set(option.answer_ids) - eligible_answer_ids
-        if unexposed_answer_ids:
+        if option.answer_id not in eligible_answer_ids:
             raise RefinementValidationError(
                 "refinement answer ID is not eligible for this request: "
-                + ", ".join(sorted(unexposed_answer_ids))
+                f"{option.answer_id}"
             )
-        answer_factor_ids = {
-            presentation.answer_by_id[answer_id].factor_id
-            for answer_id in option.answer_ids
-        }
-        if len(answer_factor_ids) != len(option.answer_ids):
-            raise RefinementValidationError(
-                "a refinement option may select at most one answer per factor"
-            )
-        if not answer_factor_ids <= selected_factor_ids:
+        answer = presentation.answer_by_id[option.answer_id]
+        if answer.factor_id != selected_topic.factor_id:
             raise RefinementValidationError(
                 "refinement answer ID belongs outside selected topics"
             )
-        if answer_factor_ids != selected_factor_ids:
-            raise RefinementValidationError(
-                "every option must contain exactly one answer for every selected topic"
-            )
-        resolved = presentation.resolve_answer_ids(option.answer_ids)
+        resolved = presentation.resolve_answer_id(option.answer_id)
         visible_copy = (
             _normalize_visible_copy(resolved.label),
             _normalize_visible_copy(resolved.description),
@@ -251,15 +226,17 @@ def compile_refinement_selection(
         )
     question, reason = resolve_interaction_copy(
         selection.question,
-        topic_ids,
+        (topic_id,),
         candidate_ids,
         presentation,
         untrusted_brief=untrusted_brief,
     )
     return RefinementProposal(
+        topic_id=topic_id,
+        target_factor_id=selected_topic.factor_id,
         question_id=semantic_refinement_question_id(
-            topic_ids=topic_ids,
-            answer_id_sets=tuple(option.answer_ids for option in selection.options),
+            topic_ids=(topic_id,),
+            answer_id_sets=tuple((option.answer_id,) for option in selection.options),
             presentation=presentation,
         ),
         question=question,
@@ -281,14 +258,19 @@ def generate_refinement_proposals(
     presentation: RefinementPresentationPolicy,
     client: LLMClient,
     already_answered_question_ids: frozenset[str] = frozenset(),
+    resolved_topic_ids: frozenset[str] = frozenset(),
 ) -> RefinementGenerationResult:
     if len(candidates) < 2 or policy.refinement.max_questions == 0:
         return RefinementGenerationResult(outcome="no_proposals", proposals=())
     bounded_untrusted_brief = (
         brief[:MAX_UNTRUSTED_BRIEF_CHARACTERS] if brief is not None else None
     )
-    eligible_provider_topics = presentation.provider_topics(
-        _clarifiable_factor_ids(policy) - synthesized_require_factor_ids(intent)
+    eligible_provider_topics = tuple(
+        topic
+        for topic in presentation.provider_topics(
+            _clarifiable_factor_ids(policy) - synthesized_require_factor_ids(intent)
+        )
+        if topic["topic_id"] not in resolved_topic_ids
     )
     context = build_refinement_context(
         brief=bounded_untrusted_brief,
@@ -355,6 +337,7 @@ def generate_refinement_proposals(
                     candidates=candidates,
                     policy=policy,
                     already_answered_question_ids=already_answered_question_ids,
+                    resolved_topic_ids=resolved_topic_ids,
                 )
                 if validated.proposal.question_id in accepted_question_ids:
                     continue
@@ -493,17 +476,14 @@ def _system_prompt() -> str:
         "Replace its placeholder with selected-topic wording; do not append a "
         "clause or use commas, semicolons, or colons. Ask about the traveller's "
         "preference or priority, never whether a resort fact is true. The semantic "
-        "body of a single-topic question must be one exact registered "
-        "question_phrase for that topic. A multi-topic question may compare exactly "
-        "one question_phrase per selected topic, with every topic represented once, "
-        "joined only by 'or', 'versus', or 'rather than'. Do not combine phrase "
-        "vocabulary into any other relationship. "
+        "body must be one exact registered question_phrase for the selected topic. "
+        "Ask about exactly one topic. Never compare, pair, or join topics with "
+        "'or', 'versus', or 'rather than'. "
         "The server writes the reason. Do not "
         "mention ranking, scores, factors, groups, "
         "weights, utilities, evidence, candidates, internal IDs, or system behavior. "
-        "Select two to five options using only supplied answer IDs. Every option "
-        "must contain exactly one answer ID for every selected topic, and must "
-        "never target the same topic twice. Do not invent answer copy, "
+        "Select two to five options using one supplied answer ID per option. "
+        "Do not invent answer copy, "
         "patches, facts, resort claims, numeric claims, or IDs. Return strict JSON "
         "matching the schema."
     )

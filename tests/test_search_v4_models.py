@@ -13,7 +13,7 @@ from app.domain.search_v4_models import (
     SearchObjective,
     TravelWindow,
 )
-from app.domain.search_v4_service import SearchV4Request
+from app.domain.search_v4_service import SearchV4RefinementRequest, SearchV4Request
 
 pytestmark = pytest.mark.db_free
 
@@ -121,4 +121,48 @@ def test_search_request_bounds_prompt_context_and_answered_question_ids() -> Non
         SearchV4Request(
             intent=SearchIntent(),
             already_answered_question_ids=("same-question", "same-question"),
+        )
+
+
+def test_search_v4_requests_accept_unique_resolved_topic_ids() -> None:
+    refinement_request = SearchV4RefinementRequest(
+        intent=SearchIntent(),
+        baseline_fingerprint="a" * 64,
+        resolved_topic_ids=("night_skiing", "glacier_terrain"),
+    )
+    search_request = SearchV4Request(
+        intent=SearchIntent(),
+        resolved_topic_ids=("night_skiing", "retired_or_unknown_topic"),
+    )
+
+    assert refinement_request.resolved_topic_ids == (
+        "night_skiing",
+        "glacier_terrain",
+    )
+    assert search_request.resolved_topic_ids == (
+        "night_skiing",
+        "retired_or_unknown_topic",
+    )
+
+
+@pytest.mark.parametrize("request_type", [SearchV4Request, SearchV4RefinementRequest])
+def test_search_v4_requests_reject_duplicate_resolved_topic_ids(
+    request_type: type,
+) -> None:
+    kwargs: dict[str, object] = {
+        "intent": SearchIntent(),
+        "resolved_topic_ids": ("night_skiing", "night_skiing"),
+    }
+    if request_type is SearchV4RefinementRequest:
+        kwargs["baseline_fingerprint"] = "a" * 64
+
+    with pytest.raises(ValidationError, match="resolved topic IDs must be unique"):
+        request_type(**kwargs)
+
+
+def test_search_v4_requests_bound_resolved_topic_history() -> None:
+    with pytest.raises(ValidationError):
+        SearchV4Request(
+            intent=SearchIntent(),
+            resolved_topic_ids=tuple(f"topic-{index}" for index in range(51)),
         )

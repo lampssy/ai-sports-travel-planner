@@ -89,10 +89,12 @@ class RefinementOption(_RefinementModel):
 
 
 class RefinementProposal(_RefinementModel):
+    topic_id: _QuestionId
+    target_factor_id: _QuestionId
     question_id: _QuestionId
     question: _BoundedDisplayText
     reason: _BoundedDisplayText
-    options: tuple[RefinementOption, ...] = Field(min_length=2, max_length=10)
+    options: tuple[RefinementOption, ...] = Field(min_length=2, max_length=5)
 
 
 @dataclass(frozen=True)
@@ -198,7 +200,12 @@ def validate_refinement_proposal(
     candidates: Sequence[RefinementCandidateState],
     policy: SearchPolicy,
     already_answered_question_ids: frozenset[str] = frozenset(),
+    resolved_topic_ids: frozenset[str] = frozenset(),
 ) -> ValidatedRefinementProposal:
+    if proposal.topic_id in resolved_topic_ids:
+        raise RefinementValidationError(
+            f"refinement topic already resolved: {proposal.topic_id}"
+        )
     if proposal.question_id in already_answered_question_ids:
         raise RefinementValidationError(
             f"refinement question already asked: {proposal.question_id}"
@@ -212,7 +219,7 @@ def validate_refinement_proposal(
     option_signatures: set[str] = set()
     variant_intents: list[SearchIntent] = []
     for option in proposal.options:
-        _validate_option_targets(option, policy)
+        _validate_option_targets(option, proposal.target_factor_id, policy)
         if option_expands_synthesized_require(intent, option):
             raise RefinementValidationError(
                 "refinement option would widen a synthesized require"
@@ -285,17 +292,24 @@ def _validate_text_and_option_bounds(
             raise RefinementValidationError("refinement option has too many patches")
 
 
-def _validate_option_targets(option: RefinementOption, policy: SearchPolicy) -> None:
-    groups = {group.group_id: group for group in policy.groups}
+def _validate_option_targets(
+    option: RefinementOption,
+    target_factor_id: str,
+    policy: SearchPolicy,
+) -> None:
+    if option.group_priority_patches:
+        raise RefinementValidationError(
+            "refinement option must target one factor, not a group"
+        )
+    factor_target_ids = tuple(
+        patch.factor_id
+        for patch in (*option.factor_preference_patches, *option.objective_patches)
+    )
+    if factor_target_ids != (target_factor_id,):
+        raise RefinementValidationError(
+            "refinement option must target exactly the proposal target factor"
+        )
     factors = {factor.factor_id: factor for factor in policy.factors}
-    for patch in option.group_priority_patches:
-        group = groups.get(patch.group_id)
-        if group is None:
-            raise RefinementValidationError(f"unknown group ID: {patch.group_id}")
-        if not group.clarifiable:
-            raise RefinementValidationError(
-                f"group is not clarifiable: {patch.group_id}"
-            )
     for patch in option.factor_preference_patches:
         factor = factors.get(patch.factor_id)
         if factor is None:

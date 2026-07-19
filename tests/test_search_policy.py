@@ -78,7 +78,8 @@ def test_default_policy_keeps_lodging_measured_and_snowmaking_composed() -> None
     assert snowmaking.allowed_modes == ("prefer", "ignore", "require")
 
     refinement = policy.refinement
-    assert refinement.max_questions == 3
+    assert refinement.max_questions == 1
+    assert refinement.max_factor_patches_per_option == 1
     assert refinement.top_three_order_margin_points == 2
     assert refinement.top_five_candidate_difference_points == 5
 

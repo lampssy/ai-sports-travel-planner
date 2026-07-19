@@ -15,9 +15,9 @@ normal = 1
 high = 2
 
 [refinement]
-max_questions = 3
+max_questions = 1
 max_options_per_question = 4
-max_factor_patches_per_option = 3
+max_factor_patches_per_option = 1
 max_candidate_summaries = 10
 max_clarifiable_factors = 30
 max_question_characters = 280
