@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 
@@ -18,6 +18,7 @@ import {
   clearWeatherEvidenceCache,
   readWeatherEvidenceCache,
   weatherEvidenceCacheKey,
+  writeWeatherEvidenceCache,
 } from "./weatherEvidenceCache";
 
 const monthIntent: SearchIntent = {
@@ -578,6 +579,88 @@ test("keeps one recovery action after weather remains unavailable on retry", asy
   expect(screen.queryByRole("button", { name: "Reload snow evidence" })).toBeNull();
   expect(screen.getByRole("button", { name: "Check again" })).toHaveFocus();
   expect(loadEvidence).toHaveBeenCalledTimes(2);
+});
+
+test("scopes a pending retry to its weather context when the cached target retries independently", async () => {
+  const user = userEvent.setup();
+  const unavailable = (skiAreaId: string) => ({
+    weather_evidence_version: "search-weather-evidence-v1" as const,
+    status: "unavailable" as const,
+    ski_area_id: skiAreaId,
+    evaluated_at: "2026-07-16T12:00:00Z",
+    cache_valid_until: "2099-07-16T12:05:00Z",
+    unavailable_reason: "historical_evidence_unavailable" as const,
+    limitations: [],
+  });
+  const tignesUnavailable = unavailable("tignes-ski-area");
+  const lesArcsUnavailable = unavailable("les-arcs-ski-area");
+  let resolveTignesRetry:
+    | ((response: SearchWeatherEvidenceResponse) => void)
+    | undefined;
+  let resolveLesArcsRetry:
+    | ((response: SearchWeatherEvidenceResponse) => void)
+    | undefined;
+  const tignesRetry = new Promise<SearchWeatherEvidenceResponse>((resolve) => {
+    resolveTignesRetry = resolve;
+  });
+  const lesArcsRetry = new Promise<SearchWeatherEvidenceResponse>((resolve) => {
+    resolveLesArcsRetry = resolve;
+  });
+  const loadEvidence = vi
+    .fn()
+    .mockResolvedValueOnce(tignesUnavailable)
+    .mockReturnValueOnce(tignesRetry)
+    .mockReturnValueOnce(lesArcsRetry);
+  writeWeatherEvidenceCache(
+    weatherEvidenceCacheKey("les-arcs-ski-area", monthIntent.constraints.travel_window),
+    lesArcsUnavailable,
+  );
+  const { rerender } = render(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={loadEvidence}
+    />,
+  );
+
+  await user.click(await screen.findByRole("button", { name: "Check again" }));
+  expect(screen.getByRole("button", { name: "Check again" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+
+  rerender(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="les-arcs-ski-area"
+      skiAreaName="Les Arcs"
+      loadEvidence={loadEvidence}
+    />,
+  );
+  const lesArcsRetryControl = await screen.findByRole("button", {
+    name: "Check again",
+  });
+  expect(lesArcsRetryControl).not.toHaveAttribute("aria-disabled");
+  expect(loadEvidence).toHaveBeenCalledTimes(2);
+
+  await user.click(lesArcsRetryControl);
+  expect(lesArcsRetryControl).toHaveAttribute("aria-disabled", "true");
+  await act(async () => {
+    resolveTignesRetry?.(tignesUnavailable);
+    await tignesRetry;
+  });
+  expect(lesArcsRetryControl).toHaveAttribute("aria-disabled", "true");
+
+  await act(async () => {
+    resolveLesArcsRetry?.(lesArcsUnavailable);
+    await lesArcsRetry;
+  });
+  await waitFor(() => {
+    expect(lesArcsRetryControl).not.toHaveAttribute("aria-disabled");
+  });
+  expect(lesArcsRetryControl).toHaveFocus();
+  expect(loadEvidence).toHaveBeenCalledTimes(3);
 });
 
 test("changes the cache context when the applied travel window changes", async () => {

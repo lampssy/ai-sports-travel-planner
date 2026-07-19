@@ -116,3 +116,59 @@ unmounted. The narrow tests passed after the scoped implementation.
 The npm commands continue to emit the existing `always-auth` configuration
 deprecation warning. It did not affect unit, typecheck, build, or Chromium
 results.
+
+---
+
+# Task 2 Review Fix Wave 3 Report
+
+## Scope
+
+Completed the single weather-context retry race fix from exact starting head
+`7dec939`. `.superdesign/` remained untracked and untouched, and no Task 3 or
+unrelated behavior was changed.
+
+## Implementation
+
+- Replaced the component-wide weather retry boolean with a retry attempt token
+  containing the weather context key, a monotonic request ID, and pending state.
+- Derived `aria-disabled`, busy presentation, focus restoration, and the
+  successful-retry reload action only from an attempt belonging to the current
+  ski-area and travel-window key.
+- Bound retry completion and effect cleanup to both context key and request ID,
+  so an aborted or late old-context request cannot clear or overwrite a newer
+  context's independent retry.
+- Added unit and Chromium coverage that caches Les Arcs evidence, starts a
+  pending Tignes retry, switches dossiers, starts an independent Les Arcs retry,
+  and releases the old result while the new retry remains pending.
+
+## TDD Evidence
+
+The focused unit regression was added before production changes and failed
+because cached Les Arcs inherited `aria-disabled="true"` from the pending Tignes
+retry. After correcting the Chromium journey's collapsed-card setup, its red run
+failed on the same inherited attribute. Both regressions passed after the
+context-and-attempt-scoped implementation.
+
+## Verification
+
+- `npm test -- --run src/api.test.ts src/App.test.tsx src/search/SearchContextRail.test.tsx src/search/RefinementCard.test.tsx src/search/SnowEvidence.test.tsx src/ui/uiPrimitives.test.tsx`: 178 passed.
+- `npx tsc -b --pretty false`: passed.
+- `npm run build`: passed; 2,397 modules transformed.
+- `npm run test:e2e -- --grep "weather retry state does not cross a cached dossier context|weather retry keeps focus while pending|failed refinement apply preserves results"`: 3 passed.
+- `git diff --check`: passed.
+
+## Review Gate
+
+- Classification: review-gated weather recovery correctness and accessibility.
+- Developer Decision Checkpoint: resolved by the binding race finding; no
+  material product or architecture choice remained open.
+- ADR: not needed for this local request-lifecycle correction.
+- Advisory review: skipped because the brief prescribed one bounded race fix;
+  self-review covered cached-context switching, abort cleanup, same-context
+  retry replacement, stale completion fencing, focus, and scoped file changes.
+
+## Concerns
+
+The verification commands continue to emit the existing npm `always-auth`
+configuration deprecation warning and Playwright's existing `NO_COLOR` warning.
+Neither affected unit, typecheck, build, or Chromium results.

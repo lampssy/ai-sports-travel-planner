@@ -1739,6 +1739,82 @@ test("weather retry keeps focus while pending and after repeated unavailability"
   expect(weatherRequests).toHaveLength(2);
 });
 
+test("weather retry state does not cross a cached dossier context", async ({
+  page,
+}) => {
+  let releaseTignesRetry: (() => void) | undefined;
+  let releaseLesArcsRetry: (() => void) | undefined;
+  const tignesRetryGate = new Promise<void>((resolve) => {
+    releaseTignesRetry = resolve;
+  });
+  const lesArcsRetryGate = new Promise<void>((resolve) => {
+    releaseLesArcsRetry = resolve;
+  });
+  const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+  await mockSearchV4Api(
+    page,
+    monthSearchResponse,
+    [],
+    [],
+    (request) => ({
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "unavailable",
+      ski_area_id: request.ski_area_id,
+      evaluated_at: "2026-07-16T12:00:00Z",
+      cache_valid_until: "2099-07-16T12:05:00Z",
+      unavailable_reason: "historical_evidence_unavailable",
+      limitations: [],
+    }),
+    weatherRequests,
+    [undefined, undefined, tignesRetryGate, lesArcsRetryGate],
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  const lesArcsCard = page.locator("article.recommendation-card").nth(1);
+  await lesArcsCard.getByRole("button", { name: /expand les arcs/i }).click();
+  await lesArcsCard.getByRole("link", {
+    name: "View dossier",
+  }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Les Arcs - Peisey Vallandry - Arc 1800",
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Check again" })).toBeVisible();
+
+  await page.getByRole("button", {
+    name: /tignes - val d'isere, rank 1/i,
+  }).click();
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
+  ).toBeVisible();
+  const retry = page.getByRole("button", { name: "Check again" });
+  await retry.click();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+
+  await page.getByRole("button", {
+    name: /les arcs - peisey vallandry, rank 2/i,
+  }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Les Arcs - Peisey Vallandry - Arc 1800",
+    }),
+  ).toBeVisible();
+  await expect(retry).not.toHaveAttribute("aria-disabled");
+  expect(weatherRequests).toHaveLength(3);
+
+  await retry.click();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  releaseTignesRetry?.();
+  await page.waitForTimeout(100);
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+
+  releaseLesArcsRetry?.();
+  await expect(retry).not.toHaveAttribute("aria-disabled");
+  await expect(retry).toBeFocused();
+  expect(weatherRequests).toHaveLength(4);
+});
+
 test("expired forecast cache refetches and replaces the selected run head", async ({
   page,
 }) => {
