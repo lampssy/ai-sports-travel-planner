@@ -1,6 +1,7 @@
 import type {
   CatalogTrustStatus,
   FactorPreferencePatch,
+  GroupPriorityPatch,
   RefinementPreview,
   SearchIntent,
   SearchV4Configuration,
@@ -76,6 +77,14 @@ const importanceLabels: Record<string, string> = {
   primary: "Top priority",
   very_high: "Highest priority",
 };
+
+export function groupPriorityLabel(priority: GroupPriorityPatch): string | null {
+  const groupLabel = groupLabels[priority.group_id];
+  const importanceLabel = importanceLabels[priority.importance];
+  return groupLabel && importanceLabel
+    ? `${groupLabel}: ${importanceLabel}`
+    : null;
+}
 
 const preferenceValueLabels: Record<string, string> = {
   "ski_day_apres:low_key": "Quiet",
@@ -211,12 +220,11 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
     });
   }
   for (const item of intent.group_priorities) {
-    const label = groupLabels[item.group_id];
-    const importanceLabel = importanceLabels[item.importance];
-    if (!label || !importanceLabel) continue;
+    const label = groupPriorityLabel(item);
+    if (!label) continue;
     chips.push({
       id: `group-${item.group_id}`,
-      label: `${label}: ${importanceLabel}`,
+      label,
       action: { kind: "group", id: item.group_id },
     });
   }

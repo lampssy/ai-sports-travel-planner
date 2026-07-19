@@ -15,12 +15,14 @@ test("disables an open drawer when loading starts but keeps close available", as
     open: true,
     filters: { ...defaultSearchFilters, location: "France" },
     preferences: [],
+    groupPriorities: [],
     objectives: [
       { factor_id: "pass_terrain_value", importance: "normal" as const },
     ],
     returnFocusRef: createRef<HTMLButtonElement>(),
     onFiltersChange,
     onPreferencesChange,
+    onGroupPrioritiesChange: vi.fn(),
     onObjectivesChange,
     onClose,
   };
@@ -68,10 +70,12 @@ test("changes only the drawer-owned pass objective", async () => {
     disabled: false,
     filters: { ...defaultSearchFilters },
     preferences: [],
+    groupPriorities: [],
     objectives,
     returnFocusRef: createRef<HTMLButtonElement>(),
     onFiltersChange,
     onPreferencesChange: vi.fn(),
+    onGroupPrioritiesChange: vi.fn(),
     onObjectivesChange,
     onClose: vi.fn(),
   };
@@ -128,10 +132,12 @@ test("shows and removes active factor and objective choices outside the defaults
         valueObjective: "pass_terrain_value",
       }}
       preferences={preferences}
+      groupPriorities={[]}
       objectives={objectives}
       returnFocusRef={createRef<HTMLButtonElement>()}
       onFiltersChange={vi.fn()}
       onPreferencesChange={onPreferencesChange}
+      onGroupPrioritiesChange={vi.fn()}
       onObjectivesChange={onObjectivesChange}
       onClose={vi.fn()}
     />,
@@ -185,10 +191,12 @@ test("renders one mode-aware control for each active feature factor", async () =
       disabled={false}
       filters={defaultSearchFilters}
       preferences={preferences}
+      groupPriorities={[]}
       objectives={[]}
       returnFocusRef={createRef<HTMLButtonElement>()}
       onFiltersChange={vi.fn()}
       onPreferencesChange={onPreferencesChange}
+      onGroupPrioritiesChange={vi.fn()}
       onObjectivesChange={vi.fn()}
       onClose={vi.fn()}
     />,
@@ -239,6 +247,7 @@ test("hides unknown factors, objectives, and raw controlled values", () => {
           importance: "high",
         },
       ]}
+      groupPriorities={[]}
       objectives={[
         { factor_id: "trip_window_snow_fit", importance: "high" },
         { factor_id: "secret_internal_objective", importance: "normal" },
@@ -246,6 +255,7 @@ test("hides unknown factors, objectives, and raw controlled values", () => {
       returnFocusRef={createRef<HTMLButtonElement>()}
       onFiltersChange={vi.fn()}
       onPreferencesChange={vi.fn()}
+      onGroupPrioritiesChange={vi.fn()}
       onObjectivesChange={vi.fn()}
       onClose={vi.fn()}
     />,

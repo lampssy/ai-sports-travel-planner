@@ -1442,6 +1442,7 @@ function App() {
       disabled={loading}
       filters={filters}
       preferences={preferences}
+      groupPriorities={groupPriorities}
       objectives={objectives}
       returnFocusRef={drawerReturnFocusRef}
       onFiltersChange={(nextFilters) => {
@@ -1449,6 +1450,9 @@ function App() {
       }}
       onPreferencesChange={(nextPreferences) => {
         if (!loading) setPreferences(nextPreferences);
+      }}
+      onGroupPrioritiesChange={(nextGroupPriorities) => {
+        if (!loading) setGroupPriorities(nextGroupPriorities);
       }}
       onObjectivesChange={(nextObjectives) => {
         if (!loading) setObjectives(nextObjectives);

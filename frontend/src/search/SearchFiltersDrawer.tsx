@@ -3,6 +3,7 @@ import { useEffect, useRef, type RefObject } from "react";
 
 import type {
   FactorPreferencePatch,
+  GroupPriorityPatch,
   SearchFilters,
   SearchObjective,
   TravelMonth,
@@ -11,6 +12,7 @@ import {
   factorPreferenceLabel,
   factorLabels,
   featureOptions,
+  groupPriorityLabel,
   monthOptions,
 } from "./searchPresentation";
 import {
@@ -43,10 +45,12 @@ export function SearchFiltersDrawer({
   disabled,
   filters,
   preferences,
+  groupPriorities,
   objectives,
   returnFocusRef,
   onFiltersChange,
   onPreferencesChange,
+  onGroupPrioritiesChange,
   onObjectivesChange,
   onClose,
 }: {
@@ -54,10 +58,12 @@ export function SearchFiltersDrawer({
   disabled: boolean;
   filters: SearchFilters;
   preferences: FactorPreferencePatch[];
+  groupPriorities: GroupPriorityPatch[];
   objectives: SearchObjective[];
   returnFocusRef: RefObject<HTMLButtonElement>;
   onFiltersChange: (filters: SearchFilters) => void;
   onPreferencesChange: (preferences: FactorPreferencePatch[]) => void;
+  onGroupPrioritiesChange: (groupPriorities: GroupPriorityPatch[]) => void;
   onObjectivesChange: (objectives: SearchObjective[]) => void;
   onClose: () => void;
 }) {
@@ -83,6 +89,10 @@ export function SearchFiltersDrawer({
   const additionalObjectives = [...objectivesByFactor.values()].filter(
     (objective) => !isPassValueObjective(objective.factor_id),
   );
+  const visibleGroupPriorities = groupPriorities.flatMap((priority) => {
+    const label = groupPriorityLabel(priority);
+    return label ? [{ priority, label }] : [];
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -408,6 +418,32 @@ export function SearchFiltersDrawer({
                     className="preference-option"
                   >
                     Optimize {factorLabels[objective.factor_id]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+
+          {visibleGroupPriorities.length ? (
+            <fieldset className="preference-fieldset">
+              <legend>Trip priorities</legend>
+              <div className="preference-options">
+                {visibleGroupPriorities.map(({ priority, label }) => (
+                  <button
+                    type="button"
+                    key={priority.group_id}
+                    aria-pressed="true"
+                    disabled={disabled}
+                    onClick={() =>
+                      onGroupPrioritiesChange(
+                        groupPriorities.filter(
+                          (item) => item.group_id !== priority.group_id,
+                        ),
+                      )
+                    }
+                    className="preference-option"
+                  >
+                    {label}
                   </button>
                 ))}
               </div>

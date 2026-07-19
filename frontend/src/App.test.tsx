@@ -514,6 +514,69 @@ test("returns drawer focus to the full preference trigger for every close action
   await waitFor(() => expect(trigger).toHaveFocus());
 });
 
+test("keeps an overflow group priority reachable and removable in the drawer", async () => {
+  const appliedIntent: SearchIntent = {
+    ...intent,
+    objectives: [
+      { factor_id: "pass_terrain_value", importance: "normal" },
+      { factor_id: "trip_window_snow_fit", importance: "high" },
+    ],
+    group_priorities: [
+      { group_id: "trip_viability", importance: "very_high" },
+    ],
+    factor_preferences: [
+      {
+        factor_id: "stay_base_access",
+        mode: "prefer",
+        values: ["near"],
+        importance: "normal",
+      },
+      {
+        factor_id: "local_pace",
+        mode: "prefer",
+        values: ["quiet"],
+        importance: "normal",
+      },
+      {
+        factor_id: "glacier_terrain",
+        mode: "prefer",
+        values: [],
+        importance: "normal",
+      },
+    ],
+  };
+  searchResponses = [
+    response({ applied_intent: appliedIntent }),
+    response({
+      baseline_fingerprint: "baseline-2",
+      applied_intent: { ...appliedIntent, group_priorities: [] },
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("button", { name: "View all 6 preferences" }),
+  );
+  const priority = screen.getByRole("button", {
+    name: "Trip viability: Highest priority",
+  });
+  expect(priority).toHaveAttribute("aria-pressed", "true");
+  await user.click(priority);
+  expect(
+    screen.queryByRole("button", { name: "Trip viability: Highest priority" }),
+  ).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Close filters" }));
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+  const latestBody = JSON.parse(String(lastRequest("/api/search")?.init?.body));
+  expect(latestBody.intent.group_priorities).toEqual([]);
+});
+
 test("renders removable parsed chips with user-language names", async () => {
   const user = userEvent.setup();
   render(<App />);

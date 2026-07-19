@@ -1041,6 +1041,14 @@ def test_default_registry_registers_safe_question_phrases_for_every_topic() -> N
     ) == sum(len(topic.question_phrases) for topic in presentation.topics)
 
 
+def test_wider_area_question_does_not_capture_an_extra_pass_decision() -> None:
+    presentation = load_refinement_presentation_policy()
+    topic = presentation.topic_by_id["terrain_potential_scale"]
+
+    assert topic.fallback_question == "How important is access to a wider ski area?"
+    assert "pass" not in topic.fallback_question.casefold()
+
+
 def test_default_registry_visible_copy_rejects_blocked_audience_terms() -> None:
     presentation = load_refinement_presentation_policy()
     visible_copy = [
