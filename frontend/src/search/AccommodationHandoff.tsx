@@ -44,9 +44,6 @@ export function AccommodationHandoff({
           <span className="accommodation-handoff__trust">
             {estimate ? lodgingTrustLabel(estimate.trust_status) : "Unavailable"}
           </span>
-          {estimate?.provenance ? (
-            <small>{estimate.provenance}</small>
-          ) : null}
           {access ? (
             <p className="accommodation-handoff__access">
               <Footprints aria-hidden="true" size={17} />

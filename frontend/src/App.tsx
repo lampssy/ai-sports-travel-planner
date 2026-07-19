@@ -240,6 +240,9 @@ function App() {
   const [currentTrip, setCurrentTrip] = useState<CurrentTrip | null>(null);
   const [currentTripSummary, setCurrentTripSummary] =
     useState<CurrentTripSummary | null>(null);
+  const [currentTripClearError, setCurrentTripClearError] = useState<string | null>(
+    null,
+  );
   const adjustFiltersRef = useRef<HTMLButtonElement>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const refinementControlRef = useRef<HTMLElement>(null);
@@ -1131,6 +1134,20 @@ function App() {
     }
   }
 
+  async function handleClearCurrentTrip() {
+    setCurrentTripClearError(null);
+    try {
+      await clearCurrentTrip();
+      setCurrentTrip(null);
+    } catch (caught) {
+      setCurrentTripClearError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to remove current trip. Check your connection and try again.",
+      );
+    }
+  }
+
   const goToSearch = () => navigate("/");
   const goToCurrentTrip = () => navigate("/current-trip");
   const switchDossier = (skiRegionId: string, candidateId: string) => {
@@ -1164,9 +1181,10 @@ function App() {
         <CurrentTripView
           trip={currentTrip}
           summary={currentTripSummary}
+          clearError={currentTripClearError}
           onBack={goToSearch}
           onClear={() => {
-            void clearCurrentTrip().then(() => setCurrentTrip(null));
+            void handleClearCurrentTrip();
           }}
         />
       </AppShell>

@@ -59,11 +59,13 @@ export function AppShell({
 export function CurrentTripView({
   trip,
   summary,
+  clearError,
   onBack,
   onClear,
 }: {
   trip: CurrentTrip | null;
   summary: CurrentTripSummary | null;
+  clearError: string | null;
   onBack: () => void;
   onClear: () => void;
 }) {
@@ -88,6 +90,11 @@ export function CurrentTripView({
                 <p>{summary.current_conditions.weather_summary}</p>
                 <p className="muted-copy">{summary.delta.summary}</p>
               </div>
+            ) : null}
+            {clearError ? (
+              <p className="error-copy" role="alert">
+                {clearError}
+              </p>
             ) : null}
             <button type="button" onClick={onClear} className="danger-button">
               Clear current trip

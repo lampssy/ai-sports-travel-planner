@@ -1,7 +1,10 @@
+import { createElement } from "react";
+import { render } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 
 import type { SearchV4Configuration } from "../types";
 import { evidenceQualityCopy } from "../ui/snowcastCopy";
+import { AccommodationHandoff } from "./AccommodationHandoff";
 import {
   buildCandidateNarrative,
   decisionEvidencePresentation,
@@ -130,6 +133,40 @@ describe("content language contracts", () => {
       "Estimated from available data",
       "Source confirmation needed",
     ]);
+  });
+
+  test("keeps lodging provenance in technical details, not primary handoff copy", () => {
+    const candidate: SearchV4Configuration = {
+      ...configuration(),
+      lodging_estimate: {
+        mode: "lodging_nightly",
+        minimum: 180,
+        maximum: 255,
+        currency: "EUR",
+        trust_status: "estimated",
+        provenance: "Catalog lodging range; estimate-aware constraint only.",
+      },
+    };
+    const view = render(
+      createElement(AccommodationHandoff, { configuration: candidate }),
+    );
+
+    expect(view.getByText("Estimated from available data")).toBeVisible();
+    expect(view.container.textContent).not.toMatch(
+      /catalog lodging range|estimate-aware constraint/i,
+    );
+    expect(
+      decisionEvidencePresentation(candidate).technicalDetails,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "lodging-estimate",
+          label: "Lodging estimate",
+          provenance: "Catalog lodging range; estimate-aware constraint only.",
+          evidenceLabel: "Stay-base estimate",
+        }),
+      ]),
+    );
   });
 
   test("keeps estimates visible while giving terrain and lift access plain labels", () => {

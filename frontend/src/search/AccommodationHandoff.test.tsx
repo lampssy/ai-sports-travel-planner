@@ -49,7 +49,7 @@ function configuration(
       maximum: 255,
       currency: "EUR",
       trust_status: trustStatus,
-      provenance: "Catalog stay-base estimate.",
+      provenance: "Catalog lodging range; estimate-aware constraint only.",
     },
     ranking_status: "ranked",
     fit_score: 82,
@@ -66,6 +66,9 @@ test("renders an honest stay-base estimate and selected-base handoff URL", () =>
   expect(screen.getByRole("heading", { name: "Find a stay in Le Lac" })).toBeVisible();
   expect(screen.getByText("EUR 180-255/night")).toBeVisible();
   expect(screen.getByText("Estimated from available data")).toBeVisible();
+  expect(document.body.textContent).not.toMatch(
+    /catalog lodging range|estimate-aware constraint/i,
+  );
   expect(screen.getByText(/toviere.*250 m walk/i)).toBeVisible();
   const link = screen.getByRole("link", { name: "Open accommodation search" });
   expect(link).toHaveAttribute(

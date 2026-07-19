@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import App from "./App";
 import type {
+  CurrentTrip,
   SearchIntent,
   RefinementProposal,
   SearchResponse,
@@ -517,7 +518,7 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeInTheDocument();
   expect(screen.getByText("82.4")).toBeInTheDocument();
-  expect(screen.getByText(/300 km pass-accessible terrain/i)).toBeInTheDocument();
+  expect(screen.getAllByText("300 km covered by this pass")).toHaveLength(2);
   expect(screen.getByText(/estimated EUR 180-255\/night/i)).toBeInTheDocument();
   const searchRequest = requests.find((item) => item.url === "/api/search");
   expect(searchRequest?.init?.method).toBe("POST");
@@ -1311,6 +1312,66 @@ test("opens the selected candidate dossier without rerunning search and saves it
   expect(JSON.parse(String(saveRequest?.init?.body)).lift_pass_product_id).toBe(
     "local-pass",
   );
+});
+
+test("keeps the current trip and handles a failed clear action", async () => {
+  const currentTrip: CurrentTrip = {
+    ski_region_id: "tignes-val-disere",
+    ski_region_name: "Tignes - Val d'Isere",
+    stay_destination_id: "tignes",
+    stay_destination_name: "Tignes",
+    stay_base_id: "tignes-le-lac",
+    stay_base_name: "Le Lac",
+    focus_ski_area_id: "tignes-ski-area",
+    focus_ski_area_name: "Tignes",
+    lift_pass_product_id: "tignes-pass",
+    lift_pass_product_name: "Tignes - Val d'Isere pass",
+    travel_month: 3,
+    booking_status: "not_booked_yet",
+    created_at: "2026-07-15T00:00:00Z",
+    updated_at: "2026-07-15T00:00:00Z",
+    last_checked_at: null,
+  };
+  window.history.replaceState(null, "", "/current-trip");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/current-trip" && (!init?.method || init.method === "GET")) {
+        return new Response(JSON.stringify({ trip: currentTrip }), { status: 200 });
+      }
+      if (url === "/api/current-trip" && init?.method === "DELETE") {
+        throw new TypeError("Failed to fetch");
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const unhandledRejection = vi.fn();
+  window.addEventListener("unhandledrejection", unhandledRejection);
+  const user = userEvent.setup();
+
+  try {
+    render(<App />);
+    expect(
+      await screen.findByRole("heading", { name: "Tignes - Val d'Isere" }),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Clear current trip" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Unable to remove current trip. Check your connection and try again.",
+    );
+    expect(
+      screen.getByRole("heading", { name: "Tignes - Val d'Isere" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Clear current trip" }),
+    ).toBeVisible();
+    await act(async () => Promise.resolve());
+    expect(unhandledRejection).not.toHaveBeenCalled();
+  } finally {
+    window.removeEventListener("unhandledrejection", unhandledRejection);
+  }
 });
 
 test("restores result state and scroll after returning from a dossier", async () => {
