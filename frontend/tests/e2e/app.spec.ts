@@ -1129,6 +1129,10 @@ test("a delayed rerank blocks chip edits and drawer entry", async ({ page }) => 
 test("failed refinement apply preserves results and the selected option", async ({
   page,
 }) => {
+  let releaseRerank: (() => void) | undefined;
+  const rerankGate = new Promise<void>((resolve) => {
+    releaseRerank = resolve;
+  });
   await mockSearchV4Api(
     page,
     [
@@ -1136,12 +1140,19 @@ test("failed refinement apply preserves results and the selected option", async 
       { status: 503, detail: "Reranking is temporarily unavailable." },
     ],
     [],
+    [undefined, rerankGate],
   );
   await page.goto("/");
   await submitHomepageBrief(page, "March in France");
   const option = page.getByRole("radio", { name: /snow reliability/i });
   await option.click();
   await page.getByRole("button", { name: "Apply and rerank" }).click();
+
+  await expect(option).toHaveAttribute("aria-disabled", "true");
+  const optionLabel = option.locator("..");
+  await expect(optionLabel).toHaveCSS("cursor", "wait");
+  await expect(optionLabel).toHaveCSS("opacity", "0.58");
+  releaseRerank?.();
 
   await expect(
     page.getByRole("heading", { name: /tignes - val d'isere/i }),
@@ -1670,6 +1681,61 @@ test("transport failure is not cached and retry announces recovered evidence", a
   await expect(
     page.getByRole("button", { name: "Reload snow evidence" }),
   ).toBeFocused();
+  expect(weatherRequests).toHaveLength(2);
+});
+
+test("weather retry keeps focus while pending and after repeated unavailability", async ({
+  page,
+}) => {
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>((resolve) => {
+    releaseRetry = resolve;
+  });
+  const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+  await mockSearchV4Api(
+    page,
+    monthSearchResponse,
+    [],
+    [],
+    (request) => ({
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "unavailable",
+      ski_area_id: request.ski_area_id,
+      evaluated_at: "2026-07-16T12:00:00Z",
+      cache_valid_until: "2099-07-16T12:05:00Z",
+      unavailable_reason: "historical_evidence_unavailable",
+      limitations: [],
+    }),
+    weatherRequests,
+    [undefined, retryGate],
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View dossier",
+  }).click();
+
+  const retry = page.getByRole("button", { name: "Check again" });
+  await expect(retry).toBeVisible();
+  await retry.focus();
+  await retry.click();
+
+  await expect(retry).toBeFocused();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).not.toHaveAttribute("disabled");
+  await expect(page.getByRole("alert")).toHaveAttribute("aria-busy", "true");
+  await retry.hover();
+  await expect(retry).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(retry).toHaveCSS("color", "rgb(2, 26, 53)");
+  await page.mouse.down();
+  await expect(retry).toHaveCSS("transform", "none");
+  await page.mouse.up();
+
+  releaseRetry?.();
+  await expect(page.getByRole("heading", { name: "Snow evidence unavailable" })).toBeVisible();
+  await expect(retry).toBeFocused();
+  await expect(page.getByRole("button", { name: "Check again" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Reload snow evidence" })).toHaveCount(0);
   expect(weatherRequests).toHaveLength(2);
 });
 

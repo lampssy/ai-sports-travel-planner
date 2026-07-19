@@ -404,19 +404,32 @@ export function SnowEvidence({
     contextKey: key,
   });
   const [retryRequest, setRetryRequest] = useState(0);
+  const [retrying, setRetrying] = useState(false);
   const requestIdentity = useRef(0);
+  const retryingRef = useRef(false);
+  const retryButtonRef = useRef<HTMLButtonElement>(null);
   const reloadButtonRef = useRef<HTMLButtonElement>(null);
   const intentRef = useRef(intent);
   intentRef.current = intent;
   const visibleState: EvidenceState =
     state.contextKey === key ? state : { kind: "loading", contextKey: key };
-  const retrying = retryRequest > 0 && visibleState.kind === "loading";
+
+  const retryEvidence = (clearCache: boolean) => {
+    if (retryingRef.current) return;
+    if (clearCache) deleteWeatherEvidenceCache(key);
+    retryingRef.current = true;
+    setRetrying(true);
+    setRetryRequest((current) => current + 1);
+  };
 
   useEffect(() => {
-    if (retryRequest > 0 && visibleState.kind === "ready") {
+    if (retryRequest === 0 || retrying || visibleState.kind !== "ready") return;
+    if (visibleState.response.status === "available") {
       reloadButtonRef.current?.focus({ preventScroll: true });
+    } else {
+      retryButtonRef.current?.focus({ preventScroll: true });
     }
-  }, [retryRequest, visibleState.kind]);
+  }, [retryRequest, retrying, visibleState]);
 
   useEffect(() => {
     const cached = readWeatherEvidenceCache(key);
@@ -427,7 +440,9 @@ export function SnowEvidence({
 
     const controller = new AbortController();
     const identity = ++requestIdentity.current;
-    setState({ kind: "loading", contextKey: key });
+    if (!(retryingRef.current && state.contextKey === key)) {
+      setState({ kind: "loading", contextKey: key });
+    }
     void loadEvidence(
       { intent: intentRef.current, ski_area_id: skiAreaId },
       controller.signal,
@@ -441,10 +456,14 @@ export function SnowEvidence({
           return;
         }
         writeWeatherEvidenceCache(key, response);
+        retryingRef.current = false;
+        setRetrying(false);
         setState({ kind: "ready", contextKey: key, response });
       })
       .catch((caught) => {
         if (controller.signal.aborted || requestIdentity.current !== identity) return;
+        retryingRef.current = false;
+        setRetrying(false);
         setState({
           kind: "error",
           contextKey: key,
@@ -482,7 +501,9 @@ export function SnowEvidence({
           title="Snow evidence could not be loaded"
           message={visibleState.message}
           retryLabel="Retry snow evidence"
-          onRetry={() => setRetryRequest((current) => current + 1)}
+          retrying={retrying}
+          retryControlRef={retryButtonRef}
+          onRetry={() => retryEvidence(false)}
           className="snow-evidence-state"
         />
       ) : null}
@@ -492,10 +513,9 @@ export function SnowEvidence({
           state="error"
           title="Snow evidence unavailable"
           retryLabel="Check again"
-          onRetry={() => {
-            deleteWeatherEvidenceCache(key);
-            setRetryRequest((current) => current + 1);
-          }}
+          retrying={retrying}
+          retryControlRef={retryButtonRef}
+          onRetry={() => retryEvidence(true)}
           className="snow-evidence-state"
           message={(
             <>
@@ -530,9 +550,7 @@ export function SnowEvidence({
           className="snow-evidence__retry"
           aria-disabled={retrying}
           onClick={() => {
-            if (retrying) return;
-            if (visibleState.kind === "ready") deleteWeatherEvidenceCache(key);
-            setRetryRequest((current) => current + 1);
+            retryEvidence(true);
           }}
         >
           <RefreshCw aria-hidden="true" size={17} />

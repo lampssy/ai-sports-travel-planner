@@ -546,7 +546,14 @@ test("keeps one recovery action after weather remains unavailable on retry", asy
     unavailable_reason: "historical_evidence_unavailable" as const,
     limitations: [],
   };
-  const loadEvidence = vi.fn().mockResolvedValue(unavailable);
+  let resolveRetry: ((response: typeof unavailable) => void) | undefined;
+  const retryResponse = new Promise<typeof unavailable>((resolve) => {
+    resolveRetry = resolve;
+  });
+  const loadEvidence = vi
+    .fn()
+    .mockResolvedValueOnce(unavailable)
+    .mockReturnValueOnce(retryResponse);
   render(
     <SnowEvidence
       intent={monthIntent}
@@ -557,11 +564,19 @@ test("keeps one recovery action after weather remains unavailable on retry", asy
   );
 
   const retry = await screen.findByRole("button", { name: "Check again" });
+  retry.focus();
   await user.click(retry);
 
+  expect(retry).toHaveFocus();
+  expect(retry).toHaveAttribute("aria-disabled", "true");
+  expect(retry).not.toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveAttribute("aria-busy", "true");
+
+  resolveRetry?.(unavailable);
   expect(await screen.findByRole("heading", { name: "Snow evidence unavailable" })).toBeVisible();
   expect(screen.getAllByRole("button", { name: /snow evidence|check again/i })).toHaveLength(1);
   expect(screen.queryByRole("button", { name: "Reload snow evidence" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Check again" })).toHaveFocus();
   expect(loadEvidence).toHaveBeenCalledTimes(2);
 });
 

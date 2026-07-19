@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import App from "./App";
+import { CurrentTripView } from "./ui/AppShell";
 import type {
   CurrentTrip,
   CurrentTripSummary,
@@ -1766,6 +1767,72 @@ test("shows a dossier save failure beside the selected Trip details action", asy
   expect(within(verdict as HTMLElement).getByRole("alert")).toHaveTextContent(
     "Your trip could not be saved. Try again.",
   );
+});
+
+test("announces every successful saved-trip recovery in the mounted view", async () => {
+  const view = (tripRecoveryRequest: number) => (
+    <CurrentTripView
+      trip={savedTrip}
+      summary={savedTripSummary}
+      tripLoadError={null}
+      summaryLoadError={null}
+      tripLoading={false}
+      summaryLoading={false}
+      tripRecoveryRequest={tripRecoveryRequest}
+      summaryRecoveryRequest={0}
+      clearError={null}
+      onBack={vi.fn()}
+      onRetryTripLoad={vi.fn()}
+      onRetrySummaryLoad={vi.fn()}
+      onClear={vi.fn()}
+    />
+  );
+  const { rerender } = render(view(0));
+
+  rerender(view(1));
+  const firstAnnouncement = await screen.findByRole("status");
+  expect(firstAnnouncement).toHaveTextContent("Saved trip loaded.");
+  expect(screen.getByRole("heading", { name: "Tignes - Val d'Isere" })).toHaveFocus();
+
+  rerender(view(2));
+  await waitFor(() => {
+    expect(screen.getByRole("status")).not.toBe(firstAnnouncement);
+  });
+  expect(screen.getAllByRole("status")).toHaveLength(1);
+  expect(screen.getByRole("heading", { name: "Tignes - Val d'Isere" })).toHaveFocus();
+});
+
+test("announces every successful conditions recovery in the mounted view", async () => {
+  const view = (summaryRecoveryRequest: number) => (
+    <CurrentTripView
+      trip={savedTrip}
+      summary={savedTripSummary}
+      tripLoadError={null}
+      summaryLoadError={null}
+      tripLoading={false}
+      summaryLoading={false}
+      tripRecoveryRequest={0}
+      summaryRecoveryRequest={summaryRecoveryRequest}
+      clearError={null}
+      onBack={vi.fn()}
+      onRetryTripLoad={vi.fn()}
+      onRetrySummaryLoad={vi.fn()}
+      onClear={vi.fn()}
+    />
+  );
+  const { rerender } = render(view(0));
+
+  rerender(view(1));
+  const firstAnnouncement = await screen.findByRole("status");
+  expect(firstAnnouncement).toHaveTextContent("Current conditions updated.");
+  expect(screen.getByRole("region", { name: "Current conditions" })).toHaveFocus();
+
+  rerender(view(2));
+  await waitFor(() => {
+    expect(screen.getByRole("status")).not.toBe(firstAnnouncement);
+  });
+  expect(screen.getAllByRole("status")).toHaveLength(1);
+  expect(screen.getByRole("region", { name: "Current conditions" })).toHaveFocus();
 });
 
 test("shows and retries a failed saved-trip load", async () => {

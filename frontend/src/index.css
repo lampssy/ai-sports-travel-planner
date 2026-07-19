@@ -132,7 +132,7 @@ textarea:focus-visible,
     transform 140ms ease;
 }
 
-.snowcast-action:not(:disabled):active {
+.snowcast-action:not(:disabled):not([aria-disabled="true"]):active {
   transform: translateY(1px);
 }
 
@@ -157,7 +157,7 @@ textarea:focus-visible,
   background: var(--alpine-blue);
 }
 
-.snowcast-action--primary:not(:disabled):hover {
+.snowcast-action--primary:not(:disabled):not([aria-disabled="true"]):hover {
   background: var(--alpine-blue-strong);
 }
 
@@ -167,8 +167,8 @@ textarea:focus-visible,
   background: var(--white);
 }
 
-.snowcast-action--secondary:not(:disabled):hover,
-.snowcast-action--ghost:not(:disabled):hover {
+.snowcast-action--secondary:not(:disabled):not([aria-disabled="true"]):hover,
+.snowcast-action--ghost:not(:disabled):not([aria-disabled="true"]):hover {
   border-color: var(--alpine-blue);
   color: var(--alpine-blue);
   background: var(--ice);
@@ -184,7 +184,7 @@ textarea:focus-visible,
   background: var(--danger);
 }
 
-.snowcast-action--danger:not(:disabled):hover {
+.snowcast-action--danger:not(:disabled):not([aria-disabled="true"]):hover {
   background: var(--state-error-strong);
 }
 
@@ -1706,6 +1706,16 @@ textarea:focus-visible,
 .refinement-options label:has(input:checked) {
   border-color: var(--alpenglow);
   background: #fff8fb;
+}
+
+.refinement-options label:has(input[aria-disabled="true"]) {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.refinement-options label:has(input[aria-disabled="true"]) input {
+  cursor: wait;
+  opacity: 1;
 }
 
 .refinement-options input {

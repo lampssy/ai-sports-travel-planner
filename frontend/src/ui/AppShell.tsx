@@ -90,8 +90,12 @@ export function CurrentTripView({
   const conditionsRef = useRef<HTMLDivElement>(null);
   const handledTripRecoveryRef = useRef(tripRecoveryRequest);
   const handledSummaryRecoveryRef = useRef(summaryRecoveryRequest);
-  const [tripRecovered, setTripRecovered] = useState(false);
-  const [summaryRecovered, setSummaryRecovered] = useState(false);
+  const [tripAnnouncementRequest, setTripAnnouncementRequest] = useState<
+    number | null
+  >(null);
+  const [summaryAnnouncementRequest, setSummaryAnnouncementRequest] = useState<
+    number | null
+  >(null);
 
   useEffect(() => {
     if (
@@ -103,7 +107,7 @@ export function CurrentTripView({
       return;
     }
     handledTripRecoveryRef.current = tripRecoveryRequest;
-    setTripRecovered(true);
+    setTripAnnouncementRequest(tripRecoveryRequest);
     tripHeadingRef.current?.focus({ preventScroll: true });
   }, [trip, tripLoadError, tripLoading, tripRecoveryRequest]);
 
@@ -117,7 +121,7 @@ export function CurrentTripView({
       return;
     }
     handledSummaryRecoveryRef.current = summaryRecoveryRequest;
-    setSummaryRecovered(true);
+    setSummaryAnnouncementRequest(summaryRecoveryRequest);
     conditionsRef.current?.focus({ preventScroll: true });
   }, [summary, summaryLoadError, summaryLoading, summaryRecoveryRequest]);
 
@@ -129,13 +133,25 @@ export function CurrentTripView({
       </button>
       <section className="current-trip-panel">
         <p className="eyebrow">Trip companion</p>
-        {tripRecovered ? (
-          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {tripAnnouncementRequest !== null ? (
+          <p
+            key={`trip-recovery-${tripAnnouncementRequest}`}
+            className="sr-only"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             Saved trip loaded.
           </p>
         ) : null}
-        {summaryRecovered ? (
-          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {summaryAnnouncementRequest !== null ? (
+          <p
+            key={`summary-recovery-${summaryAnnouncementRequest}`}
+            className="sr-only"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             Current conditions updated.
           </p>
         ) : null}

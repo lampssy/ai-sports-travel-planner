@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 
 import { Action } from "./Action";
 
@@ -11,6 +11,7 @@ export function AsyncState({
   onRetry,
   retryLabel = "Try again",
   retrying = false,
+  retryControlRef,
   className,
 }: {
   state: AsyncStateKind;
@@ -19,6 +20,7 @@ export function AsyncState({
   onRetry?: () => void;
   retryLabel?: string;
   retrying?: boolean;
+  retryControlRef?: Ref<HTMLButtonElement>;
   className?: string;
 }) {
   const isError = state === "error";
@@ -39,6 +41,7 @@ export function AsyncState({
       </div>
       {isError && onRetry ? (
         <Action
+          ref={retryControlRef}
           variant="secondary"
           size="sm"
           aria-disabled={retrying || undefined}
