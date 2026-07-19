@@ -83,6 +83,7 @@ code's meaning; tests own route/status coverage.
 | `current_trip_not_found` | 404 | Current-trip summary or mark-checked with no saved trip | Return to search or the current-trip empty state |
 | `trip_option_not_found` | 404 | Invalid accommodation handoff | Return to trip details |
 | `not_found` | 404 | Unknown customer API route | Return to the previous product surface |
+| `method_not_allowed` | 405 | Unsupported method on a customer API route | Use the supported action |
 | `request_failed` | 500 | Unexpected customer-route failure | Preserve usable state and retry |
 
 `Retry-After` remains mandatory for `refinement_rate_limited`. Codes do not
@@ -90,17 +91,21 @@ change status or meaning without a new compatibility decision and ADR update.
 
 ## Handler Boundary
 
-The JSON contract covers `/api/search*`, `/api/parse-query`,
-`/api/auth/google/sign-in`, `/api/current-trip*`, and
-`/api/devices/register`. A typed public exception and application-level handlers
-normalize explicit domain failures, dependency/auth failures,
+The JSON contract covers every non-operational `/api/*` route except the
+accommodation browser-navigation boundary. This includes unknown routes, which
+return `not_found`, and unsupported methods on known routes, which return
+`method_not_allowed` while retaining framework headers such as `Allow`. A typed
+public exception and application-level handlers normalize explicit domain
+failures, dependency/auth failures,
 `RequestValidationError` including malformed JSON, remaining `HTTPException`
 paths, and unexpected exceptions.
 
-`/api/outbound/accommodation/*` is intentionally outside the JSON boundary
-because it is opened through direct browser navigation. Valid requests retain
-the provider redirect. Invalid or stale requests return branded HTML with a
-return-to-trip-details link, so the browser never exposes an API payload.
+`/api/outbound/accommodation` and all descendant paths are intentionally outside
+the JSON boundary because they are opened through direct browser navigation.
+Valid requests retain the provider redirect. Missing or extra path segments,
+unsupported methods, and invalid or stale requests return branded HTML with the
+original status and headers plus a return-to-trip-details link, so the browser
+never exposes an API payload.
 
 Operational `/api/healthz`, `/api/readyz`, and `/api/search-readiness` retain
 their diagnostic contracts and are not consumed by customer clients. Public

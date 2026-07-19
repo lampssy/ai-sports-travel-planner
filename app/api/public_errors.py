@@ -30,6 +30,7 @@ class PublicErrorCode(StrEnum):
     CURRENT_TRIP_NOT_FOUND = "current_trip_not_found"
     TRIP_OPTION_NOT_FOUND = "trip_option_not_found"
     NOT_FOUND = "not_found"
+    METHOD_NOT_ALLOWED = "method_not_allowed"
     REQUEST_FAILED = "request_failed"
 
 
@@ -46,6 +47,7 @@ _STATUS_BY_CODE: dict[PublicErrorCode, int] = {
     PublicErrorCode.CURRENT_TRIP_NOT_FOUND: 404,
     PublicErrorCode.TRIP_OPTION_NOT_FOUND: 404,
     PublicErrorCode.NOT_FOUND: 404,
+    PublicErrorCode.METHOD_NOT_ALLOWED: 405,
     PublicErrorCode.REQUEST_FAILED: 500,
 }
 
@@ -54,14 +56,7 @@ _OPERATIONAL_PATHS = {
     "/api/readyz",
     "/api/search-readiness",
 }
-_CUSTOMER_PATH_ROOTS = (
-    "/api/search",
-    "/api/parse-query",
-    "/api/auth/google/sign-in",
-    "/api/current-trip",
-    "/api/devices/register",
-)
-_ACCOMMODATION_PATH_ROOT = "/api/outbound/accommodation/"
+_ACCOMMODATION_PATH_ROOT = "/api/outbound/accommodation"
 
 
 class PublicError(BaseModel):
@@ -120,15 +115,17 @@ def public_error_responses(
 
 
 def is_customer_api_path(path: str) -> bool:
-    if path in _OPERATIONAL_PATHS:
-        return False
-    return any(
-        path == root or path.startswith(f"{root}/") for root in _CUSTOMER_PATH_ROOTS
+    return (
+        path.startswith("/api/")
+        and path not in _OPERATIONAL_PATHS
+        and not is_accommodation_path(path)
     )
 
 
 def is_accommodation_path(path: str) -> bool:
-    return path.startswith(_ACCOMMODATION_PATH_ROOT)
+    return path == _ACCOMMODATION_PATH_ROOT or path.startswith(
+        f"{_ACCOMMODATION_PATH_ROOT}/"
+    )
 
 
 def install_public_error_handlers(app: FastAPI) -> None:
@@ -146,6 +143,7 @@ def branded_html_response(
     explanation: str,
     return_href: str,
     return_label: str,
+    headers: Mapping[str, str] | None = None,
 ) -> HTMLResponse:
     safe_title = escape(title)
     safe_heading = escape(heading)
@@ -154,6 +152,7 @@ def branded_html_response(
     safe_return_label = escape(return_label)
     return HTMLResponse(
         status_code=status_code,
+        headers=headers,
         content=f"""<!doctype html>
 <html lang="en">
   <head>
@@ -205,6 +204,7 @@ def accommodation_recovery_response(
     request: Request,
     *,
     status_code: int,
+    headers: Mapping[str, str] | None = None,
 ) -> HTMLResponse:
     return_href = _same_origin_trip_details_href(request)
     return branded_html_response(
@@ -217,6 +217,7 @@ def accommodation_recovery_response(
         ),
         return_href=return_href or "/",
         return_label="Return to trip details" if return_href else "Return to Snowcast",
+        headers=headers,
     )
 
 
@@ -231,16 +232,25 @@ async def _validation_error_handler(
     request: Request,
     error: RequestValidationError,
 ):
-    if is_customer_api_path(request.url.path):
-        return public_error_response(PublicErrorCode.INVALID_REQUEST)
     if is_accommodation_path(request.url.path):
         return accommodation_recovery_response(request, status_code=422)
+    if is_customer_api_path(request.url.path):
+        return public_error_response(PublicErrorCode.INVALID_REQUEST)
     return await request_validation_exception_handler(request, error)
 
 
 async def _http_error_handler(request: Request, error: StarletteHTTPException):
+    if is_accommodation_path(request.url.path):
+        return accommodation_recovery_response(
+            request,
+            status_code=error.status_code,
+            headers=error.headers,
+        )
     if is_customer_api_path(request.url.path):
-        return public_error_response(_residual_http_error_code(error.status_code))
+        return public_error_response(
+            _residual_http_error_code(error.status_code),
+            headers=error.headers,
+        )
     return await http_exception_handler(request, error)
 
 
@@ -254,6 +264,7 @@ def _residual_http_error_code(status_code: int) -> PublicErrorCode:
     return {
         401: PublicErrorCode.AUTHENTICATION_REQUIRED,
         404: PublicErrorCode.NOT_FOUND,
+        405: PublicErrorCode.METHOD_NOT_ALLOWED,
         422: PublicErrorCode.INVALID_REQUEST,
         429: PublicErrorCode.REFINEMENT_RATE_LIMITED,
         500: PublicErrorCode.REQUEST_FAILED,

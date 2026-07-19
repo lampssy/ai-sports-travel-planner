@@ -83,8 +83,12 @@ Testing Library, Recharts, Playwright, Flutter 3.41, Dart 3.11.
   statuses and `Retry-After`.
 - Normalize malformed JSON, request validation, residual HTTP exceptions, and
   unexpected customer failures without changing operational diagnostics.
-- Return branded HTML for unknown public destinations and invalid accommodation
-  handoffs. Valid accommodation behavior remains a `307` redirect.
+  Unsupported customer-route methods retain HTTP 405 and `Allow` while using
+  the registered `method_not_allowed` code. Unknown non-operational `/api/*`
+  routes use the registered `not_found` code.
+- Return branded HTML for unknown public destinations and all malformed
+  accommodation handoff routes, preserving their original statuses and headers.
+  Valid accommodation behavior remains a `307` redirect.
 - Declare the public envelope in OpenAPI for covered endpoints.
 
 - [ ] Add failing tests for every registry status/code pair, malformed JSON,

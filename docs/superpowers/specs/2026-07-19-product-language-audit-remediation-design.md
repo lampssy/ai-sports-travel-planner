@@ -151,19 +151,22 @@ Out of scope:
 - Backend, web, and Flutter change atomically. There are no deployed users and
   no legacy error-body compatibility requirements.
 - Existing HTTP statuses remain unchanged. Each public code has exactly one
-  status; several codes may share a status. ADR 0017 owns the initial registry.
+  status; several codes may share a status. Unsupported methods use
+  `method_not_allowed` with HTTP 405 and retain headers such as `Allow`. ADR 0017
+  owns the initial registry.
 - A typed public exception plus application handlers cover explicit domain
   errors, dependency/auth failures, FastAPI request validation and malformed
   JSON, remaining HTTP exceptions, and unexpected failures for customer routes.
-- JSON customer routes are `/api/search*`, `/api/parse-query`,
-  `/api/auth/google/sign-in`, `/api/current-trip*`, and
-  `/api/devices/register`. Operational `/api/healthz`, `/api/readyz`, and
-  `/api/search-readiness` retain their diagnostic contracts and are not
-  consumed by customer clients.
-- `/api/outbound/accommodation/*` remains a direct browser-navigation boundary:
-  valid requests return the existing provider redirect; invalid or stale
-  requests return a branded HTML recovery page with a main heading and
-  return-to-trip-details link. It never displays JSON to the browser.
+- The JSON contract covers every non-operational `/api/*` route except the
+  accommodation browser-navigation boundary. Unknown routes return the bounded
+  `not_found` envelope. Operational `/api/healthz`, `/api/readyz`, and
+  `/api/search-readiness` retain their diagnostic contracts and are not consumed
+  by customer clients.
+- `/api/outbound/accommodation` and all descendant paths remain a direct
+  browser-navigation boundary: valid requests return the existing provider
+  redirect; missing or extra path segments, unsupported methods, and invalid or
+  stale requests return a branded HTML recovery page while preserving the
+  original status and headers. It never displays JSON to the browser.
 - Web and Flutter parse only the code. Unknown, absent, malformed, non-JSON,
   transport, and decoding failures use an operation-specific safe fallback.
 - Success response schemas and internal enum values remain unchanged.

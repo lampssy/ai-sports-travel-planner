@@ -754,6 +754,46 @@ def test_outbound_accommodation_redirect_rejects_invalid_access_pair() -> None:
     assert "Return to Snowcast" in response.text
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/outbound/accommodation",
+        "/api/outbound/accommodation/tignes/extra",
+    ],
+)
+def test_outbound_accommodation_routing_failures_return_branded_html(
+    path: str,
+) -> None:
+    response = client.get(path, follow_redirects=False)
+
+    assert response.status_code == 404
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>Trip option unavailable | Snowcast</title>" in response.text
+    assert "<main" in response.text
+    assert "Return to Snowcast" in response.text
+    assert '"detail"' not in response.text
+
+
+def test_outbound_accommodation_wrong_method_preserves_html_status_and_headers() -> (
+    None
+):
+    response = client.post(
+        "/api/outbound/accommodation/tignes",
+        params={
+            "stay_base_id": "tignes-le-lac",
+            "focus_ski_area_id": "tignes-ski-area",
+            "source_surface": "selected_result_details",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 405
+    assert response.headers["Allow"] == "GET"
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>Trip option unavailable | Snowcast</title>" in response.text
+    assert '"detail"' not in response.text
+
+
 def test_google_sign_in_creates_session_and_reuses_user(monkeypatch) -> None:
     _install_google_verifier(
         monkeypatch,
@@ -1519,6 +1559,14 @@ def test_search_readiness_keeps_operational_diagnostics(monkeypatch) -> None:
     assert response.json()["detail"]["error"] == "RuntimeError"
 
 
+def test_operational_wrong_method_keeps_framework_diagnostics() -> None:
+    response = client.post("/api/healthz")
+
+    assert response.status_code == 405
+    assert response.headers["Allow"] == "GET"
+    assert response.json() == {"detail": "Method Not Allowed"}
+
+
 def test_unknown_customer_api_route_uses_bounded_public_error(tmp_path) -> None:
     dist_dir = tmp_path / "dist"
     dist_dir.mkdir()
@@ -1526,7 +1574,19 @@ def test_unknown_customer_api_route_uses_bounded_public_error(tmp_path) -> None:
     app_with_frontend = create_app(frontend_dist_dir=dist_dir)
 
     with TestClient(app_with_frontend) as frontend_client:
-        response = frontend_client.get("/api/current-trip/not-a-route")
+        response = frontend_client.get("/api/not-a-snowcast-route")
+
+    assert response.status_code == 404
+    assert response.json() == {"error": {"code": "not_found"}}
+
+
+def test_unknown_customer_api_route_without_frontend_uses_bounded_error(
+    tmp_path,
+) -> None:
+    app_without_frontend = create_app(frontend_dist_dir=tmp_path / "missing")
+
+    with TestClient(app_without_frontend) as api_client:
+        response = api_client.get("/api/not-a-snowcast-route")
 
     assert response.status_code == 404
     assert response.json() == {"error": {"code": "not_found"}}

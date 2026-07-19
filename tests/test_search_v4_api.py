@@ -94,6 +94,7 @@ def test_public_error_registry_matches_accepted_adr() -> None:
         "current_trip_not_found": 404,
         "trip_option_not_found": 404,
         "not_found": 404,
+        "method_not_allowed": 405,
         "request_failed": 500,
     }
 
@@ -142,8 +143,17 @@ def test_customer_openapi_declares_the_public_error_envelope() -> None:
         "current_trip_not_found",
         "trip_option_not_found",
         "not_found",
+        "method_not_allowed",
         "request_failed",
     ]
+
+
+def test_customer_wrong_method_preserves_status_and_allow_header() -> None:
+    response = TestClient(app).get("/api/search")
+
+    assert response.status_code == 405
+    assert response.headers["Allow"] == "POST"
+    assert response.json() == {"error": {"code": "method_not_allowed"}}
 
 
 def test_refinement_openapi_bounds_the_public_queue_to_one_proposal() -> None:
