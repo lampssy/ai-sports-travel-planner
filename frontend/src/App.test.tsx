@@ -520,6 +520,7 @@ test("keeps an overflow group priority reachable and removable in the drawer", a
     objectives: [
       { factor_id: "pass_terrain_value", importance: "normal" },
       { factor_id: "trip_window_snow_fit", importance: "high" },
+      { factor_id: "terrain_potential_scale", importance: "normal" },
     ],
     group_priorities: [
       { group_id: "trip_viability", importance: "very_high" },
@@ -556,8 +557,11 @@ test("keeps an overflow group priority reachable and removable in the drawer", a
   render(<App />);
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  expect(
+    screen.queryByRole("button", { name: "Trip viability: Highest priority" }),
+  ).not.toBeInTheDocument();
   await user.click(
-    await screen.findByRole("button", { name: "View all 6 preferences" }),
+    await screen.findByRole("button", { name: "View all 7 preferences" }),
   );
   const priority = screen.getByRole("button", {
     name: "Trip viability: Highest priority",
