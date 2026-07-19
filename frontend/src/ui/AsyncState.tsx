@@ -10,6 +10,7 @@ export function AsyncState({
   title,
   onRetry,
   retryLabel = "Try again",
+  retrying = false,
   className,
 }: {
   state: AsyncStateKind;
@@ -17,6 +18,7 @@ export function AsyncState({
   title?: ReactNode;
   onRetry?: () => void;
   retryLabel?: string;
+  retrying?: boolean;
   className?: string;
 }) {
   const isError = state === "error";
@@ -26,7 +28,7 @@ export function AsyncState({
       className={`snowcast-async-state snowcast-async-state--${state}${className ? ` ${className}` : ""}`}
       role={isError ? "alert" : "status"}
       aria-live={isError ? "assertive" : "polite"}
-      aria-busy={state === "loading" ? "true" : undefined}
+      aria-busy={state === "loading" || retrying ? "true" : undefined}
     >
       {state === "loading" ? (
         <span className="snowcast-async-state__indicator" aria-hidden="true" />
@@ -36,7 +38,12 @@ export function AsyncState({
         <div className="snowcast-async-state__message">{message}</div>
       </div>
       {isError && onRetry ? (
-        <Action variant="secondary" size="sm" onClick={onRetry}>
+        <Action
+          variant="secondary"
+          size="sm"
+          disabled={retrying}
+          onClick={onRetry}
+        >
           {retryLabel}
         </Action>
       ) : null}

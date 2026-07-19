@@ -62,6 +62,8 @@ export function CurrentTripView({
   summary,
   tripLoadError,
   summaryLoadError,
+  tripLoading,
+  summaryLoading,
   clearError,
   onBack,
   onRetryTripLoad,
@@ -72,6 +74,8 @@ export function CurrentTripView({
   summary: CurrentTripSummary | null;
   tripLoadError: string | null;
   summaryLoadError: string | null;
+  tripLoading: boolean;
+  summaryLoading: boolean;
   clearError: string | null;
   onBack: () => void;
   onRetryTripLoad: () => void;
@@ -96,6 +100,7 @@ export function CurrentTripView({
             }
             message={tripLoadError}
             retryLabel="Retry saved trip"
+            retrying={tripLoading}
             onRetry={onRetryTripLoad}
           />
         ) : null}
@@ -119,6 +124,7 @@ export function CurrentTripView({
                 title="Current conditions could not be updated"
                 message={summaryLoadError}
                 retryLabel="Retry current conditions"
+                retrying={summaryLoading}
                 onRetry={onRetrySummaryLoad}
               />
             ) : null}
@@ -133,7 +139,7 @@ export function CurrentTripView({
           </>
         ) : tripLoadError ? null : (
           <p className="current-trip-panel__empty">
-            Save a ranked configuration in the authenticated mobile app to track it.
+            Sign in to the Snowcast mobile app and save a trip option to track it.
           </p>
         )}
       </section>

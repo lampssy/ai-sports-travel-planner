@@ -66,6 +66,7 @@ test("uses the concrete question as the heading and reason as support text", () 
       error={null}
       onApply={vi.fn()}
       onSkip={vi.fn()}
+      onKeepResults={vi.fn()}
     />,
   );
 
@@ -91,6 +92,7 @@ test("supports keyboard-only radio selection, apply, and skip focus", async () =
       error={null}
       onApply={onApply}
       onSkip={onSkip}
+      onKeepResults={vi.fn()}
     />,
   );
 
@@ -131,6 +133,7 @@ test("previews a selected option before apply and supports clear and skip", asyn
       error={null}
       onApply={onApply}
       onSkip={onSkip}
+      onKeepResults={vi.fn()}
     />,
   );
 
@@ -152,15 +155,18 @@ test("previews a selected option before apply and supports clear and skip", asyn
   expect(onSkip).toHaveBeenCalledWith(refinement);
 });
 
-test("preserves the selected option after apply failure for retry", async () => {
+test("preserves the selected option and offers update or exit after apply failure", async () => {
   const user = userEvent.setup();
+  const onApply = vi.fn();
+  const onKeepResults = vi.fn();
   const { rerender } = render(
     <RefinementCard
       refinement={refinement}
       loading={false}
       error={null}
-      onApply={vi.fn()}
+      onApply={onApply}
       onSkip={vi.fn()}
+      onKeepResults={onKeepResults}
     />,
   );
   await user.click(screen.getByRole("radio", { name: /snow reliability/i }));
@@ -169,16 +175,21 @@ test("preserves the selected option after apply failure for retry", async () => 
     <RefinementCard
       refinement={refinement}
       loading={false}
-      error="Could not rerank."
-      onApply={vi.fn()}
+      error="Results could not be updated."
+      onApply={onApply}
       onSkip={vi.fn()}
+      onKeepResults={onKeepResults}
     />,
   );
 
   expect(screen.getByRole("radio", { name: /snow reliability/i })).toBeChecked();
-  expect(screen.getByRole("alert")).toHaveTextContent("Could not rerank.");
+  expect(screen.getByRole("alert")).toHaveTextContent("Results could not be updated.");
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /retry apply and rerank/i })).toBeEnabled();
+  await user.click(screen.getByRole("button", { name: "Update results" }));
+  expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[0]);
+  await user.click(screen.getByRole("button", { name: "Keep these results" }));
+  expect(onKeepResults).toHaveBeenCalledOnce();
+  expect(screen.queryByRole("button", { name: /skip this question/i })).toBeNull();
 });
 
 test("keeps the concrete question visible in a collapsed narrow disclosure", async () => {
@@ -191,6 +202,7 @@ test("keeps the concrete question visible in a collapsed narrow disclosure", asy
       error={null}
       onApply={vi.fn()}
       onSkip={vi.fn()}
+      onKeepResults={vi.fn()}
     />,
   );
 
@@ -219,6 +231,7 @@ test("a replacement question resets the narrow disclosure to collapsed", async (
     error: null,
     onApply: vi.fn(),
     onSkip: vi.fn(),
+    onKeepResults: vi.fn(),
   };
   const { rerender } = render(
     <RefinementCard refinement={refinement} {...shared} />,

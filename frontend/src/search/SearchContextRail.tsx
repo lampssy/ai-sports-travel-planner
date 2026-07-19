@@ -22,8 +22,8 @@ const REFINEMENT_STATUS_COPY: Partial<
   retrying:
     "Snowcast is waiting a moment before checking for another useful question.",
   stale: "A newer ranking replaced this refinement check.",
-  not_needed: "No follow-up would materially change these results.",
-  skipped: "Follow-up skipped. Results unchanged.",
+  not_needed: "No more questions would materially change these results.",
+  skipped: "Question skipped. Results unchanged.",
 };
 
 const REFINEMENT_ANNOUNCEMENT_COPY: Partial<
@@ -76,6 +76,7 @@ export function SearchContextRail({
   refinementStatus,
   loading,
   refinementError,
+  refinementRetrying = false,
   refinementControlRef,
   adjustFiltersRef,
   onOpenFilters,
@@ -90,6 +91,7 @@ export function SearchContextRail({
   refinementStatus: RefinementLifecycleStatus;
   loading: boolean;
   refinementError: string | null;
+  refinementRetrying?: boolean;
   refinementControlRef: RefObject<HTMLElement>;
   adjustFiltersRef: RefObject<HTMLButtonElement>;
   onOpenFilters: (trigger: HTMLButtonElement) => void;
@@ -121,7 +123,7 @@ export function SearchContextRail({
   const lifecycleCopy = REFINEMENT_STATUS_COPY[refinementStatus];
   const terminalFailure =
     !refinement &&
-    refinementStatus === "temporarily_unavailable" &&
+    (refinementStatus === "temporarily_unavailable" || refinementRetrying) &&
     refinementError;
   const refinementAnnouncement = terminalFailure
     ? null
@@ -192,19 +194,24 @@ export function SearchContextRail({
           focusControlRef={refinementControlRef}
           onApply={onApplyRefinement}
           onSkip={onSkipRefinement}
+          onKeepResults={onKeepResults}
         />
       ) : null}
       {terminalFailure ? (
-        <div className="contextual-refinement contextual-refinement--error">
-          <p className="contextual-refinement__eyebrow">Follow-up unavailable</p>
+        <div
+          className="contextual-refinement contextual-refinement--error"
+          aria-busy={refinementRetrying || undefined}
+        >
+          <p className="contextual-refinement__eyebrow">One more question</p>
           <p className="refinement-error" role="alert">
             {refinementError}
           </p>
           <div className="refinement-actions">
             <button
               type="button"
+              ref={refinementControlRef as RefObject<HTMLButtonElement>}
               className="primary-refinement-action"
-              disabled={loading}
+              disabled={loading || refinementRetrying}
               onClick={onRetryRefinement}
             >
               Try again
@@ -212,7 +219,7 @@ export function SearchContextRail({
             <button
               type="button"
               className="text-action"
-              disabled={loading}
+              disabled={loading || refinementRetrying}
               onClick={onKeepResults}
             >
               Keep these results

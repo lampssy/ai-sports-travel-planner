@@ -500,7 +500,8 @@ test("renders server fallback limitations and typed unavailability without gener
   );
   expect(await screen.findByText("Snow evidence unavailable")).toBeVisible();
   expect(screen.getByText(/no supported historical evidence/i)).toBeVisible();
-  expect(screen.getByRole("status")).toHaveTextContent(/unavailable for les arcs/i);
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+  expect(screen.queryByRole("status")).toBeNull();
   expect(document.body.textContent).not.toContain("trip_window_snow_fit");
 });
 
@@ -524,7 +525,8 @@ test("preserves the section during retryable failure and announces a successful 
     "Snow and weather could not be loaded. Try again.",
   );
   expect(screen.getByRole("alert")).not.toHaveTextContent("Stored weather evidence");
-  expect(screen.getByRole("status")).toHaveTextContent(/could not be loaded/i);
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+  expect(screen.queryByRole("status")).toBeNull();
   const retry = screen.getByRole("button", { name: "Retry snow evidence" });
   await user.click(retry);
   expect(await screen.findByText("Historical pattern")).toBeVisible();

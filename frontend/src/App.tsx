@@ -301,8 +301,11 @@ function App() {
   const [session, setSession] = useState<SearchSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveErrorsByCandidate, setSaveErrorsByCandidate] = useState<
+    Record<string, string>
+  >({});
   const [refinementError, setRefinementError] = useState<string | null>(null);
+  const [refinementRetrying, setRefinementRetrying] = useState(false);
   const [refinementStatus, setRefinementStatus] =
     useState<RefinementLifecycleStatus>("idle");
   const [rankFeedback, setRankFeedback] = useState<string | null>(null);
@@ -328,6 +331,9 @@ function App() {
   const [currentTripLoadRequest, setCurrentTripLoadRequest] = useState(0);
   const [currentTripSummaryLoadRequest, setCurrentTripSummaryLoadRequest] =
     useState(0);
+  const [currentTripLoading, setCurrentTripLoading] = useState(false);
+  const [currentTripSummaryLoading, setCurrentTripSummaryLoading] =
+    useState(false);
   const currentTripRef = useRef<CurrentTrip | null>(null);
   const currentTripLoadIdentityRef = useRef(0);
   const currentTripSummaryLoadIdentityRef = useRef(0);
@@ -425,10 +431,11 @@ function App() {
 
   useEffect(() => {
     const identity = ++currentTripLoadIdentityRef.current;
-    setCurrentTripLoadError(null);
+    setCurrentTripLoading(true);
     void getCurrentTrip()
       .then((trip) => {
         if (identity !== currentTripLoadIdentityRef.current) return;
+        setCurrentTripLoadError(null);
         if (currentTripRef.current === trip) return;
         currentTripRef.current = trip;
         setCurrentTrip(trip);
@@ -436,6 +443,11 @@ function App() {
       .catch((caught) => {
         if (identity === currentTripLoadIdentityRef.current) {
           setCurrentTripLoadError(apiErrorMessage("currentTripLoad", caught));
+        }
+      })
+      .finally(() => {
+        if (identity === currentTripLoadIdentityRef.current) {
+          setCurrentTripLoading(false);
         }
       });
     return () => {
@@ -449,14 +461,16 @@ function App() {
     if (!currentTrip) {
       setCurrentTripSummary(null);
       setCurrentTripSummaryLoadError(null);
+      setCurrentTripSummaryLoading(false);
       return;
     }
     if (route.name !== "currentTrip") return;
     const identity = ++currentTripSummaryLoadIdentityRef.current;
-    setCurrentTripSummaryLoadError(null);
+    setCurrentTripSummaryLoading(true);
     void getCurrentTripSummary()
       .then((summary) => {
         if (identity === currentTripSummaryLoadIdentityRef.current) {
+          setCurrentTripSummaryLoadError(null);
           setCurrentTripSummary(summary);
         }
       })
@@ -465,6 +479,11 @@ function App() {
           setCurrentTripSummaryLoadError(
             apiErrorMessage("currentTripSummary", caught),
           );
+        }
+      })
+      .finally(() => {
+        if (identity === currentTripSummaryLoadIdentityRef.current) {
+          setCurrentTripSummaryLoading(false);
         }
       });
     return () => {
@@ -620,6 +639,7 @@ function App() {
     rankingResponse: SearchSession["response"],
     nextBrief: string,
     nextResolvedTopics: ResolvedRefinementTopic[],
+    { preserveError = false }: { preserveError?: boolean } = {},
   ): Promise<boolean> {
     const belongsToRanking = (current: SearchSession | null) =>
       current?.response.baseline_fingerprint ===
@@ -633,7 +653,7 @@ function App() {
       window.clearTimeout(refinementSlowTimerRef.current);
       refinementSlowTimerRef.current = null;
     }
-    setRefinementError(null);
+    if (!preserveError) setRefinementError(null);
     setSession((current) =>
       belongsToRanking(current) && current
         ? replaceRefinements(current, [])
@@ -710,6 +730,9 @@ function App() {
 
       if (refinementResponse.baseline_status === "unverified") {
         setRefinementStatus("temporarily_unavailable");
+        setRefinementError(
+          apiErrorMessage("refinementDiscovery", new Error("unverified")),
+        );
         setSession((current) =>
           belongsToRanking(current) && current
             ? replaceRefinements(current, [])
@@ -749,6 +772,13 @@ function App() {
           : current,
       );
       setRefinementStatus(status);
+      if (status === "temporarily_unavailable") {
+        setRefinementError(
+          apiErrorMessage("refinementDiscovery", new Error("unavailable")),
+        );
+      } else {
+        setRefinementError(null);
+      }
       return refinements.length > 0;
     } catch (caught) {
       if (
@@ -820,6 +850,7 @@ function App() {
         : createSearchSession(nextBrief, response, nextFilters);
       return { ...next, brief: nextBrief };
     });
+    setSaveErrorsByCandidate({});
     setUndoState(null);
     setRankFeedback(null);
     setChangedRankGroupIds(new Set());
@@ -1086,14 +1117,20 @@ function App() {
 
   async function retryRefinementDiscovery() {
     const currentSession = session;
-    if (!currentSession || loading) return;
-    const hasRefinement = await loadRefinements(
-      currentSession.response,
-      currentSession.brief,
-      resolvedTopics,
-    );
-    if (hasRefinement) {
-      setRefinementFocusRequest((current) => current + 1);
+    if (!currentSession || loading || refinementRetrying) return;
+    setRefinementRetrying(true);
+    try {
+      const hasRefinement = await loadRefinements(
+        currentSession.response,
+        currentSession.brief,
+        resolvedTopics,
+        { preserveError: true },
+      );
+      if (hasRefinement) {
+        setRefinementFocusRequest((current) => current + 1);
+      }
+    } finally {
+      setRefinementRetrying(false);
     }
   }
 
@@ -1101,6 +1138,12 @@ function App() {
     refinementRequestIdRef.current += 1;
     refinementAbortRef.current?.abort();
     refinementAbortRef.current = null;
+    setSession((current) => {
+      const questionId = current?.refinementQueue[0]?.question_id;
+      return current && questionId
+        ? dismissRefinement(current, questionId)
+        : current;
+    });
     setRefinementError(null);
     setRefinementStatus("skipped");
     setFocusRequest((current) => current + 1);
@@ -1320,9 +1363,12 @@ function App() {
       setCurrentTripSummary(null);
       setCurrentTripLoadError(null);
       setCurrentTripSummaryLoadError(null);
-      setSaveError(null);
+      setSaveErrorsByCandidate({});
     } catch (caught) {
-      setSaveError(apiErrorMessage("currentTripSave", caught));
+      setSaveErrorsByCandidate((current) => ({
+        ...current,
+        [configuration.candidate_id]: apiErrorMessage("currentTripSave", caught),
+      }));
     }
   }
 
@@ -1378,6 +1424,8 @@ function App() {
           summary={currentTripSummary}
           tripLoadError={currentTripLoadError}
           summaryLoadError={currentTripSummaryLoadError}
+          tripLoading={currentTripLoading}
+          summaryLoading={currentTripSummaryLoading}
           clearError={currentTripClearError}
           onBack={goToSearch}
           onRetryTripLoad={() =>
@@ -1432,11 +1480,14 @@ function App() {
           />
         }
       >
-        {saveError ? <p className="error-copy" role="alert">{saveError}</p> : null}
         <RecommendationDossier
           session={session}
           skiRegionId={dossierSelection.group.ski_region_id}
           candidateId={dossierSelection.configuration.candidate_id}
+          saveError={
+            saveErrorsByCandidate[dossierSelection.configuration.candidate_id] ??
+            null
+          }
           onSwitch={switchDossier}
           onReturn={goToSearch}
           onSave={(configuration) =>
@@ -1505,8 +1556,9 @@ function App() {
           session={session}
           loading={loading}
           error={error}
-          saveError={saveError}
+          saveErrorsByCandidate={saveErrorsByCandidate}
           refinementError={refinementError}
+          refinementRetrying={refinementRetrying}
           refinementStatus={refinementStatus}
           refinementControlRef={refinementControlRef}
           rankFeedback={rankFeedback}

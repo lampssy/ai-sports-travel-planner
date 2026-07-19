@@ -1192,6 +1192,7 @@ test("keeps refinement validation details out of the traveller-facing UI", async
 
 test("keeps terminal refinement failure visible and retries without replacing results", async () => {
   let refinementAttempts = 0;
+  let resolveRetry: ((response: Response) => void) | undefined;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -1211,7 +1212,9 @@ test("keeps terminal refinement failure visible and retries without replacing re
             { status: 500 },
           );
         }
-        return new Response(JSON.stringify(refinementResponse()), { status: 200 });
+        return new Promise<Response>((resolve) => {
+          resolveRetry = resolve;
+        });
       }
       return new Response(JSON.stringify({ error: { code: "not_found" } }), {
         status: 404,
@@ -1229,10 +1232,25 @@ test("keeps terminal refinement failure visible and retries without replacing re
   );
   expect(screen.getAllByRole("alert")).toHaveLength(1);
 
-  await user.click(screen.getByRole("button", { name: "Try again" }));
+  const retry = screen.getByRole("button", { name: "Try again" });
+  retry.focus();
+  await user.click(retry);
+
+  expect(retry).toHaveFocus();
+  expect(retry).toBeDisabled();
+  expect(retry.closest(".contextual-refinement")).toHaveAttribute(
+    "aria-busy",
+    "true",
+  );
+  expect(screen.getByRole("button", { name: "Keep these results" })).toBeDisabled();
+  expect(screen.getByRole("alert")).toBeVisible();
+
+  resolveRetry?.(
+    new Response(JSON.stringify(refinementResponse()), { status: 200 }),
+  );
 
   expect(await screen.findByRole("status")).toHaveTextContent(
-    "No follow-up would materially change these results.",
+    "No more questions would materially change these results.",
   );
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
@@ -1274,7 +1292,7 @@ test("lets the user keep usable results after terminal refinement failure", asyn
 
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.getByRole("status")).toHaveTextContent(
-    "Follow-up skipped. Results unchanged.",
+    "Question skipped. Results unchanged.",
   );
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
   expect(document.body).not.toHaveTextContent("backend stack detail");
@@ -1363,10 +1381,12 @@ test("keeps ranking usable when a timed-out refinement baseline is unverified", 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(await screen.findByRole("status")).toHaveTextContent(
-    "No additional refinement is available right now. Your results are unchanged.",
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Snowcast could not check for another useful question. Your results are unchanged.",
   );
-  expect(document.querySelector(".contextual-refinement")).toBeNull();
+  expect(screen.getByText("One more question")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Keep these results" })).toBeVisible();
   expect(
     screen.queryByText("A newer ranking replaced this refinement check."),
   ).not.toBeInTheDocument();
@@ -1406,11 +1426,12 @@ test("does not retry a current-baseline provider temporarily unavailable respons
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(await screen.findByRole("status")).toHaveTextContent(
-    "No additional refinement is available right now. Your results are unchanged.",
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Snowcast could not check for another useful question. Your results are unchanged.",
   );
   expect(refinementCount).toBe(1);
-  expect(document.querySelector(".contextual-refinement")).toBeNull();
+  expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Keep these results" })).toBeVisible();
 });
 
 test("aborts and ignores a superseded refinement response", async () => {
@@ -1601,9 +1622,42 @@ test("opens the selected candidate dossier without rerunning search and saves it
   );
 });
 
+test("shows a dossier save failure beside the selected Trip details action", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("link", { name: "View dossier" }));
+  await screen.findByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" });
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/current-trip" && init?.method === "PUT") {
+        return new Response(
+          JSON.stringify({ error: { code: "request_failed" } }),
+          { status: 500 },
+        );
+      }
+      return new Response(JSON.stringify({ error: { code: "not_found" } }), {
+        status: 404,
+      });
+    }),
+  );
+
+  await user.click(screen.getByRole("button", { name: "Save as current trip" }));
+
+  const verdict = screen
+    .getByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" })
+    .closest("header");
+  expect(within(verdict as HTMLElement).getByRole("alert")).toHaveTextContent(
+    "Your trip could not be saved. Try again.",
+  );
+});
+
 test("shows and retries a failed saved-trip load", async () => {
   window.history.replaceState(null, "", "/current-trip");
   let tripLoadAttempts = 0;
+  let resolveTripRetry: ((response: Response) => void) | undefined;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -1611,7 +1665,9 @@ test("shows and retries a failed saved-trip load", async () => {
       if (url === "/api/current-trip" && (!init?.method || init.method === "GET")) {
         tripLoadAttempts += 1;
         if (tripLoadAttempts === 1) throw new TypeError("Failed to fetch");
-        return new Response(JSON.stringify({ trip: savedTrip }), { status: 200 });
+        return new Promise<Response>((resolve) => {
+          resolveTripRetry = resolve;
+        });
       }
       if (url === "/api/current-trip/summary") {
         return new Response(
@@ -1631,7 +1687,18 @@ test("shows and retries a failed saved-trip load", async () => {
   expect(error).toHaveTextContent("Your current trip could not be loaded. Try again.");
   expect(error).not.toHaveTextContent(/failed to fetch|api|backend/i);
 
-  await user.click(screen.getByRole("button", { name: "Retry saved trip" }));
+  const retry = screen.getByRole("button", { name: "Retry saved trip" });
+  retry.focus();
+  await user.click(retry);
+
+  expect(retry).toHaveFocus();
+  expect(retry).toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveAttribute("aria-busy", "true");
+  expect(screen.queryByText(/save a trip option/i)).toBeNull();
+
+  resolveTripRetry?.(
+    new Response(JSON.stringify({ trip: savedTrip }), { status: 200 }),
+  );
 
   expect(
     await screen.findByRole("heading", { name: "Tignes - Val d'Isere" }),
@@ -1645,7 +1712,7 @@ test("keeps an absent saved trip as an empty state", async () => {
   render(<App />);
 
   expect(
-    await screen.findByText(/save a ranked configuration.*to track it/i),
+    await screen.findByText(/save a trip option.*to track it/i),
   ).toBeVisible();
   await waitFor(() =>
     expect(requests.filter((item) => item.url === "/api/current-trip")).toHaveLength(1),
@@ -1657,6 +1724,7 @@ test("keeps an absent saved trip as an empty state", async () => {
 test("keeps current conditions visible when refresh fails and retries them", async () => {
   window.history.replaceState(null, "", "/current-trip");
   let summaryLoadAttempts = 0;
+  let resolveSummaryRetry: ((response: Response) => void) | undefined;
   const refreshedSummary: CurrentTripSummary = {
     ...savedTripSummary,
     current_conditions: {
@@ -1682,7 +1750,9 @@ test("keeps current conditions visible when refresh fails and retries them", asy
           return new Response(JSON.stringify(savedTripSummary), { status: 200 });
         }
         if (summaryLoadAttempts === 2) throw new TypeError("Failed to fetch");
-        return new Response(JSON.stringify(refreshedSummary), { status: 200 });
+        return new Promise<Response>((resolve) => {
+          resolveSummaryRetry = resolve;
+        });
       }
       return new Response(null, { status: 404 });
     }),
@@ -1701,8 +1771,17 @@ test("keeps current conditions visible when refresh fails and retries them", asy
   expect(error).not.toHaveTextContent(/failed to fetch|api|backend/i);
   expect(screen.getByText("Light snow is expected this week.")).toBeVisible();
 
-  await user.click(
-    screen.getByRole("button", { name: "Retry current conditions" }),
+  const retry = screen.getByRole("button", { name: "Retry current conditions" });
+  retry.focus();
+  await user.click(retry);
+
+  expect(retry).toHaveFocus();
+  expect(retry).toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveAttribute("aria-busy", "true");
+  expect(screen.getByText("Light snow is expected this week.")).toBeVisible();
+
+  resolveSummaryRetry?.(
+    new Response(JSON.stringify(refreshedSummary), { status: 200 }),
   );
 
   expect(
@@ -2542,38 +2621,61 @@ test("preserves previous results and the refinement on a failed rerank", async (
   expect(
     requests.filter((item) => item.url === "/api/search/refinements"),
   ).toHaveLength(refinementRequestsBefore);
+  expect(screen.getByRole("radio", { name: /prefer this/i })).toBeChecked();
+  const refinementCard = screen.getByText("Change the ranking?").closest("article");
+  expect(
+    within(refinementCard as HTMLElement).getByRole("button", {
+      name: "Update results",
+    }),
+  ).toBeEnabled();
 
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      requests.push({ url, init });
-      if (url === "/api/search") {
-        return new Response(JSON.stringify(response()), { status: 200 });
-      }
-      if (url === "/api/search/refinements") {
-        return new Response(
-          JSON.stringify(refinementResponse({ refinement_status: "not_needed" })),
-          { status: 200 },
-        );
-      }
-      return new Response(null, { status: 404 });
+  const searchRequestsBeforeExit = requests.filter(
+    (item) => item.url === "/api/search",
+  ).length;
+  await user.click(
+    within(refinementCard as HTMLElement).getByRole("button", {
+      name: "Keep these results",
     }),
   );
 
-  await user.click(screen.getByRole("button", { name: /update results/i }));
-  await waitFor(() => {
-    expect(
-      requests.filter((item) => item.url === "/api/search/refinements"),
-    ).toHaveLength(refinementRequestsBefore + 1);
-  });
-  const latestRefinementRequest = lastRequest("/api/search/refinements");
+  expect(screen.queryByText("Change the ranking?")).toBeNull();
+  expect(screen.getByRole("heading", { name: "Recommended ski trips" })).toHaveFocus();
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(
+    searchRequestsBeforeExit,
+  );
   expect(
-    JSON.parse(String(latestRefinementRequest?.init?.body)).resolved_topic_ids,
-  ).toEqual([]);
+    requests.filter((item) => item.url === "/api/search/refinements"),
+  ).toHaveLength(refinementRequestsBefore);
 });
 
-test("shows save failures separately while keeping ranked results", async () => {
+test("shows a lower-card save failure beside only the initiating result", async () => {
+  const lowerConfiguration: SearchV4Configuration = {
+    ...tignesConfiguration,
+    candidate_id: "les-arcs--paradiski",
+    ski_region_id: "les-arcs",
+    ski_region_name: "Les Arcs",
+    stay_destination_id: "les-arcs",
+    stay_destination_name: "Les Arcs",
+    stay_base_id: "arc-1800",
+    stay_base_name: "Arc 1800",
+    ski_area_id: "les-arcs-ski-area",
+    ski_area_name: "Les Arcs",
+  };
+  searchResponses = [
+    response({
+      results: [
+        response().results[0],
+        {
+          ski_region_id: "les-arcs",
+          ski_region_name: "Les Arcs",
+          rank: 2,
+          fit_score: lowerConfiguration.fit_score,
+          top_configuration: lowerConfiguration,
+          alternative_configurations: [],
+        },
+      ],
+    }),
+  ];
   const user = userEvent.setup();
   render(<App />);
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
@@ -2596,19 +2698,66 @@ test("shows save failures separately while keeping ranked results", async () => 
       return new Response(null, { status: 404 });
     }),
   );
-  const card = screen.getByText("Tignes - Val d'Isere").closest("article");
+  await user.click(screen.getByRole("button", { name: /expand les arcs/i }));
+  const card = screen.getByText("Les Arcs", { selector: "h2" }).closest("article");
   await user.click(
     within(card as HTMLElement).getByRole("button", {
       name: /save as current trip/i,
     }),
   );
 
-  expect(await screen.findByRole("alert")).toHaveTextContent(
+  expect(within(card as HTMLElement).getByRole("alert")).toHaveTextContent(
     "Your trip could not be saved. Try again.",
   );
+  const firstCard = screen.getByText("Tignes - Val d'Isere").closest("article");
+  expect(within(firstCard as HTMLElement).queryByRole("alert")).toBeNull();
   expect(document.body).not.toHaveTextContent("internal stack trace");
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
   expect(screen.queryByText(/unable to load resort results/i)).not.toBeInTheDocument();
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/current-trip" && init?.method === "PUT") {
+        return new Response(JSON.stringify(savedTrip), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: { code: "not_found" } }), {
+        status: 404,
+      });
+    }),
+  );
+  await user.click(
+    within(firstCard as HTMLElement).getByRole("button", {
+      name: /save as current trip/i,
+    }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByText("Your trip could not be saved. Try again."),
+    ).toBeNull(),
+  );
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        return new Response(JSON.stringify(refinementResponse()), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: { code: "not_found" } }), {
+        status: 404,
+      });
+    }),
+  );
+  await user.click(screen.getByRole("button", { name: "Update results" }));
+  await waitFor(() =>
+    expect(
+      screen.queryByText("Your trip could not be saved. Try again."),
+    ).toBeNull(),
+  );
 });
 
 test("preserves refinement objectives and answered state when pass priority changes", async () => {
@@ -3293,7 +3442,7 @@ test("skipping the final refinement returns focus to the results heading", async
   await user.click(screen.getByRole("button", { name: /skip this question/i }));
 
   expect(screen.getByRole("status")).toHaveTextContent(
-    /no follow-up would materially change these results/i,
+    /no more questions would materially change these results/i,
   );
   await waitFor(() => {
     expect(

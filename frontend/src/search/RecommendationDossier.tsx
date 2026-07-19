@@ -27,6 +27,7 @@ export function RecommendationDossier({
   onSwitch,
   onReturn,
   onSave,
+  saveError = null,
   onSelectCandidate,
   onToggleNavigator,
 }: {
@@ -36,6 +37,7 @@ export function RecommendationDossier({
   onSwitch: (skiRegionId: string, candidateId: string) => void;
   onReturn: () => void;
   onSave: (configuration: SearchV4Configuration) => void;
+  saveError?: string | null;
   onSelectCandidate: (skiRegionId: string, candidateId: string) => void;
   onToggleNavigator: () => void;
 }) {
@@ -84,6 +86,7 @@ export function RecommendationDossier({
           rank={group.rank}
           headingRef={headingRef}
           onSave={onSave}
+          saveError={saveError}
         />
 
         <nav className="dossier-anchor-nav" aria-label="Dossier sections">

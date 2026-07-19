@@ -34,11 +34,10 @@ export type ApiOperation =
 const publicErrorCodes = new Set<string>(PUBLIC_API_ERROR_CODES);
 
 const FALLBACK_COPY: Record<ApiOperation, string> = {
-  search: "Trip options could not be loaded. Check your connection and try again.",
+  search: "Trip options could not be loaded. Try again.",
   searchUpdate:
     "Results could not be updated. Your current results are still available. Try again.",
-  parseTripBrief:
-    "Your trip brief could not be read. Check your connection and try again.",
+  parseTripBrief: "Your trip brief could not be read. Try again.",
   refinementDiscovery:
     "Snowcast could not check for another useful question. Your results are unchanged.",
   refinementApply:
@@ -46,14 +45,20 @@ const FALLBACK_COPY: Record<ApiOperation, string> = {
   weather: "Snow and weather could not be loaded. Try again.",
   currentTripLoad: "Your current trip could not be loaded. Try again.",
   currentTripSave: "Your trip could not be saved. Try again.",
-  currentTripEvents: "Current trip activity could not be loaded. Try again.",
+  currentTripEvents: "Trip updates could not be loaded. Try again.",
   currentTripSummary: "Current conditions could not be updated. Try again.",
   currentTripClear: "Your current trip could not be removed. Try again.",
   currentTripMarkChecked: "Your current trip could not be updated. Try again.",
 };
 
 const AUTH_REQUIRED_COPY =
-  "Current trip is available in the authenticated mobile app.";
+  "Sign in to the Snowcast mobile app to use Current trip.";
+
+const TRANSPORT_COPY: Partial<Record<ApiOperation, string>> = {
+  search: "Trip options could not be loaded. Check your connection and try again.",
+  parseTripBrief:
+    "Your trip brief could not be read. Check your connection and try again.",
+};
 
 export class ApiError extends Error {
   readonly code: PublicApiErrorCode | null;
@@ -127,7 +132,7 @@ export function apiErrorMessage(
     return AUTH_REQUIRED_COPY;
   }
   if (code === "trip_option_invalid") {
-    return "This trip option is no longer available. Return to the results and choose it again.";
+    return "Snowcast could not save this trip option. Return to the results and choose it again.";
   }
   if (code === "current_trip_not_found") {
     return "No current trip is saved.";
@@ -148,6 +153,9 @@ export function apiErrorMessage(
   }
   if (operation === "search" && code === "request_failed") {
     return "Snowcast is temporarily unavailable. Try again shortly.";
+  }
+  if (error?.failureKind === "transport" && TRANSPORT_COPY[operation]) {
+    return TRANSPORT_COPY[operation];
   }
 
   return FALLBACK_COPY[operation];

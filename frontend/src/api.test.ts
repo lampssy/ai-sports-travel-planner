@@ -200,7 +200,7 @@ describe("Search API request projection", () => {
     [
       "current trip activity",
       () => getCurrentTripEvents(),
-      "Current trip activity could not be loaded. Try again.",
+      "Trip updates could not be loaded. Try again.",
     ],
     [
       "current trip removal",
@@ -336,15 +336,18 @@ describe("public API error boundary", () => {
   });
 
   it.each<[ApiOperation, string]>([
-    ["search", "Trip options could not be loaded. Check your connection and try again."],
+    ["search", "Trip options could not be loaded. Try again."],
     ["searchUpdate", "Results could not be updated. Your current results are still available. Try again."],
+    ["parseTripBrief", "Your trip brief could not be read. Try again."],
     ["refinementDiscovery", "Snowcast could not check for another useful question. Your results are unchanged."],
     ["refinementApply", "Results could not be updated. Your current results and answer are still available. Try again."],
     ["weather", "Snow and weather could not be loaded. Try again."],
     ["currentTripLoad", "Your current trip could not be loaded. Try again."],
     ["currentTripSave", "Your trip could not be saved. Try again."],
+    ["currentTripEvents", "Trip updates could not be loaded. Try again."],
     ["currentTripSummary", "Current conditions could not be updated. Try again."],
     ["currentTripClear", "Your current trip could not be removed. Try again."],
+    ["currentTripMarkChecked", "Your current trip could not be updated. Try again."],
   ])("owns safe fallback copy for %s", (operation, expected) => {
     expect(apiErrorMessage(operation, new Error("raw transport failure"))).toBe(
       expected,
@@ -372,7 +375,33 @@ describe("public API error boundary", () => {
       "Snow and weather are not available for this ski area.",
     );
     expect(apiErrorMessage("currentTripSave", invalidTrip)).toBe(
-      "This trip option is no longer available. Return to the results and choose it again.",
+      "Snowcast could not save this trip option. Return to the results and choose it again.",
+    );
+  });
+
+  it("uses connection guidance only for confirmed transport failures", () => {
+    const malformed = new ApiError({ failureKind: "decode" });
+    const transport = new ApiError({ failureKind: "transport" });
+
+    expect(apiErrorMessage("search", malformed)).toBe(
+      "Trip options could not be loaded. Try again.",
+    );
+    expect(apiErrorMessage("parseTripBrief", malformed)).toBe(
+      "Your trip brief could not be read. Try again.",
+    );
+    expect(apiErrorMessage("search", transport)).toBe(
+      "Trip options could not be loaded. Check your connection and try again.",
+    );
+  });
+
+  it("uses direct sign-in guidance for protected Current trip operations", () => {
+    const authenticationRequired = new ApiError({
+      code: "authentication_required",
+      status: 401,
+    });
+
+    expect(apiErrorMessage("currentTripLoad", authenticationRequired)).toBe(
+      "Sign in to the Snowcast mobile app to use Current trip.",
     );
   });
 
@@ -412,9 +441,9 @@ describe("public API error boundary", () => {
     ["search", "request_failed", "Snowcast is temporarily unavailable. Try again shortly."],
     ["refinementDiscovery", "refinement_rate_limited", "Snowcast needs a little more time before checking for another useful question."],
     ["weather", "weather_area_not_found", "Snow and weather are not available for this ski area."],
-    ["currentTripLoad", "authentication_required", "Current trip is available in the authenticated mobile app."],
-    ["currentTripLoad", "session_expired", "Current trip is available in the authenticated mobile app."],
-    ["currentTripSave", "trip_option_invalid", "This trip option is no longer available. Return to the results and choose it again."],
+    ["currentTripLoad", "authentication_required", "Sign in to the Snowcast mobile app to use Current trip."],
+    ["currentTripLoad", "session_expired", "Sign in to the Snowcast mobile app to use Current trip."],
+    ["currentTripSave", "trip_option_invalid", "Snowcast could not save this trip option. Return to the results and choose it again."],
     ["currentTripSummary", "current_trip_not_found", "No current trip is saved."],
   ])("maps %s / %s to client-owned copy", (operation, code, expected) => {
     expect(apiErrorMessage(operation, new ApiError({ code }))).toBe(expected);
@@ -446,7 +475,7 @@ describe("public API error boundary", () => {
 
     const request = searchResorts({ intent: responseShapedIntent });
     await expect(request).rejects.toThrow(
-      "Trip options could not be loaded. Check your connection and try again.",
+      "Trip options could not be loaded. Try again.",
     );
   });
 });

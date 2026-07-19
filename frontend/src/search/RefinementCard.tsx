@@ -11,6 +11,7 @@ export function RefinementCard({
   focusControlRef,
   onApply,
   onSkip,
+  onKeepResults,
 }: {
   refinement: RefinementProposal;
   loading: boolean;
@@ -18,6 +19,7 @@ export function RefinementCard({
   focusControlRef?: Ref<HTMLElement>;
   onApply: (refinement: RefinementProposal, option: RefinementOption) => void;
   onSkip: (refinement: RefinementProposal) => void;
+  onKeepResults?: () => void;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -39,7 +41,7 @@ export function RefinementCard({
     <article className="contextual-refinement">
       <p className="contextual-refinement__eyebrow">
         <GitBranch aria-hidden="true" size={17} />
-        Next refinement
+        One more question
       </p>
       <h2 id={questionHeadingId}>{refinement.question}</h2>
       {isNarrow ? (
@@ -104,12 +106,12 @@ export function RefinementCard({
           >
             {error ? <RotateCcw aria-hidden="true" size={17} /> : null}
             {error
-              ? "Retry apply and rerank"
+              ? "Update results"
               : selected?.intent_changed === false
                 ? "Keep current ranking"
                 : "Apply and rerank"}
           </button>
-          {selected ? (
+          {selected && !error ? (
             <button
               type="button"
               className="text-action"
@@ -120,14 +122,25 @@ export function RefinementCard({
               Clear
             </button>
           ) : null}
-          <button
-            type="button"
-            className="text-action"
-            disabled={loading}
-            onClick={() => onSkip(refinement)}
-          >
-            Skip this question
-          </button>
+          {error ? (
+            <button
+              type="button"
+              className="text-action"
+              disabled={loading}
+              onClick={onKeepResults}
+            >
+              Keep these results
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="text-action"
+              disabled={loading}
+              onClick={() => onSkip(refinement)}
+            >
+              Skip this question
+            </button>
+          )}
         </div>
       </div>
     </article>

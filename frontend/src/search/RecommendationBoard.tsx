@@ -20,8 +20,9 @@ export function RecommendationBoard({
   session,
   loading,
   error,
-  saveError,
+  saveErrorsByCandidate,
   refinementError,
+  refinementRetrying,
   refinementStatus,
   refinementControlRef,
   rankFeedback,
@@ -43,8 +44,9 @@ export function RecommendationBoard({
   session: SearchSession;
   loading: boolean;
   error: string | null;
-  saveError: string | null;
+  saveErrorsByCandidate: Record<string, string>;
   refinementError: string | null;
+  refinementRetrying: boolean;
   refinementStatus: RefinementLifecycleStatus;
   refinementControlRef: RefObject<HTMLElement>;
   rankFeedback: string | null;
@@ -85,6 +87,7 @@ export function RecommendationBoard({
         refinementStatus={refinementStatus}
         loading={loading}
         refinementError={refinementError}
+        refinementRetrying={refinementRetrying}
         refinementControlRef={refinementControlRef}
         adjustFiltersRef={adjustFiltersRef}
         onOpenFilters={onOpenFilters}
@@ -138,12 +141,6 @@ export function RecommendationBoard({
             {error}
           </p>
         ) : null}
-        {saveError ? (
-          <p className="error-copy" role="alert">
-            {saveError}
-          </p>
-        ) : null}
-
         {response.results.length ? (
           <div className="recommendation-list">
             {response.results.map((result) => (
@@ -156,6 +153,12 @@ export function RecommendationBoard({
                 expanded={session.expandedGroupIds.has(result.ski_region_id)}
                 essentialCategories={essentialCategories}
                 changedRank={changedRankGroupIds.has(result.ski_region_id)}
+                saveError={
+                  saveErrorsByCandidate[
+                    session.selectedCandidateIdByGroup[result.ski_region_id] ??
+                      result.top_configuration.candidate_id
+                  ] ?? null
+                }
                 onToggle={() => onToggleGroup(result.ski_region_id)}
                 onSelectCandidate={(candidateId) =>
                   onSelectCandidate(result.ski_region_id, candidateId)

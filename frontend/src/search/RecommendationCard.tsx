@@ -30,6 +30,7 @@ export function RecommendationCard({
   expanded,
   essentialCategories,
   changedRank,
+  saveError = null,
   onToggle,
   onSelectCandidate,
   onSave,
@@ -39,6 +40,7 @@ export function RecommendationCard({
   expanded: boolean;
   essentialCategories: TripEssentialCategory[];
   changedRank: boolean;
+  saveError?: string | null;
   onToggle: () => void;
   onSelectCandidate: (candidateId: string) => void;
   onSave: (configuration: SearchV4Configuration) => void;
@@ -151,6 +153,11 @@ export function RecommendationCard({
               <Save aria-hidden="true" size={18} />
               Save as current trip
             </button>
+            {saveError ? (
+              <p className="error-copy" role="alert">
+                {saveError}
+              </p>
+            ) : null}
             {candidates.length > 1 ? (
               <section className="alternative-configurations">
                 <p className="section-label">Alternative configurations</p>

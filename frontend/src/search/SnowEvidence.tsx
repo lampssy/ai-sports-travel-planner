@@ -460,9 +460,12 @@ export function SnowEvidence({
 
   return (
     <section className="dossier-section snow-evidence" id="snow-evidence">
-      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {statusAnnouncement(visibleState, skiAreaName)}
-      </p>
+      {visibleState.kind === "ready" &&
+      visibleState.response.status === "available" ? (
+        <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {statusAnnouncement(visibleState, skiAreaName)}
+        </p>
+      ) : null}
 
       {visibleState.kind === "loading" ? (
         <AsyncState

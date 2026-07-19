@@ -951,9 +951,15 @@ test("failed refinement apply preserves results and the selected option", async 
   ).toBeVisible();
   await expect(option).toBeChecked();
   await expect(page.getByRole("alert")).toContainText(
-    "Snowcast is temporarily unavailable. Try again shortly.",
+    "Results could not be updated. Your current results and answer are still available. Try again.",
   );
-  await expect(page.getByRole("button", { name: /retry apply and rerank/i })).toBeEnabled();
+  const searchContext = page.getByLabel("Search context");
+  await expect(
+    searchContext.getByRole("button", { name: "Update results" }),
+  ).toBeEnabled();
+  await expect(
+    searchContext.getByRole("button", { name: "Keep these results" }),
+  ).toBeEnabled();
 });
 
 test("mobile board advances refinements in document flow without overflow", async ({

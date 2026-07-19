@@ -23,11 +23,13 @@ export function DossierVerdict({
   rank,
   headingRef,
   onSave,
+  saveError,
 }: {
   configuration: SearchV4Configuration;
   rank: number;
   headingRef: RefObject<HTMLHeadingElement>;
   onSave: (configuration: SearchV4Configuration) => void;
+  saveError: string | null;
 }) {
   const narrative = buildCandidateNarrative(configuration);
   const evidenceMode = evidenceQualityMode(configuration);
@@ -70,6 +72,11 @@ export function DossierVerdict({
         <Save aria-hidden="true" size={18} />
         Save as current trip
       </button>
+      {saveError ? (
+        <p className="error-copy" role="alert">
+          {saveError}
+        </p>
+      ) : null}
 
       <section className="dossier-verdict__reasons" aria-labelledby={reasonHeadingId}>
         <p className="section-label" id={reasonHeadingId}>

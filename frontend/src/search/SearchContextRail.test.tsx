@@ -319,6 +319,32 @@ test("keeps a terminal refinement failure visible with recovery actions", () => 
   expect(onKeepResults).toHaveBeenCalledOnce();
 });
 
+test("keeps the terminal recovery card busy and disables both actions during retry", () => {
+  render(
+    <SearchContextRail
+      intent={intent}
+      refinement={null}
+      refinementStatus="loading"
+      loading={false}
+      refinementRetrying
+      refinementError="Snowcast could not check for another useful question. Your results are unchanged."
+      refinementControlRef={createRef<HTMLButtonElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+      onRetryRefinement={vi.fn()}
+      onKeepResults={vi.fn()}
+    />,
+  );
+
+  const recovery = screen.getByText("One more question").closest("div");
+  expect(recovery).toHaveAttribute("aria-busy", "true");
+  expect(screen.getByRole("button", { name: "Try again" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Keep these results" })).toBeDisabled();
+});
+
 test("keeps the idle lifecycle state compact", () => {
   render(
     <SearchContextRail
@@ -357,7 +383,7 @@ test("shows when no useful follow-up is needed", () => {
   );
 
   expect(screen.getByRole("status")).toHaveTextContent(
-    "No follow-up would materially change these results.",
+    "No more questions would materially change these results.",
   );
 });
 
@@ -379,6 +405,6 @@ test("reports a skipped follow-up without claiming it was unnecessary", () => {
   );
 
   expect(screen.getByRole("status")).toHaveTextContent(
-    "Follow-up skipped. Results unchanged.",
+    "Question skipped. Results unchanged.",
   );
 });
