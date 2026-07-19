@@ -2,13 +2,14 @@
 
 ## Status
 
-- Status: draft
+- Status: accepted
 - Owner: solo-builder
 - Related docs:
   - `docs/advisory-reviews/2026-07-19-content-language-domain-audit.md`
   - `docs/domain-language.md`
   - `docs/snow-evidence-model.md`
-- Related plan: pending design review
+- Related plan:
+  - `docs/superpowers/plans/2026-07-19-product-language-audit-remediation.md`
 - Related ADRs:
   - `docs/architecture/adr/0017-use-stable-public-api-error-codes.md`
 
@@ -110,7 +111,8 @@ Out of scope:
 - Advisory design-review:
   - reviewers: content-language, UI/UX, mobile companion, backend/API,
     data-trust/source-integrity, accessibility
-  - status: pending
+  - status: completed; all six lanes approved exact head `a5b5855` after the
+    accommodation-boundary follow-up
 - Advisory feature-review before final handoff:
   - reviewers: same scoped reviewers plus final whole-branch review
   - status: planned
