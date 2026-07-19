@@ -1952,6 +1952,54 @@ def test_refinement_service_returns_not_needed_for_zero_result_baseline(
     assert response.refinements == ()
 
 
+def test_all_resolved_topics_need_no_provider_completion_in_refinement_service() -> (
+    None
+):
+    snapshot, manifest = _catalog_and_trust()
+    policy = load_search_policy()
+    presentation = load_refinement_presentation_policy()
+    snapshot_store = SearchRefinementSnapshotStore()
+    baseline = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(),
+        forecast_repository=_ForecastRepository(),
+        policy=policy,
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+        refinement_snapshot_store=snapshot_store,
+    )
+    provider_completions = 0
+
+    class _Client:
+        model = "test-model"
+
+        def complete(self, **_kwargs: object) -> str:
+            nonlocal provider_completions
+            provider_completions += 1
+            raise AssertionError("resolved topics must skip provider completion")
+
+    resolved_topic_ids = frozenset(
+        topic.topic_id
+        for topic in presentation.topics
+        if policy.factor(topic.factor_id).clarifiable
+    )
+
+    response = get_search_refinements(
+        intent=_intent(),
+        brief="Help us decide.",
+        baseline_fingerprint=baseline.baseline_fingerprint,
+        already_answered_question_ids=frozenset(),
+        resolved_topic_ids=resolved_topic_ids,
+        llm_client_factory=lambda _remaining: _Client(),
+        refinement_snapshot_store=snapshot_store,
+    )
+
+    assert response.refinement_status == "not_needed"
+    assert response.refinements == ()
+    assert provider_completions == 0
+
+
 @pytest.mark.parametrize(
     ("max_questions", "expected_generation_calls"),
     ((0, 0), (1, 1)),

@@ -2658,6 +2658,110 @@ test("keeps a no-op refinement local and records it as answered", async () => {
   ).toEqual(["pass-balance"]);
 });
 
+test("keeps keyboard focus stable while refinement follow-ups load", async () => {
+  let refinementAttempt = 0;
+  let resolveSecondRefinement: ((response: Response) => void) | undefined;
+  let resolveThirdRefinement: ((response: Response) => void) | undefined;
+  const noChangeRefinement: RefinementProposal = {
+    topic_id: "pass-balance",
+    target_factor_id: "pass_terrain_value",
+    question_id: "pass-balance",
+    question: "Keep the current pass-value balance?",
+    reason: "The current balance remains a valid choice.",
+    options: [
+      {
+        label: "Keep current balance",
+        description: "Keep the current pass-value objective.",
+        intent_changed: false,
+        group_priority_patches: [],
+        factor_preference_patches: [],
+        objective_patches: [],
+      },
+    ],
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url === "/api/current-trip") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ trip: null }), { status: 200 }),
+        );
+      }
+      if (url === "/api/search") {
+        return Promise.resolve(
+          new Response(JSON.stringify(response()), { status: 200 }),
+        );
+      }
+      if (url === "/api/search/refinements") {
+        refinementAttempt += 1;
+        if (refinementAttempt === 1) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify(
+                refinementResponse({
+                  refinement_status: "questions_available",
+                  refinements: [noChangeRefinement],
+                }),
+              ),
+              { status: 200 },
+            ),
+          );
+        }
+        if (refinementAttempt === 2) {
+          return new Promise<Response>((resolve) => {
+            resolveSecondRefinement = resolve;
+          });
+        }
+        return new Promise<Response>((resolve) => {
+          resolveThirdRefinement = resolve;
+        });
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("radio", { name: /keep current balance/i }),
+  );
+  await user.click(screen.getByRole("button", { name: /keep current ranking/i }));
+
+  const resultsHeading = screen.getByRole("heading", {
+    name: "Recommended ski trips",
+  });
+  expect(resultsHeading).toHaveFocus();
+
+  resolveSecondRefinement?.(
+    new Response(
+      JSON.stringify(
+        refinementResponse({
+          refinement_status: "questions_available",
+          refinements: [refinement("second", "Second refinement?")],
+        }),
+      ),
+      { status: 200 },
+    ),
+  );
+  expect(await screen.findByText("Second refinement?")).toBeVisible();
+  await waitFor(() => {
+    expect(screen.getByRole("radio", { name: /prefer this/i })).toHaveFocus();
+  });
+
+  await user.click(screen.getByRole("button", { name: /skip this question/i }));
+  expect(resultsHeading).toHaveFocus();
+
+  resolveThirdRefinement?.(
+    new Response(JSON.stringify(refinementResponse()), { status: 200 }),
+  );
+  await waitFor(() => {
+    expect(screen.queryByText("Second refinement?")).not.toBeInTheDocument();
+  });
+});
+
 test("guards drawer entry and chip mutations during a delayed rerank", async () => {
   searchResponses = [
     response({

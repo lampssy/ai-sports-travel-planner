@@ -253,6 +253,30 @@ def test_resolved_topic_is_removed_from_provider_context() -> None:
     assert "accessible_terrain_scale" not in topic_ids
 
 
+def test_all_resolved_topics_skip_the_provider() -> None:
+    policy = load_search_policy()
+    presentation = load_refinement_presentation_policy()
+    client = _Client([])
+    resolved_topic_ids = frozenset(
+        topic.topic_id
+        for topic in presentation.topics
+        if policy.factor(topic.factor_id).clarifiable
+    )
+
+    result = generate_refinement_proposals(
+        brief="Help me choose.",
+        intent=SearchIntent(),
+        candidates=_candidates(),
+        policy=policy,
+        presentation=presentation,
+        client=client,
+        resolved_topic_ids=resolved_topic_ids,
+    )
+
+    assert result == RefinementGenerationResult(outcome="no_proposals", proposals=())
+    assert client.calls == []
+
+
 def test_refinement_uses_compact_answer_id_only_provider_schema() -> None:
     client = _Client([_valid_response()])
 

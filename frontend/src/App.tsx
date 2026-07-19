@@ -886,6 +886,7 @@ function App() {
       refinement,
     );
     if (!option.intent_changed) {
+      resultsHeadingRef.current?.focus({ preventScroll: true });
       setResolvedTopics(nextResolvedTopics);
       setSession((current) =>
         current ? dismissRefinement(current, refinement.question_id) : current,
@@ -1059,6 +1060,7 @@ function App() {
       resolvedTopics,
       refinement,
     );
+    resultsHeadingRef.current?.focus({ preventScroll: true });
     setResolvedTopics(nextResolvedTopics);
     setSession((current) =>
       current ? dismissRefinement(current, refinement.question_id) : current,

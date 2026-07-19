@@ -272,6 +272,8 @@ def generate_refinement_proposals(
         )
         if topic["topic_id"] not in resolved_topic_ids
     )
+    if not eligible_provider_topics:
+        return RefinementGenerationResult(outcome="no_proposals", proposals=())
     context = build_refinement_context(
         brief=bounded_untrusted_brief,
         intent=intent,
