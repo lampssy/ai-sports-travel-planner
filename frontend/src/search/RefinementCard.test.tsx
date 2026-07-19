@@ -106,7 +106,7 @@ test("supports keyboard-only radio selection, apply, and skip focus", async () =
   expect(shorterJourney).toBeChecked();
 
   await user.tab();
-  const apply = screen.getByRole("button", { name: "Update results" });
+  const apply = screen.getByRole("button", { name: "Continue" });
   expect(document.activeElement).toBe(apply);
   await user.keyboard("{Enter}");
   expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[1]);
@@ -148,11 +148,31 @@ test("previews a selected option before apply and supports clear and skip", asyn
   expect(
     screen.getByText("Keeps your current trip decisions unchanged."),
   ).toBeVisible();
-  await user.click(screen.getByRole("button", { name: "Update results" }));
+  await user.click(screen.getByRole("button", { name: "Continue" }));
   expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[1]);
 
   await user.click(screen.getByRole("button", { name: /skip this question/i }));
   expect(onSkip).toHaveBeenCalledWith(refinement);
+});
+
+test("uses Continue only when the selected answer leaves intent unchanged", async () => {
+  const user = userEvent.setup();
+  render(
+    <RefinementCard
+      refinement={refinement}
+      loading={false}
+      error={null}
+      onApply={vi.fn()}
+      onSkip={vi.fn()}
+      onKeepResults={vi.fn()}
+    />,
+  );
+
+  await user.click(screen.getByRole("radio", { name: /snow reliability/i }));
+  expect(screen.getByRole("button", { name: "Update results" })).toBeVisible();
+
+  await user.click(screen.getByRole("radio", { name: /shorter journey/i }));
+  expect(screen.getByRole("button", { name: "Continue" })).toBeVisible();
 });
 
 test("preserves the selected option and offers update or exit after apply failure", async () => {

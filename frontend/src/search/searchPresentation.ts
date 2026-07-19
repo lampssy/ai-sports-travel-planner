@@ -33,7 +33,7 @@ export const featureOptions = [
   ["snow_park", "Snow park"],
   ["night_skiing", "Night skiing"],
   ["glacier_terrain", "Glacier terrain"],
-  ["snowmaking_availability", "Snowmaking resilience"],
+  ["snowmaking_availability", "Snowmaking"],
   ["terrain_potential_scale", "Largest connected terrain"],
   ["lift_network_scale", "Large lift network"],
 ] as const;
@@ -47,8 +47,8 @@ export const factorLabels: Record<string, string> = {
   snow_park: "Snow park",
   night_skiing: "Night skiing",
   glacier_terrain: "Glacier terrain",
-  snowmaking_availability: "Snowmaking resilience",
-  stay_base_access: "Access to the slopes",
+  snowmaking_availability: "Snowmaking",
+  stay_base_access: "Place to stay and lift access",
   pass_price_per_day: "Lift-pass price per day",
   pass_terrain_value: "Terrain for lift-pass price",
   ski_day_apres: "Après after skiing",
@@ -62,7 +62,7 @@ export const factorLabels: Record<string, string> = {
 
 export const groupLabels: Record<string, string> = {
   trip_viability: "Trip timing",
-  ski_experience: "Skiing",
+  ski_experience: "Ski experience",
   stay_practicality: "Where you stay",
   value: "Value",
   character: "Character",
@@ -644,8 +644,8 @@ const strengthCopy: Record<string, string> = {
   party_skill_coverage: "The selected terrain supports your party's skill mix.",
   terrain_potential_scale: "The selected pass supports a broad terrain choice.",
   lift_network_scale: "The lift network supports varied ski-day plans.",
-  glacier_terrain: "Glacier terrain adds resilience for the selected window.",
-  snowmaking_availability: "Snowmaking adds resilience for the selected window.",
+  glacier_terrain: "Glacier terrain is available for this trip option.",
+  snowmaking_availability: "Snowmaking is available for this trip option.",
   stay_base_access: "The recommended place to stay keeps lift access practical.",
   pass_price_per_day: "The selected pass offers competitive daily value.",
   pass_terrain_value: "The selected pass balances terrain access and price.",
@@ -785,7 +785,7 @@ export function decisionEvidencePresentation(
   } else {
     addUncertainty(
       "pass-price",
-      "A comparable pass price is not available for this configuration.",
+      "A comparable pass price is not available for this trip option.",
     );
   }
 
@@ -799,7 +799,7 @@ export function decisionEvidencePresentation(
   } else {
     addUncertainty(
       "lodging",
-      "No stay-price estimate is available for this configuration.",
+      "No stay-price estimate is available for this trip option.",
     );
   }
 
@@ -908,7 +908,7 @@ export function buildCandidateNarrative(
           ? "A practical lift-access match based on estimated data."
           : "A practical lift-access match for this trip."
       : `A strong ${supportedLabel?.toLowerCase() ?? "trip"} match.`
-    : "A complete trip configuration for comparison.";
+    : "A complete trip option for comparison.";
   return {
     verdict,
     ...(supported

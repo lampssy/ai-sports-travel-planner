@@ -53,12 +53,12 @@ export function AccommodationHandoff({
         </div>
         <div className="accommodation-handoff__action">
           <a className="primary-command" href={url}>
-            Search stays in {configuration.stay_destination_name}
+            Search stays in {configuration.stay_destination_name} on Booking.com
             <ExternalLink aria-hidden="true" size={17} />
           </a>
           <small>
-            The provider searches {configuration.stay_destination_name}, not a
-            specific place to stay.
+            Booking.com searches {configuration.stay_destination_name}, not the
+            recommended place {configuration.stay_base_name}.
           </small>
         </div>
       </div>

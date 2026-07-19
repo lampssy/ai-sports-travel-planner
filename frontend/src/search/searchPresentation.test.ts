@@ -444,6 +444,35 @@ describe("deterministic recommendation copy", () => {
     });
   });
 
+  test.each([
+    ["glacier_terrain", "Glacier terrain is available for this trip option."],
+    ["snowmaking_availability", "Snowmaking is available for this trip option."],
+  ])("states %s availability without claiming resilience", (factorId, strength) => {
+    const candidate = configuration(factorId, {
+      factors: [
+        {
+          factor_id: factorId,
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: true,
+          raw_utility: 1,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 1,
+          effective_weight: 1,
+          contribution_points: 12,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Catalog availability evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(buildCandidateNarrative(candidate).strength).toBe(strength);
+    expect(buildCandidateNarrative(candidate).strength).not.toMatch(/resilien/i);
+  });
+
   test("qualifies or suppresses access strengths from non-verified catalog evidence", () => {
     const accessFactor = {
       factor_id: "stay_base_access",
@@ -499,7 +528,7 @@ describe("deterministic recommendation copy", () => {
       strength: "Catalog estimates suggest the recommended place to stay keeps access practical.",
     });
     expect(buildCandidateNarrative(needsSource)).toEqual({
-      verdict: "A complete trip configuration for comparison.",
+      verdict: "A complete trip option for comparison.",
     });
     expect(buildCandidateNarrative(adjusted)).toEqual({
       verdict: "A practical lift-access match based on estimated data.",
@@ -507,7 +536,7 @@ describe("deterministic recommendation copy", () => {
         "Estimated source data supports the recommended place to stay as a practical choice.",
     });
     expect(buildCandidateNarrative(missingEvidence)).toEqual({
-      verdict: "A complete trip configuration for comparison.",
+      verdict: "A complete trip option for comparison.",
       watchout: "Lift-access details need source verification.",
     });
   });
@@ -705,8 +734,8 @@ describe("why this trip presentation", () => {
       expect.arrayContaining([
         "Snow evidence is limited for the requested travel window.",
         "Comparable pass-wide terrain coverage is not available yet.",
-        "A comparable pass price is not available for this configuration.",
-        "No stay-price estimate is available for this configuration.",
+        "A comparable pass price is not available for this trip option.",
+        "No stay-price estimate is available for this trip option.",
       ]),
     );
     expect(new Set(presentation.uncertainties.map((item) => item.detail)).size).toBe(

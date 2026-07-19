@@ -60,7 +60,7 @@ def test_public_destination_page_returns_server_rendered_html() -> None:
     assert '<meta name="twitter:description"' in response.text
     assert "Current snow signal" in response.text
     assert "Conditions calendar" in response.text
-    assert "Trust and provenance" in response.text
+    assert "How we use source data" in response.text
     assert "Source:" in response.text
     assert "View calendar" in response.text
     assert "Mid-mountain snow" in response.text
@@ -71,10 +71,17 @@ def test_public_destination_page_returns_server_rendered_html() -> None:
     assert "forecast assisted" not in response.text.lower()
     assert "+00:00" not in response.text
     assert "Le Lac" in response.text
+    assert "Places to stay" in response.text
+    assert "Stay areas Snowcast can consider" in response.text
+    assert "Ski region" in response.text
     assert "Tignes ski-area conditions" in response.text
     lower_response = response.text.lower()
     assert "quality tier" not in lower_response
     assert "stay base" not in lower_response
+    assert "recommended places to stay" not in lower_response
+    assert "trip market" not in lower_response
+    assert "trust and provenance" not in lower_response
+    assert "weather score" not in lower_response
 
 
 def test_public_destination_page_unknown_destination_returns_404() -> None:

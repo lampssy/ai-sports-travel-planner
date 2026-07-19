@@ -73,12 +73,19 @@ test("keeps recommended stay-base guidance separate from destination-level searc
     /catalog lodging range|estimate-aware constraint/i,
   );
   expect(screen.getByText(/toviere.*250 m walk/i)).toBeVisible();
-  const link = screen.getByRole("link", { name: "Search stays in Tignes" });
+  const link = screen.getByRole("link", {
+    name: "Search stays in Tignes on Booking.com",
+  });
   expect(link).toHaveAttribute(
     "href",
     "/api/outbound/accommodation/tignes?stay_base_id=tignes-le-lac&focus_ski_area_id=tignes-ski-area&source_surface=recommendation_dossier",
   );
-  expect(document.body.textContent).not.toMatch(/hotel name|available rooms|booking\.com/i);
+  expect(
+    screen.getByText(
+      "Booking.com searches Tignes, not the recommended place Le Lac.",
+    ),
+  ).toBeVisible();
+  expect(document.body.textContent).not.toMatch(/hotel name|available rooms/i);
 });
 
 test.each([

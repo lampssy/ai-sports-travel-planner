@@ -93,7 +93,7 @@ export function RecommendationCard({
           aria-label={`${expanded ? "Collapse" : "Expand"} ${result.ski_region_name}. Stay in ${configuration.stay_base_name}. Trip fit ${configuration.fit_score != null ? configuration.fit_score.toFixed(1) : "not scored"}. Snow window ${snowWindowLabel(configuration)}.`}
           aria-expanded={expanded}
           aria-controls={detailsId}
-          title={`${expanded ? "Collapse" : "Expand"} recommendation details`}
+          title={`${expanded ? "Collapse" : "Expand"} trip option details`}
           onClick={onToggle}
         >
           <ChevronDown aria-hidden="true" size={22} />
@@ -137,13 +137,13 @@ export function RecommendationCard({
             </div>
           </div>
 
-          <aside className="recommendation-card__actions" aria-label="Recommendation actions">
+          <aside className="recommendation-card__actions" aria-label="Trip option actions">
             <a
               className="primary-card-action"
               href={buildDossierHref(result.ski_region_id, configuration.candidate_id)}
             >
               <ArrowRight aria-hidden="true" size={18} />
-              View dossier
+              View trip details
             </a>
             <button
               type="button"
@@ -160,7 +160,7 @@ export function RecommendationCard({
             ) : null}
             {candidates.length > 1 ? (
               <section className="alternative-configurations">
-                <p className="section-label">Alternative configurations</p>
+                <p className="section-label">Alternative trip options</p>
                 <div>
                   {candidates.map((candidate) => {
                     const selected = candidate.candidate_id === configuration.candidate_id;

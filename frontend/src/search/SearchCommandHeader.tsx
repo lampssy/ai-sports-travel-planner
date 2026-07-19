@@ -40,7 +40,7 @@ export function SearchCommandHeader({
           />
           <button type="submit" aria-disabled={loading || undefined}>
             <Search aria-hidden="true" size={18} />
-            {loading ? "Searching trip" : "Search trip"}
+            {loading ? "Searching for trip options" : "Search trip options"}
           </button>
         </form>
         <nav aria-label="Primary navigation" className="compact-nav">

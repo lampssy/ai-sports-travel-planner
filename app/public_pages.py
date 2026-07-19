@@ -415,19 +415,19 @@ def _render_html(page: PublicDestinationPage) -> str:
         <aside class="card">
           <div class="eyebrow">Destination facts</div>
           <div class="metrics">
-            <div class="metric"><div class="label">Recommended places to stay</div><div class="value">{len(page.stay_bases)}</div></div>
+            <div class="metric"><div class="label">Places to stay</div><div class="value">{len(page.stay_bases)}</div></div>
             <div class="metric"><div class="label">Accessible ski areas</div><div class="value">{len(page.ski_area_sections)}</div></div>
-            <div class="metric"><div class="label">Trip market</div><div class="value">{_html(page.ski_region_name)}</div></div>
+            <div class="metric"><div class="label">Ski region</div><div class="value">{_html(page.ski_region_name)}</div></div>
             <div class="metric"><div class="label">Price level</div><div class="value">{_html(destination.price_level.title())}</div></div>
           </div>
         </aside>
       </section>
       {_render_ski_area_sections(page.ski_area_sections)}
       <section class="grid">
-        <div class="card"><div class="eyebrow">Recommended places to stay</div><h2>Recommended places to stay</h2><div class="list">{_render_stay_bases(page.stay_bases)}</div></div>
+        <div class="card"><div class="eyebrow">Places to stay</div><h2>Stay areas Snowcast can consider</h2><div class="list">{_render_stay_bases(page.stay_bases)}</div></div>
         <div class="card"><div class="eyebrow">Equipment rentals</div><h2>Equipment options</h2><div class="list">{_render_rentals(page.rentals)}</div></div>
       </section>
-      <section class="card" style="margin-top: 22px;"><div class="eyebrow">Trust and provenance</div><h2>What this guide is based on</h2><p class="muted">This page combines curated destination and access details with current conditions and archive weather for each ski area. It does not blend several ski areas into one weather score.</p></section>
+      <section class="card" style="margin-top: 22px;"><div class="eyebrow">How we use source data</div><h2>What this guide is based on</h2><p class="muted">This page combines curated destination and access details with current conditions and archive weather. Weather information is shown separately for each ski area.</p></section>
     </main>
   </body>
 </html>

@@ -67,7 +67,7 @@ describe("DecisionEvidenceLedger", () => {
     ["verified", "Based on source data."],
     [
       "verified_with_adjustment",
-      "Estimated from source data for this trip configuration.",
+      "Estimated from source data for this trip option.",
     ],
     ["estimated", "Estimated from available catalog data."],
     ["needs_source", "Source confirmation is still needed."],
@@ -98,15 +98,15 @@ describe("DecisionEvidenceLedger", () => {
       render(<DecisionEvidenceLedger configuration={candidate} />);
 
       const details = screen
-        .getByText("Sources and calculation details")
+        .getByText("Show technical calculation details")
         .closest("details");
       expect(details).not.toHaveAttribute("open");
 
-      await user.click(screen.getByText("Sources and calculation details"));
+      await user.click(screen.getByText("Show technical calculation details"));
 
       expect(details).toHaveAttribute("open");
       const factorRow = within(details as HTMLElement)
-        .getByRole("heading", { name: "Party skill fit" })
+        .getByRole("heading", { name: "Skiing level fit" })
         .closest("article");
       expect(factorRow).not.toBeNull();
       expect(within(factorRow as HTMLElement).getByText(new RegExp(expectedStatus))).toBeVisible();
@@ -125,12 +125,12 @@ describe("DecisionEvidenceLedger", () => {
 
   test.each([
     [
-      "keeps the catalog stay-base relationship when distance needs verification",
+      "keeps the catalog place-to-stay relationship when distance needs verification",
       "estimated",
       "The catalog links Breuil-Cervinia to Cervinia.",
     ],
     [
-      "identifies a stay-base relationship that needs verification",
+      "identifies a place-to-stay relationship that needs verification",
       "needs_source",
       "The link between Breuil-Cervinia and Cervinia needs verification.",
     ],
@@ -148,10 +148,10 @@ describe("DecisionEvidenceLedger", () => {
       };
 
       render(<DecisionEvidenceLedger configuration={candidate} />);
-      await user.click(screen.getByText("Sources and calculation details"));
+      await user.click(screen.getByText("Show technical calculation details"));
 
       const accessRow = screen
-        .getByRole("heading", { name: "Stay base and lift access" })
+        .getByRole("heading", { name: "Place to stay and lift access" })
         .closest("article");
       expect(accessRow).not.toBeNull();
       expect(

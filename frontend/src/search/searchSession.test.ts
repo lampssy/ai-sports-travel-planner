@@ -205,12 +205,38 @@ test("rerank preserves present selections, expansions, and scroll and expands th
   expect(reranked.resultsScrollY).toBe(640);
 });
 
-test("does not announce a changed ranking when result positions are unchanged", () => {
+test("uses canonical trip-option wording when result positions are unchanged", () => {
   const unchanged = response([group("region-a", "candidate-a")]);
 
   expect(rankChangeSummary(unchanged, unchanged)).toEqual({
     changedGroupIds: new Set(),
-    announcement: "Ranking unchanged.",
+    announcement: "Trip options unchanged.",
+  });
+});
+
+test("announces singular and plural trip-option position changes", () => {
+  const previousA = group("region-a", "candidate-a");
+  const previousB = group("region-b", "candidate-b");
+  previousA.rank = 1;
+  previousB.rank = 2;
+
+  const nextA = group("region-a", "candidate-a");
+  nextA.rank = 2;
+  expect(rankChangeSummary(response([previousA]), response([nextA]))).toEqual({
+    changedGroupIds: new Set(["region-a"]),
+    announcement: "1 trip option changed position. region-a is now #2.",
+  });
+
+  const nextB = group("region-b", "candidate-b");
+  nextB.rank = 1;
+  expect(
+    rankChangeSummary(
+      response([previousA, previousB]),
+      response([nextB, nextA]),
+    ),
+  ).toEqual({
+    changedGroupIds: new Set(["region-a", "region-b"]),
+    announcement: "2 trip options changed position. region-b is now #1.",
   });
 });
 

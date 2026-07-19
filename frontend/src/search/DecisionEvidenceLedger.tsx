@@ -54,7 +54,7 @@ export function DecisionEvidenceLedger({
       ) : null}
 
       <Disclosure
-        label="Sources and calculation details"
+        label="Show technical calculation details"
         className="why-trip__technical"
       >
         <div className="why-trip__technical-rows">

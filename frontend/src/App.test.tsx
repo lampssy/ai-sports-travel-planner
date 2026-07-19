@@ -576,7 +576,7 @@ test("keeps an overflow group priority reachable and removable in the drawer", a
   ).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Close filters" }));
-  await user.click(screen.getByRole("button", { name: "Search trip" }));
+  await user.click(screen.getByRole("button", { name: "Search trip options" }));
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
   });
@@ -704,7 +704,7 @@ test("restores the previous month when Month mode is selected again", async () =
   await user.selectOptions(screen.getByLabelText("Travel window"), "month");
   expect(screen.getByLabelText("Travel month")).toHaveValue("3");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: "Search trip" }));
+  await user.click(screen.getByRole("button", { name: "Search trip options" }));
 
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
@@ -733,7 +733,7 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
   expect(
     screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
   ).toBeInTheDocument();
-  expect(screen.getByText(/show scoring details/i)).toBeInTheDocument();
+  expect(screen.getByText(/show technical calculation details/i)).toBeInTheDocument();
   expect(screen.getByText("Unknown")).toBeInTheDocument();
 });
 
@@ -1648,7 +1648,7 @@ test("keeps current results and update focus when a manual search update fails",
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
 
-  const update = screen.getByRole("button", { name: "Search trip" });
+  const update = screen.getByRole("button", { name: "Search trip options" });
   update.focus();
   await user.click(update);
 
@@ -1660,7 +1660,7 @@ test("keeps current results and update focus when a manual search update fails",
     "Results could not be updated. Your current results are still available. Try again.",
   );
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
-  expect(screen.getByRole("button", { name: "Search trip" })).toHaveFocus();
+  expect(screen.getByRole("button", { name: "Search trip options" })).toHaveFocus();
   expect(searchAttempts).toBe(2);
 });
 
@@ -1710,7 +1710,7 @@ test("opens the selected candidate dossier without rerunning search and saves it
   await user.click(
     screen.getByRole("button", { name: /select le lac with tignes local pass/i }),
   );
-  await user.click(screen.getByRole("link", { name: "View dossier" }));
+  await user.click(screen.getByRole("link", { name: "View trip details" }));
 
   expect(window.location.pathname).toBe("/recommendations/tignes-val-disere");
   expect(window.location.search).toBe("?candidate=tignes-access--local-pass");
@@ -1741,7 +1741,7 @@ test("shows a dossier save failure beside the selected Trip details action", asy
   const user = userEvent.setup();
   render(<App />);
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
-  await user.click(screen.getByRole("link", { name: "View dossier" }));
+  await user.click(screen.getByRole("link", { name: "View trip details" }));
   await screen.findByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" });
 
   vi.stubGlobal(
@@ -2164,7 +2164,7 @@ test("restores result state and scroll after returning from a dossier", async ()
   Object.defineProperty(window, "scrollY", { configurable: true, value: 428 });
   render(<App />);
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
-  await user.click(screen.getByRole("link", { name: "View dossier" }));
+  await user.click(screen.getByRole("link", { name: "View trip details" }));
   await screen.findByRole("heading", { name: /tignes - val d'isere - le lac/i });
   await user.click(screen.getByRole("button", { name: "All results" }));
 
@@ -2455,7 +2455,7 @@ test("applies a refinement to the displayed session instead of unsent drawer and
           topic_id: "local_pace",
           target_factor_id: "local_pace",
           question_id: "pace",
-          question: "What pace should your accommodation base have?",
+          question: "What pace do you prefer where you stay?",
           reason: "This can change the leading stay base.",
           options: [
             {
@@ -2723,7 +2723,7 @@ test("an ordinary successful search clears refinement undo and rank feedback", a
   expect(await screen.findByRole("button", { name: "Undo" })).toBeVisible();
   expect(screen.getAllByText("Trip options unchanged.")[0]).toBeVisible();
 
-  await user.click(screen.getByRole("button", { name: "Search trip" }));
+  await user.click(screen.getByRole("button", { name: "Search trip options" }));
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
   });
@@ -2934,7 +2934,7 @@ test("shows a lower-card save failure beside only the initiating result", async 
       });
     }),
   );
-  await user.click(screen.getByRole("button", { name: "Search trip" }));
+  await user.click(screen.getByRole("button", { name: "Search trip options" }));
   await waitFor(() =>
     expect(
       screen.queryByText("Your trip could not be saved. Try again."),
@@ -3002,12 +3002,12 @@ test("preserves refinement objectives and answered state when pass priority chan
     "pass_price_per_day",
   );
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: "Search trip" }));
+  await user.click(screen.getByRole("button", { name: "Search trip options" }));
 
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   await user.selectOptions(screen.getByLabelText("Value preference"), "");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: "Search trip" }));
+  await user.click(screen.getByRole("button", { name: "Search trip options" }));
 
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(4);
@@ -3083,7 +3083,7 @@ test("changing a hard constraint starts a new refinement context", async () => {
   await user.clear(screen.getByLabelText("Country"));
   await user.type(screen.getByLabelText("Country"), "Italy");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: "Search trip" }));
+  await user.click(screen.getByRole("button", { name: "Search trip options" }));
 
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(3);
@@ -3133,7 +3133,7 @@ test("keeps a no-op refinement local and records it as answered", async () => {
   await user.click(
     await screen.findByRole("radio", { name: /keep current balance/i }),
   );
-  await user.click(screen.getByRole("button", { name: "Update results" }));
+  await user.click(screen.getByRole("button", { name: "Continue" }));
 
   expect(screen.getAllByText("Current trip choices kept.")[0]).toBeVisible();
   expect(screen.queryByText(/keep the current pass-value balance/i)).toBeNull();
@@ -3152,7 +3152,7 @@ test("keeps a no-op refinement local and records it as answered", async () => {
     ).toHaveFocus();
   });
 
-  await user.click(screen.getByRole("button", { name: "Search trip" }));
+  await user.click(screen.getByRole("button", { name: "Search trip options" }));
   await waitFor(() => {
     expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
   });
@@ -3233,7 +3233,7 @@ test("keeps keyboard focus stable while refinement follow-ups load", async () =>
   await user.click(
     await screen.findByRole("radio", { name: /keep current balance/i }),
   );
-  await user.click(screen.getByRole("button", { name: "Update results" }));
+  await user.click(screen.getByRole("button", { name: "Continue" }));
 
   const resultsHeading = screen.getByRole("heading", {
     name: "Trip options",

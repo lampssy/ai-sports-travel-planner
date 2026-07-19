@@ -1391,7 +1391,7 @@ def test_registry_copy_resolves_to_typed_actions() -> None:
     )
     assert resolved.label == "Traditional mountain village + Quiet and relaxed"
     assert resolved.description == (
-        "Prioritize a traditional mountain village. "
+        "Prioritize traditional mountain buildings and atmosphere. "
         "Prioritize a quiet and relaxed pace near where you stay."
     )
     assert [item.factor_id for item in resolved.factor_preferences] == [
@@ -1410,9 +1410,39 @@ def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:
     assert local.description == "Prioritize a quiet evening near where you stay."
 
 
+def test_development_style_and_base_type_have_distinct_visible_contexts() -> None:
+    presentation = load_refinement_presentation_policy()
+    development = presentation.topic_by_id["development_style"]
+    base_type = presentation.topic_by_id["base_type"]
+
+    assert development.fallback_question == (
+        "What building and atmosphere style do you prefer where you stay?"
+    )
+    assert base_type.fallback_question == (
+        "What type of town or area do you prefer to stay in?"
+    )
+    assert development.fallback_question != base_type.fallback_question
+    assert presentation.answer_by_id["development_style.traditional"].description == (
+        "Prioritize traditional mountain buildings and atmosphere."
+    )
+    assert presentation.answer_by_id["base_type.town"].description == (
+        "Prioritize staying in a ski town."
+    )
+
+
+def test_dynamic_approved_phrases_use_where_you_stay() -> None:
+    presentation = load_refinement_presentation_policy()
+
+    for topic in presentation.topics:
+        approved_copy = " ".join(
+            (topic.traveller_topic, *topic.question_phrases)
+        ).lower()
+        assert "accommodation base" not in approved_copy
+
+
 def test_safe_dynamic_interaction_copy_survives_unchanged() -> None:
     presentation = load_refinement_presentation_policy()
-    question = "What kind of place do you prefer to stay in?"
+    question = "What building and atmosphere style do you prefer where you stay?"
 
     assert resolve_interaction_copy(
         question,
@@ -1450,14 +1480,14 @@ def test_unsafe_dynamic_question_uses_topic_fallback(question: str) -> None:
     )
 
     assert resolved == (
-        "What kind of place do you prefer to stay in?",
+        "What building and atmosphere style do you prefer where you stay?",
         "This choice can change which place to stay suits you best.",
     )
 
 
 def test_reason_is_always_server_owned_without_discarding_safe_question() -> None:
     presentation = load_refinement_presentation_policy()
-    question = "What kind of place do you prefer to stay in?"
+    question = "What building and atmosphere style do you prefer where you stay?"
 
     resolved = resolve_interaction_copy(
         question,
@@ -1584,7 +1614,7 @@ def test_dynamic_question_accepts_only_controlled_comparison_connectors(
     presentation = load_refinement_presentation_policy()
     question = (
         f"Would you prefer selected pass terrain {connector} "
-        "access from your accommodation base?"
+        "access from where you stay?"
     )
 
     assert (
@@ -1599,8 +1629,7 @@ def test_dynamic_question_accepts_only_controlled_comparison_connectors(
 
     assert (
         resolve_interaction_copy(
-            "Would you prefer selected pass terrain and access from your "
-            "accommodation base?",
+            "Would you prefer selected pass terrain and access from where you stay?",
             ("accessible_terrain_scale", "stay_base_access"),
             (),
             presentation,
@@ -1642,11 +1671,11 @@ def test_dynamic_question_accepts_only_controlled_comparison_connectors(
         ),
         (
             ("development_style",),
-            "What kind of place do you prefer to stay in?",
+            "What building and atmosphere style do you prefer where you stay?",
         ),
         (
             ("development_style",),
-            "What kind of place do you prefer to stay in?",
+            "What building and atmosphere style do you prefer where you stay?",
         ),
         (
             ("stay_base_access",),
@@ -1676,7 +1705,7 @@ def test_registered_preference_question_forms_accept_safe_paraphrases(
     [
         (
             ("stay_base_access",),
-            "Would your accommodation base have easy access to the slopes?",
+            "Would where you stay have easy access to the slopes?",
             "How important is easy access to the slopes from where you stay?",
         ),
         (
@@ -1768,7 +1797,7 @@ def test_dynamic_question_rejects_symbols_outside_the_character_policy(
             (),
             presentation,
         )[0]
-        == "What kind of place do you prefer to stay in?"
+        == "What building and atmosphere style do you prefer where you stay?"
     )
 
 
@@ -1807,7 +1836,7 @@ def test_dynamic_question_rejects_clause_separators(separator: str) -> None:
             (),
             presentation,
         )[0]
-        == "What kind of place do you prefer to stay in?"
+        == "What building and atmosphere style do you prefer where you stay?"
     )
 
 
@@ -1822,7 +1851,7 @@ def test_sensitive_marker_anywhere_in_brief_forces_registered_fallback() -> None
             presentation,
             untrusted_brief="password is blue traditional mountain village",
         )[0]
-        == "What kind of place do you prefer to stay in?"
+        == "What building and atmosphere style do you prefer where you stay?"
     )
 
 
@@ -1844,7 +1873,9 @@ def test_registry_fallback_uses_first_material_topic_and_authoritative_copy() ->
         ),
         presentation=presentation,
     )
-    assert fallback.proposal.question == "What kind of place do you prefer to stay in?"
+    assert fallback.proposal.question == (
+        "What building and atmosphere style do you prefer where you stay?"
+    )
     assert fallback.proposal.reason == (
         "This choice can change which place to stay suits you best."
     )
@@ -2084,7 +2115,8 @@ def test_provider_topics_expose_only_approved_copy_for_allowed_factors() -> None
     topic = topics[0]
     assert topic["topic_id"] == "development_style"
     assert topic["question_phrases"] == (
-        "village or resort development style",
+        "building and atmosphere style",
+        "traditional mountain buildings",
         "traditional mountain village",
         "a traditional mountain village",
         "traditional mountain village or resort",
@@ -2093,17 +2125,17 @@ def test_provider_topics_expose_only_approved_copy_for_allowed_factors() -> None
         {
             "answer_id": "development_style.traditional",
             "label": "Traditional mountain village",
-            "description": "Prioritize a traditional mountain village.",
+            "description": "Prioritize traditional mountain buildings and atmosphere.",
         },
         {
             "answer_id": "development_style.mixed",
             "label": "Mix of old and new",
-            "description": "Prioritize a mix of old and new buildings.",
+            "description": "Prioritize a mix of traditional and modern buildings.",
         },
         {
             "answer_id": "development_style.planned_resort",
             "label": "Purpose-built ski resort",
-            "description": "Prioritize a purpose-built ski resort.",
+            "description": "Prioritize purpose-built ski-resort design.",
         },
         {
             "answer_id": "development_style.ignore",

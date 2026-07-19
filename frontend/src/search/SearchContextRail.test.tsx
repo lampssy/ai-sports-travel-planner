@@ -104,7 +104,9 @@ test("separates hard constraints from preferences and renders one refinement", (
 
   const preferences = screen.getByRole("group", { name: "Preferences" });
   expect(within(preferences).getByText(/terrain for lift-pass price/i)).toBeVisible();
-  expect(within(preferences).getByText(/access to the slopes/i)).toBeVisible();
+  expect(
+    within(preferences).getByText(/place to stay and lift access/i),
+  ).toBeVisible();
   expect(screen.getByRole("button", { name: "Adjust" })).toBeVisible();
   expect(screen.getAllByText("What should break the tie?")).toHaveLength(1);
   expect(screen.getByRole("status")).toHaveTextContent(
@@ -171,7 +173,7 @@ test("keeps required factor preferences visible with hard constraints", () => {
   const hard = screen.getByRole("group", { name: "Must-haves" });
   expect(
     within(hard).getByRole("button", {
-      name: "Remove Require Snowmaking resilience",
+      name: "Remove Require Snowmaking",
     }),
   ).toBeVisible();
   expect(

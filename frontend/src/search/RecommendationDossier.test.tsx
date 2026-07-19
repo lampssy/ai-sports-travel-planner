@@ -198,11 +198,13 @@ test("does not present unscored options as ranked recommendations", () => {
   );
 
   expect(screen.getAllByText(/unranked option/i).length).toBeGreaterThan(0);
-  expect(screen.getByText("Why consider it")).toBeVisible();
-  expect(screen.queryByText("Why it leads")).toBeNull();
-  expect(screen.queryByRole("heading", { name: "Scoring details" })).toBeNull();
+  expect(screen.getByText("Why it fits")).toBeVisible();
+  expect(screen.getByText("Main concern")).toBeVisible();
+  expect(
+    screen.queryByRole("heading", { name: "Technical calculation details" }),
+  ).toBeNull();
   expect(screen.queryByText(/complete ranked trip configuration/i)).toBeNull();
-  expect(screen.getByText("Alternative")).toBeVisible();
+  expect(screen.getByText("Alternative trip option")).toBeVisible();
   expect(screen.queryByText("#4")).toBeNull();
 });
 
@@ -250,19 +252,26 @@ test("renders the verdict hierarchy, progressive anchors, and selected save targ
   );
 
   expect(screen.getByRole("heading", { name: "Region 4 - Base 4" })).toBeVisible();
+  expect(screen.getByText("Recommended place to stay: Base 4")).toBeVisible();
   expect(screen.getByText("Trip fit")).toBeVisible();
   expect(screen.getAllByText("Snow window")[0]).toBeVisible();
   expect(screen.getByText("Evidence quality")).toBeVisible();
   expect(screen.getAllByText("Destination 4")[0]).toBeVisible();
   expect(screen.getAllByText("Area 4")[0]).toBeVisible();
   expect(screen.getAllByText("Pass region-4-alternative")[0]).toBeVisible();
+  expect(
+    screen.getByRole("heading", {
+      name: "Alternative trip options in Region 4",
+    }),
+  ).toBeVisible();
+  expect(document.body.textContent).not.toMatch(/configuration|dossier/i);
   for (const name of [
     "Snow & weather",
     "Trip details",
-    "Alternatives",
+    "Alternative trip options",
     "Accommodation",
     "Why this trip",
-    "How ranking works",
+    "Technical calculation details",
   ]) {
     expect(screen.getByRole("link", { name })).toBeVisible();
   }
@@ -319,10 +328,10 @@ test("explains why the trip leads before exposing technical provenance", () => {
   expect(within(section as HTMLElement).getByRole("heading", { name: "What supports this choice" })).toBeVisible();
   expect(within(section as HTMLElement).getByRole("heading", { name: "What remains uncertain" })).toBeVisible();
   expect(
-    within(section as HTMLElement).getByText("Sources and calculation details"),
+    within(section as HTMLElement).getByText("Show technical calculation details"),
   ).toBeVisible();
   const disclosure = within(section as HTMLElement)
-    .getByText("Sources and calculation details")
+    .getByText("Show technical calculation details")
     .closest("details");
   expect(disclosure).not.toHaveAttribute("open");
   expect(
@@ -370,7 +379,13 @@ test("qualifies estimated terrain in dossier essentials, evidence, and scoring",
   expect(
     screen.getAllByText("About 31 km in the selected ski area"),
   ).not.toHaveLength(0);
-  await user.click(screen.getByText("Sources and calculation details"));
+  const evidenceSection = document.querySelector("#decision-evidence");
+  expect(evidenceSection).not.toBeNull();
+  await user.click(
+    within(evidenceSection as HTMLElement).getByText(
+      "Show technical calculation details",
+    ),
+  );
   expect(
     screen.getAllByText("About 31 km in the selected ski area"),
   ).not.toHaveLength(0);
@@ -378,9 +393,17 @@ test("qualifies estimated terrain in dossier essentials, evidence, and scoring",
   expect(screen.queryByText("Pass-accessible terrain")).toBeNull();
   expect(screen.queryByText("31 km accessible")).toBeNull();
 
-  const scoring = screen.getByText("Show scoring details").closest("details");
+  const scoringSection = document.querySelector("#scoring-details");
+  expect(scoringSection).not.toBeNull();
+  const scoring = within(scoringSection as HTMLElement)
+    .getByText("Show technical calculation details")
+    .closest("details");
   expect(scoring).not.toHaveAttribute("open");
-  await user.click(screen.getByText("Show scoring details"));
+  await user.click(
+    within(scoringSection as HTMLElement).getByText(
+      "Show technical calculation details",
+    ),
+  );
   expect(
     within(scoring as HTMLElement).getByText("Estimated from catalog data"),
   ).toBeVisible();
@@ -427,14 +450,28 @@ test("keeps domain terrain aligned across dossier evidence and scoring", async (
   expect(
     screen.getAllByText("About 300 km in the connected area covered by this pass"),
   ).not.toHaveLength(0);
-  await user.click(screen.getByText("Sources and calculation details"));
+  const evidenceSection = document.querySelector("#decision-evidence");
+  expect(evidenceSection).not.toBeNull();
+  await user.click(
+    within(evidenceSection as HTMLElement).getByText(
+      "Show technical calculation details",
+    ),
+  );
   expect(
     screen.getAllByText("About 300 km in the connected area covered by this pass"),
   ).not.toHaveLength(0);
   expect(screen.getAllByText("Connected terrain covered by this pass")).toHaveLength(2);
 
-  const scoring = screen.getByText("Show scoring details").closest("details");
-  await user.click(screen.getByText("Show scoring details"));
+  const scoringSection = document.querySelector("#scoring-details");
+  expect(scoringSection).not.toBeNull();
+  const scoring = within(scoringSection as HTMLElement)
+    .getByText("Show technical calculation details")
+    .closest("details");
+  await user.click(
+    within(scoringSection as HTMLElement).getByText(
+      "Show technical calculation details",
+    ),
+  );
   expect(within(scoring as HTMLElement).getByText("Estimated from source data")).toBeVisible();
 });
 

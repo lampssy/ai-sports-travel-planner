@@ -34,7 +34,6 @@ export function DossierVerdict({
   const narrative = buildCandidateNarrative(configuration);
   const evidenceMode = evidenceQualityMode(configuration);
   const unscored = configuration.ranking_status === "unscored";
-  const reasonHeadingId = unscored ? "why-consider-it" : "why-it-leads";
 
   return (
     <header className="dossier-verdict">
@@ -47,7 +46,7 @@ export function DossierVerdict({
           {configuration.ski_region_name} - {configuration.stay_base_name}
         </h1>
         <p className="dossier-verdict__selection">
-          Recommended stay: {configuration.stay_base_name}
+          Recommended place to stay: {configuration.stay_base_name}
         </p>
         <p className="dossier-verdict__summary">{narrative.verdict}</p>
       </div>
@@ -78,25 +77,22 @@ export function DossierVerdict({
         </p>
       ) : null}
 
-      <section className="dossier-verdict__reasons" aria-labelledby={reasonHeadingId}>
-        <p className="section-label" id={reasonHeadingId}>
-          {unscored ? "Why consider it" : "Why it leads"}
-        </p>
+      <section className="dossier-verdict__reasons" aria-label="Trip reasons">
         <div>
           <p>
             <CheckCircle2 aria-hidden="true" size={20} />
             <span>
-              <strong>Supported strength</strong>
+              <strong>Why it fits</strong>
               {narrative.strength ??
                 (unscored
-                  ? "This is a complete trip configuration with available supporting evidence."
-                  : "This is a complete ranked trip configuration.")}
+                  ? "This is a complete trip option with available supporting evidence."
+                  : "This trip option has available supporting evidence.")}
             </span>
           </p>
           <p>
             <AlertTriangle aria-hidden="true" size={20} />
             <span>
-              <strong>Watchout</strong>
+              <strong>Main concern</strong>
               {narrative.watchout ?? "Conditions and operations can change before travel."}
             </span>
           </p>

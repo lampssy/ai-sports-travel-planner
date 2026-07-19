@@ -21,8 +21,11 @@ const INTERNAL_PRIMARY_PHRASES = [
   "closer terrain review",
   "fallback-heavy",
   "backend api",
+  "configuration",
+  "dossier",
   "verified with adjustment",
   "needs source",
+  "stay base",
 ];
 
 function configuration(): SearchV4Configuration {
@@ -99,9 +102,11 @@ function configuration(): SearchV4Configuration {
 
 describe("content language contracts", () => {
   test("uses public trip-option language in the initial search copy", () => {
-    expect(initialHeroCopy.body).toContain("Trip options");
+    expect(initialHeroCopy.body).toContain("trip options");
     expect(initialHeroCopy.body).toContain("snow fit for your dates");
-    expect(initialHeroCopy.body.toLowerCase()).not.toContain("ranks ski resorts");
+    expect(initialHeroCopy.body.toLowerCase()).not.toMatch(
+      /trip intent|ranks ski resorts/,
+    );
   });
 
   test("keeps internal language out of primary recommendation copy", () => {
@@ -202,7 +207,7 @@ describe("content language contracts", () => {
         expect.objectContaining({
           id: "catalog-access",
           provenance:
-            "Estimated from source data for this trip configuration. The catalog links Ischgl to Ischgl. Nearest lift: Silvrettabahn.",
+            "Estimated from source data for this trip option. The catalog links Ischgl to Ischgl. Nearest lift: Silvrettabahn.",
         }),
       ]),
     );

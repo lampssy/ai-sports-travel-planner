@@ -354,7 +354,7 @@ export function rankChangeSummary(
   const winner = next.results[0];
   return {
     changedGroupIds: new Set(changed.map((result) => result.ski_region_id)),
-    announcement: `${changed.length} recommendation${
+    announcement: `${changed.length} trip option${
       changed.length === 1 ? "" : "s"
     } changed position. ${winner.ski_region_name} is now #${winner.rank}.`,
   };

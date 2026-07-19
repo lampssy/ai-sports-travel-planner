@@ -8,7 +8,7 @@ export const snowRiskSignal = {
 export const initialHeroCopy = {
   heading: "Book the mountain, not the guesswork.",
   body:
-    "Search by trip intent. Snowcast compares Trip options using snow fit for your dates, where to stay, travel effort, and evidence.",
+    "Tell Snowcast what matters for your ski trip. Snowcast compares trip options using snow fit for your dates, where to stay, travel effort, and evidence.",
 };
 
 export const evidenceQualityCopy = {
@@ -35,7 +35,7 @@ export const catalogTrustStatusCopy = {
   },
   verified_with_adjustment: {
     primary: "Estimated from source data for this trip",
-    technical: "Estimated from source data for this trip configuration.",
+    technical: "Estimated from source data for this trip option.",
   },
   estimated: {
     primary: "Estimated from available data",

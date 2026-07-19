@@ -107,7 +107,7 @@ export function RecommendationBoard({
             </h1>
           </div>
           <p className="eligible-count">
-            {response.eligible_candidate_count} trip options match your Must-haves
+            {response.eligible_candidate_count} trip options match your must-haves
           </p>
         </div>
 
@@ -170,7 +170,7 @@ export function RecommendationBoard({
         ) : (
           <section className="empty-state" aria-labelledby="no-results-heading">
             <div>
-              <h2 id="no-results-heading">No trip option matches all of your Must-haves</h2>
+              <h2 id="no-results-heading">No trip option matches all of your must-haves</h2>
               <p>
                 Review {hardConstraints.map((chip) => chip.label).join(", ") || "your trip limits"}.
               </p>
@@ -179,7 +179,7 @@ export function RecommendationBoard({
                 className="secondary-command"
                 onClick={(event) => onOpenFilters(event.currentTarget)}
               >
-                Adjust Must-haves
+                Adjust must-haves
               </button>
             </div>
           </section>

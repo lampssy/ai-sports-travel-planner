@@ -110,7 +110,9 @@ export function RefinementCard({
             }}
           >
             {error ? <RotateCcw aria-hidden="true" size={17} /> : null}
-            Update results
+            {!error && selected?.intent_changed === false
+              ? "Continue"
+              : "Update results"}
           </button>
           {selected && !error ? (
             <button

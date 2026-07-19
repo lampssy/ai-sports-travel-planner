@@ -35,8 +35,8 @@ export function TripConfigurationDetails({
       />
 
       <div className="trip-configuration__alternatives" id="alternatives">
-        <p className="section-label">Alternatives</p>
-        <h3>Configurations in {group.ski_region_name}</h3>
+        <p className="section-label">Alternative trip options</p>
+        <h3>Alternative trip options in {group.ski_region_name}</h3>
         <div className="dossier-alternatives">
           {candidates.map((candidate) => {
             const selected = candidate.candidate_id === configuration.candidate_id;
@@ -53,7 +53,7 @@ export function TripConfigurationDetails({
                   <strong>{candidate.stay_base_name}</strong>
                   <small>{candidate.selected_pass.name}</small>
                 </span>
-                <em>{selected ? "Current" : "Alternative"}</em>
+                <em>{selected ? "Current trip option" : "Alternative trip option"}</em>
               </button>
             );
           })}

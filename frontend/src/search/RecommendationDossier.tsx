@@ -14,10 +14,10 @@ import { findSelectedCandidate, type SearchSession } from "./searchSession";
 const anchors = [
   ["snow-evidence", "Snow & weather"],
   ["trip-configuration", "Trip details"],
-  ["alternatives", "Alternatives"],
+  ["alternatives", "Alternative trip options"],
   ["accommodation", "Accommodation"],
   ["decision-evidence", "Why this trip"],
-  ["scoring-details", "How ranking works"],
+  ["scoring-details", "Technical calculation details"],
 ] as const;
 
 export function RecommendationDossier({
@@ -89,7 +89,7 @@ export function RecommendationDossier({
           saveError={saveError}
         />
 
-        <nav className="dossier-anchor-nav" aria-label="Dossier sections">
+        <nav className="dossier-anchor-nav" aria-label="Trip details sections">
           {visibleAnchors.map(([id, label]) => (
             <a key={id} href={`#${id}`}>
               {label}
@@ -115,8 +115,8 @@ export function RecommendationDossier({
 
         {!unscored ? (
           <section className="dossier-section" id="scoring-details">
-            <p className="section-label">Decision evidence</p>
-            <h2>Scoring details</h2>
+            <p className="section-label">Advanced details</p>
+            <h2>Technical calculation details</h2>
             <ScoringDetails
               configuration={configuration}
               rankingPolicyVersion={session.response.ranking_policy_version}

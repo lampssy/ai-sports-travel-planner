@@ -1,14 +1,14 @@
 # Snowcast
 
 ## Project Overview
-Snowcast helps skiers compare clear Trip options for their dates, Must-haves, and Preferences. Each option explains snow conditions, a Recommended place to stay, and practical travel details; searching for stays is kept separate from that planning guidance.
+Snowcast helps skiers compare clear trip options for their dates, must-haves, and preferences. Each option explains snow conditions, a recommended place to stay, and practical travel details; searching for stays is kept separate from that planning guidance.
 
 ## Features
-- Search Trip options by country, budget, stay quality, skill level, and lift-access preference
-- Add an optional travel window, either month-level or exact dates, so Trip options can reflect planning confidence for that window
+- Search trip options by country, budget, stay quality, skill level, and lift-access preference
+- Add an optional travel window, either month-level or exact dates, so trip options can reflect planning confidence for that window
 - Add optional car-first travel effort from a user origin, with max-drive filtering, travel tolerance, result badges, and provider/provenance caveats
-- Return Trip options with a destination, Recommended place to stay, selected ski area, access details, lift pass, and alternatives
-- Keep actual hotels and apartments as an optional suggested-stay layer under the Recommended place to stay, with provider and freshness evidence when property-level data exists
+- Return trip options with a destination, recommended place to stay, selected ski area, access details, lift pass, and alternatives
+- Keep actual hotels and apartments as an optional suggested-stay layer under the recommended place to stay, with provider and freshness evidence when property-level data exists
 - Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
 - Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
 - Save one authenticated current trip per user from the mobile selected-result flow with a booking status for later companion features
@@ -25,7 +25,7 @@ Snowcast helps skiers compare clear Trip options for their dates, Must-haves, an
 - React/Vite demo frontend with brief-first search, inferred filter chips, a secondary refine panel, and accommodation booking CTA
 - Backend-rendered public stay-destination guide pages under `/ski-destinations/{stay_destination_id}` with area-labeled conditions, an evergreen historical calendar, SEO metadata, sitemap, and robots.txt
 - Flutter mobile scaffold with Google sign-in, backend bearer-token exchange, mobile search, and current-trip flow
-- Resort-level booking handoff plus anchored current-trip save flow in the mobile selected-result panel
+- Destination-level accommodation search handoff plus anchored current-trip save flow in the mobile selected-result panel
 - Seed the first linked-area glacier validation destinations: Hintertux, Stubai Glacier, and Zell am See-Kaprun
 
 ## Tech Stack
@@ -540,7 +540,7 @@ as HTTP status, provider status, and a short normalized message.
 `/search` results now include:
 - `search_model_version`, `ranking_policy_version`, and ranked/unscored status
 - applied typed intent plus eligible and excluded candidate counts
-- `ski_region_id`, display name, rank, and fit score per trip market
+- `ski_region_id`, display name, rank, and fit score per ski region
 - `top_configuration` plus bounded `alternative_configurations`
 - stable stay-destination, stay-base, focus-ski-area, access, and pass IDs/names
 - selected pass coverage and comparable price slice

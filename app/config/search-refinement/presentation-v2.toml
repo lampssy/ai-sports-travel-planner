@@ -1,5 +1,5 @@
 presentation_policy_version = "search-refinement-presentation-2"
-blocked_copy_terms = ["candidate", "evidence cap", "factor", "group priority", "objective", "optimisation", "optimization", "ranking", "score", "ski experience", "stay practicality", "trip viability", "utility", "weight"]
+blocked_copy_terms = ["accommodation base", "candidate", "evidence cap", "factor", "group priority", "objective", "optimisation", "optimization", "ranking", "score", "ski experience", "stay practicality", "trip viability", "utility", "weight"]
 
 [[topics]]
 topic_id = "trip_window_snow_fit"
@@ -103,8 +103,8 @@ fallback_priority = 17
 [[topics]]
 topic_id = "stay_base_access"
 factor_id = "stay_base_access"
-traveller_topic = "easy access from the accommodation base to the slopes"
-question_phrases = ["access from your accommodation base", "easier access from where you stay"]
+traveller_topic = "easy access from where you stay to the slopes"
+question_phrases = ["access from where you stay", "easier access from where you stay"]
 fallback_question = "How important is easy access to the slopes from where you stay?"
 fallback_reason = "This choice can change which trip option suits you best."
 fallback_answer_ids = ["stay_base_access.as_easy_as_possible", "stay_base_access.normal", "stay_base_access.low"]
@@ -147,7 +147,7 @@ fallback_priority = 4
 [[topics]]
 topic_id = "local_apres"
 factor_id = "local_apres"
-traveller_topic = "the evening atmosphere near the accommodation base"
+traveller_topic = "the evening atmosphere near where you stay"
 question_phrases = ["evening atmosphere near where you stay"]
 fallback_question = "What evening atmosphere do you prefer near where you stay?"
 fallback_reason = "This choice can change which trip option suits you best."
@@ -158,8 +158,8 @@ fallback_priority = 3
 [[topics]]
 topic_id = "local_pace"
 factor_id = "local_pace"
-traveller_topic = "the pace around the accommodation base"
-question_phrases = ["pace around your accommodation base"]
+traveller_topic = "the pace near where you stay"
+question_phrases = ["pace near where you stay"]
 fallback_question = "What pace do you prefer near where you stay?"
 fallback_reason = "This choice can change which trip option suits you best."
 fallback_answer_ids = ["local_pace.quiet", "local_pace.balanced", "local_pace.lively", "local_pace.ignore"]
@@ -169,9 +169,9 @@ fallback_priority = 2
 [[topics]]
 topic_id = "development_style"
 factor_id = "development_style"
-traveller_topic = "the village or resort development style"
-question_phrases = ["village or resort development style", "traditional mountain village", "a traditional mountain village", "traditional mountain village or resort"]
-fallback_question = "What kind of place do you prefer to stay in?"
+traveller_topic = "the building and atmosphere style where you stay"
+question_phrases = ["building and atmosphere style", "traditional mountain buildings", "traditional mountain village", "a traditional mountain village", "traditional mountain village or resort"]
+fallback_question = "What building and atmosphere style do you prefer where you stay?"
 fallback_reason = "This choice can change which place to stay suits you best."
 fallback_answer_ids = ["development_style.traditional", "development_style.mixed", "development_style.planned_resort", "development_style.ignore"]
 answer_ids = ["development_style.traditional", "development_style.mixed", "development_style.planned_resort", "development_style.ignore"]
@@ -180,9 +180,9 @@ fallback_priority = 1
 [[topics]]
 topic_id = "base_type"
 factor_id = "base_type"
-traveller_topic = "the type of place to stay"
-question_phrases = ["place to stay"]
-fallback_question = "What type of place do you prefer to stay in?"
+traveller_topic = "the type of town or area where you stay"
+question_phrases = ["type of town or area", "place to stay"]
+fallback_question = "What type of town or area do you prefer to stay in?"
 fallback_reason = "This choice can change which place to stay suits you best."
 fallback_answer_ids = ["base_type.town", "base_type.village_or_hamlet", "base_type.resort_station", "base_type.ignore"]
 answer_ids = ["base_type.town", "base_type.village_or_hamlet", "base_type.resort_station", "base_type.neighbourhood_or_sector", "base_type.ignore"]
@@ -553,21 +553,21 @@ factor_preference_patch = { factor_id = "local_pace", mode = "ignore" }
 answer_id = "development_style.traditional"
 factor_id = "development_style"
 label = "Traditional mountain village"
-description = "Prioritize a traditional mountain village."
+description = "Prioritize traditional mountain buildings and atmosphere."
 factor_preference_patch = { factor_id = "development_style", mode = "prefer", values = ["traditional"] }
 
 [[answers]]
 answer_id = "development_style.mixed"
 factor_id = "development_style"
 label = "Mix of old and new"
-description = "Prioritize a mix of old and new buildings."
+description = "Prioritize a mix of traditional and modern buildings."
 factor_preference_patch = { factor_id = "development_style", mode = "prefer", values = ["mixed"] }
 
 [[answers]]
 answer_id = "development_style.planned_resort"
 factor_id = "development_style"
 label = "Purpose-built ski resort"
-description = "Prioritize a purpose-built ski resort."
+description = "Prioritize purpose-built ski-resort design."
 factor_preference_patch = { factor_id = "development_style", mode = "prefer", values = ["planned_resort"] }
 
 [[answers]]
@@ -581,28 +581,28 @@ factor_preference_patch = { factor_id = "development_style", mode = "ignore" }
 answer_id = "base_type.town"
 factor_id = "base_type"
 label = "Ski town"
-description = "Prioritize a ski town."
+description = "Prioritize staying in a ski town."
 factor_preference_patch = { factor_id = "base_type", mode = "prefer", values = ["town"] }
 
 [[answers]]
 answer_id = "base_type.village_or_hamlet"
 factor_id = "base_type"
 label = "Village or hamlet"
-description = "Prioritize a village or hamlet."
+description = "Prioritize staying in a village or hamlet."
 factor_preference_patch = { factor_id = "base_type", mode = "prefer", values = ["village", "hamlet"] }
 
 [[answers]]
 answer_id = "base_type.resort_station"
 factor_id = "base_type"
 label = "Purpose-built resort"
-description = "Prioritize a purpose-built resort."
+description = "Prioritize staying in a purpose-built resort."
 factor_preference_patch = { factor_id = "base_type", mode = "prefer", values = ["resort_station"] }
 
 [[answers]]
 answer_id = "base_type.neighbourhood_or_sector"
 factor_id = "base_type"
 label = "Resort neighborhood or area"
-description = "Prioritize a resort neighborhood or area."
+description = "Prioritize staying in a resort neighborhood or area."
 factor_preference_patch = { factor_id = "base_type", mode = "prefer", values = ["neighbourhood", "resort_sector"] }
 
 [[answers]]

@@ -24,7 +24,7 @@ export function ScoringDetails({
     <details className="scoring-details">
       <summary>
         <Layers3 aria-hidden="true" size={17} />
-        Show scoring details
+        Show technical calculation details
       </summary>
       <div className="scoring-details__content">
         {rankingPolicyVersion ? (

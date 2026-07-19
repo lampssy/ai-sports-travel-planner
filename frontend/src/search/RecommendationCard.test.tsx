@@ -160,14 +160,16 @@ describe("RecommendationCard", () => {
     );
   });
 
-  test("keeps dossier, save, and alternative controls isolated from expansion", async () => {
+  test("keeps trip-details, save, and alternative controls isolated from expansion", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
     render(<StatefulCard onSave={onSave} />);
 
     const card = screen.getByRole("article");
     const toggle = within(card).getByRole("button", { name: /collapse matterhorn/i });
-    const dossierLink = within(card).getByRole("link", { name: /view dossier/i });
+    const dossierLink = within(card).getByRole("link", {
+      name: /view trip details/i,
+    });
     expect(dossierLink.querySelector(".lucide-arrow-right")).toBeInTheDocument();
     expect(dossierLink.querySelector(".lucide-external-link")).not.toBeInTheDocument();
     dossierLink.addEventListener("click", (event) => event.preventDefault());
@@ -183,7 +185,10 @@ describe("RecommendationCard", () => {
     expect(within(card).getByRole("heading", { name: /stay in valtournenche/i })).toBeVisible();
     expect(within(card).getAllByText("Local pass")).toHaveLength(2);
     expect(within(card).getAllByText("160 km covered by this pass")).toHaveLength(2);
-    expect(within(card).getByRole("link", { name: /view dossier/i })).toHaveAttribute(
+    expect(within(card).getByText("Alternative trip options")).toBeVisible();
+    expect(
+      within(card).getByRole("link", { name: /view trip details/i }),
+    ).toHaveAttribute(
       "href",
       "/recommendations/region-a?candidate=alternative",
     );
@@ -217,7 +222,7 @@ describe("RecommendationCard", () => {
     expect(screen.queryByText("future_internal_group")).not.toBeInTheDocument();
     expect(screen.queryByText("future_internal_factor")).not.toBeInTheDocument();
     expect(screen.getByText("Ski experience")).toBeInTheDocument();
-    expect(screen.getByText("Stay-base access")).toBeInTheDocument();
+    expect(screen.getByText("Place to stay and lift access")).toBeInTheDocument();
   });
 
   test("labels estimated ski-area terrain in the result and its collapsed scoring disclosure", async () => {
@@ -262,9 +267,11 @@ describe("RecommendationCard", () => {
     expect(screen.getAllByText("About 31 km in the selected ski area")).toHaveLength(2);
     expect(screen.queryByText("31 km accessible terrain")).toBeNull();
 
-    const scoring = screen.getByText("Show scoring details").closest("details");
+    const scoring = screen
+      .getByText("Show technical calculation details")
+      .closest("details");
     expect(scoring).not.toHaveAttribute("open");
-    await user.click(screen.getByText("Show scoring details"));
+    await user.click(screen.getByText("Show technical calculation details"));
     expect(
       within(scoring as HTMLElement).getByText("Estimated from catalog data"),
     ).toBeVisible();
@@ -314,9 +321,11 @@ describe("RecommendationCard", () => {
       />,
     );
 
-    const scoring = screen.getByText("Show scoring details").closest("details");
+    const scoring = screen
+      .getByText("Show technical calculation details")
+      .closest("details");
     expect(scoring).not.toHaveAttribute("open");
-    await user.click(screen.getByText("Show scoring details"));
+    await user.click(screen.getByText("Show technical calculation details"));
     expect(
       within(scoring as HTMLElement).getByText("Source confirmation needed"),
     ).toBeVisible();

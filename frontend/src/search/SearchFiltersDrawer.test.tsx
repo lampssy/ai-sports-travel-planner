@@ -144,7 +144,7 @@ test("shows and removes active factor and objective choices outside the defaults
   );
 
   const factorChoice = screen.getByRole("button", {
-    name: "Prefer Access to the slopes",
+    name: "Prefer Place to stay and lift access",
   });
   const objectiveChoice = screen.getByRole("button", {
     name: "Prefer Snow fit for your dates",
