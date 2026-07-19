@@ -1066,7 +1066,7 @@ List every recommendation that has not been implemented in this PR.
 
 The report may recommend changes but must not modify product code in this step.
 
-- [ ] **Step 4: Commit and push the audit to the same PR**
+- [x] **Step 4: Commit and push the audit to the same PR**
 
 ```bash
 git add docs/advisory-reviews/2026-07-19-content-language-domain-audit.md
@@ -1077,7 +1077,7 @@ git push
 Update the draft PR body with a link to the audit report and state that audit
 fixes are pending owner selection.
 
-- [ ] **Step 5: Report PR and audit state**
+- [x] **Step 5: Report PR and audit state**
 
 Return the PR URL, exact head SHA, check status, audit report path, top audit
 findings, and the local validation command. Do not mark the PR ready or merge it.
