@@ -329,7 +329,11 @@ function App() {
     null,
   );
   const [currentTripLoadRequest, setCurrentTripLoadRequest] = useState(0);
+  const [currentTripLoadRecoveryRequest, setCurrentTripLoadRecoveryRequest] =
+    useState(0);
   const [currentTripSummaryLoadRequest, setCurrentTripSummaryLoadRequest] =
+    useState(0);
+  const [currentTripSummaryRecoveryRequest, setCurrentTripSummaryRecoveryRequest] =
     useState(0);
   const [currentTripLoading, setCurrentTripLoading] = useState(false);
   const [currentTripSummaryLoading, setCurrentTripSummaryLoading] =
@@ -436,6 +440,9 @@ function App() {
       .then((trip) => {
         if (identity !== currentTripLoadIdentityRef.current) return;
         setCurrentTripLoadError(null);
+        if (currentTripLoadRequest > 0) {
+          setCurrentTripLoadRecoveryRequest((current) => current + 1);
+        }
         if (currentTripRef.current === trip) return;
         currentTripRef.current = trip;
         setCurrentTrip(trip);
@@ -472,6 +479,9 @@ function App() {
         if (identity === currentTripSummaryLoadIdentityRef.current) {
           setCurrentTripSummaryLoadError(null);
           setCurrentTripSummary(summary);
+          if (currentTripSummaryLoadRequest > 0) {
+            setCurrentTripSummaryRecoveryRequest((current) => current + 1);
+          }
         }
       })
       .catch((caught) => {
@@ -749,6 +759,7 @@ function App() {
           rankingResponse.ranking_policy_version;
       if (!baselineMatches) {
         setRefinementStatus("stale");
+        setRefinementError(null);
         setSession((current) =>
           belongsToRanking(current) && current
             ? replaceRefinements(current, [])
@@ -1128,6 +1139,8 @@ function App() {
       );
       if (hasRefinement) {
         setRefinementFocusRequest((current) => current + 1);
+      } else {
+        setFocusRequest((current) => current + 1);
       }
     } finally {
       setRefinementRetrying(false);
@@ -1426,6 +1439,8 @@ function App() {
           summaryLoadError={currentTripSummaryLoadError}
           tripLoading={currentTripLoading}
           summaryLoading={currentTripSummaryLoading}
+          tripRecoveryRequest={currentTripLoadRecoveryRequest}
+          summaryRecoveryRequest={currentTripSummaryRecoveryRequest}
           clearError={currentTripClearError}
           onBack={goToSearch}
           onRetryTripLoad={() =>

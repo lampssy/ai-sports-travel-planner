@@ -637,11 +637,18 @@ for (const [name, viewport] of [
 
 test("anonymous current-trip route remains available", async ({ page }) => {
   await mockSearchV4Api(page, monthSearchResponse, []);
+  await page.route(/\/api\/current-trip$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ trip: null }),
+    });
+  });
   await page.goto("/current-trip");
   await expect(
     page.locator("main").getByText("Trip companion", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(/save a ranked configuration/i)).toBeVisible();
+  await expect(page.getByText(/save a trip option to track it/i)).toBeVisible();
   await page.getByRole("button", { name: /back to search/i }).click();
   await expect(page).toHaveURL(/\/$/);
 });
@@ -689,10 +696,16 @@ test("saved-trip retry keeps keyboard focus while the request is pending", async
   await expect(retry).toBeFocused();
   await expect(retry).toHaveAttribute("aria-disabled", "true");
   await expect(retry).not.toHaveAttribute("disabled");
+  await expect(retry).toHaveCSS("cursor", "wait");
+  await expect(retry).toHaveCSS("opacity", "0.58");
   releaseRetry?.();
   await expect(
     page.getByRole("heading", { name: "Tignes - Val d'Isere" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere" }),
+  ).toBeFocused();
+  await expect(page.getByRole("status")).toHaveText("Saved trip loaded.");
   expect(attempts).toBe(2);
 });
 
@@ -757,10 +770,18 @@ test("current-conditions retry keeps keyboard focus while the request is pending
   await expect(retry).toBeFocused();
   await expect(retry).toHaveAttribute("aria-disabled", "true");
   await expect(retry).not.toHaveAttribute("disabled");
+  await expect(retry).toHaveCSS("cursor", "wait");
+  await expect(retry).toHaveCSS("opacity", "0.58");
   releaseRetry?.();
   await expect(
     page.getByText("Fresh snow is now expected before the trip."),
   ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Current conditions" }),
+  ).toBeFocused();
+  await expect(page.getByRole("status")).toHaveText(
+    "Current conditions updated.",
+  );
   expect(summaryAttempts).toBe(3);
 });
 
@@ -1136,6 +1157,9 @@ test("failed refinement apply preserves results and the selected option", async 
   await expect(
     searchContext.getByRole("button", { name: "Keep these results" }),
   ).toBeEnabled();
+  await expect(
+    searchContext.getByRole("button", { name: "Update results" }),
+  ).toBeFocused();
 });
 
 test("refinement retry keeps keyboard focus while the request is pending", async ({
@@ -1188,6 +1212,9 @@ test("refinement retry keeps keyboard focus while the request is pending", async
       "No more questions would materially change these results.",
     ),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Recommended ski trips" }),
+  ).toBeFocused();
   expect(attempts).toBe(2);
 });
 
@@ -1587,9 +1614,10 @@ test("stale fallback and typed unavailable states keep dossier controls intact",
   await expect(
     page.getByRole("heading", { name: "Snow evidence unavailable" }),
   ).toBeVisible();
-  await expect(page.getByRole("status")).toContainText(
-    "Snow evidence is unavailable for Les Arcs.",
+  await expect(page.getByRole("alert")).toContainText(
+    "Historical weather evidence is unavailable for this ski area and travel window.",
   );
+  await expect(page.getByRole("status")).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
       name: "Les Arcs - Peisey Vallandry - Arc 1800",
@@ -1625,7 +1653,9 @@ test("transport failure is not cached and retry announces recovered evidence", a
   await expect(
     page.getByRole("heading", { name: "Snow evidence could not be loaded" }),
   ).toBeVisible();
-  await expect(page.getByRole("status")).toContainText("could not be loaded");
+  await expect(page.getByRole("alert")).toContainText(
+    "Snow and weather could not be loaded. Try again.",
+  );
   await expect(
     page.getByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
   ).toBeVisible();

@@ -535,6 +535,36 @@ test("preserves the section during retryable failure and announces a successful 
   expect(loadEvidence).toHaveBeenCalledTimes(2);
 });
 
+test("keeps one recovery action after weather remains unavailable on retry", async () => {
+  const user = userEvent.setup();
+  const unavailable = {
+    weather_evidence_version: "search-weather-evidence-v1" as const,
+    status: "unavailable" as const,
+    ski_area_id: "tignes-ski-area",
+    evaluated_at: "2026-07-16T12:00:00Z",
+    cache_valid_until: "2026-07-16T12:05:00Z",
+    unavailable_reason: "historical_evidence_unavailable" as const,
+    limitations: [],
+  };
+  const loadEvidence = vi.fn().mockResolvedValue(unavailable);
+  render(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={loadEvidence}
+    />,
+  );
+
+  const retry = await screen.findByRole("button", { name: "Check again" });
+  await user.click(retry);
+
+  expect(await screen.findByRole("heading", { name: "Snow evidence unavailable" })).toBeVisible();
+  expect(screen.getAllByRole("button", { name: /snow evidence|check again/i })).toHaveLength(1);
+  expect(screen.queryByRole("button", { name: "Reload snow evidence" })).toBeNull();
+  expect(loadEvidence).toHaveBeenCalledTimes(2);
+});
+
 test("changes the cache context when the applied travel window changes", async () => {
   const loadEvidence = vi.fn().mockResolvedValue(historicalResponse());
   const { rerender } = render(

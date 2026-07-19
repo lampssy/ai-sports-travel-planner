@@ -520,7 +520,9 @@ export function SnowEvidence({
         <AvailableEvidence response={visibleState.response} />
       ) : null}
 
-      {visibleState.kind !== "error" && retryRequest > 0 ? (
+      {visibleState.kind === "ready" &&
+      visibleState.response.status === "available" &&
+      retryRequest > 0 ? (
         <Action
           ref={reloadButtonRef}
           variant="secondary"

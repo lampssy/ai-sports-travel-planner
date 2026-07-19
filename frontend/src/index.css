@@ -97,6 +97,11 @@ button:disabled {
   cursor: wait;
 }
 
+[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.58;
+}
+
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,

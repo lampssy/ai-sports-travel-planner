@@ -77,8 +77,10 @@ export function RefinementCard({
                 type="radio"
                 name={`refinement-${refinement.question_id}`}
                 checked={selectedIndex === index}
-                onChange={() => setSelectedIndex(index)}
-                disabled={loading}
+                aria-disabled={loading || undefined}
+                onChange={() => {
+                  if (!loading) setSelectedIndex(index);
+                }}
               />
               <span>
                 <strong>{option.label}</strong>
@@ -101,8 +103,11 @@ export function RefinementCard({
           <button
             type="button"
             className="primary-refinement-action"
-            disabled={!selected || loading}
-            onClick={() => selected && onApply(refinement, selected)}
+            disabled={!selected}
+            aria-disabled={loading || undefined}
+            onClick={() => {
+              if (selected && !loading) onApply(refinement, selected);
+            }}
           >
             {error ? <RotateCcw aria-hidden="true" size={17} /> : null}
             {error
@@ -115,8 +120,10 @@ export function RefinementCard({
             <button
               type="button"
               className="text-action"
-              disabled={loading}
-              onClick={() => setSelectedIndex(null)}
+              aria-disabled={loading || undefined}
+              onClick={() => {
+                if (!loading) setSelectedIndex(null);
+              }}
             >
               <X aria-hidden="true" size={16} />
               Clear
@@ -126,8 +133,10 @@ export function RefinementCard({
             <button
               type="button"
               className="text-action"
-              disabled={loading}
-              onClick={onKeepResults}
+              aria-disabled={loading || undefined}
+              onClick={() => {
+                if (!loading) onKeepResults?.();
+              }}
             >
               Keep these results
             </button>
@@ -135,8 +144,10 @@ export function RefinementCard({
             <button
               type="button"
               className="text-action"
-              disabled={loading}
-              onClick={() => onSkip(refinement)}
+              aria-disabled={loading || undefined}
+              onClick={() => {
+                if (!loading) onSkip(refinement);
+              }}
             >
               Skip this question
             </button>

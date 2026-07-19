@@ -1257,7 +1257,62 @@ test("keeps terminal refinement failure visible and retries without replacing re
   );
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
+  await waitFor(() => {
+    expect(screen.getByRole("heading", { name: "Recommended ski trips" })).toHaveFocus();
+  });
   expect(refinementAttempts).toBe(2);
+});
+
+test("clears the terminal failure when a refinement retry finds a stale baseline", async () => {
+  let refinementAttempts = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/current-trip") {
+        return new Response(JSON.stringify({ trip: null }), { status: 200 });
+      }
+      if (url === "/api/search") {
+        return new Response(JSON.stringify(response()), { status: 200 });
+      }
+      if (url === "/api/search/refinements") {
+        refinementAttempts += 1;
+        if (refinementAttempts === 1) {
+          return new Response(
+            JSON.stringify({ error: { code: "request_failed" } }),
+            { status: 500 },
+          );
+        }
+        return new Response(
+          JSON.stringify(
+            refinementResponse({
+              baseline_status: "stale",
+              baseline_fingerprint: "replaced-baseline",
+              refinement_status: "questions_available",
+              refinements: [],
+            }),
+          ),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  const failureCopy =
+    "Snowcast could not check for another useful question. Your results are unchanged.";
+  expect(await screen.findByRole("alert")).toHaveTextContent(failureCopy);
+
+  await user.click(screen.getByRole("button", { name: "Try again" }));
+
+  expect(
+    (await screen.findAllByText("A newer ranking replaced this refinement check."))[0],
+  ).toBeVisible();
+  expect(screen.queryByText(failureCopy)).not.toBeInTheDocument();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 
 test("lets the user keep usable results after terminal refinement failure", async () => {
@@ -2251,7 +2306,8 @@ test("previews a validated dynamic refinement before applying it", async () => {
     screen.getByText("This changes how your current matches are evaluated."),
   ).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
-  expect(livelyOption).toBeDisabled();
+  expect(livelyOption).toHaveAttribute("aria-disabled", "true");
+  expect(livelyOption).not.toBeDisabled();
   expect(screen.getByRole("heading", { name: /tignes - val d'isere/i })).toBeVisible();
   expect(
     screen.getByText(/reranking these recommendations/i),

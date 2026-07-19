@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { CurrentTrip, CurrentTripSummary } from "../types";
 import { AsyncState } from "./AsyncState";
@@ -64,6 +64,8 @@ export function CurrentTripView({
   summaryLoadError,
   tripLoading,
   summaryLoading,
+  tripRecoveryRequest,
+  summaryRecoveryRequest,
   clearError,
   onBack,
   onRetryTripLoad,
@@ -76,12 +78,49 @@ export function CurrentTripView({
   summaryLoadError: string | null;
   tripLoading: boolean;
   summaryLoading: boolean;
+  tripRecoveryRequest: number;
+  summaryRecoveryRequest: number;
   clearError: string | null;
   onBack: () => void;
   onRetryTripLoad: () => void;
   onRetrySummaryLoad: () => void;
   onClear: () => void;
 }) {
+  const tripHeadingRef = useRef<HTMLHeadingElement>(null);
+  const conditionsRef = useRef<HTMLDivElement>(null);
+  const handledTripRecoveryRef = useRef(tripRecoveryRequest);
+  const handledSummaryRecoveryRef = useRef(summaryRecoveryRequest);
+  const [tripRecovered, setTripRecovered] = useState(false);
+  const [summaryRecovered, setSummaryRecovered] = useState(false);
+
+  useEffect(() => {
+    if (
+      tripRecoveryRequest === handledTripRecoveryRef.current ||
+      tripLoading ||
+      tripLoadError ||
+      !trip
+    ) {
+      return;
+    }
+    handledTripRecoveryRef.current = tripRecoveryRequest;
+    setTripRecovered(true);
+    tripHeadingRef.current?.focus({ preventScroll: true });
+  }, [trip, tripLoadError, tripLoading, tripRecoveryRequest]);
+
+  useEffect(() => {
+    if (
+      summaryRecoveryRequest === handledSummaryRecoveryRef.current ||
+      summaryLoading ||
+      summaryLoadError ||
+      !summary
+    ) {
+      return;
+    }
+    handledSummaryRecoveryRef.current = summaryRecoveryRequest;
+    setSummaryRecovered(true);
+    conditionsRef.current?.focus({ preventScroll: true });
+  }, [summary, summaryLoadError, summaryLoading, summaryRecoveryRequest]);
+
   return (
     <main className="app-canvas current-trip-page">
       <button type="button" onClick={onBack} className="text-action">
@@ -90,6 +129,16 @@ export function CurrentTripView({
       </button>
       <section className="current-trip-panel">
         <p className="eyebrow">Trip companion</p>
+        {tripRecovered ? (
+          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Saved trip loaded.
+          </p>
+        ) : null}
+        {summaryRecovered ? (
+          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Current conditions updated.
+          </p>
+        ) : null}
         {tripLoadError ? (
           <AsyncState
             state="error"
@@ -106,13 +155,19 @@ export function CurrentTripView({
         ) : null}
         {trip ? (
           <>
-            <h1>{trip.ski_region_name}</h1>
+            <h1 ref={tripHeadingRef} tabIndex={-1}>{trip.ski_region_name}</h1>
             <p className="current-trip-panel__entities">
               {trip.stay_base_name} · {trip.focus_ski_area_name} ·{" "}
               {trip.lift_pass_product_name}
             </p>
             {summary ? (
-              <div className="current-trip-summary">
+              <div
+                ref={conditionsRef}
+                className="current-trip-summary"
+                role="region"
+                aria-label="Current conditions"
+                tabIndex={-1}
+              >
                 <p className="current-trip-summary__title">Current conditions</p>
                 <p>{summary.current_conditions.weather_summary}</p>
                 <p className="muted-copy">{summary.delta.summary}</p>
