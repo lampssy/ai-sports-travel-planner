@@ -1173,8 +1173,10 @@ function App() {
         booking_status: "not_booked_yet",
       });
       currentTripLoadIdentityRef.current += 1;
+      currentTripSummaryLoadIdentityRef.current += 1;
       currentTripRef.current = saved;
       setCurrentTrip(saved);
+      setCurrentTripSummary(null);
       setCurrentTripLoadError(null);
       setCurrentTripSummaryLoadError(null);
       setSaveError(null);
@@ -1188,6 +1190,7 @@ function App() {
     try {
       await clearCurrentTrip();
       currentTripLoadIdentityRef.current += 1;
+      currentTripSummaryLoadIdentityRef.current += 1;
       currentTripRef.current = null;
       setCurrentTrip(null);
       setCurrentTripSummary(null);

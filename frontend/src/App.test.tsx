@@ -274,6 +274,30 @@ const savedTripSummary: CurrentTripSummary = {
   },
 };
 
+const previousTrip: CurrentTrip = {
+  ...savedTrip,
+  ski_region_id: "les-arcs",
+  ski_region_name: "Les Arcs",
+  stay_destination_id: "bourg-saint-maurice",
+  stay_destination_name: "Bourg-Saint-Maurice",
+  stay_base_id: "arc-1800",
+  stay_base_name: "Arc 1800",
+  focus_ski_area_id: "les-arcs-ski-area",
+  focus_ski_area_name: "Les Arcs",
+  lift_pass_product_id: "les-arcs-pass",
+  lift_pass_product_name: "Les Arcs pass",
+};
+
+const previousTripSummary: CurrentTripSummary = {
+  ...savedTripSummary,
+  trip: previousTrip,
+  current_conditions: {
+    ...savedTripSummary.current_conditions,
+    resort_name: "Les Arcs",
+    weather_summary: "Trip A conditions must not appear for trip B.",
+  },
+};
+
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
   vi.stubGlobal("scrollTo", vi.fn());
@@ -1477,6 +1501,144 @@ test("keeps current conditions visible when refresh fails and retries them", asy
   ).toBeVisible();
   expect(screen.queryByText("Current conditions could not be updated")).toBeNull();
   expect(summaryLoadAttempts).toBe(3);
+});
+
+test("ignores trip A summary when a pending save replaces it with trip B", async () => {
+  window.history.replaceState(null, "", "/current-trip");
+  const baseFetch = fetch;
+  let summaryLoads = 0;
+  let resolveSave: ((response: Response) => void) | undefined;
+  let resolveTripASummary: ((response: Response) => void) | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = String(input);
+      if (url === "/api/current-trip" && (!init?.method || init.method === "GET")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ trip: previousTrip }), { status: 200 }),
+        );
+      }
+      if (url === "/api/current-trip/summary") {
+        summaryLoads += 1;
+        if (summaryLoads === 1) {
+          return Promise.resolve(new Response(null, { status: 404 }));
+        }
+        if (summaryLoads === 2) {
+          return new Promise<Response>((resolve) => {
+            resolveTripASummary = resolve;
+          });
+        }
+        return new Promise<Response>(() => undefined);
+      }
+      if (url === "/api/current-trip" && init?.method === "PUT") {
+        return new Promise<Response>((resolve) => {
+          resolveSave = resolve;
+        });
+      }
+      return baseFetch(input, init);
+    }),
+  );
+  const user = userEvent.setup();
+
+  render(<App />);
+  expect(await screen.findByRole("heading", { name: "Les Arcs" })).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Back to search" }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("button", { name: "Save as current trip" }),
+  );
+  await waitFor(() => expect(resolveSave).toBeDefined());
+  await user.click(screen.getByRole("button", { name: "Current trip" }));
+  expect(await screen.findByRole("heading", { name: "Les Arcs" })).toBeVisible();
+  await waitFor(() => expect(resolveTripASummary).toBeDefined());
+
+  await act(async () => {
+    resolveSave?.(new Response(JSON.stringify(savedTrip), { status: 200 }));
+    resolveTripASummary?.(
+      new Response(JSON.stringify(previousTripSummary), { status: 200 }),
+    );
+    await Promise.resolve();
+  });
+
+  expect(
+    await screen.findByRole("heading", { name: "Tignes - Val d'Isere" }),
+  ).toBeVisible();
+  expect(
+    screen.queryByText("Trip A conditions must not appear for trip B."),
+  ).toBeNull();
+});
+
+test("ignores trip A summary when clear completes before a pending trip B save", async () => {
+  window.history.replaceState(null, "", "/current-trip");
+  const baseFetch = fetch;
+  let summaryLoads = 0;
+  let resolveSave: ((response: Response) => void) | undefined;
+  let resolveClear: ((response: Response) => void) | undefined;
+  let resolveTripASummary: ((response: Response) => void) | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = String(input);
+      if (url === "/api/current-trip" && (!init?.method || init.method === "GET")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ trip: previousTrip }), { status: 200 }),
+        );
+      }
+      if (url === "/api/current-trip/summary") {
+        summaryLoads += 1;
+        if (summaryLoads === 1) {
+          return Promise.resolve(new Response(null, { status: 404 }));
+        }
+        if (summaryLoads === 2) {
+          return new Promise<Response>((resolve) => {
+            resolveTripASummary = resolve;
+          });
+        }
+        return new Promise<Response>(() => undefined);
+      }
+      if (url === "/api/current-trip" && init?.method === "PUT") {
+        return new Promise<Response>((resolve) => {
+          resolveSave = resolve;
+        });
+      }
+      if (url === "/api/current-trip" && init?.method === "DELETE") {
+        return new Promise<Response>((resolve) => {
+          resolveClear = resolve;
+        });
+      }
+      return baseFetch(input, init);
+    }),
+  );
+  const user = userEvent.setup();
+
+  render(<App />);
+  expect(await screen.findByRole("heading", { name: "Les Arcs" })).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Back to search" }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("button", { name: "Save as current trip" }),
+  );
+  await waitFor(() => expect(resolveSave).toBeDefined());
+  await user.click(screen.getByRole("button", { name: "Current trip" }));
+  await waitFor(() => expect(resolveTripASummary).toBeDefined());
+  await user.click(screen.getByRole("button", { name: "Clear current trip" }));
+  await waitFor(() => expect(resolveClear).toBeDefined());
+
+  await act(async () => {
+    resolveClear?.(new Response(null, { status: 204 }));
+    resolveSave?.(new Response(JSON.stringify(savedTrip), { status: 200 }));
+    resolveTripASummary?.(
+      new Response(JSON.stringify(previousTripSummary), { status: 200 }),
+    );
+    await Promise.resolve();
+  });
+
+  expect(
+    await screen.findByRole("heading", { name: "Tignes - Val d'Isere" }),
+  ).toBeVisible();
+  expect(
+    screen.queryByText("Trip A conditions must not appear for trip B."),
+  ).toBeNull();
 });
 
 test("keeps the current trip and handles a failed clear action", async () => {
