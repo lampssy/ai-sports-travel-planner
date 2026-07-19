@@ -170,6 +170,7 @@ Primary concepts:
 - clarification opportunity
 - clarification
 - refinement proposal
+- resolved refinement topic
 - typed capability invocation
 - explicit preference customization
 - retrieved explanatory material
@@ -184,6 +185,10 @@ Boundaries:
   first-class; optional chat is only one possible interaction surface.
 - May dynamically propose which registered factors to clarify, including
   question wording, answer options, and typed preference patches.
+- A resolved refinement topic is one registered clarification topic that the
+  traveller answered or skipped in the current search context. It stays
+  suppressed until the trip context materially changes or the traveller
+  manually changes the preference owned by that topic.
 - Does not own ranking, catalog truth, source trust, or provider data fetching.
 - Does not own weather derivation, companion event or alert eligibility,
   booking handoff, or durable trip and preference persistence.

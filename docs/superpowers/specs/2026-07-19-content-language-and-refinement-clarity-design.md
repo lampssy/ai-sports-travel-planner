@@ -9,7 +9,7 @@
   - `docs/superpowers/specs/2026-07-16-search-v4-hybrid-results-design.md`
   - `docs/superpowers/specs/2026-07-17-snowcast-ai-orchestration-architecture-design.md`
 - Related plan:
-  `docs/superpowers/plans/2026-07-18-assistant-ready-search-refinement.md`
+  `docs/superpowers/plans/2026-07-19-content-language-and-refinement-clarity.md`
 - Related ADRs:
   - `docs/architecture/adr/0015-load-search-refinements-after-ranking.md`
   - `docs/architecture/adr/0016-use-ai-as-a-cross-product-orchestration-layer.md`
