@@ -462,6 +462,58 @@ test("opens the labelled filter drawer and restores focus after Escape", async (
   expect(trigger).toHaveFocus();
 });
 
+test("returns drawer focus to the full preference trigger for every close action", async () => {
+  const appliedIntent: SearchIntent = {
+    ...intent,
+    objectives: [
+      { factor_id: "pass_terrain_value", importance: "normal" },
+      { factor_id: "trip_window_snow_fit", importance: "high" },
+    ],
+    factor_preferences: [
+      {
+        factor_id: "stay_base_access",
+        mode: "prefer",
+        values: ["near"],
+        importance: "normal",
+      },
+      {
+        factor_id: "local_pace",
+        mode: "prefer",
+        values: ["quiet"],
+        importance: "normal",
+      },
+      {
+        factor_id: "glacier_terrain",
+        mode: "prefer",
+        values: [],
+        importance: "normal",
+      },
+    ],
+  };
+  searchResponses = [response({ applied_intent: appliedIntent })];
+  const user = userEvent.setup();
+  const { container } = render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  const trigger = await screen.findByRole("button", {
+    name: "View all 5 preferences",
+  });
+
+  await user.click(trigger);
+  await user.click(screen.getByRole("button", { name: "Close filters" }));
+  await waitFor(() => expect(trigger).toHaveFocus());
+
+  await user.click(trigger);
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(trigger).toHaveFocus());
+
+  await user.click(trigger);
+  const backdrop = container.querySelector<HTMLElement>(".drawer-backdrop");
+  expect(backdrop).not.toBeNull();
+  await user.click(backdrop!);
+  await waitFor(() => expect(trigger).toHaveFocus());
+});
+
 test("renders removable parsed chips with user-language names", async () => {
   const user = userEvent.setup();
   render(<App />);
@@ -2346,9 +2398,7 @@ test("preserves previous results and the refinement on a failed rerank", async (
       requests.filter((item) => item.url === "/api/search/refinements"),
     ).toHaveLength(refinementRequestsBefore + 1);
   });
-  const latestRefinementRequest = requests
-    .filter((item) => item.url === "/api/search/refinements")
-    .at(-1);
+  const latestRefinementRequest = lastRequest("/api/search/refinements");
   expect(
     JSON.parse(String(latestRefinementRequest?.init?.body)).resolved_topic_ids,
   ).toEqual([]);

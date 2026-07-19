@@ -50,7 +50,7 @@ export function RecommendationBoard({
   canUndo: boolean;
   headingRef: RefObject<HTMLHeadingElement>;
   adjustFiltersRef: RefObject<HTMLButtonElement>;
-  onOpenFilters: () => void;
+  onOpenFilters: (trigger: HTMLButtonElement) => void;
   onRemoveChip: (chip: ParsedChip) => void;
   onApplyRefinement: (
     refinement: RefinementProposal,
@@ -165,7 +165,11 @@ export function RecommendationBoard({
               <p>
                 Review {hardConstraints.map((chip) => chip.label).join(", ") || "your trip limits"}.
               </p>
-              <button type="button" className="secondary-command" onClick={onOpenFilters}>
+              <button
+                type="button"
+                className="secondary-command"
+                onClick={(event) => onOpenFilters(event.currentTarget)}
+              >
                 Adjust hard constraints
               </button>
             </div>

@@ -329,6 +329,7 @@ function App() {
   const currentTripLoadIdentityRef = useRef(0);
   const currentTripSummaryLoadIdentityRef = useRef(0);
   const adjustFiltersRef = useRef<HTMLButtonElement>(null);
+  const drawerReturnFocusRef = useRef<HTMLButtonElement | null>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const refinementControlRef = useRef<HTMLElement>(null);
   const pendingRerankScrollRestoreRef =
@@ -1334,8 +1335,9 @@ function App() {
     navigate(buildDossierHref(skiRegionId, candidateId));
     window.scrollTo(0, 0);
   };
-  const openFilters = () => {
+  const openFilters = (trigger: HTMLButtonElement) => {
     if (loading) return;
+    drawerReturnFocusRef.current = trigger;
     setDrawerOpen(true);
   };
 
@@ -1439,7 +1441,7 @@ function App() {
       filters={filters}
       preferences={preferences}
       objectives={objectives}
-      returnFocusRef={adjustFiltersRef}
+      returnFocusRef={drawerReturnFocusRef}
       onFiltersChange={(nextFilters) => {
         if (!loading) setFilters(nextFilters);
       }}

@@ -1609,6 +1609,18 @@ textarea:focus-visible,
   gap: 0.65rem;
 }
 
+.search-context__group-action {
+  display: flex;
+  min-width: 0;
+}
+
+.search-context__view-all {
+  min-height: 2.25rem;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .contextual-refinement {
   margin-top: 0.5rem;
   padding: 1.25rem;

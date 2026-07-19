@@ -1,5 +1,5 @@
 import { SlidersHorizontal } from "lucide-react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 
 import type {
   RefinementOption,
@@ -39,11 +39,13 @@ function ContextGroup({
   chips,
   disabled,
   onRemove,
+  action,
 }: {
   label: string;
   chips: ParsedChip[];
   disabled: boolean;
   onRemove: (chip: ParsedChip) => void;
+  action?: ReactNode;
 }) {
   if (!chips.length) return null;
   return (
@@ -63,6 +65,7 @@ function ContextGroup({
           </button>
         ))}
       </div>
+      {action}
     </div>
   );
 }
@@ -87,7 +90,7 @@ export function SearchContextRail({
   refinementError: string | null;
   refinementControlRef: RefObject<HTMLElement>;
   adjustFiltersRef: RefObject<HTMLButtonElement>;
-  onOpenFilters: () => void;
+  onOpenFilters: (trigger: HTMLButtonElement) => void;
   onRemoveChip: (chip: ParsedChip) => void;
   onApplyRefinement: (
     refinement: RefinementProposal,
@@ -102,6 +105,8 @@ export function SearchContextRail({
     ),
   );
   const preferences = chips.filter((chip) => !hard.includes(chip));
+  const visiblePreferences = preferences.slice(0, 3);
+  const hasHiddenPreferences = preferences.length > visiblePreferences.length;
   const lifecycleCopy = REFINEMENT_STATUS_COPY[refinementStatus];
   const refinementAnnouncement = refinement
     ? `A refinement question is ready. ${refinement.question}`
@@ -129,7 +134,7 @@ export function SearchContextRail({
           ref={adjustFiltersRef}
           className="text-action search-context__adjust"
           disabled={loading}
-          onClick={onOpenFilters}
+          onClick={(event) => onOpenFilters(event.currentTarget)}
         >
           <SlidersHorizontal aria-hidden="true" size={17} />
           Adjust
@@ -143,9 +148,23 @@ export function SearchContextRail({
       />
       <ContextGroup
         label="Preferences"
-        chips={preferences}
+        chips={visiblePreferences}
         disabled={loading}
         onRemove={onRemoveChip}
+        action={
+          hasHiddenPreferences ? (
+            <div className="search-context__group-action">
+              <button
+                type="button"
+                className="text-action search-context__view-all"
+                disabled={loading}
+                onClick={(event) => onOpenFilters(event.currentTarget)}
+              >
+                View all {preferences.length} preferences
+              </button>
+            </div>
+          ) : null
+        }
       />
       {refinement ? (
         <RefinementCard

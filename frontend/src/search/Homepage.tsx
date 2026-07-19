@@ -30,7 +30,7 @@ export function Homepage({
   adjustFiltersRef: RefObject<HTMLButtonElement>;
   onBriefChange: (brief: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onOpenFilters: () => void;
+  onOpenFilters: (trigger: HTMLButtonElement) => void;
   onRemoveChip: (chip: ParsedChip) => void;
 }) {
   return (
@@ -97,7 +97,7 @@ export function Homepage({
                 type="button"
                 ref={adjustFiltersRef}
                 className="text-action"
-                onClick={onOpenFilters}
+                onClick={(event) => onOpenFilters(event.currentTarget)}
               >
                 <SlidersHorizontal aria-hidden="true" size={18} />
                 Adjust filters

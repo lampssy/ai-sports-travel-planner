@@ -101,3 +101,56 @@ test("changes only the drawer-owned pass objective", async () => {
     { factor_id: "trip_window_snow_fit", importance: "high" },
   ]);
 });
+
+test("shows and removes active factor and objective choices outside the defaults", async () => {
+  const user = userEvent.setup();
+  const onPreferencesChange = vi.fn();
+  const onObjectivesChange = vi.fn();
+  const preferences = [
+    {
+      factor_id: "stay_base_access",
+      mode: "prefer" as const,
+      values: ["near"],
+      importance: "normal" as const,
+    },
+  ];
+  const objectives = [
+    { factor_id: "pass_terrain_value", importance: "normal" as const },
+    { factor_id: "trip_window_snow_fit", importance: "high" as const },
+  ];
+
+  render(
+    <SearchFiltersDrawer
+      open
+      disabled={false}
+      filters={{
+        ...defaultSearchFilters,
+        valueObjective: "pass_terrain_value",
+      }}
+      preferences={preferences}
+      objectives={objectives}
+      returnFocusRef={createRef<HTMLButtonElement>()}
+      onFiltersChange={vi.fn()}
+      onPreferencesChange={onPreferencesChange}
+      onObjectivesChange={onObjectivesChange}
+      onClose={vi.fn()}
+    />,
+  );
+
+  const factorChoice = screen.getByRole("button", {
+    name: "Prefer Stay-base access: near",
+  });
+  const objectiveChoice = screen.getByRole("button", {
+    name: "Optimize Trip-window snow fit",
+  });
+  expect(factorChoice).toHaveAttribute("aria-pressed", "true");
+  expect(objectiveChoice).toHaveAttribute("aria-pressed", "true");
+
+  await user.click(factorChoice);
+  expect(onPreferencesChange).toHaveBeenCalledWith([]);
+
+  await user.click(objectiveChoice);
+  expect(onObjectivesChange).toHaveBeenCalledWith([
+    { factor_id: "pass_terrain_value", importance: "normal" },
+  ]);
+});

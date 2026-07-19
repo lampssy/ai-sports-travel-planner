@@ -31,6 +31,34 @@ const intent: SearchIntent = {
   assumptions: [],
 };
 
+const intentWithFivePreferences: SearchIntent = {
+  ...intent,
+  objectives: [
+    { factor_id: "pass_terrain_value", importance: "normal" },
+    { factor_id: "trip_window_snow_fit", importance: "high" },
+  ],
+  factor_preferences: [
+    {
+      factor_id: "stay_base_access",
+      mode: "prefer",
+      values: ["near"],
+      importance: "normal",
+    },
+    {
+      factor_id: "local_pace",
+      mode: "prefer",
+      values: ["quiet"],
+      importance: "normal",
+    },
+    {
+      factor_id: "glacier_terrain",
+      mode: "prefer",
+      values: [],
+      importance: "normal",
+    },
+  ],
+};
+
 const refinement: RefinementProposal = {
   topic_id: "tie_break",
   target_factor_id: "stay_base_access",
@@ -80,6 +108,34 @@ test("separates hard constraints from preferences and renders one refinement", (
   expect(screen.getByRole("status")).toHaveTextContent(
     "A refinement question is ready. What should break the tie?",
   );
+});
+
+test("shows three preferences and a full-list count", () => {
+  render(
+    <SearchContextRail
+      intent={intentWithFivePreferences}
+      refinement={null}
+      refinementStatus="idle"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  const preferences = screen.getByRole("group", { name: "Preferences" });
+  expect(
+    within(preferences).getAllByRole("button", { name: /^Remove / }),
+  ).toHaveLength(3);
+  expect(
+    within(preferences).getByRole("button", {
+      name: "View all 5 preferences",
+    }),
+  ).toBeVisible();
 });
 
 test("disables context mutations while recommendations are loading", () => {

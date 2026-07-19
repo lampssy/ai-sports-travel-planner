@@ -7,7 +7,11 @@ import type {
   SearchObjective,
   TravelMonth,
 } from "../types";
-import { featureOptions, monthOptions } from "./searchPresentation";
+import {
+  factorLabels,
+  featureOptions,
+  monthOptions,
+} from "./searchPresentation";
 import {
   isPassValueObjective,
   mergeObjectivePatches,
@@ -27,6 +31,24 @@ function Field({
       {children}
     </label>
   );
+}
+
+const featureOptionIds = new Set<string>(
+  featureOptions.map(([factorId]) => factorId),
+);
+
+function factorLabel(factorId: string): string {
+  const label = factorLabels[factorId] ?? factorId.replaceAll("_", " ");
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function preferenceLabel(preference: FactorPreferencePatch): string {
+  const mode =
+    preference.mode.charAt(0).toUpperCase() + preference.mode.slice(1);
+  const values = preference.values.length
+    ? `: ${preference.values.join(", ")}`
+    : "";
+  return `${mode} ${factorLabel(preference.factor_id)}${values}`;
 }
 
 export function SearchFiltersDrawer({
@@ -56,6 +78,15 @@ export function SearchFiltersDrawer({
   const dialogRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const additionalPreferences = preferences.filter(
+    (preference) =>
+      !featureOptionIds.has(preference.factor_id) ||
+      preference.mode !== "prefer" ||
+      preference.values.length > 0,
+  );
+  const additionalObjectives = objectives.filter(
+    (objective) => !isPassValueObjective(objective.factor_id),
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -141,6 +172,11 @@ export function SearchFiltersDrawer({
   const changePreferences = (nextPreferences: FactorPreferencePatch[]) => {
     if (disabled) return;
     onPreferencesChange(nextPreferences);
+  };
+
+  const changeObjectives = (nextObjectives: SearchObjective[]) => {
+    if (disabled) return;
+    onObjectivesChange(nextObjectives);
   };
 
   return (
@@ -356,6 +392,32 @@ export function SearchFiltersDrawer({
             </select>
           </Field>
 
+          {additionalObjectives.length ? (
+            <fieldset className="preference-fieldset">
+              <legend>Other active objectives</legend>
+              <div className="preference-options">
+                {additionalObjectives.map((objective) => (
+                  <button
+                    type="button"
+                    key={objective.factor_id}
+                    aria-pressed="true"
+                    disabled={disabled}
+                    onClick={() =>
+                      changeObjectives(
+                        objectives.filter(
+                          (item) => item.factor_id !== objective.factor_id,
+                        ),
+                      )
+                    }
+                    className="preference-option"
+                  >
+                    Optimize {factorLabel(objective.factor_id)}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+
           <fieldset className="preference-fieldset">
             <legend>Extra preferences</legend>
             <div className="preference-options">
@@ -393,6 +455,24 @@ export function SearchFiltersDrawer({
                   </button>
                 );
               })}
+              {additionalPreferences.map((preference) => (
+                <button
+                  type="button"
+                  key={`${preference.factor_id}-${preference.mode}`}
+                  aria-pressed="true"
+                  disabled={disabled}
+                  onClick={() =>
+                    changePreferences(
+                      preferences.filter(
+                        (item) => item.factor_id !== preference.factor_id,
+                      ),
+                    )
+                  }
+                  className="preference-option"
+                >
+                  {preferenceLabel(preference)}
+                </button>
+              ))}
             </div>
           </fieldset>
         </div>
