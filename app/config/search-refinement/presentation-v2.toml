@@ -140,7 +140,7 @@ traveller_topic = "the ski-day après atmosphere"
 question_phrases = ["ski-day après atmosphere", "ski-day apres atmosphere"]
 fallback_question = "What kind of après atmosphere would you like around the ski day?"
 fallback_reason = "Your answer can change which trip option fits you best."
-fallback_answer_ids = ["ski_day_apres.low_key", "ski_day_apres.moderate", "ski_day_apres.lively", "ski_day_apres.destination_defining", "ski_day_apres.ignore"]
+fallback_answer_ids = ["ski_day_apres.low_key", "ski_day_apres.moderate", "ski_day_apres.lively", "ski_day_apres.ignore"]
 answer_ids = ["ski_day_apres.low_key", "ski_day_apres.moderate", "ski_day_apres.lively", "ski_day_apres.destination_defining", "ski_day_apres.ignore"]
 fallback_priority = 4
 
@@ -151,7 +151,7 @@ traveller_topic = "the evening atmosphere near the accommodation base"
 question_phrases = ["evening atmosphere near where you stay"]
 fallback_question = "What kind of evening atmosphere would you like near where you stay?"
 fallback_reason = "Your answer can change which trip option fits you best."
-fallback_answer_ids = ["local_apres.low_key", "local_apres.moderate", "local_apres.lively", "local_apres.destination_defining", "local_apres.ignore"]
+fallback_answer_ids = ["local_apres.low_key", "local_apres.moderate", "local_apres.lively", "local_apres.ignore"]
 answer_ids = ["local_apres.low_key", "local_apres.moderate", "local_apres.lively", "local_apres.destination_defining", "local_apres.ignore"]
 fallback_priority = 3
 
@@ -184,7 +184,7 @@ traveller_topic = "the structural type of accommodation base"
 question_phrases = ["accommodation base"]
 fallback_question = "What type of accommodation base would suit you best?"
 fallback_reason = "Your answer can change which trip option fits you best."
-fallback_answer_ids = ["base_type.town", "base_type.village_or_hamlet", "base_type.resort_station", "base_type.neighbourhood_or_sector", "base_type.ignore"]
+fallback_answer_ids = ["base_type.town", "base_type.village_or_hamlet", "base_type.resort_station", "base_type.ignore"]
 answer_ids = ["base_type.town", "base_type.village_or_hamlet", "base_type.resort_station", "base_type.neighbourhood_or_sector", "base_type.ignore"]
 fallback_priority = 18
 

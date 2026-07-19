@@ -2095,6 +2095,20 @@ def test_version_two_is_default_and_version_one_remains_loadable() -> None:
     )
 
 
+def test_active_fallback_sets_fit_the_active_option_limit() -> None:
+    search_policy = load_search_policy()
+    presentation = load_refinement_presentation_policy()
+    maximum = search_policy.refinement.max_options_per_question
+
+    oversized = {
+        topic.topic_id: len(topic.fallback_answer_ids)
+        for topic in presentation.topics
+        if len(topic.fallback_answer_ids) > maximum
+    }
+
+    assert oversized == {}
+
+
 def test_registry_rejects_duplicate_topic_and_answer_ids() -> None:
     search_policy = load_search_policy()
     payload = load_refinement_presentation_policy().model_dump(mode="python")
