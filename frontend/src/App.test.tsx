@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import App from "./App";
 import type {
   CurrentTrip,
+  CurrentTripSummary,
   SearchIntent,
   RefinementProposal,
   SearchResponse,
@@ -215,6 +216,62 @@ const weatherResponse: SearchWeatherEvidenceResponse = {
   cache_valid_until: "2099-07-16T12:05:00Z",
   unavailable_reason: "historical_evidence_unavailable",
   limitations: ["No supported historical evidence covers this ski area."],
+};
+
+const savedTrip: CurrentTrip = {
+  ski_region_id: "tignes-val-disere",
+  ski_region_name: "Tignes - Val d'Isere",
+  stay_destination_id: "tignes",
+  stay_destination_name: "Tignes",
+  stay_base_id: "tignes-le-lac",
+  stay_base_name: "Le Lac",
+  focus_ski_area_id: "tignes-ski-area",
+  focus_ski_area_name: "Tignes",
+  lift_pass_product_id: "tignes-pass",
+  lift_pass_product_name: "Tignes - Val d'Isere pass",
+  travel_month: 3,
+  booking_status: "not_booked_yet",
+  created_at: "2026-07-15T00:00:00Z",
+  updated_at: "2026-07-15T00:00:00Z",
+  last_checked_at: null,
+};
+
+const savedTripSummary: CurrentTripSummary = {
+  trip: savedTrip,
+  current_conditions: {
+    resort_name: "Tignes",
+    snow_confidence_score: 78,
+    snow_confidence_label: "good",
+    availability_status: "open",
+    weather_summary: "Light snow is expected this week.",
+    conditions_score: 76,
+    updated_at: "2026-07-19T08:00:00Z",
+    source: "Historical weather model",
+  },
+  current_conditions_provenance: {
+    source_name: "Historical weather model",
+    source_type: "estimated",
+    updated_at: "2026-07-19T08:00:00Z",
+    freshness_status: "fresh",
+    basis_summary: "Weather evidence for the saved trip window.",
+  },
+  comparison_basis: {
+    kind: "since_trip_saved",
+    baseline_at: "2026-07-15T00:00:00Z",
+    label: "Since this trip was saved",
+  },
+  delta: {
+    status: "unchanged",
+    summary: "No important change since this trip was saved.",
+    changes: [],
+  },
+  companion_status: {
+    trip_window_status: "upcoming",
+    trip_window_label: "Upcoming trip",
+    notification_eligible: true,
+    eligibility_reason: "The trip is upcoming.",
+    actionable_change_available: false,
+  },
 };
 
 beforeEach(() => {
@@ -1314,31 +1371,122 @@ test("opens the selected candidate dossier without rerunning search and saves it
   );
 });
 
-test("keeps the current trip and handles a failed clear action", async () => {
-  const currentTrip: CurrentTrip = {
-    ski_region_id: "tignes-val-disere",
-    ski_region_name: "Tignes - Val d'Isere",
-    stay_destination_id: "tignes",
-    stay_destination_name: "Tignes",
-    stay_base_id: "tignes-le-lac",
-    stay_base_name: "Le Lac",
-    focus_ski_area_id: "tignes-ski-area",
-    focus_ski_area_name: "Tignes",
-    lift_pass_product_id: "tignes-pass",
-    lift_pass_product_name: "Tignes - Val d'Isere pass",
-    travel_month: 3,
-    booking_status: "not_booked_yet",
-    created_at: "2026-07-15T00:00:00Z",
-    updated_at: "2026-07-15T00:00:00Z",
-    last_checked_at: null,
+test("shows and retries a failed saved-trip load", async () => {
+  window.history.replaceState(null, "", "/current-trip");
+  let tripLoadAttempts = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/current-trip" && (!init?.method || init.method === "GET")) {
+        tripLoadAttempts += 1;
+        if (tripLoadAttempts === 1) throw new TypeError("Failed to fetch");
+        return new Response(JSON.stringify({ trip: savedTrip }), { status: 200 });
+      }
+      if (url === "/api/current-trip/summary") {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+
+  render(<App />);
+
+  const error = await screen.findByRole("alert");
+  expect(error).toHaveTextContent("Saved trip could not be loaded");
+  expect(error).toHaveTextContent("Check your connection and try again.");
+  expect(error).not.toHaveTextContent(/failed to fetch|api|backend/i);
+
+  await user.click(screen.getByRole("button", { name: "Retry saved trip" }));
+
+  expect(
+    await screen.findByRole("heading", { name: "Tignes - Val d'Isere" }),
+  ).toBeVisible();
+  expect(screen.queryByText("Saved trip could not be loaded")).toBeNull();
+  expect(tripLoadAttempts).toBe(2);
+});
+
+test("keeps an absent saved trip as an empty state", async () => {
+  window.history.replaceState(null, "", "/current-trip");
+  render(<App />);
+
+  expect(
+    await screen.findByText(/save a ranked configuration.*to track it/i),
+  ).toBeVisible();
+  await waitFor(() =>
+    expect(requests.filter((item) => item.url === "/api/current-trip")).toHaveLength(1),
+  );
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Retry saved trip" })).toBeNull();
+});
+
+test("keeps current conditions visible when refresh fails and retries them", async () => {
+  window.history.replaceState(null, "", "/current-trip");
+  let summaryLoadAttempts = 0;
+  const refreshedSummary: CurrentTripSummary = {
+    ...savedTripSummary,
+    current_conditions: {
+      ...savedTripSummary.current_conditions,
+      weather_summary: "Fresh snow is now expected before the trip.",
+    },
+    delta: {
+      status: "changed",
+      summary: "Snow confidence has improved since this trip was saved.",
+      changes: ["Snow confidence improved."],
+    },
   };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/current-trip" && (!init?.method || init.method === "GET")) {
+        return new Response(JSON.stringify({ trip: savedTrip }), { status: 200 });
+      }
+      if (url === "/api/current-trip/summary") {
+        summaryLoadAttempts += 1;
+        if (summaryLoadAttempts === 1) {
+          return new Response(JSON.stringify(savedTripSummary), { status: 200 });
+        }
+        if (summaryLoadAttempts === 2) throw new TypeError("Failed to fetch");
+        return new Response(JSON.stringify(refreshedSummary), { status: 200 });
+      }
+      return new Response(null, { status: 404 });
+    }),
+  );
+  const user = userEvent.setup();
+
+  render(<App />);
+  expect(await screen.findByText("Light snow is expected this week.")).toBeVisible();
+
+  await user.click(screen.getByRole("button", { name: "Back to search" }));
+  await user.click(screen.getByRole("button", { name: "Current trip" }));
+
+  const error = await screen.findByRole("alert");
+  expect(error).toHaveTextContent("Current conditions could not be updated");
+  expect(error).toHaveTextContent("Check your connection and try again.");
+  expect(error).not.toHaveTextContent(/failed to fetch|api|backend/i);
+  expect(screen.getByText("Light snow is expected this week.")).toBeVisible();
+
+  await user.click(
+    screen.getByRole("button", { name: "Retry current conditions" }),
+  );
+
+  expect(
+    await screen.findByText("Fresh snow is now expected before the trip."),
+  ).toBeVisible();
+  expect(screen.queryByText("Current conditions could not be updated")).toBeNull();
+  expect(summaryLoadAttempts).toBe(3);
+});
+
+test("keeps the current trip and handles a failed clear action", async () => {
   window.history.replaceState(null, "", "/current-trip");
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url === "/api/current-trip" && (!init?.method || init.method === "GET")) {
-        return new Response(JSON.stringify({ trip: currentTrip }), { status: 200 });
+        return new Response(JSON.stringify({ trip: savedTrip }), { status: 200 });
       }
       if (url === "/api/current-trip" && init?.method === "DELETE") {
         throw new TypeError("Failed to fetch");

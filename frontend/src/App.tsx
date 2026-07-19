@@ -65,6 +65,8 @@ import type {
 } from "./types";
 import { AppShell, CurrentTripView } from "./ui/AppShell";
 
+const CURRENT_TRIP_RETRY_MESSAGE = "Check your connection and try again.";
+
 interface PreviousSearchState {
   brief: string;
   filters: SearchFilters;
@@ -240,9 +242,21 @@ function App() {
   const [currentTrip, setCurrentTrip] = useState<CurrentTrip | null>(null);
   const [currentTripSummary, setCurrentTripSummary] =
     useState<CurrentTripSummary | null>(null);
+  const [currentTripLoadError, setCurrentTripLoadError] = useState<string | null>(
+    null,
+  );
+  const [currentTripSummaryLoadError, setCurrentTripSummaryLoadError] = useState<
+    string | null
+  >(null);
   const [currentTripClearError, setCurrentTripClearError] = useState<string | null>(
     null,
   );
+  const [currentTripLoadRequest, setCurrentTripLoadRequest] = useState(0);
+  const [currentTripSummaryLoadRequest, setCurrentTripSummaryLoadRequest] =
+    useState(0);
+  const currentTripRef = useRef<CurrentTrip | null>(null);
+  const currentTripLoadIdentityRef = useRef(0);
+  const currentTripSummaryLoadIdentityRef = useRef(0);
   const adjustFiltersRef = useRef<HTMLButtonElement>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const refinementControlRef = useRef<HTMLElement>(null);
@@ -335,22 +349,53 @@ function App() {
   }, [route.name]);
 
   useEffect(() => {
+    const identity = ++currentTripLoadIdentityRef.current;
+    setCurrentTripLoadError(null);
     void getCurrentTrip()
       .then((trip) => {
-        if (trip) setCurrentTrip(trip);
+        if (identity !== currentTripLoadIdentityRef.current) return;
+        if (currentTripRef.current === trip) return;
+        currentTripRef.current = trip;
+        setCurrentTrip(trip);
       })
-      .catch(() => undefined);
-  }, []);
+      .catch(() => {
+        if (identity === currentTripLoadIdentityRef.current) {
+          setCurrentTripLoadError(CURRENT_TRIP_RETRY_MESSAGE);
+        }
+      });
+    return () => {
+      if (identity === currentTripLoadIdentityRef.current) {
+        currentTripLoadIdentityRef.current += 1;
+      }
+    };
+  }, [currentTripLoadRequest]);
 
   useEffect(() => {
-    if (route.name !== "currentTrip" || !currentTrip) {
+    if (!currentTrip) {
       setCurrentTripSummary(null);
+      setCurrentTripSummaryLoadError(null);
       return;
     }
+    if (route.name !== "currentTrip") return;
+    const identity = ++currentTripSummaryLoadIdentityRef.current;
+    setCurrentTripSummaryLoadError(null);
     void getCurrentTripSummary()
-      .then(setCurrentTripSummary)
-      .catch(() => setCurrentTripSummary(null));
-  }, [route.name, currentTrip]);
+      .then((summary) => {
+        if (identity === currentTripSummaryLoadIdentityRef.current) {
+          setCurrentTripSummary(summary);
+        }
+      })
+      .catch(() => {
+        if (identity === currentTripSummaryLoadIdentityRef.current) {
+          setCurrentTripSummaryLoadError(CURRENT_TRIP_RETRY_MESSAGE);
+        }
+      });
+    return () => {
+      if (identity === currentTripSummaryLoadIdentityRef.current) {
+        currentTripSummaryLoadIdentityRef.current += 1;
+      }
+    };
+  }, [route.name, currentTrip, currentTripSummaryLoadRequest]);
 
   useEffect(() => {
     if (focusRequest > 0 && session) {
@@ -1127,7 +1172,11 @@ function App() {
           travelWindow?.end_date ?? null,
         booking_status: "not_booked_yet",
       });
+      currentTripLoadIdentityRef.current += 1;
+      currentTripRef.current = saved;
       setCurrentTrip(saved);
+      setCurrentTripLoadError(null);
+      setCurrentTripSummaryLoadError(null);
       setSaveError(null);
     } catch (caught) {
       setSaveError(caught instanceof Error ? caught.message : "Could not save trip.");
@@ -1138,7 +1187,12 @@ function App() {
     setCurrentTripClearError(null);
     try {
       await clearCurrentTrip();
+      currentTripLoadIdentityRef.current += 1;
+      currentTripRef.current = null;
       setCurrentTrip(null);
+      setCurrentTripSummary(null);
+      setCurrentTripLoadError(null);
+      setCurrentTripSummaryLoadError(null);
     } catch (caught) {
       setCurrentTripClearError(
         caught instanceof Error
@@ -1181,8 +1235,16 @@ function App() {
         <CurrentTripView
           trip={currentTrip}
           summary={currentTripSummary}
+          tripLoadError={currentTripLoadError}
+          summaryLoadError={currentTripSummaryLoadError}
           clearError={currentTripClearError}
           onBack={goToSearch}
+          onRetryTripLoad={() =>
+            setCurrentTripLoadRequest((current) => current + 1)
+          }
+          onRetrySummaryLoad={() =>
+            setCurrentTripSummaryLoadRequest((current) => current + 1)
+          }
           onClear={() => {
             void handleClearCurrentTrip();
           }}

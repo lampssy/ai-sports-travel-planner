@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { CurrentTrip, CurrentTripSummary } from "../types";
+import { AsyncState } from "./AsyncState";
 import { SnowcastLogo } from "./SnowcastLogo";
 
 export function AppShell({
@@ -59,14 +60,22 @@ export function AppShell({
 export function CurrentTripView({
   trip,
   summary,
+  tripLoadError,
+  summaryLoadError,
   clearError,
   onBack,
+  onRetryTripLoad,
+  onRetrySummaryLoad,
   onClear,
 }: {
   trip: CurrentTrip | null;
   summary: CurrentTripSummary | null;
+  tripLoadError: string | null;
+  summaryLoadError: string | null;
   clearError: string | null;
   onBack: () => void;
+  onRetryTripLoad: () => void;
+  onRetrySummaryLoad: () => void;
   onClear: () => void;
 }) {
   return (
@@ -77,6 +86,19 @@ export function CurrentTripView({
       </button>
       <section className="current-trip-panel">
         <p className="eyebrow">Trip companion</p>
+        {tripLoadError ? (
+          <AsyncState
+            state="error"
+            title={
+              trip
+                ? "Saved trip could not be refreshed"
+                : "Saved trip could not be loaded"
+            }
+            message={tripLoadError}
+            retryLabel="Retry saved trip"
+            onRetry={onRetryTripLoad}
+          />
+        ) : null}
         {trip ? (
           <>
             <h1>{trip.ski_region_name}</h1>
@@ -91,6 +113,15 @@ export function CurrentTripView({
                 <p className="muted-copy">{summary.delta.summary}</p>
               </div>
             ) : null}
+            {summaryLoadError ? (
+              <AsyncState
+                state="error"
+                title="Current conditions could not be updated"
+                message={summaryLoadError}
+                retryLabel="Retry current conditions"
+                onRetry={onRetrySummaryLoad}
+              />
+            ) : null}
             {clearError ? (
               <p className="error-copy" role="alert">
                 {clearError}
@@ -100,7 +131,7 @@ export function CurrentTripView({
               Clear current trip
             </button>
           </>
-        ) : (
+        ) : tripLoadError ? null : (
           <p className="current-trip-panel__empty">
             Save a ranked configuration in the authenticated mobile app to track it.
           </p>
