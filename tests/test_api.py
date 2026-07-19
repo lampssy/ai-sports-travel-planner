@@ -1283,6 +1283,9 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
     assert payload["comparison_basis"]["kind"] == "since_trip_saved"
     assert payload["current_conditions_provenance"]["source_type"] == "forecast"
     assert payload["delta"]["status"] == "changed"
+    assert payload["delta"]["summary"] == (
+        "Conditions have changed since you saved this trip."
+    )
     assert payload["companion_status"]["trip_window_status"] == "unscheduled"
     assert payload["companion_status"]["notification_eligible"] is False
     assert payload["companion_status"]["eligibility_reason"] == (
@@ -1330,6 +1333,67 @@ def test_current_trip_summary_uses_last_checked_at_when_present(monkeypatch) -> 
         == (trip_created_at + timedelta(days=1)).isoformat()
     )
     assert payload["comparison_basis"]["kind"] == "since_last_check"
+    assert payload["delta"]["summary"] == (
+        "Conditions have changed since your last check."
+    )
+
+
+@pytest.mark.parametrize(
+    ("checked_at_offset", "comparison_kind", "expected_summary"),
+    [
+        (
+            None,
+            "since_trip_saved",
+            "Conditions have not changed since you saved this trip.",
+        ),
+        (
+            timedelta(days=1),
+            "since_last_check",
+            "Conditions have not changed since your last check.",
+        ),
+    ],
+)
+def test_current_trip_summary_uses_basis_aware_unchanged_copy(
+    monkeypatch,
+    checked_at_offset: timedelta | None,
+    comparison_kind: str,
+    expected_summary: str,
+) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
+    trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
+    _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
+        trip_created_at=trip_created_at,
+        current_updated_at=trip_created_at,
+        prior_snapshot_at=None,
+    )
+    if checked_at_offset is not None:
+        CurrentTripRepository().mark_checked(
+            user_id=session["user"]["user_id"],
+            checked_at=(trip_created_at + checked_at_offset).isoformat(),
+        )
+
+    response = client.get("/api/current-trip/summary", headers=headers)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["comparison_basis"]["kind"] == comparison_kind
+    assert payload["delta"] == {
+        "status": "unchanged",
+        "summary": expected_summary,
+        "changes": [],
+    }
 
 
 def test_current_trip_summary_handles_sparse_history_gracefully(monkeypatch) -> None:
@@ -1358,7 +1422,10 @@ def test_current_trip_summary_handles_sparse_history_gracefully(monkeypatch) -> 
     assert response.status_code == 200
     payload = response.json()
     assert payload["delta"]["status"] == "insufficient_history"
-    assert "not enough earlier history" in payload["delta"]["summary"].lower()
+    assert payload["delta"]["summary"] == (
+        "Conditions are newer since you saved this trip, but there is not enough "
+        "earlier history to compare."
+    )
 
 
 def test_mark_checked_updates_only_last_checked_at(monkeypatch) -> None:

@@ -181,6 +181,41 @@ test("keeps required factor preferences visible with hard constraints", () => {
   ).toBeVisible();
 });
 
+test("uses required factor preferences in the no-results must-have review", () => {
+  const requiredIntent: SearchIntent = {
+    ...intent,
+    factor_preferences: [
+      {
+        factor_id: "snowmaking_availability",
+        mode: "require",
+        values: [],
+        importance: "high",
+      },
+    ],
+  };
+  render(
+    <SearchContextRail
+      intent={requiredIntent}
+      refinement={null}
+      refinementStatus="idle"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  expect(
+    within(screen.getByRole("group", { name: "Must-haves" })).getByText(
+      "Require Snowmaking",
+    ),
+  ).toBeVisible();
+});
+
 test("disables context mutations while recommendations are loading", () => {
   const onOpenFilters = vi.fn();
   const onRemoveChip = vi.fn();

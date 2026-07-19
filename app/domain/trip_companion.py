@@ -139,6 +139,7 @@ def _delta_from_conditions(
     current_conditions: ResortConditions,
     provenance: ProvenanceInfo,
     prior_snapshot: ResortConditionSnapshot,
+    comparison_basis: CurrentTripComparisonBasis,
 ) -> CurrentTripDelta:
     changes: list[str] = []
 
@@ -175,15 +176,24 @@ def _delta_from_conditions(
     if not changes:
         return CurrentTripDelta(
             status="unchanged",
-            summary="Conditions have not changed since the last comparison.",
+            summary=(
+                "Conditions have not changed "
+                f"{_comparison_basis_copy(comparison_basis)}."
+            ),
             changes=[],
         )
 
     return CurrentTripDelta(
         status="changed",
-        summary="Conditions have changed since the last comparison.",
+        summary=f"Conditions have changed {_comparison_basis_copy(comparison_basis)}.",
         changes=changes,
     )
+
+
+def _comparison_basis_copy(comparison_basis: CurrentTripComparisonBasis) -> str:
+    if comparison_basis.kind == "since_trip_saved":
+        return "since you saved this trip"
+    return "since your last check"
 
 
 def _event_signature(
@@ -294,7 +304,7 @@ def build_current_trip_summary(
     elif current_updated_at <= baseline_at:
         delta = CurrentTripDelta(
             status="unchanged",
-            summary=("No newer conditions are available since the last comparison."),
+            summary=f"Conditions have not changed {_comparison_basis_copy(basis)}.",
             changes=[],
         )
     else:
@@ -303,8 +313,8 @@ def build_current_trip_summary(
             delta = CurrentTripDelta(
                 status="insufficient_history",
                 summary=(
-                    "Conditions are newer than the last comparison, but there is "
-                    "not enough earlier history to compare."
+                    f"Conditions are newer {_comparison_basis_copy(basis)}, but "
+                    "there is not enough earlier history to compare."
                 ),
                 changes=[],
             )
@@ -313,6 +323,7 @@ def build_current_trip_summary(
                 current_conditions=current_conditions,
                 provenance=provenance,
                 prior_snapshot=prior_snapshot,
+                comparison_basis=basis,
             )
 
     companion_status = companion_status.model_copy(

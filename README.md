@@ -8,7 +8,7 @@ Snowcast helps skiers compare clear trip options for their dates, must-haves, an
 - Add an optional travel window, either month-level or exact dates, so trip options can reflect planning confidence for that window
 - Add optional car-first travel effort from a user origin, with max-drive filtering, travel tolerance, result badges, and provider/provenance caveats
 - Return trip options with a destination, recommended place to stay, selected ski area, access details, lift pass, and alternatives
-- Keep actual hotels and apartments as an optional suggested-stay layer under the recommended place to stay, with provider and freshness evidence when property-level data exists
+- Keep property-level hotel and apartment suggestions as future work; current accommodation handoff is a destination-level Booking.com search
 - Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
 - Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
 - Save one authenticated current trip per user from the mobile selected-result flow with a booking status for later companion features

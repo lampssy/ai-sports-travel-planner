@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -5,7 +7,8 @@ from app.data.catalog_loader import load_catalog
 from app.data.catalog_repository import CatalogRepository
 from app.data.catalog_sync import sync_catalog_snapshot
 from app.data.repositories import RawWeatherHistoryRepository
-from app.domain.models import RawWeatherObservation
+from app.domain.models import RawWeatherObservation, ResortConditions
+from app.domain.planning import PlanningAssessment
 from app.main import create_app
 
 
@@ -82,6 +85,47 @@ def test_public_destination_page_returns_server_rendered_html() -> None:
     assert "trip market" not in lower_response
     assert "trust and provenance" not in lower_response
     assert "weather score" not in lower_response
+
+
+def test_public_calendar_keeps_poor_measured_snow_honest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _seed_tignes_archive_weather()
+    monkeypatch.setattr(
+        "app.public_pages.derive_planning_assessment",
+        lambda **_kwargs: PlanningAssessment(
+            conditions=ResortConditions(
+                resort_name="Tignes",
+                snow_confidence_score=0.2,
+                snow_confidence_label="poor",
+                availability_status="limited",
+                weather_summary="Historically weak snow signal.",
+                conditions_score=0.2,
+            ),
+            planning_summary="Historically weak snow signal.",
+            evidence_count=2,
+            best_travel_months=(),
+            latest_snapshot_at="2025-03-08T12:00:00+00:00",
+            evidence_source="raw_history",
+            evidence_profile="archive_backed",
+        ),
+    )
+    app = create_app()
+
+    with TestClient(app) as client:
+        response = client.get("/ski-destinations/tignes")
+
+    assert response.status_code == 200
+    march_match = re.search(
+        r'<article class="month[^>]*>.*?<h3>March</h3>.*?</article>',
+        response.text,
+        flags=re.DOTALL,
+    )
+    assert march_match is not None
+    march = march_match.group(0)
+    assert "Some concerns" in march
+    assert "Historically weak snow signal with mid-mountain typical snow depth" in march
+    assert "Not enough evidence" not in march
 
 
 def test_public_destination_page_unknown_destination_returns_404() -> None:

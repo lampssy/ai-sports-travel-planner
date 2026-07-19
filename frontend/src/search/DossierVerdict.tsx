@@ -15,7 +15,7 @@ import {
   evidenceQualityMode,
   formatAccess,
   formatPassPrice,
-  snowWindowLabel,
+  snowFitLabel,
 } from "./searchPresentation";
 
 export function DossierVerdict({
@@ -57,8 +57,8 @@ export function DossierVerdict({
           <span>Trip fit</span>
         </div>
         <div>
-          <strong>{snowWindowLabel(configuration)}</strong>
-          <span>Snow window</span>
+          <strong>{snowFitLabel(configuration)}</strong>
+          <span>Snow fit for your dates</span>
         </div>
         <EvidenceQualityBadge mode={evidenceMode} compact />
       </div>

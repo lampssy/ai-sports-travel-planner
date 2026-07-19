@@ -573,7 +573,7 @@ def _snow_fit_label(value: str) -> str:
     return {
         "good": "Strong fit",
         "fair": "Some concerns",
-        "poor": "Not enough evidence",
+        "poor": "Some concerns",
     }.get(value, "Not enough evidence")
 
 

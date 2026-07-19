@@ -7,7 +7,7 @@ import type {
   SearchIntent,
 } from "../types";
 import {
-  buildParsedChips,
+  partitionParsedChips,
   type ParsedChip,
 } from "./searchPresentation";
 import { RefinementCard } from "./RefinementCard";
@@ -104,20 +104,7 @@ export function SearchContextRail({
   onRetryRefinement?: () => void;
   onKeepResults?: () => void;
 }) {
-  const chips = buildParsedChips(intent);
-  const requiredFactorIds = new Set(
-    intent.factor_preferences
-      .filter((preference) => preference.mode === "require")
-      .map((preference) => preference.factor_id),
-  );
-  const hard = chips.filter((chip) =>
-    ["location", "travelWindow", "lodgingBudget", "stayQuality", "travelLimit", "skill"].includes(
-      chip.action.kind,
-    ) ||
-      (chip.action.kind === "preference" &&
-        requiredFactorIds.has(chip.action.id)),
-  );
-  const preferences = chips.filter((chip) => !hard.includes(chip));
+  const { mustHaves: hard, preferences } = partitionParsedChips(intent);
   const visiblePreferences = preferences.slice(0, 3);
   const hasHiddenPreferences = preferences.length > visiblePreferences.length;
   const lifecycleCopy = REFINEMENT_STATUS_COPY[refinementStatus];

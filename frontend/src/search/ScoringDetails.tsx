@@ -1,11 +1,13 @@
-import { Layers3 } from "lucide-react";
+import { Database, Layers3 } from "lucide-react";
 
 import type { SearchV4Configuration } from "../types";
+import { Badge } from "../ui/Badge";
 import {
   factorLabelForConfiguration,
   factorLabels,
   factorTrustLabelForConfiguration,
   groupLabels,
+  technicalEvidenceDetails,
 } from "./searchPresentation";
 
 export function ScoringDetails({
@@ -19,7 +21,15 @@ export function ScoringDetails({
   const factors = configuration.factors.filter(
     (factor) => factorLabels[factor.factor_id],
   );
-  if (!groups.length && !factors.length) return null;
+  const technicalDetails = technicalEvidenceDetails(configuration);
+  if (
+    !rankingPolicyVersion &&
+    !technicalDetails.length &&
+    !groups.length &&
+    !factors.length
+  ) {
+    return null;
+  }
   return (
     <details className="scoring-details">
       <summary>
@@ -31,6 +41,29 @@ export function ScoringDetails({
           <section className="scoring-details__policy">
             <h4>Ranking policy</h4>
             <code>{rankingPolicyVersion}</code>
+          </section>
+        ) : null}
+        {technicalDetails.length ? (
+          <section>
+            <h4>Evidence and source context</h4>
+            <div className="why-trip__technical-rows">
+              {technicalDetails.map((item) => (
+                <article key={item.id}>
+                  <Database aria-hidden="true" size={18} />
+                  <div>
+                    <h4>{item.label}</h4>
+                    <p>{item.provenance}</p>
+                  </div>
+                  <Badge
+                    variant={
+                      item.evidenceLabel === "Limited evidence" ? "warning" : "info"
+                    }
+                  >
+                    {item.evidenceLabel}
+                  </Badge>
+                </article>
+              ))}
+            </div>
           </section>
         ) : null}
         {groups.length ? (

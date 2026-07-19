@@ -223,7 +223,7 @@ test("shows the top two plus an out-of-band current recommendation", () => {
   );
 
   const navigator = screen.getByRole("navigation", {
-    name: "Recommendation results",
+    name: "Trip option results",
   });
   expect(within(navigator).getByRole("button", { name: /region 1/i })).toBeVisible();
   expect(within(navigator).getByRole("button", { name: /region 2/i })).toBeVisible();
@@ -254,7 +254,7 @@ test("renders the verdict hierarchy, progressive anchors, and selected save targ
   expect(screen.getByRole("heading", { name: "Region 4 - Base 4" })).toBeVisible();
   expect(screen.getByText("Recommended place to stay: Base 4")).toBeVisible();
   expect(screen.getByText("Trip fit")).toBeVisible();
-  expect(screen.getAllByText("Snow window")[0]).toBeVisible();
+  expect(screen.getAllByText("Snow fit for your dates")[0]).toBeVisible();
   expect(screen.getByText("Evidence quality")).toBeVisible();
   expect(screen.getAllByText("Destination 4")[0]).toBeVisible();
   expect(screen.getAllByText("Area 4")[0]).toBeVisible();
@@ -328,15 +328,14 @@ test("explains why the trip leads before exposing technical provenance", () => {
   expect(within(section as HTMLElement).getByRole("heading", { name: "What supports this choice" })).toBeVisible();
   expect(within(section as HTMLElement).getByRole("heading", { name: "What remains uncertain" })).toBeVisible();
   expect(
-    within(section as HTMLElement).getByText("Show technical calculation details"),
-  ).toBeVisible();
-  const disclosure = within(section as HTMLElement)
-    .getByText("Show technical calculation details")
-    .closest("details");
-  expect(disclosure).not.toHaveAttribute("open");
+    within(section as HTMLElement).queryByText("Show technical calculation details"),
+  ).toBeNull();
   expect(
-    within(section as HTMLElement).getByText(/Catalog field-group evidence/),
-  ).not.toBeVisible();
+    within(section as HTMLElement).queryByText(/Catalog field-group evidence/),
+  ).toBeNull();
+  const disclosures = screen.getAllByText("Show technical calculation details");
+  expect(disclosures).toHaveLength(1);
+  expect(disclosures[0].closest("details")).not.toHaveAttribute("open");
 });
 
 test("qualifies estimated terrain in dossier essentials, evidence, and scoring", async () => {
@@ -379,13 +378,6 @@ test("qualifies estimated terrain in dossier essentials, evidence, and scoring",
   expect(
     screen.getAllByText("About 31 km in the selected ski area"),
   ).not.toHaveLength(0);
-  const evidenceSection = document.querySelector("#decision-evidence");
-  expect(evidenceSection).not.toBeNull();
-  await user.click(
-    within(evidenceSection as HTMLElement).getByText(
-      "Show technical calculation details",
-    ),
-  );
   expect(
     screen.getAllByText("About 31 km in the selected ski area"),
   ).not.toHaveLength(0);
@@ -450,13 +442,6 @@ test("keeps domain terrain aligned across dossier evidence and scoring", async (
   expect(
     screen.getAllByText("About 300 km in the connected area covered by this pass"),
   ).not.toHaveLength(0);
-  const evidenceSection = document.querySelector("#decision-evidence");
-  expect(evidenceSection).not.toBeNull();
-  await user.click(
-    within(evidenceSection as HTMLElement).getByText(
-      "Show technical calculation details",
-    ),
-  );
   expect(
     screen.getAllByText("About 300 km in the connected area covered by this pass"),
   ).not.toHaveLength(0);
@@ -493,13 +478,13 @@ test("exposes desktop collapse and the bounded mobile switcher", async () => {
   );
 
   const collapse = screen.getByRole("button", {
-    name: "Collapse recommendation navigator",
+    name: "Collapse trip option navigator",
   });
   expect(collapse).toHaveAttribute("aria-expanded", "true");
   await user.click(collapse);
   expect(onToggleNavigator).toHaveBeenCalledOnce();
 
-  const switcher = screen.getByRole("button", { name: /recommendation 1 of 4/i });
+  const switcher = screen.getByRole("button", { name: /trip option 1 of 4/i });
   expect(switcher).toHaveAttribute("aria-expanded", "false");
   await user.click(switcher);
   expect(switcher).toHaveAttribute("aria-expanded", "true");
@@ -537,14 +522,16 @@ test("navigator and mobile switcher open the selected alternative they display",
   );
 
   const navigator = screen.getByRole("navigation", {
-    name: "Recommendation results",
+    name: "Trip option results",
   });
   expect(within(navigator).getByText("Selected Base 2")).toBeVisible();
   expect(
     within(navigator).getByRole("button", {
       name: /region 2, rank 2, open option/i,
     }),
-  ).toHaveAccessibleName(/selected base 2.*88 trip fit.*strong snow/i);
+  ).toHaveAccessibleName(
+    /selected base 2.*88 trip fit.*snow fit for your dates: strong fit/i,
+  );
   await user.click(
     within(navigator).getByRole("button", {
       name: /region 2, rank 2, open option/i,
@@ -555,7 +542,7 @@ test("navigator and mobile switcher open the selected alternative they display",
     "region-2-selected-alternative",
   );
 
-  await user.click(screen.getByRole("button", { name: /recommendation 1 of 4/i }));
+  await user.click(screen.getByRole("button", { name: /trip option 1 of 4/i }));
   await user.click(screen.getByRole("button", { name: /switch to region 2/i }));
   expect(onSwitch).toHaveBeenLastCalledWith(
     "region-2",

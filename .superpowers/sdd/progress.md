@@ -75,9 +75,9 @@ Task 2: complete (commits 14e72e3, be62a2b, 834ea1b, d508ef8, 1bfbff3,
 reviews clean after recovery, focus, announcement, visual-state, and
 weather-context race fixes; 178 focused frontend tests, production build, and
 targeted Chromium recovery journeys passed)
-Task 3: in progress (initial commit 4a29075 plus review-fix work; 910 focused
-backend tests, all 270 frontend tests, and production build pass; five-lane
-exact-head re-review pending)
+Task 3: in progress (initial commit 4a29075 plus two review-fix passes; 924
+focused backend tests, all 270 frontend tests, production build, Ruff, format,
+and language scans pass; final five-lane exact-head re-review pending)
 Task 4: pending
 Task 5: pending
 Task 6: pending

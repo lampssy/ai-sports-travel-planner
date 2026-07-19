@@ -48,6 +48,20 @@ _CONFIGURED_PUBLIC_COPY_FIELDS = (
     ("answers", "description"),
 )
 
+_INTERNAL_ONLY_REFINEMENT_TERMS = (
+    "configuration",
+    "dossier",
+    "hard constraint",
+    "rerank",
+    "eligible configuration",
+    "selected pass context",
+    "adjusted",
+    "evidence ledger",
+    "comparison baseline",
+    "notification eligible",
+    "suppressed",
+)
+
 
 def test_refinement_registry_uses_american_public_language() -> None:
     raw_policy = (
@@ -1398,6 +1412,21 @@ def test_registry_copy_resolves_to_typed_actions() -> None:
         "development_style",
         "local_pace",
     ]
+
+
+@pytest.mark.parametrize("term", _INTERNAL_ONLY_REFINEMENT_TERMS)
+def test_registry_rejects_internal_only_copy_without_changing_typed_actions(
+    term: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    payload = presentation.model_dump(mode="python")
+    payload["topics"][0]["fallback_reason"] = f"This uses {term}."
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    assert configured.topics[0].topic_id == presentation.topics[0].topic_id
+    assert configured.answers == presentation.answers
+    with pytest.raises(ValueError, match="blocked traveller-facing copy"):
+        validate_refinement_presentation_policy(configured, load_search_policy())
 
 
 def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:

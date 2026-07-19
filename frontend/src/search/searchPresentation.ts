@@ -125,6 +125,11 @@ export interface ParsedChip {
   action: ParsedChipAction;
 }
 
+export interface ParsedChipPartitions {
+  mustHaves: ParsedChip[];
+  preferences: ParsedChip[];
+}
+
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
 }
@@ -239,6 +244,31 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
     });
   }
   return chips;
+}
+
+export function partitionParsedChips(intent: SearchIntent): ParsedChipPartitions {
+  const chips = buildParsedChips(intent);
+  const requiredFactorIds = new Set(
+    intent.factor_preferences
+      .filter((preference) => preference.mode === "require")
+      .map((preference) => preference.factor_id),
+  );
+  const mustHaves = chips.filter(
+    (chip) =>
+      [
+        "location",
+        "travelWindow",
+        "lodgingBudget",
+        "stayQuality",
+        "travelLimit",
+        "skill",
+      ].includes(chip.action.kind) ||
+      (chip.action.kind === "preference" && requiredFactorIds.has(chip.action.id)),
+  );
+  return {
+    mustHaves,
+    preferences: chips.filter((chip) => !mustHaves.includes(chip)),
+  };
 }
 
 function accessTrustState(
@@ -650,7 +680,7 @@ const strengthCopy: Record<string, string> = {
   pass_price_per_day: "The selected pass offers competitive daily value.",
   pass_terrain_value: "The selected pass balances terrain access and price.",
   travel_effort: "The route keeps travel effort within the requested plan.",
-  trip_window_snow_fit: "The available evidence supports the selected snow window.",
+  trip_window_snow_fit: "Available snow evidence supports your requested travel dates.",
 };
 
 const watchoutCopy: Record<string, string> = {
@@ -676,12 +706,13 @@ export interface CandidateNarrative {
 export interface DecisionEvidencePresentation {
   supports: Array<{ id: string; title: string; detail: string }>;
   uncertainties: Array<{ id: string; detail: string }>;
-  technicalDetails: Array<{
-    id: string;
-    label: string;
-    provenance: string;
-    evidenceLabel: string;
-  }>;
+}
+
+export interface TechnicalEvidenceDetail {
+  id: string;
+  label: string;
+  provenance: string;
+  evidenceLabel: string;
 }
 
 function supportedFactor(
@@ -716,7 +747,7 @@ export function decisionEvidencePresentation(
   if (supportedFactor(configuration, "trip_window_snow_fit")) {
     addSupport(
       "snow-window",
-      "Snow window",
+      "Snow fit for your dates",
       "Available snow evidence supports the requested travel window.",
     );
   } else if (
@@ -810,7 +841,17 @@ export function decisionEvidencePresentation(
     );
   }
 
-  const technicalDetails: DecisionEvidencePresentation["technicalDetails"] =
+  return {
+    supports: supports.slice(0, 4),
+    uncertainties,
+  };
+}
+
+export function technicalEvidenceDetails(
+  configuration: SearchV4Configuration,
+): TechnicalEvidenceDetail[] {
+  const terrain = terrainPresentation(configuration.selected_pass);
+  const technicalDetails: TechnicalEvidenceDetail[] =
     configuration.factors
       .filter((factor) => factorLabels[factor.factor_id] && factor.provenance_summary)
       .map((factor) => ({
@@ -860,11 +901,7 @@ export function decisionEvidencePresentation(
       });
   }
 
-  return {
-    supports: supports.slice(0, 4),
-    uncertainties,
-    technicalDetails,
-  };
+  return technicalDetails;
 }
 
 export function buildCandidateNarrative(
@@ -928,14 +965,13 @@ export function buildCandidateNarrative(
   };
 }
 
-export function snowWindowLabel(configuration: SearchV4Configuration): string {
+export function snowFitLabel(configuration: SearchV4Configuration): string {
   const factor = configuration.factors.find(
     (item) => item.factor_id === "trip_window_snow_fit",
   );
-  if (!factor || factor.effective_evidence_cap === 0) return "Unknown";
-  if (factor.effective_utility >= 0.75) return "Strong";
-  if (factor.effective_utility >= 0.55) return "Good";
-  return "Mixed";
+  if (!factor || factor.effective_evidence_cap === 0) return "Not enough evidence";
+  if (factor.effective_utility >= 0.75) return "Strong fit";
+  return "Some concerns";
 }
 
 export function evidenceQualityMode(

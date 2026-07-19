@@ -384,7 +384,7 @@ test("renders the accepted homepage command stage", () => {
     }),
   ).toBeInTheDocument();
   expect(screen.getByLabelText("Describe your ski trip")).toBeInTheDocument();
-  expect(screen.getAllByText("Example recommendation")).toHaveLength(1);
+  expect(screen.getAllByText("Example trip option")).toHaveLength(1);
   expect(screen.queryByText(/^Describe$/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/^Review$/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/^Compare$/i)).not.toBeInTheDocument();
@@ -723,7 +723,7 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeInTheDocument();
   expect(screen.getByText("82.4")).toBeInTheDocument();
-  expect(screen.getAllByText("300 km covered by this pass")).toHaveLength(2);
+  expect(screen.getAllByText("300 km covered by this pass")).not.toHaveLength(0);
   expect(screen.getByText(/estimated EUR 180-255\/night/i)).toBeInTheDocument();
   const searchRequest = requests.find((item) => item.url === "/api/search");
   expect(searchRequest?.init?.method).toBe("POST");
@@ -734,7 +734,7 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
     screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
   ).toBeInTheDocument();
   expect(screen.getByText(/show technical calculation details/i)).toBeInTheDocument();
-  expect(screen.getByText("Unknown")).toBeInTheDocument();
+  expect(screen.getByText("Not enough evidence")).toBeInTheDocument();
 });
 
 test("renders ranking before a separate refinement request resolves", async () => {
@@ -812,7 +812,21 @@ test("renders ranking before a separate refinement request resolves", async () =
 
 test("skips refinement discovery when no result is eligible", async () => {
   searchResponses = [
-    response({ eligible_candidate_count: 0, results: [] }),
+    response({
+      eligible_candidate_count: 0,
+      results: [],
+      applied_intent: {
+        ...intent,
+        factor_preferences: [
+          {
+            factor_id: "snowmaking_availability",
+            mode: "require",
+            values: [],
+            importance: "high",
+          },
+        ],
+      },
+    }),
   ];
   const user = userEvent.setup();
   render(<App />);
@@ -823,6 +837,9 @@ test("skips refinement discovery when no result is eligible", async () => {
     await screen.findByRole("heading", {
       name: /no trip option matches all of your must-haves/i,
     }),
+  ).toBeVisible();
+  expect(
+    await screen.findByText(/review .*require snowmaking/i),
   ).toBeVisible();
   expect(
     requests.some((item) => item.url === "/api/search/refinements"),

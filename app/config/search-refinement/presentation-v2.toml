@@ -1,5 +1,5 @@
 presentation_policy_version = "search-refinement-presentation-2"
-blocked_copy_terms = ["accommodation base", "candidate", "evidence cap", "factor", "group priority", "objective", "optimisation", "optimization", "ranking", "score", "ski experience", "stay practicality", "trip viability", "utility", "weight"]
+blocked_copy_terms = ["accommodation base", "adjusted", "candidate", "comparison baseline", "configuration", "dossier", "eligible configuration", "evidence cap", "evidence ledger", "factor", "group priority", "hard constraint", "notification eligible", "objective", "optimisation", "optimization", "ranking", "rerank", "score", "selected pass context", "ski experience", "stay practicality", "suppressed", "trip viability", "utility", "weight"]
 
 [[topics]]
 topic_id = "trip_window_snow_fit"

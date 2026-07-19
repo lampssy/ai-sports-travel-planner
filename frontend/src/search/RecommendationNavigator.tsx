@@ -7,7 +7,7 @@ import {
 import { useState } from "react";
 
 import type { SearchV4RecommendationGroup } from "../types";
-import { snowWindowLabel } from "./searchPresentation";
+import { snowFitLabel } from "./searchPresentation";
 import { findSelectedCandidate, type SearchSession } from "./searchSession";
 
 export function boundedNavigatorGroups(
@@ -41,29 +41,29 @@ export function RecommendationNavigator({
     currentGroup.ski_region_id,
   );
   const collapsed = session.dossierNavigatorCollapsed;
-  const recommendationCount = session.response.results.length;
+  const tripOptionCount = session.response.results.length;
   const unscored = session.response.ranking_status === "unscored";
 
   return (
     <>
       <nav
         className={`dossier-navigator${collapsed ? " dossier-navigator--collapsed" : ""}`}
-        aria-label="Recommendation results"
+        aria-label="Trip option results"
         data-collapsed={collapsed || undefined}
       >
         <div className="dossier-navigator__heading">
           <div>
             <span>Search results</span>
             <strong>
-              {recommendationCount} {unscored ? "options" : "recommendations"}
+              {tripOptionCount} trip options
             </strong>
           </div>
           <button
             type="button"
             className="icon-button"
-            aria-label={`${collapsed ? "Expand" : "Collapse"} recommendation navigator`}
+            aria-label={`${collapsed ? "Expand" : "Collapse"} trip option navigator`}
             aria-expanded={!collapsed}
-            title={`${collapsed ? "Expand" : "Collapse"} recommendation navigator`}
+            title={`${collapsed ? "Expand" : "Collapse"} trip option navigator`}
             onClick={onToggle}
           >
             {collapsed ? (
@@ -98,8 +98,8 @@ export function RecommendationNavigator({
                 }. ${
                   rowUnscored
                     ? "Trip fit not scored"
-                    : `${configuration.fit_score?.toFixed(0)} trip fit`
-                }. ${snowWindowLabel(configuration)} snow.`}
+                  : `${configuration.fit_score?.toFixed(0)} trip fit`
+                }. Snow fit for your dates: ${snowFitLabel(configuration)}.`}
                 onClick={() =>
                   onSwitch(
                     group.ski_region_id,
@@ -115,8 +115,8 @@ export function RecommendationNavigator({
                   <small>{configuration.stay_base_name}</small>
                   <small>
                     {rowUnscored
-                      ? `Unranked option · ${snowWindowLabel(configuration)} snow`
-                      : `${configuration.fit_score?.toFixed(0)} trip fit · ${snowWindowLabel(configuration)} snow`}
+                      ? `Unranked trip option · Snow fit for your dates: ${snowFitLabel(configuration)}`
+                      : `${configuration.fit_score?.toFixed(0)} trip fit · Snow fit for your dates: ${snowFitLabel(configuration)}`}
                   </small>
                 </span>
               </button>
@@ -128,7 +128,7 @@ export function RecommendationNavigator({
         </p>
       </nav>
 
-      <section className="dossier-switcher" aria-label="Recommendation switcher">
+      <section className="dossier-switcher" aria-label="Trip option switcher">
         <button
           type="button"
           className="dossier-switcher__trigger"
@@ -138,8 +138,8 @@ export function RecommendationNavigator({
         >
           <span>
             {unscored
-              ? "Viewing unranked option"
-              : `Recommendation ${currentGroup.rank} of ${recommendationCount}`}
+              ? "Viewing unranked trip option"
+              : `Trip option ${currentGroup.rank} of ${tripOptionCount}`}
             <strong>{currentGroup.ski_region_name}</strong>
           </span>
           <ChevronDown aria-hidden="true" size={19} />

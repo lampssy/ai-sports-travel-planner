@@ -11,6 +11,7 @@ import {
   formatTripEssential,
   lodgingTrustLabel,
   terrainPresentation,
+  technicalEvidenceDetails,
 } from "./searchPresentation";
 
 const INTERNAL_PRIMARY_PHRASES = [
@@ -167,7 +168,7 @@ describe("content language contracts", () => {
       /catalog lodging range|estimate-aware constraint/i,
     );
     expect(
-      decisionEvidencePresentation(candidate).technicalDetails,
+      technicalEvidenceDetails(candidate),
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -202,7 +203,7 @@ describe("content language contracts", () => {
     expect(buildCandidateNarrative(candidate).watchout).toBe(
       "Some terrain may not suit every skier in your group.",
     );
-    expect(presentation.technicalDetails).toEqual(
+    expect(technicalEvidenceDetails(candidate)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: "catalog-access",

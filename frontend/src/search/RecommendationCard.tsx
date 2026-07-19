@@ -16,7 +16,7 @@ import { TripEntityStack } from "../ui/TripEntityStack";
 import {
   buildCandidateNarrative,
   evidenceQualityMode,
-  snowWindowLabel,
+  snowFitLabel,
   terrainPresentation,
   type TripEssentialCategory,
 } from "./searchPresentation";
@@ -83,14 +83,14 @@ export function RecommendationCard({
             <small>Trip fit</small>
           </span>
           <span>
-            <strong>{snowWindowLabel(configuration)}</strong>
-            <small>Snow window</small>
+            <strong>{snowFitLabel(configuration)}</strong>
+            <small>Snow fit for your dates</small>
           </span>
         </span>
         <button
           type="button"
           className="recommendation-card__toggle"
-          aria-label={`${expanded ? "Collapse" : "Expand"} ${result.ski_region_name}. Stay in ${configuration.stay_base_name}. Trip fit ${configuration.fit_score != null ? configuration.fit_score.toFixed(1) : "not scored"}. Snow window ${snowWindowLabel(configuration)}.`}
+          aria-label={`${expanded ? "Collapse" : "Expand"} ${result.ski_region_name}. Stay in ${configuration.stay_base_name}. Trip fit ${configuration.fit_score != null ? configuration.fit_score.toFixed(1) : "not scored"}. Snow fit for your dates ${snowFitLabel(configuration)}.`}
           aria-expanded={expanded}
           aria-controls={detailsId}
           title={`${expanded ? "Collapse" : "Expand"} trip option details`}

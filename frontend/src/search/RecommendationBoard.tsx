@@ -9,7 +9,7 @@ import type {
 import { RecommendationCard } from "./RecommendationCard";
 import { SearchContextRail } from "./SearchContextRail";
 import {
-  buildParsedChips,
+  partitionParsedChips,
   selectTripEssentialCategories,
   type ParsedChip,
 } from "./searchPresentation";
@@ -73,11 +73,7 @@ export function RecommendationBoard({
     session.intent,
     response.results,
   );
-  const hardConstraints = buildParsedChips(session.intent).filter((chip) =>
-    ["location", "travelWindow", "lodgingBudget", "stayQuality", "travelLimit", "skill"].includes(
-      chip.action.kind,
-    ),
-  );
+  const { mustHaves: hardConstraints } = partitionParsedChips(session.intent);
 
   return (
     <main className="app-canvas results-workspace">

@@ -1,9 +1,7 @@
-import { CheckCircle2, Database, TriangleAlert } from "lucide-react";
+import { CheckCircle2, TriangleAlert } from "lucide-react";
 
 import type { SearchV4Configuration } from "../types";
 import { Alert } from "../ui/Alert";
-import { Badge } from "../ui/Badge";
-import { Disclosure } from "../ui/Disclosure";
 import { SectionHeader } from "../ui/SectionHeader";
 import { decisionEvidencePresentation } from "./searchPresentation";
 
@@ -52,30 +50,6 @@ export function DecisionEvidenceLedger({
           </div>
         </Alert>
       ) : null}
-
-      <Disclosure
-        label="Show technical calculation details"
-        className="why-trip__technical"
-      >
-        <div className="why-trip__technical-rows">
-          {presentation.technicalDetails.map((item) => (
-            <article key={item.id}>
-              <Database aria-hidden="true" size={18} />
-              <div>
-                <h4>{item.label}</h4>
-                <p>{item.provenance}</p>
-              </div>
-              <Badge
-                variant={
-                  item.evidenceLabel === "Limited evidence" ? "warning" : "info"
-                }
-              >
-                {item.evidenceLabel}
-              </Badge>
-            </article>
-          ))}
-        </div>
-      </Disclosure>
     </section>
   );
 }

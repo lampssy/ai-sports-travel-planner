@@ -16,6 +16,8 @@ import {
   formatTripEssential,
   refinementPreviewCopy,
   selectTripEssentialCategories,
+  snowFitLabel,
+  technicalEvidenceDetails,
   terrainPresentation,
 } from "./searchPresentation";
 
@@ -255,6 +257,81 @@ describe("trip essentials", () => {
     });
 
     expect(formatTripEssential("liftAccess", unknownAccess)).toBeNull();
+  });
+});
+
+describe("snow fit label", () => {
+  test.each([
+    [undefined, "Not enough evidence"],
+    [
+      {
+        factor_id: "trip_window_snow_fit",
+        group_id: "trip_viability",
+        direction: "prefer",
+        raw_value: null,
+        raw_utility: 0.9,
+        neutral_utility: 0.5,
+        effective_evidence_cap: 1,
+        effective_utility: 0.75,
+        effective_weight: 1,
+        contribution_points: 10,
+        evidence_cap_components: {},
+        warnings: [],
+        provenance_summary: "Historical evidence.",
+        explanation_inputs: {},
+      },
+      "Strong fit",
+    ],
+    [
+      {
+        factor_id: "trip_window_snow_fit",
+        group_id: "trip_viability",
+        direction: "prefer",
+        raw_value: null,
+        raw_utility: 0.4,
+        neutral_utility: 0.5,
+        effective_evidence_cap: 1,
+        effective_utility: 0.4,
+        effective_weight: 1,
+        contribution_points: -4,
+        evidence_cap_components: {},
+        warnings: [],
+        provenance_summary: "Historical evidence.",
+        explanation_inputs: {},
+      },
+      "Some concerns",
+    ],
+    [
+      {
+        factor_id: "trip_window_snow_fit",
+        group_id: "trip_viability",
+        direction: "prefer",
+        raw_value: null,
+        raw_utility: 0.8,
+        neutral_utility: 0.5,
+        effective_evidence_cap: 0,
+        effective_utility: 0.8,
+        effective_weight: 1,
+        contribution_points: 0,
+        evidence_cap_components: {},
+        warnings: ["No archive data"],
+        provenance_summary: "No evidence.",
+        explanation_inputs: {},
+      },
+      "Not enough evidence",
+    ],
+  ] as const)("uses %s for the canonical public snow state", (factor, expected) => {
+    const factors = factor
+      ? [
+          {
+            ...factor,
+            evidence_cap_components: { ...factor.evidence_cap_components },
+            warnings: [...factor.warnings],
+            explanation_inputs: { ...factor.explanation_inputs },
+          },
+        ]
+      : [];
+    expect(snowFitLabel(configuration("snow", { factors }))).toBe(expected);
   });
 });
 
@@ -688,15 +765,13 @@ describe("why this trip presentation", () => {
 
     expect(presentation.supports).toHaveLength(4);
     expect(presentation.supports.map((item) => item.title)).toEqual([
-      "Snow window",
+      "Snow fit for your dates",
       "Skill match",
       "Terrain choice",
       "Lift access",
     ]);
     expect(primaryCopy).not.toMatch(/verified_with_adjustment|Catalog field-group|source reference|trip_window_snow_fit/);
-    expect(presentation.technicalDetails[0].provenance).toContain(
-      "Catalog field-group evidence",
-    );
+    expect(presentation).not.toHaveProperty("technicalDetails");
   });
 
   test("states missing snow, pass coverage, and lodging evidence as uncertainties", () => {
@@ -764,7 +839,7 @@ describe("why this trip presentation", () => {
     expect(formatAccess(candidate)).toBe(
       "Lift access needs source confirmation",
     );
-    const technicalAccess = presentation.technicalDetails.find(
+    const technicalAccess = technicalEvidenceDetails(candidate).find(
       (item) => item.id === "catalog-access",
     );
     expect(technicalAccess).toMatchObject({
