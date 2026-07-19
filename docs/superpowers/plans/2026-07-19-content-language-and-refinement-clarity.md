@@ -70,7 +70,7 @@
 - Produces the same three modes as every peer reviewer: `feature-review`, `design-review`, and `domain-audit`.
 - Keeps `docs/operating-model/advisory-reviewers.md` as the only reviewer-contract source of truth.
 
-- [ ] **Step 1: Add a failing consistency check for the new reviewer slug**
+- [x] **Step 1: Add a failing consistency check for the new reviewer slug**
 
 Run this before editing:
 
@@ -93,7 +93,7 @@ PY
 
 Expected: FAIL and list all six files.
 
-- [ ] **Step 2: Add the reviewer contract and routing**
+- [x] **Step 2: Add the reviewer contract and routing**
 
 Add this peer section after UI / UX in `advisory-reviewers.md`:
 
@@ -143,7 +143,7 @@ below without hiding evidence limits or changing product meaning.
 Add `content-language` to every reviewer/domain list in the four skills. Add
 `Content / language changes | content-language, ui-ux, data-trust-source-integrity when evidence wording changes` to the playbook routing table. Add a concise AGENTS.md rule that language-sensitive review-gated work routes to the reviewer and that B2 is the default maximum complexity.
 
-- [ ] **Step 3: Record the durable content convention**
+- [x] **Step 3: Record the durable content convention**
 
 Add an engineering note with these boundaries:
 
@@ -158,7 +158,7 @@ Add an engineering note with these boundaries:
 - Human Content & Language review remains authoritative; readability scores and blocked-word checks are supporting tools only.
 ```
 
-- [ ] **Step 4: Re-run the consistency check**
+- [x] **Step 4: Re-run the consistency check**
 
 Run the Step 1 command again.
 
@@ -177,7 +177,7 @@ rg -n "content-language|B2 English|Content & Language" \
 
 Expected: every repo entry point and all four skill wrappers include the new reviewer.
 
-- [ ] **Step 5: Commit the repo-owned contract and accepted design artifacts**
+- [x] **Step 5: Commit the repo-owned contract and accepted design artifacts**
 
 ```bash
 git add AGENTS.md docs/operating-model/advisory-reviewers.md \
@@ -221,7 +221,7 @@ outside the repository commit.
 - `SearchV4RefinementProposal` exposes topic and factor identity.
 - Both Search V4 request models accept unique `resolved_topic_ids` with maximum length 50.
 
-- [ ] **Step 1: Write failing domain and API tests**
+- [x] **Step 1: Write failing domain and API tests**
 
 Add tests equivalent to:
 
@@ -263,7 +263,7 @@ Add a duplicate-ID request test, a fallback-suppression test, a provider-output
 test proving `topic_ids` and `answer_ids` are rejected, and a response test
 proving `topic_id` and `target_factor_id` are serialized.
 
-- [ ] **Step 2: Run the focused tests and verify RED**
+- [x] **Step 2: Run the focused tests and verify RED**
 
 ```bash
 uv run pytest \
@@ -278,7 +278,7 @@ uv run pytest \
 Expected: FAIL because the topic fields, singular provider schema, and request
 collection do not exist.
 
-- [ ] **Step 3: Add topic identity and suppression to deterministic models**
+- [x] **Step 3: Add topic identity and suppression to deterministic models**
 
 Change the model and validator shape to:
 
@@ -298,7 +298,7 @@ Validate that every option targets exactly `target_factor_id`, through either
 one factor-preference patch or one objective patch, and never both. Continue to
 honor exact `already_answered_question_ids` for compatibility.
 
-- [ ] **Step 4: Introduce presentation policy version 2**
+- [x] **Step 4: Introduce presentation policy version 2**
 
 Create `presentation-v2.toml` from the complete version-1 registry, set:
 
@@ -325,7 +325,7 @@ testing version-1 compatibility; active v2 compilation never calls it and
 therefore never reaches compound `" + ".join(...)` output. Fallback proposals
 set `topic_id=topic.topic_id` and `target_factor_id=topic.factor_id`.
 
-- [ ] **Step 5: Replace the provider schema with singular IDs**
+- [x] **Step 5: Replace the provider schema with singular IDs**
 
 Use this structural shape in `app/ai/search_refinement.py`:
 
@@ -367,7 +367,7 @@ Compile each option from `(option.answer_id,)`. Validate that the selected
 answer belongs to the selected topic and its factor. Update the system prompt
 to prohibit comparisons or paired topics and require one answer ID per option.
 
-- [ ] **Step 6: Make the public Search V4 contract additive and bounded**
+- [x] **Step 6: Make the public Search V4 contract additive and bounded**
 
 Add to both request models:
 
@@ -392,7 +392,7 @@ max_factor_patches_per_option = 1
 Keep the Pydantic upper bounds permissive enough to read historical policy
 fixtures, but make the active default and tests assert `1`.
 
-- [ ] **Step 7: Run focused tests and verify GREEN**
+- [x] **Step 7: Run focused tests and verify GREEN**
 
 ```bash
 uv run pytest \
@@ -408,7 +408,7 @@ uv run pytest \
 
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/config/search-refinement/presentation-v2.toml \
@@ -448,7 +448,7 @@ git commit -m "feat: make refinements topic aware"
 - Every refinement request sends both compatibility question IDs and resolved
   topic IDs.
 
-- [ ] **Step 1: Write failing lifecycle tests**
+- [x] **Step 1: Write failing lifecycle tests**
 
 Add tests for these behaviors:
 
@@ -484,7 +484,7 @@ test("a changed hard constraint starts a new refinement context", () => {
 
 Update fixtures to include `topic_id` and `target_factor_id`.
 
-- [ ] **Step 2: Run the focused frontend tests and verify RED**
+- [x] **Step 2: Run the focused frontend tests and verify RED**
 
 ```bash
 npm --prefix frontend test -- \
@@ -494,7 +494,7 @@ npm --prefix frontend test -- \
 
 Expected: FAIL because topic fields and lifecycle state do not exist.
 
-- [ ] **Step 3: Add typed topic state and request serialization**
+- [x] **Step 3: Add typed topic state and request serialization**
 
 Add:
 
@@ -525,7 +525,7 @@ const answeredQuestionIds = resolvedTopics.map((item) => item.questionId);
 Keep resolved state in `PreviousSearchState` so Undo restores the exact prior
 refinement context.
 
-- [ ] **Step 4: Make answer and skip sequential**
+- [x] **Step 4: Make answer and skip sequential**
 
 Change the card contract to:
 
@@ -543,7 +543,7 @@ Make skip asynchronous: upsert the topic, dismiss the card, and call
 `Skip this question` as the action label because the topic does not return in
 the current context.
 
-- [ ] **Step 5: Implement deterministic reset rules**
+- [x] **Step 5: Implement deterministic reset rules**
 
 Create a pure helper:
 
@@ -567,7 +567,7 @@ Use canonical applied session state to distinguish:
 - refinement apply, dossier navigation, retry, or unchanged submit -> preserve;
 - chip removal uses the chip action to choose all-versus-related reset.
 
-- [ ] **Step 6: Run focused tests and verify GREEN**
+- [x] **Step 6: Run focused tests and verify GREEN**
 
 ```bash
 npm --prefix frontend test -- \
@@ -577,7 +577,7 @@ npm --prefix frontend test -- \
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/types.ts frontend/src/App.tsx \
@@ -610,7 +610,7 @@ git commit -m "feat: preserve refinement topic decisions"
 - More than three active preferences produce a `View all N preferences` button
   that opens the existing drawer and returns focus to that exact trigger.
 
-- [ ] **Step 1: Write failing summary and focus tests**
+- [x] **Step 1: Write failing summary and focus tests**
 
 Add tests equivalent to:
 
@@ -631,7 +631,7 @@ test("returns drawer focus to the full-list trigger", async () => {
 });
 ```
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 ```bash
 npm --prefix frontend test -- \
@@ -642,7 +642,7 @@ npm --prefix frontend test -- \
 Expected: FAIL because all preferences render and drawer return focus is fixed
 to the Adjust button.
 
-- [ ] **Step 3: Limit visible preferences and expose the total**
+- [x] **Step 3: Limit visible preferences and expose the total**
 
 In `SearchContextRail`, use:
 
@@ -655,7 +655,7 @@ Render `ContextGroup` with `visiblePreferences`. When hidden preferences exist,
 render a text button whose accessible and visible label is
 `View all ${preferences.length} preferences`.
 
-- [ ] **Step 4: Make drawer return focus trigger-specific**
+- [x] **Step 4: Make drawer return focus trigger-specific**
 
 Change the open callback to accept the actual trigger:
 
@@ -671,13 +671,13 @@ behavior unchanged.
 Ensure the drawer's active-preference controls show all current factor and
 objective choices; do not create a second preference editor.
 
-- [ ] **Step 5: Add stable responsive styling**
+- [x] **Step 5: Add stable responsive styling**
 
 Add a compact footer/action row within the preference group. Keep its button
 height stable, allow the count label to wrap at narrow widths, and do not place
 a new card inside the context rail.
 
-- [ ] **Step 6: Run focused tests and verify GREEN**
+- [x] **Step 6: Run focused tests and verify GREEN**
 
 ```bash
 npm --prefix frontend test -- \
@@ -687,7 +687,7 @@ npm --prefix frontend test -- \
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/App.tsx frontend/src/search/SearchContextRail.tsx \
@@ -722,7 +722,7 @@ git commit -m "feat: compact active search preferences"
 - JSX components render display-ready copy and do not translate trust enums.
 - Technical details remain available through the existing disclosure.
 
-- [ ] **Step 1: Write failing copy-contract tests**
+- [x] **Step 1: Write failing copy-contract tests**
 
 Test actual presentation outputs, not raw source text alone:
 
@@ -764,7 +764,7 @@ Also assert that an estimated or adjusted value retains `About` or `Estimated`
 in primary presentation and retains a plain provenance sentence in technical
 details.
 
-- [ ] **Step 2: Run focused copy tests and verify RED**
+- [x] **Step 2: Run focused copy tests and verify RED**
 
 ```bash
 npm --prefix frontend test -- \
@@ -776,7 +776,7 @@ npm --prefix frontend test -- \
 
 Expected: FAIL on the current internal phrases.
 
-- [ ] **Step 3: Centralize reusable labels and statuses**
+- [x] **Step 3: Centralize reusable labels and statuses**
 
 Update `evidenceQualityCopy.fallbackHeavy` to:
 
@@ -791,7 +791,7 @@ Keep errors action-scoped. A failed update says what failed, whether prior
 results remain, and how to retry. Do not surface `backend`, `API`, model
 versions, or service-startup assumptions in product copy.
 
-- [ ] **Step 4: Rewrite typed terrain, access, and evidence presentation**
+- [x] **Step 4: Rewrite typed terrain, access, and evidence presentation**
 
 Use estimate cues instead of internal prefixes:
 
@@ -817,7 +817,7 @@ group.` Replace the decision-evidence introduction with `Why Snowcast recommends
 this trip, including important limits.` Rewrite pass and access support
 sentences as direct statements about the selected trip.
 
-- [ ] **Step 5: Keep source truth visible in secondary details**
+- [x] **Step 5: Keep source truth visible in secondary details**
 
 Translate trust states as:
 
@@ -831,7 +831,7 @@ needs_source -> Source confirmation is still needed.
 Do not remove source links, provenance summaries, evidence warnings, missing
 states, or the `Sources and calculation details` disclosure.
 
-- [ ] **Step 6: Run focused tests and verify GREEN**
+- [x] **Step 6: Run focused tests and verify GREEN**
 
 ```bash
 npm --prefix frontend test -- \
@@ -843,7 +843,7 @@ npm --prefix frontend test -- \
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/ui/snowcastCopy.ts \
@@ -879,7 +879,7 @@ Stage only files that actually changed.
 - Marks the accepted spec implemented only after verification and feature review.
 - Leaves ADR 0015 and ADR 0016 unchanged.
 
-- [ ] **Step 1: Update domain and model documentation**
+- [x] **Step 1: Update domain and model documentation**
 
 Add to `docs/domain-language.md`:
 
@@ -893,7 +893,7 @@ Replace prior multi-topic wording in `docs/search-ranking-model.md` and the Web
 Experience spec. Document one question per request, topic-versus-question
 identity, sequential answer/skip behavior, compatibility IDs, and reset rules.
 
-- [ ] **Step 2: Run backend quality gates**
+- [x] **Step 2: Run backend quality gates**
 
 ```bash
 uv run ruff check app tests
@@ -903,7 +903,7 @@ uv run pytest -q
 
 Expected: all commands PASS.
 
-- [ ] **Step 3: Run frontend quality gates**
+- [x] **Step 3: Run frontend quality gates**
 
 ```bash
 npm --prefix frontend test
@@ -912,7 +912,7 @@ npm --prefix frontend run build
 
 Expected: PASS with no TypeScript or Vite build errors.
 
-- [ ] **Step 4: Run focused browser acceptance**
+- [x] **Step 4: Run focused browser acceptance**
 
 Start the built app using the repo convention:
 
@@ -938,7 +938,7 @@ refinement, and dossier. Manually verify desktop and 390 px mobile widths for:
 Capture screenshots under `.superpowers/sdd/`; do not add generated screenshots
 to git.
 
-- [ ] **Step 5: Run advisory feature reviews on the exact head**
+- [x] **Step 5: Run advisory feature reviews on the exact head**
 
 Run these reviewers in `feature-review` mode:
 
@@ -955,7 +955,7 @@ Fix every Blocker and High finding, rerun affected tests, and obtain a fresh
 review of the exact fixed head. Record Medium/Low follow-ups in the audit or
 product backlog rather than silently expanding scope.
 
-- [ ] **Step 6: Mark implementation artifacts complete**
+- [x] **Step 6: Mark implementation artifacts complete**
 
 Set the spec status to implemented with the verification and advisory-review
 date. Check every completed plan checkbox. Run:
@@ -967,7 +967,7 @@ git status --short
 
 Expected: no whitespace errors and no accidental `.superdesign/` staging.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add docs/domain-language.md docs/search-ranking-model.md \
