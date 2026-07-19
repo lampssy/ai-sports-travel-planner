@@ -636,7 +636,7 @@ def test_sensitive_multiword_brief_forces_provider_question_fallback() -> None:
     )
 
     assert result.proposals[0].proposal.question == (
-        "What building and atmosphere style do you prefer where you stay?"
+        "What building and development style do you prefer where you stay?"
     )
 
 

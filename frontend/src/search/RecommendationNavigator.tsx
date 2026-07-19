@@ -7,7 +7,7 @@ import {
 import { useState } from "react";
 
 import type { SearchV4RecommendationGroup } from "../types";
-import { snowFitLabel } from "./searchPresentation";
+import { snowFitPresentation } from "./searchPresentation";
 import { findSelectedCandidate, type SearchSession } from "./searchSession";
 
 export function boundedNavigatorGroups(
@@ -85,6 +85,10 @@ export function RecommendationNavigator({
               session.selectedCandidateIdByGroup[group.ski_region_id],
             );
             const rowUnscored = configuration.ranking_status === "unscored";
+            const snowFit = snowFitPresentation(
+              configuration,
+              session.response.applied_intent.constraints.travel_window,
+            );
             return (
               <button
                 type="button"
@@ -92,14 +96,14 @@ export function RecommendationNavigator({
                 key={group.ski_region_id}
                 aria-current={selected ? "page" : undefined}
                 aria-label={`${group.ski_region_name}, ${
-                  rowUnscored ? "unranked option" : `rank ${group.rank}`
+                  rowUnscored ? "fit comparison unavailable" : `rank ${group.rank}`
                 }, ${selected ? "viewing" : "open option"}. Stay in ${
                   configuration.stay_base_name
                 }. ${
                   rowUnscored
                     ? "Trip fit not scored"
                   : `${configuration.fit_score?.toFixed(0)} trip fit`
-                }. Snow fit for your dates: ${snowFitLabel(configuration)}.`}
+                }. ${snowFit.label}: ${snowFit.value}.`}
                 onClick={() =>
                   onSwitch(
                     group.ski_region_id,
@@ -115,8 +119,8 @@ export function RecommendationNavigator({
                   <small>{configuration.stay_base_name}</small>
                   <small>
                     {rowUnscored
-                      ? `Unranked trip option · Snow fit for your dates: ${snowFitLabel(configuration)}`
-                      : `${configuration.fit_score?.toFixed(0)} trip fit · Snow fit for your dates: ${snowFitLabel(configuration)}`}
+                      ? `Fit comparison unavailable · ${snowFit.label}: ${snowFit.value}`
+                      : `${configuration.fit_score?.toFixed(0)} trip fit · ${snowFit.label}: ${snowFit.value}`}
                   </small>
                 </span>
               </button>
@@ -138,7 +142,7 @@ export function RecommendationNavigator({
         >
           <span>
             {unscored
-              ? "Viewing unranked trip option"
+              ? "Fit comparison unavailable"
               : `Trip option ${currentGroup.rank} of ${tripOptionCount}`}
             <strong>{currentGroup.ski_region_name}</strong>
           </span>

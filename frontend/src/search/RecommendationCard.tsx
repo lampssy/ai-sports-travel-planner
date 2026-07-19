@@ -10,13 +10,14 @@ import { buildDossierHref } from "../navigation";
 import type {
   SearchV4Configuration,
   SearchV4RecommendationGroup,
+  TravelWindow,
 } from "../types";
 import { EvidenceQualityBadge } from "../ui/EvidenceQualityBadge";
 import { TripEntityStack } from "../ui/TripEntityStack";
 import {
   buildCandidateNarrative,
   evidenceQualityMode,
-  snowFitLabel,
+  snowFitPresentation,
   terrainPresentation,
   type TripEssentialCategory,
 } from "./searchPresentation";
@@ -26,6 +27,7 @@ import { TripEssentials } from "./TripEssentials";
 
 export function RecommendationCard({
   result,
+  travelWindow,
   selectedCandidateId,
   expanded,
   essentialCategories,
@@ -36,6 +38,7 @@ export function RecommendationCard({
   onSave,
 }: {
   result: SearchV4RecommendationGroup;
+  travelWindow?: TravelWindow;
   selectedCandidateId: string | undefined;
   expanded: boolean;
   essentialCategories: TripEssentialCategory[];
@@ -50,6 +53,7 @@ export function RecommendationCard({
   const detailsId = `recommendation-${result.ski_region_id}`;
   const narrative = buildCandidateNarrative(configuration);
   const evidenceMode = evidenceQualityMode(configuration);
+  const snowFit = snowFitPresentation(configuration, travelWindow);
   const candidates = [result.top_configuration, ...result.alternative_configurations];
 
   return (
@@ -61,7 +65,7 @@ export function RecommendationCard({
         <span className="rank-marker">
           {configuration.ranking_status === "ranked"
             ? `#${result.rank}`
-            : "Unranked"}
+            : "Fit comparison unavailable"}
         </span>
         <span className="recommendation-card__identity">
           <span className="eyebrow">
@@ -83,14 +87,14 @@ export function RecommendationCard({
             <small>Trip fit</small>
           </span>
           <span>
-            <strong>{snowFitLabel(configuration)}</strong>
-            <small>Snow fit for your dates</small>
+            <strong>{snowFit.value}</strong>
+            <small>{snowFit.label}</small>
           </span>
         </span>
         <button
           type="button"
           className="recommendation-card__toggle"
-          aria-label={`${expanded ? "Collapse" : "Expand"} ${result.ski_region_name}. Stay in ${configuration.stay_base_name}. Trip fit ${configuration.fit_score != null ? configuration.fit_score.toFixed(1) : "not scored"}. Snow fit for your dates ${snowFitLabel(configuration)}.`}
+          aria-label={`${expanded ? "Collapse" : "Expand"} ${result.ski_region_name}. Stay in ${configuration.stay_base_name}. Trip fit ${configuration.fit_score != null ? configuration.fit_score.toFixed(1) : "not scored"}. ${snowFit.label}: ${snowFit.value}.`}
           aria-expanded={expanded}
           aria-controls={detailsId}
           title={`${expanded ? "Collapse" : "Expand"} trip option details`}
@@ -182,7 +186,7 @@ export function RecommendationCard({
             ) : null}
           </aside>
           {configuration.ranking_status === "ranked" ? (
-            <ScoringDetails configuration={configuration} />
+            <ScoringDetails configuration={configuration} travelWindow={travelWindow} />
           ) : null}
         </div>
       ) : null}

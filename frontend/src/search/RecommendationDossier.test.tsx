@@ -197,7 +197,7 @@ test("does not present unscored options as ranked recommendations", () => {
     />,
   );
 
-  expect(screen.getAllByText(/unranked option/i).length).toBeGreaterThan(0);
+  expect(screen.getAllByText("Fit comparison unavailable").length).toBeGreaterThan(0);
   expect(screen.getByText("Why it fits")).toBeVisible();
   expect(screen.getByText("Main concern")).toBeVisible();
   expect(
@@ -254,7 +254,7 @@ test("renders the verdict hierarchy, progressive anchors, and selected save targ
   expect(screen.getByRole("heading", { name: "Region 4 - Base 4" })).toBeVisible();
   expect(screen.getByText("Recommended place to stay: Base 4")).toBeVisible();
   expect(screen.getByText("Trip fit")).toBeVisible();
-  expect(screen.getAllByText("Snow fit for your dates")[0]).toBeVisible();
+  expect(screen.getAllByText("Snow fit for March")[0]).toBeVisible();
   expect(screen.getByText("Evidence quality")).toBeVisible();
   expect(screen.getAllByText("Destination 4")[0]).toBeVisible();
   expect(screen.getAllByText("Area 4")[0]).toBeVisible();
@@ -530,7 +530,7 @@ test("navigator and mobile switcher open the selected alternative they display",
       name: /region 2, rank 2, open option/i,
     }),
   ).toHaveAccessibleName(
-    /selected base 2.*88 trip fit.*snow fit for your dates: strong fit/i,
+    /selected base 2.*88 trip fit.*snow fit for march: strong fit/i,
   );
   await user.click(
     within(navigator).getByRole("button", {

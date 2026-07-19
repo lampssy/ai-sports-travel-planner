@@ -169,9 +169,9 @@ fallback_priority = 2
 [[topics]]
 topic_id = "development_style"
 factor_id = "development_style"
-traveller_topic = "the building and atmosphere style where you stay"
-question_phrases = ["building and atmosphere style", "traditional mountain buildings", "traditional mountain village", "a traditional mountain village", "traditional mountain village or resort"]
-fallback_question = "What building and atmosphere style do you prefer where you stay?"
+traveller_topic = "the visible building and development style where you stay"
+question_phrases = ["building and development style", "traditional mountain buildings", "traditional mountain village", "a traditional mountain village", "traditional mountain village or resort"]
+fallback_question = "What building and development style do you prefer where you stay?"
 fallback_reason = "This choice can change which place to stay suits you best."
 fallback_answer_ids = ["development_style.traditional", "development_style.mixed", "development_style.planned_resort", "development_style.ignore"]
 answer_ids = ["development_style.traditional", "development_style.mixed", "development_style.planned_resort", "development_style.ignore"]
@@ -553,7 +553,7 @@ factor_preference_patch = { factor_id = "local_pace", mode = "ignore" }
 answer_id = "development_style.traditional"
 factor_id = "development_style"
 label = "Traditional mountain village"
-description = "Prioritize traditional mountain buildings and atmosphere."
+description = "Prioritize traditional mountain building style."
 factor_preference_patch = { factor_id = "development_style", mode = "prefer", values = ["traditional"] }
 
 [[answers]]

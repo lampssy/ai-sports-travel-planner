@@ -342,7 +342,7 @@ async function openResults(page: Page, response: SearchResponse) {
     .getByLabel("Describe your ski trip")
     .fill("A snow-reliable intermediate trip in France for March, close to the lifts");
   await page.getByRole("button", { name: "Find resorts" }).click();
-  await waitForStablePage(page, "Recommended ski trips");
+  await waitForStablePage(page, "Trip options for you");
 }
 
 async function openDossier(
@@ -359,7 +359,7 @@ async function openDossier(
   await page
     .locator("article.recommendation-card")
     .first()
-    .getByRole("link", { name: "View dossier" })
+    .getByRole("link", { name: "View trip details" })
     .click();
   await waitForStablePage(page, "Tignes - Val d'Isere - Le Lac");
   await expect(page.getByRole("heading", { name: /Snow & weather for/ })).toBeVisible();
@@ -445,9 +445,9 @@ test("exact-date dossier with collapsed desktop navigator", async ({ page }) => 
   await page.setViewportSize(desktop);
   await openDossier(page, exactDateResponse(), forecastWeatherResponse());
   await page
-    .getByRole("button", { name: "Collapse recommendation navigator" })
+    .getByRole("button", { name: "Collapse trip option navigator" })
     .click();
-  await expect(page.getByRole("navigation", { name: "Recommendation results" })).toHaveAttribute(
+  await expect(page.getByRole("navigation", { name: "Trip option results" })).toHaveAttribute(
     "data-collapsed",
     "true",
   );
@@ -471,7 +471,7 @@ test("exact-date dossier with collapsed desktop navigator", async ({ page }) => 
 test("mobile dossier switcher", async ({ page }) => {
   await page.setViewportSize(mobile);
   await openDossier(page, monthSearchResponse, monthWeatherResponse());
-  await page.getByRole("button", { name: /recommendation 1 of 2/i }).click();
+  await page.getByRole("button", { name: /trip option 1 of 2/i }).click();
   await expect(page.getByRole("button", { name: /switch to les arcs/i })).toBeVisible();
 
   await expect(page).toHaveScreenshot("dossier-mobile-switcher.png", {

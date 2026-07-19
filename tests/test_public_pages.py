@@ -10,6 +10,7 @@ from app.data.repositories import RawWeatherHistoryRepository
 from app.domain.models import RawWeatherObservation, ResortConditions
 from app.domain.planning import PlanningAssessment
 from app.main import create_app
+from app.public_pages import _current_snow_signal_label
 
 
 @pytest.fixture(autouse=True)
@@ -62,6 +63,8 @@ def test_public_destination_page_returns_server_rendered_html() -> None:
     assert '<meta property="og:title"' in response.text
     assert '<meta name="twitter:description"' in response.text
     assert "Current snow signal" in response.text
+    assert "Snow fit" not in response.text
+    assert "Not enough evidence" in response.text
     assert "Conditions calendar" in response.text
     assert "How we use source data" in response.text
     assert "Source:" in response.text
@@ -123,9 +126,40 @@ def test_public_calendar_keeps_poor_measured_snow_honest(
     )
     assert march_match is not None
     march = march_match.group(0)
-    assert "Some concerns" in march
+    assert "Historical snow conditions look poor" in march
     assert "Historically weak snow signal with mid-mountain typical snow depth" in march
     assert "Not enough evidence" not in march
+
+
+def test_public_destination_fallback_uses_evidence_limitation_not_a_fit_state() -> None:
+    app = create_app()
+
+    with TestClient(app) as client:
+        response = client.get("/ski-destinations/tignes")
+
+    assert response.status_code == 200
+    assert "Current snow signal" in response.text
+    assert "Not enough evidence" in response.text
+    assert "Some concerns" not in response.text
+
+
+@pytest.mark.parametrize(
+    ("label", "source_available", "expected"),
+    [
+        ("good", True, "Current snow conditions look good"),
+        ("fair", True, "Current snow conditions are mixed"),
+        ("poor", True, "Current snow conditions look poor"),
+        ("fair", False, "Not enough evidence"),
+    ],
+)
+def test_current_snow_signal_labels_reflect_source_availability(
+    label: str,
+    source_available: bool,
+    expected: str,
+) -> None:
+    assert (
+        _current_snow_signal_label(label, source_available=source_available) == expected
+    )
 
 
 def test_public_destination_page_unknown_destination_returns_404() -> None:

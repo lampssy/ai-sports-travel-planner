@@ -84,6 +84,7 @@ export function RecommendationDossier({
         <DossierVerdict
           configuration={configuration}
           rank={group.rank}
+          travelWindow={session.response.applied_intent.constraints.travel_window}
           headingRef={headingRef}
           onSave={onSave}
           saveError={saveError}
@@ -111,7 +112,10 @@ export function RecommendationDossier({
 
         <AccommodationHandoff configuration={configuration} />
 
-        <DecisionEvidenceLedger configuration={configuration} />
+        <DecisionEvidenceLedger
+          configuration={configuration}
+          travelWindow={session.response.applied_intent.constraints.travel_window}
+        />
 
         {!unscored ? (
           <section className="dossier-section" id="scoring-details">
@@ -120,6 +124,7 @@ export function RecommendationDossier({
             <ScoringDetails
               configuration={configuration}
               rankingPolicyVersion={session.response.ranking_policy_version}
+              travelWindow={session.response.applied_intent.constraints.travel_window}
             />
           </section>
         ) : null}

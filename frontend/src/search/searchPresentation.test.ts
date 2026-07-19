@@ -16,6 +16,7 @@ import {
   formatTripEssential,
   refinementPreviewCopy,
   selectTripEssentialCategories,
+  snowFitPresentation,
   snowFitLabel,
   technicalEvidenceDetails,
   terrainPresentation,
@@ -332,6 +333,21 @@ describe("snow fit label", () => {
         ]
       : [];
     expect(snowFitLabel(configuration("snow", { factors }))).toBe(expected);
+  });
+});
+
+describe("snow fit presentation", () => {
+  test.each([
+    [
+      { start_date: "2027-01-16", end_date: "2027-01-20" },
+      "Snow fit for your dates",
+    ],
+    [{ month: 3 }, "Snow fit for March"],
+    [undefined, "Add travel dates to assess snow fit"],
+  ] as const)("uses the applied travel window %o", (travelWindow, label) => {
+    expect(
+      snowFitPresentation(configuration("snow"), travelWindow),
+    ).toEqual({ label, value: "Not enough evidence" });
   });
 });
 
@@ -765,7 +781,7 @@ describe("why this trip presentation", () => {
 
     expect(presentation.supports).toHaveLength(4);
     expect(presentation.supports.map((item) => item.title)).toEqual([
-      "Snow fit for your dates",
+      "Add travel dates to assess snow fit",
       "Skill match",
       "Terrain choice",
       "Lift access",

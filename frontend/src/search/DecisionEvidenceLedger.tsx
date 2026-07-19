@@ -1,16 +1,18 @@
 import { CheckCircle2, TriangleAlert } from "lucide-react";
 
-import type { SearchV4Configuration } from "../types";
+import type { SearchV4Configuration, TravelWindow } from "../types";
 import { Alert } from "../ui/Alert";
 import { SectionHeader } from "../ui/SectionHeader";
 import { decisionEvidencePresentation } from "./searchPresentation";
 
 export function DecisionEvidenceLedger({
   configuration,
+  travelWindow,
 }: {
   configuration: SearchV4Configuration;
+  travelWindow?: TravelWindow;
 }) {
-  const presentation = decisionEvidencePresentation(configuration);
+  const presentation = decisionEvidencePresentation(configuration, travelWindow);
 
   return (
     <section className="dossier-section why-trip" id="decision-evidence">

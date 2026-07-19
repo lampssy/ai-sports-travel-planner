@@ -1,6 +1,6 @@
 import { Database, Layers3 } from "lucide-react";
 
-import type { SearchV4Configuration } from "../types";
+import type { SearchV4Configuration, TravelWindow } from "../types";
 import { Badge } from "../ui/Badge";
 import {
   factorLabelForConfiguration,
@@ -13,15 +13,17 @@ import {
 export function ScoringDetails({
   configuration,
   rankingPolicyVersion,
+  travelWindow,
 }: {
   configuration: SearchV4Configuration;
   rankingPolicyVersion?: string;
+  travelWindow?: TravelWindow;
 }) {
   const groups = configuration.groups.filter((group) => groupLabels[group.group_id]);
   const factors = configuration.factors.filter(
     (factor) => factorLabels[factor.factor_id],
   );
-  const technicalDetails = technicalEvidenceDetails(configuration);
+  const technicalDetails = technicalEvidenceDetails(configuration, travelWindow);
   if (
     !rankingPolicyVersion &&
     !technicalDetails.length &&
@@ -92,7 +94,11 @@ export function ScoringDetails({
                   <div key={factor.factor_id}>
                     <dt>
                       <span>
-                        {factorLabelForConfiguration(configuration, factor.factor_id)}
+                        {factorLabelForConfiguration(
+                          configuration,
+                          factor.factor_id,
+                          travelWindow,
+                        )}
                       </span>
                       {trustLabel ? (
                         <small className="scoring-details__trust">{trustLabel}</small>

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import type { RefObject } from "react";
 
-import type { SearchV4Configuration } from "../types";
+import type { SearchV4Configuration, TravelWindow } from "../types";
 import { EvidenceQualityBadge } from "../ui/EvidenceQualityBadge";
 import { TripEntityStack } from "../ui/TripEntityStack";
 import {
@@ -15,18 +15,20 @@ import {
   evidenceQualityMode,
   formatAccess,
   formatPassPrice,
-  snowFitLabel,
+  snowFitPresentation,
 } from "./searchPresentation";
 
 export function DossierVerdict({
   configuration,
   rank,
+  travelWindow,
   headingRef,
   onSave,
   saveError,
 }: {
   configuration: SearchV4Configuration;
   rank: number;
+  travelWindow?: TravelWindow;
   headingRef: RefObject<HTMLHeadingElement>;
   onSave: (configuration: SearchV4Configuration) => void;
   saveError: string | null;
@@ -34,12 +36,13 @@ export function DossierVerdict({
   const narrative = buildCandidateNarrative(configuration);
   const evidenceMode = evidenceQualityMode(configuration);
   const unscored = configuration.ranking_status === "unscored";
+  const snowFit = snowFitPresentation(configuration, travelWindow);
 
   return (
     <header className="dossier-verdict">
       <div className="dossier-verdict__title">
         <p className="eyebrow">
-          {unscored ? "Unranked option" : `#${rank}`} ·{" "}
+          {unscored ? "Fit comparison unavailable" : `#${rank}`} ·{" "}
           {configuration.stay_destination_name}
         </p>
         <h1 ref={headingRef} tabIndex={-1}>
@@ -57,8 +60,8 @@ export function DossierVerdict({
           <span>Trip fit</span>
         </div>
         <div>
-          <strong>{snowFitLabel(configuration)}</strong>
-          <span>Snow fit for your dates</span>
+          <strong>{snowFit.value}</strong>
+          <span>{snowFit.label}</span>
         </div>
         <EvidenceQualityBadge mode={evidenceMode} compact />
       </div>
@@ -85,7 +88,7 @@ export function DossierVerdict({
               <strong>Why it fits</strong>
               {narrative.strength ??
                 (unscored
-                  ? "This is a complete trip option with available supporting evidence."
+                  ? "This trip option is shown without a fit comparison because key details are unavailable."
                   : "This trip option has available supporting evidence.")}
             </span>
           </p>

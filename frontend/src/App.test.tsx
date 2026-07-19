@@ -806,7 +806,7 @@ test("renders ranking before a separate refinement request resolves", async () =
     screen.getByRole("heading", { level: 2, name: "What matters most?" }),
   ).toBeVisible();
   expect(
-    screen.getByRole("heading", { name: "Trip options" }),
+    screen.getByRole("heading", { name: "Trip options for you" }),
   ).toHaveFocus();
 });
 
@@ -1276,7 +1276,7 @@ test("keeps terminal refinement failure visible and retries without replacing re
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
   await waitFor(() => {
-    expect(screen.getByRole("heading", { name: "Trip options" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Trip options for you" })).toHaveFocus();
   });
   expect(refinementAttempts).toBe(2);
 });
@@ -2838,7 +2838,7 @@ test("preserves previous results and the refinement on a failed rerank", async (
   );
 
   expect(screen.queryByText("Change your trip options?")).toBeNull();
-  expect(screen.getByRole("heading", { name: "Trip options" })).toHaveFocus();
+  expect(screen.getByRole("heading", { name: "Trip options for you" })).toHaveFocus();
   expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(
     searchRequestsBeforeExit,
   );
@@ -3165,7 +3165,7 @@ test("keeps a no-op refinement local and records it as answered", async () => {
   expect(followUpBody.resolved_topic_ids).toEqual(["pass_balance"]);
   await waitFor(() => {
     expect(
-      screen.getByRole("heading", { name: "Trip options" }),
+      screen.getByRole("heading", { name: "Trip options for you" }),
     ).toHaveFocus();
   });
 
@@ -3253,7 +3253,7 @@ test("keeps keyboard focus stable while refinement follow-ups load", async () =>
   await user.click(screen.getByRole("button", { name: "Continue" }));
 
   const resultsHeading = screen.getByRole("heading", {
-    name: "Trip options",
+    name: "Trip options for you",
   });
   expect(resultsHeading).toHaveFocus();
 
@@ -3516,12 +3516,38 @@ test("does not present stable unscored order as recommendation strength", async 
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(await screen.findByText("Unranked")).toBeInTheDocument();
+  expect(await screen.findByText("Fit comparison unavailable")).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      "This trip option is shown without a fit comparison because key details are unavailable.",
+    ),
+  ).toBeInTheDocument();
   expect(screen.queryByText("#1")).not.toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
   ).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /expand tignes/i })).not.toBeInTheDocument();
+});
+
+test("asks for travel dates when results have no applied travel window", async () => {
+  searchResponses = [
+    response({
+      applied_intent: {
+        ...intent,
+        constraints: { location: { country: "France" } },
+      },
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  await screen.findAllByText("Add travel dates to assess snow fit");
+  const card = document.querySelector<HTMLElement>(".recommendation-card");
+  if (!card) throw new Error("Snow label must render inside a recommendation card.");
+  expect(within(card).getAllByText("Add travel dates to assess snow fit")).not.toHaveLength(0);
+  expect(within(card).queryByText("Snow fit for your dates")).toBeNull();
 });
 
 test("renders grouped recommendations with independent expansion and no raw metadata", async () => {
@@ -3645,7 +3671,7 @@ test("skipping the final refinement returns focus to the results heading", async
   );
   await waitFor(() => {
     expect(
-      screen.getByRole("heading", { name: "Trip options" }),
+      screen.getByRole("heading", { name: "Trip options for you" }),
     ).toHaveFocus();
   });
 });

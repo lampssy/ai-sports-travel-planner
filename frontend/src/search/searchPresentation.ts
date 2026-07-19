@@ -7,6 +7,7 @@ import type {
   SearchV4Configuration,
   SearchV4PassSummary,
   SearchV4RecommendationGroup,
+  TravelWindow,
 } from "../types";
 import {
   catalogTrustStatusCopy,
@@ -431,7 +432,11 @@ export function terrainPresentation(
 export function factorLabelForConfiguration(
   configuration: SearchV4Configuration,
   factorId: string,
+  travelWindow?: TravelWindow,
 ): string | undefined {
+  if (factorId === "trip_window_snow_fit") {
+    return snowFitPresentation(configuration, travelWindow).label;
+  }
   if (factorId !== "accessible_terrain_scale") return factorLabels[factorId];
   const scope = configuration.selected_pass.accessible_piste_km_evidence?.scope;
   if (scope === "ski_area") return "Terrain in the selected ski area";
@@ -729,6 +734,7 @@ function supportedFactor(
 
 export function decisionEvidencePresentation(
   configuration: SearchV4Configuration,
+  travelWindow?: TravelWindow,
 ): DecisionEvidencePresentation {
   const supports: DecisionEvidencePresentation["supports"] = [];
   const uncertainties: DecisionEvidencePresentation["uncertainties"] = [];
@@ -747,7 +753,7 @@ export function decisionEvidencePresentation(
   if (supportedFactor(configuration, "trip_window_snow_fit")) {
     addSupport(
       "snow-window",
-      "Snow fit for your dates",
+      snowFitPresentation(configuration, travelWindow).label,
       "Available snow evidence supports the requested travel window.",
     );
   } else if (
@@ -849,6 +855,7 @@ export function decisionEvidencePresentation(
 
 export function technicalEvidenceDetails(
   configuration: SearchV4Configuration,
+  travelWindow?: TravelWindow,
 ): TechnicalEvidenceDetail[] {
   const terrain = terrainPresentation(configuration.selected_pass);
   const technicalDetails: TechnicalEvidenceDetail[] =
@@ -857,7 +864,7 @@ export function technicalEvidenceDetails(
       .map((factor) => ({
         id: `factor-${factor.factor_id}`,
         label:
-          factorLabelForConfiguration(configuration, factor.factor_id) ??
+          factorLabelForConfiguration(configuration, factor.factor_id, travelWindow) ??
           "Ranking factor",
         provenance: technicalProvenance(factor.provenance_summary),
         evidenceLabel:
@@ -972,6 +979,19 @@ export function snowFitLabel(configuration: SearchV4Configuration): string {
   if (!factor || factor.effective_evidence_cap === 0) return "Not enough evidence";
   if (factor.effective_utility >= 0.75) return "Strong fit";
   return "Some concerns";
+}
+
+export function snowFitPresentation(
+  configuration: SearchV4Configuration,
+  travelWindow: TravelWindow | undefined,
+): { label: string; value: string } {
+  const hasExactDates = Boolean(travelWindow?.start_date && travelWindow?.end_date);
+  const label = hasExactDates
+    ? "Snow fit for your dates"
+    : typeof travelWindow?.month === "number"
+      ? `Snow fit for ${monthName(travelWindow.month)}`
+      : "Add travel dates to assess snow fit";
+  return { label, value: snowFitLabel(configuration) };
 }
 
 export function evidenceQualityMode(

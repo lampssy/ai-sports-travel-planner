@@ -98,7 +98,7 @@ export function RecommendationBoard({
         <div className="results-board__heading">
           <div>
             <p className="eyebrow">Conditions-aware trip options</p>
-            <h1 ref={headingRef} tabIndex={-1} aria-label="Trip options">
+            <h1 ref={headingRef} tabIndex={-1}>
               Trip options for you
             </h1>
           </div>
@@ -110,7 +110,7 @@ export function RecommendationBoard({
         {response.ranking_status === "unscored" ? (
           <p className="warning-status">
             <AlertTriangle aria-hidden="true" size={17} />
-            Trip options are shown without a fit comparison because key details are unavailable
+            This trip option is shown without a fit comparison because key details are unavailable.
           </p>
         ) : null}
         {rankFeedback ? (
@@ -143,6 +143,7 @@ export function RecommendationBoard({
               <RecommendationCard
                 key={result.ski_region_id}
                 result={result}
+                travelWindow={response.applied_intent.constraints.travel_window}
                 selectedCandidateId={
                   session.selectedCandidateIdByGroup[result.ski_region_id]
                 }

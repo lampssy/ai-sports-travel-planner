@@ -4,6 +4,7 @@ import { useState } from "react";
 import { describe, expect, test, vi } from "vitest";
 
 import type {
+  TravelWindow,
   SearchV4Configuration,
   SearchV4RecommendationGroup,
 } from "../types";
@@ -114,8 +115,10 @@ const result: SearchV4RecommendationGroup = {
 
 function StatefulCard({
   onSave = vi.fn(),
+  travelWindow,
 }: {
   onSave?: (configuration: SearchV4Configuration) => void;
+  travelWindow?: TravelWindow;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [selectedCandidateId, setSelectedCandidateId] = useState(
@@ -124,6 +127,7 @@ function StatefulCard({
   return (
     <RecommendationCard
       result={result}
+      travelWindow={travelWindow}
       expanded={expanded}
       selectedCandidateId={selectedCandidateId}
       essentialCategories={["terrain", "passValue", "liftAccess"]}
@@ -148,7 +152,7 @@ describe("RecommendationCard", () => {
     });
     expect(toggle).not.toContainElement(heading);
     expect(toggle).toHaveAccessibleName(
-      /breuil-cervinia.*trip fit 94\.8.*snow fit for your dates not enough evidence/i,
+      /breuil-cervinia.*trip fit 94\.8.*add travel dates to assess snow fit: not enough evidence/i,
     );
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(toggle).toHaveAttribute("aria-controls", "recommendation-region-a");
@@ -158,6 +162,13 @@ describe("RecommendationCard", () => {
       "aria-expanded",
       "false",
     );
+  });
+
+  test("asks for travel dates before presenting a snow fit", () => {
+    render(<StatefulCard travelWindow={undefined} />);
+
+    expect(screen.getByText("Add travel dates to assess snow fit")).toBeVisible();
+    expect(screen.queryByText("Snow fit for your dates")).toBeNull();
   });
 
   test("keeps trip-details, save, and alternative controls isolated from expansion", async () => {

@@ -447,13 +447,17 @@ def _render_ski_area_sections(
             reverse=True,
         )[:3]
         best_months_label = ", ".join(month.month_name for month in best_months)
+        current_snow_label = _current_snow_signal_label(
+            current.snow_confidence_label,
+            source_available=section.current_provenance.source_type == "forecast",
+        )
         rendered.append(
             f"""
       <section id="ski-area-{_html(area.ski_area_id)}" class="card area-section">
         <div class="area-header">
           <div><div class="eyebrow">Current snow signal</div><h2>{_html(area.name)} ski-area conditions</h2><p>{_html(current.weather_summary)}</p></div>
           <div class="metrics">
-            <div class="metric"><div class="label">Snow fit</div><div class="value">{_html(_snow_fit_label(current.snow_confidence_label))}</div></div>
+            <div class="metric"><div class="label">Current snow signal</div><div class="value">{_html(current_snow_label)}</div></div>
             <div class="metric"><div class="label">Disruption signal</div><div class="value">{_html(_availability_label(current.availability_status))}</div></div>
             <div class="metric"><div class="label">Elevation</div><div class="value">{area.base_elevation_m}-{area.summit_elevation_m}m</div></div>
             <div class="metric"><div class="label">Season</div><div class="value">{_html(_season_label(area))}</div></div>
@@ -474,7 +478,7 @@ def _render_calendar(months: tuple[PublicCalendarMonth, ...]) -> str:
     return "\n".join(
         f"""
           <article class="month {"good" if month.snow_confidence_label == "good" else ""}">
-            <span class="badge">{_html(_snow_fit_label(month.snow_confidence_label))}</span>
+            <span class="badge">{_html(_historical_snow_signal_label(month.snow_confidence_label))}</span>
             <h3>{_html(month.month_name)}</h3>
             <p>{_html(_calendar_summary(month))}</p>
             {_render_weather_metrics(month.weather_metrics)}
@@ -569,12 +573,22 @@ def _availability_label(value: str) -> str:
     }.get(value, value.replace("_", " ").title())
 
 
-def _snow_fit_label(value: str) -> str:
+def _current_snow_signal_label(value: str, *, source_available: bool) -> str:
+    if not source_available:
+        return "Not enough evidence"
     return {
-        "good": "Strong fit",
-        "fair": "Some concerns",
-        "poor": "Some concerns",
+        "good": "Current snow conditions look good",
+        "fair": "Current snow conditions are mixed",
+        "poor": "Current snow conditions look poor",
     }.get(value, "Not enough evidence")
+
+
+def _historical_snow_signal_label(value: str) -> str:
+    return {
+        "good": "Historical snow conditions look good",
+        "fair": "Historical snow conditions are mixed",
+        "poor": "Historical snow conditions look poor",
+    }.get(value, "Not enough historical evidence")
 
 
 def _calendar_summary(month: PublicCalendarMonth) -> str:
