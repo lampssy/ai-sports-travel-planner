@@ -994,7 +994,7 @@ git commit -m "docs: finalize refinement language contract"
 - Keeps audit recommendations in the same PR without implementing them until
   the owner reviews the audit.
 
-- [ ] **Step 1: Push the verified branch and create a draft PR**
+- [x] **Step 1: Push the verified branch and create a draft PR**
 
 ```bash
 export GH_CONFIG_DIR="$HOME/.config/gh-lampssy-snowcast"
@@ -1009,7 +1009,7 @@ gh pr create --repo lampssy/ai-sports-travel-planner --base main \
 The body must summarize user outcomes, API compatibility, verification,
 Decision and Review Gate, and how to test locally.
 
-- [ ] **Step 2: Run the explicit product-wide domain audit**
+- [x] **Step 2: Run the explicit product-wide domain audit**
 
 Use `snowcast-advisory-review` in `domain-audit` mode with reviewer
 `content-language`. Inspect at minimum:
@@ -1030,7 +1030,7 @@ opportunities, and suggested next actions. Ground every proposed change in a
 file path or rendered surface and distinguish decision-impacting language from
 style-only polish.
 
-- [ ] **Step 3: Save the audit report without implementing its recommendations**
+- [x] **Step 3: Save the audit report without implementing its recommendations**
 
 Create:
 
