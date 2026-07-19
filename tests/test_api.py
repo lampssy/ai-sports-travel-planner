@@ -755,6 +755,39 @@ def test_outbound_accommodation_redirect_rejects_invalid_access_pair() -> None:
 
 
 @pytest.mark.parametrize(
+    ("referer", "expected_label"),
+    [
+        ("https://attacker.example/recommendations/tignes", "Return to Snowcast"),
+        (
+            "http://testserver/recommendations/tignes?candidate=%22%3E%3Cscript%3E",
+            "Return to trip details",
+        ),
+    ],
+)
+def test_outbound_accommodation_recovery_keeps_return_links_safe(
+    referer: str,
+    expected_label: str,
+) -> None:
+    response = client.get(
+        "/api/outbound/accommodation/unknown-resort",
+        params={
+            "stay_base_id": "tignes-le-lac",
+            "focus_ski_area_id": "tignes-ski-area",
+            "source_surface": "selected_result_details",
+        },
+        headers={"referer": referer},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 404
+    assert expected_label in response.text
+    assert "attacker.example" not in response.text
+    assert "<script>" not in response.text
+
+
+@pytest.mark.parametrize("frontend_built", [False, True])
+@pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize(
     "path",
     [
         "/api/outbound/accommodation",
@@ -763,8 +796,18 @@ def test_outbound_accommodation_redirect_rejects_invalid_access_pair() -> None:
 )
 def test_outbound_accommodation_routing_failures_return_branded_html(
     path: str,
+    method: str,
+    frontend_built: bool,
+    tmp_path,
 ) -> None:
-    response = client.get(path, follow_redirects=False)
+    dist_dir = tmp_path / "dist"
+    if frontend_built:
+        dist_dir.mkdir()
+        (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    test_app = create_app(frontend_dist_dir=dist_dir)
+
+    with TestClient(test_app) as test_client:
+        response = test_client.request(method, path, follow_redirects=False)
 
     assert response.status_code == 404
     assert "text/html" in response.headers["content-type"]
@@ -1567,29 +1610,42 @@ def test_operational_wrong_method_keeps_framework_diagnostics() -> None:
     assert response.json() == {"detail": "Method Not Allowed"}
 
 
-def test_unknown_customer_api_route_uses_bounded_public_error(tmp_path) -> None:
-    dist_dir = tmp_path / "dist"
-    dist_dir.mkdir()
-    (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
-    app_with_frontend = create_app(frontend_dist_dir=dist_dir)
-
-    with TestClient(app_with_frontend) as frontend_client:
-        response = frontend_client.get("/api/not-a-snowcast-route")
-
-    assert response.status_code == 404
-    assert response.json() == {"error": {"code": "not_found"}}
-
-
-def test_unknown_customer_api_route_without_frontend_uses_bounded_error(
+@pytest.mark.parametrize("frontend_built", [False, True])
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_unknown_customer_api_route_uses_bounded_public_error(
     tmp_path,
+    frontend_built: bool,
+    method: str,
 ) -> None:
-    app_without_frontend = create_app(frontend_dist_dir=tmp_path / "missing")
+    dist_dir = tmp_path / "dist"
+    if frontend_built:
+        dist_dir.mkdir()
+        (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    test_app = create_app(frontend_dist_dir=dist_dir)
 
-    with TestClient(app_without_frontend) as api_client:
-        response = api_client.get("/api/not-a-snowcast-route")
+    with TestClient(test_app) as test_client:
+        response = test_client.request(method, "/api/not-a-snowcast-route")
 
     assert response.status_code == 404
     assert response.json() == {"error": {"code": "not_found"}}
+
+
+@pytest.mark.parametrize("frontend_built", [False, True])
+def test_customer_api_trailing_slash_redirect_is_deployment_independent(
+    tmp_path,
+    frontend_built: bool,
+) -> None:
+    dist_dir = tmp_path / "dist"
+    if frontend_built:
+        dist_dir.mkdir()
+        (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    test_app = create_app(frontend_dist_dir=dist_dir)
+
+    with TestClient(test_app) as test_client:
+        response = test_client.get("/api/search//", follow_redirects=False)
+
+    assert response.status_code == 307
+    assert response.headers["location"] == "http://testserver/api/search"
 
 
 def test_app_serves_built_frontend_from_single_url(tmp_path, monkeypatch) -> None:

@@ -12,17 +12,14 @@ from fastapi.responses import (
     PlainTextResponse,
     Response,
 )
+from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.routing import Match
+from starlette.types import Scope
 
 from app.api.public_errors import (
-    PublicErrorCode,
-    accommodation_recovery_response,
     branded_html_response,
     install_public_error_handlers,
-    is_accommodation_path,
-    is_customer_api_path,
-    public_error_response,
 )
 from app.api.routes import router
 from app.observability.logging import configure_logging
@@ -90,22 +87,7 @@ def create_app(frontend_dist_dir: Path | None = None) -> FastAPI:
         if assets_dir.exists():
             app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
-        @app.get("/{full_path:path}", include_in_schema=False)
-        def serve_frontend(full_path: str, request: Request):
-            if full_path.startswith("api/"):
-                path = f"/{full_path}"
-                if is_accommodation_path(path):
-                    return accommodation_recovery_response(request, status_code=404)
-                if is_customer_api_path(path):
-                    allowed_methods = _allowed_methods_for_request(app, request)
-                    if allowed_methods:
-                        return public_error_response(
-                            PublicErrorCode.METHOD_NOT_ALLOWED,
-                            headers={"Allow": ", ".join(sorted(allowed_methods))},
-                        )
-                    return public_error_response(PublicErrorCode.NOT_FOUND)
-                return JSONResponse({"detail": "Not Found"}, status_code=404)
-
+        def serve_frontend(full_path: str):
             requested_path = dist_dir / full_path
             if full_path and requested_path.exists() and requested_path.is_file():
                 return FileResponse(requested_path)
@@ -115,18 +97,24 @@ def create_app(frontend_dist_dir: Path | None = None) -> FastAPI:
                 return FileResponse(index_path)
             return JSONResponse({"detail": "Frontend not built"}, status_code=404)
 
+        # The SPA fallback must never participate in API method matching.
+        app.router.routes.append(
+            _FrontendCatchAllRoute(
+                "/{full_path:path}",
+                serve_frontend,
+                methods=["GET"],
+                include_in_schema=False,
+            )
+        )
+
     return app
 
 
-def _allowed_methods_for_request(app: FastAPI, request: Request) -> set[str]:
-    allowed_methods: set[str] = set()
-    for route in app.routes:
-        if getattr(route, "path", None) == "/{full_path:path}":
-            continue
-        match, _ = route.matches(request.scope)
-        if match is Match.PARTIAL:
-            allowed_methods.update(getattr(route, "methods", None) or ())
-    return allowed_methods
+class _FrontendCatchAllRoute(APIRoute):
+    def matches(self, scope: Scope) -> tuple[Match, Scope]:
+        if scope["type"] == "http" and scope["path"].startswith("/api/"):
+            return Match.NONE, {}
+        return super().matches(scope)
 
 
 def _request_base_url(request: Request) -> str:
