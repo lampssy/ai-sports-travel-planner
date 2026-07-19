@@ -90,12 +90,17 @@ change status or meaning without a new compatibility decision and ADR update.
 
 ## Handler Boundary
 
-The contract covers `/api/search*`, `/api/parse-query`,
-`/api/auth/google/sign-in`, `/api/current-trip*`, `/api/devices/register`, and
-`/api/outbound/accommodation/*`. A typed public exception and application-level
-handlers normalize explicit domain failures, dependency/auth failures,
+The JSON contract covers `/api/search*`, `/api/parse-query`,
+`/api/auth/google/sign-in`, `/api/current-trip*`, and
+`/api/devices/register`. A typed public exception and application-level handlers
+normalize explicit domain failures, dependency/auth failures,
 `RequestValidationError` including malformed JSON, remaining `HTTPException`
 paths, and unexpected exceptions.
+
+`/api/outbound/accommodation/*` is intentionally outside the JSON boundary
+because it is opened through direct browser navigation. Valid requests retain
+the provider redirect. Invalid or stale requests return branded HTML with a
+return-to-trip-details link, so the browser never exposes an API payload.
 
 Operational `/api/healthz`, `/api/readyz`, and `/api/search-readiness` retain
 their diagnostic contracts and are not consumed by customer clients. Public

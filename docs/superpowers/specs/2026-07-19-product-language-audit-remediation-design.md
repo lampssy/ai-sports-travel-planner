@@ -153,11 +153,15 @@ Out of scope:
 - A typed public exception plus application handlers cover explicit domain
   errors, dependency/auth failures, FastAPI request validation and malformed
   JSON, remaining HTTP exceptions, and unexpected failures for customer routes.
-- Customer routes are `/api/search*`, `/api/parse-query`,
-  `/api/auth/google/sign-in`, `/api/current-trip*`, `/api/devices/register`, and
-  `/api/outbound/accommodation/*`. Operational `/api/healthz`, `/api/readyz`,
-  and `/api/search-readiness` retain their diagnostic contracts and are not
+- JSON customer routes are `/api/search*`, `/api/parse-query`,
+  `/api/auth/google/sign-in`, `/api/current-trip*`, and
+  `/api/devices/register`. Operational `/api/healthz`, `/api/readyz`, and
+  `/api/search-readiness` retain their diagnostic contracts and are not
   consumed by customer clients.
+- `/api/outbound/accommodation/*` remains a direct browser-navigation boundary:
+  valid requests return the existing provider redirect; invalid or stale
+  requests return a branded HTML recovery page with a main heading and
+  return-to-trip-details link. It never displays JSON to the browser.
 - Web and Flutter parse only the code. Unknown, absent, malformed, non-JSON,
   transport, and decoding failures use an operation-specific safe fallback.
 - Success response schemas and internal enum values remain unchanged.
@@ -172,6 +176,7 @@ Out of scope:
 | Refinement discovery | Keep results, applied intent, answered topics, and unsubmitted drafts | Refinement rail/card | `Try again` and `Keep these results` | Announce one terminal status; keep focus on the triggering control |
 | Apply refinement | Keep current results and the selected answer | Refinement card | `Update results` retry and `Keep these results` | Associate the error with the question; keep the selection perceivable |
 | Weather evidence | Keep the trip details page and every other section | Snow and weather section | `Try again` | Inline alert labelled with the ski area; no route focus reset |
+| Invalid accommodation handoff | Keep the browser on a Snowcast-branded recovery page | Recovery-page main region | `Return to trip details` | Descriptive document title, main heading, and keyboard-reachable return link |
 | Sign-in attempt | Keep the sign-in screen | Sign-in form | `Try again` | Visible and announced once; sign-in remains reachable |
 | Expired mobile session | Clear persisted session and protected current-trip state | Sign-in screen | `Sign in` | Announce the session-ended state, then focus the sign-in heading |
 | Current-trip primary load | Keep any loaded summary; otherwise show a bounded empty/error state | Current-trip main region | `Try again` | Main-region alert without replacing global navigation |
