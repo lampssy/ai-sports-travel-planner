@@ -5991,13 +5991,18 @@
       "access_mode": "walk",
       "lift_distance": "near",
       "nearest_lift_name": "Colfosco gondola",
-      "distance_m": null,
+      "distance_m": 479,
       "duration_minutes": null,
       "is_direct": true,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "331180135",
+        "nearest_lift_osm_way_id": "30067734"
+      },
       "source_urls": [
         "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-        "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+        "https://www.altabadia.org/en/villages/colfosco-alta-badia",
+        "https://www.openstreetmap.org/node/331180135",
+        "https://www.openstreetmap.org/way/30067734"
       ]
     },
     {
@@ -6007,13 +6012,16 @@
       "access_mode": "walk",
       "lift_distance": "near",
       "nearest_lift_name": "Piz La Ila",
-      "distance_m": null,
+      "distance_m": 322,
       "duration_minutes": null,
       "is_direct": true,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "224779030"
+      },
       "source_urls": [
         "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-        "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+        "https://www.altabadia.org/en/villages/la-villa-alta-badia",
+        "https://www.openstreetmap.org/node/224779030"
       ]
     },
     {
@@ -6023,13 +6031,16 @@
       "access_mode": "walk",
       "lift_distance": "near",
       "nearest_lift_name": "Piz Sorega",
-      "distance_m": null,
+      "distance_m": 589,
       "duration_minutes": null,
       "is_direct": true,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "223530229"
+      },
       "source_urls": [
         "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-        "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+        "https://www.altabadia.org/en/villages/san-cassiano-alta-badia",
+        "https://www.openstreetmap.org/node/223530229"
       ]
     },
     {
@@ -6039,13 +6050,16 @@
       "access_mode": "walk",
       "lift_distance": "near",
       "nearest_lift_name": "La Crusc",
-      "distance_m": null,
+      "distance_m": 255,
       "duration_minutes": null,
       "is_direct": true,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "12425251140"
+      },
       "source_urls": [
         "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area",
-        "https://www.altabadia.org/en/villages/badia-alta-badia"
+        "https://www.altabadia.org/en/villages/badia-alta-badia",
+        "https://www.openstreetmap.org/node/12425251140"
       ]
     },
     {
@@ -6081,6 +6095,21 @@
         "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
         "https://www.openstreetmap.org/node/916336242",
         "https://www.openstreetmap.org/node/360633380"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-armentarola",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "mixed",
+      "lift_distance": "far",
+      "nearest_lift_name": "Armentarola ski lift",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
       ]
     }
   ],
@@ -6277,6 +6306,7 @@
           "advanced": 9.0
         },
         "source_urls": [
+          "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
           "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
         ]
       },

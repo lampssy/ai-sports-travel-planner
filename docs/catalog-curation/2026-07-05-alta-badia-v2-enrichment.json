@@ -1,7 +1,7 @@
 {
   "report_schema_version": 3,
   "title": "Alta Badia schema-v3 graph and source remediation",
-  "summary": "Retains one Alta Badia stay market, adds source-backed bases and transfer-required Lagazuoi, keeps La Crusc and official sectors under the parent, and defers foreign regional topology.",
+  "summary": "Retains one Alta Badia stay market, adds source-backed bases and transfer-required Lagazuoi, keeps La Crusc and official sectors under the parent, and defers foreign regional topology. Cycle 3 binds aggregate pass metrics to the official ski-area page, adds exact lower-station geometry for four core access edges, models the official Armentarola return relationship conservatively, and records Sas Dlacia as a non-separate route waypoint.",
   "changed_entities": [
     "lift_pass_product:alta-badia-skipass",
     "ski_area:alta-badia-ski-area",
@@ -36,7 +36,9 @@
     "trust_manifest:stay_bases:alta-badia-corvara",
     "trust_manifest:stay_bases:alta-badia-la-villa",
     "trust_manifest:stay_bases:alta-badia-san-cassiano",
-    "trust_manifest:stay_destinations:alta-badia"
+    "trust_manifest:stay_destinations:alta-badia",
+    "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+    "trust_manifest:ski_area_access:alta-badia-armentarola--alta-badia-ski-area"
   ],
   "reviewed_targets": [
     {
@@ -266,6 +268,18 @@
       "target_id": "rental_display_facts:alta-badia-marcello-varallo-sport",
       "scope": "full",
       "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "scope": "full",
+      "required_field_paths": []
     }
   ],
   "changes": [
@@ -285,16 +299,17 @@
       "before": null,
       "after": {
         "metric_scope": "pass_accessible",
-        "total_piste_km": 130.0,
-        "total_lift_count": 53,
         "piste_km_by_difficulty": {
+          "advanced": 9.0,
           "beginner": 74.0,
-          "intermediate": 47.0,
-          "advanced": 9.0
+          "intermediate": 47.0
         },
         "source_urls": [
+          "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
           "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
-        ]
+        ],
+        "total_lift_count": 53,
+        "total_piste_km": 130.0
       },
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
@@ -745,7 +760,9 @@
       "target_id": "alta-badia-badia--alta-badia-ski-area",
       "field_path": "regional_data_ids",
       "before": null,
-      "after": {},
+      "after": {
+        "nearest_lift_osm_node_id": "12425251140"
+      },
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -774,7 +791,8 @@
       "before": null,
       "after": [
         "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area",
-        "https://www.altabadia.org/en/villages/badia-alta-badia"
+        "https://www.altabadia.org/en/villages/badia-alta-badia",
+        "https://www.openstreetmap.org/node/12425251140"
       ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
@@ -829,7 +847,10 @@
       "target_id": "alta-badia-colfosco--alta-badia-ski-area",
       "field_path": "regional_data_ids",
       "before": null,
-      "after": {},
+      "after": {
+        "nearest_lift_osm_node_id": "331180135",
+        "nearest_lift_osm_way_id": "30067734"
+      },
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -858,7 +879,9 @@
       "before": null,
       "after": [
         "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-        "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+        "https://www.altabadia.org/en/villages/colfosco-alta-badia",
+        "https://www.openstreetmap.org/node/331180135",
+        "https://www.openstreetmap.org/way/30067734"
       ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
@@ -913,7 +936,9 @@
       "target_id": "alta-badia-la-villa--alta-badia-ski-area",
       "field_path": "regional_data_ids",
       "before": null,
-      "after": {},
+      "after": {
+        "nearest_lift_osm_node_id": "224779030"
+      },
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -942,7 +967,8 @@
       "before": null,
       "after": [
         "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-        "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+        "https://www.altabadia.org/en/villages/la-villa-alta-badia",
+        "https://www.openstreetmap.org/node/224779030"
       ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
@@ -997,7 +1023,9 @@
       "target_id": "alta-badia-san-cassiano--alta-badia-ski-area",
       "field_path": "regional_data_ids",
       "before": null,
-      "after": {},
+      "after": {
+        "nearest_lift_osm_node_id": "223530229"
+      },
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -1026,7 +1054,8 @@
       "before": null,
       "after": [
         "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-        "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+        "https://www.altabadia.org/en/villages/san-cassiano-alta-badia",
+        "https://www.openstreetmap.org/node/223530229"
       ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
@@ -1918,6 +1947,7 @@
           "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
         ],
         "pass_accessible_terrain": [
+          "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
           "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
         ],
         "prices": [
@@ -1938,7 +1968,7 @@
       ],
       "after": [
         "The official 2025/26 piste map numbers Lagazuoi within the Alta Badia local-pass map, so the local multi-area product covers both modeled Alta Badia core and Lagazuoi ski areas.",
-        "The official 130 km, 53-lift, and 74/47/9 km difficulty inventory is normalized to pass_accessible_terrain because its mapped scope includes Lagazuoi; these totals are not duplicated onto the narrower core weather owner.",
+        "The official Alta Badia ski-area page publishes the 130 km, 53-lift, and 74/47/9 km aggregate inventory; the official piste map establishes that the mapped local-pass scope includes Lagazuoi. The metrics are therefore normalized to pass_accessible_terrain and are not duplicated onto the narrower core weather owner.",
         "EUR 80 is a reviewed editorial main-season adult one-day example observed on 2026-07-21; it is not represented as an official 2026/27 tariff.",
         "Broader Dolomiti Superski and Sellaronda validity remains external context."
       ],
@@ -2071,11 +2101,13 @@
       "after": {
         "access_mode_distance": [
           "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area",
-          "https://www.altabadia.org/en/villages/badia-alta-badia"
+          "https://www.altabadia.org/en/villages/badia-alta-badia",
+          "https://www.openstreetmap.org/node/12425251140"
         ],
         "relationship": [
           "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area",
-          "https://www.altabadia.org/en/villages/badia-alta-badia"
+          "https://www.altabadia.org/en/villages/badia-alta-badia",
+          "https://www.openstreetmap.org/node/12425251140"
         ]
       },
       "trust_status": "estimated",
@@ -2100,7 +2132,7 @@
       "before": null,
       "after": [
         "Official La Crusc and Badia village material establishes direct walk access from Badia to La Crusc; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
-        "No numeric distance or duration is stored where the accepted source does not establish one."
+        "OSM node 12425251140 is the La Crusc 1 lower station; 255 m is the rounded Haversine distance from the catalog stay-base coordinate. No duration is asserted."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2122,11 +2154,15 @@
       "after": {
         "access_mode_distance": [
           "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-          "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+          "https://www.altabadia.org/en/villages/colfosco-alta-badia",
+          "https://www.openstreetmap.org/node/331180135",
+          "https://www.openstreetmap.org/way/30067734"
         ],
         "relationship": [
           "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-          "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+          "https://www.altabadia.org/en/villages/colfosco-alta-badia",
+          "https://www.openstreetmap.org/node/331180135",
+          "https://www.openstreetmap.org/way/30067734"
         ]
       },
       "trust_status": "estimated",
@@ -2151,7 +2187,7 @@
       "before": null,
       "after": [
         "Official skiing and village material establishes direct walk access from Colfosco to the Colfosco gondola; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
-        "No numeric distance or duration is stored where the accepted source does not establish one."
+        "OSM node 331180135 is the lower station of Colfosco gondola way 30067734; 479 m is the rounded Haversine distance from the catalog stay-base coordinate. No duration is asserted."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2189,11 +2225,13 @@
       "after": {
         "access_mode_distance": [
           "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-          "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+          "https://www.altabadia.org/en/villages/la-villa-alta-badia",
+          "https://www.openstreetmap.org/node/224779030"
         ],
         "relationship": [
           "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-          "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+          "https://www.altabadia.org/en/villages/la-villa-alta-badia",
+          "https://www.openstreetmap.org/node/224779030"
         ]
       },
       "trust_status": "estimated",
@@ -2218,7 +2256,7 @@
       "before": null,
       "after": [
         "Official skiing and village material establishes direct walk access from La Villa to Piz La Ila; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
-        "No numeric distance or duration is stored where the accepted source does not establish one."
+        "OSM node 224779030 is the Piz la Ila lower station; 322 m is the rounded Haversine distance from the catalog stay-base coordinate. No duration is asserted."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2240,11 +2278,13 @@
       "after": {
         "access_mode_distance": [
           "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-          "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+          "https://www.altabadia.org/en/villages/san-cassiano-alta-badia",
+          "https://www.openstreetmap.org/node/223530229"
         ],
         "relationship": [
           "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-          "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+          "https://www.altabadia.org/en/villages/san-cassiano-alta-badia",
+          "https://www.openstreetmap.org/node/223530229"
         ]
       },
       "trust_status": "estimated",
@@ -2269,7 +2309,7 @@
       "before": null,
       "after": [
         "Official skiing and village material establishes direct walk access from San Cassiano to Piz Sorega; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
-        "No numeric distance or duration is stored where the accepted source does not establish one."
+        "OSM node 223530229 is the Piz Sorega lower station; 589 m is the rounded Haversine distance from the catalog stay-base coordinate. No duration is asserted."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2479,12 +2519,10 @@
       "before": null,
       "after": {
         "elevation_season": [
-          "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
           "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
         ],
         "glacier_terrain": [],
         "identity_coordinates": [
-          "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
           "https://www.openstreetmap.org/node/360633380"
         ],
         "marked_freeride_routes": [],
@@ -2529,7 +2567,7 @@
       "before": null,
       "after": [
         "Lagazuoi has a complete lift-served area and independent operating presentation and is transfer-required from the Alta Badia core.",
-        "The catalog uses the lower cable-car station geometry, 2105 m pass/base elevation, and 2732 m lift-served upper station; it does not use the 2778 m mountain peak as child weather geometry.",
+        "OSM node 360633380 is the exact lower cable-car station geometry. The Alta Badia route page establishes Passo Falzarego at 2105 m and the Christmas-to-Easter operating period; the operator page is retained only for Lagazuoi identity, snowmaking, and its separate 2107 m operator context.",
         "Aggregate terrain is owned by the local pass-accessible scope and the official 2025/26 piste map establishes Lagazuoi coverage under the Alta Badia local pass; no terrain-domain membership is inferred.",
         "The new ski-area ID is handed to scheduled historical-weather completion after merge."
       ],
@@ -3145,6 +3183,174 @@
       "after": [
         "Official village and accommodation inventories support one complete Alta Badia stay market.",
         "The catalog centre coordinate and medium price level remain product estimates rather than source-verified destination facts."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-colfosco--alta-badia-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 479,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-la-villa--alta-badia-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 322,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-san-cassiano--alta-badia-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 589,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-badia--alta-badia-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 255,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "is_direct",
+      "before": null,
+      "after": false,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "far",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Armentarola ski lift",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {},
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "ski_area_access_id",
+      "before": null,
+      "after": "alta-badia-armentarola--alta-badia-ski-area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "alta-badia-ski-area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "alta-badia-armentarola",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Armentarola -> Alta Badia",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "access_mode_distance": [
+          "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+        ],
+        "relationship": [
+          "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The official Lagazuoi route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia core.",
+        "The multi-leg relationship is normalized to access_mode=mixed, lift_distance=far, and is_direct=false; no unsupported distance or duration is asserted."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -4513,8 +4719,8 @@
       "target_type": "ski_area_access",
       "target_id": "alta-badia-colfosco--alta-badia-ski-area",
       "field_path": "distance_m",
-      "status": "unresolved",
-      "notes": "No verification-capable evidence established a more specific value."
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
     },
     {
       "target_type": "ski_area_access",
@@ -4590,8 +4796,8 @@
       "target_type": "ski_area_access",
       "target_id": "alta-badia-la-villa--alta-badia-ski-area",
       "field_path": "distance_m",
-      "status": "unresolved",
-      "notes": "No verification-capable evidence established a more specific value."
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
     },
     {
       "target_type": "ski_area_access",
@@ -4667,8 +4873,8 @@
       "target_type": "ski_area_access",
       "target_id": "alta-badia-san-cassiano--alta-badia-ski-area",
       "field_path": "distance_m",
-      "status": "unresolved",
-      "notes": "No verification-capable evidence established a more specific value."
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
     },
     {
       "target_type": "ski_area_access",
@@ -4744,8 +4950,8 @@
       "target_type": "ski_area_access",
       "target_id": "alta-badia-badia--alta-badia-ski-area",
       "field_path": "distance_m",
-      "status": "unresolved",
-      "notes": "No verification-capable evidence established a more specific value."
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
     },
     {
       "target_type": "ski_area_access",
@@ -5628,6 +5834,111 @@
       "field_path": "notes",
       "status": "changed",
       "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "is_direct",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "ski_area_id",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Exact prepare-base delta is declared in changes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "distance_m",
+      "status": "unresolved",
+      "notes": "The official route establishes the relationship but does not establish an exact access distance or duration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "duration_minutes",
+      "status": "unresolved",
+      "notes": "The official route establishes the relationship but does not establish an exact access distance or duration."
     }
   ],
   "evidence": [
@@ -5651,20 +5962,20 @@
       "target_id": "alta-badia-skipass",
       "field_path": "pass_accessible_terrain",
       "source_type": "official",
-      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
-      "source_title": "Alta Badia 2025/26 piste map",
+      "source_url": "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
+      "source_title": "Official Alta Badia ski area",
       "source_value": {
         "metric_scope": "pass_accessible",
-        "total_piste_km": 130.0,
+        "total_piste_km": 130,
         "total_lift_count": 53,
         "piste_km_by_difficulty": {
-          "beginner": 74.0,
-          "intermediate": 47.0,
-          "advanced": 9.0
+          "beginner": 74,
+          "intermediate": 47,
+          "advanced": 9
         }
       },
-      "evidence_summary": "The published inventory is scoped to the local-pass map that includes numbered Lagazuoi.",
-      "normalization_note": "Owned once as pass-accessible aggregate metrics and not duplicated onto either ski-area weather owner."
+      "evidence_summary": "The official ski-area page publishes 130 piste kilometres, 53 lifts, and the 74 km easy / 47 km medium / 9 km difficult split.",
+      "normalization_note": "The official map separately establishes the local-pass coverage that includes Lagazuoi; metrics are owned once as pass-accessible aggregate facts."
     },
     {
       "evidence_id": "cycle2-pass-trust-status",
@@ -5793,7 +6104,7 @@
       "source_title": "Direct reviewed source",
       "source_value": [
         {
-          "amount": 80.0,
+          "amount": 80,
           "amount_max": null,
           "amount_min": null,
           "audience": "adult",
@@ -5879,11 +6190,11 @@
       "target_id": "lagazuoi-ski-area",
       "field_path": "base_elevation_m",
       "source_type": "official",
-      "source_url": "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
-      "source_title": "Direct reviewed source",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
       "source_value": 2105,
-      "evidence_summary": "The direct source supports the normalized field and its owner scope.",
-      "normalization_note": "Normalized into the Snowcast catalog/trust contract."
+      "evidence_summary": "The route page identifies Passo Falzarego at 2105 m.",
+      "normalization_note": "The operator page remains identity/2107 m context only and is not used for this typed field."
     },
     {
       "evidence_id": "change-010",
@@ -5892,11 +6203,11 @@
       "target_id": "lagazuoi-ski-area",
       "field_path": "latitude",
       "source_type": "official",
-      "source_url": "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
-      "source_title": "Direct reviewed source",
+      "source_url": "https://www.openstreetmap.org/node/360633380",
+      "source_title": "OpenStreetMap Lagazuoi lower station",
       "source_value": 46.5191116,
-      "evidence_summary": "The direct source supports the normalized field and its owner scope.",
-      "normalization_note": "Normalized into the Snowcast catalog/trust contract."
+      "evidence_summary": "OSM node 360633380 provides the exact lower cable-car station latitude.",
+      "normalization_note": "The operator page remains identity/2107 m context only and is not used for this typed field."
     },
     {
       "evidence_id": "change-011",
@@ -5905,11 +6216,11 @@
       "target_id": "lagazuoi-ski-area",
       "field_path": "longitude",
       "source_type": "official",
-      "source_url": "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
-      "source_title": "Direct reviewed source",
+      "source_url": "https://www.openstreetmap.org/node/360633380",
+      "source_title": "OpenStreetMap Lagazuoi lower station",
       "source_value": 12.008447,
-      "evidence_summary": "The direct source supports the normalized field and its owner scope.",
-      "normalization_note": "Normalized into the Snowcast catalog/trust contract."
+      "evidence_summary": "OSM node 360633380 provides the exact lower cable-car station longitude.",
+      "normalization_note": "The operator page remains identity/2107 m context only and is not used for this typed field."
     },
     {
       "evidence_id": "change-013",
@@ -5931,11 +6242,11 @@
       "target_id": "lagazuoi-ski-area",
       "field_path": "season_end_month",
       "source_type": "official",
-      "source_url": "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
-      "source_title": "Direct reviewed source",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
       "source_value": 4,
-      "evidence_summary": "The direct source supports the normalized field and its owner scope.",
-      "normalization_note": "Normalized into the Snowcast catalog/trust contract."
+      "evidence_summary": "The official route recommends the period from Christmas to Easter.",
+      "normalization_note": "The operator page remains identity/2107 m context only and is not used for this typed field."
     },
     {
       "evidence_id": "change-016",
@@ -5944,11 +6255,11 @@
       "target_id": "lagazuoi-ski-area",
       "field_path": "season_start_month",
       "source_type": "official",
-      "source_url": "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
-      "source_title": "Direct reviewed source",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
       "source_value": 12,
-      "evidence_summary": "The direct source supports the normalized field and its owner scope.",
-      "normalization_note": "Normalized into the Snowcast catalog/trust contract."
+      "evidence_summary": "The official route recommends the period from Christmas to Easter.",
+      "normalization_note": "The operator page remains identity/2107 m context only and is not used for this typed field."
     },
     {
       "evidence_id": "change-017",
@@ -5957,11 +6268,11 @@
       "target_id": "lagazuoi-ski-area",
       "field_path": "season_windows",
       "source_type": "official",
-      "source_url": "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
-      "source_title": "Direct reviewed source",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
       "source_value": [],
-      "evidence_summary": "The direct source supports the normalized field and its owner scope.",
-      "normalization_note": "Normalized into the Snowcast catalog/trust contract."
+      "evidence_summary": "Christmas-to-Easter supports month-level season normalization but not a dated season window.",
+      "normalization_note": "The operator page remains identity/2107 m context only and is not used for this typed field."
     },
     {
       "evidence_id": "change-018",
@@ -7750,7 +8061,7 @@
       "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
       "source_title": "Alta Badia piste map",
       "source_value": "Alta Badia",
-      "evidence_summary": "Core sectors, Vallon 2550 m geometry, numbered Lagazuoi local-pass coverage, and the 130 km / 53-lift / 74-47-9 km aggregate inventory.",
+      "evidence_summary": "Core sectors, Vallon 2550 m geometry, and numbered Lagazuoi local-pass coverage; metric values are sourced separately from the official ski-area page.",
       "normalization_note": null
     },
     {
@@ -7802,7 +8113,7 @@
       "source_url": "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
       "source_title": "Alta Badia ski area",
       "source_value": "Alta Badia",
-      "evidence_summary": "Connected core identity and operating scope; aggregate lift totals are not assigned to this narrower owner.",
+      "evidence_summary": "Connected core identity and operating scope; the page also publishes the 130 km / 53-lift / 74-47-9 km aggregate inventory, which is normalized to the local pass-accessible owner.",
       "normalization_note": null
     },
     {
@@ -7984,7 +8295,7 @@
         }
       ],
       "evidence_summary": "EUR 80 editorial example and 53-lift corroboration.",
-      "normalization_note": null
+      "normalization_note": "The reviewed editorial price is retained as an explicitly dated representative example, not as an official current-season tariff."
     },
     {
       "evidence_id": "scope-boe",
@@ -7998,6 +8309,316 @@
       "source_value": 214,
       "evidence_summary": "Retained access geometry.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "cycle3-alta-badia-colfosco--alta-badia-ski-area-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-colfosco--alta-badia-ski-area",
+      "field_path": "distance_m",
+      "source_type": "official",
+      "source_url": "https://www.openstreetmap.org/node/331180135",
+      "source_title": "OpenStreetMap lower lift station",
+      "source_value": 479,
+      "evidence_summary": "OSM node 331180135, the lower station of Colfosco gondola way 30067734; the rounded Haversine distance from the catalog stay-base coordinate is 479 m.",
+      "normalization_note": "Point-to-point Haversine distance, not routed walking distance."
+    },
+    {
+      "evidence_id": "cycle3-alta-badia-colfosco--alta-badia-ski-area-geometry",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-colfosco--alta-badia-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "official",
+      "source_url": "https://www.openstreetmap.org/node/331180135",
+      "source_title": "OpenStreetMap lower lift station",
+      "source_value": {
+        "nearest_lift_osm_node_id": "331180135",
+        "nearest_lift_osm_way_id": "30067734"
+      },
+      "evidence_summary": "OSM node 331180135, the lower station of Colfosco gondola way 30067734 is the exact geometry used by the access edge.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "cycle3-alta-badia-la-villa--alta-badia-ski-area-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-la-villa--alta-badia-ski-area",
+      "field_path": "distance_m",
+      "source_type": "official",
+      "source_url": "https://www.openstreetmap.org/node/224779030",
+      "source_title": "OpenStreetMap lower lift station",
+      "source_value": 322,
+      "evidence_summary": "OSM node 224779030, the Piz la Ila lower station; the rounded Haversine distance from the catalog stay-base coordinate is 322 m.",
+      "normalization_note": "Point-to-point Haversine distance, not routed walking distance."
+    },
+    {
+      "evidence_id": "cycle3-alta-badia-la-villa--alta-badia-ski-area-geometry",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-la-villa--alta-badia-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "official",
+      "source_url": "https://www.openstreetmap.org/node/224779030",
+      "source_title": "OpenStreetMap lower lift station",
+      "source_value": {
+        "nearest_lift_osm_node_id": "224779030"
+      },
+      "evidence_summary": "OSM node 224779030, the Piz la Ila lower station is the exact geometry used by the access edge.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "cycle3-alta-badia-san-cassiano--alta-badia-ski-area-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-san-cassiano--alta-badia-ski-area",
+      "field_path": "distance_m",
+      "source_type": "official",
+      "source_url": "https://www.openstreetmap.org/node/223530229",
+      "source_title": "OpenStreetMap lower lift station",
+      "source_value": 589,
+      "evidence_summary": "OSM node 223530229, the Piz Sorega lower station; the rounded Haversine distance from the catalog stay-base coordinate is 589 m.",
+      "normalization_note": "Point-to-point Haversine distance, not routed walking distance."
+    },
+    {
+      "evidence_id": "cycle3-alta-badia-san-cassiano--alta-badia-ski-area-geometry",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-san-cassiano--alta-badia-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "official",
+      "source_url": "https://www.openstreetmap.org/node/223530229",
+      "source_title": "OpenStreetMap lower lift station",
+      "source_value": {
+        "nearest_lift_osm_node_id": "223530229"
+      },
+      "evidence_summary": "OSM node 223530229, the Piz Sorega lower station is the exact geometry used by the access edge.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "cycle3-alta-badia-badia--alta-badia-ski-area-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-badia--alta-badia-ski-area",
+      "field_path": "distance_m",
+      "source_type": "official",
+      "source_url": "https://www.openstreetmap.org/node/12425251140",
+      "source_title": "OpenStreetMap lower lift station",
+      "source_value": 255,
+      "evidence_summary": "OSM node 12425251140, the La Crusc 1 lower station; the rounded Haversine distance from the catalog stay-base coordinate is 255 m.",
+      "normalization_note": "Point-to-point Haversine distance, not routed walking distance."
+    },
+    {
+      "evidence_id": "cycle3-alta-badia-badia--alta-badia-ski-area-geometry",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-badia--alta-badia-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "official",
+      "source_url": "https://www.openstreetmap.org/node/12425251140",
+      "source_title": "OpenStreetMap lower lift station",
+      "source_value": {
+        "nearest_lift_osm_node_id": "12425251140"
+      },
+      "evidence_summary": "OSM node 12425251140, the La Crusc 1 lower station is the exact geometry used by the access edge.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-access_mode",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": "mixed",
+      "evidence_summary": "The route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia ski area.",
+      "normalization_note": "Normalized as a non-direct mixed access edge without an unsupported distance or duration."
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-is_direct",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "is_direct",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": false,
+      "evidence_summary": "The route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia ski area.",
+      "normalization_note": "Normalized as a non-direct mixed access edge without an unsupported distance or duration."
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-lift_distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "lift_distance",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": "far",
+      "evidence_summary": "The route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia ski area.",
+      "normalization_note": "Normalized as a non-direct mixed access edge without an unsupported distance or duration."
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-nearest_lift_name",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": "Armentarola ski lift",
+      "evidence_summary": "The route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia ski area.",
+      "normalization_note": "Normalized as a non-direct mixed access edge without an unsupported distance or duration."
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-regional_data_ids",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": {},
+      "evidence_summary": "The route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia ski area.",
+      "normalization_note": "Normalized as a non-direct mixed access edge without an unsupported distance or duration."
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-ski_area_access_id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": "alta-badia-armentarola--alta-badia-ski-area",
+      "evidence_summary": "The route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia ski area.",
+      "normalization_note": "Normalized as a non-direct mixed access edge without an unsupported distance or duration."
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-ski_area_id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": "alta-badia-ski-area",
+      "evidence_summary": "The route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia ski area.",
+      "normalization_note": "Normalized as a non-direct mixed access edge without an unsupported distance or duration."
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-source_urls",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ],
+      "evidence_summary": "The route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia ski area.",
+      "normalization_note": "Normalized as a non-direct mixed access edge without an unsupported distance or duration."
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-stay_base_id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": "alta-badia-armentarola",
+      "evidence_summary": "The route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia ski area.",
+      "normalization_note": "Normalized as a non-direct mixed access edge without an unsupported distance or duration."
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-trust-display_name",
+      "boundary_target_ids": [],
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "display_name",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": "Armentarola -> Alta Badia",
+      "evidence_summary": "Direct official route evidence supports the new access relationship and its conservative normalization.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-trust-field_source_refs",
+      "boundary_target_ids": [],
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "field_source_refs",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": {
+        "relationship": [
+          "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+        ],
+        "access_mode_distance": [
+          "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+        ]
+      },
+      "evidence_summary": "Direct official route evidence supports the new access relationship and its conservative normalization.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-trust-field_statuses",
+      "boundary_target_ids": [],
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "field_statuses",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": {
+        "relationship": "verified_with_adjustment",
+        "access_mode_distance": "verified_with_adjustment"
+      },
+      "evidence_summary": "Direct official route evidence supports the new access relationship and its conservative normalization.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "cycle3-armentarola-core-trust-notes",
+      "boundary_target_ids": [],
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:alta-badia-armentarola--alta-badia-ski-area",
+      "field_path": "notes",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": [
+        "The official Lagazuoi route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia core.",
+        "The multi-leg relationship is normalized to access_mode=mixed, lift_distance=far, and is_direct=false; no unsupported distance or duration is asserted."
+      ],
+      "evidence_summary": "Direct official route evidence supports the new access relationship and its conservative normalization.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-sass-dlacia",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "alta-badia-armentarola",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+      "source_title": "Official Lagazuoi skitour",
+      "source_value": "Sas Dlacia",
+      "evidence_summary": "The official route identifies Sas Dlacia as the descent endpoint and horse-tow waypoint to the Armentarola lift.",
+      "normalization_note": "Assessed as a route waypoint within the Armentarola base scope, not a separate stay base."
     }
   ],
   "destination_boundary_assessments": [
@@ -9919,6 +10540,71 @@
           "scope-sellaronda"
         ]
       }
+    },
+    {
+      "candidate_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "candidate_name": "Armentarola to Alta Badia core",
+      "candidate_kind": "ski_area_access",
+      "disposition": "add_entity",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-route"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "alta-badia-armentarola--alta-badia-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official Lagazuoi route material establishes the return relationship from Sas Dlacia via horse tow and the Armentarola lift; the catalog conservatively models it at the existing Armentarola stay base as non-direct mixed access.",
+      "ski_area_boundary": null
+    },
+    {
+      "candidate_id": "alta-badia-sass-dlacia",
+      "candidate_name": "Sas Dlacia",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-sass-dlacia"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "alta-badia-armentarola"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official route establishes Sas Dlacia as the Lagazuoi descent endpoint and horse-tow waypoint, but not as a complete independently owned accommodation market; it remains within the Armentarola base scope.",
+      "ski_area_boundary": null
+    },
+    {
+      "candidate_id": "alta-badia-sass-dlacia--alta-badia-ski-area",
+      "candidate_name": "Sas Dlacia to Alta Badia core",
+      "candidate_kind": "ski_area_access",
+      "disposition": "not_separate",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-sass-dlacia"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "alta-badia-armentarola--alta-badia-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The route-specific return via horse tow and Armentarola lift is represented once on the concrete Armentarola stay-base edge rather than creating an access edge from an unmodeled waypoint.",
+      "ski_area_boundary": null
     }
   ],
   "boundary_decision_targets": [

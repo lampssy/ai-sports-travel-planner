@@ -8573,11 +8573,9 @@
         },
         "field_source_refs": {
           "identity_coordinates": [
-            "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
             "https://www.openstreetmap.org/node/360633380"
           ],
           "elevation_season": [
-            "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
             "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
           ],
           "terrain_metrics": [],
@@ -8594,7 +8592,7 @@
         },
         "notes": [
           "Lagazuoi has a complete lift-served area and independent operating presentation and is transfer-required from the Alta Badia core.",
-          "The catalog uses the lower cable-car station geometry, 2105 m pass/base elevation, and 2732 m lift-served upper station; it does not use the 2778 m mountain peak as child weather geometry.",
+          "OSM node 360633380 is the exact lower cable-car station geometry. The Alta Badia route page establishes Passo Falzarego at 2105 m and the Christmas-to-Easter operating period; the operator page is retained only for Lagazuoi identity, snowmaking, and its separate 2107 m operator context.",
           "Aggregate terrain is owned by the local pass-accessible scope and the official 2025/26 piste map establishes Lagazuoi coverage under the Alta Badia local pass; no terrain-domain membership is inferred.",
           "The new ski-area ID is handed to scheduled historical-weather completion after merge."
         ]
@@ -10129,16 +10127,20 @@
         "field_source_refs": {
           "relationship": [
             "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+            "https://www.altabadia.org/en/villages/colfosco-alta-badia",
+            "https://www.openstreetmap.org/node/331180135",
+            "https://www.openstreetmap.org/way/30067734"
           ],
           "access_mode_distance": [
             "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+            "https://www.altabadia.org/en/villages/colfosco-alta-badia",
+            "https://www.openstreetmap.org/node/331180135",
+            "https://www.openstreetmap.org/way/30067734"
           ]
         },
         "notes": [
           "Official skiing and village material establishes direct walk access from Colfosco to the Colfosco gondola; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
-          "No numeric distance or duration is stored where the accepted source does not establish one."
+          "OSM node 331180135 is the lower station of Colfosco gondola way 30067734; 479 m is the rounded Haversine distance from the catalog stay-base coordinate. No duration is asserted."
         ]
       },
       "alta-badia-la-villa--alta-badia-ski-area": {
@@ -10150,16 +10152,18 @@
         "field_source_refs": {
           "relationship": [
             "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+            "https://www.altabadia.org/en/villages/la-villa-alta-badia",
+            "https://www.openstreetmap.org/node/224779030"
           ],
           "access_mode_distance": [
             "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+            "https://www.altabadia.org/en/villages/la-villa-alta-badia",
+            "https://www.openstreetmap.org/node/224779030"
           ]
         },
         "notes": [
           "Official skiing and village material establishes direct walk access from La Villa to Piz La Ila; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
-          "No numeric distance or duration is stored where the accepted source does not establish one."
+          "OSM node 224779030 is the Piz la Ila lower station; 322 m is the rounded Haversine distance from the catalog stay-base coordinate. No duration is asserted."
         ]
       },
       "alta-badia-san-cassiano--alta-badia-ski-area": {
@@ -10171,16 +10175,18 @@
         "field_source_refs": {
           "relationship": [
             "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia",
+            "https://www.openstreetmap.org/node/223530229"
           ],
           "access_mode_distance": [
             "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia",
+            "https://www.openstreetmap.org/node/223530229"
           ]
         },
         "notes": [
           "Official skiing and village material establishes direct walk access from San Cassiano to Piz Sorega; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
-          "No numeric distance or duration is stored where the accepted source does not establish one."
+          "OSM node 223530229 is the Piz Sorega lower station; 589 m is the rounded Haversine distance from the catalog stay-base coordinate. No duration is asserted."
         ]
       },
       "alta-badia-badia--alta-badia-ski-area": {
@@ -10192,16 +10198,18 @@
         "field_source_refs": {
           "relationship": [
             "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area",
-            "https://www.altabadia.org/en/villages/badia-alta-badia"
+            "https://www.altabadia.org/en/villages/badia-alta-badia",
+            "https://www.openstreetmap.org/node/12425251140"
           ],
           "access_mode_distance": [
             "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area",
-            "https://www.altabadia.org/en/villages/badia-alta-badia"
+            "https://www.altabadia.org/en/villages/badia-alta-badia",
+            "https://www.openstreetmap.org/node/12425251140"
           ]
         },
         "notes": [
           "Official La Crusc and Badia village material establishes direct walk access from Badia to La Crusc; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
-          "No numeric distance or duration is stored where the accepted source does not establish one."
+          "OSM node 12425251140 is the La Crusc 1 lower station; 255 m is the rounded Haversine distance from the catalog stay-base coordinate. No duration is asserted."
         ]
       },
       "alta-badia-san-cassiano--lagazuoi-ski-area": {
@@ -10244,6 +10252,25 @@
         "notes": [
           "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
           "The approximate 10 km / 20 minute segment is explicitly published for Armentarola to Passo Falzarego."
+        ]
+      },
+      "alta-badia-armentarola--alta-badia-ski-area": {
+        "display_name": "Armentarola -> Alta Badia",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ]
+        },
+        "notes": [
+          "The official Lagazuoi route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia core.",
+          "The multi-leg relationship is normalized to access_mode=mixed, lift_distance=far, and is_direct=false; no unsupported distance or duration is asserted."
         ]
       }
     },
@@ -10501,12 +10528,13 @@
             "https://www.skiresort.info/ski-resort/alta-badia/"
           ],
           "pass_accessible_terrain": [
+            "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
             "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
           ]
         },
         "notes": [
           "The official 2025/26 piste map numbers Lagazuoi within the Alta Badia local-pass map, so the local multi-area product covers both modeled Alta Badia core and Lagazuoi ski areas.",
-          "The official 130 km, 53-lift, and 74/47/9 km difficulty inventory is normalized to pass_accessible_terrain because its mapped scope includes Lagazuoi; these totals are not duplicated onto the narrower core weather owner.",
+          "The official Alta Badia ski-area page publishes the 130 km, 53-lift, and 74/47/9 km aggregate inventory; the official piste map establishes that the mapped local-pass scope includes Lagazuoi. The metrics are therefore normalized to pass_accessible_terrain and are not duplicated onto the narrower core weather owner.",
           "EUR 80 is a reviewed editorial main-season adult one-day example observed on 2026-07-21; it is not represented as an official 2026/27 tariff.",
           "Broader Dolomiti Superski and Sellaronda validity remains external context."
         ]
