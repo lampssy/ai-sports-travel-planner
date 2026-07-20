@@ -729,7 +729,7 @@ export interface WeatherEvidencePresentation {
   mainLimitation: string;
 }
 
-const weatherDateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
+const weatherDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   month: "short",
   year: "numeric",
@@ -809,6 +809,35 @@ function forecastConditions(
     : "No forecast condition values are available for the requested dates.";
 }
 
+function mainWeatherLimitation(
+  response: Extract<SearchWeatherEvidenceResponse, { status: "available" }>,
+): string {
+  const { evidence } = response;
+  const { historical, forecast } = evidence;
+  if (evidence.elevation_status === "mixed") {
+    return "This assessment combines weather data from different elevations.";
+  }
+  if (
+    historical.provenance_status === "mixed" ||
+    forecast?.provenance_status === "mixed"
+  ) {
+    return "This assessment combines weather data from different sources.";
+  }
+  if (evidence.limitations[0]) return evidence.limitations[0];
+
+  if (evidence.mode === "forecast_assisted" && forecast) {
+    const missingDates = Math.max(
+      0,
+      forecast.requested_date_count - forecast.usable_date_count,
+    );
+    return missingDates > 0
+      ? `Forecast values are unavailable for ${missingDates} of ${forecast.requested_date_count} requested dates.`
+      : "Forecast conditions can still change before travel.";
+  }
+
+  return "Historical patterns do not predict exact trip conditions.";
+}
+
 export function weatherEvidencePresentation(
   response: SearchWeatherEvidenceResponse,
 ): WeatherEvidencePresentation {
@@ -829,10 +858,6 @@ export function weatherEvidencePresentation(
   const { historical, forecast } = response.evidence;
   const archive = archiveCurrency(historical);
   if (response.evidence.mode === "forecast_assisted" && forecast) {
-    const missingDates = Math.max(
-      0,
-      forecast.requested_date_count - forecast.usable_date_count,
-    );
     return {
       sourceType: "Forecast and historical pattern",
       sourceCurrency: [
@@ -843,11 +868,7 @@ export function weatherEvidencePresentation(
       ].join("; "),
       coverage: `${forecast.usable_date_count} of ${forecast.requested_date_count} requested dates have forecast values; ${historical.evidence_seasons ?? "No"} historical seasons`,
       expectedConditions: forecastConditions(response),
-      mainLimitation:
-        response.evidence.limitations[0] ??
-        (missingDates > 0
-          ? `Forecast values are unavailable for ${missingDates} of ${forecast.requested_date_count} requested dates.`
-          : "Forecast conditions can still change before travel."),
+      mainLimitation: mainWeatherLimitation(response),
     };
   }
 
@@ -874,9 +895,7 @@ export function weatherEvidencePresentation(
     expectedConditions: historicalConditions.length
       ? historicalConditions.join("; ")
       : "No historical condition values are available for this trip window.",
-    mainLimitation:
-      response.evidence.limitations[0] ??
-      "Historical patterns do not predict exact trip conditions.",
+    mainLimitation: mainWeatherLimitation(response),
   };
 }
 

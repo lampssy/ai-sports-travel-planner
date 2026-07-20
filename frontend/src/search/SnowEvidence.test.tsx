@@ -339,7 +339,7 @@ test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
   expect(
     (await screen.findAllByText("Forecast and historical pattern")).length,
   ).toBeGreaterThan(0);
-  expect(screen.getByText("Forecast issued 16 Jul 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline")).toBeVisible();
+  expect(screen.getByText("Forecast issued Jul 16, 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline")).toBeVisible();
   expect(screen.getByText("2 of 3 requested dates have forecast values; 30 historical seasons")).toBeVisible();
   expect(screen.queryByText(/fresh at 16 jul 2026, 12:02 utc/i)).toBeNull();
   expect(screen.queryByText(/cache_valid_until|evaluated_at/i)).toBeNull();
@@ -373,7 +373,7 @@ test("keeps selected forecast freshness separate from excluded stale rows", asyn
     />,
   );
 
-  expect(await screen.findByText(/forecast issued 16 jul 2026, 11:00 utc/i)).toBeVisible();
+  expect(await screen.findByText(/forecast issued jul 16, 2026, 11:00 utc/i)).toBeVisible();
   expect(screen.queryByText(/fresh at 16 jul 2026, 12:02 utc/i)).toBeNull();
   expect(screen.queryByText("Stale at evaluation")).toBeNull();
   expect(screen.getByText(/stale forecast rows were excluded/i)).toBeVisible();
@@ -699,7 +699,7 @@ test("reuses an unexpired cache entry and refetches an expired entry with a new 
       loadEvidence={loadEvidence}
     />,
   );
-  await screen.findByText(/forecast issued 16 jul 2026, 11:00 utc/i);
+  await screen.findByText(/forecast issued jul 16, 2026, 11:00 utc/i);
   expect(
     readWeatherEvidenceCache(
       weatherEvidenceCacheKey("tignes-ski-area", datesIntent.constraints.travel_window),
@@ -715,7 +715,7 @@ test("reuses an unexpired cache entry and refetches an expired entry with a new 
       loadEvidence={loadEvidence}
     />,
   );
-  await screen.findByText(/forecast issued 16 jul 2026, 11:00 utc/i);
+  await screen.findByText(/forecast issued jul 16, 2026, 11:00 utc/i);
   expect(loadEvidence).toHaveBeenCalledTimes(1);
   cached.unmount();
 
@@ -730,7 +730,7 @@ test("reuses an unexpired cache entry and refetches an expired entry with a new 
       onResponseChange={responseChanges}
     />,
   );
-  await screen.findByText(/forecast issued 16 jul 2026, 12:30 utc/i);
+  await screen.findByText(/forecast issued jul 16, 2026, 12:30 utc/i);
   expect(responseChanges).toHaveBeenCalledWith(forecastResponse("forecast-head-2"));
   vi.useRealTimers();
 });

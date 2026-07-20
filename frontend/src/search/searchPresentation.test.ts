@@ -1089,7 +1089,7 @@ describe("weather evidence presentation", () => {
     expect(presentation).toMatchObject({
       sourceType: "Forecast and historical pattern",
       sourceCurrency:
-        "Forecast issued 16 Jul 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline",
+        "Forecast issued Jul 16, 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline",
       coverage: "2 of 3 requested dates have forecast values; 30 historical seasons",
       expectedConditions:
         "Forecast fresh snow 7.4 cm; forecast temperature range -7 to -1 °C; historical median depth 128 cm",
@@ -1097,6 +1097,65 @@ describe("weather evidence presentation", () => {
     });
     expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
     expect(JSON.stringify(presentation)).not.toContain(response.cache_valid_until);
+  });
+
+  test("promotes mixed forecast provenance at one elevation to the main limitation", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      mode: "forecast_assisted",
+      limitations: ["Forecast coverage is incomplete."],
+      forecast: {
+        source_label: "Open-Meteo forecast",
+        source_model: "best_match",
+        issued_at: "2026-07-16T11:00:00Z",
+        provenance_status: "mixed",
+        sources: [],
+        coverage_status: "complete",
+        usable_date_count: 3,
+        requested_date_count: 3,
+        average_forecast_share: 1,
+        daily_profile: [],
+      },
+    };
+
+    expect(weatherEvidencePresentation(response).mainLimitation).toBe(
+      "This assessment combines weather data from different sources.",
+    );
+  });
+
+  test("promotes mixed historical provenance to the main limitation", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      limitations: ["Historical coverage is incomplete."],
+      historical: {
+        ...response.evidence.historical,
+        provenance_status: "mixed",
+      },
+    };
+
+    expect(weatherEvidencePresentation(response).mainLimitation).toBe(
+      "This assessment combines weather data from different sources.",
+    );
+  });
+
+  test("prioritizes mixed elevations over mixed provenance and response limitations", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      elevation_m: null,
+      elevation_status: "mixed",
+      limitations: ["Historical coverage is incomplete."],
+      historical: {
+        ...response.evidence.historical,
+        provenance_status: "mixed",
+      },
+    };
+
+    expect(weatherEvidencePresentation(response).mainLimitation).toBe(
+      "This assessment combines weather data from different elevations.",
+    );
   });
 
   test("presents unavailable evidence without inventing source freshness or conditions", () => {
