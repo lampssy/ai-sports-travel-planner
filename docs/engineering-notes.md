@@ -117,9 +117,9 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   baseline period, and model version.
 - Search should prefer the derived climatology table for future trip windows and
   only fall back to raw archive rows when climatology is missing.
-- The primary planning baseline is a WMO-style 30-year normal. A recent 15-year
-  baseline can nudge the score, but should not replace the normal unless the
-  planning policy is deliberately changed.
+- The primary planning baseline is a WMO-style 30-year normal. Search V4 uses
+  the recent 15-year baseline only when that normal is unavailable; it does not
+  apply a hidden recent-period adjustment to the displayed normal.
 - Physical snowpack models such as SNOWPACK, Crocus, and S2M-style chains are
   reference architectures for future upgrades, not current Snowcast
   implementation claims.
@@ -363,6 +363,13 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   provider's snow-depth state is primary; snowfall and rain/thaw are bounded
   surface-condition modifiers, with policy curves anchored by ski-reliability
   research and validated through named scenarios.
+- Historical reliability is calculated from median snow depth, the probability
+  of reaching 30 cm and 50 cm, and one maximum-composed rain/freeze-thaw risk.
+  Historical snowfall and average maximum temperature remain explanation data;
+  fresh-snow likelihood belongs to a separate future powder preference.
+- Snow assessment and forecast applicability are separate backend-owned states.
+  In particular, `not_yet_available` beyond the forecast horizon is neutral
+  context and cannot be promoted to a customer-facing snow concern by React.
 - Canonical decisions live in `docs/search-ranking-model.md`, the trip-window
   forecast evidence spec, and ADR 0013.
 

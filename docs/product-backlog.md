@@ -788,6 +788,79 @@ Promotion trigger:
   longer-range trip planning or operational terrain availability becomes a
   repeated recommendation-quality gap.
 
+### Public Pages Snow Model And Experience Refresh
+
+Status: candidate
+Area: Public Pages; Planning / Ranking; Content; UI / UX
+Source: Search V4 climatology-reliability refinement
+
+Why it matters:
+
+- Public destination calendar pages still use the legacy planning heuristic and
+  forecast-window weights rather than the active Search V4 snow model.
+- Internal model docs now mark that path as legacy, but the public-facing snow
+  explanation still needs to move with the product surface.
+- Keeping two snow calculations and two presentation paths invites policy,
+  terminology, and trust drift.
+
+Potential scope:
+
+- Refresh public-facing snow-model documentation and keep internal model docs
+  aligned as the legacy path is retired.
+- Decide whether public calendar pages should consume the Search V4
+  climatology-reliability evaluator or a deliberately separate public summary
+  projection built from the same policy-owned evidence.
+- Replace or retire the legacy public-page snow-outlook calculation only after
+  its current route and SEO responsibilities are understood.
+- Refresh the public-page UI and language around historical snow reliability,
+  forecast applicability, evidence coverage, and limitations.
+
+Not now:
+
+- Do not mix public-page migration into the focused Search V4 climatology-v2
+  correction.
+- Do not silently change public SEO claims or calendar output without Growth / SEO,
+  Data Trust, Content / Language, and Accessibility review.
+
+Promotion trigger:
+
+- Promote when public destination pages become an active product surface or
+  duplicated snow-policy behavior causes another correctness or language gap.
+
+### Historical Fresh-Snow And Powder Likelihood
+
+Status: idea
+Area: Planning / Ranking; Weather Evidence; Ski Experience
+Source: Search V4 climatology-reliability refinement
+
+Why it matters:
+
+- Historical average daily snowfall cannot distinguish frequent small refreshes
+  from rare large storms and should not dominate general snow reliability.
+- Skiers who explicitly prefer powder or fresh snow need a separate answer from
+  whether established snow depth is historically reliable.
+
+Potential scope:
+
+- Derive source-aware probabilities such as at least 5 cm in one day, at least
+  15 cm over three days, or the likelihood of an extended dry spell.
+- Evaluate whether the signal belongs to a powder/freeride preference factor or
+  an explanation-only snow-quality profile.
+- Keep the factor inactive until evidence coverage, normalization, and
+  correlation with freeride preferences are reviewed.
+
+Not now:
+
+- Do not use average daily snowfall as an unconditional climatology-reliability
+  bonus.
+- Do not infer powder quality, avalanche safety, or off-piste suitability from
+  snowfall alone.
+
+Promotion trigger:
+
+- Promote when users can express a powder/fresh-snow preference and historical
+  snowfall probabilities have sufficient coverage for honest comparison.
+
 ### Freezing-Level Forecast Enrichment
 
 Status: idea

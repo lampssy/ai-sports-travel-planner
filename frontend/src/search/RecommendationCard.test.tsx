@@ -72,6 +72,11 @@ function candidate(
     },
     ranking_status: "ranked",
     fit_score: id === "primary" ? 94.8 : 91.2,
+    snow_assessment: {
+      state: "not_assessed",
+      reason: "not_assessed",
+      forecast_status: "not_applicable",
+    },
     groups: [
       {
         group_id: "ski_experience",
@@ -253,6 +258,50 @@ describe("RecommendationCard", () => {
     ).toHaveAccessibleName(
       /add travel dates to assess snow fit: not assessed/i,
     );
+  });
+
+  test("presents a far-future strong result as historical with neutral forecast context", () => {
+    const snowCandidate = {
+      ...primary,
+      snow_assessment: {
+        state: "strong_fit" as const,
+        reason: "strong_snow_reliability" as const,
+        forecast_status: "not_yet_available" as const,
+      },
+      factors: [
+        ...primary.factors,
+        {
+          factor_id: "trip_window_snow_fit" as const,
+          group_id: "trip_viability",
+          direction: "prefer" as const,
+          raw_value: null,
+          raw_utility: 0.9,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.9,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Historical snow evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    };
+    const snowResult = { ...result, top_configuration: snowCandidate };
+
+    render(
+      <StatefulCard
+        recommendation={snowResult}
+        travelWindow={{ start_date: "2027-12-10", end_date: "2027-12-17" }}
+      />,
+    );
+
+    expect(screen.getAllByText("Strong historical fit").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("A trip-specific forecast is not available yet."),
+    ).toBeVisible();
+    expect(screen.queryByText(/some concerns/i)).toBeNull();
   });
 
   test("uses fit comparison unavailable in the unscored card control name", () => {

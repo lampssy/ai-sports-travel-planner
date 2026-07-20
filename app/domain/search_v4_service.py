@@ -70,11 +70,15 @@ from app.domain.search_factors.static import (
     select_matching_pass_price,
 )
 from app.domain.search_factors.weather import (
+    ForecastApplicabilityStatus,
+    SnowAssessmentReason,
+    SnowAssessmentState,
     WeatherEvaluationContext,
     WeatherFactorCandidate,
     build_weather_factor_registry,
 )
 from app.domain.search_intent_policy import (
+    SearchIntentPolicyError,
     validate_search_intent,
 )
 from app.domain.search_policy import SearchPolicy, load_search_policy
@@ -226,6 +230,49 @@ class SearchV4PassSummary(_SearchV4Model):
     price: SearchV4PassPriceSummary | None
 
 
+class SearchV4SnowAssessment(_SearchV4Model):
+    state: SnowAssessmentState
+    reason: SnowAssessmentReason
+    forecast_status: ForecastApplicabilityStatus
+
+    @model_validator(mode="after")
+    def require_reason_matching_state(self) -> Self:
+        canonical_reason: dict[SnowAssessmentState, SnowAssessmentReason] = {
+            "not_assessed": "not_assessed",
+            "not_enough_evidence": "insufficient_date_coverage",
+            "strong_fit": "strong_snow_reliability",
+            "some_concerns": "mixed_snow_signals",
+        }
+        concern_reasons = {
+            "marginal_historical_depth",
+            "inconsistent_historical_depth",
+            "historical_rain_or_thaw_risk",
+            "weaker_forecast_outlook",
+            "limited_historical_context",
+            "mixed_snow_signals",
+        }
+        valid = (
+            self.reason in concern_reasons
+            if self.state == "some_concerns"
+            else self.reason == canonical_reason[self.state]
+        )
+        if not valid:
+            raise ValueError("snow assessment reason must match state")
+        forecast_dependent_reasons = {
+            "limited_historical_context",
+            "weaker_forecast_outlook",
+        }
+        if self.reason in forecast_dependent_reasons and self.forecast_status not in {
+            "available",
+            "partial",
+        }:
+            raise ValueError(
+                "forecast-dependent snow assessment reason requires usable "
+                "forecast evidence"
+            )
+        return self
+
+
 class SearchV4Configuration(_SearchV4Model):
     candidate_id: str
     ski_region_id: str
@@ -240,6 +287,7 @@ class SearchV4Configuration(_SearchV4Model):
     access: SearchV4AccessSummary
     selected_pass: SearchV4PassSummary
     lodging_estimate: CandidateLodgingEstimate | None
+    snow_assessment: SearchV4SnowAssessment
     ranking_status: Literal["ranked", "unscored"]
     fit_score: float | None = Field(default=None, ge=0, le=100)
     groups: tuple[GroupScoreBreakdown, ...] = ()
@@ -473,15 +521,27 @@ def get_search_weather_evidence(
 ) -> SearchWeatherEvidenceResponse:
     selected_policy = policy or load_search_policy()
     validate_search_intent(intent, selected_policy)
+    search_reference_time = reference_time or datetime.now(UTC)
+    if (
+        search_reference_time.tzinfo is None
+        or search_reference_time.utcoffset() is None
+    ):
+        raise ValueError("reference_time must be timezone-aware")
+    window = intent.constraints.travel_window
+    if (
+        window is not None
+        and window.mode == "exact_dates"
+        and window.end_date is not None
+        and window.end_date < search_reference_time.date()
+    ):
+        raise SearchIntentPolicyError("exact travel dates cannot be in the past")
     snapshot = catalog_snapshot or CatalogRepository().get_snapshot()
     manifest = trust_manifest or _load_trust_manifest(DEFAULT_TRUST_MANIFEST_PATH)
     manifest.validate_against_catalog(snapshot)
     if ski_area_id not in {area.ski_area_id for area in snapshot.ski_areas}:
         raise UnknownSearchWeatherAreaError(ski_area_id)
 
-    evaluated_at = reference_time or datetime.now(UTC)
-    if evaluated_at.tzinfo is None or evaluated_at.utcoffset() is None:
-        raise ValueError("reference_time must be timezone-aware")
+    evaluated_at = search_reference_time
     cache_valid_until = evaluated_at + timedelta(minutes=5)
     window = intent.constraints.travel_window
     if window is None:
@@ -507,6 +567,7 @@ def get_search_weather_evidence(
     context = WeatherEvaluationContext(
         intent=intent,
         policy=selected_policy,
+        reference_date=evaluated_at.date(),
         stale_run_ids=stale_run_ids,
     )
     candidate = WeatherFactorCandidate(
@@ -730,6 +791,20 @@ def _evaluate_search(
 
     selected_policy = policy or load_search_policy()
     validate_search_intent(intent, selected_policy)
+    search_reference_time = reference_time or datetime.now(UTC)
+    if (
+        search_reference_time.tzinfo is None
+        or search_reference_time.utcoffset() is None
+    ):
+        raise ValueError("reference_time must be timezone-aware")
+    window = intent.constraints.travel_window
+    if (
+        window is not None
+        and window.mode == "exact_dates"
+        and window.end_date is not None
+        and window.end_date < search_reference_time.date()
+    ):
+        raise SearchIntentPolicyError("exact travel dates cannot be in the past")
     snapshot = catalog_snapshot or CatalogRepository().get_snapshot()
     manifest = trust_manifest or _load_trust_manifest(DEFAULT_TRUST_MANIFEST_PATH)
     manifest.validate_against_catalog(snapshot)
@@ -822,12 +897,6 @@ def _evaluate_search(
     area_ids = tuple(
         sorted({record.ski_area.ski_area_id for record in eligible_records})
     )
-    search_reference_time = reference_time or datetime.now(UTC)
-    if (
-        search_reference_time.tzinfo is None
-        or search_reference_time.utcoffset() is None
-    ):
-        raise ValueError("reference_time must be timezone-aware")
     with search_phase(phase="weather_preload", intent=intent):
         climate_by_area, forecast_by_area, stale_run_ids = _load_weather_evidence(
             intent=intent,
@@ -842,10 +911,12 @@ def _evaluate_search(
     weather_context = WeatherEvaluationContext(
         intent=intent,
         policy=selected_policy,
+        reference_date=search_reference_time.date(),
         stale_run_ids=stale_run_ids,
     )
     weather_replay_context_template = WeatherEvaluationReplayContextTemplate(
         policy=weather_context.policy,
+        reference_date=weather_context.reference_date,
         stale_run_ids=weather_context.stale_run_ids,
     )
     weather_registry = build_weather_factor_registry()
@@ -1779,11 +1850,73 @@ def _configuration(
             manifest=manifest,
         ),
         lodging_estimate=record.constraint_facts.lodging,
+        snow_assessment=_snow_assessment(item.evaluations),
         ranking_status="ranked" if isinstance(ranking, RankedScore) else "unscored",
         fit_score=ranking.fit_score if isinstance(ranking, RankedScore) else None,
         groups=ranking.groups if isinstance(ranking, RankedScore) else (),
         factors=ranking.factors if isinstance(ranking, RankedScore) else (),
         constraint_warnings=item.constraint_decision.warnings,
+    )
+
+
+def _snow_assessment(
+    evaluations: Sequence[FactorEvaluation],
+) -> SearchV4SnowAssessment:
+    snow = next(
+        (
+            evaluation
+            for evaluation in evaluations
+            if evaluation.factor_id == "trip_window_snow_fit"
+        ),
+        None,
+    )
+    if snow is None or not isinstance(snow.raw_value, Mapping):
+        return SearchV4SnowAssessment(
+            state="not_assessed",
+            reason="not_assessed",
+            forecast_status="not_applicable",
+        )
+    state = snow.raw_value.get("assessment_state")
+    reason = snow.raw_value.get("assessment_reason")
+    forecast_status = snow.raw_value.get("forecast_status")
+    if state not in {
+        "not_assessed",
+        "strong_fit",
+        "some_concerns",
+        "not_enough_evidence",
+    }:
+        state = "not_enough_evidence"
+    if forecast_status not in {
+        "not_applicable",
+        "not_yet_available",
+        "available",
+        "partial",
+        "unexpectedly_unavailable",
+    }:
+        forecast_status = "not_applicable"
+    concern_reasons: set[str] = {
+        "marginal_historical_depth",
+        "inconsistent_historical_depth",
+        "historical_rain_or_thaw_risk",
+        "weaker_forecast_outlook",
+        "limited_historical_context",
+        "mixed_snow_signals",
+    }
+    canonical_reason = {
+        "not_assessed": "not_assessed",
+        "not_enough_evidence": "insufficient_date_coverage",
+        "strong_fit": "strong_snow_reliability",
+        "some_concerns": "mixed_snow_signals",
+    }[state]
+    reason = (
+        reason
+        if state == "some_concerns" and reason in concern_reasons
+        else canonical_reason
+    )
+    return SearchV4SnowAssessment(
+        state=state,
+        reason=reason,
+        forecast_status=forecast_status,
     )
 
 

@@ -94,6 +94,11 @@ function configuration(
     },
     ranking_status: "ranked",
     fit_score: 82.4,
+    snow_assessment: {
+      state: "not_assessed",
+      reason: "not_assessed",
+      forecast_status: "not_applicable",
+    },
     groups: [],
     factors: [],
     constraint_warnings: [],
@@ -272,77 +277,298 @@ describe("trip essentials", () => {
 
 describe("snow fit label", () => {
   test.each([
-    [undefined, "Not enough evidence"],
-    [
-      {
-        factor_id: "trip_window_snow_fit",
-        group_id: "trip_viability",
-        direction: "prefer",
-        raw_value: null,
-        raw_utility: 0.9,
-        neutral_utility: 0.5,
-        effective_evidence_cap: 1,
-        effective_utility: 0.75,
-        effective_weight: 1,
-        contribution_points: 10,
-        evidence_cap_components: {},
-        warnings: [],
-        provenance_summary: "Historical evidence.",
-        explanation_inputs: {},
-      },
-      "Strong fit",
-    ],
-    [
-      {
-        factor_id: "trip_window_snow_fit",
-        group_id: "trip_viability",
-        direction: "prefer",
-        raw_value: null,
-        raw_utility: 0.4,
-        neutral_utility: 0.5,
-        effective_evidence_cap: 1,
-        effective_utility: 0.4,
-        effective_weight: 1,
-        contribution_points: -4,
-        evidence_cap_components: {},
-        warnings: [],
-        provenance_summary: "Historical evidence.",
-        explanation_inputs: {},
-      },
-      "Some concerns",
-    ],
-    [
-      {
-        factor_id: "trip_window_snow_fit",
-        group_id: "trip_viability",
-        direction: "prefer",
-        raw_value: null,
-        raw_utility: 0.8,
-        neutral_utility: 0.5,
-        effective_evidence_cap: 0,
-        effective_utility: 0.8,
-        effective_weight: 1,
-        contribution_points: 0,
-        evidence_cap_components: {},
-        warnings: ["No archive data"],
-        provenance_summary: "No evidence.",
-        explanation_inputs: {},
-      },
-      "Not enough evidence",
-    ],
-  ] as const)("uses %s for the canonical public snow state", (factor, expected) => {
-    const factors = factor
-      ? [
+    ["strong_fit", "not_yet_available", "Strong historical fit"],
+    ["strong_fit", "available", "Strong fit"],
+    ["some_concerns", "available", "Some concerns"],
+    ["not_enough_evidence", "unexpectedly_unavailable", "Not enough evidence"],
+    ["not_assessed", "not_applicable", "Not assessed"],
+  ] as const)(
+    "uses backend snow assessment state %s instead of recalculating it",
+    (state, forecastStatus, expected) => {
+      const candidate = {
+        ...configuration(`snow-${state}`),
+        snow_assessment: {
+          state,
+          reason:
+            state === "strong_fit"
+              ? "strong_snow_reliability"
+              : state === "some_concerns"
+                ? "mixed_snow_signals"
+                : state === "not_enough_evidence"
+                  ? "insufficient_date_coverage"
+                  : "not_assessed",
+          forecast_status: forecastStatus,
+        },
+        factors: [
           {
-            ...factor,
-            evidence_cap_components: { ...factor.evidence_cap_components },
-            warnings: [...factor.warnings],
-            explanation_inputs: { ...factor.explanation_inputs },
+            factor_id: "trip_window_snow_fit",
+            group_id: "trip_viability",
+            direction: "prefer",
+            raw_value: null,
+            raw_utility: state === "strong_fit" ? 0.1 : 0.99,
+            neutral_utility: 0.5,
+            effective_evidence_cap: state === "not_enough_evidence" ? 1 : 0,
+            effective_utility: state === "strong_fit" ? 0.1 : 0.99,
+            effective_weight: 1,
+            contribution_points: 0,
+            evidence_cap_components: {},
+            warnings:
+              forecastStatus === "not_yet_available"
+                ? ["Forecast unavailable"]
+                : [],
+            provenance_summary: "Historical evidence.",
+            explanation_inputs: {},
           },
-        ]
-      : [];
-    expect(snowFitLabel(configuration("snow", { factors }))).toBe(expected);
+        ],
+      } as SearchV4Configuration & {
+        snow_assessment: {
+          state: typeof state;
+          reason:
+            | "not_assessed"
+            | "insufficient_date_coverage"
+            | "strong_snow_reliability"
+            | "mixed_snow_signals";
+          forecast_status: typeof forecastStatus;
+        };
+      };
+
+      expect(snowFitLabel(candidate)).toBe(expected);
+    },
+  );
+
+  test("keeps a future forecast that is not available yet neutral", () => {
+    const candidate = {
+      ...configuration("future-snow"),
+      snow_assessment: {
+        state: "strong_fit" as const,
+        reason: "strong_snow_reliability" as const,
+        forecast_status: "not_yet_available" as const,
+      },
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer" as const,
+          raw_value: null,
+          raw_utility: 0.9,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.9,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: ["Forecast unavailable"],
+          provenance_summary: "Historical evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    } as SearchV4Configuration & {
+      snow_assessment: {
+        state: "strong_fit";
+        reason: "strong_snow_reliability";
+        forecast_status: "not_yet_available";
+      };
+    };
+
+    expect(
+      buildCandidateNarrative(candidate, {
+        start_date: "2027-12-10",
+        end_date: "2027-12-17",
+      }),
+    ).toEqual({
+      verdict: "Strong snow fit for your dates.",
+      strength:
+        "Snow fit for your dates: Historical snow patterns strongly support this travel window. A trip-specific forecast is not available yet.",
+    });
+    expect(
+      decisionEvidencePresentation(candidate, {
+        start_date: "2027-12-10",
+        end_date: "2027-12-17",
+      }).uncertainties,
+    ).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "snow-window" }),
+      ]),
+    );
+
+    const missingForecastCandidate = {
+      ...candidate,
+      snow_assessment: {
+        ...candidate.snow_assessment,
+        forecast_status: "unexpectedly_unavailable" as const,
+      },
+    };
+    expect(
+      buildCandidateNarrative(missingForecastCandidate, {
+        start_date: "2027-01-10",
+        end_date: "2027-01-17",
+      }).strength,
+    ).toBe(
+      "Snow fit for your dates: Historical snow patterns strongly support this travel window. A forecast should be available for these dates, but usable forecast data is missing.",
+    );
   });
+
+  test("does not claim historical support when a strong fit can be forecast-only", () => {
+    const candidate = {
+      ...configuration("forecast-only-snow"),
+      snow_assessment: {
+        state: "strong_fit" as const,
+        reason: "strong_snow_reliability" as const,
+        forecast_status: "available" as const,
+      },
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer" as const,
+          raw_value: null,
+          raw_utility: 0.9,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.9,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Forecast evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    };
+
+    expect(
+      buildCandidateNarrative(candidate, {
+        start_date: "2027-01-10",
+        end_date: "2027-01-17",
+      }).strength,
+    ).toBe(
+      "Snow fit for your dates: Available snow evidence strongly supports this travel window.",
+    );
+  });
+
+  test("presents backend snow concerns even without a warning", () => {
+    const candidate = {
+      ...configuration("snow-concerns"),
+      snow_assessment: {
+        state: "some_concerns" as const,
+        reason: "historical_rain_or_thaw_risk" as const,
+        forecast_status: "available" as const,
+      },
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: 0.7,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.7,
+          effective_weight: 1,
+          contribution_points: 5,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Historical evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    } as SearchV4Configuration & {
+      snow_assessment: {
+        state: "some_concerns";
+        reason: "historical_rain_or_thaw_risk";
+        forecast_status: "available";
+      };
+    };
+
+    expect(
+      buildCandidateNarrative(candidate, {
+        start_date: "2026-12-10",
+        end_date: "2026-12-17",
+      }),
+    ).toEqual({
+      verdict: "A complete trip option for comparison.",
+      watchout:
+        "Snow fit for your dates: Historical rain or thaw risk reduces snow reliability for these dates.",
+      watchoutEvidenceId: "snow-window",
+    });
+  });
+
+  test("explains a forecast-only concern without inventing mixed evidence", () => {
+    const candidate = {
+      ...configuration("forecast-only-concern"),
+      snow_assessment: {
+        state: "some_concerns" as const,
+        reason: "limited_historical_context" as const,
+        forecast_status: "available" as const,
+      },
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer" as const,
+          raw_value: null,
+          raw_utility: 0.74,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.74,
+          effective_weight: 1,
+          contribution_points: 5,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Forecast evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    };
+
+    expect(
+      buildCandidateNarrative(candidate, {
+        start_date: "2027-01-10",
+        end_date: "2027-01-17",
+      }).watchout,
+    ).toBe(
+      "Snow fit for your dates: Historical snow context is unavailable, so this result relies on the forecast.",
+    );
+  });
+
+  test("describes a weak forecast without inventing a historical comparison", () => {
+    const candidate = {
+      ...configuration("weak-forecast-only"),
+      snow_assessment: {
+        state: "some_concerns" as const,
+        reason: "weaker_forecast_outlook" as const,
+        forecast_status: "available" as const,
+      },
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer" as const,
+          raw_value: null,
+          raw_utility: 0.42,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.42,
+          effective_weight: 1,
+          contribution_points: -3,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Forecast evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    };
+
+    expect(
+      buildCandidateNarrative(candidate, {
+        start_date: "2027-01-10",
+        end_date: "2027-01-17",
+      }).watchout,
+    ).toBe(
+      "Snow fit for your dates: The forecast snowpack outlook is less suitable for these dates.",
+    );
+  });
+
 });
 
 describe("snow fit presentation", () => {
@@ -356,7 +582,18 @@ describe("snow fit presentation", () => {
     [undefined, "Add travel dates to assess snow fit", "Not assessed"],
   ] as const)("uses the applied travel window %o", (travelWindow, label, value) => {
     expect(
-      snowFitPresentation(configuration("snow"), travelWindow),
+      snowFitPresentation(
+        configuration("snow", {
+          snow_assessment: {
+            state: travelWindow ? "not_enough_evidence" : "not_assessed",
+            reason: travelWindow
+              ? "insufficient_date_coverage"
+              : "not_assessed",
+            forecast_status: "not_applicable",
+          },
+        }),
+        travelWindow,
+      ),
     ).toEqual({ label, value });
   });
 
@@ -649,6 +886,11 @@ describe("deterministic recommendation copy", () => {
     "uses %s in a snow-led narrative",
     (travelWindow, snowLabel, expectedVerdict) => {
       const candidate = configuration("supported-snow-narrative", {
+        snow_assessment: {
+          state: "strong_fit",
+          reason: "strong_snow_reliability",
+          forecast_status: "not_applicable",
+        },
         factors: [
           {
             factor_id: "trip_window_snow_fit",
@@ -671,7 +913,7 @@ describe("deterministic recommendation copy", () => {
 
       expect(buildCandidateNarrative(candidate, travelWindow)).toEqual({
         verdict: expectedVerdict,
-        strength: `${snowLabel}: Available snow evidence supports this travel window.`,
+        strength: `${snowLabel}: Historical snow patterns strongly support this travel window.`,
       });
     },
   );
@@ -905,6 +1147,11 @@ describe("deterministic recommendation copy", () => {
 describe("why this trip presentation", () => {
   test("builds bounded traveller-facing support without exposing internal provenance", () => {
     const candidate = configuration("why", {
+      snow_assessment: {
+        state: "strong_fit",
+        reason: "strong_snow_reliability",
+        forecast_status: "not_applicable",
+      },
       factors: [
         {
           factor_id: "trip_window_snow_fit",
@@ -967,6 +1214,11 @@ describe("why this trip presentation", () => {
         price: null,
       },
       lodging_estimate: null,
+      snow_assessment: {
+        state: "not_enough_evidence",
+        reason: "insufficient_date_coverage",
+        forecast_status: "not_applicable",
+      },
       factors: [
         {
           factor_id: "trip_window_snow_fit",
@@ -1048,6 +1300,7 @@ describe("weather evidence presentation", () => {
       cache_valid_until: "2026-07-16T13:00:00Z",
       evidence: {
         mode: "climatology",
+        forecast_status: "not_applicable",
         window_label: "March",
         elevation_band: "mid_mountain",
         elevation_m: 2400,
@@ -1081,6 +1334,8 @@ describe("weather evidence presentation", () => {
           snow_depth_cm_p50: 128,
           snow_depth_cm_p75: 176,
           probability_snow_depth_ge_30cm: 0.87,
+          probability_snow_depth_ge_50cm: 0.72,
+          average_deterioration_risk: 0.18,
           average_daily_snowfall_cm: 4.2,
           average_max_temperature_c: -2.1,
           daily_profile: [
@@ -1113,11 +1368,25 @@ describe("weather evidence presentation", () => {
       sourceCurrency: "Archive through 2024; 1995-2024 baseline",
       coverage: "30 historical seasons; 1 profile date",
       expectedConditions:
-        "Typical historical snow depth 128 cm; typical fresh snow 4.2 cm/day; average high -2.1 °C",
+        "Typical historical snow depth 128 cm; average historical snowfall 4.2 cm/day; average high -2.1 °C",
       mainLimitation: "Historical patterns do not predict exact trip conditions.",
     });
     expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
     expect(JSON.stringify(presentation)).not.toContain(response.cache_valid_until);
+
+  });
+
+  test("presents a future forecast as neutral context instead of a concern", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      forecast_status: "not_yet_available",
+      limitations: ["No up-to-date forecast is available for requested dates."],
+    };
+
+    expect(weatherEvidencePresentation(response).mainLimitation).toBe(
+      "A trip-specific forecast is not available yet.",
+    );
   });
 
   test("derives mixed historical timing and coverage from source rows", () => {
@@ -1125,7 +1394,7 @@ describe("weather evidence presentation", () => {
     response.evidence = {
       ...response.evidence,
       historical: {
-        ...response.evidence.historical,
+        ...response.evidence.historical!,
         baseline_start_year: null,
         baseline_end_year: null,
         evidence_seasons: null,
@@ -1133,14 +1402,14 @@ describe("weather evidence presentation", () => {
         provenance_status: "mixed",
         sources: [
           {
-            ...response.evidence.historical.sources[0],
+            ...response.evidence.historical!.sources[0],
             baseline_start_year: 1995,
             baseline_end_year: 2024,
             evidence_seasons: 30,
             latest_archive_year: 2024,
           },
           {
-            ...response.evidence.historical.sources[0],
+            ...response.evidence.historical!.sources[0],
             baseline_period: "recent_15y",
             baseline_start_year: 2009,
             baseline_end_year: 2023,
@@ -1162,6 +1431,7 @@ describe("weather evidence presentation", () => {
     response.evidence = {
       ...response.evidence,
       mode: "forecast_assisted",
+      forecast_status: "partial",
       forecast: {
         source_label: "Open-Meteo forecast",
         source_model: "best_match",
@@ -1196,13 +1466,43 @@ describe("weather evidence presentation", () => {
       sourceType: "Forecast and historical pattern",
       sourceCurrency:
         "Forecast issued Jul 16, 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline",
-      coverage: "2 of 3 requested dates have forecast values; 30 historical seasons",
+      coverage:
+        "2 of 3 forecast-applicable dates have forecast values; 30 historical seasons",
       expectedConditions:
         "Forecast fresh snow 7.4 cm; forecast temperature range -7 to -1 °C; typical historical snow depth 128 cm",
-      mainLimitation: "Forecast values are unavailable for 1 of 3 requested dates.",
+      mainLimitation:
+        "Forecast values are unavailable for 1 of 3 forecast-applicable dates.",
     });
     expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
     expect(JSON.stringify(presentation)).not.toContain(response.cache_valid_until);
+
+    const crossingHorizon = structuredClone(response);
+    crossingHorizon.evidence.forecast_status = "available";
+    crossingHorizon.evidence.limitations = [
+      "5 later requested days are beyond the active 30-day forecast horizon.",
+    ];
+    crossingHorizon.evidence.forecast!.coverage_status = "complete";
+    crossingHorizon.evidence.forecast!.requested_date_count = 2;
+
+    expect(weatherEvidencePresentation(crossingHorizon)).toMatchObject({
+      coverage:
+        "2 of 2 forecast-applicable dates have forecast values; 30 historical seasons",
+      mainLimitation:
+        "5 later requested days are beyond the active 30-day forecast horizon.",
+    });
+
+    const partialCrossingHorizon = structuredClone(response);
+    partialCrossingHorizon.evidence.limitations = [
+      "Up-to-date forecast coverage is available for 2 of 3 forecast-applicable days.",
+      "5 later requested days are beyond the active 30-day forecast horizon.",
+    ];
+
+    expect(weatherEvidencePresentation(partialCrossingHorizon)).toMatchObject({
+      coverage:
+        "2 of 3 forecast-applicable dates have forecast values; 30 historical seasons",
+      mainLimitation:
+        "Forecast values are unavailable for 1 of 3 forecast-applicable dates.",
+    });
   });
 
   test("promotes mixed forecast provenance at one elevation to the main limitation", () => {
@@ -1236,7 +1536,7 @@ describe("weather evidence presentation", () => {
       ...response.evidence,
       limitations: ["Historical coverage is incomplete."],
       historical: {
-        ...response.evidence.historical,
+        ...response.evidence.historical!,
         provenance_status: "mixed",
       },
     };
@@ -1254,7 +1554,7 @@ describe("weather evidence presentation", () => {
       elevation_status: "mixed",
       limitations: ["Historical coverage is incomplete."],
       historical: {
-        ...response.evidence.historical,
+        ...response.evidence.historical!,
         provenance_status: "mixed",
       },
     };

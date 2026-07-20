@@ -94,6 +94,10 @@ export function RecommendationCard({
           <span>
             <strong>{snowFit.value}</strong>
             <small>{snowFit.label}</small>
+            {configuration.snow_assessment.forecast_status ===
+            "not_yet_available" ? (
+              <small>A trip-specific forecast is not available yet.</small>
+            ) : null}
           </span>
         </span>
         <button

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: accepted design; not implemented
+- Status: implemented, including climatology reliability v2
 - Owner: solo-builder
 - Related docs:
   - `docs/search-ranking-model.md`
@@ -41,6 +41,10 @@ In scope:
 - one bulk indexed query for the candidate ski areas and requested dates;
 - a per-ski-day forecast/climatology composition with lead-time uncertainty and
   valid-date coverage;
+- a source-aware climatology reliability utility derived directly from stored
+  historical snow-depth and deterioration statistics;
+- typed snow-assessment and forecast-applicability states for deterministic
+  user-facing presentation;
 - sufficient sampled run history for later forecast-versus-observation
   calibration;
 - freshness, partial-coverage, failure, and uncertainty semantics;
@@ -124,9 +128,27 @@ climatology. A prediction for a valid date is not an observation of that date.
     forecast-versus-observation study before activation;
   - activate the factor with the completed forecast implementation rather than
     shipping a diagnostic-only production phase.
-- Developer Decision Checkpoints still required before activation: none for
-  this forecast-evidence slice.
+  - replace the legacy averaged snow-confidence score in Search V4 with a
+    policy-owned climatology reliability equation using median snow depth,
+    probabilities of reaching 30 cm and 50 cm, and the maximum of historical
+    rain and freeze-thaw probability;
+  - keep historical average daily snowfall and average maximum temperature as
+    explanation evidence rather than independent climatology-utility terms;
+  - reserve a separate future powder-likelihood factor for source-backed fresh
+    snowfall probabilities rather than overloading snow reliability;
+  - distinguish forecast evidence that is not yet applicable from unexpectedly
+    missing in-horizon evidence, and never turn expected long-range absence into
+    a customer-facing concern;
+  - make the backend own the canonical snow-assessment state instead of having
+    the frontend infer it independently from warnings and a duplicated score
+    threshold;
+  - defer unifying the legacy public-page planning calculation and UI to the
+    product backlog.
+- Developer Decision Checkpoints still required before activation: none.
 - ADR status: ADR 0013 accepted
+- ADR status for climatology reliability v2: no new ADR required because the
+  existing evidence ownership, persistence, request-path composition, and
+  forecast-run architecture remain unchanged.
 - Advisory design review: completed on 2026-07-13; no Blocker or High findings
   remained after clarifying daily lead-time timezone semantics, partial-area
   head publication, request-path query shape, trust boundaries, and telemetry
@@ -174,6 +196,93 @@ day counts; partial archive coverage cannot masquerade as complete evidence.
 A `17–30` day contribution is possible only when an eligible long-range or
 ensemble source covers the exact date. If no such evidence exists, date
 coverage is zero and the day is fully climatological.
+
+## Climatology Reliability Policy
+
+Search V4 computes one normalized climatology utility for each recurring local
+ski date from the selected mid-mountain normal row. The version-two policy uses
+statistics already stored in `ski_area_snow_climatology_daily`:
+
+```text
+typical_depth_d = depth_curve(snow_depth_cm_p50_d)
+
+depth_reliability_d =
+    0.60 * probability(snow depth >= 30 cm)_d
+  + 0.40 * probability(snow depth >= 50 cm)_d
+
+historical_deterioration_d = max(
+    probability(rain)_d,
+    probability(freeze-thaw)_d
+)
+
+climatology_reliability_d = clamp(
+    0.50 * typical_depth_d
+  + 0.50 * depth_reliability_d
+  - 0.25 * historical_deterioration_d,
+  0,
+  1
+)
+```
+
+The shared depth curve keeps forecast and climatology utilities on a comparable
+physical scale. The forecast outlook describes one modelled future snowpack
+state; climatology reliability describes the historical distribution for the
+recurring date. They are not interchangeable inputs and remain separate pure
+evaluators before the documented lead-time blend.
+
+The p25-p75 snow-depth range, average daily snowfall, average maximum
+temperature, evidence-season count, and archive provenance remain visible
+explanation and evidence-quality inputs. Historical snowfall does not add a
+ranking bonus because established depth already reflects accumulated snowfall
+and a daily mean cannot distinguish frequent refreshes from rare large storms.
+Average maximum temperature likewise does not add a separate penalty because
+depth, rain probability, and freeze-thaw probability already capture the
+decision-relevant historical effect more directly.
+
+The normal 30-year row is the scoring baseline when it exists. The recent
+15-year row is used only as a fallback when the normal is absent; it does not
+silently adjust the displayed normal. Missing median snow depth cannot be
+converted into a positive snow claim. Date coverage and evidence caps continue
+to express whether enough recurring dates were resolved.
+
+## Forecast Applicability And Public Assessment
+
+For exact dates, forecast availability has one typed state:
+
+- `not_yet_available`: every requested date is beyond the maximum active
+  forecast horizon;
+- `available`: every forecast-applicable requested date has usable evidence;
+- `partial`: some forecast-applicable requested dates have usable evidence;
+- `unexpectedly_unavailable`: no forecast-applicable requested date has usable
+  evidence;
+- `not_applicable`: the request is month-only and intentionally climatology-only.
+
+The backend exposes this status consistently on the ranked search configuration
+and detailed weather-evidence response.
+
+The backend also owns the canonical public snow assessment: `not_assessed` when
+no travel window exists, otherwise `strong_fit`, `some_concerns`, or
+`not_enough_evidence`. A snow-quality claim requires resolved evidence for every
+requested exact date or every calendar day represented by a month search; lower
+coverage still scales ranking influence but is presented as
+`not_enough_evidence`. The strong-fit and minimum-coverage thresholds remain
+versioned weather policy and are not duplicated in React. Expected forecast
+absence beyond 30 days is neutral context and cannot create a main concern.
+Partial or unexpectedly unavailable in-horizon evidence remains a visible
+limitation, while its missing forecast share returns to climatology rather than
+becoming a fabricated negative score.
+
+For `some_concerns`, the backend returns a typed primary reason derived from the
+same depth, consistency, deterioration, and forecast inputs used by the score.
+The detailed evidence response exposes the averaged historical deterioration
+risk so a rain/freeze-thaw penalty is not hidden from the user. Exact windows
+entirely before the request reference date are rejected rather than overloading
+the month-only `not_applicable` status.
+
+When accepted forecast evidence exists without historical context, the detailed
+response uses `forecast_only`, keeps historical evidence null, and presents the
+forecast that actually influenced ranking instead of returning a contradictory
+historical-evidence error.
 
 ## Initial Provider And Model Policy
 
@@ -613,6 +722,13 @@ defined by this policy, the Search V4 model, and reviewed golden scenarios.
   observability-ops, performance, product-strategy.
 - Feature reviewers: the same set, narrowed to the implemented provider,
   persistence, serving, and evaluator surfaces.
+- Climatology reliability v2 design review: product-strategy, backend-api,
+  data-trust-source-integrity, and content-language reviewed the accepted
+  formula, forecast-applicability states, backend-owned public assessment, and
+  deferred public-page migration on 2026-07-20. No Blocker or High finding
+  remained after adding `not_assessed`, requiring typed forecast status on both
+  search and weather-evidence responses, and keeping the strong-fit boundary in
+  versioned backend policy.
 - Required design focus: scientific claim boundaries, confidence semantics,
   run publication atomicity, query shape, failure isolation, and telemetry
   cardinality.

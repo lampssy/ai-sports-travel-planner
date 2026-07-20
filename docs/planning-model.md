@@ -91,6 +91,47 @@ The forecast share is a cap. A missing, incomplete, or stale row contributes
 zero forecast coverage, returning that part of the blend to climatology. A
 month-only request has no target dates and is therefore climatology-only.
 
+Forecast absence is classified separately from snow quality. Exact dates more
+than 30 days away use `not_yet_available`; that is expected neutral context,
+not a snow concern. Missing usable evidence inside the forecast horizon uses
+`unexpectedly_unavailable`. The other states are `available`, `partial`, and
+`not_applicable`.
+
+### Climatology Reliability
+
+For one requested calendar day, Search V4 calculates historical reliability
+directly from the displayed climatology distribution:
+
+```text
+typical_depth = depth_curve(snow_depth_cm_p50)
+depth_reliability =
+    0.60 * P(snow depth >= 30 cm)
+  + 0.40 * P(snow depth >= 50 cm)
+historical_deterioration = max(P(rain risk), P(freeze-thaw))
+
+climatology_utility = clamp(
+    0.50 * typical_depth
+  + 0.50 * depth_reliability
+  - 0.25 * historical_deterioration,
+  0,
+  1
+)
+```
+
+The equivalent flattened positive weights are `0.50` for median-depth
+adequacy, `0.30` for the 30 cm probability, and `0.20` for the 50 cm
+probability. Average historical snowfall and average maximum temperature stay
+available for explanation; they do not add independent reliability bonuses.
+Fresh-snow or powder likelihood is a separate future preference rather than a
+hidden part of general historical reliability. A missing median snow depth
+leaves the day unresolved instead of falling back to the legacy empirical
+confidence score.
+
+The detailed evidence view also shows the averaged historical deterioration
+input, using the stronger rain or freeze-thaw probability for each matching
+date. The backend names the largest negative contribution as the primary
+concern reason; the UI does not reconstruct this explanation independently.
+
 ### Forecast Snowpack Outlook
 
 The initial forecast evaluates the representative mid-mountain band. For a
@@ -150,8 +191,10 @@ defined by ADR 0013 and
 
 Derived climatology is read from `ski_area_snow_climatology_daily`, keyed by
 `ski_area_id`, elevation band, baseline, and day of season. Search requests both
-the 30-year normal and recent 15-year baseline in one bulk query. The recent
-baseline adjusts the normal by the configured `0.20` policy weight.
+the 30-year normal and recent 15-year baseline in one bulk query. Search V4 uses
+the normal as its scoring baseline and uses the recent row only when that normal
+is unavailable; there is no hidden recent-period adjustment to the displayed
+normal.
 
 `raw_weather_history` remains the rebuild and audit source for climatology.
 Forecast rows never become historical truth merely by ageing; recent archive

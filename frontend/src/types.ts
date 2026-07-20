@@ -208,6 +208,8 @@ export interface HistoricalWeatherEvidence {
   snow_depth_cm_p50: number | null;
   snow_depth_cm_p75: number | null;
   probability_snow_depth_ge_30cm: number | null;
+  probability_snow_depth_ge_50cm: number | null;
+  average_deterioration_risk: number;
   average_daily_snowfall_cm: number | null;
   average_max_temperature_c: number | null;
   daily_profile: WeatherEvidencePoint[];
@@ -238,14 +240,20 @@ export interface ForecastWeatherEvidence {
 }
 
 export interface SearchWeatherEvidence {
-  mode: "climatology" | "forecast_assisted";
+  mode: "climatology" | "forecast_assisted" | "forecast_only";
+  forecast_status:
+    | "not_applicable"
+    | "not_yet_available"
+    | "available"
+    | "partial"
+    | "unexpectedly_unavailable";
   window_label: string;
   elevation_band: "mid_mountain";
   elevation_m: number | null;
   elevation_status: "exact" | "mixed" | "unavailable";
   interpretation: string;
   limitations: string[];
-  historical: HistoricalWeatherEvidence;
+  historical: HistoricalWeatherEvidence | null;
   forecast: ForecastWeatherEvidence | null;
 }
 
@@ -275,6 +283,29 @@ export interface SearchV4Configuration {
   } | null;
   ranking_status: "ranked" | "unscored";
   fit_score: number | null;
+  snow_assessment: {
+    state:
+      | "not_assessed"
+      | "strong_fit"
+      | "some_concerns"
+      | "not_enough_evidence";
+    reason:
+      | "not_assessed"
+      | "insufficient_date_coverage"
+      | "strong_snow_reliability"
+      | "marginal_historical_depth"
+      | "inconsistent_historical_depth"
+      | "historical_rain_or_thaw_risk"
+      | "weaker_forecast_outlook"
+      | "limited_historical_context"
+      | "mixed_snow_signals";
+    forecast_status:
+      | "not_applicable"
+      | "not_yet_available"
+      | "available"
+      | "partial"
+      | "unexpectedly_unavailable";
+  };
   groups: GroupScoreBreakdown[];
   factors: FactorScoreBreakdown[];
   constraint_warnings: ConstraintIssue[];

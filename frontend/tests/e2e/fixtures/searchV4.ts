@@ -107,6 +107,11 @@ const tignesConfiguration: SearchV4Configuration = {
     trust_status: "estimated",
     provenance: "Catalog lodging range; estimate-aware constraint only.",
   },
+  snow_assessment: {
+    state: "not_enough_evidence",
+    reason: "insufficient_date_coverage",
+    forecast_status: "not_applicable",
+  },
   ranking_status: "ranked",
   fit_score: 82.4,
   groups: [
@@ -241,6 +246,11 @@ const lesArcsConfiguration: SearchV4Configuration = {
     currency: "EUR",
     trust_status: "estimated",
     provenance: "Catalog lodging range; estimate-aware constraint only.",
+  },
+  snow_assessment: {
+    state: "strong_fit",
+    reason: "strong_snow_reliability",
+    forecast_status: "not_applicable",
   },
   ranking_status: "ranked",
   fit_score: 76.8,

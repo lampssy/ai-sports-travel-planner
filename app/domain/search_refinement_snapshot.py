@@ -6,6 +6,7 @@ import time
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
+from datetime import date
 from threading import Event, RLock, Thread
 from typing import Literal, Protocol
 
@@ -91,12 +92,14 @@ class WeatherEvaluationReplayContextTemplate:
     """Intent-free weather evaluator context retained for bounded replay."""
 
     policy: SearchPolicy
+    reference_date: date
     stale_run_ids: frozenset[str]
 
     def materialize(self, intent: SearchIntent) -> WeatherEvaluationContext:
         return WeatherEvaluationContext(
             intent=intent,
             policy=self.policy,
+            reference_date=self.reference_date,
             stale_run_ids=self.stale_run_ids,
         )
 

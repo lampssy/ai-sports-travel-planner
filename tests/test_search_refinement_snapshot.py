@@ -4,6 +4,7 @@ import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import FrozenInstanceError
+from datetime import date
 from types import SimpleNamespace
 from typing import cast
 
@@ -17,6 +18,7 @@ from app.domain.search_refinement_snapshot import (
     RefinementCandidateReplayState,
     RefinementFactorEvaluation,
     SearchRefinementSnapshotStore,
+    WeatherEvaluationReplayContextTemplate,
     canonical_search_intent_digest,
 )
 from app.domain.search_v4_models import SearchIntent
@@ -147,6 +149,22 @@ def test_canonical_intent_digest_is_stable_and_changes_with_intent() -> None:
         canonical_search_intent_digest(SearchIntent(assumptions=("Flexible dates",)))
         != expected
     )
+
+
+def test_weather_replay_preserves_original_reference_date_at_forecast_boundary() -> (
+    None
+):
+    reference_date = date(2027, 1, 1)
+    template = WeatherEvaluationReplayContextTemplate(
+        policy=load_search_policy(),
+        reference_date=reference_date,
+        stale_run_ids=frozenset({"stale-run"}),
+    )
+
+    replay = template.materialize(SearchIntent())
+
+    assert replay.reference_date == reference_date
+    assert replay.stale_run_ids == frozenset({"stale-run"})
 
 
 def test_put_and_get_return_frozen_results_for_a_hit() -> None:

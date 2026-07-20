@@ -53,6 +53,11 @@ function configuration(
     },
     ranking_status: "ranked",
     fit_score: 82,
+    snow_assessment: {
+      state: "not_assessed",
+      reason: "not_assessed",
+      forecast_status: "not_applicable",
+    },
     groups: [],
     factors: [],
     constraint_warnings: [],

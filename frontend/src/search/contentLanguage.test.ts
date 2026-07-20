@@ -78,6 +78,11 @@ function configuration(): SearchV4Configuration {
     lodging_estimate: null,
     ranking_status: "ranked",
     fit_score: 62.9,
+    snow_assessment: {
+      state: "not_assessed",
+      reason: "not_assessed",
+      forecast_status: "not_applicable",
+    },
     groups: [],
     factors: [
       {

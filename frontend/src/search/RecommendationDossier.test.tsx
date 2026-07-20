@@ -99,6 +99,12 @@ function configuration(
     },
     ranking_status: "ranked",
     fit_score: 90 - rank,
+    snow_assessment: {
+      state: rank === 4 ? "some_concerns" : "strong_fit",
+      reason:
+        rank === 4 ? "mixed_snow_signals" : "strong_snow_reliability",
+      forecast_status: "not_applicable",
+    },
     groups: [],
     factors: [
       {
@@ -306,6 +312,11 @@ test("de-duplicates the snow warning between the verdict and remaining uncertain
     effective_evidence_cap: 0,
     warnings: ["Historical evidence is limited."],
   };
+  current.snow_assessment = {
+    state: "not_enough_evidence",
+    reason: "insufficient_date_coverage",
+    forecast_status: "not_applicable",
+  };
 
   render(
     <RecommendationDossier
@@ -435,6 +446,11 @@ test("explains why the trip leads before exposing technical provenance", () => {
       provenance_summary: "Derived daily climatology; exact-date forecast unavailable.",
     },
   ];
+  selected.snow_assessment = {
+    state: "not_enough_evidence",
+    reason: "insufficient_date_coverage",
+    forecast_status: "not_applicable",
+  };
 
   render(
     <RecommendationDossier
@@ -691,7 +707,7 @@ test("navigator and mobile switcher open the selected alternative they display",
       name: /region 2, rank 2, open option/i,
     }),
   ).toHaveAccessibleName(
-    /selected base 2.*88 trip fit.*snow fit for march: strong fit/i,
+    /selected base 2.*88 trip fit.*snow fit for march: strong historical fit/i,
   );
   await user.click(
     within(navigator).getByRole("button", {
