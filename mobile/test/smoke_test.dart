@@ -217,6 +217,14 @@ void main() {
     expect(find.textContaining('configuration'), findsNothing);
     expect(find.textContaining('ranking'), findsNothing);
     expect(find.textContaining('companion'), findsNothing);
+
+    final tripBrief = find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField && widget.decoration?.labelText == 'Trip brief',
+    );
+    expect(find.bySemanticsLabel('Trip brief'), findsOneWidget);
+    await tester.enterText(tripBrief, 'March in France');
+    expect(find.bySemanticsLabel('Trip brief'), findsOneWidget);
   });
 
   testWidgets('mobile search controls reflow at enlarged text scale', (

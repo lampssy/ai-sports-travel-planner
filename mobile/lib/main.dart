@@ -126,13 +126,17 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<bool> handleProtectedFailure(PublicApiException error) async {
-    if (error.code != PublicApiErrorCode.sessionExpired) {
+    final code = error.code;
+    if (code != PublicApiErrorCode.sessionExpired &&
+        code != PublicApiErrorCode.authenticationRequired) {
       return false;
     }
     if (session != null) {
       await sessionStore.clear();
       session = null;
-      errorMessage = PublicCopy.sessionEnded;
+      errorMessage = code == PublicApiErrorCode.sessionExpired
+          ? PublicCopy.sessionEnded
+          : PublicCopy.signInRequired;
       notifyListeners();
     }
     return true;
@@ -464,16 +468,12 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Trip brief',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
                 TextField(
                   controller: _briefController,
                   minLines: 2,
                   maxLines: 3,
                   decoration: const InputDecoration(
+                    labelText: 'Trip brief',
                     hintText:
                         'Cheap March ski trip in France for intermediates, close to the lift.',
                     border: OutlineInputBorder(),
@@ -1103,7 +1103,6 @@ class InlineRecovery extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      liveRegion: true,
       container: true,
       explicitChildNodes: true,
       child: Column(
@@ -1111,6 +1110,7 @@ class InlineRecovery extends StatelessWidget {
         children: [
           Semantics(
             container: true,
+            liveRegion: true,
             child: Text(
               message,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -1121,6 +1121,9 @@ class InlineRecovery extends StatelessWidget {
             button: true,
             label: semanticsLabel,
             excludeSemantics: true,
+            onTap: () {
+              unawaited(onRetry());
+            },
             child: OutlinedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),

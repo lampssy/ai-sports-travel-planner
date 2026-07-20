@@ -97,6 +97,31 @@ void main() {
     },
   );
 
+  testWidgets(
+    'authentication required clears persisted auth and returns to sign-in',
+    (tester) async {
+      final store = InMemorySessionStore();
+      final api = MobileApiClient(
+        baseUrl: 'http://localhost/api',
+        client: MockClient(
+          (request) async => http.Response(
+            '{"error":{"code":"authentication_required"}}',
+            401,
+          ),
+        ),
+      );
+      final auth = await _authController(api, store: store);
+
+      await tester.pumpWidget(SnowcastApp(api: api, authController: auth));
+      await tester.tap(find.text('Current trip').last);
+      await tester.pumpAndSettle();
+
+      expect(await store.read(), isNull);
+      expect(find.text('Sign in to Snowcast'), findsOneWidget);
+      expect(find.text('Sign in to continue.'), findsOneWidget);
+    },
+  );
+
   testWidgets('loads summary and trip updates independently', (tester) async {
     final api = MobileApiClient(
       baseUrl: 'http://localhost/api',
@@ -268,6 +293,25 @@ void main() {
     expect(
       find.bySemanticsLabel('Try marking conditions as reviewed again'),
       findsOneWidget,
+    );
+    expect(
+      tester.getSemantics(
+        find.bySemanticsLabel('Try marking conditions as reviewed again'),
+      ),
+      matchesSemantics(
+        label: 'Try marking conditions as reviewed again',
+        isButton: true,
+        hasTapAction: true,
+      ),
+    );
+    expect(
+      tester.getSemantics(
+        find.text('Your current trip could not be updated. Try again.'),
+      ),
+      matchesSemantics(
+        label: 'Your current trip could not be updated. Try again.',
+        isLiveRegion: true,
+      ),
     );
 
     await tester.tap(

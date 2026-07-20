@@ -4,6 +4,7 @@ class PublicCopy {
   static const appName = 'Snowcast';
   static const signInHeading = 'Sign in to Snowcast';
   static const sessionEnded = 'Your session ended. Sign in again.';
+  static const signInRequired = 'Sign in to continue.';
   static const tripOptions = 'Trip options';
   static const tripOption = 'Trip option';
   static const tripDetails = 'Trip details';
