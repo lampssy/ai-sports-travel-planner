@@ -729,13 +729,13 @@ function supportedVerdict(
   }
   const verdicts: Record<string, string> = {
     party_skill_coverage: "A strong match for your group's skiing level.",
-    terrain_potential_scale: "A strong match for connected terrain.",
-    lift_network_scale: "A strong match for lift-network variety.",
-    glacier_terrain: "A strong match for glacier access.",
+    terrain_potential_scale: "A strong match for wider terrain access.",
+    lift_network_scale: "A strong match for a large lift network.",
+    glacier_terrain: "A strong match for glacier terrain.",
     snowmaking_availability: "A strong match for snowmaking support.",
     pass_price_per_day: "A strong match for lift-pass price.",
     pass_terrain_value: "A strong match for terrain and lift-pass value.",
-    travel_effort: "A strong match for your travel limits.",
+    travel_effort: "A strong match for a shorter or easier journey.",
   };
   return verdicts[factorId] ?? "A strong trip match.";
 }

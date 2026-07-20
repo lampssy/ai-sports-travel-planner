@@ -1440,7 +1440,7 @@ def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:
     )
     assert ski_day.description == "Prefer a quiet place to relax after skiing."
     assert presentation.answer_by_id["ski_day_apres.moderate"].label == (
-        "Some atmosphere"
+        "Social, not party-focused"
     )
     assert presentation.answer_by_id["ski_day_apres.moderate"].description == (
         "Prefer a social atmosphere without a strong party focus."

@@ -526,6 +526,36 @@ describe("deterministic recommendation copy", () => {
     });
   });
 
+  test.each([
+    ["terrain_potential_scale", "A strong match for wider terrain access."],
+    ["lift_network_scale", "A strong match for a large lift network."],
+    ["travel_effort", "A strong match for a shorter or easier journey."],
+    ["glacier_terrain", "A strong match for glacier terrain."],
+  ])("keeps the %s verdict within the measured evidence", (factorId, verdict) => {
+    const candidate = configuration(`verdict-${factorId}`, {
+      factors: [
+        {
+          factor_id: factorId,
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: 0.8,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.8,
+          effective_weight: 1,
+          contribution_points: 8,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Approved source evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(buildCandidateNarrative(candidate).verdict).toBe(verdict);
+  });
+
   test("uses approved factor copy without reading arbitrary factor JSON", () => {
     const candidate = configuration("copy", {
       factors: [

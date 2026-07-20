@@ -461,7 +461,7 @@ factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values
 [[answers]]
 answer_id = "ski_day_apres.moderate"
 factor_id = "ski_day_apres"
-label = "Some atmosphere"
+label = "Social, not party-focused"
 description = "Prefer a social atmosphere without a strong party focus."
 factor_preference_patch = { factor_id = "ski_day_apres", mode = "prefer", values = ["moderate"] }
 
