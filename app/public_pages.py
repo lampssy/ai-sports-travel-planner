@@ -376,7 +376,7 @@ def _render_html(page: PublicDestinationPage) -> str:
     <meta name="twitter:title" content="{_html(title)}" />
     <meta name="twitter:description" content="{_html(description)}" />
     <style>
-      :root {{ --ink: #14202d; --slate: #526174; --frost: #e5f0f2; --alpine: #176b5b; --ember: #d6532f; --paper: #f6f8f7; }}
+      :root {{ --ink: #14202d; --slate: #526174; --frost: #e5f0f2; --alpine: #176b5b; --ember: #b83d1d; --ember-on-dark: #ff8fb1; --paper: #f6f8f7; }}
       * {{ box-sizing: border-box; }}
       body {{ margin: 0; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: var(--paper); }}
       a {{ color: inherit; }}
@@ -390,6 +390,7 @@ def _render_html(page: PublicDestinationPage) -> str:
       .card {{ border: 1px solid #d8e1e4; border-radius: 8px; background: white; padding: 26px; box-shadow: 0 12px 35px rgba(20,32,45,.07); }}
       .hero-main {{ background: #102a43; color: white; }}
       .brand, .eyebrow, .label {{ color: var(--ember); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }}
+      .hero-main .eyebrow {{ color: var(--ember-on-dark); }}
       .pill, .cta-primary, .cta-secondary {{ display: inline-flex; align-items: center; padding: 11px 15px; border-radius: 6px; font-weight: 800; text-decoration: none; }}
       .pill, .cta-secondary {{ border: 1px solid #cbd5df; background: white; }}
       .cta-primary {{ background: var(--ember); color: white; }}

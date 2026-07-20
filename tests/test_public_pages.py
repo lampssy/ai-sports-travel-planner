@@ -65,6 +65,9 @@ def test_public_destination_page_returns_server_rendered_html() -> None:
     )
     assert '<meta property="og:title"' in response.text
     assert '<meta name="twitter:description"' in response.text
+    assert "--ember: #b83d1d" in response.text
+    assert "--ember-on-dark: #ff8fb1" in response.text
+    assert ".hero-main .eyebrow { color: var(--ember-on-dark); }" in response.text
     assert "Latest available snow signal" in response.text
     assert "Snow fit" not in response.text
     assert "Not enough evidence" in response.text
