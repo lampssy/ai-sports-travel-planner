@@ -260,9 +260,18 @@ ranked result.
 
 **Stay destination**
 
-The bookable town or destination context presented to a user. It owns country,
-region, center coordinates, price level, and its parent trip-market region. It
-does not own ski areas, local apres, or stay-base character.
+The complete, independently evidenced accommodation market presented to a user.
+It owns country, region, center coordinates, price level, and its parent trip-
+market region. It does not own ski areas, local apres, or stay-base character.
+
+A separate stay destination must have complete stay-market scope, independent
+stay-market ownership, and material destination-level separation value. Direct
+official stay-market evidence must support the ownership claim. A named village,
+municipality, lift access point, or dedicated web page is not enough by itself.
+A useful place that fails any gate is normally a `StayBase` under the nearest
+qualifying destination. When several sibling markets each pass all three gates,
+they remain separate destinations and their familiar umbrella is a `SkiRegion`.
+See ADR 0018.
 
 **Stay base**
 

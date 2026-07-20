@@ -136,6 +136,7 @@ def main(argv: list[str] | None = None) -> int:
         validate_catalog_curation_report(
             report,
             require_resulting_graph=require_resulting_graph,
+            require_current_destination_policy=require_resulting_graph,
         )
         if not getattr(args, "skip_product_backlog_validation", False):
             validate_catalog_curation_backlog_refs(report, args.product_backlog_path)

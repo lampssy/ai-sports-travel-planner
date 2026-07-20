@@ -445,6 +445,7 @@ def validate_proposal(
             validate_catalog_curation_report(
                 report,
                 require_resulting_graph=True,
+                require_current_destination_policy=True,
             )
             validate_catalog_resulting_graph(
                 report,

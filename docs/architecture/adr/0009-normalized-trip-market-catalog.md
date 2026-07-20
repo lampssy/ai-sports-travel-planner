@@ -20,6 +20,7 @@ Related docs:
 - `docs/data-trust-model.md`
 - `docs/snow-evidence-model.md`
 - `docs/architecture/adr/0016-require-evidence-owner-boundaries-for-ski-areas.md`
+- `docs/architecture/adr/0018-require-independent-stay-market-boundaries.md`
 
 ## Context
 
@@ -69,13 +70,17 @@ The snapshot has an explicit schema version. Rental display facts reference a
 stay destination and optional stay base; they remain curated dossier context and
 do not participate in candidate identity.
 
-`StayDestination` owns stay and arrival context, not ski terrain. `StayBase`
-belongs to exactly one stay destination. Every active stay destination belongs
+`StayDestination` owns a complete, independently evidenced accommodation market
+with material destination-level separation value, not ski terrain. `StayBase`
+belongs to exactly one stay destination. Candidates that do not pass all three
+stay-market gates route to stay bases or another normalized entity rather than
+becoming overlapping ranked destinations. Every active stay destination belongs
 to exactly one primary `trip_market` ski region, which determines the grouping
 key for its configurations. Contextual regional-network membership does not
 change search grouping. `SkiArea` is independent and remains the stable
 weather-evidence identity. Explicit many-to-many `SkiAreaAccess` records connect
-bases to areas and carry source-backed access facts.
+bases to areas and carry source-backed access facts. ADR 0018 owns the detailed
+stay-destination boundary policy.
 
 Generalize `TerrainDomain` to any physically ski-connected aggregate, including
 destination-local domains. Retire `TerrainGroup` from the target model.

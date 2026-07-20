@@ -233,12 +233,18 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 ### Place-model convention
 - The product models places and access as independent typed entities:
   - `SkiRegion` is the ranked trip-market grouping and user-facing umbrella;
-  - `StayDestination` is a recognizable booking and lodging market;
+  - `StayDestination` is a complete, independently owned accommodation market
+    with material destination-level separation value;
   - `StayBase` is a concrete accommodation town, village, or district;
   - `SkiArea` is the independently weathered and operated terrain unit;
   - `SkiAreaAccess` is a reviewed base-to-area relationship.
 - A stay destination does not own a ski area. Shared branding, pass validity,
   and physical connectivity do not create access edges automatically.
+- A named village becomes a separate stay destination only when it passes all
+  three ADR 0018 gates: complete stay-market scope, independent stay-market
+  ownership, and material destination-level separation value. Otherwise it is
+  normally a stay base. Direct lift access is modeled on `SkiAreaAccess`, not as
+  a destination-identity shortcut.
 - Stay-destination and stay-base names should use recognizable, searchable real
   place labels. Avoid helper suffixes such as `Dorf`, `Centre`, or `Zentrum`
   unless the full label is itself what travelers use.
@@ -809,10 +815,14 @@ semantic Codex policy rather than a deterministic Markdown parser or registry.
 Existing-model boundary, stable-ID, and weather-owner changes may be published
 as decision-bearing discovery proposals. They include the intended catalog
 state plus historical-data impact, preserve/migrate/backfill decision, manual
-commands, merge order, rollback, and unresolved owner decision. The proposal
-label and later curation review keep them from readiness until resolution.
-Actual database migration execution, catalog-schema changes, and production
-code remain outside the catalog proposal helper and require separate work.
+commands when exceptional intervention is needed, merge order, rollback, and
+the policy-adjudication result. A policy-determined graph proceeds through the
+normal fix and fresh-review cycle; only two policy-compliant alternatives
+justify an unresolved owner decision. The proposal label and later curation
+review keep incomplete migration handling from readiness. Actual database
+migration execution, catalog-schema changes, production code, and production
+weather jobs remain outside the catalog proposal helper and require separate
+work.
 The proposal validator keeps deletion safety narrow: an old catalog key may be
 removed only when the proposal adds its same-kind replacement candidate, fully
 reviews the old target, declares the identity deletion, records that target as
@@ -1163,7 +1173,22 @@ a `TerrainDomain`. See ADR 0016.
 Accommodation and terrain boundaries remain independent. A distinct,
 bookable accommodation market such as Kirchberg may justify its own
 `StayDestination` and bases while sharing the same KitzSki `SkiArea`, provided
-explicit access edges connect them.
+explicit access edges connect them. The market must still pass complete-scope,
+independent-ownership, and material-separation gates; a place name or municipal
+boundary alone does not qualify it. See ADR 0018.
+
+Boundary adjudication should return `policy_determined` when only one graph
+satisfies the destination or ski-area policy. `owner_choice_required` is for the
+rare case where two materially different graphs both satisfy the applicable
+gates with comparable evidence. Missing source evidence is
+`evidence_insufficient`, not an owner preference.
+
+Catalog maintenance never runs production weather migration inline. New active
+ski-area IDs start without archive/climatology rows; after merge, the separate
+Complete Historical Weather workflow discovers them, resumes backfill across
+scheduled runs, and rebuilds climatology once archive coverage is complete.
+Retained IDs keep their evidence. A material coordinate/elevation change on a
+retained ID requires an explicit forced refetch and rebuild handoff.
 
 Sourceable missing entities that fit the active curation batch should be added
 in that PR. Deferral is an escape hatch for work that would make the batch

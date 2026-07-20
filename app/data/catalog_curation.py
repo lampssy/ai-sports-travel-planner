@@ -85,6 +85,9 @@ CatalogBoundaryGateName = Literal[
     "independent_stay_context",
     "independent_ski_access",
     "independent_recommendation_value",
+    "complete_stay_market_scope",
+    "independent_stay_market_ownership",
+    "material_destination_level_separation_value",
 ]
 CatalogIdentitySignalType = Literal[
     "local_pass",
@@ -93,6 +96,9 @@ CatalogIdentitySignalType = Literal[
     "status_feed",
     "weather_presentation",
     "official_destination_treatment",
+    "official_stay_market_treatment",
+    "independent_accommodation_inventory",
+    "independent_destination_management",
 ]
 CatalogBoundaryFailureRoute = Literal[
     "stay_base",
@@ -181,11 +187,31 @@ SCOPE_ID_FIELD_PATHS: Mapping[CatalogScopeCandidateKind, str] = MappingProxyType
     }
 )
 MARKDOWN_LINK_URL_SAFE_CHARS = ":/?#@!$&'*,;=%-._~"
-BOUNDARY_GATE_NAMES = frozenset(
+LEGACY_DESTINATION_BOUNDARY_GATE_NAMES = frozenset(
     {
         "independent_stay_context",
         "independent_ski_access",
         "independent_recommendation_value",
+    }
+)
+CURRENT_DESTINATION_BOUNDARY_GATE_NAMES = frozenset(
+    {
+        "complete_stay_market_scope",
+        "independent_stay_market_ownership",
+        "material_destination_level_separation_value",
+    }
+)
+DESTINATION_BOUNDARY_GATE_NAME_SETS = frozenset(
+    {
+        LEGACY_DESTINATION_BOUNDARY_GATE_NAMES,
+        CURRENT_DESTINATION_BOUNDARY_GATE_NAMES,
+    }
+)
+CURRENT_STAY_MARKET_IDENTITY_SIGNALS = frozenset(
+    {
+        "official_stay_market_treatment",
+        "independent_accommodation_inventory",
+        "independent_destination_management",
     }
 )
 TRUST_MANIFEST_NAMESPACES = frozenset(
@@ -679,11 +705,13 @@ class CatalogDestinationBoundaryAssessment(CatalogCurationContractModel):
 
     @model_validator(mode="after")
     def validate_assessment(self) -> CatalogDestinationBoundaryAssessment:
-        if {gate.gate_name for gate in self.gates} != BOUNDARY_GATE_NAMES:
+        gate_names = frozenset(gate.gate_name for gate in self.gates)
+        if gate_names not in DESTINATION_BOUNDARY_GATE_NAME_SETS:
             raise ValueError(
-                "destination boundary assessment must contain exactly all three gates"
+                "destination boundary assessment must contain exactly one complete "
+                "three-gate policy set"
             )
-        if len(self.gates) != len(BOUNDARY_GATE_NAMES):
+        if len(self.gates) != len(gate_names):
             raise ValueError("destination boundary gates must be unique")
         signal_types = [signal.signal_type for signal in self.identity_signals]
         if len(signal_types) != len(set(signal_types)):
@@ -698,8 +726,28 @@ class CatalogDestinationBoundaryAssessment(CatalogCurationContractModel):
 
     @property
     def is_passing(self) -> bool:
-        return all(gate.status == "pass" for gate in self.gates) and any(
-            signal.status == "pass" for signal in self.identity_signals
+        if not all(gate.status == "pass" for gate in self.gates):
+            return False
+        if self.uses_current_policy:
+            return any(
+                signal.status == "pass"
+                and signal.signal_type in CURRENT_STAY_MARKET_IDENTITY_SIGNALS
+                for signal in self.identity_signals
+            )
+        return any(signal.status == "pass" for signal in self.identity_signals)
+
+    @property
+    def uses_current_policy(self) -> bool:
+        return (
+            frozenset(gate.gate_name for gate in self.gates)
+            == CURRENT_DESTINATION_BOUNDARY_GATE_NAMES
+        )
+
+    @property
+    def has_current_ownership_signal_assessment(self) -> bool:
+        return any(
+            signal.signal_type in CURRENT_STAY_MARKET_IDENTITY_SIGNALS
+            for signal in self.identity_signals
         )
 
 
@@ -920,6 +968,7 @@ def validate_catalog_curation_report(
     report: CatalogCurationReport,
     *,
     require_resulting_graph: bool = False,
+    require_current_destination_policy: bool = False,
 ) -> None:
     issues: list[str] = []
     if report.resulting_graph is not None and report.report_schema_version < 3:
@@ -1006,7 +1055,13 @@ def validate_catalog_curation_report(
                 "not declared in reviewed_targets"
             )
 
-    _validate_boundary_assessments(report, reviewed_by_key, evidence_by_id, issues)
+    _validate_boundary_assessments(
+        report,
+        reviewed_by_key,
+        evidence_by_id,
+        issues,
+        require_current_destination_policy=require_current_destination_policy,
+    )
     _validate_geometry_assessments(report, reviewed_by_key, issues)
     _validate_entity_scope_assessments(
         report,
@@ -1014,6 +1069,7 @@ def validate_catalog_curation_report(
         changes_by_key,
         evidence_by_id,
         issues,
+        require_current_destination_policy=require_current_destination_policy,
     )
 
     unresolved_keys = {
@@ -1228,6 +1284,8 @@ def _validate_entity_scope_assessments(
     changes_by_key: Mapping[tuple[str, str, str], CatalogChangeSummary],
     evidence_by_id: Mapping[str, CatalogEvidenceItem],
     issues: list[str],
+    *,
+    require_current_destination_policy: bool = False,
 ) -> None:
     assessments = report.entity_scope_assessments
     if report.report_schema_version >= 2 and not assessments:
@@ -1326,6 +1384,19 @@ def _validate_entity_scope_assessments(
                 "independent-owner signal"
             )
         if (
+            require_current_destination_policy
+            and assessment.candidate_kind == "stay_destination"
+            and assessment.disposition in {"represented", "add_entity"}
+            and not all(
+                target_ref.target_id in passing_destination_boundaries
+                for target_ref in assessment.target_refs
+            )
+        ):
+            issues.append(
+                f"{assessment.candidate_id}: current stay destination requires "
+                "a passing boundary assessment"
+            )
+        elif (
             assessment.candidate_kind == "stay_destination"
             and assessment.disposition == "add_entity"
             and not all(
@@ -1366,6 +1437,8 @@ def _validate_boundary_assessments(
     reviewed_by_key: Mapping[tuple[str, str], CatalogReviewedTarget],
     evidence_by_id: Mapping[str, CatalogEvidenceItem],
     issues: list[str],
+    *,
+    require_current_destination_policy: bool = False,
 ) -> None:
     declared = set(report.boundary_decision_targets)
     if len(declared) != len(report.boundary_decision_targets):
@@ -1386,6 +1459,37 @@ def _validate_boundary_assessments(
     for candidate_id in sorted(set(assessments) - declared):
         issues.append(f"{candidate_id}: undeclared destination boundary assessment")
     for assessment in assessments.values():
+        if require_current_destination_policy and not assessment.uses_current_policy:
+            issues.append(
+                f"{assessment.candidate_id}: destination boundary assessment "
+                "must use current stay-market policy gates"
+            )
+        if (
+            require_current_destination_policy
+            and not assessment.has_current_ownership_signal_assessment
+        ):
+            issues.append(
+                f"{assessment.candidate_id}: current destination boundary "
+                "assessment requires a direct stay-market ownership signal "
+                "assessment"
+            )
+        if require_current_destination_policy and assessment.is_passing:
+            ownership_evidence_ids = {
+                evidence_id
+                for signal in assessment.identity_signals
+                if signal.status == "pass"
+                and signal.signal_type in CURRENT_STAY_MARKET_IDENTITY_SIGNALS
+                for evidence_id in signal.evidence_refs
+            }
+            if not any(
+                evidence_by_id[evidence_id].source_type == "official"
+                for evidence_id in ownership_evidence_ids
+                if evidence_id in evidence_by_id
+            ):
+                issues.append(
+                    f"{assessment.candidate_id}: passing stay-market ownership "
+                    "requires official evidence"
+                )
         for item in (*assessment.gates, *assessment.identity_signals):
             referenced = [
                 evidence_by_id[evidence_id]
