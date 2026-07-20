@@ -77,6 +77,11 @@ class WorkState(BaseModel):
         default=None,
         pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$",
     )
+    resulting_graph_markdown: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=32768,
+    )
     selected_head: str = Field(pattern=_SHA_PATTERN)
     prepared_head: str | None = Field(default=None, pattern=_SHA_PATTERN)
     reviewed_head: str | None = Field(default=None, pattern=_SHA_PATTERN)
@@ -123,6 +128,8 @@ class WorkState(BaseModel):
                 raise ValueError(f"{field_name} is required for {self.phase.value}")
             if phase_index < minimum_phase and value is not None:
                 raise ValueError(f"{field_name} belongs to a later phase")
+        if phase_index < 3 and self.resulting_graph_markdown is not None:
+            raise ValueError("resulting graph belongs to validated work")
         if self.worker == "curation":
             if phase_index < 3 and self.report_path is not None:
                 raise ValueError("curation report path belongs to validated work")
@@ -159,6 +166,15 @@ class PushJournal(BaseModel):
         pattern=_ID_PATTERN.pattern,
     )
     candidate_origin: Literal["backlog", "external"] | None = None
+    report_path: str | None = Field(
+        default=None,
+        pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$",
+    )
+    resulting_graph_markdown: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=32768,
+    )
     phase: PushPhase
 
     @model_validator(mode="after")
@@ -458,6 +474,8 @@ class StateStore:
             "new_head",
             "candidate_key",
             "candidate_origin",
+            "report_path",
+            "resulting_graph_markdown",
         )
         if any(
             getattr(existing, field_name) != getattr(journal, field_name)
@@ -500,6 +518,7 @@ class StateStore:
             "backup_ref",
             "candidate_origin",
             "report_path",
+            "resulting_graph_markdown",
             "sync",
         ):
             existing_value = getattr(existing, field_name)

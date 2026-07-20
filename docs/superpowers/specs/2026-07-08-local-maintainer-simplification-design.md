@@ -177,7 +177,9 @@ Out of scope:
 - Requests, but cannot unilaterally authorize, `proposal`, `waiting-ci`, or
   `ready`.
 - Maintains a concise human-readable PR-body synopsis and summary prose while
-  keeping the complete curation report checked in as the source of truth.
+  keeping the complete curation report checked in as the source of truth. The
+  synopsis includes the exact deterministic resulting-graph Mermaid section
+  reproduced from the validated catalog/report head.
 - Reports the bounded Triage outcome for every success, stop, failure, and
   no-op without exposing the private lease run ID.
 - Never constructs branch-rewrite or GitHub-publication commands outside the
@@ -444,9 +446,11 @@ the same-key duplicate gate without trying to infer identity from prose.
     Codex removes only the base checkout it created.
 14. The helper performs the guarded push if needed.
 15. Codex writes a concise synopsis of the final reviewed scope, evidence,
-    verification, and owner caveats, then requests `waiting-ci` with that body
-    input while GitHub checks are pending. The full schema-v3 report remains in
-    the repository.
+    verification, and owner caveats and includes the helper-reproduced canonical
+    resulting-graph Mermaid section. It then requests `waiting-ci` with that
+    body input while GitHub checks are pending. The helper rejects a missing or
+    altered canonical graph before publication. The full schema-v3 report
+    remains in the repository.
 16. A later lightweight run handles the unchanged `waiting-ci` head without
     preparation or semantic review: it requests readiness when checks are green
     and mergeability is clean, supplying the current synopsis again; it remains
@@ -466,6 +470,16 @@ Incoming curation reports may use a legacy schema or be incomplete. Codex
 treats them as context and upgrades the existing report during remediation.
 The final validation and readiness gates continue to require exactly one
 schema-version-3 report reconciled to the reviewed catalog and trust changes.
+Historical schema-v3 reports remain readable without `resulting_graph`; any
+report newly validated or refreshed by the maintainer must declare one or more
+focus stay destinations so the helper can derive the canonical graph. The
+declared focus must include every final-catalog destination reached by a
+reviewed graph target; validation derives that set rather than trusting the
+report's focus declaration alone.
+The exceptional reviewed-but-unvalidated `manual-check` path must supply that
+report path and the exact derived graph in its body; the helper verifies the
+graph against the immutable reviewed commit and verifies that the supplied path
+is the PR diff's single curation report before authorizing a push.
 
 ## Readiness Contract
 
@@ -709,8 +723,10 @@ selection, recovery, review reuse, or mutation.
 The push journal remains separate because network success is ambiguous across
 a process crash. It records work ID, worker, immutable origin run ID, current
 recovery run ID, exact branch, expected remote head, new head, operation phase,
-and, for discovery, candidate key, candidate origin, and the returned PR number
-once known. Recovery observes the remote:
+and, for discovery, candidate key, candidate origin, validated report path,
+canonical resulting graph, and the returned PR number once known. The report
+and graph are immutable recovery evidence; journal-only proposal publication
+fails closed when either is unavailable. Recovery observes the remote:
 
 - old head: the push did not apply and may be retried;
 - new head: the push succeeded and recovery continues idempotently;
@@ -745,7 +761,8 @@ outside that recovery path, missing comment state requires a fresh review.
 - Labels carry exactly one lane and one maintainer lifecycle state.
 - The PR body contains human-readable curation/proposal context maintained by
   Codex. For curation readiness this is a compact synopsis, not the complete
-  checked-in report.
+  checked-in report, but it includes the same canonical resulting-graph Mermaid
+  section as the rendered report.
 - One `lampssy`-authored maintainer comment contains concise status plus one
   hidden schema-version-2 structured record with exact reviewed head, validated
   head, candidate key/origin when applicable, and latest operation. Legacy and

@@ -55,7 +55,24 @@ SHA_C = "c" * 40
 SHA_D = "d" * 40
 NOW = datetime(2026, 7, 8, 10, tzinfo=UTC)
 CANDIDATE = "stay_destination:nendaz"
+CANONICAL_GRAPH = (
+    "## Resulting Graph\n\n"
+    "```mermaid\n"
+    "flowchart LR\n"
+    '  destination_1["Stay destination<br/>Nendaz"]\n'
+    "```\n"
+)
 BRANCH = "codex/catalog-curation-nendaz"
+
+
+@pytest.fixture(autouse=True)
+def _stub_manual_check_resulting_graph(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "ops.maintainer.capabilities.immutable_resulting_graph_markdown",
+        lambda _repository, _revision, _report_path: CANONICAL_GRAPH,
+    )
 
 
 def _catalog_json(*, include_candidate: bool = False) -> str:
@@ -1494,6 +1511,8 @@ def _validated_curation(
     state_dir: Path,
     github: FakeGitHub,
     repository: FakeRepository,
+    *,
+    resulting_graph_markdown: str | None = None,
 ) -> str:
     run_id = _prepare_curation(capsys, state_dir, github, repository)
     code, _payload = _invoke(
@@ -1517,7 +1536,9 @@ def _validated_curation(
         github=github,
         repository=repository,
         base_repository=FakeRepository(),
-        curation_validator=lambda **kwargs: _validation_result(),
+        curation_validator=lambda **kwargs: _validation_result().model_copy(
+            update={"resulting_graph_markdown": resulting_graph_markdown}
+        ),
     )
     assert code == 0
     return run_id
@@ -1526,7 +1547,11 @@ def _validated_curation(
 def _manual_check_publication_files(state_dir: Path) -> tuple[str, str]:
     return (
         _private_text(state_dir, "manual-check-summary.md", "Owner review required."),
-        _private_text(state_dir, "manual-check-body.md", "Reviewed unresolved work."),
+        _private_text(
+            state_dir,
+            "manual-check-body.md",
+            f"Reviewed unresolved work.\n\n{CANONICAL_GRAPH}",
+        ),
     )
 
 
@@ -1550,6 +1575,8 @@ def _publish_manual_check(
             "42",
             "--reviewed-head",
             reviewed_head,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
             "--summary-file",
             summary,
             "--body-file",
@@ -1755,7 +1782,7 @@ def test_publish_manual_check_binds_publication_text_before_push(
     body_name = _private_text(
         state_dir,
         "manual-check-body.md",
-        "Original reviewed body.",
+        f"Original reviewed body.\n\n{CANONICAL_GRAPH}",
     )
 
     def replace_publication_text() -> None:
@@ -1784,6 +1811,8 @@ def test_publish_manual_check_binds_publication_text_before_push(
             "42",
             "--reviewed-head",
             SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
             "--summary-file",
             summary_name,
             "--body-file",
@@ -1802,6 +1831,87 @@ def test_publish_manual_check_binds_publication_text_before_push(
     assert len(comments) == 1
     assert "Original reviewed summary." in comments[0].body
     assert "Replacement after push." not in comments[0].body
+
+
+def test_publish_manual_check_requires_canonical_graph_before_push(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    summary = _private_text(state_dir, "summary.md", "Owner review required.")
+    body = _private_text(state_dir, "body.md", "Reviewed unresolved work.")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "manual-check",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--summary-file",
+            summary,
+            "--body-file",
+            body,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert repository.push_calls == 0
+    assert github.body_writes == 0
+
+
+def test_publish_manual_check_rejects_report_outside_the_prepared_diff(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    summary, body = _manual_check_publication_files(state_dir)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "manual-check",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/unrelated.json",
+            "--summary-file",
+            summary,
+            "--body-file",
+            body,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert repository.push_calls == 0
+    assert github.body_writes == 0
 
 
 def test_publish_manual_check_waits_for_github_to_observe_exact_pushed_head(
@@ -2567,6 +2677,7 @@ def test_recovered_discovery_journal_can_finish_publication_with_successor(
         state_dir,
         github,
         repository,
+        resulting_graph_markdown=CANONICAL_GRAPH,
     )
     old = RunLease.load_owner(state_dir, "discovery", old_run_id)
     store = StateStore(state_dir)
@@ -2580,6 +2691,8 @@ def test_recovered_discovery_journal_can_finish_publication_with_successor(
             new_head=SHA_B,
             candidate_key=CANDIDATE,
             candidate_origin="backlog",
+            report_path="docs/catalog-curation/nendaz.json",
+            resulting_graph_markdown=CANONICAL_GRAPH,
             phase=PushPhase.AUTHORIZED,
         ),
         old,
@@ -2609,7 +2722,11 @@ def test_recovered_discovery_journal_can_finish_publication_with_successor(
     assert recover_code == 0
 
     title = _private_text(state_dir, "title.txt", "Curate Nendaz")
-    body = _private_text(state_dir, "body.md", "Owner proposal context")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"Owner proposal context\n\n{CANONICAL_GRAPH}",
+    )
     summary = _private_text(state_dir, "summary.md", "Validated candidate.")
     publish_code, payload = _invoke(
         capsys,
@@ -2650,6 +2767,102 @@ def test_recovered_discovery_journal_can_finish_publication_with_successor(
         mutation=True,
         run_id=successor.run_id,
     )
+
+
+def test_recovered_discovery_journal_without_graph_evidence_fails_closed(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub(pull_requests={})
+    repository = FakeRepository(head=SHA_B, remote=None, github=github)
+    old_run_id, work_id = _validated_proposal(
+        capsys,
+        state_dir,
+        github,
+        repository,
+        resulting_graph_markdown=CANONICAL_GRAPH,
+    )
+    old = RunLease.load_owner(state_dir, "discovery", old_run_id)
+    store = StateStore(state_dir)
+    store.save_push(
+        PushJournal(
+            work_id=work_id,
+            worker="discovery",
+            origin_run_id=old.run_id,
+            recovery_run_id=old.run_id,
+            branch=BRANCH,
+            new_head=SHA_B,
+            candidate_key=CANDIDATE,
+            candidate_origin="backlog",
+            phase=PushPhase.AUTHORIZED,
+        ),
+        old,
+    )
+    (state_dir / "work" / f"{work_id}.json").unlink()
+    successor = RunLease.acquire(
+        state_dir,
+        "discovery",
+        now=NOW + timedelta(hours=7),
+    )
+
+    recover_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            work_id,
+            "--run-id",
+            successor.run_id,
+        ],
+        github=github,
+        repository=repository,
+        catalog_keys_provider=frozenset,
+    )
+    assert recover_code == 0
+    title = _private_text(state_dir, "title.txt", "Curate Nendaz")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"Owner proposal context\n\n{CANONICAL_GRAPH}",
+    )
+    summary = _private_text(state_dir, "summary.md", "Validated candidate.")
+
+    publish_code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "proposal",
+            "--branch",
+            BRANCH,
+            "--candidate-key",
+            CANDIDATE,
+            "--candidate-origin",
+            "backlog",
+            "--head",
+            SHA_B,
+            "--title-file",
+            title,
+            "--body-file",
+            body,
+            "--summary-file",
+            summary,
+            "--run-id",
+            successor.run_id,
+        ],
+        github=github,
+        repository=repository,
+        catalog_keys_provider=frozenset,
+    )
+
+    assert publish_code == 2
+    assert payload["reason"] == "invalid-command"
+    assert github.pr_creates == 0
 
 
 def test_publish_recover_fails_closed_for_multiple_journals(
@@ -2710,6 +2923,7 @@ def _validated_proposal(
     *,
     catalog_keys_provider: Callable[[], frozenset[str]] | None = frozenset,
     repository_root: Path | None = None,
+    resulting_graph_markdown: str | None = CANONICAL_GRAPH,
 ) -> tuple[str, str]:
     run_id = _acquire(capsys, state_dir, "discovery")
     code, payload = _invoke(
@@ -2737,6 +2951,7 @@ def _validated_proposal(
             candidate_origin="backlog",
             validated_head=SHA_B,
             report_path="docs/catalog-curation/nendaz.json",
+            resulting_graph_markdown=resulting_graph_markdown,
         ),
         catalog_keys_provider=catalog_keys_provider,
         repository_root=repository_root,
@@ -2772,7 +2987,11 @@ def test_publish_proposal_rechecks_fetched_main_before_push(
     )
     repository.main_catalog_json = _catalog_json(include_candidate=True)
     title = _private_text(state_dir, "title.txt", "Curate Nendaz")
-    body = _private_text(state_dir, "body.md", "Owner proposal context")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"Owner proposal context\n\n{CANONICAL_GRAPH}",
+    )
     summary = _private_text(state_dir, "summary.md", "Validated candidate.")
 
     code, payload = _invoke(
@@ -2819,7 +3038,11 @@ def test_publish_proposal_uses_only_private_state_files_and_finishes_work(
     repository = FakeRepository(head=SHA_B, remote=None, github=github)
     run_id, work_id = _validated_proposal(capsys, state_dir, github, repository)
     title = _private_text(state_dir, "title.txt", "Curate Nendaz")
-    body = _private_text(state_dir, "body.md", "Owner proposal context")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"Owner proposal context\n\n{CANONICAL_GRAPH}",
+    )
     summary = _private_text(state_dir, "summary.md", "Validated candidate.")
 
     code, payload = _invoke(
@@ -2857,7 +3080,64 @@ def test_publish_proposal_uses_only_private_state_files_and_finishes_work(
     work = StateStore(state_dir).load_work(work_id)
     assert work is not None and work.phase is WorkPhase.PUBLISHED
     assert work.pr_number == 71
+    journal = StateStore(state_dir).load_push(work_id)
+    assert journal is not None
+    assert journal.report_path == "docs/catalog-curation/nendaz.json"
+    assert journal.resulting_graph_markdown == CANONICAL_GRAPH
     _assert_outcome(payload, worker="discovery", mutation=True, run_id=run_id)
+
+
+def test_publish_proposal_requires_the_validated_canonical_graph_before_push(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub(pull_requests={})
+    repository = FakeRepository(head=SHA_B, remote=None, github=github)
+    run_id, _work_id = _validated_proposal(
+        capsys,
+        state_dir,
+        github,
+        repository,
+        resulting_graph_markdown=CANONICAL_GRAPH,
+    )
+    title = _private_text(state_dir, "title.txt", "Curate Nendaz")
+    body = _private_text(state_dir, "body.md", "Owner proposal context")
+    summary = _private_text(state_dir, "summary.md", "Validated candidate.")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "proposal",
+            "--branch",
+            BRANCH,
+            "--candidate-key",
+            CANDIDATE,
+            "--candidate-origin",
+            "backlog",
+            "--head",
+            SHA_B,
+            "--title-file",
+            title,
+            "--body-file",
+            body,
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        catalog_keys_provider=frozenset,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert repository.create_only_calls == 0
+    assert github.pr_creates == 0
 
 
 def test_publish_proposal_idempotent_retry_reports_no_mutation(
@@ -2869,7 +3149,11 @@ def test_publish_proposal_idempotent_retry_reports_no_mutation(
     repository = FakeRepository(head=SHA_B, remote=None, github=github)
     run_id, _work_id = _validated_proposal(capsys, state_dir, github, repository)
     title = _private_text(state_dir, "title.txt", "Curate Nendaz")
-    body = _private_text(state_dir, "body.md", "Owner proposal context")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"Owner proposal context\n\n{CANONICAL_GRAPH}",
+    )
     summary = _private_text(state_dir, "summary.md", "Validated candidate.")
     command = [
         "--state-dir",
@@ -3038,6 +3322,141 @@ def test_publish_state_ready_adopts_legacy_body_with_explicit_permission(
     journal = StateStore(state_dir).load_push("curation-pr-42")
     assert journal is not None and journal.phase is PushPhase.PUBLISHED
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
+
+
+def test_publish_state_requires_the_validated_canonical_graph_before_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _validated_curation(
+        capsys,
+        state_dir,
+        github,
+        repository,
+        resulting_graph_markdown=CANONICAL_GRAPH,
+    )
+    push_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "push",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert push_code == 0
+    summary = _private_text(state_dir, "summary.md", "Ready for owner merge.\n")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        "## Snowcast catalog review\n\nCurrent concise synopsis.",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:ready",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary,
+            "--body-file",
+            body,
+            "--adopt-body",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert github.pull_requests[42].body == "Owner text"
+    assert MaintainerState.READY.value not in github.pull_requests[42].labels
+
+
+def test_publish_state_accepts_the_exact_validated_canonical_graph(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _validated_curation(
+        capsys,
+        state_dir,
+        github,
+        repository,
+        resulting_graph_markdown=CANONICAL_GRAPH,
+    )
+    push_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "push",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert push_code == 0
+    summary = _private_text(state_dir, "summary.md", "Ready for owner merge.\n")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"## Snowcast catalog review\n\nCurrent concise synopsis.\n\n{CANONICAL_GRAPH}",
+    )
+
+    code, _payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:ready",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary,
+            "--body-file",
+            body,
+            "--adopt-body",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0
+    assert CANONICAL_GRAPH.strip() in github.pull_requests[42].body
+    assert MaintainerState.READY.value in github.pull_requests[42].labels
 
 
 @pytest.mark.parametrize(

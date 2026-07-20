@@ -114,7 +114,12 @@ availability, defaults, coverage, prices, and pass-accessible aggregates.
 High-impact changes should include a typed catalog curation report with
 before/after values, affected entities, trust statuses, clickable source links,
 normalization notes, validation commands, and ranking-impact notes when the
-changed fields affect ranking or fit behavior.
+changed fields affect ranking or fit behavior. Current schema-v3 reports also
+declare the focus stay destinations for a deterministic resulting-graph diagram.
+The diagram is derived from the normalized catalog, not maintained as separate
+free-form prose. Validation derives the destinations reached by every reviewed
+graph target from the final catalog and requires the declared focus to cover
+all of them, so a valid diagram cannot silently omit a changed destination.
 
 Run the catalog validator after catalog or trust-manifest edits:
 
@@ -129,6 +134,7 @@ When a curation report exists, validate it and render the Markdown review packet
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation \
   typed docs/catalog-curation/REPORT.json \
+  --current-catalog-path app/data/catalog.json \
   --markdown-output docs/catalog-curation/2026-06-23-zell-am-see-kaprun.md
 ```
 
@@ -209,6 +215,12 @@ validate curation|proposal
 publish push|manual-check|recover|proposal|outcome|state|ensure-labels
 ```
 
+`publish manual-check` also receives the schema-v3 report path. Before pushing,
+the helper reproduces the graph from the immutable reviewed head and requires
+that exact Mermaid section in the supplied PR body. It also revalidates that
+this path is the PR diff's single curation report, rather than trusting a
+caller-selected report from elsewhere in the reviewed commit.
+
 Every mutation supplies the exact worker and 32-character `run_id` returned by
 `lock acquire`. Hold the curation lease from prepare through review, fix,
 validation, push, and publication. Discovery backlog interpretation and source
@@ -231,11 +243,14 @@ Publication prose is passed only through owner-private, direct-child
 `STATE_DIR`. The helper rejects symlinks, unsafe ownership or permissions,
 invalid UTF-8, and oversized content. Caller-selected paths are never passed to
 `gh`. `waiting-ci` and `ready` publication require a concise current synopsis
-through `--body-file`. On an automation-owned curation PR whose legacy body has
-no managed markers, `--adopt-body` explicitly replaces that legacy description;
-without that flag, unmarked text is preserved. Later publications update the
-managed block idempotently. The complete curation report remains checked in and
-is not copied into the PR body.
+through `--body-file`. For newly validated schema-v3 work, that synopsis must
+contain the exact canonical resulting-graph Mermaid section persisted from the
+validated head; the helper rejects missing or independently edited diagrams
+before GitHub mutation. On an automation-owned curation PR whose legacy body
+has no managed markers, `--adopt-body` explicitly replaces that legacy
+description; without that flag, unmarked text is preserved. Later publications
+update the managed block idempotently. The complete curation report remains
+checked in and is not copied into the PR body.
 
 #### State, outcomes, and recovery
 
@@ -245,7 +260,8 @@ Local state is deliberately small:
 - `work/*.json`: one selected -> prepared -> reviewed -> validated -> pushed
   -> published phase record per work item; and
 - `push/*.json`: the separate irreversible-operation journal used for exact
-  push and proposal recovery.
+  push and proposal recovery; discovery journals also retain the validated
+  report path and canonical graph needed to resume publication.
 
 There is no private lease token, worker credential file, runtime coverage
 registry, deterministic backlog parser, lineage counter, or cycle counter.
@@ -270,7 +286,8 @@ Recovery is journal-first:
 3. multiple unresolved journals fail closed for owner attention;
 4. discovery recovery accepts only an absent remote or the exact journaled new
    head, finds PRs across all lifecycle states, and never recreates an
-   owner-closed proposal;
+   owner-closed proposal; journal-only recovery fails closed if its validated
+   report or canonical graph evidence is unavailable;
 5. a canonical proposal comment without `maintainer:proposal` fails closed
    because owner acceptance cannot be distinguished from an interrupted final
    label write; and

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from html import escape
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal, Mapping
@@ -9,7 +10,7 @@ from urllib.parse import quote, urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.domain.catalog import SkiArea
+from app.domain.catalog import CatalogSnapshot, SkiArea
 from app.integrations.open_meteo import weather_elevation_points
 
 CatalogTargetType = Literal[
@@ -197,6 +198,18 @@ TRUST_MANIFEST_NAMESPACES = frozenset(
         "terrain_domains",
         "lift_pass_products",
         "rental_display_facts",
+    }
+)
+TRUST_MANIFEST_TARGET_TYPES: Mapping[str, CatalogTargetType] = MappingProxyType(
+    {
+        "ski_regions": "ski_region",
+        "stay_destinations": "stay_destination",
+        "stay_bases": "stay_base",
+        "ski_areas": "ski_area",
+        "ski_area_access": "ski_area_access",
+        "terrain_domains": "terrain_domain",
+        "lift_pass_products": "lift_pass_product",
+        "rental_display_facts": "rental_display_fact",
     }
 )
 
@@ -814,6 +827,15 @@ class CatalogWeatherRequestGeometryAssessment(CatalogCurationContractModel):
         return self.before != self.after
 
 
+class CatalogResultingGraph(CatalogCurationContractModel):
+    focus_stay_destination_ids: list[str] = Field(min_length=1)
+
+    @field_validator("focus_stay_destination_ids")
+    @classmethod
+    def validate_focus_stay_destination_ids(cls, values: list[str]) -> list[str]:
+        return _validate_string_list(values, "focus_stay_destination_ids")
+
+
 def catalog_weather_request_geometry(
     ski_area: SkiArea,
 ) -> CatalogWeatherRequestGeometry:
@@ -849,6 +871,7 @@ class CatalogCurationReport(CatalogCurationContractModel):
     weather_request_geometry_assessments: list[
         CatalogWeatherRequestGeometryAssessment
     ] = Field(default_factory=list)
+    resulting_graph: CatalogResultingGraph | None = None
     validation_commands: list[str] = Field(default_factory=list)
     ranking_impact_summary: str | None = None
     unresolved_caveats: list[str] = Field(default_factory=list)
@@ -893,8 +916,20 @@ def load_catalog_curation_report(path: Path) -> CatalogCurationReport:
     return CatalogCurationReport.model_validate(payload)
 
 
-def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
+def validate_catalog_curation_report(
+    report: CatalogCurationReport,
+    *,
+    require_resulting_graph: bool = False,
+) -> None:
     issues: list[str] = []
+    if report.resulting_graph is not None and report.report_schema_version < 3:
+        issues.append("resulting_graph requires report schema version 3")
+    if (
+        require_resulting_graph
+        and report.report_schema_version == 3
+        and report.resulting_graph is None
+    ):
+        issues.append("schema version 3 requires resulting_graph")
     if any(change.ranking_relevant for change in report.changes):
         if not report.ranking_impact_summary:
             issues.append(
@@ -1419,17 +1454,370 @@ def _markdown_link(label: str, url: str) -> str:
     return f"[{escaped_label}]({quote(url, safe=MARKDOWN_LINK_URL_SAFE_CHARS)})"
 
 
-def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> str:
+def validate_catalog_resulting_graph(
+    report: CatalogCurationReport,
+    catalog: CatalogSnapshot,
+    *,
+    require: bool = False,
+) -> None:
+    validate_catalog_curation_report(
+        report,
+        require_resulting_graph=require,
+    )
+    graph = report.resulting_graph
+    if graph is None:
+        return
+    known_destination_ids = {
+        destination.stay_destination_id for destination in catalog.stay_destinations
+    }
+    issues = [
+        f"unknown focus stay destination {destination_id}"
+        for destination_id in graph.focus_stay_destination_ids
+        if destination_id not in known_destination_ids
+    ]
+    required_destination_ids = _required_resulting_graph_destination_ids(
+        report,
+        catalog,
+    )
+    issues.extend(
+        f"missing required focus stay destination {destination_id}"
+        for destination_id in sorted(
+            required_destination_ids - set(graph.focus_stay_destination_ids)
+        )
+    )
+    if issues:
+        raise CatalogValidationError(issues)
+
+
+def _required_resulting_graph_destination_ids(
+    report: CatalogCurationReport,
+    catalog: CatalogSnapshot,
+) -> set[str]:
+    destinations_by_region: dict[str, set[str]] = {}
+    for destination in catalog.stay_destinations:
+        destinations_by_region.setdefault(
+            destination.trip_market_region_id,
+            set(),
+        ).add(destination.stay_destination_id)
+    destination_by_base = {
+        base.stay_base_id: base.stay_destination_id for base in catalog.stay_bases
+    }
+    destinations_by_area: dict[str, set[str]] = {}
+    destination_by_access: dict[str, str] = {}
+    for access in catalog.ski_area_access:
+        destination_id = destination_by_base[access.stay_base_id]
+        destination_by_access[access.ski_area_access_id] = destination_id
+        destinations_by_area.setdefault(access.ski_area_id, set()).add(destination_id)
+    destinations_by_pass = {
+        product.lift_pass_product_id: set(product.available_from_stay_destination_ids)
+        | set(product.default_for_stay_destination_ids)
+        for product in catalog.lift_pass_products
+    }
+    destinations_by_domain: dict[str, set[str]] = {}
+    for domain in catalog.terrain_domains:
+        destinations_by_domain[domain.terrain_domain_id] = {
+            destination_id
+            for area_id in domain.ski_area_ids
+            for destination_id in destinations_by_area.get(area_id, set())
+        }
+    for product in catalog.lift_pass_products:
+        for domain_id in product.terrain_domain_ids:
+            destinations_by_domain.setdefault(domain_id, set()).update(
+                destinations_by_pass[product.lift_pass_product_id]
+            )
+    destination_by_rental = {
+        rental.rental_display_fact_id: rental.stay_destination_id
+        for rental in catalog.rental_display_facts
+    }
+
+    direct_destination_ids = {
+        destination.stay_destination_id for destination in catalog.stay_destinations
+    }
+    target_destinations: dict[str, Mapping[str, set[str]]] = {
+        "ski_region": destinations_by_region,
+        "stay_destination": {
+            destination_id: {destination_id}
+            for destination_id in direct_destination_ids
+        },
+        "stay_base": {
+            base_id: {destination_id}
+            for base_id, destination_id in destination_by_base.items()
+        },
+        "ski_area": destinations_by_area,
+        "ski_area_access": {
+            access_id: {destination_id}
+            for access_id, destination_id in destination_by_access.items()
+        },
+        "terrain_domain": destinations_by_domain,
+        "lift_pass_product": destinations_by_pass,
+        "rental_display_fact": {
+            rental_id: {destination_id}
+            for rental_id, destination_id in destination_by_rental.items()
+        },
+    }
+
+    required: set[str] = set()
+    for target in report.reviewed_targets:
+        target_type: CatalogTargetType = target.target_type
+        target_id = target.target_id
+        if target_type == "trust_manifest":
+            namespace, _, target_id = target_id.partition(":")
+            target_type = TRUST_MANIFEST_TARGET_TYPES[namespace]
+        required.update(target_destinations[target_type].get(target_id, set()))
+    return required
+
+
+def _mermaid_label(entity_type: str, name: str) -> str:
+    return f"{escape(entity_type, quote=True)}<br/>{escape(name, quote=True)}"
+
+
+def _mermaid_edge_label(value: str) -> str:
+    return escape(value, quote=True)
+
+
+def render_catalog_resulting_graph_markdown(
+    report: CatalogCurationReport,
+    catalog: CatalogSnapshot,
+) -> str:
+    validate_catalog_resulting_graph(report, catalog, require=True)
+    assert report.resulting_graph is not None
+
+    destinations_by_id = {
+        destination.stay_destination_id: destination
+        for destination in catalog.stay_destinations
+    }
+    regions_by_id = {region.ski_region_id: region for region in catalog.ski_regions}
+    bases_by_id = {base.stay_base_id: base for base in catalog.stay_bases}
+    areas_by_id = {area.ski_area_id: area for area in catalog.ski_areas}
+    domains_by_id = {
+        domain.terrain_domain_id: domain for domain in catalog.terrain_domains
+    }
+    passes_by_id = {
+        product.lift_pass_product_id: product for product in catalog.lift_pass_products
+    }
+
+    destination_ids = set(report.resulting_graph.focus_stay_destination_ids)
+    region_ids = {
+        destinations_by_id[destination_id].trip_market_region_id
+        for destination_id in destination_ids
+    }
+    base_ids = {
+        base.stay_base_id
+        for base in catalog.stay_bases
+        if base.stay_destination_id in destination_ids
+    }
+    access_links = tuple(
+        sorted(
+            (
+                access
+                for access in catalog.ski_area_access
+                if access.stay_base_id in base_ids
+            ),
+            key=lambda access: access.ski_area_access_id,
+        )
+    )
+    area_ids = {access.ski_area_id for access in access_links}
+    pass_ids = {
+        product.lift_pass_product_id
+        for product in catalog.lift_pass_products
+        if destination_ids
+        & (
+            set(product.available_from_stay_destination_ids)
+            | set(product.default_for_stay_destination_ids)
+        )
+    }
+    domain_ids = {
+        domain_id
+        for pass_id in pass_ids
+        for domain_id in passes_by_id[pass_id].terrain_domain_ids
+    }
+    area_ids.update(
+        area_id
+        for pass_id in pass_ids
+        for area_id in passes_by_id[pass_id].valid_ski_area_ids
+    )
+
+    while True:
+        expanded_domain_ids = domain_ids | {
+            domain.terrain_domain_id
+            for domain in catalog.terrain_domains
+            if area_ids & set(domain.ski_area_ids)
+        }
+        expanded_area_ids = area_ids | {
+            area_id
+            for domain_id in expanded_domain_ids
+            for area_id in domains_by_id[domain_id].ski_area_ids
+        }
+        if expanded_domain_ids == domain_ids and expanded_area_ids == area_ids:
+            break
+        domain_ids = expanded_domain_ids
+        area_ids = expanded_area_ids
+
+    node_ids: dict[tuple[str, str], str] = {}
+    lines = ["## Resulting Graph", "", "```mermaid", "flowchart LR"]
+
+    def add_nodes(
+        kind: str,
+        entity_type: str,
+        entity_ids: set[str],
+        names: Mapping[str, str],
+    ) -> None:
+        for index, entity_id in enumerate(sorted(entity_ids), start=1):
+            node_id = f"{kind}_{index}"
+            node_ids[(kind, entity_id)] = node_id
+            lines.append(
+                f'  {node_id}["{_mermaid_label(entity_type, names[entity_id])}"]'
+            )
+
+    add_nodes(
+        "region",
+        "Trip market",
+        region_ids,
+        {entity_id: regions_by_id[entity_id].name for entity_id in region_ids},
+    )
+    add_nodes(
+        "destination",
+        "Stay destination",
+        destination_ids,
+        {
+            entity_id: destinations_by_id[entity_id].name
+            for entity_id in destination_ids
+        },
+    )
+    add_nodes(
+        "base",
+        "Stay base",
+        base_ids,
+        {entity_id: bases_by_id[entity_id].name for entity_id in base_ids},
+    )
+    add_nodes(
+        "area",
+        "Ski area",
+        area_ids,
+        {entity_id: areas_by_id[entity_id].name for entity_id in area_ids},
+    )
+    add_nodes(
+        "domain",
+        "Terrain domain",
+        domain_ids,
+        {entity_id: domains_by_id[entity_id].name for entity_id in domain_ids},
+    )
+    add_nodes(
+        "pass",
+        "Lift pass",
+        pass_ids,
+        {entity_id: passes_by_id[entity_id].name for entity_id in pass_ids},
+    )
+
+    def add_edge(
+        source_kind: str,
+        source_id: str,
+        target_kind: str,
+        target_id: str,
+        label: str,
+    ) -> None:
+        lines.append(
+            f"  {node_ids[(source_kind, source_id)]} "
+            f'-->|"{_mermaid_edge_label(label)}"| '
+            f"{node_ids[(target_kind, target_id)]}"
+        )
+
+    for destination_id in sorted(destination_ids):
+        destination = destinations_by_id[destination_id]
+        add_edge(
+            "region",
+            destination.trip_market_region_id,
+            "destination",
+            destination_id,
+            "trip market",
+        )
+    for base_id in sorted(base_ids):
+        base = bases_by_id[base_id]
+        add_edge(
+            "destination",
+            base.stay_destination_id,
+            "base",
+            base_id,
+            "stay base",
+        )
+    for access in access_links:
+        label = f"access: {access.access_mode}"
+        if access.nearest_lift_name is not None:
+            label += f" via {access.nearest_lift_name}"
+        if access.distance_m is not None:
+            label += f", {access.distance_m} m"
+        elif access.duration_minutes is not None:
+            label += f", {access.duration_minutes} min"
+        add_edge(
+            "base",
+            access.stay_base_id,
+            "area",
+            access.ski_area_id,
+            label,
+        )
+    for domain_id in sorted(domain_ids):
+        domain = domains_by_id[domain_id]
+        for area_id in sorted(set(domain.ski_area_ids) & area_ids):
+            add_edge("domain", domain_id, "area", area_id, "contains")
+    for pass_id in sorted(pass_ids):
+        product = passes_by_id[pass_id]
+        for destination_id in sorted(destination_ids):
+            if destination_id in product.default_for_stay_destination_ids:
+                add_edge(
+                    "destination",
+                    destination_id,
+                    "pass",
+                    pass_id,
+                    "default pass",
+                )
+            elif destination_id in product.available_from_stay_destination_ids:
+                add_edge(
+                    "destination",
+                    destination_id,
+                    "pass",
+                    pass_id,
+                    "pass available",
+                )
+        for area_id in sorted(set(product.valid_ski_area_ids) & area_ids):
+            add_edge("pass", pass_id, "area", area_id, "covers area")
+        for domain_id in sorted(set(product.terrain_domain_ids) & domain_ids):
+            add_edge(
+                "pass",
+                pass_id,
+                "domain",
+                domain_id,
+                "covers terrain domain",
+            )
+    lines.extend(["```", ""])
+    return "\n".join(lines)
+
+
+def render_catalog_curation_report_markdown(
+    report: CatalogCurationReport,
+    catalog: CatalogSnapshot | None = None,
+) -> str:
     lines = [
         f"# {report.title}",
         "",
         report.summary,
-        "",
-        "## Reviewed Targets",
-        "",
-        "| Target | Scope | Required Fields |",
-        "| --- | --- | --- |",
     ]
+    if report.resulting_graph is not None:
+        if catalog is None:
+            raise CatalogValidationError(
+                ["current catalog is required to render resulting_graph"]
+            )
+        lines.extend(
+            ["", *render_catalog_resulting_graph_markdown(report, catalog).splitlines()]
+        )
+    lines.extend(
+        [
+            "",
+            "## Reviewed Targets",
+            "",
+            "| Target | Scope | Required Fields |",
+            "| --- | --- | --- |",
+        ]
+    )
     for target in report.reviewed_targets:
         required = (
             "all canonical fields"

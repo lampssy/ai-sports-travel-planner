@@ -10,16 +10,23 @@ from app.data.catalog_curation import (
     CatalogCurationReport,
     CatalogEvidenceItem,
     CatalogFieldCoverage,
+    CatalogResultingGraph,
     CatalogReviewedTarget,
     CatalogValidationError,
     catalog_weather_request_geometry,
     load_catalog_curation_report,
     render_catalog_curation_report_markdown,
+    render_catalog_resulting_graph_markdown,
     validate_catalog_curation_report,
+    validate_catalog_resulting_graph,
 )
 from app.data.catalog_policy import catalog_policy_issues
 from app.domain.catalog import CatalogSnapshot
-from tests.test_catalog_models import minimal_catalog_payload
+from tests.test_catalog_models import (
+    add_second_destination_base_with_access,
+    add_terrain_domain,
+    minimal_catalog_payload,
+)
 
 NORMALIZED_TARGET_TYPES = {
     "ski_region",
@@ -859,6 +866,114 @@ def test_ski_area_boundary_markdown_is_rendered() -> None:
     assert "`parent-area`" in rendered
     assert "`parent_owned`" in rendered
     assert "`redundant`" in rendered
+
+
+def test_schema_three_graph_is_required_only_when_requested() -> None:
+    payload = _scope_report_payload()
+    payload["report_schema_version"] = 3
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_curation_report(report)
+    with pytest.raises(
+        CatalogValidationError,
+        match="schema version 3 requires resulting_graph",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_resulting_graph_is_derived_from_the_current_catalog() -> None:
+    catalog_payload = minimal_catalog_payload()
+    add_terrain_domain(catalog_payload)
+    catalog = CatalogSnapshot.model_validate(catalog_payload)
+    payload = _scope_report_payload()
+    payload.update(
+        {
+            "report_schema_version": 3,
+            "resulting_graph": {
+                "focus_stay_destination_ids": ["example"],
+            },
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_resulting_graph(report, catalog, require=True)
+    graph = render_catalog_resulting_graph_markdown(report, catalog)
+    rendered_report = render_catalog_curation_report_markdown(report, catalog)
+
+    assert graph.startswith("## Resulting Graph\n\n```mermaid\nflowchart LR\n")
+    assert "Trip market<br/>Example Valley" in graph
+    assert "Stay destination<br/>Example" in graph
+    assert "Stay base<br/>Example Village" in graph
+    assert "Ski area<br/>Example Area" in graph
+    assert "Ski area<br/>Other Area" in graph
+    assert "Terrain domain<br/>Example Domain" in graph
+    assert "Lift pass<br/>Example Local Pass" in graph
+    assert '|"access: walk via Example Gondola, 300 m"|' in graph
+    assert '|"default pass"|' in graph
+    assert graph in rendered_report
+
+
+def test_resulting_graph_rejects_unknown_focus_destination() -> None:
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+    payload = _scope_report_payload()
+    payload.update(
+        {
+            "report_schema_version": 3,
+            "resulting_graph": CatalogResultingGraph(
+                focus_stay_destination_ids=["missing-destination"]
+            ).model_dump(mode="json"),
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="unknown focus stay destination missing-destination",
+    ):
+        validate_catalog_resulting_graph(report, catalog, require=True)
+
+
+def test_resulting_graph_requires_destinations_owning_reviewed_graph_targets() -> None:
+    catalog_payload = minimal_catalog_payload()
+    add_second_destination_base_with_access(catalog_payload)
+    catalog = CatalogSnapshot.model_validate(catalog_payload)
+    payload = _scope_report_payload()
+    for collection in (
+        "reviewed_targets",
+        "changes",
+        "field_coverage",
+        "evidence",
+    ):
+        for item in payload[collection]:
+            if item["target_type"] == "ski_area_access":
+                item["target_id"] = "other-village--example-area"
+    for assessment in payload["entity_scope_assessments"]:
+        for target in assessment["target_refs"]:
+            target["target_id"] = "other-village--example-area"
+    payload.update(
+        {
+            "report_schema_version": 3,
+            "resulting_graph": {
+                "focus_stay_destination_ids": ["example"],
+            },
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="missing required focus stay destination other-destination",
+    ):
+        validate_catalog_resulting_graph(report, catalog, require=True)
+
+    report = report.model_copy(
+        update={
+            "resulting_graph": CatalogResultingGraph(
+                focus_stay_destination_ids=["example", "other-destination"]
+            )
+        }
+    )
+    validate_catalog_resulting_graph(report, catalog, require=True)
 
 
 def test_scope_assessment_markdown_renders_backlog_reference() -> None:
