@@ -280,7 +280,13 @@ test("renders month climatology metrics, segmented charts, and collapsed source 
   ).toBeVisible();
   expect(within(metrics).getByText("82-176 cm")).toBeVisible();
   expect(within(metrics).getByText("4.2 cm/day")).toBeVisible();
-  expect(within(metrics).getByText(/87% average historical likelihood/i)).toBeVisible();
+  expect(within(metrics).getByText("Typical historical snow depth")).toBeVisible();
+  expect(within(metrics).getByText("Usual historical range")).toBeVisible();
+  expect(
+    within(metrics).getByText(
+      "Historical data gives an average 87% chance of at least 30 cm during this travel window.",
+    ),
+  ).toBeVisible();
   expect(within(metrics).getByText("-2.1 °C")).toBeVisible();
   expect(screen.queryByRole("tab", { name: "Forecast" })).toBeNull();
   expect(
@@ -363,14 +369,14 @@ test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
   expect(screen.queryByText(/cache_valid_until|evaluated_at/i)).toBeNull();
   const forecastTab = screen.getByRole("tab", { name: "Forecast" });
   const historicalTab = screen.getByRole("tab", { name: "Historical context" });
-  expect(screen.getByText("Average daily median depth")).not.toBeVisible();
+  expect(screen.getByText("Typical historical snow depth")).not.toBeVisible();
   expect(forecastTab).toHaveAttribute("aria-selected", "true");
   forecastTab.focus();
   await user.keyboard("{ArrowRight}");
   expect(historicalTab).toHaveFocus();
   expect(historicalTab).toHaveAttribute("aria-selected", "true");
   expect(screen.getByRole("tabpanel", { name: "Historical context" })).toBeVisible();
-  expect(screen.getByText("Average daily median depth")).toBeVisible();
+  expect(screen.getByText("Typical historical snow depth")).toBeVisible();
   await user.keyboard("{ArrowRight}");
   expect(forecastTab).toHaveFocus();
   expect(forecastTab).toHaveAttribute("aria-selected", "true");

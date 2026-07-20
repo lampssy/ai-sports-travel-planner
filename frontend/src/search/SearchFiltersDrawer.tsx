@@ -202,7 +202,7 @@ export function SearchFiltersDrawer({
       >
         <header className="filters-drawer__header">
           <div>
-            <p className="eyebrow">Exact controls</p>
+            <p className="eyebrow">Search details</p>
             <h2 id="filters-drawer-title">Adjust filters</h2>
           </div>
           <button
@@ -345,7 +345,7 @@ export function SearchFiltersDrawer({
           ) : null}
 
           <div className="drawer-grid">
-            <Field label="Origin">
+            <Field label="Starting location">
               <input
                 value={filters.originText}
                 disabled={disabled}
@@ -356,7 +356,7 @@ export function SearchFiltersDrawer({
                 className="control"
               />
             </Field>
-            <Field label="Hard drive limit">
+            <Field label="Maximum drive time">
               <input
                 type="number"
                 min="0.1"
@@ -372,7 +372,7 @@ export function SearchFiltersDrawer({
             </Field>
           </div>
 
-          <Field label="Value preference">
+          <Field label="What matters most for value?">
             <select
               value={filters.valueObjective}
               disabled={disabled}
@@ -426,7 +426,7 @@ export function SearchFiltersDrawer({
 
           {visibleGroupPriorities.length ? (
             <fieldset className="preference-fieldset">
-              <legend>Trip priorities</legend>
+              <legend>What matters most</legend>
               <div className="preference-options">
                 {visibleGroupPriorities.map(({ priority, label }) => (
                   <button

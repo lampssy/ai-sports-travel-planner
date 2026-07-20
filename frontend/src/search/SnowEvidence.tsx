@@ -82,7 +82,7 @@ function evidenceMetrics(response: AvailableResponse) {
   const { historical } = response.evidence;
   return [
     {
-      label: "Average daily median depth",
+      label: "Typical historical snow depth",
       value:
         historical.snow_depth_cm_p50 == null
           ? "Not available"
@@ -90,10 +90,10 @@ function evidenceMetrics(response: AvailableResponse) {
       detail:
         historical.probability_snow_depth_ge_30cm == null
           ? undefined
-          : `${percentage(historical.probability_snow_depth_ge_30cm)} average historical likelihood above 30 cm`,
+          : `Historical data gives an average ${percentage(historical.probability_snow_depth_ge_30cm)} chance of at least 30 cm during this travel window.`,
     },
     {
-      label: "Typical depth range",
+      label: "Usual historical range",
       value:
         historical.snow_depth_cm_p25 == null || historical.snow_depth_cm_p75 == null
           ? "Not available"

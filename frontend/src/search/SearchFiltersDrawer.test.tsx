@@ -82,7 +82,7 @@ test("changes only the drawer-owned pass objective", async () => {
   const { rerender } = render(<SearchFiltersDrawer {...props} />);
 
   await user.selectOptions(
-    screen.getByLabelText("Value preference"),
+    screen.getByLabelText("What matters most for value?"),
     "pass_price_per_day",
   );
   expect(onObjectivesChange).toHaveBeenLastCalledWith([
@@ -100,10 +100,40 @@ test("changes only the drawer-owned pass objective", async () => {
       ]}
     />,
   );
-  await user.selectOptions(screen.getByLabelText("Value preference"), "");
+  await user.selectOptions(
+    screen.getByLabelText("What matters most for value?"),
+    "",
+  );
   expect(onObjectivesChange).toHaveBeenLastCalledWith([
     { factor_id: "trip_window_snow_fit", importance: "high" },
   ]);
+});
+
+test("uses plain-language labels for detailed search controls", () => {
+  render(
+    <SearchFiltersDrawer
+      open
+      disabled={false}
+      filters={defaultSearchFilters}
+      preferences={[]}
+      groupPriorities={[
+        { group_id: "ski_experience", importance: "important" },
+      ]}
+      objectives={[]}
+      returnFocusRef={createRef<HTMLButtonElement>()}
+      onFiltersChange={vi.fn()}
+      onPreferencesChange={vi.fn()}
+      onGroupPrioritiesChange={vi.fn()}
+      onObjectivesChange={vi.fn()}
+      onClose={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText("Search details")).toBeVisible();
+  expect(screen.getByLabelText("Starting location")).toBeVisible();
+  expect(screen.getByLabelText("Maximum drive time")).toBeVisible();
+  expect(screen.getByLabelText("What matters most for value?")).toBeVisible();
+  expect(screen.getByRole("group", { name: "What matters most" })).toBeVisible();
 });
 
 test("shows and removes active factor and objective choices outside the defaults", async () => {

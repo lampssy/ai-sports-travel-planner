@@ -9,11 +9,32 @@ import type {
 import {
   createSearchSession,
   clearResolvedTopicsForManualChange,
+  defaultSearchFilters,
   findSelectedCandidate,
   mergeObjectivePatches,
   rankChangeSummary,
   reconcileSearchSession,
+  validateSearchFilters,
 } from "./searchSession";
+
+test("uses plain-language maximum drive time validation messages", () => {
+  expect(
+    validateSearchFilters({
+      ...defaultSearchFilters,
+      location: "France",
+      maxDriveHours: "0",
+    }),
+  ).toBe("Maximum drive time must be greater than 0 hours.");
+
+  expect(
+    validateSearchFilters({
+      ...defaultSearchFilters,
+      location: "France",
+      maxDriveHours: "5",
+      originText: "",
+    }),
+  ).toBe("Add a starting location to use a maximum drive time.");
+});
 
 const resolvedTopics: ResolvedRefinementTopic[] = [
   {

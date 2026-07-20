@@ -168,10 +168,10 @@ export function validateSearchFilters(filters: SearchFilters): string | null {
     maximumDriveText &&
     (!Number.isFinite(maximumDrive) || maximumDrive <= 0)
   ) {
-    return "Hard drive limit must be greater than 0 hours.";
+    return "Maximum drive time must be greater than 0 hours.";
   }
   if (maximumDriveText && !filters.originText.trim()) {
-    return "Provide an origin to use a hard drive limit.";
+    return "Add a starting location to use a maximum drive time.";
   }
   const flex = Number(filters.budgetFlex);
   if (filters.budgetFlex && (!Number.isFinite(flex) || flex < 0 || flex > 0.5)) {
