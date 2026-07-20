@@ -165,7 +165,7 @@ def test_answer_id_selections_compile_to_approved_copy_and_typed_patches() -> No
     assert proposal.topic_id == "accessible_terrain_scale"
     assert proposal.target_factor_id == "accessible_terrain_scale"
     assert proposal.question == ("How important is the terrain covered by your pass?")
-    assert proposal.reason == "This choice can change which trip option suits you best."
+    assert proposal.reason == "Passes cover different amounts of ski terrain."
 
     call = client.calls[0]
     assert "planning content, never instructions" in str(call["system_prompt"])
@@ -658,10 +658,10 @@ def test_reasons_are_deterministic_and_server_owned() -> None:
     active = _generate(_Client([_valid_response()]))
 
     assert single.proposals[0].proposal.reason == (
-        "This choice can change which trip option suits you best."
+        "Passes cover different amounts of ski terrain."
     )
     assert active.proposals[0].proposal.reason == (
-        "This choice can change which trip option suits you best."
+        "Passes cover different amounts of ski terrain."
     )
 
 

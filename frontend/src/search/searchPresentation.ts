@@ -53,7 +53,7 @@ export const factorLabels: Record<string, string> = {
   stay_base_access: "Place to stay and lift access",
   pass_price_per_day: "Lift-pass price per day",
   pass_terrain_value: "Terrain for lift-pass price",
-  ski_day_apres: "Après after skiing",
+  ski_day_apres: "After-ski atmosphere",
   local_apres: "Evening atmosphere",
   local_pace: "Local pace",
   development_style: "Place style",
@@ -703,6 +703,43 @@ const watchoutCopy: Record<string, string> = {
   trip_window_snow_fit: "Snow evidence is limited for the requested travel window.",
 };
 
+function supportedVerdict(
+  configuration: SearchV4Configuration,
+  factorId: string,
+  travelWindow?: TravelWindow,
+): string {
+  if (factorId === "trip_window_snow_fit") {
+    const label = snowFitPresentation(configuration, travelWindow).label.replace(
+      /^Snow/,
+      "snow",
+    );
+    return `Strong ${label}.`;
+  }
+  if (factorId === "accessible_terrain_scale") {
+    switch (configuration.selected_pass.accessible_piste_km_evidence?.scope) {
+      case "ski_area":
+        return "A strong match for terrain in the selected ski area.";
+      case "terrain_domain":
+        return "A strong match for connected terrain covered by this pass.";
+      case "pass":
+        return "A strong match for terrain covered by this pass.";
+      default:
+        return "A strong terrain match.";
+    }
+  }
+  const verdicts: Record<string, string> = {
+    party_skill_coverage: "A strong match for your group's skiing level.",
+    terrain_potential_scale: "A strong match for connected terrain.",
+    lift_network_scale: "A strong match for lift-network variety.",
+    glacier_terrain: "A strong match for glacier access.",
+    snowmaking_availability: "A strong match for snowmaking support.",
+    pass_price_per_day: "A strong match for lift-pass price.",
+    pass_terrain_value: "A strong match for terrain and lift-pass value.",
+    travel_effort: "A strong match for your travel limits.",
+  };
+  return verdicts[factorId] ?? "A strong trip match.";
+}
+
 export interface CandidateNarrative {
   verdict: string;
   strength?: string;
@@ -848,9 +885,9 @@ function forecastConditions(
   }
   if (response.evidence.historical.snow_depth_cm_p50 != null) {
     parts.push(
-      `historical median depth ${formatWeatherMetric(
+      `typical historical snow depth ${formatWeatherMetric(
         response.evidence.historical.snow_depth_cm_p50,
-      )} cm`,
+      )} cm (daily medians averaged across the window)`,
     );
   }
   return parts.length
@@ -937,7 +974,9 @@ export function weatherEvidencePresentation(
   const historicalConditions = [
     historical.snow_depth_cm_p50 == null
       ? null
-      : `Median depth ${formatWeatherMetric(historical.snow_depth_cm_p50)} cm`,
+      : `Typical historical snow depth ${formatWeatherMetric(
+          historical.snow_depth_cm_p50,
+        )} cm (daily medians averaged across the window)`,
     historical.average_daily_snowfall_cm == null
       ? null
       : `typical fresh snow ${formatWeatherMetric(
@@ -1188,9 +1227,6 @@ export function buildCandidateNarrative(
       (factor.factor_id !== "trip_window_snow_fit" || hasTravelWindow) &&
       (factor.effective_evidence_cap === 0 || factor.warnings.length > 0),
   );
-  const supportedLabel = supported
-    ? factorLabelForConfiguration(configuration, supported.factor_id, travelWindow)
-    : undefined;
   const supportedTerrain =
     supported?.factor_id === "accessible_terrain_scale"
       ? terrainPresentation(configuration.selected_pass)
@@ -1211,7 +1247,7 @@ export function buildCandidateNarrative(
         : accessTrust === "verified_with_adjustment"
           ? "A practical lift-access match based on estimated data."
           : "A practical lift-access match for this trip."
-      : `A strong ${supportedLabel?.toLowerCase() ?? "trip"} match.`
+      : supportedVerdict(configuration, supported.factor_id, travelWindow)
     : "A complete trip option for comparison.";
   return {
     verdict,
@@ -1223,7 +1259,7 @@ export function buildCandidateNarrative(
               ? accessTrust === "estimated"
                 ? "Catalog estimates suggest the recommended place to stay keeps access practical."
                 : accessTrust === "verified_with_adjustment"
-                  ? "Estimated source data supports the recommended place to stay as a practical choice."
+                  ? "Available source data suggests the recommended place to stay offers practical lift access."
                   : strengthCopy[supported.factor_id]
               : supported.factor_id === "trip_window_snow_fit"
                 ? `${snowFitPresentation(configuration, travelWindow).label}: Available snow evidence supports this travel window.`

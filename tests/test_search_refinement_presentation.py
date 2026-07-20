@@ -1435,8 +1435,28 @@ def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:
     ski_day = presentation.answer_by_id["ski_day_apres.low_key"]
     local = presentation.answer_by_id["local_apres.low_key"]
 
-    assert ski_day.description == "Prioritize a quiet atmosphere after skiing."
+    assert presentation.topic_by_id["ski_day_apres"].fallback_question == (
+        "What atmosphere do you prefer right after skiing?"
+    )
+    assert ski_day.description == "Prefer a quiet place to relax after skiing."
+    assert presentation.answer_by_id["ski_day_apres.moderate"].label == (
+        "Some atmosphere"
+    )
+    assert presentation.answer_by_id["ski_day_apres.moderate"].description == (
+        "Prefer a social atmosphere without a strong party focus."
+    )
     assert local.description == "Prioritize a quiet evening near where you stay."
+
+
+def test_refinement_reasons_explain_the_specific_choice() -> None:
+    presentation = load_refinement_presentation_policy()
+    generic_reasons = {
+        "This choice can change which trip option suits you best.",
+        "This choice can change which place to stay suits you best.",
+    }
+
+    for topic in presentation.topics:
+        assert topic.fallback_reason not in generic_reasons
 
 
 def test_development_style_and_base_type_have_distinct_visible_contexts() -> None:
@@ -1480,7 +1500,7 @@ def test_safe_dynamic_interaction_copy_survives_unchanged() -> None:
         presentation,
     ) == (
         question,
-        "This choice can change which place to stay suits you best.",
+        "Places to stay differ in building style and resort layout.",
     )
 
 
@@ -1510,7 +1530,7 @@ def test_unsafe_dynamic_question_uses_topic_fallback(question: str) -> None:
 
     assert resolved == (
         "What building and development style do you prefer where you stay?",
-        "This choice can change which place to stay suits you best.",
+        "Places to stay differ in building style and resort layout.",
     )
 
 
@@ -1527,7 +1547,7 @@ def test_reason_is_always_server_owned_without_discarding_safe_question() -> Non
 
     assert resolved == (
         question,
-        "This choice can change which place to stay suits you best.",
+        "Places to stay differ in building style and resort layout.",
     )
 
 
@@ -1556,7 +1576,7 @@ def test_blocked_terms_and_candidate_ids_match_whole_tokens_only() -> None:
         presentation,
     ) == (
         question,
-        "This choice can change which place to stay suits you best.",
+        "Places to stay differ in building style and resort layout.",
     )
 
 
@@ -1906,7 +1926,7 @@ def test_registry_fallback_uses_first_material_topic_and_authoritative_copy() ->
         "What building and development style do you prefer where you stay?"
     )
     assert fallback.proposal.reason == (
-        "This choice can change which place to stay suits you best."
+        "Places to stay differ in building style and resort layout."
     )
     assert [option.label for option in fallback.proposal.options] == [
         "Traditional mountain village",

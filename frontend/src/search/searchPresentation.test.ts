@@ -485,7 +485,7 @@ describe("deterministic recommendation copy", () => {
     });
 
     expect(buildCandidateNarrative(candidate)).toEqual({
-      verdict: "A strong terrain in the selected ski area match.",
+      verdict: "A strong match for terrain in the selected ski area.",
       strength: "About 31 km in the selected ski area.",
     });
   });
@@ -521,7 +521,7 @@ describe("deterministic recommendation copy", () => {
       "Terrain scale",
     );
     expect(buildCandidateNarrative(candidate)).toEqual({
-      verdict: "A strong terrain scale match.",
+      verdict: "A strong terrain match.",
       strength: "Terrain scale contributes positively to this comparison.",
     });
   });
@@ -572,14 +572,15 @@ describe("deterministic recommendation copy", () => {
   });
 
   test.each([
-    [{ month: 3 }, "Snow fit for March"],
+    [{ month: 3 }, "Snow fit for March", "Strong snow fit for March."],
     [
       { start_date: "2027-01-16", end_date: "2027-01-20" },
       "Snow fit for your dates",
+      "Strong snow fit for your dates.",
     ],
   ] as const)(
     "uses %s in a snow-led narrative",
-    (travelWindow, snowLabel) => {
+    (travelWindow, snowLabel, expectedVerdict) => {
       const candidate = configuration("supported-snow-narrative", {
         factors: [
           {
@@ -602,7 +603,7 @@ describe("deterministic recommendation copy", () => {
       });
 
       expect(buildCandidateNarrative(candidate, travelWindow)).toEqual({
-        verdict: `A strong ${snowLabel.toLowerCase()} match.`,
+        verdict: expectedVerdict,
         strength: `${snowLabel}: Available snow evidence supports this travel window.`,
       });
     },
@@ -725,7 +726,7 @@ describe("deterministic recommendation copy", () => {
     expect(buildCandidateNarrative(adjusted)).toEqual({
       verdict: "A practical lift-access match based on estimated data.",
       strength:
-        "Estimated source data supports the recommended place to stay as a practical choice.",
+        "Available source data suggests the recommended place to stay offers practical lift access.",
     });
     expect(buildCandidateNarrative(missingEvidence)).toEqual({
       verdict: "A complete trip option for comparison.",
@@ -1044,7 +1045,7 @@ describe("weather evidence presentation", () => {
       sourceCurrency: "Archive through 2024; 1995-2024 baseline",
       coverage: "30 historical seasons; 1 profile date",
       expectedConditions:
-        "Median depth 128 cm; typical fresh snow 4.2 cm/day; average high -2.1 °C",
+        "Typical historical snow depth 128 cm (daily medians averaged across the window); typical fresh snow 4.2 cm/day; average high -2.1 °C",
       mainLimitation: "Historical patterns do not predict exact trip conditions.",
     });
     expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
@@ -1129,7 +1130,7 @@ describe("weather evidence presentation", () => {
         "Forecast issued Jul 16, 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline",
       coverage: "2 of 3 requested dates have forecast values; 30 historical seasons",
       expectedConditions:
-        "Forecast fresh snow 7.4 cm; forecast temperature range -7 to -1 °C; historical median depth 128 cm",
+        "Forecast fresh snow 7.4 cm; forecast temperature range -7 to -1 °C; typical historical snow depth 128 cm (daily medians averaged across the window)",
       mainLimitation: "Forecast values are unavailable for 1 of 3 requested dates.",
     });
     expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
