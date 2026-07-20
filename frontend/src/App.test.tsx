@@ -91,6 +91,11 @@ const tignesConfiguration: SearchV4Configuration = {
   },
   ranking_status: "ranked",
   fit_score: 82.4,
+  snow_assessment: {
+    state: "not_enough_evidence",
+    reason: "insufficient_date_coverage",
+    forecast_status: "not_applicable",
+  },
   groups: [
     {
       group_id: "ski_experience",

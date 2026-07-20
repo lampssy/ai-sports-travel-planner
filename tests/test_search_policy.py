@@ -56,10 +56,11 @@ def test_default_search_v4_policy_loads_accepted_numeric_policy() -> None:
         "terrain_fit": "informational",
         "pass_value": "informational",
     }
-    assert policy.weather.policy_version == "trip-window-snow-v1"
+    assert policy.weather.policy_version == "trip-window-snow-v2"
     assert policy.weather.depth_curve_values == (0, 10, 20, 30, 60, 100)
     assert policy.weather.lead_time_forecast_shares == (0.8, 0.6, 0.4, 0.15)
     assert policy.weather.preferred_short_range_max_lead_days == 15
+    assert policy.weather.minimum_snow_assessment_coverage == 1
 
 
 def test_default_policy_keeps_lodging_measured_and_snowmaking_composed() -> None:
@@ -115,6 +116,17 @@ def test_policy_rejects_invalid_evidence_readiness_shape() -> None:
     with pytest.raises(
         ValidationError,
         match="positive_presence requires minimum_verified_positive_count",
+    ):
+        SearchPolicy.model_validate(payload)
+
+
+def test_policy_rejects_climatology_positive_weights_that_do_not_sum_to_one() -> None:
+    payload = load_search_policy().model_dump(mode="python")
+    payload["weather"]["climatology_probability_50cm_coefficient"] = 0.19
+
+    with pytest.raises(
+        ValidationError,
+        match="positive climatology reliability coefficients must sum to one",
     ):
         SearchPolicy.model_validate(payload)
 

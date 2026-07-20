@@ -324,6 +324,11 @@ def _weather_api_configuration(
             price=None,
         ),
         lodging_estimate=None,
+        snow_assessment={
+            "state": "strong_fit",
+            "reason": "strong_snow_reliability",
+            "forecast_status": "available",
+        },
         ranking_status="ranked",
         fit_score=88,
     )
@@ -353,12 +358,13 @@ def test_search_weather_evidence_endpoint_serializes_typed_available_response(
     )
     weather = SearchWeatherEvidence(
         mode="forecast_assisted",
+        forecast_status="available",
         window_label="2027-01-10 to 2027-01-12",
         elevation_m=2000,
         elevation_status="exact",
         interpretation=(
             "Fresh forecast data adds to historical weather patterns for "
-            "3 of 3 requested days."
+            "3 of 3 forecast-applicable days."
         ),
         historical=HistoricalWeatherEvidence(
             source_label="30-year snow climatology",
@@ -387,6 +393,8 @@ def test_search_weather_evidence_endpoint_serializes_typed_available_response(
             snow_depth_cm_p50=80,
             snow_depth_cm_p75=100,
             probability_snow_depth_ge_30cm=0.8,
+            probability_snow_depth_ge_50cm=0.65,
+            average_deterioration_risk=0.2,
             average_daily_snowfall_cm=4,
             average_max_temperature_c=-1,
             daily_profile=(historical_point,),
@@ -445,6 +453,8 @@ def test_search_weather_evidence_endpoint_serializes_typed_available_response(
     payload = response.json()["evidence"]
     assert payload["mode"] == "forecast_assisted"
     assert payload["historical"]["daily_profile"][0]["snow_depth_cm_p50"] == 80
+    assert payload["historical"]["probability_snow_depth_ge_50cm"] == 0.65
+    assert payload["historical"]["average_deterioration_risk"] == 0.2
     assert payload["historical"]["provenance_status"] == "homogeneous"
     assert payload["historical"]["sources"][0]["baseline_period"] == "normal_30y"
     assert payload["forecast"]["usable_date_count"] == 3

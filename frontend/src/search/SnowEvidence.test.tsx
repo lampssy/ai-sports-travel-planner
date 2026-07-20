@@ -65,6 +65,7 @@ function historicalResponse(
     cache_valid_until: "2026-07-16T12:05:00Z",
     evidence: {
       mode: "climatology",
+      forecast_status: "not_applicable",
       window_label: "March",
       elevation_band: "mid_mountain",
       elevation_m: 2400,
@@ -98,6 +99,8 @@ function historicalResponse(
         snow_depth_cm_p50: 128,
         snow_depth_cm_p75: 176,
         probability_snow_depth_ge_30cm: 0.87,
+        probability_snow_depth_ge_50cm: 0.72,
+        average_deterioration_risk: 0.18,
         average_daily_snowfall_cm: 4.2,
         average_max_temperature_c: -2.1,
         daily_profile: [historicalPoint],
@@ -133,6 +136,7 @@ function forecastResponse(
     evidence: {
       ...historicalResponse().evidence,
       mode: "forecast_assisted",
+      forecast_status: "available",
       window_label: "20-22 July 2026",
       interpretation: "Fresh forecast supports the requested dates.",
       forecast: {
@@ -160,6 +164,26 @@ function forecastResponse(
         average_forecast_share: 0.67,
         daily_profile: [forecastPoint],
       },
+    },
+  };
+}
+
+function forecastOnlyResponse(): Extract<
+  SearchWeatherEvidenceResponse,
+  { status: "available" }
+> {
+  const response = forecastResponse();
+  return {
+    ...response,
+    evidence: {
+      ...response.evidence,
+      mode: "forecast_only",
+      interpretation:
+        "Fresh forecast data describes 2 of 3 forecast-applicable days; historical context is unavailable.",
+      limitations: [
+        "No trustworthy mid-mountain historical evidence is available.",
+      ],
+      historical: null,
     },
   };
 }
@@ -282,9 +306,15 @@ test("renders month climatology metrics, segmented charts, and collapsed source 
   expect(within(metrics).getByText("4.2 cm/day")).toBeVisible();
   expect(within(metrics).getByText("Typical historical snow depth")).toBeVisible();
   expect(within(metrics).getByText("Usual historical range")).toBeVisible();
+  expect(within(metrics).getByText("Average historical snowfall")).toBeVisible();
+  expect(
+    within(metrics).getByText("Average across matching historical dates"),
+  ).toBeVisible();
+  expect(within(metrics).getByText("Historical rain or thaw risk")).toBeVisible();
+  expect(within(metrics).getByText("18%")).toBeVisible();
   expect(
     within(metrics).getByText(
-      "Across matching dates, historical data averaged 87% of days at or above the 30 cm snow-depth reference.",
+      "Across matching dates, historical data averaged 87% of days at or above the 30 cm snow-depth reference. 72% of days were at or above 50 cm.",
     ),
   ).toBeVisible();
   expect(within(metrics).getByText("-2.1 °C")).toBeVisible();
@@ -379,7 +409,7 @@ test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
   ).toBeGreaterThan(0);
   expect(screen.getByText("Data dates")).toBeVisible();
   expect(screen.getByText("Forecast issued Jul 16, 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline")).toBeVisible();
-  expect(screen.getByText("2 of 3 requested dates have forecast values; 30 historical seasons")).toBeVisible();
+  expect(screen.getByText("2 of 3 forecast-applicable dates have forecast values; 30 historical seasons")).toBeVisible();
   expect(screen.queryByText(/fresh at 16 jul 2026, 12:02 utc/i)).toBeNull();
   expect(screen.queryByText(/cache_valid_until|evaluated_at/i)).toBeNull();
   const forecastTab = screen.getByRole("tab", { name: "Forecast" });
@@ -395,6 +425,36 @@ test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
   await user.keyboard("{ArrowRight}");
   expect(forecastTab).toHaveFocus();
   expect(forecastTab).toHaveAttribute("aria-selected", "true");
+});
+
+test("renders forecast-only evidence without inventing historical context", async () => {
+  const response = forecastOnlyResponse();
+  render(
+    <SnowEvidence
+      intent={datesIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={vi.fn().mockResolvedValue(response)}
+    />,
+  );
+
+  expect((await screen.findAllByText("Forecast")).length).toBeGreaterThan(0);
+  expect(
+    screen.getByText(
+      "2 of 3 forecast-applicable dates have forecast values; historical context unavailable",
+    ),
+  ).toBeVisible();
+  expect(screen.queryByRole("tab", { name: "Historical context" })).toBeNull();
+  expect(screen.queryByText("Typical historical snow depth")).toBeNull();
+  expect(
+    screen.getByText(
+      "No trustworthy mid-mountain historical evidence is available.",
+    ),
+  ).toBeVisible();
+
+  render(<WeatherEvidenceTechnicalDetails response={response} />);
+  expect(screen.getByText("Forecast methods and source rows")).toBeVisible();
+  expect(screen.queryByText("Historical methods and source rows")).toBeNull();
 });
 
 test("keeps selected forecast freshness separate from excluded stale rows", async () => {
@@ -425,7 +485,7 @@ test("distinguishes mixed source elevations from unavailable elevation", async (
     elevation_m: null,
     elevation_status: "mixed",
     historical: {
-      ...mixed.evidence.historical,
+      ...mixed.evidence.historical!,
       provenance_status: "mixed",
       sources: [
         {
@@ -488,7 +548,7 @@ test("retains response limitations when mixed evidence becomes the main limitati
       "Historical coverage is limited for one requested date.",
     ],
     historical: {
-      ...response.evidence.historical,
+      ...response.evidence.historical!,
       provenance_status: "mixed",
     },
   };

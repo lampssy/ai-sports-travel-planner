@@ -12,7 +12,7 @@ from typing import cast
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 import app.domain.search_refinement_snapshot as refinement_snapshot_module
 from app.api.routes import router
@@ -65,6 +65,7 @@ from app.domain.search_v4_models import (
 from app.domain.search_v4_service import (
     SearchV4RefinementResponse,
     SearchV4Response,
+    SearchV4SnowAssessment,
     UnknownSearchWeatherAreaError,
     forecast_run_is_fresh,
     generate_v4_candidate_records,
@@ -1657,7 +1658,15 @@ def test_exact_date_snowmaking_replay_updates_trip_window_snow_fit() -> None:
             ski_area_id=ski_area_id,
             day=day,
             snow_depth_cm_p50=25,
-        ).model_copy(update={"avg_snow_confidence_score": 0.2})
+        ).model_copy(
+            update={
+                "prob_snow_depth_ge_30cm": 0.1,
+                "prob_snow_depth_ge_50cm": 0.05,
+                "prob_rain_risk": 0.5,
+                "prob_freeze_thaw": 0.4,
+                "avg_snow_confidence_score": 0.2,
+            }
+        )
         for ski_area_id in _country_area_ids(snapshot, "Austria")
         for day in requested_dates
     )
@@ -2875,6 +2884,10 @@ def test_exact_date_search_does_not_map_weather_evidence_without_changing_rankin
 
     configurations = _configurations(result)
     assert configurations
+    assert all(
+        configuration.snow_assessment.forecast_status == "available"
+        for configuration in configurations
+    )
     assert build_calls == []
     assert all(
         "weather_evidence" not in configuration.model_dump()
@@ -3194,4 +3207,45 @@ def test_service_validates_intent_even_when_constraints_exclude_every_candidate(
             climatology_repository=_ClimatologyRepository(),
             forecast_repository=_ForecastRepository(),
             include_refinements=False,
+        )
+
+
+def test_service_rejects_an_exact_travel_window_entirely_in_the_past() -> None:
+    snapshot, manifest = _catalog_and_trust()
+
+    with pytest.raises(
+        ValueError,
+        match="exact travel dates cannot be in the past",
+    ):
+        search_trip_configurations(
+            intent=SearchIntent(
+                constraints=SearchConstraints(
+                    travel_window=TravelWindow(
+                        start_date=date(2026, 12, 1),
+                        end_date=date(2026, 12, 7),
+                    )
+                )
+            ),
+            catalog_snapshot=snapshot,
+            trust_manifest=manifest,
+            climatology_repository=_ClimatologyRepository(),
+            forecast_repository=_ForecastRepository(),
+            reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+            include_refinements=False,
+        )
+
+
+def test_snow_assessment_rejects_contradictory_state_and_reason() -> None:
+    with pytest.raises(ValidationError, match="reason must match state"):
+        SearchV4SnowAssessment(
+            state="strong_fit",
+            reason="insufficient_date_coverage",
+            forecast_status="available",
+        )
+
+    with pytest.raises(ValidationError, match="requires usable forecast evidence"):
+        SearchV4SnowAssessment(
+            state="some_concerns",
+            reason="limited_historical_context",
+            forecast_status="not_applicable",
         )

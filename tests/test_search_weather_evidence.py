@@ -22,6 +22,8 @@ from app.domain.search_policy import load_search_policy
 from app.domain.search_v4_models import SearchConstraints, SearchIntent, TravelWindow
 from app.domain.search_v4_service import get_search_weather_evidence
 from app.domain.search_weather_evidence import (
+    ForecastWeatherEvidence,
+    SearchWeatherEvidence,
     SearchWeatherEvidenceAvailableResponse,
     SearchWeatherEvidenceRequest,
     SearchWeatherEvidenceUnavailableResponse,
@@ -150,12 +152,14 @@ def _context(
     window: TravelWindow,
     *,
     stale_run_ids: frozenset[str] = frozenset(),
+    reference_date: date = date(2027, 1, 1),
 ) -> WeatherEvaluationContext:
     return WeatherEvaluationContext(
         intent=SearchIntent(
             constraints=SearchConstraints(travel_window=window),
         ),
         policy=load_search_policy(),
+        reference_date=reference_date,
         stale_run_ids=stale_run_ids,
     )
 
@@ -214,6 +218,8 @@ def test_month_summary_prefers_latest_normal_rows_and_preserves_provenance() -> 
     assert summary.historical.baseline_end_year == 2020
     assert summary.historical.evidence_seasons == 25
     assert summary.historical.daily_profile[1].snow_depth_cm_p50 == 80
+    assert summary.historical.probability_snow_depth_ge_50cm == pytest.approx(0.65)
+    assert summary.historical.average_deterioration_risk == pytest.approx(0.2)
     assert summary.historical.provenance_status == "homogeneous"
     assert len(summary.historical.sources) == 1
     assert summary.historical.sources[0].profile_dates == ("01-02",)
@@ -394,6 +400,7 @@ def test_exact_dates_use_fresh_complete_preferred_source_forecasts() -> None:
 
     assert summary is not None
     assert summary.mode == "forecast_assisted"
+    assert summary.forecast_status == "available"
     assert summary.forecast is not None
     assert summary.forecast.usable_date_count == 3
     assert summary.forecast.requested_date_count == 3
@@ -413,7 +420,7 @@ def test_exact_dates_use_fresh_complete_preferred_source_forecasts() -> None:
     assert summary.historical is not None
     assert summary.interpretation == (
         "Fresh forecast data adds to historical weather patterns for 3 of 3 "
-        "requested days."
+        "forecast-applicable days."
     )
 
 
@@ -499,15 +506,23 @@ def test_exact_dates_report_partial_usable_forecast_coverage() -> None:
 
     assert summary is not None
     assert summary.mode == "forecast_assisted"
+    assert summary.forecast_status == "partial"
     assert summary.forecast is not None
     assert summary.forecast.coverage_status == "partial"
     assert summary.forecast.usable_date_count == 2
     assert len(summary.forecast.daily_profile) == 3
     assert summary.forecast.daily_profile[2].snow_depth_cm is None
     assert (
-        "Up-to-date forecast coverage is available for 2 of 3 days."
-        in summary.limitations
+        "Up-to-date forecast coverage is available for 2 of 3 "
+        "forecast-applicable days." in summary.limitations
     )
+    with pytest.raises(ValidationError, match="must match forecast coverage"):
+        SearchWeatherEvidence(
+            **{
+                **summary.model_dump(),
+                "forecast_status": "available",
+            }
+        )
 
 
 def test_historical_profile_preserves_missing_middle_requested_day() -> None:
@@ -524,6 +539,7 @@ def test_historical_profile_preserves_missing_middle_requested_day() -> None:
     )
 
     assert summary is not None
+    assert summary.forecast_status == "not_applicable"
     assert len(summary.historical.daily_profile) == 31
     assert [
         point.date_or_month_day for point in summary.historical.daily_profile[:3]
@@ -609,10 +625,58 @@ def test_stale_forecast_falls_back_to_climatology_with_explicit_limitation() -> 
 
     assert summary is not None
     assert summary.mode == "climatology"
+    assert summary.forecast_status == "unexpectedly_unavailable"
     assert summary.forecast is None
     assert "Older forecasts were not used." in summary.limitations
     assert (
         "No up-to-date forecast is available for the requested dates."
+        in summary.limitations
+    )
+
+
+def test_far_future_forecast_absence_is_neutral_expected_context() -> None:
+    day = date(2027, 12, 12)
+
+    summary = build_search_weather_evidence(
+        context=_context(TravelWindow(start_date=day, end_date=day)),
+        candidate=_candidate(climatology_rows=(_climatology(day),)),
+    )
+
+    assert summary is not None
+    assert summary.mode == "climatology"
+    assert summary.forecast_status == "not_yet_available"
+    assert summary.limitations == (
+        "A trip-specific forecast is not available this far ahead.",
+    )
+
+
+def test_mixed_horizon_forecast_coverage_excludes_not_yet_applicable_dates() -> None:
+    reference_date = date(2027, 1, 1)
+    requested = tuple(
+        reference_date + timedelta(days=offset) for offset in range(29, 36)
+    )
+    applicable = requested[:2]
+
+    summary = build_search_weather_evidence(
+        context=_context(
+            TravelWindow(start_date=requested[0], end_date=requested[-1]),
+            reference_date=reference_date,
+        ),
+        candidate=_candidate(
+            climatology_rows=tuple(_climatology(day) for day in requested),
+            forecast_rows=tuple(_served(day, _FALLBACK_SOURCE) for day in applicable),
+        ),
+    )
+
+    assert summary is not None
+    assert summary.forecast_status == "available"
+    assert summary.forecast is not None
+    assert summary.forecast.coverage_status == "complete"
+    assert summary.forecast.usable_date_count == 2
+    assert summary.forecast.requested_date_count == 2
+    assert not any("coverage is available" in item for item in summary.limitations)
+    assert (
+        "5 later requested days are beyond the active 30-day forecast horizon."
         in summary.limitations
     )
 
@@ -638,7 +702,7 @@ def test_incomplete_forecast_falls_back_without_exposing_values() -> None:
     )
 
 
-def test_summary_is_omitted_without_trustworthy_historical_evidence() -> None:
+def test_forecast_only_summary_is_available_without_historical_evidence() -> None:
     day = date(2027, 1, 2)
     context = _context(TravelWindow(start_date=day, end_date=day))
 
@@ -649,16 +713,44 @@ def test_summary_is_omitted_without_trustworthy_historical_evidence() -> None:
         )
         is None
     )
-    assert (
-        build_search_weather_evidence(
-            context=context,
-            candidate=_candidate(
-                climatology_rows=(),
-                forecast_rows=(_served(day),),
-            ),
-        )
-        is None
+    summary = build_search_weather_evidence(
+        context=context,
+        candidate=_candidate(
+            climatology_rows=(),
+            forecast_rows=(_served(day),),
+        ),
     )
+
+    assert summary is not None
+    assert summary.mode == "forecast_only"
+    assert summary.historical is None
+    assert summary.forecast is not None
+    assert summary.forecast.daily_profile[0].snow_depth_cm == 60
+    assert summary.limitations[0] == (
+        "No trustworthy mid-mountain historical evidence is available."
+    )
+
+    with pytest.raises(ValidationError, match="requires an available forecast"):
+        SearchWeatherEvidence(
+            **{
+                **summary.model_dump(),
+                "forecast_status": "not_yet_available",
+            }
+        )
+    with pytest.raises(ValidationError, match="must match forecast coverage"):
+        SearchWeatherEvidence(
+            **{
+                **summary.model_dump(),
+                "forecast_status": "partial",
+            }
+        )
+    with pytest.raises(ValidationError, match="coverage status must match"):
+        ForecastWeatherEvidence(
+            **{
+                **summary.forecast.model_dump(),
+                "coverage_status": "partial",
+            }
+        )
 
 
 def test_profiles_preserve_null_depth_and_are_bounded_to_31_points() -> None:

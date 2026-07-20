@@ -23,8 +23,9 @@ Snowcast adapts that idea to ski planning:
 
 - `normal_30y`: primary baseline, using up to 30 archive seasons ending at the
   latest complete archive year.
-- `recent_15y`: secondary adjustment baseline, used to nudge the 30-year normal
-  toward recent climate behavior without replacing the more stable normal.
+- `recent_15y`: secondary fallback baseline. Search V4 uses it only when the
+  corresponding 30-year normal is unavailable, avoiding a hidden adjustment to
+  the historical distribution shown to the user.
 
 This is a pragmatic planning model. It does not claim official climatological
 normal status for every ski area because the underlying weather archive is
@@ -142,12 +143,19 @@ The search request path should prefer climatology because it reads a small,
 indexed derived table instead of constructing years of raw daily weather rows.
 Raw archive remains the fallback and audit path.
 
-## Forecast Assistance
+## Legacy Public And Companion Forecast Assistance
 
-Current forecast conditions should only affect planning when the trip is close
+The weights in this section belong to the legacy public-page and companion
+planning path. They are not the active Search V4 ranking policy. Search V4 uses
+the per-day `80/60/40/15/0%` forecast shares and direct climatology-reliability
+equation documented in `docs/search-ranking-model.md` and
+`docs/planning-model.md`. Migrating the remaining public pages and legacy
+calculations is tracked separately in `docs/product-backlog.md`.
+
+Legacy current forecast conditions affect planning only when the trip is close
 enough that forecast skill is meaningful.
 
-Current policy:
+Legacy policy:
 
 - 0-14 days before exact trip start: forecast weight `0.35`
 - 15-30 days before exact trip start: forecast weight `0.15`

@@ -156,6 +156,7 @@ function monthWeatherResponse(
     cache_valid_until: "2099-07-16T12:05:00Z",
     evidence: {
       mode: "climatology",
+      forecast_status: "not_applicable",
       window_label: "March",
       elevation_band: "mid_mountain",
       elevation_m: 2400,
@@ -189,6 +190,8 @@ function monthWeatherResponse(
         snow_depth_cm_p50: 128,
         snow_depth_cm_p75: 176,
         probability_snow_depth_ge_30cm: 0.87,
+        probability_snow_depth_ge_50cm: 0.72,
+        average_deterioration_risk: 0.18,
         average_daily_snowfall_cm: 4.2,
         average_max_temperature_c: -2.1,
         daily_profile: historicalProfile,
@@ -208,6 +211,7 @@ function forecastWeatherResponse(
     evidence: {
       ...monthWeatherResponse().evidence,
       mode: "forecast_assisted",
+      forecast_status: "partial",
       window_label: "20-22 July 2026",
       interpretation: "Fresh forecast evidence supports the selected dates.",
       forecast: {
@@ -1578,7 +1582,7 @@ test("forecast dossier exposes source currency, coverage, keyboard tabs, and cha
   );
   await expect(page.getByText(/forecast issued .* utc; archive through/i)).toBeVisible();
   await expect(
-    page.getByText(/2 of 3 requested dates have forecast values/i),
+    page.getByText(/2 of 3 forecast-applicable dates have forecast values/i),
   ).toBeVisible();
   await expect(page.getByText(/fresh at .* utc/i)).toHaveCount(0);
   const forecastTab = page.getByRole("tab", { name: "Forecast" });

@@ -248,13 +248,18 @@ class WeatherRankingPolicy(_PolicyModel):
     thaw_curve_utilities: tuple[float, ...]
     fresh_snow_coefficient: float = Field(ge=0, le=1)
     rain_thaw_risk_coefficient: float = Field(ge=0, le=1)
+    climatology_typical_depth_coefficient: float = Field(ge=0, le=1)
+    climatology_probability_30cm_coefficient: float = Field(ge=0, le=1)
+    climatology_probability_50cm_coefficient: float = Field(ge=0, le=1)
+    climatology_deterioration_coefficient: float = Field(ge=0, le=1)
+    strong_snow_fit_threshold: float = Field(ge=0, le=1)
+    minimum_snow_assessment_coverage: float = Field(gt=0, le=1)
     lead_time_max_days: tuple[int, ...]
     lead_time_forecast_shares: tuple[float, ...]
     preferred_short_range_source: _NonBlankText
     fallback_and_long_range_source: _NonBlankText
     preferred_short_range_max_lead_days: int = Field(ge=0)
     maximum_forecast_lead_days: int = Field(ge=0)
-    recent_climatology_adjustment_weight: float = Field(ge=0, le=1)
     snowmaking_need_full_below: float = Field(ge=0, le=1)
     snowmaking_need_zero_at: float = Field(ge=0, le=1)
     snowmaking_uplift_coefficient: float = Field(ge=0, le=1)
@@ -309,6 +314,15 @@ class WeatherRankingPolicy(_PolicyModel):
         if self.snowmaking_need_full_below >= self.snowmaking_need_zero_at:
             raise ValueError(
                 "snowmaking full-need threshold must be below zero-need threshold"
+            )
+        climatology_positive_weight = (
+            self.climatology_typical_depth_coefficient
+            + self.climatology_probability_30cm_coefficient
+            + self.climatology_probability_50cm_coefficient
+        )
+        if abs(climatology_positive_weight - 1) > 1e-9:
+            raise ValueError(
+                "positive climatology reliability coefficients must sum to one"
             )
         return self
 

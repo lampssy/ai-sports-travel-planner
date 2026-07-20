@@ -9,8 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.domain.models import SnowClimatologyBaselinePeriod, SnowClimatologyDaily
 from app.domain.search_factors.weather import (
+    ForecastApplicabilityStatus,
     WeatherEvaluationContext,
     WeatherFactorCandidate,
+    forecast_applicability_status,
+    forecast_applicable_dates,
     forecast_share_for_lead_days,
     select_usable_forecast_rows_by_date,
     snowpack_outlook,
@@ -74,6 +77,12 @@ class HistoricalWeatherEvidence(_WeatherEvidenceModel):
         ge=0,
         le=1,
     )
+    probability_snow_depth_ge_50cm: float | None = Field(
+        default=None,
+        ge=0,
+        le=1,
+    )
+    average_deterioration_risk: float = Field(ge=0, le=1)
     average_daily_snowfall_cm: float | None = Field(default=None, ge=0)
     average_max_temperature_c: float | None = None
     daily_profile: tuple[WeatherEvidencePoint, ...] = Field(
@@ -115,26 +124,62 @@ class ForecastWeatherEvidence(_WeatherEvidenceModel):
     def validate_coverage(self) -> Self:
         if self.usable_date_count > self.requested_date_count:
             raise ValueError("usable forecast dates cannot exceed requested dates")
+        expected_status = (
+            "complete"
+            if self.usable_date_count == self.requested_date_count
+            else "partial"
+        )
+        if self.coverage_status != expected_status:
+            raise ValueError(
+                "forecast coverage status must match usable and requested date counts"
+            )
         return self
 
 
 class SearchWeatherEvidence(_WeatherEvidenceModel):
-    mode: Literal["climatology", "forecast_assisted"]
+    mode: Literal["climatology", "forecast_assisted", "forecast_only"]
+    forecast_status: ForecastApplicabilityStatus
     window_label: str
     elevation_band: Literal["mid_mountain"] = "mid_mountain"
     elevation_m: int | None = None
     elevation_status: Literal["exact", "mixed", "unavailable"] = "exact"
     interpretation: str
     limitations: tuple[str, ...] = ()
-    historical: HistoricalWeatherEvidence
+    historical: HistoricalWeatherEvidence | None = None
     forecast: ForecastWeatherEvidence | None = None
 
     @model_validator(mode="after")
     def validate_mode(self) -> Self:
-        if self.mode == "climatology" and self.forecast is not None:
-            raise ValueError("climatology mode cannot include forecast evidence")
-        if self.mode == "forecast_assisted" and self.forecast is None:
-            raise ValueError("forecast-assisted mode requires forecast evidence")
+        if self.mode == "climatology" and (
+            self.historical is None or self.forecast is not None
+        ):
+            raise ValueError("climatology mode requires historical evidence only")
+        if self.mode == "forecast_assisted" and (
+            self.historical is None or self.forecast is None
+        ):
+            raise ValueError(
+                "forecast-assisted mode requires forecast and historical evidence"
+            )
+        if self.mode == "forecast_only" and (
+            self.historical is not None or self.forecast is None
+        ):
+            raise ValueError("forecast-only mode requires forecast evidence only")
+        has_usable_forecast = self.forecast_status in {"available", "partial"}
+        if self.mode in {"forecast_assisted", "forecast_only"} and not (
+            has_usable_forecast
+        ):
+            mode_label = self.mode.replace("_", "-")
+            raise ValueError(f"{mode_label} mode requires an available forecast status")
+        if self.mode == "climatology" and has_usable_forecast:
+            raise ValueError("climatology mode cannot report usable forecast status")
+        if self.forecast is not None:
+            expected_status: ForecastApplicabilityStatus = (
+                "available"
+                if self.forecast.coverage_status == "complete"
+                else "partial"
+            )
+            if self.forecast_status != expected_status:
+                raise ValueError("forecast status must match forecast coverage status")
         return self
 
 
@@ -185,22 +230,30 @@ def build_search_weather_evidence(
         candidate.climatology_rows,
         window,
     )
-    if not selected_historical:
-        return None
-
-    historical = _historical_evidence(selected_historical, window)
-    limitations = list(
-        _historical_limitations(
-            selected_historical,
-            window,
-        )
-    )
     presented_forecast_rows = (
         select_weather_evidence_forecast_rows(context, candidate, window)
         if accepted_forecast_rows is None
         else accepted_forecast_rows
     )
     forecast = _forecast_evidence(context, presented_forecast_rows, window)
+    if not selected_historical and forecast is None:
+        return None
+
+    historical = (
+        _historical_evidence(selected_historical, window)
+        if selected_historical
+        else None
+    )
+    limitations = (
+        list(_historical_limitations(selected_historical, window))
+        if selected_historical
+        else ["No trustworthy mid-mountain historical evidence is available."]
+    )
+    forecast_status = forecast_applicability_status(
+        context,
+        window,
+        frozenset(valid_date for valid_date, _row, _share in presented_forecast_rows),
+    )
     if window.mode == "exact_dates":
         limitations.extend(
             _forecast_limitations(
@@ -208,18 +261,24 @@ def build_search_weather_evidence(
                 candidate,
                 window,
                 forecast,
+                forecast_status,
             )
         )
 
-    mode: Literal["climatology", "forecast_assisted"] = (
-        "forecast_assisted" if forecast is not None else "climatology"
-    )
+    mode: Literal["climatology", "forecast_assisted", "forecast_only"]
+    if forecast is None:
+        mode = "climatology"
+    elif historical is None:
+        mode = "forecast_only"
+    else:
+        mode = "forecast_assisted"
     elevation_m, elevation_status = _elevation_provenance(
         selected_historical,
         presented_forecast_rows if forecast is not None else (),
     )
     return SearchWeatherEvidence(
         mode=mode,
+        forecast_status=forecast_status,
         window_label=_window_label(window),
         elevation_m=elevation_m,
         elevation_status=elevation_status,
@@ -321,6 +380,13 @@ def _historical_evidence(
         probability_snow_depth_ge_30cm=(
             sum(row.prob_snow_depth_ge_30cm for row in rows) / len(rows)
         ),
+        probability_snow_depth_ge_50cm=(
+            sum(row.prob_snow_depth_ge_50cm for row in rows) / len(rows)
+        ),
+        average_deterioration_risk=(
+            sum(max(row.prob_rain_risk, row.prob_freeze_thaw) for row in rows)
+            / len(rows)
+        ),
         average_daily_snowfall_cm=(
             sum(row.avg_daily_snowfall_cm for row in rows) / len(rows)
         ),
@@ -420,7 +486,11 @@ def _forecast_evidence(
     if not accepted_rows:
         return None
 
-    requested_dates = _requested_dates(window)
+    requested_dates = forecast_applicable_dates(
+        context,
+        _requested_dates(window),
+        frozenset(valid_date for valid_date, _row, _share in accepted_rows),
+    )
     profile_dates = requested_dates[:_PROFILE_LIMIT]
     rows_by_date = {
         valid_date: (valid_date, row, share) for valid_date, row, share in accepted_rows
@@ -567,6 +637,7 @@ def _forecast_limitations(
     candidate: WeatherFactorCandidate,
     window: TravelWindow,
     forecast: ForecastWeatherEvidence | None,
+    forecast_status: ForecastApplicabilityStatus,
 ) -> tuple[str, ...]:
     requested_dates = frozenset(_requested_dates(window))
     relevant = tuple(
@@ -581,7 +652,9 @@ def _forecast_limitations(
         row.run.status != "complete" or not row.daily.is_complete for row in relevant
     ):
         limitations.append("Incomplete forecast days were not used.")
-    if forecast is None:
+    if forecast_status == "not_yet_available":
+        limitations.append("A trip-specific forecast is not available this far ahead.")
+    elif forecast is None:
         limitations.append(
             "No up-to-date forecast is available for the requested dates."
         )
@@ -589,13 +662,21 @@ def _forecast_limitations(
         limitations.append(
             "Up-to-date forecast coverage is available for "
             f"{forecast.usable_date_count} of {forecast.requested_date_count} "
-            "days."
+            "forecast-applicable days."
         )
+    if forecast is not None:
+        beyond_horizon_count = len(requested_dates) - forecast.requested_date_count
+        if beyond_horizon_count > 0:
+            day_label = "day is" if beyond_horizon_count == 1 else "days are"
+            limitations.append(
+                f"{beyond_horizon_count} later requested {day_label} beyond the "
+                "active 30-day forecast horizon."
+            )
     return tuple(limitations)
 
 
 def _interpretation(
-    mode: Literal["climatology", "forecast_assisted"],
+    mode: Literal["climatology", "forecast_assisted", "forecast_only"],
     forecast: ForecastWeatherEvidence | None,
 ) -> str:
     if mode == "forecast_assisted":
@@ -603,7 +684,14 @@ def _interpretation(
         return (
             "Fresh forecast data adds to historical weather patterns for "
             f"{forecast.usable_date_count} of {forecast.requested_date_count} "
-            "requested days."
+            "forecast-applicable days."
+        )
+    if mode == "forecast_only":
+        assert forecast is not None
+        return (
+            "Fresh forecast data describes "
+            f"{forecast.usable_date_count} of {forecast.requested_date_count} "
+            "forecast-applicable days; historical context is unavailable."
         )
     return "Historical weather patterns describe the requested travel window."
 

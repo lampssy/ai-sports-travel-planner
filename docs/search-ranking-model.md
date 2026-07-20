@@ -428,6 +428,59 @@ climatology evidence cap is the fraction of calendar days in that month with
 resolved archive evidence; a single resolved day cannot represent a complete
 month.
 
+Forecast availability is a typed context, separate from the snow assessment:
+`available`, `partial`, `unexpectedly_unavailable`, `not_yet_available`, or
+`not_applicable`. Dates beyond the 30-day horizon use `not_yet_available`; the
+absence of a forecast there is expected and must not become a customer-facing
+snow concern.
+
+The factor evidence cap is the share of requested dates with usable
+climatology or forecast evidence. Ranking influence scales with that coverage.
+A public snow-quality label requires full requested-date coverage under the
+versioned `minimum_snow_assessment_coverage = 1.0` policy; otherwise the backend
+returns `not_enough_evidence` instead of making a strong or weak snow claim.
+For a trip crossing day 30, detailed forecast coverage counts only dates for
+which a forecast is applicable; later dates remain neutral climatology-only
+dates.
+
+When the assessment has concerns, the backend also returns the primary
+explanatory reason: marginal typical depth, inconsistent historical depth,
+historical rain/freeze-thaw risk, a weaker forecast outlook, limited historical
+context for a forecast-only result, or mixed signals.
+That attribution uses the active policy coefficients and the same requested-date
+denominator for historical and forecast drivers, so explanation cannot drift
+from scoring policy or overstate a sparse source.
+React maps that typed reason to plain language but does not infer the cause.
+Detailed historical evidence exposes the average per-date deterioration input,
+`mean(max(P(rain), P(freeze-thaw)))`, alongside the depth distribution.
+When ranking has usable forecast evidence but no historical row, the detailed
+evidence response uses an explicit `forecast_only` mode and shows the forecast
+rather than returning a contradictory historical-evidence error.
+
+Historical reliability for one calendar day is computed from the same
+climatology distribution shown to the user:
+
+```text
+typical_depth_d = depth_curve(snow_depth_cm_p50_d)
+depth_reliability_d = 0.60 * P(depth >= 30 cm)_d
+                    + 0.40 * P(depth >= 50 cm)_d
+historical_deterioration_d = max(P(rain)_d, P(freeze_thaw)_d)
+
+climatological_snow_reliability_d = clamp(
+    0.50 * typical_depth_d
+  + 0.50 * depth_reliability_d
+  - 0.25 * historical_deterioration_d,
+  0,
+  1
+)
+```
+
+The flattened positive weights are `0.50`, `0.30`, and `0.20`. Historical
+average snowfall and average maximum temperature remain explanation evidence,
+not ranking bonuses. A future powder-oriented preference may use fresh-snow
+probabilities separately. Missing median-depth evidence leaves climatology
+unresolved rather than using the older aggregate confidence score.
+
 The initial outlook uses a daily ensemble-mean row at the representative
 mid-mountain elevation. Open-Meteo supplies ECMWF IFS 0.25 degree ensemble mean
 as the preferred source through lead day 15 and NOAA GEFS 0.5 degree ensemble

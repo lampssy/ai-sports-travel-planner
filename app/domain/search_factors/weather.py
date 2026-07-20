@@ -4,7 +4,7 @@ import calendar
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Any
+from typing import Any, Literal
 
 from app.domain.models import SnowClimatologyDaily
 from app.domain.search_factors.models import FactorEvaluation
@@ -16,11 +16,37 @@ from app.domain.weather_forecast import (
     WeatherForecastDaily,
 )
 
+ForecastApplicabilityStatus = Literal[
+    "not_applicable",
+    "not_yet_available",
+    "available",
+    "partial",
+    "unexpectedly_unavailable",
+]
+SnowAssessmentState = Literal[
+    "not_assessed",
+    "strong_fit",
+    "some_concerns",
+    "not_enough_evidence",
+]
+SnowAssessmentReason = Literal[
+    "not_assessed",
+    "insufficient_date_coverage",
+    "strong_snow_reliability",
+    "marginal_historical_depth",
+    "inconsistent_historical_depth",
+    "historical_rain_or_thaw_risk",
+    "weaker_forecast_outlook",
+    "limited_historical_context",
+    "mixed_snow_signals",
+]
+
 
 @dataclass(frozen=True)
 class WeatherEvaluationContext:
     intent: SearchIntent
     policy: SearchPolicy
+    reference_date: date
     stale_run_ids: frozenset[str] = frozenset()
 
 
@@ -53,6 +79,15 @@ class SnowpackOutlook:
     rain_risk: float
     thaw_risk: float
     rain_thaw_risk: float
+
+
+@dataclass(frozen=True)
+class ClimatologyReliability:
+    utility: float
+    typical_depth: float
+    probability_30cm: float
+    probability_50cm: float
+    deterioration_risk: float
 
 
 @dataclass(frozen=True)
@@ -178,11 +213,25 @@ def _trip_window_snow_fit(
             window,
             context.policy.weather,
         )
+        assessment_state = _snow_assessment_state(
+            context,
+            raw_utility=utility,
+            evidence_cap=coverage,
+        )
         return _evaluation(
             context,
             candidate,
             factor_id="trip_window_snow_fit",
-            raw_value={"mode": "month_climatology_only", "utility": utility},
+            raw_value={
+                "mode": "month_climatology_only",
+                "utility": utility,
+                "forecast_status": "not_applicable",
+                "assessment_state": assessment_state,
+                "assessment_reason": _snow_assessment_reason(
+                    assessment_state,
+                    concern_reason=details["primary_concern_reason"],
+                ),
+            },
             raw_utility=utility,
             evidence_cap=coverage,
             evidence_components={
@@ -202,7 +251,7 @@ def _trip_window_snow_fit(
 
     requested_dates = _requested_dates(window)
     climatology = {
-        valid_date: _climatology_for_date(
+        valid_date: _climatology_breakdown_for_date(
             candidate.climatology_rows,
             valid_date,
             context.policy.weather,
@@ -214,14 +263,18 @@ def _trip_window_snow_fit(
     day_details: list[dict[str, Any]] = []
     day_utilities: list[float] = []
     forecast_covered = 0
+    forecast_covered_dates: set[date] = set()
     climatology_covered = 0
-    any_evidence = False
+    evidence_covered_dates: set[date] = set()
+    forecast_shortfalls: list[float] = []
+    forecast_outlooks: list[float] = []
 
     for valid_date in requested_dates:
-        climate_utility = climatology[valid_date]
-        if climate_utility is not None:
+        climate = climatology[valid_date]
+        climate_utility = climate.utility if climate is not None else None
+        if climate is not None:
             climatology_covered += 1
-            any_evidence = True
+            evidence_covered_dates.add(valid_date)
         else:
             climate_utility = 0.5
         forecast = forecast_rows.get(valid_date)
@@ -235,7 +288,12 @@ def _trip_window_snow_fit(
             )
             if share > 0:
                 forecast_covered += 1
-                any_evidence = True
+                forecast_covered_dates.add(valid_date)
+                evidence_covered_dates.add(valid_date)
+                forecast_outlooks.append(outlook.utility)
+                forecast_shortfalls.append(
+                    share * max(0, climate_utility - outlook.utility)
+                )
         natural_utility = (
             share * outlook.utility + (1 - share) * climate_utility
             if outlook is not None
@@ -285,7 +343,17 @@ def _trip_window_snow_fit(
         )
 
     date_count = len(requested_dates)
-    missing_forecast_count = date_count - forecast_covered
+    forecast_status = forecast_applicability_status(
+        context,
+        window,
+        forecast_covered_dates,
+    )
+    applicable_dates = forecast_applicable_dates(
+        context,
+        requested_dates,
+        forecast_covered_dates,
+    )
+    missing_forecast_count = len(set(applicable_dates) - forecast_covered_dates)
     warnings: list[str] = []
     if missing_forecast_count:
         warnings.append(
@@ -297,6 +365,32 @@ def _trip_window_snow_fit(
             f"{date_count - climatology_covered} requested day(s)"
         )
     raw_utility = sum(day_utilities) / date_count
+    evidence_cap = len(evidence_covered_dates) / date_count
+    assessment_state = _snow_assessment_state(
+        context,
+        raw_utility=raw_utility,
+        evidence_cap=evidence_cap,
+    )
+    historical_concern_reason, historical_concern_weight = (
+        _historical_primary_concern_reason(
+            tuple(item for item in climatology.values() if item is not None),
+            context.policy.weather,
+            date_count,
+        )
+    )
+    forecast_concern_weight = (
+        sum(forecast_shortfalls) / date_count if forecast_shortfalls else 0
+    )
+    concern_reason: SnowAssessmentReason = historical_concern_reason
+    if climatology_covered == 0 and forecast_outlooks:
+        forecast_only_utility = sum(forecast_outlooks) / len(forecast_outlooks)
+        concern_reason = (
+            "limited_historical_context"
+            if forecast_only_utility >= context.policy.weather.strong_snow_fit_threshold
+            else "weaker_forecast_outlook"
+        )
+    elif forecast_concern_weight > historical_concern_weight:
+        concern_reason = "weaker_forecast_outlook"
     return _evaluation(
         context,
         candidate,
@@ -305,9 +399,15 @@ def _trip_window_snow_fit(
             "mode": "exact_dates",
             "utility": raw_utility,
             "snowmaking_support": snowmaking_support,
+            "forecast_status": forecast_status,
+            "assessment_state": assessment_state,
+            "assessment_reason": _snow_assessment_reason(
+                assessment_state,
+                concern_reason=concern_reason,
+            ),
         },
         raw_utility=raw_utility,
-        evidence_cap=1 if any_evidence else 0,
+        evidence_cap=evidence_cap,
         evidence_components={
             "climatology_date_coverage": climatology_covered / date_count,
             "forecast_date_coverage": forecast_covered / date_count,
@@ -320,6 +420,93 @@ def _trip_window_snow_fit(
             "derived climatology."
         ),
     )
+
+
+def forecast_applicability_status(
+    context: WeatherEvaluationContext,
+    window: TravelWindow,
+    forecast_covered_dates: set[date] | frozenset[date],
+) -> ForecastApplicabilityStatus:
+    if window.mode != "exact_dates":
+        return "not_applicable"
+    requested_dates = _requested_dates(window)
+    applicable_dates = frozenset(
+        forecast_applicable_dates(
+            context,
+            requested_dates,
+            forecast_covered_dates,
+        )
+    )
+    if not applicable_dates:
+        if requested_dates and all(
+            (valid_date - context.reference_date).days
+            > context.policy.weather.maximum_forecast_lead_days
+            for valid_date in requested_dates
+        ):
+            return "not_yet_available"
+        return "unexpectedly_unavailable"
+    covered = applicable_dates.intersection(forecast_covered_dates)
+    if len(covered) == len(applicable_dates):
+        return "available"
+    if covered:
+        return "partial"
+    return "unexpectedly_unavailable"
+
+
+def forecast_applicable_dates(
+    context: WeatherEvaluationContext,
+    requested_dates: Sequence[date],
+    forecast_covered_dates: set[date] | frozenset[date] = frozenset(),
+) -> tuple[date, ...]:
+    maximum_lead = context.policy.weather.maximum_forecast_lead_days
+    return tuple(
+        valid_date
+        for valid_date in requested_dates
+        if (
+            0 <= (valid_date - context.reference_date).days <= maximum_lead
+            or valid_date in forecast_covered_dates
+        )
+    )
+
+
+def _snow_assessment_state(
+    context: WeatherEvaluationContext,
+    *,
+    raw_utility: float,
+    evidence_cap: float,
+) -> SnowAssessmentState:
+    if evidence_cap < context.policy.weather.minimum_snow_assessment_coverage:
+        return "not_enough_evidence"
+    effective_utility = context.policy.factor(
+        "trip_window_snow_fit"
+    ).neutral_utility + evidence_cap * (
+        raw_utility - context.policy.factor("trip_window_snow_fit").neutral_utility
+    )
+    if effective_utility >= context.policy.weather.strong_snow_fit_threshold:
+        return "strong_fit"
+    return "some_concerns"
+
+
+def _snow_assessment_reason(
+    state: SnowAssessmentState,
+    *,
+    concern_reason: object,
+) -> SnowAssessmentReason:
+    if state == "not_assessed":
+        return "not_assessed"
+    if state == "not_enough_evidence":
+        return "insufficient_date_coverage"
+    if state == "strong_fit":
+        return "strong_snow_reliability"
+    if concern_reason in {
+        "marginal_historical_depth",
+        "inconsistent_historical_depth",
+        "historical_rain_or_thaw_risk",
+        "weaker_forecast_outlook",
+        "limited_historical_context",
+    }:
+        return concern_reason  # type: ignore[return-value]
+    return "mixed_snow_signals"
 
 
 def _climatological_snow_reliability(
@@ -470,6 +657,15 @@ def _climatology_for_date(
     valid_date: date,
     policy: WeatherRankingPolicy,
 ) -> float | None:
+    breakdown = _climatology_breakdown_for_date(rows, valid_date, policy)
+    return breakdown.utility if breakdown is not None else None
+
+
+def _climatology_breakdown_for_date(
+    rows: Sequence[SnowClimatologyDaily],
+    valid_date: date,
+    policy: WeatherRankingPolicy,
+) -> ClimatologyReliability | None:
     matching = tuple(
         row
         for row in rows
@@ -479,17 +675,84 @@ def _climatology_for_date(
     )
     if not matching:
         return None
-    normal = _latest_climatology_row(matching, "normal_30y")
-    recent = _latest_climatology_row(matching, "recent_15y")
-    primary = normal or recent
+    primary = _latest_climatology_row(
+        matching,
+        "normal_30y",
+    ) or _latest_climatology_row(matching, "recent_15y")
     if primary is None:
         return None
-    utility = primary.avg_snow_confidence_score
-    if normal is not None and recent is not None:
-        utility += policy.recent_climatology_adjustment_weight * (
-            recent.avg_snow_confidence_score - normal.avg_snow_confidence_score
-        )
-    return _clamp(utility)
+    return _climatology_reliability_breakdown(primary, policy)
+
+
+def _climatology_reliability(
+    row: SnowClimatologyDaily,
+    policy: WeatherRankingPolicy,
+) -> float | None:
+    breakdown = _climatology_reliability_breakdown(row, policy)
+    return breakdown.utility if breakdown is not None else None
+
+
+def _climatology_reliability_breakdown(
+    row: SnowClimatologyDaily,
+    policy: WeatherRankingPolicy,
+) -> ClimatologyReliability | None:
+    if row.snow_depth_cm_p50 is None:
+        return None
+    typical_depth = piecewise_linear_utility(
+        row.snow_depth_cm_p50,
+        policy.depth_curve_values,
+        policy.depth_curve_utilities,
+    )
+    deterioration = max(row.prob_rain_risk, row.prob_freeze_thaw)
+    return ClimatologyReliability(
+        utility=_clamp(
+            policy.climatology_typical_depth_coefficient * typical_depth
+            + policy.climatology_probability_30cm_coefficient
+            * row.prob_snow_depth_ge_30cm
+            + policy.climatology_probability_50cm_coefficient
+            * row.prob_snow_depth_ge_50cm
+            - policy.climatology_deterioration_coefficient * deterioration
+        ),
+        typical_depth=typical_depth,
+        probability_30cm=row.prob_snow_depth_ge_30cm,
+        probability_50cm=row.prob_snow_depth_ge_50cm,
+        deterioration_risk=deterioration,
+    )
+
+
+def _historical_primary_concern_reason(
+    values: Sequence[ClimatologyReliability],
+    policy: WeatherRankingPolicy,
+    requested_date_count: int,
+) -> tuple[SnowAssessmentReason, float]:
+    if not values or requested_date_count <= 0:
+        return "mixed_snow_signals", 0
+    candidates: tuple[tuple[SnowAssessmentReason, float], ...] = (
+        (
+            "marginal_historical_depth",
+            policy.climatology_typical_depth_coefficient
+            * sum(1 - item.typical_depth for item in values)
+            / requested_date_count,
+        ),
+        (
+            "inconsistent_historical_depth",
+            sum(
+                policy.climatology_probability_30cm_coefficient
+                * (1 - item.probability_30cm)
+                + policy.climatology_probability_50cm_coefficient
+                * (1 - item.probability_50cm)
+                for item in values
+            )
+            / requested_date_count,
+        ),
+        (
+            "historical_rain_or_thaw_risk",
+            policy.climatology_deterioration_coefficient
+            * sum(item.deterioration_risk for item in values)
+            / requested_date_count,
+        ),
+    )
+    return max(candidates, key=lambda item: item[1])
 
 
 def _latest_climatology_row(
@@ -521,7 +784,7 @@ def _month_climatology(
         {(row.month, row.day) for row in rows if row.month == window.month}
     )
     values = tuple(
-        _climatology_for_date(
+        _climatology_breakdown_for_date(
             rows,
             date(2024, month, day),
             policy,
@@ -531,7 +794,14 @@ def _month_climatology(
     resolved = tuple(value for value in values if value is not None)
     expected_days = calendar.monthrange(2024, window.month)[1]
     coverage = len(resolved) / expected_days
-    utility = sum(resolved) / len(resolved) if resolved else 0.5
+    utility = (
+        sum(value.utility for value in resolved) / len(resolved) if resolved else 0.5
+    )
+    concern_reason, _concern_weight = _historical_primary_concern_reason(
+        resolved,
+        policy,
+        expected_days,
+    )
     return (
         utility,
         coverage,
@@ -539,6 +809,7 @@ def _month_climatology(
             "month": window.month,
             "resolved_calendar_days": len(resolved),
             "expected_calendar_days": expected_days,
+            "primary_concern_reason": concern_reason,
         },
     )
 

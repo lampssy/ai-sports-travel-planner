@@ -106,6 +106,7 @@ function HistoricalTechnicalDetails({
   response: Extract<SearchWeatherEvidenceResponse, { status: "available" }>;
 }) {
   const historical = response.evidence.historical;
+  if (!historical) return null;
   return (
     <section>
       <h4>Historical methods and source rows</h4>
@@ -215,7 +216,9 @@ export function WeatherEvidenceTechnicalDetails({
           <WeatherValuesTable mode="forecast" points={forecast.daily_profile} />
         </section>
       ) : null}
-      <HistoricalTechnicalDetails response={response} />
+      {response.evidence.historical ? (
+        <HistoricalTechnicalDetails response={response} />
+      ) : null}
     </>
   );
 }

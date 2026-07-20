@@ -16,6 +16,7 @@ const available: SearchWeatherEvidenceResponse = {
   cache_valid_until: "2026-07-16T12:05:00Z",
   evidence: {
     mode: "climatology",
+    forecast_status: "not_applicable",
     window_label: "March",
     elevation_band: "mid_mountain",
     elevation_m: 2400,
@@ -49,6 +50,8 @@ const available: SearchWeatherEvidenceResponse = {
       snow_depth_cm_p50: 128,
       snow_depth_cm_p75: 176,
       probability_snow_depth_ge_30cm: 0.87,
+      probability_snow_depth_ge_50cm: 0.72,
+      average_deterioration_risk: 0.18,
       average_daily_snowfall_cm: 4.2,
       average_max_temperature_c: -2.1,
       daily_profile: [],

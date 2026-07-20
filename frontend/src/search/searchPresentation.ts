@@ -2,6 +2,7 @@ import type {
   CatalogTrustStatus,
   FactorPreferencePatch,
   GroupPriorityPatch,
+  HistoricalWeatherEvidence,
   RefinementPreview,
   SearchIntent,
   SearchWeatherEvidenceResponse,
@@ -808,10 +809,7 @@ function formatWeatherDateTime(value: string): string {
 }
 
 function historicalArchiveCurrency(
-  historical: Extract<
-    SearchWeatherEvidenceResponse,
-    { status: "available" }
-  >["evidence"]["historical"],
+  historical: HistoricalWeatherEvidence,
 ): string {
   const parts: string[] = [];
   if (historical.latest_archive_year != null) {
@@ -853,10 +851,7 @@ function historicalArchiveCurrency(
 }
 
 function historicalSeasonCoverage(
-  historical: Extract<
-    SearchWeatherEvidenceResponse,
-    { status: "available" }
-  >["evidence"]["historical"],
+  historical: HistoricalWeatherEvidence,
 ): string {
   if (historical.evidence_seasons != null) {
     return `${historical.evidence_seasons} historical seasons`;
@@ -900,7 +895,7 @@ function forecastConditions(
       `forecast temperature range ${formatWeatherMetric(lower)} to ${formatWeatherMetric(upper)} °C`,
     );
   }
-  if (response.evidence.historical.snow_depth_cm_p50 != null) {
+  if (response.evidence.historical?.snow_depth_cm_p50 != null) {
     parts.push(
       `typical historical snow depth ${formatWeatherMetric(
         response.evidence.historical.snow_depth_cm_p50,
@@ -918,7 +913,7 @@ function mainWeatherLimitation(
   const { evidence } = response;
   const { historical, forecast } = evidence;
   const hasMixedProvenance =
-    historical.provenance_status === "mixed" ||
+    historical?.provenance_status === "mixed" ||
     forecast?.provenance_status === "mixed";
   if (evidence.elevation_status === "mixed" && hasMixedProvenance) {
     return "This assessment combines weather data from different sources and elevations.";
@@ -929,16 +924,29 @@ function mainWeatherLimitation(
   if (hasMixedProvenance) {
     return "This assessment combines weather data from different sources.";
   }
-  if (evidence.limitations[0]) return evidence.limitations[0];
 
-  if (evidence.mode === "forecast_assisted" && forecast) {
+  if (evidence.forecast_status === "not_yet_available") {
+    return "A trip-specific forecast is not available yet.";
+  }
+  if (evidence.forecast_status === "unexpectedly_unavailable") {
+    return (
+      evidence.limitations[0] ??
+      "A forecast should be available for these dates, but forecast data is missing."
+    );
+  }
+  if (evidence.forecast_status === "partial" && forecast) {
     const missingDates = Math.max(
       0,
       forecast.requested_date_count - forecast.usable_date_count,
     );
     return missingDates > 0
-      ? `Forecast values are unavailable for ${missingDates} of ${forecast.requested_date_count} requested dates.`
-      : "Forecast conditions can still change before travel.";
+      ? `Forecast values are unavailable for ${missingDates} of ${forecast.requested_date_count} forecast-applicable dates.`
+      : "Forecast coverage is incomplete for these dates.";
+  }
+  if (evidence.limitations[0]) return evidence.limitations[0];
+
+  if (evidence.forecast_status === "available") {
+    return "Forecast conditions can still change before travel.";
   }
 
   return "Historical patterns do not predict exact trip conditions.";
@@ -971,6 +979,26 @@ export function weatherEvidencePresentation(
   }
 
   const { historical, forecast } = response.evidence;
+  if (response.evidence.mode === "forecast_only" && forecast) {
+    return {
+      sourceType: "Forecast",
+      sourceCurrency: forecast.issued_at
+        ? `Forecast issued ${formatWeatherDateTime(forecast.issued_at)} UTC`
+        : "Forecast issue time unavailable",
+      coverage: `${forecast.usable_date_count} of ${forecast.requested_date_count} forecast-applicable dates have forecast values; historical context unavailable`,
+      expectedConditions: forecastConditions(response),
+      mainLimitation: mainWeatherLimitation(response),
+    };
+  }
+  if (!historical) {
+    return {
+      sourceType: "Weather evidence unavailable",
+      sourceCurrency: "Not available for this assessment.",
+      coverage: "No usable weather evidence is available for this trip window.",
+      expectedConditions: "Unavailable from the current evidence.",
+      mainLimitation: mainWeatherLimitation(response),
+    };
+  }
   const archive = historicalArchiveCurrency(historical);
   const seasonCoverage = historicalSeasonCoverage(historical);
   if (response.evidence.mode === "forecast_assisted" && forecast) {
@@ -982,7 +1010,7 @@ export function weatherEvidencePresentation(
           : "Forecast issue time unavailable",
         archive,
       ].join("; "),
-      coverage: `${forecast.usable_date_count} of ${forecast.requested_date_count} requested dates have forecast values; ${seasonCoverage}`,
+      coverage: `${forecast.usable_date_count} of ${forecast.requested_date_count} forecast-applicable dates have forecast values; ${seasonCoverage}`,
       expectedConditions: forecastConditions(response),
       mainLimitation: mainWeatherLimitation(response),
     };
@@ -996,7 +1024,7 @@ export function weatherEvidencePresentation(
         )} cm`,
     historical.average_daily_snowfall_cm == null
       ? null
-      : `typical fresh snow ${formatWeatherMetric(
+      : `average historical snowfall ${formatWeatherMetric(
           historical.average_daily_snowfall_cm,
         )} cm/day`,
     historical.average_max_temperature_c == null
@@ -1028,6 +1056,9 @@ function supportedFactor(
   configuration: SearchV4Configuration,
   factorId: string,
 ): boolean {
+  if (factorId === "trip_window_snow_fit") {
+    return configuration.snow_assessment.state === "strong_fit";
+  }
   const factor = configuration.factors.find((item) => item.factor_id === factorId);
   return Boolean(
     factor &&
@@ -1051,19 +1082,23 @@ export function decisionEvidencePresentation(
     }
   };
 
-  const snowFactor = configuration.factors.find(
-    (item) => item.factor_id === "trip_window_snow_fit",
-  );
   if (hasAppliedTravelWindow(travelWindow) && supportedFactor(configuration, "trip_window_snow_fit")) {
     addSupport(
       "snow-window",
       snowFitPresentation(configuration, travelWindow).label,
-      "Available snow evidence supports the requested travel window.",
+      snowSupportDetail(configuration),
     );
   } else if (
     hasAppliedTravelWindow(travelWindow) &&
-    snowFactor &&
-    (snowFactor.effective_evidence_cap === 0 || snowFactor.warnings.length > 0)
+    configuration.snow_assessment.state === "some_concerns"
+  ) {
+    addUncertainty(
+      "snow-window",
+      snowConcernDetail(configuration),
+    );
+  } else if (
+    hasAppliedTravelWindow(travelWindow) &&
+    configuration.snow_assessment.state === "not_enough_evidence"
   ) {
     addUncertainty(
       "snow-window",
@@ -1240,14 +1275,19 @@ export function buildCandidateNarrative(
           configuration.selected_pass.accessible_piste_km_evidence?.trust_status ===
             "needs_source"
         ) &&
-        (factor.factor_id !== "trip_window_snow_fit" || hasTravelWindow),
+        (factor.factor_id !== "trip_window_snow_fit" ||
+          (hasTravelWindow &&
+            configuration.snow_assessment.state === "strong_fit")),
     )
     .sort((left, right) => right.effective_utility - left.effective_utility)[0];
   const caution = configuration.factors.find(
     (factor) =>
       watchoutCopy[factor.factor_id] &&
       (factor.factor_id !== "trip_window_snow_fit" || hasTravelWindow) &&
-      (factor.effective_evidence_cap === 0 || factor.warnings.length > 0),
+      (factor.factor_id === "trip_window_snow_fit"
+        ? configuration.snow_assessment.state === "some_concerns" ||
+          configuration.snow_assessment.state === "not_enough_evidence"
+        : factor.effective_evidence_cap === 0 || factor.warnings.length > 0),
   );
   const supportedTerrain =
     supported?.factor_id === "accessible_terrain_scale"
@@ -1259,7 +1299,9 @@ export function buildCandidateNarrative(
     ? caution.factor_id === "stay_base_access" && accessTrust === "needs_source"
       ? "Lift-access details need source verification."
       : caution.factor_id === "trip_window_snow_fit"
-        ? `${snowFitPresentation(configuration, travelWindow).label}: Snow evidence is limited for this travel window.`
+        ? configuration.snow_assessment.state === "some_concerns"
+          ? `${snowFitPresentation(configuration, travelWindow).label}: ${snowConcernDetail(configuration)}`
+          : `${snowFitPresentation(configuration, travelWindow).label}: Snow evidence is limited for this travel window.`
       : watchoutCopy[caution.factor_id]
     : undefined;
   const verdict = supported
@@ -1284,7 +1326,7 @@ export function buildCandidateNarrative(
                   ? `Available source data suggests ${configuration.stay_base_name} offers practical lift access.`
                   : strengthCopy[supported.factor_id]
               : supported.factor_id === "trip_window_snow_fit"
-                ? `${snowFitPresentation(configuration, travelWindow).label}: Available snow evidence supports this travel window.`
+                ? `${snowFitPresentation(configuration, travelWindow).label}: ${snowSupportDetail(configuration)}`
               : supportedStrength(configuration, supported.factor_id),
         }
       : {}),
@@ -1296,12 +1338,54 @@ export function buildCandidateNarrative(
 }
 
 export function snowFitLabel(configuration: SearchV4Configuration): string {
-  const factor = configuration.factors.find(
-    (item) => item.factor_id === "trip_window_snow_fit",
-  );
-  if (!factor || factor.effective_evidence_cap === 0) return "Not enough evidence";
-  if (factor.effective_utility >= 0.75) return "Strong fit";
-  return "Some concerns";
+  switch (configuration.snow_assessment.state) {
+    case "strong_fit":
+      return configuration.snow_assessment.forecast_status === "not_applicable" ||
+        configuration.snow_assessment.forecast_status === "not_yet_available"
+        ? "Strong historical fit"
+        : "Strong fit";
+    case "some_concerns":
+      return "Some concerns";
+    case "not_enough_evidence":
+      return "Not enough evidence";
+    case "not_assessed":
+      return "Not assessed";
+  }
+}
+
+function snowSupportDetail(configuration: SearchV4Configuration): string {
+  if (configuration.snow_assessment.forecast_status === "not_yet_available") {
+    return "Historical snow patterns strongly support this travel window. A trip-specific forecast is not available yet.";
+  }
+  if (configuration.snow_assessment.forecast_status === "not_applicable") {
+    return "Historical snow patterns strongly support this travel window.";
+  }
+  if (
+    configuration.snow_assessment.forecast_status ===
+    "unexpectedly_unavailable"
+  ) {
+    return "Historical snow patterns strongly support this travel window. A forecast should be available for these dates, but usable forecast data is missing.";
+  }
+  return "Available snow evidence strongly supports this travel window.";
+}
+
+function snowConcernDetail(configuration: SearchV4Configuration): string {
+  switch (configuration.snow_assessment.reason) {
+    case "marginal_historical_depth":
+      return "Typical historical snow depth is less suitable for this travel window.";
+    case "inconsistent_historical_depth":
+      return "Historical snow depth is less consistently adequate for these dates.";
+    case "historical_rain_or_thaw_risk":
+      return "Historical rain or thaw risk reduces snow reliability for these dates.";
+    case "weaker_forecast_outlook":
+      return "The forecast snowpack outlook is less suitable for these dates.";
+    case "limited_historical_context":
+      return "Historical snow context is unavailable, so this result relies on the forecast.";
+    case "mixed_snow_signals":
+      return "Snow depth and weather signals are mixed for this travel window.";
+    default:
+      return "Snow evidence is mixed for this travel window.";
+  }
 }
 
 export function snowFitPresentation(

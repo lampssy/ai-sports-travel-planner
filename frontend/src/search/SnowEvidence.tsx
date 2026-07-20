@@ -80,10 +80,14 @@ function statusAnnouncement(
 
 function evidenceMetrics(response: AvailableResponse) {
   const { historical } = response.evidence;
+  if (!historical) return [];
   const depthDetails = [
     historical.probability_snow_depth_ge_30cm == null
       ? null
       : `Across matching dates, historical data averaged ${percentage(historical.probability_snow_depth_ge_30cm)} of days at or above the 30 cm snow-depth reference.`,
+    historical.probability_snow_depth_ge_50cm == null
+      ? null
+      : `${percentage(historical.probability_snow_depth_ge_50cm)} of days were at or above 50 cm.`,
   ].filter((value): value is string => value != null);
   return [
     {
@@ -104,12 +108,18 @@ function evidenceMetrics(response: AvailableResponse) {
             )} cm`,
     },
     {
-      label: "Fresh snow",
+      label: "Average historical snowfall",
       value:
         historical.average_daily_snowfall_cm == null
           ? "Not available"
           : `${formatNumber(historical.average_daily_snowfall_cm)} cm/day`,
-      detail: "Historical daily average",
+      detail: "Average across matching historical dates",
+    },
+    {
+      label: "Historical rain or thaw risk",
+      value: percentage(historical.average_deterioration_risk),
+      detail:
+        "Average across matching dates; each date uses the stronger rain or freeze-thaw risk.",
     },
     {
       label: "Average high",
@@ -202,22 +212,23 @@ function EvidenceExplorer({
   historicalSummary: ReactNode;
 }) {
   const { evidence } = response;
-  const forecast = evidence.mode === "forecast_assisted" ? evidence.forecast : null;
-  const historicalPanel = (
+  const forecast = evidence.forecast;
+  const historical = evidence.historical;
+  const historicalPanel = historical ? (
     <>
       {historicalSummary}
       <WeatherChartBoundary
         fallback={(
           <WeatherChartFallback
             mode="historical"
-            points={evidence.historical.daily_profile}
+            points={historical.daily_profile}
           />
         )}
       >
         <Suspense fallback={<ChartLoadingState />}>
           <LazySnowEvidenceChart
             mode="historical"
-            points={evidence.historical.daily_profile}
+            points={historical.daily_profile}
             interpretation={
               forecast
                 ? "Historical weather patterns provide context for the same requested window."
@@ -227,9 +238,30 @@ function EvidenceExplorer({
         </Suspense>
       </WeatherChartBoundary>
     </>
-  );
+  ) : null;
 
   if (!forecast) return historicalPanel;
+
+  const forecastPanel = (
+    <WeatherChartBoundary
+      fallback={(
+        <WeatherChartFallback
+          mode="forecast"
+          points={forecast.daily_profile}
+        />
+      )}
+    >
+      <Suspense fallback={<ChartLoadingState />}>
+        <LazySnowEvidenceChart
+          mode="forecast"
+          points={forecast.daily_profile}
+          interpretation={evidence.interpretation}
+        />
+      </Suspense>
+    </WeatherChartBoundary>
+  );
+
+  if (!historicalPanel) return forecastPanel;
 
   return (
     <SegmentedTabs
@@ -240,24 +272,7 @@ function EvidenceExplorer({
         {
           id: "forecast",
           label: "Forecast",
-          panel: (
-            <WeatherChartBoundary
-              fallback={(
-                <WeatherChartFallback
-                  mode="forecast"
-                  points={forecast.daily_profile}
-                />
-              )}
-            >
-              <Suspense fallback={<ChartLoadingState />}>
-                <LazySnowEvidenceChart
-                  mode="forecast"
-                  points={forecast.daily_profile}
-                  interpretation={evidence.interpretation}
-                />
-              </Suspense>
-            </WeatherChartBoundary>
-          ),
+          panel: forecastPanel,
         },
         {
           id: "historical",
@@ -288,7 +303,7 @@ function WeatherEvidenceSummary({
 
 function AvailableEvidence({ response }: { response: AvailableResponse }) {
   const { evidence } = response;
-  const isForecastAssisted = evidence.mode === "forecast_assisted";
+  const hasForecast = evidence.forecast !== null;
   const historical = evidence.historical;
   const metrics = evidenceMetrics(response);
   const presentation = weatherEvidencePresentation(response);
@@ -310,7 +325,7 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
         description={evidence.interpretation}
         className="snow-evidence__heading"
         action={(
-          <Badge variant={isForecastAssisted ? "supported" : "info"} className="snow-mode">
+          <Badge variant={hasForecast ? "supported" : "info"} className="snow-mode">
           <Snowflake aria-hidden="true" size={15} />
           {presentation.sourceType}
           </Badge>
@@ -325,11 +340,13 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
 
       <EvidenceExplorer
         response={response}
-        historicalSummary={<div className="snow-metrics" aria-label="Historical snow and weather summary">
-        {metrics.map((metric) => (
-          <MetricTile key={metric.label} {...metric} />
-        ))}
-        </div>}
+        historicalSummary={historical ? (
+          <div className="snow-metrics" aria-label="Historical snow and weather summary">
+            {metrics.map((metric) => (
+              <MetricTile key={metric.label} {...metric} />
+            ))}
+          </div>
+        ) : null}
       />
 
       {additionalLimitations.length ? (
