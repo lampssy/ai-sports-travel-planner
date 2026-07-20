@@ -140,9 +140,9 @@ def test_development_style_variation_compiles_concrete_options_and_reorders() ->
     proposal = result.proposals[0]
     assert [option.label for option in proposal.proposal.options] == [
         "Traditional mountain village",
-        "A mix of old and new",
+        "Mix of old and new",
         "Purpose-built ski resort",
-        "Not important for this trip",
+        "Not important",
     ]
     assert (
         len({variant.ordered_candidate_ids for variant in proposal.variant_outcomes})
@@ -302,7 +302,7 @@ def test_unsafe_internal_wording_uses_configured_safe_fallback_copy() -> None:
     )
 
     assert result.proposals[0].proposal.question == (
-        "What kind of place would you prefer to stay in?"
+        "What building and development style do you prefer where you stay?"
     )
 
 
@@ -322,5 +322,6 @@ def test_provider_failure_allows_first_material_registry_fallback() -> None:
     )
     assert fallback is not None
     assert (
-        fallback.proposal.question == "What kind of place would you prefer to stay in?"
+        fallback.proposal.question
+        == "What building and development style do you prefer where you stay?"
     )
