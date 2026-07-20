@@ -1201,6 +1201,17 @@ canonical `backlog_ref` to one consolidated regional H3 item under
 dispositions do not carry backlog references, and `not_separate` creates no
 backlog item.
 
+Maintainer review deliberately discovers first-order linked graph candidates
+beyond the selected PR, but discovery scope is not mutation scope. When a
+modeled linked entity is covered by another open curation PR, or a new linked
+entity depends on that PR's unresolved graph, the selected PR records a
+source-backed deferral and remains internally valid without changing the
+dependency. Terrain domains, access edges, pass coverage, and owner decisions
+that depend on the linked boundary belong to the owning PR. The selected PR may
+still correct its own local metrics, evidence scope, and unsupported linked
+claims. An owner choice confined to the linked dependency must never be
+published against the selected PR.
+
 When curation changes ranking or fit inputs, include ranking-impact notes and
 run the Search V4 factor-readiness audit plus affected golden scenarios.
 
