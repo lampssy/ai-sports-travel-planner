@@ -284,7 +284,7 @@ test("renders month climatology metrics, segmented charts, and collapsed source 
   expect(within(metrics).getByText("Usual historical range")).toBeVisible();
   expect(
     within(metrics).getByText(
-      "Historical data gives an average 87% chance of at least 30 cm during this travel window.",
+      "Daily median values averaged across the travel window. Historical data gives an average 87% chance of at least 30 cm during this travel window.",
     ),
   ).toBeVisible();
   expect(within(metrics).getByText("-2.1 °C")).toBeVisible();
