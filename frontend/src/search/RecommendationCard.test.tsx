@@ -320,6 +320,32 @@ describe("RecommendationCard", () => {
     ).not.toHaveLength(0);
   });
 
+  test("uses nested technical heading levels inside the disclosure", async () => {
+    const user = userEvent.setup();
+    render(
+      <ScoringDetails
+        configuration={primary}
+        rankingPolicyVersion="search-v4-scoring-v1"
+      />,
+    );
+
+    const details = screen
+      .getByText("Technical calculation details", { selector: "summary" })
+      .closest("details");
+    if (!details) throw new Error("Technical details disclosure was not rendered");
+    await user.click(
+      within(details).getByText("Technical calculation details", { selector: "summary" }),
+    );
+    expect(within(details).getByRole("heading", { level: 3, name: "Ranking policy" })).toBeVisible();
+    expect(within(details).getByRole("heading", { level: 3, name: "Evidence and source context" })).toBeVisible();
+    expect(
+      within(details).getAllByRole("heading", {
+        level: 4,
+        name: "Place to stay and lift access",
+      }),
+    ).not.toHaveLength(0);
+  });
+
   test("labels estimated ski-area terrain in the result and its collapsed scoring disclosure", async () => {
     const user = userEvent.setup();
     const estimated = candidate("estimated", "Pinzolo", "Pinzolo Skipass", 31);

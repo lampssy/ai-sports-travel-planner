@@ -26,6 +26,18 @@ function displayValue(value: number, unit: string): string {
   return `${rendered} ${unit}`;
 }
 
+function sourceElevation(elevationM: number | null): string {
+  return elevationM == null
+    ? "elevation unavailable"
+    : `elevation ${elevationM.toLocaleString("en-GB")} m`;
+}
+
+function sourceProfileDates(profileDates: string[]): string {
+  return profileDates.length
+    ? `profile dates ${profileDates.join(", ")}`
+    : "profile dates unavailable";
+}
+
 function WeatherValuesTable({
   mode,
   points,
@@ -90,7 +102,7 @@ function HistoricalTechnicalDetails({
       <ul>
         {historical.sources.map((source, index) => (
           <li key={`${source.source_model}-${source.baseline_period}-${index}`}>
-            {source.source_model}, {source.evidence_seasons} seasons, {source.row_count} source rows
+            {source.source_model}; {source.evidence_seasons} seasons; {sourceElevation(source.elevation_m)}; {sourceProfileDates(source.profile_dates)}; {source.row_count} source rows.
           </li>
         ))}
       </ul>
@@ -108,7 +120,11 @@ export function WeatherEvidenceTechnicalDetails({
     return (
       <section>
         <h4>Weather evidence availability</h4>
-        <p>No source rows or daily values are available for this trip window.</p>
+        <p>
+          {response.unavailable_reason === "travel_window_missing"
+            ? "Travel dates are needed before source rows or daily values can be assessed."
+            : "No source rows or daily values are available for this trip window."}
+        </p>
       </section>
     );
   }
@@ -122,7 +138,7 @@ export function WeatherEvidenceTechnicalDetails({
           <ul>
             {forecast.sources.map((source) => (
               <li key={source.forecast_run_id}>
-                Run {source.forecast_run_id}, issued {source.issued_at}, {source.row_count} source rows
+                {source.source_label} ({source.source_model}; {source.forecast_source_key}), run {source.forecast_run_id}, issued {source.issued_at}; {sourceElevation(source.elevation_m)}; {sourceProfileDates(source.profile_dates)}; {source.row_count} source rows.
               </li>
             ))}
           </ul>

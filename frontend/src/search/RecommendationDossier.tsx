@@ -143,7 +143,7 @@ export function RecommendationDossier({
 
         {!unscored || weatherEvidence ? (
           <section className="dossier-section" id="scoring-details">
-            <p className="section-label">Advanced details</p>
+            <h2 className="section-label">Advanced details</h2>
             <ScoringDetails
               configuration={configuration}
               rankingPolicyVersion={

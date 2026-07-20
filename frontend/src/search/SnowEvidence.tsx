@@ -285,6 +285,9 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
   const historical = evidence.historical;
   const metrics = evidenceMetrics(response);
   const presentation = weatherEvidencePresentation(response);
+  const additionalLimitations = evidence.limitations.filter(
+    (limitation) => limitation !== presentation.mainLimitation,
+  );
   const elevation =
     evidence.elevation_status === "mixed"
       ? "Mixed source elevations across this assessment"
@@ -322,13 +325,13 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
         </div>}
       />
 
-      {evidence.limitations.slice(1).length ? (
+      {additionalLimitations.length ? (
         <Alert variant="warning" className="snow-evidence__limitations">
           <div>
             <strong>Evidence limitations</strong>
             <ul>
-              {evidence.limitations.slice(1).map((limitation) => (
-                <li key={limitation}>{limitation}</li>
+              {additionalLimitations.map((limitation, index) => (
+                <li key={`${limitation}-${index}`}>{limitation}</li>
               ))}
             </ul>
           </div>
@@ -521,19 +524,23 @@ export function SnowEvidence({
 
       {visibleState.kind === "ready" && visibleState.response.status === "unavailable" ? (
         <div className="snow-evidence-state">
-          <AsyncState
-            state="error"
-            title="Snow evidence unavailable"
-            retryLabel="Check again"
-            retrying={retrying}
-            retryControlRef={retryButtonRef}
-            onRetry={() => retryEvidence(true)}
-            message={
-              visibleState.response.unavailable_reason === "travel_window_missing"
-                ? "No applied travel window is available for weather evidence."
-                : "Historical weather evidence is unavailable for this ski area and travel window."
-            }
-          />
+          {visibleState.response.unavailable_reason === "travel_window_missing" ? (
+            <AsyncState
+              state="empty"
+              title="Add travel dates to assess weather"
+              message="Choose travel dates to see weather conditions for this ski area."
+            />
+          ) : (
+            <AsyncState
+              state="error"
+              title="Snow evidence unavailable"
+              retryLabel="Check again"
+              retrying={retrying}
+              retryControlRef={retryButtonRef}
+              onRetry={() => retryEvidence(true)}
+              message="Historical weather evidence is unavailable for this ski area and travel window."
+            />
+          )}
           <WeatherEvidenceSummary response={visibleState.response} />
         </div>
       ) : null}

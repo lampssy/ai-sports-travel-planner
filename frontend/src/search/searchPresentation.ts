@@ -814,13 +814,16 @@ function mainWeatherLimitation(
 ): string {
   const { evidence } = response;
   const { historical, forecast } = evidence;
+  const hasMixedProvenance =
+    historical.provenance_status === "mixed" ||
+    forecast?.provenance_status === "mixed";
+  if (evidence.elevation_status === "mixed" && hasMixedProvenance) {
+    return "This assessment combines weather data from different sources and elevations.";
+  }
   if (evidence.elevation_status === "mixed") {
     return "This assessment combines weather data from different elevations.";
   }
-  if (
-    historical.provenance_status === "mixed" ||
-    forecast?.provenance_status === "mixed"
-  ) {
+  if (hasMixedProvenance) {
     return "This assessment combines weather data from different sources.";
   }
   if (evidence.limitations[0]) return evidence.limitations[0];
@@ -842,6 +845,16 @@ export function weatherEvidencePresentation(
   response: SearchWeatherEvidenceResponse,
 ): WeatherEvidencePresentation {
   if (response.status === "unavailable") {
+    if (response.unavailable_reason === "travel_window_missing") {
+      return {
+        sourceType: "Travel dates needed",
+        sourceCurrency: "Add travel dates to assess weather conditions.",
+        coverage: "Weather coverage will be assessed after travel dates are added.",
+        expectedConditions: "Choose travel dates to see weather conditions.",
+        mainLimitation:
+          response.limitations[0] ?? "Add travel dates to assess weather conditions.",
+      };
+    }
     return {
       sourceType: "No weather source available",
       sourceCurrency: "No forecast issue time or archive year is available.",
@@ -849,9 +862,7 @@ export function weatherEvidencePresentation(
       expectedConditions: "No data-backed weather conditions are available.",
       mainLimitation:
         response.limitations[0] ??
-        (response.unavailable_reason === "travel_window_missing"
-          ? "Add a travel window to assess weather evidence."
-          : "No complete historical profile is available for this trip window."),
+        "No complete historical profile is available for this trip window.",
     };
   }
 

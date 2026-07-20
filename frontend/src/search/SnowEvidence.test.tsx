@@ -319,10 +319,25 @@ test("keeps source rows and equivalent chart values in technical details", () =>
 
   const table = screen.getByRole("table", { name: "Historical weather values" });
   expect(screen.getByText("Open-Meteo archive climatology")).toBeVisible();
+  expect(
+    screen.getByText(
+      "ERA5-Land; 30 seasons; elevation 2,400 m; profile dates 03-01, 03-15, 03-31; 3 source rows.",
+    ),
+  ).toBeVisible();
   expect(within(table).getByText("03-15")).toBeVisible();
   expect(within(table).getByText("128 cm")).toBeVisible();
   expect(within(table).queryByText("0 cm")).toBeNull();
   expect(within(table).getAllByText("Not available").length).toBeGreaterThan(0);
+});
+
+test("shows complete forecast source provenance only in technical details", () => {
+  render(<WeatherEvidenceTechnicalDetails response={forecastResponse()} />);
+
+  expect(
+    screen.getByText(
+      "Open-Meteo forecast (best_match; open-meteo), run forecast-head-1, issued 2026-07-16T11:00:00Z; elevation 2,400 m; profile dates 2026-07-20, 2026-07-21, 2026-07-22; 3 source rows.",
+    ),
+  ).toBeVisible();
 });
 
 test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
@@ -436,6 +451,41 @@ test("distinguishes mixed source elevations from unavailable elevation", async (
     await screen.findByText("Mixed source elevations across this assessment"),
   ).toBeVisible();
   expect(screen.queryByText(/elevation unavailable/i)).toBeNull();
+});
+
+test("retains response limitations when mixed evidence becomes the main limitation", async () => {
+  const response = forecastResponse();
+  response.evidence = {
+    ...response.evidence,
+    elevation_m: null,
+    elevation_status: "mixed",
+    limitations: [
+      "Forecast coverage is incomplete.",
+      "Historical coverage is limited for one requested date.",
+    ],
+    historical: {
+      ...response.evidence.historical,
+      provenance_status: "mixed",
+    },
+  };
+  render(
+    <SnowEvidence
+      intent={datesIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={vi.fn().mockResolvedValue(response)}
+    />,
+  );
+
+  expect(
+    await screen.findByText(
+      "This assessment combines weather data from different sources and elevations.",
+    ),
+  ).toBeVisible();
+  expect(screen.getByText("Forecast coverage is incomplete.")).toBeVisible();
+  expect(
+    screen.getByText("Historical coverage is limited for one requested date."),
+  ).toBeVisible();
 });
 
 test("shows API risk and wind values only in the complete daily-values table", () => {
@@ -572,6 +622,35 @@ test("keeps one recovery action after weather remains unavailable on retry", asy
   expect(screen.queryByRole("button", { name: "Reload snow evidence" })).toBeNull();
   expect(screen.getByRole("button", { name: "Check again" })).toHaveFocus();
   expect(loadEvidence).toHaveBeenCalledTimes(2);
+});
+
+test("asks for travel dates without presenting unavailable weather evidence or a retry", async () => {
+  render(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={vi.fn().mockResolvedValue({
+        weather_evidence_version: "search-weather-evidence-v1",
+        status: "unavailable",
+        ski_area_id: "tignes-ski-area",
+        evaluated_at: "2026-07-16T12:00:00Z",
+        cache_valid_until: "2026-07-16T12:05:00Z",
+        unavailable_reason: "travel_window_missing",
+        limitations: ["A travel month or exact travel dates are required."],
+      })}
+    />,
+  );
+
+  expect(
+    await screen.findByRole("heading", { name: "Add travel dates to assess weather" }),
+  ).toBeVisible();
+  expect(
+    screen.getByText("Choose travel dates to see weather conditions for this ski area."),
+  ).toBeVisible();
+  expect(screen.getByText("Travel dates needed")).toBeVisible();
+  expect(screen.queryByRole("button", { name: /check again|retry/i })).toBeNull();
+  expect(screen.queryByText(/weather evidence is unavailable/i)).toBeNull();
 });
 
 test("scopes a pending retry to its weather context when the cached target retries independently", async () => {

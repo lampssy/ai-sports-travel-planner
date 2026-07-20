@@ -325,6 +325,9 @@ test("renders the verdict hierarchy, progressive anchors, and selected save targ
   expect(
     screen.getAllByText("Technical calculation details", { selector: "summary" }),
   ).toHaveLength(1);
+  expect(
+    screen.getByRole("heading", { level: 2, name: "Advanced details" }),
+  ).toBeVisible();
   expect(document.querySelectorAll("#scoring-details details")).toHaveLength(1);
 
   await user.click(screen.getByRole("button", { name: "Save as current trip" }));

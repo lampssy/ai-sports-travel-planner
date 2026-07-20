@@ -1140,7 +1140,7 @@ describe("weather evidence presentation", () => {
     );
   });
 
-  test("prioritizes mixed elevations over mixed provenance and response limitations", () => {
+  test("names both mixed source provenance and elevations in the main limitation", () => {
     const response = archiveResponse();
     response.evidence = {
       ...response.evidence,
@@ -1154,7 +1154,7 @@ describe("weather evidence presentation", () => {
     };
 
     expect(weatherEvidencePresentation(response).mainLimitation).toBe(
-      "This assessment combines weather data from different elevations.",
+      "This assessment combines weather data from different sources and elevations.",
     );
   });
 
@@ -1175,6 +1175,26 @@ describe("weather evidence presentation", () => {
       coverage: "Weather coverage is unavailable for this trip window.",
       expectedConditions: "No data-backed weather conditions are available.",
       mainLimitation: "No complete archive profile is available.",
+    });
+  });
+
+  test("presents missing travel dates as an informational not-assessed state", () => {
+    const presentation = weatherEvidencePresentation({
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "unavailable",
+      ski_area_id: "area-weather",
+      evaluated_at: "2026-07-16T12:02:00Z",
+      cache_valid_until: "2026-07-16T13:00:00Z",
+      unavailable_reason: "travel_window_missing",
+      limitations: ["A travel month or exact travel dates are required."],
+    });
+
+    expect(presentation).toEqual({
+      sourceType: "Travel dates needed",
+      sourceCurrency: "Add travel dates to assess weather conditions.",
+      coverage: "Weather coverage will be assessed after travel dates are added.",
+      expectedConditions: "Choose travel dates to see weather conditions.",
+      mainLimitation: "A travel month or exact travel dates are required.",
     });
   });
 });

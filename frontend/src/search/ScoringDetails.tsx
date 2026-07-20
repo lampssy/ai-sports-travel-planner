@@ -49,19 +49,19 @@ export function ScoringDetails({
       <div className="scoring-details__content">
         {weatherEvidence ? (
           <section className="scoring-details__weather">
-            <h4>Weather calculations and values</h4>
+            <h3>Weather calculations and values</h3>
             <WeatherEvidenceTechnicalDetails response={weatherEvidence} />
           </section>
         ) : null}
         {rankingPolicyVersion ? (
           <section className="scoring-details__policy">
-            <h4>Ranking policy</h4>
+            <h3>Ranking policy</h3>
             <code>{rankingPolicyVersion}</code>
           </section>
         ) : null}
         {technicalDetails.length ? (
           <section>
-            <h4>Evidence and source context</h4>
+            <h3>Evidence and source context</h3>
             <div className="why-trip__technical-rows">
               {technicalDetails.map((item) => (
                 <article key={item.id}>
@@ -84,7 +84,7 @@ export function ScoringDetails({
         ) : null}
         {groups.length ? (
           <section>
-            <h4>Decision groups</h4>
+            <h3>Decision groups</h3>
             <dl className="scoring-details__groups">
               {groups.map((group) => (
                 <div key={group.group_id}>
@@ -97,7 +97,7 @@ export function ScoringDetails({
         ) : null}
         {factors.length ? (
           <section>
-            <h4>Raw factor contributions</h4>
+            <h3>Raw factor contributions</h3>
             <dl className="scoring-details__factors">
               {factors.map((factor) => {
                 const trustLabel = factorTrustLabelForConfiguration(
