@@ -152,6 +152,8 @@ Material catalog changes use a typed CatalogCurationReport. A report must:
 - link direct evidence with source title/type and an evidence summary;
 - record normalization notes;
 - assess destination boundaries and weather request geometry when relevant;
+- declare focus stay destinations for a deterministic resulting graph in
+  current schema-v3 work;
 - state ranking impact for ranking-relevant changes; and
 - list unresolved caveats without hiding them in prose.
 
@@ -282,6 +284,7 @@ Validate and render a curation report:
 
     UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation \
       typed docs/catalog-curation/REPORT.json \
+      --current-catalog-path app/data/catalog.json \
       --markdown-output docs/catalog-curation/REPORT.md
 
 Reconcile a report against a base checkout:

@@ -819,7 +819,10 @@ worker and can be adopted by a successor; multiple journals fail closed. The
 journal check and stale takeover share one transition mutex, preventing a
 journal from appearing between eligibility check and acquisition. Completed
 journals can be replaced by a new authorized journal for a later review/fix
-cycle on the same PR.
+cycle on the same PR. A discovery journal also stores the validated report path
+and immutable canonical graph. This lets journal-only recovery enforce the same
+publication input as the original run; historical or incomplete journals
+without that evidence stop rather than publishing a caller-supplied graph.
 
 Normal curation push remains validation-gated. The narrow exception is
 `publish manual-check`: after an unresolved bounded review, it revalidates the
@@ -925,6 +928,20 @@ an explicit helper adoption flag on an already-authorized automation-owned PR;
 once managed markers exist, updates are idempotent. Recovery must finish the
 body publication as well as the label and canonical comment, so a recovered PR
 cannot become ready with its original discovery-era description still shown.
+
+Schema-v3 reports may declare `resulting_graph.focus_stay_destination_ids`.
+Historical v3 reports remain readable without it, but current maintainer
+validation requires it. The renderer derives regions, destinations, stay bases,
+access edges, ski areas, terrain domains, and lift-pass coverage from the exact
+normalized catalog head and emits one canonical Mermaid section. Validation
+also derives every final-catalog destination reached by the report's reviewed
+graph targets and requires the focus list to cover them; extra focus destinations
+are allowed, but omissions are not. The helper persists the rendered section
+with validation and journal evidence and requires the same section in the
+managed PR body, preventing report and PR diagrams from drifting apart. The
+unvalidated `manual-check` path receives the report path explicitly, verifies
+that it is the PR diff's single curation report, and reproduces the graph from
+the immutable reviewed head before allowing its push.
 
 An unchanged `ready` head is held out of fresh curation selection and becomes
 eligible again only after a new commit. An unchanged `waiting-ci` head remains

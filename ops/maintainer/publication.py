@@ -1055,6 +1055,8 @@ def publish_discovery_proposal(
             new_head=validation.validated_head,
             candidate_key=validation.candidate_key,
             candidate_origin=validation.candidate_origin,
+            report_path=validation.report_path,
+            resulting_graph_markdown=validation.resulting_graph_markdown,
             phase=PushPhase.AUTHORIZED,
         )
         store.save_push(journal, lease)
@@ -1479,6 +1481,8 @@ def _require_matching_proposal_journal(
         or journal.new_head != validation.validated_head
         or journal.candidate_key != validation.candidate_key
         or journal.candidate_origin != validation.candidate_origin
+        or journal.report_path != validation.report_path
+        or journal.resulting_graph_markdown != validation.resulting_graph_markdown
     ):
         raise _publication_error(
             ErrorReason.INVALID_COMMAND,

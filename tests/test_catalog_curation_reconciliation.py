@@ -216,6 +216,9 @@ def _schema_two_relationship_report() -> CatalogCurationReport:
 def _schema_three_relationship_report() -> CatalogCurationReport:
     payload = _schema_two_relationship_report().model_dump(mode="json")
     payload["report_schema_version"] = 3
+    payload["resulting_graph"] = {
+        "focus_stay_destination_ids": ["example"],
+    }
     return CatalogCurationReport.model_validate(payload)
 
 
@@ -470,6 +473,65 @@ def test_typed_cli_accepts_required_schema_version_three(
 
     assert exit_code == 0
     assert "report_schema_version=3" in capsys.readouterr().out
+
+
+def test_typed_cli_requires_resulting_graph_for_current_schema_three(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    report_path = tmp_path / "report-v3-without-graph.json"
+    payload = _schema_three_relationship_report().model_dump(mode="json")
+    payload.pop("resulting_graph")
+    report_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    exit_code = validate_curation_main(
+        [
+            "typed",
+            str(report_path),
+            "--require-report-schema-version",
+            "3",
+        ]
+    )
+
+    assert exit_code == 1
+    assert "schema version 3 requires resulting_graph" in capsys.readouterr().out
+
+
+def test_reconcile_cli_renders_the_canonical_resulting_graph(
+    tmp_path: Path,
+) -> None:
+    base_paths, current_paths = _relationship_snapshots(tmp_path)
+    report_path = tmp_path / "report-v3.json"
+    markdown_path = tmp_path / "report-v3.md"
+    report_path.write_text(
+        _schema_three_relationship_report().model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "reconcile",
+            str(report_path),
+            "--base-catalog-path",
+            str(base_paths[0]),
+            "--current-catalog-path",
+            str(current_paths[0]),
+            "--base-trust-manifest-path",
+            str(base_paths[1]),
+            "--current-trust-manifest-path",
+            str(current_paths[1]),
+            "--require-report-schema-version",
+            "3",
+            "--markdown-output",
+            str(markdown_path),
+        ]
+    )
+
+    assert exit_code == 0
+    rendered = markdown_path.read_text(encoding="utf-8")
+    assert "## Resulting Graph" in rendered
+    assert "Stay destination<br/>Example" in rendered
+    assert '|"access: walk via Example Gondola, 450 m"|' in rendered
 
 
 def test_typed_cli_requires_backlog_path_for_deferred_report(

@@ -74,6 +74,8 @@ from ops.maintainer.state import (
 from ops.maintainer.validation import (
     ProposalValidationResult,
     ValidationResult,
+    immutable_resulting_graph_markdown,
+    require_single_curation_report_path,
     revalidate_curation_request,
 )
 
@@ -330,6 +332,22 @@ def _advance_work(
     return advanced
 
 
+def _require_canonical_resulting_graph(
+    work: WorkState | None,
+    body: str | None,
+    *,
+    expected: str | None = None,
+) -> None:
+    if expected is None:
+        expected = work.resulting_graph_markdown if work is not None else None
+    if expected is None:
+        return
+    if body is None or expected.strip() not in body:
+        raise PublicationInputError(
+            "publication body must contain the canonical resulting graph"
+        )
+
+
 def handle_validate_curation(
     args: argparse.Namespace,
     dependencies: Dependencies,
@@ -401,6 +419,7 @@ def handle_validate_curation(
         WorkPhase.VALIDATED,
         validated_head=result.validated_head,
         report_path=args.report,
+        resulting_graph_markdown=result.resulting_graph_markdown,
     )
     dependencies.tracker.terminal_reason = "validated"
     return {
@@ -497,6 +516,7 @@ def handle_validate_proposal(
         WorkPhase.VALIDATED,
         validated_head=result.validated_head,
         report_path=result.report_path,
+        resulting_graph_markdown=result.resulting_graph_markdown,
     )
     dependencies.tracker.terminal_reason = "validated"
     return {"work_id": work_id, "validation": result.model_dump(mode="json")}
@@ -506,6 +526,9 @@ def _matching_curation_journal(
     work: WorkState,
     lease: RunLease,
     new_head: str,
+    *,
+    report_path: str | None = None,
+    resulting_graph_markdown: str | None = None,
 ) -> PushJournal:
     if work.sync is None or work.pr_number is None:
         raise StateStoreError("prepared curation facts are incomplete")
@@ -518,6 +541,12 @@ def _matching_curation_journal(
         branch=work.sync.target_branch,
         expected_remote_head=work.selected_head,
         new_head=new_head,
+        report_path=report_path if report_path is not None else work.report_path,
+        resulting_graph_markdown=(
+            resulting_graph_markdown
+            if resulting_graph_markdown is not None
+            else work.resulting_graph_markdown
+        ),
         phase=PushPhase.AUTHORIZED,
     )
 
@@ -609,6 +638,23 @@ def handle_publish_manual_check(
         if args.body_file is not None
         else None
     )
+    try:
+        resulting_graph_markdown = immutable_resulting_graph_markdown(
+            dependencies.repository,
+            args.reviewed_head,
+            args.report,
+        )
+    except MaintainerError:
+        raise
+    except Exception:
+        raise PublicationInputError(
+            "manual-check report must contain a reproducible resulting graph"
+        ) from None
+    _require_canonical_resulting_graph(
+        None,
+        body,
+        expected=resulting_graph_markdown,
+    )
 
     work = store.load_work(work_id)
     journal = store.load_push(work_id)
@@ -618,6 +664,8 @@ def handle_publish_manual_check(
         and journal.recovery_run_id == lease.run_id
         and journal.pr_number == args.pr
         and journal.new_head == args.reviewed_head
+        and journal.report_path == args.report
+        and journal.resulting_graph_markdown == resulting_graph_markdown
         and journal.phase
         in {PushPhase.AUTHORIZED, PushPhase.PUSHED, PushPhase.PUBLISHED}
     )
@@ -638,11 +686,17 @@ def handle_publish_manual_check(
             and args.reviewed_head != work.reviewed_head
         ):
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
-        dependencies.repository.revalidate_prepared_result(
+        snapshot = dependencies.repository.revalidate_prepared_result(
             pull_request,
             work.sync,
             args.reviewed_head,
         )
+        try:
+            require_single_curation_report_path(snapshot, args.report)
+        except ValueError:
+            raise PublicationInputError(
+                "manual-check report must be the single changed curation report"
+            ) from None
         if work.phase is WorkPhase.PREPARED:
             work = _advance_work(
                 store,
@@ -652,7 +706,13 @@ def handle_publish_manual_check(
                 WorkPhase.REVIEWED,
                 reviewed_head=args.reviewed_head,
             )
-        journal = _matching_curation_journal(work, lease, args.reviewed_head)
+        journal = _matching_curation_journal(
+            work,
+            lease,
+            args.reviewed_head,
+            report_path=args.report,
+            resulting_graph_markdown=resulting_graph_markdown,
+        )
         store.save_push(journal, lease)
         dependencies.tracker.mutation_occurred = True
     elif journal is None:
@@ -805,15 +865,25 @@ def handle_publish_proposal(
     if work_matches_request and (work.run_id == lease.run_id or journal_matches_run):
         assert work is not None and work.report_path is not None
         report_path = work.report_path
+        resulting_graph_markdown = work.resulting_graph_markdown
     elif journal_matches_run:
-        report_path = "docs/catalog-curation/recovered-proposal.json"
+        report_path = journal.report_path
+        resulting_graph_markdown = journal.resulting_graph_markdown
     else:
         raise StateStoreError("validated proposal evidence is missing")
+    if report_path is None or resulting_graph_markdown is None:
+        raise StateStoreError("validated proposal graph evidence is missing")
+    _require_canonical_resulting_graph(
+        None,
+        body,
+        expected=resulting_graph_markdown,
+    )
     validation = ProposalValidationResult(
         candidate_key=args.candidate_key,
         candidate_origin=args.candidate_origin,
         validated_head=args.head,
         report_path=report_path,
+        resulting_graph_markdown=resulting_graph_markdown,
     )
     journal_before = journal
     journal = publish_discovery_proposal(
@@ -959,6 +1029,7 @@ def handle_publish_state(
             else None
         )
     work = store.load_work(work_id)
+    _require_canonical_resulting_graph(work, body)
     journal = store.load_push(work_id)
     matching_pushed_journal = (
         journal is not None

@@ -7,10 +7,12 @@ from typing import Sequence
 from pydantic import ValidationError
 
 from app.data.catalog_curation import (
+    CatalogCurationReport,
     CatalogValidationError,
     load_catalog_curation_report,
     render_catalog_curation_report_markdown,
     validate_catalog_curation_report,
+    validate_catalog_resulting_graph,
 )
 from app.data.catalog_curation_backlog import (
     validate_catalog_curation_backlog_refs,
@@ -18,6 +20,8 @@ from app.data.catalog_curation_backlog import (
 from app.data.catalog_curation_reconciliation import (
     reconcile_catalog_curation_report,
 )
+from app.data.catalog_loader import load_catalog_from_path
+from app.domain.catalog import CatalogSnapshot
 
 
 def _add_report_schema_version_argument(parser: argparse.ArgumentParser) -> None:
@@ -49,6 +53,11 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     typed_parser = subparsers.add_parser("typed", help="Validate the report only.")
     typed_parser.add_argument("report_path", type=Path)
     typed_parser.add_argument("--markdown-output", type=Path)
+    typed_parser.add_argument(
+        "--current-catalog-path",
+        type=Path,
+        help="Current normalized catalog used to derive the resulting graph.",
+    )
     _add_report_schema_version_argument(typed_parser)
     _add_product_backlog_argument(typed_parser)
 
@@ -97,11 +106,14 @@ def _print_invalid(issues: Sequence[str]) -> None:
         print(f"[catalog-curation-invalid] {issue}")
 
 
-def _write_markdown_report(report_path: Path, output_path: Path) -> None:
-    report = load_catalog_curation_report(report_path)
+def _write_markdown_report(
+    report: CatalogCurationReport,
+    output_path: Path,
+    catalog: CatalogSnapshot | None,
+) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
-        render_catalog_curation_report_markdown(report),
+        render_catalog_curation_report_markdown(report, catalog),
         encoding="utf-8",
     )
 
@@ -120,11 +132,22 @@ def main(argv: list[str] | None = None) -> int:
                     f"required version {args.require_report_schema_version}"
                 ]
             )
-        validate_catalog_curation_report(report)
+        require_resulting_graph = args.require_report_schema_version == 3
+        validate_catalog_curation_report(
+            report,
+            require_resulting_graph=require_resulting_graph,
+        )
         if not getattr(args, "skip_product_backlog_validation", False):
             validate_catalog_curation_backlog_refs(report, args.product_backlog_path)
         reconciliation_result = None
+        current_catalog = None
         if args.command == "reconcile":
+            current_catalog = load_catalog_from_path(args.current_catalog_path)
+            validate_catalog_resulting_graph(
+                report,
+                current_catalog,
+                require=require_resulting_graph,
+            )
             reconciliation_result = reconcile_catalog_curation_report(
                 report,
                 base_catalog_path=args.base_catalog_path,
@@ -132,8 +155,15 @@ def main(argv: list[str] | None = None) -> int:
                 base_trust_manifest_path=args.base_trust_manifest_path,
                 current_trust_manifest_path=args.current_trust_manifest_path,
             )
+        elif args.current_catalog_path is not None:
+            current_catalog = load_catalog_from_path(args.current_catalog_path)
+            validate_catalog_resulting_graph(
+                report,
+                current_catalog,
+                require=require_resulting_graph,
+            )
         if args.markdown_output is not None:
-            _write_markdown_report(args.report_path, args.markdown_output)
+            _write_markdown_report(report, args.markdown_output, current_catalog)
     except ValidationError as error:
         _print_invalid(_pydantic_issue_messages(error))
         return 1

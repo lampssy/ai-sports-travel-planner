@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import signal
@@ -15,7 +16,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.data.catalog_curation import (
     CatalogCurationReport,
     load_catalog_curation_report,
+    render_catalog_resulting_graph_markdown,
     validate_catalog_curation_report,
+    validate_catalog_resulting_graph,
 )
 from app.data.catalog_curation_reconciliation import (
     reconcile_catalog_curation_report,
@@ -75,6 +78,11 @@ class ValidationResult(_ValidationModel):
     validated_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     commands_completed: Literal[3]
     observations: tuple[ValidationCommandObservation, ...]
+    resulting_graph_markdown: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=32768,
+    )
 
     @model_validator(mode="after")
     def validate_observations(self) -> Self:
@@ -92,6 +100,11 @@ class ProposalValidationResult(_ValidationModel):
     candidate_origin: Literal["backlog", "external"]
     validated_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     report_path: str = Field(pattern=_REPORT_PATH.pattern)
+    resulting_graph_markdown: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=32768,
+    )
 
 
 class ValidationCommandRunner(Protocol):
@@ -307,11 +320,51 @@ def validate_curation(
             ErrorKind.MISMATCH,
             "Reviewed validation plan changed",
         )
+    try:
+        resulting_graph_markdown = immutable_resulting_graph_markdown(
+            repository,
+            reviewed_head,
+            report_path,
+        )
+    except MaintainerError:
+        raise
+    except Exception:
+        raise _validation_error(
+            ErrorCheck.POST_VALIDATION,
+            ErrorKind.MISMATCH,
+            "Reviewed resulting graph could not be reproduced",
+        ) from None
     return ValidationResult(
         validated_head=reviewed_head,
         commands_completed=3,
         observations=tuple(observations),
+        resulting_graph_markdown=resulting_graph_markdown,
     )
+
+
+def immutable_resulting_graph_markdown(
+    repository: GitRepository,
+    revision: str,
+    report_path: str,
+) -> str:
+    catalog_payload = json.loads(
+        repository.read_bounded_immutable_text(
+            revision,
+            CATALOG_PATH,
+            max_bytes=_PRIVATE_OBJECT_LIMIT,
+        )
+    )
+    report_payload = json.loads(
+        repository.read_bounded_immutable_text(
+            revision,
+            report_path,
+            max_bytes=_PRIVATE_OBJECT_LIMIT,
+        )
+    )
+    catalog = CatalogSnapshot.model_validate(catalog_payload)
+    report = CatalogCurationReport.model_validate(report_payload)
+    validate_catalog_resulting_graph(report, catalog, require=True)
+    return render_catalog_resulting_graph_markdown(report, catalog)
 
 
 def revalidate_curation_request(
@@ -389,7 +442,15 @@ def validate_proposal(
             report = load_catalog_curation_report(report_file)
             if report.report_schema_version != 3:
                 raise ValueError
-            validate_catalog_curation_report(report)
+            validate_catalog_curation_report(
+                report,
+                require_resulting_graph=True,
+            )
+            validate_catalog_resulting_graph(
+                report,
+                head_catalog,
+                require=True,
+            )
             reconcile_catalog_curation_report(
                 report,
                 base_catalog_path=base_catalog_path,
@@ -422,6 +483,10 @@ def validate_proposal(
         candidate_origin=candidate_origin,
         validated_head=head,
         report_path=report_path,
+        resulting_graph_markdown=render_catalog_resulting_graph_markdown(
+            report,
+            head_catalog,
+        ),
     )
 
 
@@ -436,23 +501,13 @@ def _curation_plan(
     check: ErrorCheck,
 ) -> _CurationPlan:
     try:
-        if _REPORT_PATH.fullmatch(report_path) is None:
-            raise ValueError
         snapshot = repository.revalidate_prepared_result(
             pull_request,
             sync,
             reviewed_head,
         )
         base_repository.verify_validation_base(sync.base_head)
-        report_paths = tuple(
-            sorted(
-                path
-                for path in snapshot.changed_paths
-                if _REPORT_PATH.fullmatch(path) is not None
-            )
-        )
-        if report_paths != (report_path,):
-            raise ValueError
+        require_single_curation_report_path(snapshot, report_path)
         return _CurationPlan(
             report_path=report_path,
             base_dir=Path(base_repository.root),
@@ -467,6 +522,23 @@ def _curation_plan(
             ErrorKind.MISMATCH,
             "Reviewed validation state changed",
         ) from None
+
+
+def require_single_curation_report_path(
+    snapshot: IntentSnapshot,
+    report_path: str,
+) -> None:
+    if _REPORT_PATH.fullmatch(report_path) is None:
+        raise ValueError("curation report path is invalid")
+    report_paths = tuple(
+        sorted(
+            path
+            for path in snapshot.changed_paths
+            if _REPORT_PATH.fullmatch(path) is not None
+        )
+    )
+    if report_paths != (report_path,):
+        raise ValueError("curation report path is not the single changed report")
 
 
 def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:

@@ -557,7 +557,8 @@ own source-reference list.
 **Catalog curation report**
 
 A typed review packet that covers every applicable field for reviewed entities,
-links evidence, records changes and unresolved gaps, and states ranking impact.
+links evidence, records changes and unresolved gaps, states ranking impact, and
+renders the resulting destination graph from normalized catalog relationships.
 
 **Suggested stay**
 

@@ -122,6 +122,71 @@ def _intent(
     )
 
 
+def _current_graph_report_payload() -> dict[str, object]:
+    return {
+        "report_schema_version": 3,
+        "title": "Example access review",
+        "summary": "Reviews the exact access graph.",
+        "resulting_graph": {"focus_stay_destination_ids": ["example"]},
+        "reviewed_targets": [
+            {
+                "target_type": "ski_area_access",
+                "target_id": "example-village--example-area",
+                "scope": "narrow",
+                "required_field_paths": ["distance_m"],
+            }
+        ],
+        "changes": [
+            {
+                "target_type": "ski_area_access",
+                "target_id": "example-village--example-area",
+                "field_path": "distance_m",
+                "before": 250,
+                "after": 300,
+                "trust_status": "estimated",
+            }
+        ],
+        "field_coverage": [
+            {
+                "target_type": "ski_area_access",
+                "target_id": "example-village--example-area",
+                "field_path": "distance_m",
+                "status": "changed",
+            }
+        ],
+        "evidence": [
+            {
+                "evidence_id": "example-access-scope",
+                "target_type": "ski_area_access",
+                "target_id": "example-village--example-area",
+                "field_path": "source_urls",
+                "source_type": "official",
+                "source_url": "https://example.com/access",
+                "source_title": "Official access",
+                "source_value": ["https://example.com/access"],
+                "evidence_summary": "Confirms the modeled access relationship.",
+            }
+        ],
+        "entity_scope_assessments": [
+            {
+                "candidate_id": "example-access",
+                "candidate_name": "Example access",
+                "candidate_kind": "ski_area_access",
+                "disposition": "represented",
+                "signals": ["direct_access_relationship"],
+                "evidence_refs": ["example-access-scope"],
+                "target_refs": [
+                    {
+                        "target_type": "ski_area_access",
+                        "target_id": "example-village--example-area",
+                    }
+                ],
+                "rationale": "The access relationship is represented explicitly.",
+            }
+        ],
+    }
+
+
 class FakeLiveRepository:
     def __init__(self, root: Path, snapshot: IntentSnapshot) -> None:
         self.root = root
@@ -147,6 +212,23 @@ class FakeLiveRepository:
         self.base_calls += 1
         if self.fail:
             raise RepositorySafetyError("raw base drift")
+
+    def read_bounded_immutable_text(
+        self,
+        revision: str,
+        path: str,
+        *,
+        max_bytes: int,
+    ) -> str:
+        assert revision == SHA_B
+        if path == CATALOG_PATH:
+            value = json.dumps(minimal_catalog_payload())
+        elif path == REPORT_PATH:
+            value = json.dumps(_current_graph_report_payload())
+        else:
+            raise RepositorySafetyError("unexpected immutable object")
+        assert len(value.encode("utf-8")) <= max_bytes
+        return value
 
 
 class RecordingRunner:
@@ -555,6 +637,9 @@ def _report_payload(
         "report_schema_version": 3,
         "title": "Nendaz Village onboarding",
         "summary": "Adds a separately represented stay base.",
+        "resulting_graph": {
+            "focus_stay_destination_ids": ["nendaz"],
+        },
         "reviewed_targets": [
             {"target_type": target_type, "target_id": target_id, "scope": "full"}
             for target_type, target_id, _ in targets
@@ -713,8 +798,32 @@ def test_validate_proposal_accepts_one_coherent_new_catalog_graph() -> None:
     assert result.candidate_key == CANDIDATE_KEY
     assert result.candidate_origin == "external"
     assert result.validated_head == SHA_B
+    assert result.resulting_graph_markdown is not None
+    assert "## Resulting Graph" in result.resulting_graph_markdown
+    assert "Stay destination<br/>Nendaz" in result.resulting_graph_markdown
     assert all("product-backlog" not in path for _, path in repository.show_calls)
     assert all("registry" not in path for _, path in repository.show_calls)
+
+
+def test_validate_proposal_requires_resulting_graph_for_schema_three() -> None:
+    repository, snapshot, inventory = _proposal_dependencies()
+    payload = json.loads(repository.texts[(SHA_B, REPORT_PATH)])
+    payload.pop("resulting_graph")
+    repository.texts[(SHA_B, REPORT_PATH)] = json.dumps(payload)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_proposal(
+            candidate_key=CANDIDATE_KEY,
+            candidate_origin="external",
+            base=SHA_A,
+            head=SHA_B,
+            snapshot=snapshot,
+            discovery_inventory=inventory,
+            repository=repository,  # type: ignore[arg-type]
+        )
+
+    assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
 
 
 def _rekey_catalog_pair() -> tuple[CatalogSnapshot, CatalogSnapshot]:

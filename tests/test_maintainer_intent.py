@@ -85,6 +85,7 @@ def _valid_full_report() -> dict[str, object]:
         "report_schema_version": 3,
         "title": "Alpha full curation",
         "summary": "Reviews Alpha against its official source.",
+        "resulting_graph": {"focus_stay_destination_ids": ["alpha"]},
         "reviewed_targets": [
             {
                 "target_type": "ski_area",
@@ -321,6 +322,24 @@ def test_full_schema_v3_report_collects_reviewed_scope_and_trust_targets() -> No
         }
     )
     assert repository.show_calls == [("head", path)]
+
+
+def test_schema_v3_report_without_graph_remains_admissible_review_input() -> None:
+    report_path = "docs/catalog-curation/alpha.json"
+    report = _valid_full_report()
+    report.pop("resulting_graph")
+    repository = FakeIntentRepository(
+        [report_path],
+        {
+            ("base", report_path): json.dumps(_valid_full_report()),
+            ("head", report_path): json.dumps(report),
+        },
+    )
+
+    snapshot = build_intent_snapshot(repository, "base", "head")
+
+    assert "ski_area:alpha" in snapshot.report_targets
+    assert repository.show_calls == [("head", report_path)]
 
 
 def test_report_target_can_be_declared_by_review_and_scope_without_drift() -> None:
