@@ -230,22 +230,31 @@ describe("trip essentials", () => {
     );
   });
 
-  test("labels needs-source ski-area terrain at the field level", () => {
-    const selectedPass = {
-      ...configuration("needs-source-terrain").selected_pass,
-      accessible_piste_km: 31,
-      accessible_piste_km_evidence: {
-        trust_status: "needs_source" as const,
-        scope: "ski_area" as const,
-        source_entity_id: "pinzolo-ski-area",
-        field_group: "terrain_metrics" as const,
-      },
-    };
+  test.each([
+    ["ski_area", "31 km in the selected ski area; source confirmation is still needed"],
+    [
+      "terrain_domain",
+      "31 km in the connected area covered by this pass; source confirmation is still needed",
+    ],
+    ["pass", "31 km covered by this pass; source confirmation is still needed"],
+  ] as const)(
+    "labels needs-source %s terrain in primary and secondary values",
+    (scope, expected) => {
+      const selectedPass = {
+        ...configuration("needs-source-terrain").selected_pass,
+        accessible_piste_km: 31,
+        accessible_piste_km_evidence: {
+          trust_status: "needs_source" as const,
+          scope,
+          source_entity_id: "terrain-source",
+          field_group: "terrain_metrics" as const,
+        },
+      };
 
-    expect(terrainPresentation(selectedPass)?.evidenceLabel).toBe(
-      "31 km in the selected ski area; source confirmation is still needed",
-    );
-  });
+      expect(terrainPresentation(selectedPass)?.essentialValue).toBe(expected);
+      expect(terrainPresentation(selectedPass)?.evidenceLabel).toBe(expected);
+    },
+  );
 
   test("does not expose an unknown access-mode identifier", () => {
     const unknownAccess = configuration("unknown-access", {

@@ -53,15 +53,28 @@ def _build_conditions_provenance(
     if conditions.updated_at is not None:
         freshness_status = "fresh" if is_condition_fresh(conditions) else "stale"
 
+    if freshness_status == "fresh":
+        basis_summary = (
+            "Using a current forecast-based conditions signal from the latest "
+            "weather refresh."
+        )
+    elif freshness_status == "stale":
+        basis_summary = (
+            "Using the latest available forecast-based conditions signal. "
+            "This forecast is out of date."
+        )
+    else:
+        basis_summary = (
+            "Using the latest available forecast-based conditions signal. "
+            "The update time is unavailable."
+        )
+
     return ProvenanceInfo(
         source_name=conditions.source or "open-meteo",
         source_type="forecast",
         updated_at=conditions.updated_at,
         freshness_status=freshness_status,
-        basis_summary=(
-            "Using a current forecast-based conditions signal from the latest "
-            "weather refresh."
-        ),
+        basis_summary=basis_summary,
     )
 
 
@@ -317,9 +330,17 @@ def build_current_trip_summary(
             changes=[],
         )
     elif current_updated_at <= baseline_at:
+        stale_note = (
+            " The latest available forecast is out of date."
+            if provenance.freshness_status == "stale"
+            else ""
+        )
         delta = CurrentTripDelta(
             status="unchanged",
-            summary=f"Conditions have not changed {_comparison_basis_copy(basis)}.",
+            summary=(
+                f"Conditions have not changed {_comparison_basis_copy(basis)}."
+                f"{stale_note}"
+            ),
             changes=[],
         )
     else:

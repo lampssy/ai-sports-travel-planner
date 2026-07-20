@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -54,12 +55,16 @@ Map<String, dynamic> recommendationGroupJson() => {
   'alternative_configurations': <Map<String, dynamic>>[],
 };
 
-Map<String, dynamic> searchResponseJson() => {
+Map<String, dynamic> searchResponseJson({
+  Map<String, dynamic> travelWindow = const {'month': 3},
+}) => {
   'search_model_version': 'search-v4',
   'ranking_policy_version': 'search-v4-policy-1',
   'ranking_status': 'ranked',
   'unscored_reason': null,
-  'applied_intent': <String, dynamic>{},
+  'applied_intent': {
+    'constraints': {'travel_window': travelWindow},
+  },
   'eligible_candidate_count': 1,
   'excluded_candidate_count': 0,
   'results': [recommendationGroupJson()],
@@ -129,6 +134,256 @@ void main() {
     expect(response.searchModelVersion, 'search-v4');
     expect(response.rankingPolicyVersion, 'search-v4-policy-1');
     expect(response.results.single.topConfiguration.fitScore, 84.0);
+  });
+
+  testWidgets('mobile save keeps the month used for displayed results', (
+    tester,
+  ) async {
+    Map<String, dynamic>? savedBody;
+    final api = MobileApiClient(
+      baseUrl: 'http://localhost/api',
+      client: MockClient((request) async {
+        if (request.url.path == '/api/search') {
+          return http.Response(jsonEncode(searchResponseJson()), 200);
+        }
+        if (request.url.path == '/api/current-trip') {
+          savedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return http.Response('{}', 200);
+        }
+        return http.Response('{}', 404);
+      }),
+    );
+    final session = AppSession(
+      accessToken: 'token',
+      expiresAt: '2026-07-03T00:00:00Z',
+      user: AppUser(userId: 'user-1', email: 'user@example.com'),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchScreen(
+          api: api,
+          session: session,
+          authController: AuthController(
+            api: api,
+            sessionStore: InMemorySessionStore(),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Search'));
+    await tester.pumpAndSettle();
+
+    final monthField = find.byWidgetPredicate(
+      (widget) =>
+          widget is DropdownButtonFormField<int?> &&
+          widget.decoration.labelText == 'Travel month (optional)',
+    );
+    await tester.ensureVisible(monthField);
+    await tester.tap(monthField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('April').last);
+    await tester.pumpAndSettle();
+
+    final save = find.widgetWithText(FilledButton, 'Save as current trip');
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+
+    expect(savedBody, containsPair('travel_month', 3));
+    expect(savedBody, containsPair('trip_start_date', null));
+    expect(savedBody, containsPair('trip_end_date', null));
+  });
+
+  testWidgets('mobile save keeps the exact dates used for displayed results', (
+    tester,
+  ) async {
+    Map<String, dynamic>? savedBody;
+    final api = MobileApiClient(
+      baseUrl: 'http://localhost/api',
+      client: MockClient((request) async {
+        if (request.url.path == '/api/parse-query') {
+          return http.Response(
+            jsonEncode({
+              'filters': {
+                'trip_start_date': '2026-04-09',
+                'trip_end_date': '2026-04-16',
+              },
+            }),
+            200,
+          );
+        }
+        if (request.url.path == '/api/search') {
+          return http.Response(
+            jsonEncode(
+              searchResponseJson(
+                travelWindow: const {
+                  'start_date': '2026-04-09',
+                  'end_date': '2026-04-16',
+                },
+              ),
+            ),
+            200,
+          );
+        }
+        if (request.url.path == '/api/current-trip') {
+          savedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return http.Response('{}', 200);
+        }
+        return http.Response('{}', 404);
+      }),
+    );
+    final session = AppSession(
+      accessToken: 'token',
+      expiresAt: '2026-07-03T00:00:00Z',
+      user: AppUser(userId: 'user-1', email: 'user@example.com'),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchScreen(
+          api: api,
+          session: session,
+          authController: AuthController(
+            api: api,
+            sessionStore: InMemorySessionStore(),
+          ),
+        ),
+      ),
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Trip brief',
+      ),
+      'April trip',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Use this trip brief'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Search'));
+    await tester.pumpAndSettle();
+
+    final monthField = find.byWidgetPredicate(
+      (widget) =>
+          widget is DropdownButtonFormField<int?> &&
+          widget.decoration.labelText == 'Travel month (optional)',
+    );
+    await tester.ensureVisible(monthField);
+    await tester.tap(monthField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('May').last);
+    await tester.pumpAndSettle();
+
+    final save = find.widgetWithText(FilledButton, 'Save as current trip');
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+
+    expect(savedBody, containsPair('travel_month', null));
+    expect(savedBody, containsPair('trip_start_date', '2026-04-09'));
+    expect(savedBody, containsPair('trip_end_date', '2026-04-16'));
+  });
+
+  testWidgets(
+    'late brief and search responses do not update a disposed screen',
+    (tester) async {
+      final briefResponse = Completer<http.Response>();
+      final searchResponse = Completer<http.Response>();
+      final api = MobileApiClient(
+        baseUrl: 'http://localhost/api',
+        client: MockClient((request) {
+          if (request.url.path == '/api/parse-query') {
+            return briefResponse.future;
+          }
+          if (request.url.path == '/api/search') {
+            return searchResponse.future;
+          }
+          return Future.value(http.Response('{}', 404));
+        }),
+      );
+      final session = AppSession(
+        accessToken: 'token',
+        expiresAt: '2026-07-03T00:00:00Z',
+        user: AppUser(userId: 'user-1', email: 'user@example.com'),
+      );
+
+      Widget screen() => MaterialApp(
+        home: SearchScreen(
+          api: api,
+          session: session,
+          authController: AuthController(
+            api: api,
+            sessionStore: InMemorySessionStore(),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(screen());
+      await tester.enterText(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.decoration?.labelText == 'Trip brief',
+        ),
+        'March trip',
+      );
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Use this trip brief'),
+      );
+      await tester.pump();
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      briefResponse.complete(
+        http.Response('{"filters":{"travel_month":3}}', 200),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(screen());
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Search'));
+      await tester.pump();
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      searchResponse.complete(
+        http.Response(jsonEncode(searchResponseJson()), 200),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('late trip save does not update a disposed card', (tester) async {
+    final saveResponse = Completer<http.Response>();
+    final api = MobileApiClient(
+      baseUrl: 'http://localhost/api',
+      client: MockClient((request) => saveResponse.future),
+    );
+    final group = RecommendationGroupItem.fromJson(recommendationGroupJson());
+    final session = AppSession(
+      accessToken: 'token',
+      expiresAt: '2026-07-03T00:00:00Z',
+      user: AppUser(userId: 'user-1', email: 'user@example.com'),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RecommendationGroupCard(
+          result: group,
+          session: session,
+          api: api,
+          authController: AuthController(
+            api: api,
+            sessionStore: InMemorySessionStore(),
+          ),
+          travelWindow: const AppliedTravelWindow(month: 3),
+        ),
+      ),
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Save as current trip'));
+    await tester.pump();
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    saveResponse.complete(http.Response('{}', 200));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
   });
 
   test('parsed filters read exact date fields', () {
@@ -205,9 +460,7 @@ void main() {
               api: api,
               sessionStore: InMemorySessionStore(),
             ),
-            travelMonth: 3,
-            tripStartDate: '',
-            tripEndDate: '',
+            travelWindow: const AppliedTravelWindow(month: 3),
           ),
         ),
       ),
@@ -258,9 +511,7 @@ void main() {
                 api: api,
                 sessionStore: InMemorySessionStore(),
               ),
-              travelMonth: 3,
-              tripStartDate: '',
-              tripEndDate: '',
+              travelWindow: const AppliedTravelWindow(month: 3),
             ),
           ),
         ),

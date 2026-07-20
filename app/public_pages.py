@@ -420,7 +420,7 @@ def _render_html(page: PublicDestinationPage) -> str:
         <div class="card hero-main">
           <div class="eyebrow">Ski destination guide</div>
           <h1>{_html(destination.name)}</h1>
-          <p class="lede">Stay in {_html(destination.name)}, {_html(destination.region)}, {_html(destination.country)}, with access to {_html(page.ski_region_name)}. Snowcast shows current and historical weather information separately for each ski area below.</p>
+          <p class="lede">Stay in {_html(destination.name)}, {_html(destination.region)}, {_html(destination.country)}, with access to {_html(page.ski_region_name)}. Snowcast shows forecast and historical weather information separately for each ski area below.</p>
           <div class="cta-row"><a class="cta-primary" href="{_html(page.planner_url)}">Plan with Snowcast</a><a class="cta-secondary" href="#ski-area-{_html(first_area_id)}">View calendar</a></div>
         </div>
         <aside class="card">
@@ -438,7 +438,7 @@ def _render_html(page: PublicDestinationPage) -> str:
         <div class="card"><div class="eyebrow">Places to stay</div><h2>Stay areas Snowcast can consider</h2><div class="list">{_render_stay_bases(page.stay_bases)}</div></div>
         <div class="card"><div class="eyebrow">Equipment rentals</div><h2>Equipment options</h2><div class="list">{_render_rentals(page.rentals)}</div></div>
       </section>
-      <section class="card" style="margin-top: 22px;"><div class="eyebrow">How we use source data</div><h2>What this guide is based on</h2><p class="muted">This guide combines reviewed destination and access details with current forecasts and historical weather records. Weather information is shown separately for each ski area.</p></section>
+      <section class="card" style="margin-top: 22px;"><div class="eyebrow">How we use source data</div><h2>What this guide is based on</h2><p class="muted">This guide combines reviewed destination and access details with forecast and historical weather records. Weather information is shown separately for each ski area.</p></section>
     </main>
   </body>
 </html>

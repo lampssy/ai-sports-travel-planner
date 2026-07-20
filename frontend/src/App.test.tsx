@@ -1844,7 +1844,7 @@ test("announces every successful conditions recovery in the mounted view", async
 
   rerender(view(1));
   const firstAnnouncement = await screen.findByRole("status");
-  expect(firstAnnouncement).toHaveTextContent("Current conditions updated.");
+  expect(firstAnnouncement).toHaveTextContent("Weather summary updated.");
   expect(screen.getByRole("region", { name: "Current conditions" })).toHaveFocus();
 
   rerender(view(2));
@@ -1854,6 +1854,42 @@ test("announces every successful conditions recovery in the mounted view", async
   expect(screen.getAllByRole("status")).toHaveLength(1);
   expect(screen.getByRole("region", { name: "Current conditions" })).toHaveFocus();
 });
+
+test.each([
+  ["fresh", "Current conditions"],
+  ["stale", "Latest available conditions (out of date)"],
+  ["unknown", "Latest available conditions"],
+] as const)(
+  "labels %s current-trip weather without overstating freshness",
+  (freshnessStatus, expectedLabel) => {
+    render(
+      <CurrentTripView
+        trip={savedTrip}
+        summary={{
+          ...savedTripSummary,
+          current_conditions_provenance: {
+            ...savedTripSummary.current_conditions_provenance,
+            freshness_status: freshnessStatus,
+          },
+        }}
+        tripLoadError={null}
+        summaryLoadError={null}
+        tripLoading={false}
+        summaryLoading={false}
+        tripRecoveryRequest={0}
+        summaryRecoveryRequest={0}
+        clearError={null}
+        onBack={vi.fn()}
+        onRetryTripLoad={vi.fn()}
+        onRetrySummaryLoad={vi.fn()}
+        onClear={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("region", { name: expectedLabel })).toBeVisible();
+    expect(screen.getByText(expectedLabel)).toBeVisible();
+  },
+);
 
 test("shows and retries a failed saved-trip load", async () => {
   window.history.replaceState(null, "", "/current-trip");
@@ -1967,12 +2003,12 @@ test("keeps current conditions visible when refresh fails and retries them", asy
   await user.click(screen.getByRole("button", { name: "Current trip" }));
 
   const error = await screen.findByRole("alert");
-  expect(error).toHaveTextContent("Current conditions could not be updated");
-  expect(error).toHaveTextContent("Current conditions could not be updated. Try again.");
+  expect(error).toHaveTextContent("Weather summary could not be updated");
+  expect(error).toHaveTextContent("Weather summary could not be updated. Try again.");
   expect(error).not.toHaveTextContent(/failed to fetch|api|backend/i);
   expect(screen.getByText("Light snow is expected this week.")).toBeVisible();
 
-  const retry = screen.getByRole("button", { name: "Retry current conditions" });
+  const retry = screen.getByRole("button", { name: "Retry weather summary" });
   retry.focus();
   await user.click(retry);
 
@@ -1988,7 +2024,7 @@ test("keeps current conditions visible when refresh fails and retries them", asy
   expect(
     await screen.findByText("Fresh snow is now expected before the trip."),
   ).toBeVisible();
-  expect(screen.queryByText("Current conditions could not be updated")).toBeNull();
+  expect(screen.queryByText("Weather summary could not be updated")).toBeNull();
   expect(summaryLoadAttempts).toBe(3);
 });
 

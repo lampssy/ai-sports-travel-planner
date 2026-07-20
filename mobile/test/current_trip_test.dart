@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:snowcast_mobile/main.dart';
 
-Map<String, dynamic> _summaryJson() => {
+Map<String, dynamic> _summaryJson({String freshnessStatus = 'fresh'}) => {
   'trip': {
     'ski_region_name': 'Chamonix Valley',
     'focus_ski_area_name': 'Grands Montets',
@@ -15,6 +15,7 @@ Map<String, dynamic> _summaryJson() => {
     'trip_end_date': '2026-04-16',
   },
   'current_conditions': {'weather_summary': 'Fresh snow is likely this week.'},
+  'current_conditions_provenance': {'freshness_status': freshnessStatus},
   'comparison_basis': {'label': 'internal baseline'},
   'companion_status': {
     'trip_window_label': 'internal trip window',
@@ -158,6 +159,42 @@ void main() {
       find.bySemanticsLabel('Try loading current trip again'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('labels current-trip weather by freshness', (tester) async {
+    for (final entry in {
+      'fresh': 'Current conditions',
+      'stale': 'Latest available conditions (out of date)',
+      'unknown': 'Latest available conditions',
+    }.entries) {
+      final api = MobileApiClient(
+        baseUrl: 'http://localhost/api',
+        client: MockClient((request) async {
+          if (request.url.path == '/api/current-trip/summary') {
+            return http.Response(
+              jsonEncode(_summaryJson(freshnessStatus: entry.key)),
+              200,
+            );
+          }
+          return http.Response(jsonEncode(_eventsJson()), 200);
+        }),
+      );
+      final auth = await _authController(api);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CurrentTripScreen(
+            key: ValueKey(entry.key),
+            api: api,
+            session: _session(),
+            authController: auth,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(entry.value), findsOneWidget);
+    }
   });
 
   testWidgets('current-trip not found shows the normal empty state', (

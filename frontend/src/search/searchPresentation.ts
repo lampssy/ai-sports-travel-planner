@@ -405,28 +405,28 @@ export function terrainPresentation(
 
   const prefix = approximatePrefix(evidence.trust_status);
   const needsSource = evidence.trust_status === "needs_source";
+  const sourceQualifier = needsSource
+    ? "; source confirmation is still needed"
+    : "";
 
   if (evidence.scope === "ski_area") {
+    const value = `${prefix}${kilometres} km in the selected ski area${sourceQualifier}`;
     return {
-      essentialValue: `${prefix}${kilometres} km in the selected ski area`,
-      evidenceLabel: needsSource
-        ? `${kilometres} km in the selected ski area; source confirmation is still needed`
-        : `${prefix}${kilometres} km in the selected ski area`,
+      essentialValue: value,
+      evidenceLabel: value,
     };
   }
   if (evidence.scope === "terrain_domain") {
+    const value = `${prefix}${kilometres} km in the connected area covered by this pass${sourceQualifier}`;
     return {
-      essentialValue: `${prefix}${kilometres} km in the connected area covered by this pass`,
-      evidenceLabel: needsSource
-        ? `${kilometres} km in the connected area; source confirmation is still needed`
-        : `${prefix}${kilometres} km in the connected area covered by this pass`,
+      essentialValue: value,
+      evidenceLabel: value,
     };
   }
+  const value = `${prefix}${kilometres} km covered by this pass${sourceQualifier}`;
   return {
-    essentialValue: `${prefix}${kilometres} km covered by this pass`,
-    evidenceLabel: needsSource
-      ? `${kilometres} km covered by this pass; source confirmation is still needed`
-      : `${prefix}${kilometres} km covered by this pass`,
+    essentialValue: value,
+    evidenceLabel: value,
   };
 }
 

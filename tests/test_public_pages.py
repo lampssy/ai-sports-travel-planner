@@ -80,7 +80,8 @@ def test_public_destination_page_returns_server_rendered_html() -> None:
     assert "130 cm" in response.text
     assert "Historical data through Mar 2025" in response.text
     assert "archive weather windows" not in response.text
-    assert "current and historical weather information" in response.text
+    assert "forecast and historical weather information" in response.text
+    assert "current forecasts and historical weather records" not in response.text
     assert "reviewed destination and access details" in response.text
     assert "historical weather records" in response.text
     assert "Data status:" in response.text

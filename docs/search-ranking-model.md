@@ -1008,7 +1008,7 @@ The refinement response has exactly one public status:
   no valid queue.
 
 Admission rejection is an HTTP `429`, not a refinement response. Its generic
-error body is `{"detail": "Refinement is temporarily unavailable."}` and a
+error body is `{"error":{"code":"refinement_rate_limited"}}` and a
 `Retry-After` header supplies the bounded retry delay. The browser waits for a
 valid delay of at most 15 seconds and retries that admitted request once. It
 shows a compact `retrying` lifecycle message while the ranked results remain

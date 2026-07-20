@@ -472,6 +472,12 @@ describe("RecommendationCard", () => {
       />,
     );
 
+    expect(
+      screen.getAllByText(
+        "44 km in the connected area covered by this pass; source confirmation is still needed",
+      ),
+    ).not.toHaveLength(0);
+
     const scoring = screen
       .getByText("Technical calculation details")
       .closest("details");

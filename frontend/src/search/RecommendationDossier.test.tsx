@@ -9,7 +9,10 @@ import type {
   SearchV4RecommendationGroup,
 } from "../types";
 import { RecommendationDossier } from "./RecommendationDossier";
-import { boundedNavigatorGroups } from "./RecommendationNavigator";
+import {
+  boundedNavigatorGroups,
+  tripOptionCountLabel,
+} from "./RecommendationNavigator";
 import { createSearchSession } from "./searchSession";
 
 beforeEach(() => {
@@ -158,6 +161,13 @@ test("bounds the navigator to the top three or top two plus current", () => {
   expect(
     boundedNavigatorGroups(groups, "region-4").map((item) => item.ski_region_id),
   ).toEqual(["region-1", "region-2", "region-4"]);
+});
+
+test.each([
+  [1, "1 trip option"],
+  [2, "2 trip options"],
+])("uses singular-aware trip option counts", (count, expected) => {
+  expect(tripOptionCountLabel(count)).toBe(expected);
 });
 
 test("renders evidence-bounded wider-terrain strength in trip details", () => {
@@ -576,6 +586,40 @@ test("keeps domain terrain aligned across dossier evidence and scoring", async (
     within(scoringSection as HTMLElement).getByText("Technical calculation details"),
   );
   expect(within(scoring as HTMLElement).getByText("Estimated from source data")).toBeVisible();
+});
+
+test("keeps needs-source terrain qualified in dossier essentials", () => {
+  const needsSourceSession = session();
+  const selected = needsSourceSession.response.results[0].top_configuration;
+  selected.selected_pass = {
+    ...selected.selected_pass,
+    accessible_piste_km: 42,
+    accessible_piste_km_evidence: {
+      trust_status: "needs_source",
+      scope: "pass",
+      source_entity_id: "unconfirmed-pass",
+      field_group: "pass_accessible_terrain",
+    },
+  } as SearchV4Configuration["selected_pass"];
+
+  render(
+    <RecommendationDossier
+      session={needsSourceSession}
+      skiRegionId="region-1"
+      candidateId="region-1-top"
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen.getAllByText(
+      "42 km covered by this pass; source confirmation is still needed",
+    ),
+  ).not.toHaveLength(0);
 });
 
 test("exposes desktop collapse and the bounded mobile switcher", async () => {

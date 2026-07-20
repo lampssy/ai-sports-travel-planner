@@ -5,6 +5,17 @@ import type { CurrentTrip, CurrentTripSummary } from "../types";
 import { AsyncState } from "./AsyncState";
 import { SnowcastLogo } from "./SnowcastLogo";
 
+export function currentConditionsLabel(summary: CurrentTripSummary): string {
+  switch (summary.current_conditions_provenance.freshness_status) {
+    case "fresh":
+      return "Current conditions";
+    case "stale":
+      return "Latest available conditions (out of date)";
+    default:
+      return "Latest available conditions";
+  }
+}
+
 export function AppShell({
   children,
   active,
@@ -96,6 +107,7 @@ export function CurrentTripView({
   const [summaryAnnouncementRequest, setSummaryAnnouncementRequest] = useState<
     number | null
   >(null);
+  const conditionsLabel = summary ? currentConditionsLabel(summary) : null;
 
   useEffect(() => {
     if (
@@ -152,7 +164,7 @@ export function CurrentTripView({
             aria-live="polite"
             aria-atomic="true"
           >
-            Current conditions updated.
+            Weather summary updated.
           </p>
         ) : null}
         {tripLoadError ? (
@@ -181,10 +193,10 @@ export function CurrentTripView({
                 ref={conditionsRef}
                 className="current-trip-summary"
                 role="region"
-                aria-label="Current conditions"
+                aria-label={conditionsLabel ?? undefined}
                 tabIndex={-1}
               >
-                <p className="current-trip-summary__title">Current conditions</p>
+                <p className="current-trip-summary__title">{conditionsLabel}</p>
                 <p>{summary.current_conditions.weather_summary}</p>
                 <p className="muted-copy">{summary.delta.summary}</p>
               </div>
@@ -192,9 +204,9 @@ export function CurrentTripView({
             {summaryLoadError ? (
               <AsyncState
                 state="error"
-                title="Current conditions could not be updated"
+                title="Weather summary could not be updated"
                 message={summaryLoadError}
-                retryLabel="Retry current conditions"
+                retryLabel="Retry weather summary"
                 retrying={summaryLoading}
                 onRetry={onRetrySummaryLoad}
               />

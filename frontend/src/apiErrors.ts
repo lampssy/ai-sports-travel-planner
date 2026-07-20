@@ -46,7 +46,7 @@ const FALLBACK_COPY: Record<ApiOperation, string> = {
   currentTripLoad: "Your current trip could not be loaded. Try again.",
   currentTripSave: "Your trip could not be saved. Try again.",
   currentTripEvents: "Trip updates could not be loaded. Try again.",
-  currentTripSummary: "Current conditions could not be updated. Try again.",
+  currentTripSummary: "Weather summary could not be updated. Try again.",
   currentTripClear: "Your current trip could not be removed. Try again.",
   currentTripMarkChecked: "Your current trip could not be updated. Try again.",
 };

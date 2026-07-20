@@ -325,6 +325,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isBusy = false;
   String? _errorMessage;
   List<RecommendationGroupItem> _results = const [];
+  AppliedTravelWindow _appliedTravelWindow = const AppliedTravelWindow();
 
   @override
   void dispose() {
@@ -348,28 +349,36 @@ class _SearchScreenState extends State<SearchScreen> {
       final parsed = await widget.api.parseTripBrief(
         _briefController.text.trim(),
       );
-      _locationController.text = parsed.location ?? _locationController.text;
-      if (parsed.maxPrice != null) {
-        _maxPriceController.text = parsed.maxPrice!.toStringAsFixed(0);
-      }
-      if (parsed.tripStartDate != null && parsed.tripEndDate != null) {
-        _tripStartDate = parsed.tripStartDate;
-        _tripEndDate = parsed.tripEndDate;
-        _travelMonth = null;
-      } else if (parsed.travelMonth != null) {
-        _travelMonth = parsed.travelMonth;
-        _tripStartDate = null;
-        _tripEndDate = null;
-      }
-      if (parsed.skillLevel != null) {
-        _skillLevel = parsed.skillLevel!;
-      }
-    } on PublicApiException catch (error) {
-      _errorMessage = apiErrorMessage(ApiOperation.parseTripBrief, error);
-    } finally {
+      if (!mounted) return;
       setState(() {
-        _isBusy = false;
+        _locationController.text = parsed.location ?? _locationController.text;
+        if (parsed.maxPrice != null) {
+          _maxPriceController.text = parsed.maxPrice!.toStringAsFixed(0);
+        }
+        if (parsed.tripStartDate != null && parsed.tripEndDate != null) {
+          _tripStartDate = parsed.tripStartDate;
+          _tripEndDate = parsed.tripEndDate;
+          _travelMonth = null;
+        } else if (parsed.travelMonth != null) {
+          _travelMonth = parsed.travelMonth;
+          _tripStartDate = null;
+          _tripEndDate = null;
+        }
+        if (parsed.skillLevel != null) {
+          _skillLevel = parsed.skillLevel!;
+        }
       });
+    } on PublicApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = apiErrorMessage(ApiOperation.parseTripBrief, error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBusy = false;
+        });
+      }
     }
   }
 
@@ -414,21 +423,27 @@ class _SearchScreenState extends State<SearchScreen> {
         tripEndDate: hasTripEndDate ? tripEndDate : null,
         brief: _briefController.text.trim(),
       );
+      if (!mounted) return;
       setState(() {
         _results = response.results;
+        _appliedTravelWindow = response.appliedTravelWindow;
       });
     } on FormatException {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Prices must be valid numbers.';
       });
     } on PublicApiException catch (error) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = apiErrorMessage(ApiOperation.search, error);
       });
     } finally {
-      setState(() {
-        _isBusy = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isBusy = false;
+        });
+      }
     }
   }
 
@@ -653,9 +668,7 @@ class _SearchScreenState extends State<SearchScreen> {
             session: widget.session,
             api: widget.api,
             authController: widget.authController,
-            travelMonth: _travelMonth,
-            tripStartDate: _tripStartDate ?? '',
-            tripEndDate: _tripEndDate ?? '',
+            travelWindow: _appliedTravelWindow,
           ),
       ],
     );
@@ -669,18 +682,14 @@ class RecommendationGroupCard extends StatefulWidget {
     required this.session,
     required this.api,
     required this.authController,
-    required this.travelMonth,
-    required this.tripStartDate,
-    required this.tripEndDate,
+    required this.travelWindow,
   });
 
   final RecommendationGroupItem result;
   final AppSession session;
   final MobileApiClient api;
   final AuthController authController;
-  final int? travelMonth;
-  final String tripStartDate;
-  final String tripEndDate;
+  final AppliedTravelWindow travelWindow;
 
   @override
   State<RecommendationGroupCard> createState() =>
@@ -698,19 +707,19 @@ class _RecommendationGroupCardState extends State<RecommendationGroupCard> {
     });
 
     try {
-      final hasCompleteTripWindow =
-          widget.tripStartDate.isNotEmpty && widget.tripEndDate.isNotEmpty;
       await widget.api.saveCurrentTrip(
         token: widget.session.accessToken,
         result: widget.result,
-        travelMonth: widget.travelMonth,
-        tripStartDate: hasCompleteTripWindow ? widget.tripStartDate : null,
-        tripEndDate: hasCompleteTripWindow ? widget.tripEndDate : null,
+        travelMonth: widget.travelWindow.month,
+        tripStartDate: widget.travelWindow.startDate,
+        tripEndDate: widget.travelWindow.endDate,
       );
+      if (!mounted) return;
       setState(() {
         _message = 'Saved as current trip.';
       });
     } on PublicApiException catch (error) {
+      if (!mounted) return;
       if (await widget.authController.handleProtectedFailure(error) ||
           !mounted) {
         return;
@@ -970,6 +979,11 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
                 ),
               ),
             const SizedBox(height: 12),
+            Text(
+              summary.currentConditionsLabel,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
             Text(summary.currentWeatherSummary),
             const SizedBox(height: 12),
             Text(summary.eligibilityReason),
@@ -1502,14 +1516,22 @@ class SearchResponseItem {
     required this.searchModelVersion,
     required this.rankingPolicyVersion,
     required this.rankingStatus,
+    required this.appliedTravelWindow,
     required this.results,
   });
 
   factory SearchResponseItem.fromJson(Map<String, dynamic> json) {
+    final appliedIntent =
+        json['applied_intent'] as Map<String, dynamic>? ?? const {};
+    final constraints =
+        appliedIntent['constraints'] as Map<String, dynamic>? ?? const {};
+    final travelWindow =
+        constraints['travel_window'] as Map<String, dynamic>? ?? const {};
     return SearchResponseItem(
       searchModelVersion: json['search_model_version'] as String,
       rankingPolicyVersion: json['ranking_policy_version'] as String,
       rankingStatus: json['ranking_status'] as String,
+      appliedTravelWindow: AppliedTravelWindow.fromJson(travelWindow),
       results: (json['results'] as List<dynamic>? ?? const [])
           .map(
             (item) =>
@@ -1522,7 +1544,25 @@ class SearchResponseItem {
   final String searchModelVersion;
   final String rankingPolicyVersion;
   final String rankingStatus;
+  final AppliedTravelWindow appliedTravelWindow;
   final List<RecommendationGroupItem> results;
+}
+
+class AppliedTravelWindow {
+  const AppliedTravelWindow({this.month, this.startDate, this.endDate});
+
+  factory AppliedTravelWindow.fromJson(Map<String, dynamic> json) {
+    final startDate = json['start_date'] as String?;
+    final endDate = json['end_date'] as String?;
+    if (startDate != null && endDate != null) {
+      return AppliedTravelWindow(startDate: startDate, endDate: endDate);
+    }
+    return AppliedTravelWindow(month: json['month'] as int?);
+  }
+
+  final int? month;
+  final String? startDate;
+  final String? endDate;
 }
 
 class RecommendationGroupItem {
@@ -1699,6 +1739,7 @@ class CurrentTripSummaryData {
     required this.tripStartDate,
     required this.tripEndDate,
     required this.currentWeatherSummary,
+    required this.currentConditionsLabel,
     required this.comparisonLabel,
     required this.tripWindowLabel,
     required this.eligibilityReason,
@@ -1710,6 +1751,9 @@ class CurrentTripSummaryData {
     final trip = json['trip'] as Map<String, dynamic>;
     final currentConditions =
         json['current_conditions'] as Map<String, dynamic>;
+    final provenance =
+        json['current_conditions_provenance'] as Map<String, dynamic>? ??
+        const {};
     final comparisonBasis = json['comparison_basis'] as Map<String, dynamic>;
     final delta = json['delta'] as Map<String, dynamic>;
     return CurrentTripSummaryData(
@@ -1719,6 +1763,11 @@ class CurrentTripSummaryData {
       tripStartDate: trip['trip_start_date'] as String?,
       tripEndDate: trip['trip_end_date'] as String?,
       currentWeatherSummary: currentConditions['weather_summary'] as String,
+      currentConditionsLabel: switch (provenance['freshness_status']) {
+        'fresh' => 'Current conditions',
+        'stale' => 'Latest available conditions (out of date)',
+        _ => 'Latest available conditions',
+      },
       comparisonLabel: comparisonBasis['label'] as String,
       tripWindowLabel:
           (json['companion_status']
@@ -1741,6 +1790,7 @@ class CurrentTripSummaryData {
   final String? tripStartDate;
   final String? tripEndDate;
   final String currentWeatherSummary;
+  final String currentConditionsLabel;
   final String comparisonLabel;
   final String tripWindowLabel;
   final String eligibilityReason;

@@ -22,6 +22,10 @@ export function boundedNavigatorGroups(
   return [...groups.slice(0, 2), current];
 }
 
+export function tripOptionCountLabel(count: number): string {
+  return `${count} trip ${count === 1 ? "option" : "options"}`;
+}
+
 export function RecommendationNavigator({
   session,
   currentGroup,
@@ -54,9 +58,7 @@ export function RecommendationNavigator({
         <div className="dossier-navigator__heading">
           <div>
             <span>Search results</span>
-            <strong>
-              {tripOptionCount} trip options
-            </strong>
+            <strong>{tripOptionCountLabel(tripOptionCount)}</strong>
           </div>
           <button
             type="button"

@@ -51,6 +51,7 @@ from app.domain.search_weather_evidence import (
     SearchWeatherEvidenceUnavailableResponse,
     WeatherEvidencePoint,
 )
+from app.domain.trip_companion import _build_conditions_provenance
 from app.main import app, create_app
 from app.observability.metrics import (
     InMemoryMetricsRecorder,
@@ -59,6 +60,59 @@ from app.observability.metrics import (
 )
 
 client = TestClient(app)
+
+
+@pytest.mark.parametrize(
+    ("updated_at", "is_fresh", "expected_status", "expected_summary"),
+    [
+        (
+            "2026-07-20T05:00:00+00:00",
+            True,
+            "fresh",
+            "Using a current forecast-based conditions signal from the latest "
+            "weather refresh.",
+        ),
+        (
+            "2026-07-01T05:00:00+00:00",
+            False,
+            "stale",
+            "Using the latest available forecast-based conditions signal. "
+            "This forecast is out of date.",
+        ),
+        (
+            None,
+            False,
+            "unknown",
+            "Using the latest available forecast-based conditions signal. "
+            "The update time is unavailable.",
+        ),
+    ],
+)
+def test_trip_companion_provenance_explains_weather_freshness(
+    monkeypatch,
+    updated_at: str | None,
+    is_fresh: bool,
+    expected_status: str,
+    expected_summary: str,
+) -> None:
+    monkeypatch.setattr(
+        "app.domain.trip_companion.is_condition_fresh",
+        lambda _conditions: is_fresh,
+    )
+    provenance = _build_conditions_provenance(
+        ResortConditions(
+            resort_name="Tignes",
+            snow_confidence_score=0.8,
+            availability_status="open",
+            weather_summary="Forecast summary.",
+            conditions_score=0.8,
+            updated_at=updated_at,
+            source="open-meteo",
+        )
+    )
+
+    assert provenance.freshness_status == expected_status
+    assert provenance.basis_summary == expected_summary
 
 
 @pytest.fixture(autouse=True)
@@ -1286,6 +1340,10 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
     assert payload["trip"]["focus_ski_area_id"] == "tignes-ski-area"
     assert payload["comparison_basis"]["kind"] == "since_trip_saved"
     assert payload["current_conditions_provenance"]["source_type"] == "forecast"
+    assert payload["current_conditions_provenance"]["basis_summary"] == (
+        "Using the latest available forecast-based conditions signal. "
+        "This forecast is out of date."
+    )
     assert payload["delta"]["status"] == "changed"
     assert payload["delta"]["summary"] == (
         "Conditions have changed since you saved this trip."
@@ -1301,6 +1359,42 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
         "The weather summary changed since you saved this trip.",
         "The latest forecast is out of date.",
     ]
+
+
+def test_current_trip_summary_keeps_stale_forecast_visible_before_baseline(
+    monkeypatch,
+) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
+    trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
+    _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
+        trip_created_at=trip_created_at,
+        current_updated_at=trip_created_at - timedelta(days=1),
+        prior_snapshot_at=None,
+    )
+    monkeypatch.setattr(
+        "app.domain.trip_companion.is_condition_fresh",
+        lambda _conditions: False,
+    )
+
+    response = client.get("/api/current-trip/summary", headers=headers)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["current_conditions_provenance"]["freshness_status"] == "stale"
+    assert "out of date" in payload["current_conditions_provenance"]["basis_summary"]
+    assert "out of date" in payload["delta"]["summary"]
 
 
 def test_current_trip_summary_uses_last_checked_at_when_present(monkeypatch) -> None:
@@ -1363,6 +1457,10 @@ def test_current_trip_summary_uses_basis_aware_unchanged_copy(
     comparison_kind: str,
     expected_summary: str,
 ) -> None:
+    monkeypatch.setattr(
+        "app.domain.trip_companion.is_condition_fresh",
+        lambda _conditions: True,
+    )
     _install_google_verifier(
         monkeypatch,
         identities_by_token={
