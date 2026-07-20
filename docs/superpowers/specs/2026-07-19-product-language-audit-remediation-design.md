@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: accepted
+- Status: implemented
 - Owner: solo-builder
 - Related docs:
   - `docs/advisory-reviews/2026-07-19-content-language-domain-audit.md`
@@ -115,7 +115,9 @@ Out of scope:
     accommodation-boundary follow-up
 - Advisory feature-review before final handoff:
   - reviewers: same scoped reviewers plus final whole-branch review
-  - status: planned
+  - status: completed; the final Content & Language audit found no remaining
+    severity findings, and the UI/accessibility close-out was reviewed on exact
+    implementation head `70fd820`
 
 ## Developer Decision Checkpoints
 

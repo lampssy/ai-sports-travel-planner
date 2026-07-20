@@ -91,12 +91,12 @@ Testing Library, Recharts, Playwright, Flutter 3.41, Dart 3.11.
   Valid accommodation behavior remains a `307` redirect.
 - Declare the public envelope in OpenAPI for covered endpoints.
 
-- [ ] Add failing tests for every registry status/code pair, malformed JSON,
+- [x] Add failing tests for every registry status/code pair, malformed JSON,
   unknown/missing routes, unexpected failures, operational-route exclusion,
   OpenAPI schemas, `Retry-After`, branded destination 404, branded accommodation
   recovery, and successful redirect.
-- [ ] Implement the smallest centralized public-error module and route changes.
-- [ ] Run:
+- [x] Implement the smallest centralized public-error module and route changes.
+- [x] Run:
 
 ```bash
 uv run pytest tests/test_search_v4_api.py tests/test_api.py tests/test_public_pages.py -q
@@ -104,8 +104,8 @@ uv run ruff check app/api/public_errors.py app/api/routes.py app/main.py tests
 uv run ruff format --check app/api/public_errors.py app/api/routes.py app/main.py tests
 ```
 
-- [ ] Commit as `feat: add stable public API errors`.
-- [ ] Run fresh Backend/API and Security/Privacy feature reviews on the exact
+- [x] Commit as `feat: add stable public API errors`.
+- [x] Run fresh Backend/API and Security/Privacy feature reviews on the exact
   commit; fix and re-review any finding before Task 2.
 
 ---
@@ -137,10 +137,10 @@ uv run ruff format --check app/api/public_errors.py app/api/routes.py app/main.p
 - Errors use visible non-color-only alert/status semantics without duplicate
   announcements or unexpected focus movement.
 
-- [ ] Add failing mapper and state-transition tests for every operation and all
+- [x] Add failing mapper and state-transition tests for every operation and all
   malformed/unknown failure categories.
-- [ ] Implement typed code parsing, operation copy, and UI state preservation.
-- [ ] Run focused Vitest and production build:
+- [x] Implement typed code parsing, operation copy, and UI state preservation.
+- [x] Run focused Vitest and production build:
 
 ```bash
 cd frontend
@@ -150,8 +150,8 @@ npm test -- --run src/api.test.ts src/App.test.tsx \
 npm run build
 ```
 
-- [ ] Commit as `fix: make web failures recoverable`.
-- [ ] Run fresh UI/UX, Content & Language, and Accessibility feature reviews;
+- [x] Commit as `fix: make web failures recoverable`.
+- [x] Run fresh UI/UX, Content & Language, and Accessibility feature reviews;
   fix and re-review any finding before Task 3.
 
 ---
@@ -187,10 +187,10 @@ npm run build
   exposes stable IDs or internal quality tiers as customer labels.
 - Add content-contract tests for forbidden primary terms and American spelling.
 
-- [ ] Add failing content-contract and focused behavior tests.
-- [ ] Implement copy in its existing owner modules/config; do not reconstruct
+- [x] Add failing content-contract and focused behavior tests.
+- [x] Implement copy in its existing owner modules/config; do not reconstruct
   domain meaning in leaf components.
-- [ ] Run:
+- [x] Run:
 
 ```bash
 uv run pytest tests/test_search_refinement_presentation.py \
@@ -205,8 +205,8 @@ npm test -- --run src/search/contentLanguage.test.ts \
 npm run build
 ```
 
-- [ ] Commit as `fix: align Snowcast public language`.
-- [ ] Run fresh Content & Language, Product/Strategy, UI/UX, and
+- [x] Commit as `fix: align Snowcast public language`.
+- [x] Run fresh Content & Language, Product/Strategy, UI/UX, and
   Monetization/Partnerships feature reviews; fix and re-review before Task 4.
 
 ---
@@ -241,15 +241,15 @@ npm run build
 - Use real response values in charts. Preserve programmatic summary, equivalent
   table, keyboard metric switching, and visible 30 cm limitation text.
 
-- [ ] Add failing hierarchy, trust-claim, weather-mode, 30 cm, accessibility,
+- [x] Add failing hierarchy, trust-claim, weather-mode, 30 cm, accessibility,
   and mobile-card tests.
-- [ ] Implement typed view models and component/CSS changes.
-- [ ] Run focused Vitest, build, and dossier/search Playwright tests.
-- [ ] Capture and inspect desktop and 390 px screenshots for archive-only,
+- [x] Implement typed view models and component/CSS changes.
+- [x] Run focused Vitest, build, and dossier/search Playwright tests.
+- [x] Capture and inspect desktop and 390 px screenshots for archive-only,
   forecast-assisted, partial, unavailable, expanded/collapsed, and technical-
   disclosure states.
-- [ ] Commit as `fix: clarify trip evidence and details`.
-- [ ] Run fresh Data Trust, UI/UX, Content & Language, and Accessibility feature
+- [x] Commit as `fix: clarify trip evidence and details`.
+- [x] Run fresh Data Trust, UI/UX, Content & Language, and Accessibility feature
   reviews; fix and re-review before Task 5.
 
 ---
@@ -278,10 +278,10 @@ npm run build
 - Do not add refinements, detailed dossier weather, or accommodation handoff to
   Flutter in this task.
 
-- [ ] Add failing mapper, widget-state, session-expiry, partial-data, semantics,
+- [x] Add failing mapper, widget-state, session-expiry, partial-data, semantics,
   and enlarged-text tests.
-- [ ] Extract the smallest reusable copy and error modules and update screens.
-- [ ] Run:
+- [x] Extract the smallest reusable copy and error modules and update screens.
+- [x] Run:
 
 ```bash
 cd mobile
@@ -290,8 +290,12 @@ flutter test
 flutter build apk --debug
 ```
 
-- [ ] Commit as `fix: clarify mobile planning flows`.
-- [ ] Run fresh Mobile Companion, Content & Language, Accessibility, and
+The analysis and test steps pass. The APK command reaches the expected local
+environment gate because no Android SDK is installed; packaging remains a
+pre-release environment check rather than an application-test failure.
+
+- [x] Commit as `fix: clarify mobile planning flows`.
+- [x] Run fresh Mobile Companion, Content & Language, Accessibility, and
   Backend/API feature reviews; fix and re-review before Task 6.
 
 ---
@@ -306,25 +310,40 @@ flutter build apk --debug
 - Modify: E2E/visual tests or fixtures only where final verification exposes a
   real gap
 
-- [ ] Run the full backend suite and Ruff check/format.
-- [ ] Run all frontend Vitest tests, production build, and full Playwright suite.
-- [ ] Run Flutter analyze/test/build smoke.
-- [ ] Start `./scripts/run-built-app.sh`; manually inspect desktop and mobile
+- [x] Run the full backend suite and Ruff check/format.
+- [x] Run all frontend Vitest tests, production build, and full Playwright suite.
+- [x] Run Flutter analyze/test/build smoke.
+- [x] Start `./scripts/run-built-app.sh`; manually inspect desktop and mobile
   search, repeated refinements, all cards, trip details, weather modes,
   technical disclosure, accommodation success/failure, current trip, public
   destination, public 404, and backend-unavailable recovery.
-- [ ] Check no text overlaps, clipped actions, broken icon alignment, decorative
+- [x] Check no text overlaps, clipped actions, broken icon alignment, decorative
   chart data, inaccessible chart state, missing background pink tint, or raw
   internal/error language remains.
-- [ ] Run final exact-head feature reviews for content-language, UI/UX,
+- [x] Run final exact-head feature reviews for content-language, UI/UX,
   backend/API, data-trust/source-integrity, mobile companion, accessibility,
   security/privacy, and release/change-management.
-- [ ] Run a fresh independent whole-branch code review. Fix every defensible
+- [x] Run a fresh independent whole-branch code review. Fix every defensible
   finding and repeat exact-head reviews.
-- [ ] Update spec to `implemented`, mark this plan and SDD ledger complete, and
+- [x] Update spec to `implemented`, mark this plan and SDD ledger complete, and
   commit as `docs: close product language remediation`.
 - [ ] Push the branch and update existing draft PR #52. Do not merge or mark it
   ready without an explicit owner request.
+
+Verification record:
+
+- Backend: 2,459 tests; Ruff check and format check passed.
+- Frontend: 323 Vitest tests, production build, and 59 Chromium Playwright
+  journeys passed; 18 of those journeys cover the visual state matrix.
+- Flutter: analysis and 28 tests passed. APK packaging is blocked only by the
+  missing local Android SDK.
+- Live built-app QA: two successive one-topic refinements, result preservation,
+  Trip details navigation, response-backed weather evidence, the 30 cm
+  limitation, and browser-console errors were checked; no browser errors were
+  recorded.
+- Review: final scoped reviews, whole-branch review, Content & Language domain
+  audit, and exact-head UI/accessibility follow-up found no remaining severity
+  findings.
 
 ## Local Acceptance Path
 

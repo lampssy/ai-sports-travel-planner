@@ -22,6 +22,22 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - Reusable actions, statuses, and empty states use the shared frontend copy module.
 - Components do not translate raw trust enums or reconstruct domain meaning.
 - Human Content & Language review remains authoritative; readability scores and blocked-word checks are supporting tools only.
+- Public `Trip option` counts refer to recommendation groups. Internal candidate
+  or configuration counts must not be relabeled as customer-visible trip
+  options. Variants inside one group are described as other ways to plan that
+  trip, not as additional top-level Trip options.
+- Terrain-distance copy must preserve both evidence scope and trust on every
+  client. A ski-area or terrain-domain value is not pass-covered terrain unless
+  the typed evidence says so.
+- Primary weather copy explains useful conditions and limitations. Exact
+  aggregation methods, source rows, and calculation details belong in the
+  advanced technical disclosure.
+- A displayed recommendation keeps the applied search intent that produced it.
+  Saving that recommendation must use its applied travel window, not newer
+  draft controls that the user has not searched with yet.
+- Weather headings derive from typed freshness provenance. Only fresh data is
+  called current; stale data is labelled out of date, and unknown freshness is
+  presented as the latest available information without a current-data claim.
 
 ### Current shape
 - Backend-first architecture using FastAPI.
