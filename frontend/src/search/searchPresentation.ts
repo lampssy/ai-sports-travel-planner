@@ -403,27 +403,34 @@ export function terrainPresentation(
   const evidence = selectedPass.accessible_piste_km_evidence;
   if (kilometres == null || !evidence) return null;
 
+  if (evidence.trust_status === "needs_source") {
+    const scope =
+      evidence.scope === "ski_area"
+        ? "Ski-area terrain"
+        : evidence.scope === "terrain_domain"
+          ? "Connected terrain"
+          : "Pass terrain";
+    const value = `${scope} needs source confirmation`;
+    return { essentialValue: value, evidenceLabel: value };
+  }
+
   const prefix = approximatePrefix(evidence.trust_status);
-  const needsSource = evidence.trust_status === "needs_source";
-  const sourceQualifier = needsSource
-    ? "; source confirmation is still needed"
-    : "";
 
   if (evidence.scope === "ski_area") {
-    const value = `${prefix}${kilometres} km in the selected ski area${sourceQualifier}`;
+    const value = `${prefix}${kilometres} km in the selected ski area`;
     return {
       essentialValue: value,
       evidenceLabel: value,
     };
   }
   if (evidence.scope === "terrain_domain") {
-    const value = `${prefix}${kilometres} km in the connected area covered by this pass${sourceQualifier}`;
+    const value = `${prefix}${kilometres} km in the connected area covered by this pass`;
     return {
       essentialValue: value,
       evidenceLabel: value,
     };
   }
-  const value = `${prefix}${kilometres} km covered by this pass${sourceQualifier}`;
+  const value = `${prefix}${kilometres} km covered by this pass`;
   return {
     essentialValue: value,
     evidenceLabel: value,
@@ -1227,6 +1234,11 @@ export function buildCandidateNarrative(
         !(
           factor.factor_id === "stay_base_access" &&
           accessTrust === "needs_source"
+        ) &&
+        !(
+          factor.factor_id === "accessible_terrain_scale" &&
+          configuration.selected_pass.accessible_piste_km_evidence?.trust_status ===
+            "needs_source"
         ) &&
         (factor.factor_id !== "trip_window_snow_fit" || hasTravelWindow),
     )

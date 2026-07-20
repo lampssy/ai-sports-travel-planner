@@ -304,7 +304,7 @@ describe("RecommendationCard", () => {
     expect(
       within(card).getAllByText("160 km covered by this pass"),
     ).not.toHaveLength(0);
-    expect(within(card).getByText("Alternative trip options")).toBeVisible();
+    expect(within(card).getByText("Other ways to plan this trip")).toBeVisible();
     expect(
       within(card).getByRole("link", { name: /view trip details/i }),
     ).toHaveAttribute(
@@ -472,11 +472,10 @@ describe("RecommendationCard", () => {
       />,
     );
 
+    expect(screen.queryByText(/44 km/i)).toBeNull();
     expect(
-      screen.getAllByText(
-        "44 km in the connected area covered by this pass; source confirmation is still needed",
-      ),
-    ).not.toHaveLength(0);
+      screen.getAllByText("Connected terrain needs source confirmation").length,
+    ).toBeGreaterThan(0);
 
     const scoring = screen
       .getByText("Technical calculation details")

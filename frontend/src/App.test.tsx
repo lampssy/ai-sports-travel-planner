@@ -253,7 +253,7 @@ const savedTripSummary: CurrentTripSummary = {
   },
   current_conditions_provenance: {
     source_name: "Historical weather model",
-    source_type: "estimated",
+    source_type: "forecast",
     updated_at: "2026-07-19T08:00:00Z",
     freshness_status: "fresh",
     basis_summary: "Weather evidence for the saved trip window.",
@@ -1856,12 +1856,28 @@ test("announces every successful conditions recovery in the mounted view", async
 });
 
 test.each([
-  ["fresh", "Current conditions"],
-  ["stale", "Latest available conditions (out of date)"],
-  ["unknown", "Latest available conditions"],
+  ["fresh", "forecast", "Current conditions", "Recently updated forecast."],
+  [
+    "stale",
+    "forecast",
+    "Latest available conditions (out of date)",
+    "The latest available forecast is out of date.",
+  ],
+  [
+    "unknown",
+    "forecast",
+    "Latest available conditions",
+    "The forecast update time is unavailable.",
+  ],
+  [
+    "unknown",
+    "estimated",
+    "Estimated conditions",
+    "No forecast is available, so these conditions are estimated.",
+  ],
 ] as const)(
-  "labels %s current-trip weather without overstating freshness",
-  (freshnessStatus, expectedLabel) => {
+  "labels %s %s current-trip weather without overstating freshness",
+  (freshnessStatus, sourceType, expectedLabel, basisSummary) => {
     render(
       <CurrentTripView
         trip={savedTrip}
@@ -1870,6 +1886,8 @@ test.each([
           current_conditions_provenance: {
             ...savedTripSummary.current_conditions_provenance,
             freshness_status: freshnessStatus,
+            source_type: sourceType,
+            basis_summary: basisSummary,
           },
         }}
         tripLoadError={null}
@@ -1888,8 +1906,57 @@ test.each([
 
     expect(screen.getByRole("region", { name: expectedLabel })).toBeVisible();
     expect(screen.getByText(expectedLabel)).toBeVisible();
+    expect(screen.getByText(basisSummary)).toBeVisible();
   },
 );
+
+test("focuses the saved trip heading when Current trip first opens", async () => {
+  render(
+    <CurrentTripView
+      trip={savedTrip}
+      summary={savedTripSummary}
+      tripLoadError={null}
+      summaryLoadError={null}
+      tripLoading={false}
+      summaryLoading={false}
+      tripRecoveryRequest={0}
+      summaryRecoveryRequest={0}
+      clearError={null}
+      onBack={vi.fn()}
+      onRetryTripLoad={vi.fn()}
+      onRetrySummaryLoad={vi.fn()}
+      onClear={vi.fn()}
+    />,
+  );
+
+  await waitFor(() =>
+    expect(screen.getByRole("heading", { name: "Tignes - Val d'Isere" })).toHaveFocus(),
+  );
+});
+
+test("focuses the Current trip heading when the saved trip is empty", async () => {
+  render(
+    <CurrentTripView
+      trip={null}
+      summary={null}
+      tripLoadError={null}
+      summaryLoadError={null}
+      tripLoading={false}
+      summaryLoading={false}
+      tripRecoveryRequest={0}
+      summaryRecoveryRequest={0}
+      clearError={null}
+      onBack={vi.fn()}
+      onRetryTripLoad={vi.fn()}
+      onRetrySummaryLoad={vi.fn()}
+      onClear={vi.fn()}
+    />,
+  );
+
+  await waitFor(() =>
+    expect(screen.getByRole("heading", { name: "Current trip" })).toHaveFocus(),
+  );
+});
 
 test("shows and retries a failed saved-trip load", async () => {
   window.history.replaceState(null, "", "/current-trip");

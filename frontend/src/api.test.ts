@@ -417,7 +417,6 @@ describe("public API error boundary", () => {
       "refinement_rate_limited",
       "trip_option_invalid",
       "current_trip_not_found",
-      "trip_option_not_found",
       "not_found",
       "method_not_allowed",
       "request_failed",

@@ -985,6 +985,11 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
             ),
             const SizedBox(height: 4),
             Text(summary.currentWeatherSummary),
+            const SizedBox(height: 4),
+            Text(
+              summary.conditionsBasisSummary,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 12),
             Text(summary.eligibilityReason),
             Text(summary.deltaSummary),
@@ -1689,8 +1694,13 @@ class PassOptionItem {
       CatalogTrustStatus.verifiedWithAdjustment =>
         'About $kilometres km of $scopeCopy',
       CatalogTrustStatus.estimated => 'Estimated $kilometres km of $scopeCopy',
-      CatalogTrustStatus.needsSource =>
-        '$kilometres km of $scopeCopy; source confirmation is still needed',
+      CatalogTrustStatus.needsSource => switch (evidence.scope) {
+        PisteKmScope.pass => 'Pass terrain needs source confirmation',
+        PisteKmScope.terrainDomain =>
+          'Connected terrain needs source confirmation',
+        PisteKmScope.skiArea => 'Ski-area terrain needs source confirmation',
+        PisteKmScope.unknown => 'Terrain needs source confirmation',
+      },
       CatalogTrustStatus.unknown =>
         '$kilometres km reported; source status is not confirmed',
     };
@@ -1740,6 +1750,7 @@ class CurrentTripSummaryData {
     required this.tripEndDate,
     required this.currentWeatherSummary,
     required this.currentConditionsLabel,
+    required this.conditionsBasisSummary,
     required this.comparisonLabel,
     required this.tripWindowLabel,
     required this.eligibilityReason,
@@ -1763,11 +1774,14 @@ class CurrentTripSummaryData {
       tripStartDate: trip['trip_start_date'] as String?,
       tripEndDate: trip['trip_end_date'] as String?,
       currentWeatherSummary: currentConditions['weather_summary'] as String,
-      currentConditionsLabel: switch (provenance['freshness_status']) {
-        'fresh' => 'Current conditions',
-        'stale' => 'Latest available conditions (out of date)',
-        _ => 'Latest available conditions',
-      },
+      currentConditionsLabel: provenance['source_type'] == 'estimated'
+          ? 'Estimated conditions'
+          : switch (provenance['freshness_status']) {
+              'fresh' => 'Current conditions',
+              'stale' => 'Latest available conditions (out of date)',
+              _ => 'Latest available conditions',
+            },
+      conditionsBasisSummary: provenance['basis_summary'] as String,
       comparisonLabel: comparisonBasis['label'] as String,
       tripWindowLabel:
           (json['companion_status']
@@ -1791,6 +1805,7 @@ class CurrentTripSummaryData {
   final String? tripEndDate;
   final String currentWeatherSummary;
   final String currentConditionsLabel;
+  final String conditionsBasisSummary;
   final String comparisonLabel;
   final String tripWindowLabel;
   final String eligibilityReason;

@@ -231,14 +231,11 @@ describe("trip essentials", () => {
   });
 
   test.each([
-    ["ski_area", "31 km in the selected ski area; source confirmation is still needed"],
-    [
-      "terrain_domain",
-      "31 km in the connected area covered by this pass; source confirmation is still needed",
-    ],
-    ["pass", "31 km covered by this pass; source confirmation is still needed"],
+    ["ski_area", "Ski-area terrain needs source confirmation"],
+    ["terrain_domain", "Connected terrain needs source confirmation"],
+    ["pass", "Pass terrain needs source confirmation"],
   ] as const)(
-    "labels needs-source %s terrain in primary and secondary values",
+    "hides the number for needs-source %s terrain",
     (scope, expected) => {
       const selectedPass = {
         ...configuration("needs-source-terrain").selected_pass,

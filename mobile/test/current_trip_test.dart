@@ -6,7 +6,11 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:snowcast_mobile/main.dart';
 
-Map<String, dynamic> _summaryJson({String freshnessStatus = 'fresh'}) => {
+Map<String, dynamic> _summaryJson({
+  String freshnessStatus = 'fresh',
+  String basisSummary = 'Weather evidence for the saved trip window.',
+  String sourceType = 'forecast',
+}) => {
   'trip': {
     'ski_region_name': 'Chamonix Valley',
     'focus_ski_area_name': 'Grands Montets',
@@ -15,7 +19,11 @@ Map<String, dynamic> _summaryJson({String freshnessStatus = 'fresh'}) => {
     'trip_end_date': '2026-04-16',
   },
   'current_conditions': {'weather_summary': 'Fresh snow is likely this week.'},
-  'current_conditions_provenance': {'freshness_status': freshnessStatus},
+  'current_conditions_provenance': {
+    'freshness_status': freshnessStatus,
+    'basis_summary': basisSummary,
+    'source_type': sourceType,
+  },
   'comparison_basis': {'label': 'internal baseline'},
   'companion_status': {
     'trip_window_label': 'internal trip window',
@@ -162,17 +170,44 @@ void main() {
   });
 
   testWidgets('labels current-trip weather by freshness', (tester) async {
-    for (final entry in {
-      'fresh': 'Current conditions',
-      'stale': 'Latest available conditions (out of date)',
-      'unknown': 'Latest available conditions',
+    for (final entry in <String, (String, String, String)>{
+      'fresh': (
+        'Current conditions',
+        'The latest forecast was updated recently.',
+        'forecast',
+      ),
+      'stale': (
+        'Latest available conditions (out of date)',
+        'The latest available forecast is out of date.',
+        'forecast',
+      ),
+      'unknown-forecast': (
+        'Latest available conditions',
+        'The forecast update time is unavailable.',
+        'forecast',
+      ),
+      'estimated': (
+        'Estimated conditions',
+        'No forecast is available, so these conditions are estimated.',
+        'estimated',
+      ),
     }.entries) {
+      final freshnessStatus =
+          entry.key == 'unknown-forecast' || entry.key == 'estimated'
+          ? 'unknown'
+          : entry.key;
       final api = MobileApiClient(
         baseUrl: 'http://localhost/api',
         client: MockClient((request) async {
           if (request.url.path == '/api/current-trip/summary') {
             return http.Response(
-              jsonEncode(_summaryJson(freshnessStatus: entry.key)),
+              jsonEncode(
+                _summaryJson(
+                  freshnessStatus: freshnessStatus,
+                  basisSummary: entry.value.$2,
+                  sourceType: entry.value.$3,
+                ),
+              ),
               200,
             );
           }
@@ -193,7 +228,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text(entry.value), findsOneWidget);
+      expect(find.text(entry.value.$1), findsOneWidget);
+      expect(find.text(entry.value.$2), findsOneWidget);
     }
   });
 

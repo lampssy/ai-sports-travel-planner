@@ -242,13 +242,13 @@ test("does not present unscored options as ranked recommendations", () => {
 
   expect(screen.getAllByText("Fit comparison unavailable").length).toBeGreaterThan(0);
   expect(screen.queryByText("Unscored")).toBeNull();
-  expect(screen.getByText("Why it fits")).toBeVisible();
+  expect(screen.getByText("Why this option is shown")).toBeVisible();
   expect(screen.getByText("Main concern")).toBeVisible();
   expect(
     screen.queryByRole("heading", { name: "Technical calculation details" }),
   ).toBeNull();
   expect(screen.queryByText(/complete ranked trip configuration/i)).toBeNull();
-  expect(screen.getByText("Alternative trip option")).toBeVisible();
+  expect(screen.getByText("Another way to plan this trip")).toBeVisible();
   expect(screen.queryByText("#4")).toBeNull();
   const navigator = screen.getByRole("navigation", {
     name: "Trip option results",
@@ -381,14 +381,14 @@ test("renders the verdict hierarchy, progressive anchors, and selected save targ
   expect(screen.getAllByText("Pass region-4-alternative")[0]).toBeVisible();
   expect(
     screen.getByRole("heading", {
-      name: "Alternative trip options in Region 4",
+      name: "Other ways to plan this trip in Region 4",
     }),
   ).toBeVisible();
   expect(document.body.textContent).not.toMatch(/configuration|dossier/i);
   for (const name of [
     "Snow & weather",
     "Trip details",
-    "Alternative trip options",
+    "Other ways to plan this trip",
     "Accommodation",
     "Why this trip",
     "Technical calculation details",
@@ -615,11 +615,10 @@ test("keeps needs-source terrain qualified in dossier essentials", () => {
     />,
   );
 
+  expect(screen.queryByText(/42 km/i)).toBeNull();
   expect(
-    screen.getAllByText(
-      "42 km covered by this pass; source confirmation is still needed",
-    ),
-  ).not.toHaveLength(0);
+    screen.getAllByText("Pass terrain needs source confirmation").length,
+  ).toBeGreaterThan(0);
 });
 
 test("exposes desktop collapse and the bounded mobile switcher", async () => {

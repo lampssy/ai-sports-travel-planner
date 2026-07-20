@@ -435,7 +435,7 @@ void main() {
     );
     expect(
       terrainCopy(scope: 'pass', trustStatus: 'needs_source'),
-      '120.0 km of terrain covered by this pass; source confirmation is still needed',
+      'Pass terrain needs source confirmation',
     );
     expect(terrainCopy(), '120.0 km reported; terrain scope is not confirmed');
   });

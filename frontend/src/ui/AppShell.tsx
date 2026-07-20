@@ -6,6 +6,9 @@ import { AsyncState } from "./AsyncState";
 import { SnowcastLogo } from "./SnowcastLogo";
 
 export function currentConditionsLabel(summary: CurrentTripSummary): string {
+  if (summary.current_conditions_provenance.source_type === "estimated") {
+    return "Estimated conditions";
+  }
   switch (summary.current_conditions_provenance.freshness_status) {
     case "fresh":
       return "Current conditions";
@@ -98,7 +101,9 @@ export function CurrentTripView({
   onClear: () => void;
 }) {
   const tripHeadingRef = useRef<HTMLHeadingElement>(null);
+  const emptyHeadingRef = useRef<HTMLHeadingElement>(null);
   const conditionsRef = useRef<HTMLDivElement>(null);
+  const initialFocusHandledRef = useRef(false);
   const handledTripRecoveryRef = useRef(tripRecoveryRequest);
   const handledSummaryRecoveryRef = useRef(summaryRecoveryRequest);
   const [tripAnnouncementRequest, setTripAnnouncementRequest] = useState<
@@ -108,6 +113,14 @@ export function CurrentTripView({
     number | null
   >(null);
   const conditionsLabel = summary ? currentConditionsLabel(summary) : null;
+
+  useEffect(() => {
+    if (initialFocusHandledRef.current || tripLoading) return;
+    initialFocusHandledRef.current = true;
+    (trip ? tripHeadingRef.current : emptyHeadingRef.current)?.focus({
+      preventScroll: true,
+    });
+  }, [trip, tripLoading]);
 
   useEffect(() => {
     if (
@@ -198,6 +211,9 @@ export function CurrentTripView({
               >
                 <p className="current-trip-summary__title">{conditionsLabel}</p>
                 <p>{summary.current_conditions.weather_summary}</p>
+                <p className="muted-copy">
+                  {summary.current_conditions_provenance.basis_summary}
+                </p>
                 <p className="muted-copy">{summary.delta.summary}</p>
               </div>
             ) : null}
@@ -221,9 +237,12 @@ export function CurrentTripView({
             </button>
           </>
         ) : tripLoadError ? null : (
-          <p className="current-trip-panel__empty">
-            Sign in to the Snowcast mobile app and save a trip option to track it.
-          </p>
+          <>
+            <h1 ref={emptyHeadingRef} tabIndex={-1}>Current trip</h1>
+            <p className="current-trip-panel__empty">
+              Sign in to the Snowcast mobile app and save a trip option to track it.
+            </p>
+          </>
         )}
       </section>
     </main>

@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import sys
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -147,7 +148,9 @@ def test_configure_observability_enabled_without_endpoint_is_safe(monkeypatch):
         lambda _self, set_logging_format=False: None,
     )
     monkeypatch.setattr(otel.PsycopgInstrumentor, "instrument", lambda _self: None)
-    monkeypatch.setattr(otel.URLLibInstrumentor, "instrument", lambda _self: None)
+    monkeypatch.setattr(
+        otel.URLLibInstrumentor, "instrument", lambda _self, **_kwargs: None
+    )
     app = FastAPI()
 
     try:
@@ -158,6 +161,32 @@ def test_configure_observability_enabled_without_endpoint_is_safe(monkeypatch):
 
     assert settings.enabled is True
     assert settings.otlp_endpoint is None
+
+
+def test_global_urllib_instrumentation_excludes_google_identity_tokens(monkeypatch):
+    import app.observability.otel as otel
+
+    calls: list[dict[str, object]] = []
+    monkeypatch.setattr(otel, "_global_instrumentors_configured", False)
+    monkeypatch.setattr(
+        otel.LoggingInstrumentor,
+        "instrument",
+        lambda _self, **_kwargs: None,
+    )
+    monkeypatch.setattr(otel.PsycopgInstrumentor, "instrument", lambda _self: None)
+    monkeypatch.setattr(
+        otel.URLLibInstrumentor,
+        "instrument",
+        lambda _self, **kwargs: calls.append(kwargs),
+    )
+
+    otel._instrument_global_libraries_once()
+
+    assert calls == [{"excluded_urls": otel.URLLIB_TRACE_EXCLUDED_URLS}]
+    assert re.fullmatch(
+        otel.URLLIB_TRACE_EXCLUDED_URLS,
+        "https://oauth2.googleapis.com/tokeninfo?id_token=secret",
+    )
 
 
 def test_configure_cli_observability_disabled_is_noop(monkeypatch):
@@ -261,7 +290,9 @@ def test_configure_cli_observability_enabled_without_endpoint_uses_local_recorde
         lambda _self, set_logging_format=False: None,
     )
     monkeypatch.setattr(otel.PsycopgInstrumentor, "instrument", lambda _self: None)
-    monkeypatch.setattr(otel.URLLibInstrumentor, "instrument", lambda _self: None)
+    monkeypatch.setattr(
+        otel.URLLibInstrumentor, "instrument", lambda _self, **_kwargs: None
+    )
     monkeypatch.setattr(
         cli,
         "shutdown_observability_runtime",
@@ -320,7 +351,9 @@ def test_configure_observability_enabled_is_idempotent(monkeypatch):
         lambda _self, set_logging_format=False: None,
     )
     monkeypatch.setattr(otel.PsycopgInstrumentor, "instrument", lambda _self: None)
-    monkeypatch.setattr(otel.URLLibInstrumentor, "instrument", lambda _self: None)
+    monkeypatch.setattr(
+        otel.URLLibInstrumentor, "instrument", lambda _self, **_kwargs: None
+    )
 
     try:
         configure_observability(FastAPI())
@@ -356,7 +389,9 @@ def test_configure_observability_excludes_healthcheck_traces(monkeypatch):
         lambda _self, set_logging_format=False: None,
     )
     monkeypatch.setattr(otel.PsycopgInstrumentor, "instrument", lambda _self: None)
-    monkeypatch.setattr(otel.URLLibInstrumentor, "instrument", lambda _self: None)
+    monkeypatch.setattr(
+        otel.URLLibInstrumentor, "instrument", lambda _self, **_kwargs: None
+    )
 
     try:
         configure_observability(FastAPI())

@@ -981,6 +981,7 @@ def test_current_trip_endpoints_require_authentication() -> None:
     for response in responses:
         assert response.status_code == 401
         assert response.json() == {"error": {"code": "authentication_required"}}
+        assert response.headers["WWW-Authenticate"] == "Bearer"
 
 
 def test_current_trip_rejects_expired_session() -> None:
@@ -991,6 +992,7 @@ def test_current_trip_rejects_expired_session() -> None:
 
     assert response.status_code == 401
     assert response.json() == {"error": {"code": "session_expired"}}
+    assert response.headers["WWW-Authenticate"] == "Bearer"
 
 
 def test_current_trip_endpoints_save_read_and_clear(monkeypatch) -> None:
@@ -1394,7 +1396,13 @@ def test_current_trip_summary_keeps_stale_forecast_visible_before_baseline(
     payload = response.json()
     assert payload["current_conditions_provenance"]["freshness_status"] == "stale"
     assert "out of date" in payload["current_conditions_provenance"]["basis_summary"]
-    assert "out of date" in payload["delta"]["summary"]
+    assert payload["delta"] == {
+        "status": "insufficient_history",
+        "summary": (
+            "No newer weather information is available since you saved this trip."
+        ),
+        "changes": [],
+    }
 
 
 def test_current_trip_summary_uses_last_checked_at_when_present(monkeypatch) -> None:

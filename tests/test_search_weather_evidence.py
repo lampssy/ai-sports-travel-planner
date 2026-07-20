@@ -371,6 +371,7 @@ def test_exact_dates_weight_repeated_calendar_dates_in_historical_evidence() -> 
     assert summary.historical.snow_depth_cm_p50 == pytest.approx(282.5)
     assert summary.historical.sources[0].row_count == 366
     assert not any("365 of 366" in limitation for limitation in summary.limitations)
+    assert "Daily details are shown for the first 31 dates." in summary.limitations
 
 
 def test_exact_dates_use_fresh_complete_preferred_source_forecasts() -> None:
@@ -503,7 +504,10 @@ def test_exact_dates_report_partial_usable_forecast_coverage() -> None:
     assert summary.forecast.usable_date_count == 2
     assert len(summary.forecast.daily_profile) == 3
     assert summary.forecast.daily_profile[2].snow_depth_cm is None
-    assert any("2 of 3" in limitation for limitation in summary.limitations)
+    assert (
+        "Up-to-date forecast coverage is available for 2 of 3 days."
+        in summary.limitations
+    )
 
 
 def test_historical_profile_preserves_missing_middle_requested_day() -> None:
@@ -606,7 +610,11 @@ def test_stale_forecast_falls_back_to_climatology_with_explicit_limitation() -> 
     assert summary is not None
     assert summary.mode == "climatology"
     assert summary.forecast is None
-    assert any("stale" in limitation.lower() for limitation in summary.limitations)
+    assert "Older forecasts were not used." in summary.limitations
+    assert (
+        "No up-to-date forecast is available for the requested dates."
+        in summary.limitations
+    )
 
 
 def test_incomplete_forecast_falls_back_without_exposing_values() -> None:
@@ -623,7 +631,11 @@ def test_incomplete_forecast_falls_back_without_exposing_values() -> None:
     assert summary is not None
     assert summary.mode == "climatology"
     assert summary.forecast is None
-    assert any("incomplete" in item.lower() for item in summary.limitations)
+    assert "Incomplete forecast days were not used." in summary.limitations
+    assert (
+        "No up-to-date forecast is available for the requested dates."
+        in summary.limitations
+    )
 
 
 def test_summary_is_omitted_without_trustworthy_historical_evidence() -> None:

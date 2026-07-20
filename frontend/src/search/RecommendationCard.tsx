@@ -163,7 +163,7 @@ export function RecommendationCard({
             ) : null}
             {candidates.length > 1 ? (
               <section className="alternative-configurations">
-                <p className="section-label">Alternative trip options</p>
+                <p className="section-label">Other ways to plan this trip</p>
                 <div>
                   {candidates.map((candidate) => {
                     const selected = candidate.candidate_id === configuration.candidate_id;

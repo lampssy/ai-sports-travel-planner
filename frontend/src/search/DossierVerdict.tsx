@@ -86,7 +86,7 @@ export function DossierVerdict({
           <p>
             <CheckCircle2 aria-hidden="true" size={20} />
             <span>
-              <strong>Why it fits</strong>
+              <strong>{unscored ? "Why this option is shown" : "Why it fits"}</strong>
               {narrative.strength ??
                 (unscored
                   ? "This trip option is shown without a fit comparison because key details are unavailable."

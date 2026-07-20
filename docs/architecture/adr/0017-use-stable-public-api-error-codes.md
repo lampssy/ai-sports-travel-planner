@@ -81,7 +81,6 @@ code's meaning; tests own route/status coverage.
 | `refinement_rate_limited` | 429 | Refinement admission rejection | Preserve results; retry after required `Retry-After` |
 | `trip_option_invalid` | 422 | Saving inconsistent or stale trip-option entities | Return to results and choose the option again |
 | `current_trip_not_found` | 404 | Current-trip summary or mark-checked with no saved trip | Return to search or the current-trip empty state |
-| `trip_option_not_found` | 404 | Invalid accommodation handoff | Return to trip details |
 | `not_found` | 404 | Unknown customer API route | Return to the previous product surface |
 | `method_not_allowed` | 405 | Unsupported method on a customer API route | Use the supported action |
 | `request_failed` | 500 | Unexpected customer-route failure | Preserve usable state and retry |

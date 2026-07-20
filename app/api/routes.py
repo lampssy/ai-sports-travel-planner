@@ -108,13 +108,19 @@ def get_authenticated_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> AuthenticatedUser:
     if credentials is None or credentials.scheme.lower() != "bearer":
-        raise PublicApiError(PublicErrorCode.AUTHENTICATION_REQUIRED)
+        raise PublicApiError(
+            PublicErrorCode.AUTHENTICATION_REQUIRED,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     user = AppSessionRepository().get_user_for_access_token(
         access_token=credentials.credentials
     )
     if user is None:
-        raise PublicApiError(PublicErrorCode.SESSION_EXPIRED)
+        raise PublicApiError(
+            PublicErrorCode.SESSION_EXPIRED,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
 
 

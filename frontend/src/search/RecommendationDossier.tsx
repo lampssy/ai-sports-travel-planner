@@ -18,7 +18,7 @@ import { buildCandidateNarrative } from "./searchPresentation";
 const anchors = [
   ["snow-evidence", "Snow & weather"],
   ["trip-configuration", "Trip details"],
-  ["alternatives", "Alternative trip options"],
+  ["alternatives", "Other ways to plan this trip"],
   ["accommodation", "Accommodation"],
   ["decision-evidence", "Why this trip"],
   ["scoring-details", "Technical calculation details"],

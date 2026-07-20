@@ -502,7 +502,8 @@ curl --request POST http://127.0.0.1:8000/api/search \
 
 - `POST /api/search/refinements` after a successful ranking. Send the returned
   canonical `applied_intent`, `baseline_fingerprint`, the optional trip brief,
-  and answered question IDs. The endpoint returns one explicit status:
+  answered question IDs, and `resolved_topic_ids` so completed topics are not
+  asked again. The endpoint returns one explicit status:
   `questions_available`, `not_needed`, or `temporarily_unavailable`. The
   ranking-to-refinement handoff is process-local and expires after 60 seconds;
   delivered questions do not expire, and applying an answer creates a fresh

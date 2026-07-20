@@ -28,7 +28,6 @@ class PublicErrorCode(StrEnum):
     REFINEMENT_RATE_LIMITED = "refinement_rate_limited"
     TRIP_OPTION_INVALID = "trip_option_invalid"
     CURRENT_TRIP_NOT_FOUND = "current_trip_not_found"
-    TRIP_OPTION_NOT_FOUND = "trip_option_not_found"
     NOT_FOUND = "not_found"
     METHOD_NOT_ALLOWED = "method_not_allowed"
     REQUEST_FAILED = "request_failed"
@@ -45,7 +44,6 @@ _STATUS_BY_CODE: dict[PublicErrorCode, int] = {
     PublicErrorCode.REFINEMENT_RATE_LIMITED: 429,
     PublicErrorCode.TRIP_OPTION_INVALID: 422,
     PublicErrorCode.CURRENT_TRIP_NOT_FOUND: 404,
-    PublicErrorCode.TRIP_OPTION_NOT_FOUND: 404,
     PublicErrorCode.NOT_FOUND: 404,
     PublicErrorCode.METHOD_NOT_ALLOWED: 405,
     PublicErrorCode.REQUEST_FAILED: 500,

@@ -330,16 +330,11 @@ def build_current_trip_summary(
             changes=[],
         )
     elif current_updated_at <= baseline_at:
-        stale_note = (
-            " The latest available forecast is out of date."
-            if provenance.freshness_status == "stale"
-            else ""
-        )
         delta = CurrentTripDelta(
-            status="unchanged",
+            status="insufficient_history",
             summary=(
-                f"Conditions have not changed {_comparison_basis_copy(basis)}."
-                f"{stale_note}"
+                "No newer weather information is available "
+                f"{_comparison_basis_copy(basis)}."
             ),
             changes=[],
         )

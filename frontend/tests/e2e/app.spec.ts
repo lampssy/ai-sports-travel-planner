@@ -120,7 +120,7 @@ const savedTripSummary: CurrentTripSummary = {
   },
   current_conditions_provenance: {
     source_name: "Historical weather model",
-    source_type: "estimated",
+    source_type: "forecast",
     updated_at: "2026-07-19T08:00:00Z",
     freshness_status: "fresh",
     basis_summary: "Weather evidence for the saved trip window.",
@@ -709,7 +709,7 @@ test("saved-trip retry keeps keyboard focus while the request is pending", async
   expect(attempts).toBe(2);
 });
 
-test("current-conditions retry keeps keyboard focus while the request is pending", async ({
+test("weather-summary retry keeps keyboard focus while the request is pending", async ({
   page,
 }) => {
   await mockSearchV4Api(page, monthSearchResponse, []);
@@ -762,7 +762,7 @@ test("current-conditions retry keeps keyboard focus while the request is pending
   await page.getByRole("button", { name: "Back to search" }).click();
   await page.getByRole("button", { name: "Current trip", exact: true }).click();
 
-  const retry = page.getByRole("button", { name: "Retry current conditions" });
+  const retry = page.getByRole("button", { name: "Retry weather summary" });
   await expect(retry).toBeVisible();
   await retry.focus();
   await retry.click();
@@ -780,9 +780,46 @@ test("current-conditions retry keeps keyboard focus while the request is pending
     page.getByRole("region", { name: "Current conditions" }),
   ).toBeFocused();
   await expect(page.getByRole("status")).toHaveText(
-    "Current conditions updated.",
+    "Weather summary updated.",
   );
   expect(summaryAttempts).toBe(3);
+});
+
+test("Current trip receives route focus for loaded and empty states", async ({
+  page,
+}) => {
+  let hasTrip = true;
+  await page.route(/\/api\/current-trip$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(
+        hasTrip
+          ? { trip: savedTrip }
+          : { trip: null },
+      ),
+    });
+  });
+  await page.route(/\/api\/current-trip\/summary$/, async (route) => {
+    await route.fulfill({
+      status: hasTrip ? 200 : 404,
+      contentType: "application/json",
+      body: JSON.stringify(
+        hasTrip
+          ? savedTripSummary
+          : { error: { code: "current_trip_not_found" } },
+      ),
+    });
+  });
+
+  await page.goto("/current-trip");
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere" }),
+  ).toBeFocused();
+
+  hasTrip = false;
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Current trip" })).toBeFocused();
 });
 
 test("desktop board compares, selects alternatives, and reranks in place", async ({
