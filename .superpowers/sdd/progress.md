@@ -95,11 +95,11 @@ live announcements, and enlarged-text coverage; Flutter analysis and 20 tests
 passed; final exact-scope Mobile Companion, Backend/API, Content & Language,
 and Accessibility reviews clean; APK build blocked only by the missing local
 Android SDK)
-Task 6: verification complete; PR publication pending (commits
-8f47500..70fd820; product-wide language, refinement, Trip details, evidence,
-API error, accessibility, and mobile parity changes implemented; final Content
-& Language audit found no remaining severity findings; 2,459 backend tests,
-Ruff check/format, 323 frontend tests, production build, 59 Playwright journeys
+Task 6: complete (commits 8f47500..8a1d890; product-wide language,
+refinement, Trip details, evidence, API error, accessibility, and mobile parity
+changes implemented and published to draft PR #52; final Content & Language
+audit found no remaining severity findings; 2,459 backend tests, Ruff
+check/format, 323 frontend tests, production build, 59 Playwright journeys
 including 18 visual journeys, 28 Flutter tests, Flutter analysis, live browser
 QA, and exact-head reviews passed; Android APK blocked by the missing local
 Android SDK; native assistive technology, non-Chromium coverage, mobile CI, and

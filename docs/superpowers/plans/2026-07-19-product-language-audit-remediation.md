@@ -327,7 +327,7 @@ pre-release environment check rather than an application-test failure.
   finding and repeat exact-head reviews.
 - [x] Update spec to `implemented`, mark this plan and SDD ledger complete, and
   commit as `docs: close product language remediation`.
-- [ ] Push the branch and update existing draft PR #52. Do not merge or mark it
+- [x] Push the branch and update existing draft PR #52. Do not merge or mark it
   ready without an explicit owner request.
 
 Verification record:
