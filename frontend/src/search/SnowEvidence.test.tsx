@@ -558,13 +558,13 @@ test("renders server fallback limitations and typed unavailability without gener
   );
   expect(await screen.findByText("Snow evidence unavailable")).toBeVisible();
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "Snowcast lacks enough historical data for this ski area and trip window.",
+    "Snowcast could not find enough reliable historical data for this ski area and trip window.",
   );
   const unavailableSummary = screen.getByLabelText("Weather evidence summary");
   expect(unavailableSummary).toHaveTextContent("Historical weather evidence unavailable");
-  expect(unavailableSummary).toHaveTextContent("No archive dates available for this assessment.");
+  expect(unavailableSummary).toHaveTextContent("Not available for this assessment.");
   expect(unavailableSummary).toHaveTextContent(
-    "No complete historical profile covers the trip window.",
+    "No historical profile met Snowcast's evidence requirements for this trip window.",
   );
   expect(unavailableSummary).toHaveTextContent("Unavailable from the current evidence.");
   expect(screen.getByText(/no supported historical evidence/i)).toBeVisible();

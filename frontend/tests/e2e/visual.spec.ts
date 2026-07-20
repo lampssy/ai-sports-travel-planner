@@ -566,12 +566,14 @@ test("mobile dossier unavailable weather evidence", async ({ page }) => {
 
   await expect(page.getByText("Snow evidence unavailable")).toBeVisible();
   await expect(page.getByRole("alert")).toContainText(
-    "Snowcast lacks enough historical data for this ski area and trip window.",
+    "Snowcast could not find enough reliable historical data for this ski area and trip window.",
   );
   const summary = page.getByLabel("Weather evidence summary");
   await expect(summary).toContainText("Historical weather evidence unavailable");
-  await expect(summary).toContainText("No archive dates available for this assessment.");
-  await expect(summary).toContainText("No complete historical profile covers the trip window.");
+  await expect(summary).toContainText("Not available for this assessment.");
+  await expect(summary).toContainText(
+    "No historical profile met Snowcast's evidence requirements for this trip window.",
+  );
   await expect(summary).toContainText("Unavailable from the current evidence.");
   await expect(summary).toContainText(
     "Historical evidence is unavailable for the selected window.",

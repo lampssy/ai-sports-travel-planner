@@ -1635,7 +1635,7 @@ test("stale fallback and typed unavailable states keep dossier controls intact",
     page.getByRole("heading", { name: "Snow evidence unavailable" }),
   ).toBeVisible();
   await expect(page.getByRole("alert")).toContainText(
-    "Weather evidence cannot be assessed for this trip window.",
+    "Snowcast could not find enough reliable historical data for this ski area and trip window.",
   );
   await expect(page.getByRole("status")).toHaveCount(0);
   await expect(

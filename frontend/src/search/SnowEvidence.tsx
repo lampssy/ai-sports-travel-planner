@@ -543,7 +543,7 @@ export function SnowEvidence({
               retrying={retrying}
               retryControlRef={retryButtonRef}
               onRetry={() => retryEvidence(true)}
-              message="Snowcast lacks enough historical data for this ski area and trip window."
+              message="Snowcast could not find enough reliable historical data for this ski area and trip window."
             />
           )}
           <WeatherEvidenceSummary response={visibleState.response} />

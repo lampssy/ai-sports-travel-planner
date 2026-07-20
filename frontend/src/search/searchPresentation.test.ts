@@ -1195,7 +1195,7 @@ describe("weather evidence presentation", () => {
     );
   });
 
-  test("presents unavailable evidence without inventing source freshness or conditions", () => {
+  test("presents unavailable evidence without claiming the archive is absent", () => {
     const presentation = weatherEvidencePresentation({
       weather_evidence_version: "search-weather-evidence-v1",
       status: "unavailable",
@@ -1206,13 +1206,14 @@ describe("weather evidence presentation", () => {
       limitations: ["No complete archive profile is available."],
     });
 
-    expect(presentation).toEqual({
-      sourceType: "Historical weather evidence unavailable",
-      sourceCurrency: "No archive dates available for this assessment.",
-      coverage: "No complete historical profile covers the trip window.",
-      expectedConditions: "Unavailable from the current evidence.",
-      mainLimitation: "No complete archive profile is available.",
-    });
+    expect(presentation.sourceType).toBe("Historical weather evidence unavailable");
+    expect(presentation.sourceCurrency).toBe("Not available for this assessment.");
+    expect(presentation.coverage).toBe(
+      "No historical profile met Snowcast's evidence requirements for this trip window.",
+    );
+    expect(presentation.expectedConditions).toBe("Unavailable from the current evidence.");
+    expect(presentation.mainLimitation).toBe("No complete archive profile is available.");
+    expect(`${presentation.sourceCurrency} ${presentation.coverage}`).not.toMatch(/archive/i);
   });
 
   test("presents missing travel dates as an informational not-assessed state", () => {

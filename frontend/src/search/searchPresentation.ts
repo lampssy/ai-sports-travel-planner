@@ -906,8 +906,9 @@ export function weatherEvidencePresentation(
     }
     return {
       sourceType: "Historical weather evidence unavailable",
-      sourceCurrency: "No archive dates available for this assessment.",
-      coverage: "No complete historical profile covers the trip window.",
+      sourceCurrency: "Not available for this assessment.",
+      coverage:
+        "No historical profile met Snowcast's evidence requirements for this trip window.",
       expectedConditions: "Unavailable from the current evidence.",
       mainLimitation:
         response.limitations[0] ??
