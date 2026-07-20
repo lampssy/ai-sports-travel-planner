@@ -1207,10 +1207,10 @@ describe("weather evidence presentation", () => {
     });
 
     expect(presentation).toEqual({
-      sourceType: "Weather evidence unavailable",
-      sourceCurrency: "Weather evidence cannot be assessed for this trip window.",
-      coverage: "Weather evidence cannot be assessed for this trip window.",
-      expectedConditions: "Weather conditions cannot be assessed for this trip window.",
+      sourceType: "Historical weather evidence unavailable",
+      sourceCurrency: "No archive dates available for this assessment.",
+      coverage: "No complete historical profile covers the trip window.",
+      expectedConditions: "Unavailable from the current evidence.",
       mainLimitation: "No complete archive profile is available.",
     });
   });
