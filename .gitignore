@@ -19,9 +19,11 @@ mobile/build/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/.packages
+test-results/
 app/data/*.db
 docs/portfolio-plan
 artifacts/
 .env
+.superdesign/
 .superpowers/
 .worktrees/
