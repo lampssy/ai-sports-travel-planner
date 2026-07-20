@@ -149,29 +149,35 @@ def _delta_from_conditions(
     if current_conditions.snow_confidence_label != prior_snapshot.snow_confidence_label:
         direction = "improved" if snow_delta >= 0 else "weakened"
         changes.append(
-            "Snow confidence "
+            "Snow outlook "
             f"{direction} from {prior_snapshot.snow_confidence_label} "
             f"to {current_conditions.snow_confidence_label}."
         )
     elif abs(snow_delta) >= 0.08:
         direction = "up" if snow_delta > 0 else "down"
         changes.append(
-            f"Snow confidence moved {direction} by "
-            f"{abs(round(snow_delta * 100))} points."
+            f"Snow outlook moved {direction} by {abs(round(snow_delta * 100))} points."
         )
 
     if current_conditions.availability_status != prior_snapshot.availability_status:
-        previous_status = prior_snapshot.availability_status.replace("_", " ")
-        current_status = current_conditions.availability_status.replace("_", " ")
+        previous_status = _weather_disruption_risk_label(
+            prior_snapshot.availability_status
+        )
+        current_status = _weather_disruption_risk_label(
+            current_conditions.availability_status
+        )
         changes.append(
-            f"Availability changed from {previous_status} to {current_status}."
+            "Weather disruption risk changed "
+            f"from {previous_status} to {current_status}."
         )
 
     if current_conditions.weather_summary != prior_snapshot.weather_summary:
-        changes.append("Weather summary shifted since the previous recorded snapshot.")
+        changes.append(
+            f"The weather summary changed {_comparison_basis_copy(comparison_basis)}."
+        )
 
     if provenance.freshness_status == "stale":
-        changes.append("The latest forecast refresh is now stale.")
+        changes.append("The latest forecast is out of date.")
 
     if not changes:
         return CurrentTripDelta(
@@ -194,6 +200,15 @@ def _comparison_basis_copy(comparison_basis: CurrentTripComparisonBasis) -> str:
     if comparison_basis.kind == "since_trip_saved":
         return "since you saved this trip"
     return "since your last check"
+
+
+def _weather_disruption_risk_label(status: str) -> str:
+    return {
+        "open": "low",
+        "limited": "some",
+        "temporarily_closed": "high",
+        "out_of_season": "out of season",
+    }.get(status, status.replace("_", " "))
 
 
 def _event_signature(

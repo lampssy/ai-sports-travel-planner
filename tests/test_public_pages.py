@@ -74,6 +74,14 @@ def test_public_destination_page_returns_server_rendered_html() -> None:
     assert "130 cm" in response.text
     assert "Historical data through Mar 2025" in response.text
     assert "archive weather windows" not in response.text
+    assert "current and historical weather information" in response.text
+    assert "reviewed destination and access details" in response.text
+    assert "historical weather records" in response.text
+    assert "Data status:" in response.text
+    assert "evidence stay attached" not in response.text
+    assert "curated destination" not in response.text
+    assert "archive weather" not in response.text
+    assert "Freshness:" not in response.text
     assert "forecast assisted" not in response.text.lower()
     assert "+00:00" not in response.text
     assert "Le Lac" in response.text
@@ -141,6 +149,30 @@ def test_public_destination_fallback_uses_evidence_limitation_not_a_fit_state() 
     assert "Current snow signal" in response.text
     assert "Not enough evidence" in response.text
     assert "Some concerns" not in response.text
+
+
+def test_public_calendar_fallback_months_use_seasonal_estimates() -> None:
+    app = create_app()
+
+    with TestClient(app) as client:
+        response = client.get("/ski-destinations/tignes")
+
+    assert response.status_code == 200
+    month_cards = re.findall(
+        r'<article class="month[^>]*>.*?</article>',
+        response.text,
+        flags=re.DOTALL,
+    )
+    assert month_cards
+    for card in month_cards:
+        assert "Seasonal estimate" in card
+        assert "Not enough historical snow-depth evidence" in card
+        assert "Historical snow conditions" not in card
+        assert "Historically strong snow signal" not in card
+        assert "Historically mixed snow signal" not in card
+        assert "Historically weak snow signal" not in card
+    assert "Highest seasonal estimates:" in response.text
+    assert "Historically strongest months:" not in response.text
 
 
 @pytest.mark.parametrize(

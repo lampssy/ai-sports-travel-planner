@@ -549,7 +549,7 @@ def _historical_limitations(
     )
     if len(rows) < expected_count:
         limitations.append(
-            "Historical climatology is available for "
+            "Historical weather patterns cover "
             f"{len(rows)} of {expected_count} requested days."
         )
     if any(row.baseline_period == "recent_15y" for row in rows):
@@ -601,11 +601,11 @@ def _interpretation(
     if mode == "forecast_assisted":
         assert forecast is not None
         return (
-            "Fresh forecast evidence supplements the historical climatology for "
+            "Fresh forecast data adds to historical weather patterns for "
             f"{forecast.usable_date_count} of {forecast.requested_date_count} "
             "requested days."
         )
-    return "Historical climatology describes the requested travel window."
+    return "Historical weather patterns describe the requested travel window."
 
 
 def _window_label(window: TravelWindow) -> str:

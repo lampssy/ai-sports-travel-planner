@@ -303,7 +303,7 @@ def test_search_weather_evidence_endpoint_serializes_typed_available_response(
         elevation_m=2000,
         elevation_status="exact",
         interpretation=(
-            "Fresh forecast evidence supplements the historical climatology for "
+            "Fresh forecast data adds to historical weather patterns for "
             "3 of 3 requested days."
         ),
         historical=HistoricalWeatherEvidence(
@@ -1274,6 +1274,10 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
         current_updated_at=trip_created_at + timedelta(days=1),
         prior_snapshot_at=trip_created_at - timedelta(hours=6),
     )
+    monkeypatch.setattr(
+        "app.domain.trip_companion.is_condition_fresh",
+        lambda _conditions: False,
+    )
 
     response = client.get("/api/current-trip/summary", headers=headers)
 
@@ -1291,12 +1295,12 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
     assert payload["companion_status"]["eligibility_reason"] == (
         "Exact trip dates are not available."
     )
-    assert any(
-        "Snow confidence improved" in change for change in payload["delta"]["changes"]
-    )
-    assert any(
-        "Availability changed" in change for change in payload["delta"]["changes"]
-    )
+    assert payload["delta"]["changes"] == [
+        "Snow outlook improved from fair to good.",
+        "Weather disruption risk changed from some to low.",
+        "The weather summary changed since you saved this trip.",
+        "The latest forecast is out of date.",
+    ]
 
 
 def test_current_trip_summary_uses_last_checked_at_when_present(monkeypatch) -> None:

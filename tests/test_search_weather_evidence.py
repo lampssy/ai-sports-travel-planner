@@ -217,6 +217,9 @@ def test_month_summary_prefers_latest_normal_rows_and_preserves_provenance() -> 
     assert summary.historical.provenance_status == "homogeneous"
     assert len(summary.historical.sources) == 1
     assert summary.historical.sources[0].profile_dates == ("01-02",)
+    assert summary.interpretation == (
+        "Historical weather patterns describe the requested travel window."
+    )
 
 
 def test_mixed_historical_rows_expose_exact_sources_without_synthetic_metadata() -> (
@@ -407,6 +410,10 @@ def test_exact_dates_use_fresh_complete_preferred_source_forecasts() -> None:
         day.isoformat() for day in requested
     )
     assert summary.historical is not None
+    assert summary.interpretation == (
+        "Fresh forecast data adds to historical weather patterns for 3 of 3 "
+        "requested days."
+    )
 
 
 def test_mixed_forecast_rows_expose_exact_sources_without_synthetic_issuance() -> None:
@@ -535,7 +542,9 @@ def test_historical_profile_preserves_missing_middle_requested_day() -> None:
     )
     assert summary.historical.sources[0].row_count == 2
     assert summary.historical.sources[0].profile_dates == ("01-01", "01-03")
-    assert any("2 of 31" in limitation for limitation in summary.limitations)
+    assert "Historical weather patterns cover 2 of 31 requested days." in (
+        summary.limitations
+    )
 
 
 def test_forecast_profile_preserves_missing_middle_requested_day() -> None:
