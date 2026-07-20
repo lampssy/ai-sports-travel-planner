@@ -3057,9 +3057,7 @@ def test_stale_forecasts_produce_dossier_climatology_fallback_and_limitation() -
     assert result.status == "available"
     assert result.evidence.mode == "climatology"
     assert result.evidence.forecast is None
-    assert any(
-        "stale" in limitation.lower() for limitation in result.evidence.limitations
-    )
+    assert "Older forecasts were not used." in result.evidence.limitations
 
 
 def test_candidate_generation_expands_each_applicable_pass_without_default_bias() -> (
