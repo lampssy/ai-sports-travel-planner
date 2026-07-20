@@ -509,6 +509,33 @@ test("technical calculation details desktop", async ({ page }) => {
   );
 });
 
+test("technical calculation details at 390 px with enlarged text", async ({ page }) => {
+  await page.setViewportSize(mobile);
+  await page.addStyleTag({ content: "html { font-size: 20px; }" });
+  await openDossier(page, exactDateResponse(), forecastWeatherResponse());
+
+  await page.locator("#scoring-details summary").click();
+  const values = page.getByRole("region", {
+    name: "Forecast weather values. Scroll horizontally to view all values.",
+  });
+  await values.focus();
+  await expect(values).toBeFocused();
+  await expect(values).toHaveCSS("outline-style", "solid");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+
+  await expect(page.locator("#scoring-details")).toHaveScreenshot(
+    "dossier-technical-details-mobile-enlarged.png",
+    {
+      animations: "disabled",
+      caret: "hide",
+    },
+  );
+});
+
 test("mobile dossier switcher", async ({ page }) => {
   await page.setViewportSize(mobile);
   await openDossier(page, monthSearchResponse, monthWeatherResponse());

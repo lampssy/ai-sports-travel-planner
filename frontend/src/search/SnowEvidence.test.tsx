@@ -319,11 +319,12 @@ test("keeps source rows and equivalent chart values in technical details", () =>
 
   const table = screen.getByRole("table", { name: "Historical weather values" });
   expect(screen.getByText("Open-Meteo archive climatology")).toBeVisible();
-  expect(
-    screen.getByText(
-      "ERA5-Land; 30 seasons; elevation 2,400 m; profile dates 03-01, 03-15, 03-31; 3 source rows.",
-    ),
-  ).toBeVisible();
+  expect(screen.getByText("ERA5-Land")).toBeVisible();
+  expect(screen.getByText("2,400 m")).toBeVisible();
+  expect(screen.getByText("03-01, 03-15, 03-31")).toBeVisible();
+  expect(screen.getByText("3")).toBeVisible();
+  expect(screen.getByText("Baseline years")).toBeVisible();
+  expect(screen.getByText("Latest archive year")).toBeVisible();
   expect(within(table).getByText("03-15")).toBeVisible();
   expect(within(table).getByText("128 cm")).toBeVisible();
   expect(within(table).queryByText("0 cm")).toBeNull();
@@ -333,11 +334,12 @@ test("keeps source rows and equivalent chart values in technical details", () =>
 test("shows complete forecast source provenance only in technical details", () => {
   render(<WeatherEvidenceTechnicalDetails response={forecastResponse()} />);
 
-  expect(
-    screen.getByText(
-      "Open-Meteo forecast (best_match; open-meteo), run forecast-head-1, issued 2026-07-16T11:00:00Z; elevation 2,400 m; profile dates 2026-07-20, 2026-07-21, 2026-07-22; 3 source rows.",
-    ),
-  ).toBeVisible();
+  expect(screen.getByText("forecast-head-1")).toBeVisible();
+  expect(screen.getByText("open-meteo")).toBeVisible();
+  expect(screen.getByText("2026-07-16T11:00:00Z")).toBeVisible();
+  expect(screen.getByText("Run ID")).toBeVisible();
+  expect(screen.getByText("Source key")).toBeVisible();
+  expect(screen.getByText("Issued")).toBeVisible();
 });
 
 test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
@@ -354,6 +356,7 @@ test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
   expect(
     (await screen.findAllByText("Forecast and historical pattern")).length,
   ).toBeGreaterThan(0);
+  expect(screen.getByText("Data dates")).toBeVisible();
   expect(screen.getByText("Forecast issued Jul 16, 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline")).toBeVisible();
   expect(screen.getByText("2 of 3 requested dates have forecast values; 30 historical seasons")).toBeVisible();
   expect(screen.queryByText(/fresh at 16 jul 2026, 12:02 utc/i)).toBeNull();
@@ -503,6 +506,17 @@ test("shows API risk and wind values only in the complete daily-values table", (
   const row = within(table).getByRole("row", { name: /2026-07-20/ });
   expect(row).toHaveTextContent("0 %");
   expect(row).toHaveTextContent("10 km/h");
+});
+
+test("labels and exposes weather value tables as keyboard-scrollable regions", () => {
+  render(<WeatherEvidenceTechnicalDetails response={forecastResponse()} />);
+
+  const region = screen.getByRole("region", {
+    name: "Forecast weather values. Scroll horizontally to view all values.",
+  });
+  region.focus();
+  expect(region).toHaveFocus();
+  expect(region).toHaveAttribute("tabindex", "0");
 });
 
 test("renders server fallback limitations and typed unavailability without generic factor inference", async () => {

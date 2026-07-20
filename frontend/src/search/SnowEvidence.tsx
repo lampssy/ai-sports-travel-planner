@@ -141,7 +141,12 @@ function WeatherChartFallback({
       <div>
         <strong>Weather chart could not be displayed</strong>
         <p>The underlying values remain available below.</p>
-        <div className="snow-values__scroll">
+        <div
+          className="snow-values__scroll"
+          role="region"
+          aria-label={`${mode === "forecast" ? "Forecast" : "Historical"} weather values. Scroll horizontally to view all values.`}
+          tabIndex={0}
+        >
           <table
             aria-label={`${mode === "forecast" ? "Forecast" : "Historical"} weather values`}
           >
@@ -271,7 +276,7 @@ function WeatherEvidenceSummary({
   return (
     <dl className="snow-evidence__summary" aria-label="Weather evidence summary">
       <div><dt>Source</dt><dd>{presentation.sourceType}</dd></div>
-      <div><dt>Source currency</dt><dd>{presentation.sourceCurrency}</dd></div>
+      <div><dt>Data dates</dt><dd>{presentation.sourceCurrency}</dd></div>
       <div><dt>Coverage</dt><dd>{presentation.coverage}</dd></div>
       <div><dt>Expected conditions</dt><dd>{presentation.expectedConditions}</dd></div>
       <div><dt>Main limitation</dt><dd>{presentation.mainLimitation}</dd></div>
@@ -538,7 +543,7 @@ export function SnowEvidence({
               retrying={retrying}
               retryControlRef={retryButtonRef}
               onRetry={() => retryEvidence(true)}
-              message="Historical weather evidence is unavailable for this ski area and travel window."
+              message="Weather evidence cannot be assessed for this trip window."
             />
           )}
           <WeatherEvidenceSummary response={visibleState.response} />

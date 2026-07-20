@@ -1051,6 +1051,43 @@ describe("weather evidence presentation", () => {
     expect(JSON.stringify(presentation)).not.toContain(response.cache_valid_until);
   });
 
+  test("derives mixed historical timing and coverage from source rows", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      historical: {
+        ...response.evidence.historical,
+        baseline_start_year: null,
+        baseline_end_year: null,
+        evidence_seasons: null,
+        latest_archive_year: null,
+        provenance_status: "mixed",
+        sources: [
+          {
+            ...response.evidence.historical.sources[0],
+            baseline_start_year: 1995,
+            baseline_end_year: 2024,
+            evidence_seasons: 30,
+            latest_archive_year: 2024,
+          },
+          {
+            ...response.evidence.historical.sources[0],
+            baseline_period: "recent_15y",
+            baseline_start_year: 2009,
+            baseline_end_year: 2023,
+            evidence_seasons: 15,
+            latest_archive_year: 2023,
+          },
+        ],
+      },
+    };
+
+    expect(weatherEvidencePresentation(response)).toMatchObject({
+      sourceCurrency: "Archives through 2023-2024; baseline years vary across sources",
+      coverage: "15-30 historical seasons across sources; 1 profile date",
+    });
+  });
+
   test("uses forecast issue time and archive year for partial forecast currency", () => {
     const response = archiveResponse();
     response.evidence = {
@@ -1170,10 +1207,10 @@ describe("weather evidence presentation", () => {
     });
 
     expect(presentation).toEqual({
-      sourceType: "No weather source available",
-      sourceCurrency: "No forecast issue time or archive year is available.",
-      coverage: "Weather coverage is unavailable for this trip window.",
-      expectedConditions: "No data-backed weather conditions are available.",
+      sourceType: "Weather evidence unavailable",
+      sourceCurrency: "Weather evidence cannot be assessed for this trip window.",
+      coverage: "Weather evidence cannot be assessed for this trip window.",
+      expectedConditions: "Weather conditions cannot be assessed for this trip window.",
       mainLimitation: "No complete archive profile is available.",
     });
   });

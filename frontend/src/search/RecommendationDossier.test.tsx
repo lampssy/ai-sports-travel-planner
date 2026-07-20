@@ -255,6 +255,36 @@ test("prompts for travel dates instead of narrating a snow fit without a window"
   ).toBeVisible();
 });
 
+test("de-duplicates the snow warning between the verdict and remaining uncertainty by evidence id", () => {
+  const currentSession = session();
+  const current = currentSession.response.results[0].top_configuration;
+  current.factors[0] = {
+    ...current.factors[0],
+    effective_evidence_cap: 0,
+    warnings: ["Historical evidence is limited."],
+  };
+
+  render(
+    <RecommendationDossier
+      session={currentSession}
+      skiRegionId={current.ski_region_id}
+      candidateId={current.candidate_id}
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText("Main concern").parentElement).toHaveTextContent(
+    "Snow fit for March: Snow evidence is limited for this travel window.",
+  );
+  expect(
+    screen.queryByText("Snow evidence is limited for the requested travel window."),
+  ).toBeNull();
+});
+
 test("shows the top two plus an out-of-band current recommendation", () => {
   render(
     <RecommendationDossier
@@ -380,7 +410,10 @@ test("explains why the trip leads before exposing technical provenance", () => {
   expect(section).not.toBeNull();
   expect(within(section as HTMLElement).getByRole("heading", { name: "Why this trip" })).toBeVisible();
   expect(within(section as HTMLElement).getByRole("heading", { name: "What supports this choice" })).toBeVisible();
-  expect(within(section as HTMLElement).getByRole("heading", { name: "What remains uncertain" })).toBeVisible();
+  expect(within(section as HTMLElement).queryByRole("heading", { name: "What remains uncertain" })).toBeNull();
+  expect(screen.getByText("Main concern").parentElement).toHaveTextContent(
+    "Snow fit for March: Snow evidence is limited for this travel window.",
+  );
   expect(
     within(section as HTMLElement).queryByText("Technical calculation details"),
   ).toBeNull();

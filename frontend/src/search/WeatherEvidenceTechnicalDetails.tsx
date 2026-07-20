@@ -28,14 +28,29 @@ function displayValue(value: number, unit: string): string {
 
 function sourceElevation(elevationM: number | null): string {
   return elevationM == null
-    ? "elevation unavailable"
-    : `elevation ${elevationM.toLocaleString("en-GB")} m`;
+    ? "Not available"
+    : `${elevationM.toLocaleString("en-GB")} m`;
 }
 
 function sourceProfileDates(profileDates: string[]): string {
   return profileDates.length
-    ? `profile dates ${profileDates.join(", ")}`
-    : "profile dates unavailable";
+    ? profileDates.join(", ")
+    : "Not available";
+}
+
+type SourceDetail = { label: string; value: string };
+
+function SourceDetails({ details }: { details: SourceDetail[] }) {
+  return (
+    <dl className="weather-source-details">
+      {details.map((detail) => (
+        <div key={detail.label}>
+          <dt>{detail.label}</dt>
+          <dd>{detail.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 function WeatherValuesTable({
@@ -49,7 +64,12 @@ function WeatherValuesTable({
     mode === "forecast" ? "Forecast weather values" : "Historical weather values";
 
   return (
-    <div className="snow-values__scroll">
+    <div
+      className="snow-values__scroll"
+      role="region"
+      aria-label={`${tableLabel}. Scroll horizontally to view all values.`}
+      tabIndex={0}
+    >
       <table aria-label={tableLabel}>
         <thead>
           <tr>
@@ -99,10 +119,29 @@ function HistoricalTechnicalDetails({
           ? `Latest archive year ${historical.latest_archive_year}.`
           : "Latest archive year unavailable."}
       </p>
-      <ul>
+      <ul className="weather-source-list">
         {historical.sources.map((source, index) => (
           <li key={`${source.source_model}-${source.baseline_period}-${index}`}>
-            {source.source_model}; {source.evidence_seasons} seasons; {sourceElevation(source.elevation_m)}; {sourceProfileDates(source.profile_dates)}; {source.row_count} source rows.
+            <SourceDetails
+              details={[
+                { label: "Model", value: source.source_model },
+                { label: "Calculated", value: source.computed_at },
+                {
+                  label: "Baseline years",
+                  value: `${source.baseline_start_year}-${source.baseline_end_year}`,
+                },
+                { label: "Evidence seasons", value: String(source.evidence_seasons) },
+                {
+                  label: "Latest archive year",
+                  value: source.latest_archive_year == null
+                    ? "Not available"
+                    : String(source.latest_archive_year),
+                },
+                { label: "Elevation", value: sourceElevation(source.elevation_m) },
+                { label: "Profile dates", value: sourceProfileDates(source.profile_dates) },
+                { label: "Source rows", value: String(source.row_count) },
+              ]}
+            />
           </li>
         ))}
       </ul>
@@ -135,10 +174,21 @@ export function WeatherEvidenceTechnicalDetails({
         <section>
           <h4>Forecast methods and source rows</h4>
           <p>{forecast.source_label}</p>
-          <ul>
+          <ul className="weather-source-list">
             {forecast.sources.map((source) => (
               <li key={source.forecast_run_id}>
-                {source.source_label} ({source.source_model}; {source.forecast_source_key}), run {source.forecast_run_id}, issued {source.issued_at}; {sourceElevation(source.elevation_m)}; {sourceProfileDates(source.profile_dates)}; {source.row_count} source rows.
+                <SourceDetails
+                  details={[
+                    { label: "Source", value: source.source_label },
+                    { label: "Model", value: source.source_model },
+                    { label: "Source key", value: source.forecast_source_key },
+                    { label: "Run ID", value: source.forecast_run_id },
+                    { label: "Issued", value: source.issued_at },
+                    { label: "Elevation", value: sourceElevation(source.elevation_m) },
+                    { label: "Profile dates", value: sourceProfileDates(source.profile_dates) },
+                    { label: "Source rows", value: String(source.row_count) },
+                  ]}
+                />
               </li>
             ))}
           </ul>

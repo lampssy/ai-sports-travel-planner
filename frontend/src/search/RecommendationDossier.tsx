@@ -139,6 +139,9 @@ export function RecommendationDossier({
           configuration={configuration}
           travelWindow={travelWindow}
           primaryDetails={[narrative.strength, narrative.watchout]}
+          primaryEvidenceIds={
+            narrative.watchoutEvidenceId ? [narrative.watchoutEvidenceId] : []
+          }
         />
 
         {!unscored || weatherEvidence ? (

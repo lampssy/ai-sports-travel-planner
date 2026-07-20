@@ -3,24 +3,31 @@ import { CheckCircle2, TriangleAlert } from "lucide-react";
 import type { SearchV4Configuration, TravelWindow } from "../types";
 import { Alert } from "../ui/Alert";
 import { SectionHeader } from "../ui/SectionHeader";
-import { decisionEvidencePresentation } from "./searchPresentation";
+import {
+  decisionEvidencePresentation,
+  type DecisionEvidenceId,
+} from "./searchPresentation";
 
 export function DecisionEvidenceLedger({
   configuration,
   travelWindow,
   primaryDetails = [],
+  primaryEvidenceIds = [],
 }: {
   configuration: SearchV4Configuration;
   travelWindow?: TravelWindow;
   primaryDetails?: Array<string | undefined>;
+  primaryEvidenceIds?: readonly DecisionEvidenceId[];
 }) {
   const presentation = decisionEvidencePresentation(configuration, travelWindow);
   const primaryDetailSet = new Set(primaryDetails.filter(Boolean));
+  const primaryEvidenceIdSet = new Set(primaryEvidenceIds);
   const supports = presentation.supports.filter(
     (item) => !primaryDetailSet.has(item.detail),
   );
   const uncertainties = presentation.uncertainties.filter(
-    (item) => !primaryDetailSet.has(item.detail),
+    (item) =>
+      !primaryEvidenceIdSet.has(item.id) && !primaryDetailSet.has(item.detail),
   );
 
   return (

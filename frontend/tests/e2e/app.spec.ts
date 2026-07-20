@@ -1635,7 +1635,7 @@ test("stale fallback and typed unavailable states keep dossier controls intact",
     page.getByRole("heading", { name: "Snow evidence unavailable" }),
   ).toBeVisible();
   await expect(page.getByRole("alert")).toContainText(
-    "Historical weather evidence is unavailable for this ski area and travel window.",
+    "Weather evidence cannot be assessed for this trip window.",
   );
   await expect(page.getByRole("status")).toHaveCount(0);
   await expect(
@@ -1858,19 +1858,19 @@ test("expired forecast cache refetches and replaces the selected run head", asyn
       .click();
   await openDossier();
   await openSourceDetails();
-  await expect(page.getByText(/run forecast-head-1,/i)).toBeVisible();
+  await expect(page.getByText("forecast-head-1")).toBeVisible();
   await page.getByRole("button", { name: "All results" }).click();
   await openDossier();
   await openSourceDetails();
-  await expect(page.getByText(/run forecast-head-1,/i)).toBeVisible();
+  await expect(page.getByText("forecast-head-1")).toBeVisible();
   expect(weatherRequests).toHaveLength(1);
 
   await page.getByRole("button", { name: "All results" }).click();
   await page.waitForTimeout(3100);
   await openDossier();
   await openSourceDetails();
-  await expect(page.getByText(/run forecast-head-2,/i)).toBeVisible();
-  await expect(page.getByText(/run forecast-head-1,/i)).toHaveCount(0);
+  await expect(page.getByText("forecast-head-2")).toBeVisible();
+  await expect(page.getByText("forecast-head-1")).toHaveCount(0);
   expect(weatherRequests).toHaveLength(2);
 });
 

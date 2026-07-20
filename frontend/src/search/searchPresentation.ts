@@ -707,11 +707,21 @@ export interface CandidateNarrative {
   verdict: string;
   strength?: string;
   watchout?: string;
+  watchoutEvidenceId?: DecisionEvidenceId;
 }
 
+export type DecisionEvidenceId =
+  | "snow-window"
+  | "skill-match"
+  | "terrain"
+  | "lift-access"
+  | "pass-price"
+  | "lodging"
+  | "constraints";
+
 export interface DecisionEvidencePresentation {
-  supports: Array<{ id: string; title: string; detail: string }>;
-  uncertainties: Array<{ id: string; detail: string }>;
+  supports: Array<{ id: DecisionEvidenceId; title: string; detail: string }>;
+  uncertainties: Array<{ id: DecisionEvidenceId; detail: string }>;
 }
 
 export interface TechnicalEvidenceDetail {
@@ -743,7 +753,7 @@ function formatWeatherDateTime(value: string): string {
   return weatherDateTimeFormatter.format(new Date(value));
 }
 
-function archiveCurrency(
+function historicalArchiveCurrency(
   historical: Extract<
     SearchWeatherEvidenceResponse,
     { status: "available" }
@@ -752,6 +762,19 @@ function archiveCurrency(
   const parts: string[] = [];
   if (historical.latest_archive_year != null) {
     parts.push(`archive through ${historical.latest_archive_year}`);
+  } else {
+    const archiveYears = [...new Set(
+      historical.sources
+        .map((source) => source.latest_archive_year)
+        .filter((year): year is number => year != null),
+    )].sort((left, right) => left - right);
+    if (archiveYears.length === 1) {
+      parts.push(`archive through ${archiveYears[0]}`);
+    } else if (archiveYears.length > 1) {
+      parts.push(
+        `archives through ${archiveYears[0]}-${archiveYears[archiveYears.length - 1]}`,
+      );
+    }
   }
   if (
     historical.baseline_start_year != null &&
@@ -760,8 +783,34 @@ function archiveCurrency(
     parts.push(
       `${historical.baseline_start_year}-${historical.baseline_end_year} baseline`,
     );
+  } else {
+    const baselineYears = new Set(
+      historical.sources.map(
+        (source) => `${source.baseline_start_year}-${source.baseline_end_year}`,
+      ),
+    );
+    if (baselineYears.size === 1) {
+      parts.push(`${[...baselineYears][0]} baseline`);
+    } else if (baselineYears.size > 1) {
+      parts.push("baseline years vary across sources");
+    }
   }
   return parts.length ? parts.join("; ") : "archive year and baseline unavailable";
+}
+
+function historicalSeasonCoverage(
+  historical: Extract<
+    SearchWeatherEvidenceResponse,
+    { status: "available" }
+  >["evidence"]["historical"],
+): string {
+  if (historical.evidence_seasons != null) {
+    return `${historical.evidence_seasons} historical seasons`;
+  }
+  const seasons = [...new Set(historical.sources.map((source) => source.evidence_seasons))]
+    .sort((left, right) => left - right);
+  if (seasons.length === 1) return `${seasons[0]} historical seasons`;
+  return `${seasons[0]}-${seasons[seasons.length - 1]} historical seasons across sources`;
 }
 
 function formatWeatherMetric(value: number): string {
@@ -856,10 +905,10 @@ export function weatherEvidencePresentation(
       };
     }
     return {
-      sourceType: "No weather source available",
-      sourceCurrency: "No forecast issue time or archive year is available.",
-      coverage: "Weather coverage is unavailable for this trip window.",
-      expectedConditions: "No data-backed weather conditions are available.",
+      sourceType: "Weather evidence unavailable",
+      sourceCurrency: "Weather evidence cannot be assessed for this trip window.",
+      coverage: "Weather evidence cannot be assessed for this trip window.",
+      expectedConditions: "Weather conditions cannot be assessed for this trip window.",
       mainLimitation:
         response.limitations[0] ??
         "No complete historical profile is available for this trip window.",
@@ -867,7 +916,8 @@ export function weatherEvidencePresentation(
   }
 
   const { historical, forecast } = response.evidence;
-  const archive = archiveCurrency(historical);
+  const archive = historicalArchiveCurrency(historical);
+  const seasonCoverage = historicalSeasonCoverage(historical);
   if (response.evidence.mode === "forecast_assisted" && forecast) {
     return {
       sourceType: "Forecast and historical pattern",
@@ -877,7 +927,7 @@ export function weatherEvidencePresentation(
           : "Forecast issue time unavailable",
         archive,
       ].join("; "),
-      coverage: `${forecast.usable_date_count} of ${forecast.requested_date_count} requested dates have forecast values; ${historical.evidence_seasons ?? "No"} historical seasons`,
+      coverage: `${forecast.usable_date_count} of ${forecast.requested_date_count} requested dates have forecast values; ${seasonCoverage}`,
       expectedConditions: forecastConditions(response),
       mainLimitation: mainWeatherLimitation(response),
     };
@@ -902,7 +952,7 @@ export function weatherEvidencePresentation(
   return {
     sourceType: "Historical pattern",
     sourceCurrency: archive.charAt(0).toUpperCase() + archive.slice(1),
-    coverage: `${historical.evidence_seasons ?? "No"} historical seasons; ${profileDateCount} profile ${profileDateCount === 1 ? "date" : "dates"}`,
+    coverage: `${seasonCoverage}; ${profileDateCount} profile ${profileDateCount === 1 ? "date" : "dates"}`,
     expectedConditions: historicalConditions.length
       ? historicalConditions.join("; ")
       : "No historical condition values are available for this trip window.",
@@ -935,10 +985,10 @@ export function decisionEvidencePresentation(
 ): DecisionEvidencePresentation {
   const supports: DecisionEvidencePresentation["supports"] = [];
   const uncertainties: DecisionEvidencePresentation["uncertainties"] = [];
-  const addSupport = (id: string, title: string, detail: string) => {
+  const addSupport = (id: DecisionEvidenceId, title: string, detail: string) => {
     supports.push({ id, title, detail });
   };
-  const addUncertainty = (id: string, detail: string) => {
+  const addUncertainty = (id: DecisionEvidenceId, detail: string) => {
     if (!uncertainties.some((item) => item.detail === detail)) {
       uncertainties.push({ id, detail });
     }
@@ -1180,6 +1230,9 @@ export function buildCandidateNarrative(
         }
       : {}),
     ...(watchout ? { watchout } : {}),
+    ...(caution?.factor_id === "trip_window_snow_fit"
+      ? { watchoutEvidenceId: "snow-window" as const }
+      : {}),
   };
 }
 
