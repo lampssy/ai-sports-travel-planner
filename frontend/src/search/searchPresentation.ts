@@ -1257,9 +1257,9 @@ export function buildCandidateNarrative(
             ? `${supportedTerrain.evidenceLabel}.`
             : supported.factor_id === "stay_base_access"
               ? accessTrust === "estimated"
-                ? "Catalog estimates suggest the recommended place to stay keeps access practical."
+                ? `Available estimates suggest ${configuration.stay_base_name} offers practical lift access.`
                 : accessTrust === "verified_with_adjustment"
-                  ? "Available source data suggests the recommended place to stay offers practical lift access."
+                  ? `Available source data suggests ${configuration.stay_base_name} offers practical lift access.`
                   : strengthCopy[supported.factor_id]
               : supported.factor_id === "trip_window_snow_fit"
                 ? `${snowFitPresentation(configuration, travelWindow).label}: Available snow evidence supports this travel window.`

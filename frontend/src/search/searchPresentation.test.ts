@@ -718,7 +718,8 @@ describe("deterministic recommendation copy", () => {
 
     expect(buildCandidateNarrative(estimated)).toEqual({
       verdict: "An estimated practical lift-access match for this trip.",
-      strength: "Catalog estimates suggest the recommended place to stay keeps access practical.",
+      strength:
+        "Available estimates suggest Base estimated-access offers practical lift access.",
     });
     expect(buildCandidateNarrative(needsSource)).toEqual({
       verdict: "A complete trip option for comparison.",
@@ -726,7 +727,7 @@ describe("deterministic recommendation copy", () => {
     expect(buildCandidateNarrative(adjusted)).toEqual({
       verdict: "A practical lift-access match based on estimated data.",
       strength:
-        "Available source data suggests the recommended place to stay offers practical lift access.",
+        "Available source data suggests Base adjusted-access offers practical lift access.",
     });
     expect(buildCandidateNarrative(missingEvidence)).toEqual({
       verdict: "A complete trip option for comparison.",
