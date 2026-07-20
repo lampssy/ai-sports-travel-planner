@@ -5802,7 +5802,7 @@
       "ski_area_access_id": "cervinia-valtournenche--valtournenche-ski-area",
       "stay_base_id": "cervinia-valtournenche",
       "ski_area_id": "valtournenche-ski-area",
-      "access_mode": "drive",
+      "access_mode": "walk",
       "lift_distance": "medium",
       "nearest_lift_name": "Salette",
       "distance_m": 1255,

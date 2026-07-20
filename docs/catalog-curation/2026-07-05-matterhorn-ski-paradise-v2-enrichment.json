@@ -829,7 +829,7 @@
       "target_id": "cervinia-valtournenche--valtournenche-ski-area",
       "field_path": "access_mode",
       "before": null,
-      "after": "drive",
+      "after": "walk",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
@@ -1549,7 +1549,7 @@
       "before": null,
       "after": [
         "The existing Salette edge is retargeted to the Valtournenche ski-area weather owner.",
-        "Official lift inventory and OSM geometry establish the local Salette relationship and the reviewed point-to-point distance; the operator identifies the gondola as starting directly from a large valley-bottom car park, so the unsupported ski-bus claim is normalized to drive access."
+        "Official lift inventory places the Valtournenche-Salette gondola inside the destination, while OSM geometry records about 1.255 km from the representative stay-base point to the lower station; access is therefore normalized to a medium walk rather than a required drive."
       ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
@@ -3783,7 +3783,7 @@
       "target_id": "cervinia-valtournenche--valtournenche-ski-area",
       "field_path": "access_mode",
       "status": "changed",
-      "notes": "Exact-base reconciliation records access_mode for ski_area_access:cervinia-valtournenche--valtournenche-ski-area as \"drive\"."
+      "notes": "Exact-base reconciliation records access_mode for ski_area_access:cervinia-valtournenche--valtournenche-ski-area as \"walk\"."
     },
     {
       "target_type": "ski_area_access",
@@ -5791,9 +5791,9 @@
       "source_type": "official",
       "source_url": "https://www.cervinia.it/en/impianti",
       "source_title": "Cervino official Valtournenche lift presentation",
-      "source_value": "drive",
-      "evidence_summary": "The cited owner-scoped source was checked for ski_area_access:cervinia-valtournenche--valtournenche-ski-area and the exact access_mode claim is recorded as \"drive\".",
-      "normalization_note": "The source is normalized only to the stated field and owner; null or unknown values preserve uncertainty rather than infer unsupported facts."
+      "source_value": "Valtournenche-Salette gondola",
+      "evidence_summary": "The official lift inventory identifies the Valtournenche-Salette gondola; the separately cited OSM access geometry places the lower station 1,255 m from the representative stay-base point, supporting a medium walk without requiring a drive.",
+      "normalization_note": "walk represents destination-to-lower-station access from the representative stay-base point; is_direct=false preserves the measured 1,255 m separation."
     },
     {
       "evidence_id": "pr32-delta-058",
@@ -6568,10 +6568,10 @@
       "source_title": "Cervino Ski Paradise official catalog presentation",
       "source_value": [
         "The existing Salette edge is retargeted to the Valtournenche ski-area weather owner.",
-        "Official lift inventory and OSM geometry establish the local Salette relationship and the reviewed point-to-point distance; the operator identifies the gondola as starting directly from a large valley-bottom car park, so the unsupported ski-bus claim is normalized to drive access."
+        "Official lift inventory places the Valtournenche-Salette gondola inside the destination, while OSM geometry records about 1.255 km from the representative stay-base point to the lower station; access is therefore normalized to a medium walk rather than a required drive."
       ],
-      "evidence_summary": "The cited owner-scoped source was checked for trust_manifest:ski_area_access:cervinia-valtournenche--valtournenche-ski-area and the exact notes claim is recorded as [\"The existing Salette edge is retargeted to the Valtournenche ski-area weather owner.\", \"Official lift inventory and OSM geometry establish the local Salette relationship and the reviewed point-to-point distance; the....",
-      "normalization_note": "The source is normalized only to the stated field and owner; null or unknown values preserve uncertainty rather than infer unsupported facts."
+      "evidence_summary": "The official lift inventory and cited OSM geometry support the Valtournenche owner/access notes and their medium-walk normalization to Salette.",
+      "normalization_note": "The notes separate the verified access relationship and measured distance from the normalized walk classification; they do not claim ski-in/ski-out access."
     },
     {
       "evidence_id": "pr32-delta-117",

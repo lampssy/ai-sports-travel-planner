@@ -9986,7 +9986,7 @@
         },
         "notes": [
           "The existing Salette edge is retargeted to the Valtournenche ski-area weather owner.",
-          "Official lift inventory and OSM geometry establish the local Salette relationship and the reviewed point-to-point distance; the operator identifies the gondola as starting directly from a large valley-bottom car park, so the unsupported ski-bus claim is normalized to drive access."
+          "Official lift inventory places the Valtournenche-Salette gondola inside the destination, while OSM geometry records about 1.255 km from the representative stay-base point to the lower station; access is therefore normalized to a medium walk rather than a required drive."
         ]
       }
     },
