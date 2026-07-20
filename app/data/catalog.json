@@ -2409,13 +2409,9 @@
           "status": "planned"
         }
       ],
-      "total_piste_km": 130.0,
-      "total_lift_count": 53,
-      "piste_km_by_difficulty": {
-        "beginner": 74.0,
-        "intermediate": 47.0,
-        "advanced": 9.0
-      },
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
         "intermediate",
@@ -6258,7 +6254,7 @@
     {
       "lift_pass_product_id": "alta-badia-skipass",
       "name": "Alta Badia Ski Pass",
-      "validity_scope": "single_ski_area",
+      "validity_scope": "local_multi_area",
       "available_from_stay_destination_ids": [
         "alta-badia"
       ],
@@ -6266,11 +6262,24 @@
         "alta-badia"
       ],
       "valid_ski_area_ids": [
-        "alta-badia-ski-area"
+        "alta-badia-ski-area",
+        "lagazuoi-ski-area"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": "The local Alta Badia pass covers the modeled 130 km Alta Badia core. Lagazuoi, Dolomiti Superski, and Sellaronda coverage are not inferred into this product from route or regional-network context.",
-      "pass_accessible_terrain": null,
+      "external_validity_summary": "The local Alta Badia pass covers the modeled Alta Badia core and Lagazuoi. Broader Dolomiti Superski and Sellaronda validity remains regional-network context and is not inferred into this local product.",
+      "pass_accessible_terrain": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 130.0,
+        "total_lift_count": 53,
+        "piste_km_by_difficulty": {
+          "beginner": 74.0,
+          "intermediate": 47.0,
+          "advanced": 9.0
+        },
+        "source_urls": [
+          "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
+        ]
+      },
       "prices": [
         {
           "duration_days": 1,

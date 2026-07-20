@@ -274,7 +274,51 @@
       "target_id": "alta-badia-skipass",
       "field_path": "external_validity_summary",
       "before": "Local Alta Badia pass covers the modeled 130 km Alta Badia ski area; broader Dolomiti Superski and Sellaronda access is available through separate regional products and is not copied into this local ski-area record.",
-      "after": "The local Alta Badia pass covers the modeled 130 km Alta Badia core. Lagazuoi, Dolomiti Superski, and Sellaronda coverage are not inferred into this product from route or regional-network context.",
+      "after": "The local Alta Badia pass covers the modeled Alta Badia core and Lagazuoi. Broader Dolomiti Superski and Sellaronda validity remains regional-network context and is not inferred into this local product.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "alta-badia-skipass",
+      "field_path": "pass_accessible_terrain",
+      "before": null,
+      "after": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 130.0,
+        "total_lift_count": 53,
+        "piste_km_by_difficulty": {
+          "beginner": 74.0,
+          "intermediate": 47.0,
+          "advanced": 9.0
+        },
+        "source_urls": [
+          "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
+        ]
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "alta-badia-skipass",
+      "field_path": "valid_ski_area_ids",
+      "before": [
+        "alta-badia-ski-area"
+      ],
+      "after": [
+        "alta-badia-ski-area",
+        "lagazuoi-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "alta-badia-skipass",
+      "field_path": "validity_scope",
+      "before": "single_ski_area",
+      "after": "local_multi_area",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -345,6 +389,51 @@
       "before": "unknown",
       "after": "available",
       "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "before": 9.0,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "before": 74.0,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "before": 47.0,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_lift_count",
+      "before": 53,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_piste_km",
+      "before": 130.0,
+      "after": null,
+      "trust_status": "needs_source",
       "ranking_relevant": true
     },
     {
@@ -1749,6 +1838,25 @@
     {
       "target_type": "trust_manifest",
       "target_id": "lift_pass_products:alta-badia-skipass",
+      "field_path": "field_statuses",
+      "before": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "verified_with_adjustment"
+      },
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "verified_with_adjustment",
+        "prices": "verified_with_adjustment"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:alta-badia-skipass",
       "field_path": "field_source_refs",
       "before": {
         "coverage": [
@@ -1802,12 +1910,16 @@
       },
       "after": {
         "coverage": [
-          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
         ],
         "identity_scope_availability": [
-          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
         ],
-        "pass_accessible_terrain": [],
+        "pass_accessible_terrain": [
+          "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
+        ],
         "prices": [
           "https://www.skiresort.info/ski-resort/alta-badia/"
         ]
@@ -1825,7 +1937,8 @@
         "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
       ],
       "after": [
-        "The local product is limited to the modeled Alta Badia core; route and regional-network material do not establish Lagazuoi coverage for this product.",
+        "The official 2025/26 piste map numbers Lagazuoi within the Alta Badia local-pass map, so the local multi-area product covers both modeled Alta Badia core and Lagazuoi ski areas.",
+        "The official 130 km, 53-lift, and 74/47/9 km difficulty inventory is normalized to pass_accessible_terrain because its mapped scope includes Lagazuoi; these totals are not duplicated onto the narrower core weather owner.",
         "EUR 80 is a reviewed editorial main-season adult one-day example observed on 2026-07-21; it is not represented as an official 2026/27 tariff.",
         "Broader Dolomiti Superski and Sellaronda validity remains external context."
       ],
@@ -1986,7 +2099,7 @@
       "field_path": "notes",
       "before": null,
       "after": [
-        "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+        "Official La Crusc and Badia village material establishes direct walk access from Badia to La Crusc; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
         "No numeric distance or duration is stored where the accepted source does not establish one."
       ],
       "trust_status": "estimated",
@@ -2037,7 +2150,7 @@
       "field_path": "notes",
       "before": null,
       "after": [
-        "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+        "Official skiing and village material establishes direct walk access from Colfosco to the Colfosco gondola; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
         "No numeric distance or duration is stored where the accepted source does not establish one."
       ],
       "trust_status": "estimated",
@@ -2053,8 +2166,8 @@
         "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
       ],
       "after": [
-        "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
-        "No numeric distance or duration is stored where the accepted source does not establish one."
+        "Official skiing material establishes direct walk access from Corvara to the Boè lift; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
+        "Reviewed OSM lower-station geometry supports the stored 214 m point-to-point distance; no duration is asserted."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2104,7 +2217,7 @@
       "field_path": "notes",
       "before": null,
       "after": [
-        "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+        "Official skiing and village material establishes direct walk access from La Villa to Piz La Ila; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
         "No numeric distance or duration is stored where the accepted source does not establish one."
       ],
       "trust_status": "estimated",
@@ -2155,7 +2268,7 @@
       "field_path": "notes",
       "before": null,
       "after": [
-        "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+        "Official skiing and village material establishes direct walk access from San Cassiano to Piz Sorega; access_mode=walk, lift_distance=near, and is_direct=true match the canonical edge.",
         "No numeric distance or duration is stored where the accepted source does not establish one."
       ],
       "trust_status": "estimated",
@@ -2274,7 +2387,6 @@
       "after": {
         "elevation_season": [
           "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-          "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
           "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
         ],
         "glacier_terrain": [],
@@ -2294,12 +2406,7 @@
         "snowmaking": [
           "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
         ],
-        "terrain_metrics": [
-          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-          "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
-          "https://www.skiresort.info/ski-resort/alta-badia/"
-        ]
+        "terrain_metrics": []
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2332,7 +2439,7 @@
         "skill_fit": "estimated",
         "snow_park": "verified",
         "snowmaking": "verified",
-        "terrain_metrics": "verified_with_adjustment"
+        "terrain_metrics": "needs_source"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2347,9 +2454,9 @@
         "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
       ],
       "after": [
-        "The retained core owns the connected 130 km Alta Badia terrain; transfer-required Lagazuoi is modeled separately.",
-        "The core summit is corrected from the Lagazuoi-influenced 2778 m aggregate to the 2550 m representative core geometry shown on the official Alta Badia map.",
-        "Official scope pages publish 53 lift facilities while live inventory can enumerate 54 installations; the catalog retains the 53-lift pass/ski-area scope and records the live count as a scope caveat rather than averaging.",
+        "The retained core owns connected Alta Badia terrain, but the reviewed official sources do not publish a narrower core-only piste total, lift count, or difficulty split after transfer-required Lagazuoi is modeled separately.",
+        "The 2550 m summit is sourced directly from the official 2025/26 piste map at Vallon and normalized as the representative lift-served upper point of the connected core; the separate Lagazuoi geometry uses its own cable-car endpoints.",
+        "Official aggregate material publishes 53 lift facilities while live inventory can enumerate 54 installations; the 53-lift value belongs to the local-pass-accessible scope rather than this narrower weather owner.",
         "The regional map is not stored as a core official document because it includes Lagazuoi and broader route context.",
         "Ski-area-wide apres remains unknown after the stale L’Murin source was removed."
       ],
@@ -2423,7 +2530,7 @@
       "after": [
         "Lagazuoi has a complete lift-served area and independent operating presentation and is transfer-required from the Alta Badia core.",
         "The catalog uses the lower cable-car station geometry, 2105 m pass/base elevation, and 2732 m lift-served upper station; it does not use the 2778 m mountain peak as child weather geometry.",
-        "Aggregate terrain, local pass coverage, and terrain-domain membership are not inferred.",
+        "Aggregate terrain is owned by the local pass-accessible scope and the official 2025/26 piste map establishes Lagazuoi coverage under the Alta Badia local pass; no terrain-domain membership is inferred.",
         "The new ski-area ID is handed to scheduled historical-weather completion after merge."
       ],
       "trust_status": "estimated",
@@ -3944,22 +4051,22 @@
       "target_type": "ski_area",
       "target_id": "alta-badia-ski-area",
       "field_path": "piste_km_by_difficulty.advanced",
-      "status": "reviewed-no-change",
-      "notes": "Reviewed against the complete candidate/source inventory; retained unchanged."
+      "status": "changed",
+      "notes": "The aggregate difficulty inventory includes Lagazuoi and moves to the local pass-accessible owner; no core-only value is asserted."
     },
     {
       "target_type": "ski_area",
       "target_id": "alta-badia-ski-area",
       "field_path": "piste_km_by_difficulty.beginner",
-      "status": "reviewed-no-change",
-      "notes": "Reviewed against the complete candidate/source inventory; retained unchanged."
+      "status": "changed",
+      "notes": "The aggregate difficulty inventory includes Lagazuoi and moves to the local pass-accessible owner; no core-only value is asserted."
     },
     {
       "target_type": "ski_area",
       "target_id": "alta-badia-ski-area",
       "field_path": "piste_km_by_difficulty.intermediate",
-      "status": "reviewed-no-change",
-      "notes": "Reviewed against the complete candidate/source inventory; retained unchanged."
+      "status": "changed",
+      "notes": "The aggregate difficulty inventory includes Lagazuoi and moves to the local pass-accessible owner; no core-only value is asserted."
     },
     {
       "target_type": "ski_area",
@@ -4077,15 +4184,15 @@
       "target_type": "ski_area",
       "target_id": "alta-badia-ski-area",
       "field_path": "total_lift_count",
-      "status": "reviewed-no-change",
-      "notes": "Reviewed against the complete candidate/source inventory; retained unchanged."
+      "status": "changed",
+      "notes": "The official 53-lift value belongs to the local pass-accessible scope; no core-only count is asserted."
     },
     {
       "target_type": "ski_area",
       "target_id": "alta-badia-ski-area",
       "field_path": "total_piste_km",
-      "status": "reviewed-no-change",
-      "notes": "Reviewed against the complete candidate/source inventory; retained unchanged."
+      "status": "changed",
+      "notes": "The official 130 km value belongs to the local pass-accessible scope; no core-only total is asserted."
     },
     {
       "target_type": "ski_area",
@@ -4896,8 +5003,8 @@
       "target_type": "lift_pass_product",
       "target_id": "alta-badia-skipass",
       "field_path": "pass_accessible_terrain",
-      "status": "unresolved",
-      "notes": "No verification-capable evidence established a more specific value."
+      "status": "changed",
+      "notes": "The official 2025/26 piste map establishes the aggregate pass-accessible inventory including Lagazuoi."
     },
     {
       "target_type": "lift_pass_product",
@@ -4917,15 +5024,15 @@
       "target_type": "lift_pass_product",
       "target_id": "alta-badia-skipass",
       "field_path": "valid_ski_area_ids",
-      "status": "reviewed-no-change",
-      "notes": "Reviewed against the complete candidate/source inventory; retained unchanged."
+      "status": "changed",
+      "notes": "The official 2025/26 piste map includes numbered Lagazuoi in the Alta Badia local-pass scope."
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "alta-badia-skipass",
       "field_path": "validity_scope",
-      "status": "reviewed-no-change",
-      "notes": "Reviewed against the complete candidate/source inventory; retained unchanged."
+      "status": "changed",
+      "notes": "Coverage of the separate core and Lagazuoi ski areas makes this a local multi-area product."
     },
     {
       "target_type": "rental_display_fact",
@@ -5484,8 +5591,8 @@
       "target_type": "trust_manifest",
       "target_id": "lift_pass_products:alta-badia-skipass",
       "field_path": "field_statuses",
-      "status": "reviewed-no-change",
-      "notes": "Reviewed against the complete candidate/source inventory; retained unchanged."
+      "status": "changed",
+      "notes": "The accepted official map evidence verifies the pass-accessible aggregate owner."
     },
     {
       "target_type": "trust_manifest",
@@ -5531,11 +5638,149 @@
       "target_id": "alta-badia-skipass",
       "field_path": "external_validity_summary",
       "source_type": "official",
-      "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-      "source_title": "Direct reviewed source",
-      "source_value": "The local Alta Badia pass covers the modeled 130 km Alta Badia core. Lagazuoi, Dolomiti Superski, and Sellaronda coverage are not inferred into this product from route or regional-network context.",
-      "evidence_summary": "The direct source supports the normalized field and its owner scope.",
-      "normalization_note": "Normalized into the Snowcast catalog/trust contract."
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": "The local Alta Badia pass covers the modeled Alta Badia core and Lagazuoi. Broader Dolomiti Superski and Sellaronda validity remains regional-network context and is not inferred into this local product.",
+      "evidence_summary": "The map numbers Lagazuoi within the Alta Badia local-pass scope while broader network validity remains separate context.",
+      "normalization_note": "Normalized into the Snowcast local multi-area pass contract."
+    },
+    {
+      "evidence_id": "cycle2-pass-terrain",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "alta-badia-skipass",
+      "field_path": "pass_accessible_terrain",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 130.0,
+        "total_lift_count": 53,
+        "piste_km_by_difficulty": {
+          "beginner": 74.0,
+          "intermediate": 47.0,
+          "advanced": 9.0
+        }
+      },
+      "evidence_summary": "The published inventory is scoped to the local-pass map that includes numbered Lagazuoi.",
+      "normalization_note": "Owned once as pass-accessible aggregate metrics and not duplicated onto either ski-area weather owner."
+    },
+    {
+      "evidence_id": "cycle2-pass-trust-status",
+      "boundary_target_ids": [],
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:alta-badia-skipass",
+      "field_path": "field_statuses",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "verified_with_adjustment",
+        "prices": "verified_with_adjustment"
+      },
+      "evidence_summary": "The map verifies the local-pass aggregate owner and its Lagazuoi coverage.",
+      "normalization_note": "verified_with_adjustment records pass-accessible scope normalization rather than core-only ownership."
+    },
+    {
+      "evidence_id": "cycle2-pass-areas",
+      "boundary_target_ids": [
+        "lagazuoi-ski-area"
+      ],
+      "target_type": "lift_pass_product",
+      "target_id": "alta-badia-skipass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": [
+        "alta-badia-ski-area",
+        "lagazuoi-ski-area"
+      ],
+      "evidence_summary": "Numbered Lagazuoi is shown within the Alta Badia local-pass map alongside the connected core.",
+      "normalization_note": "Coverage is represented through two modeled ski-area IDs without inventing a terrain domain."
+    },
+    {
+      "evidence_id": "cycle2-pass-scope",
+      "boundary_target_ids": [
+        "lagazuoi-ski-area"
+      ],
+      "target_type": "lift_pass_product",
+      "target_id": "alta-badia-skipass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": "local_multi_area",
+      "evidence_summary": "The local product spans the separately modeled Alta Badia core and Lagazuoi areas.",
+      "normalization_note": "Normalized from one local map/product scope covering two modeled ski areas."
+    },
+    {
+      "evidence_id": "cycle2-core-piste-total",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": null,
+      "evidence_summary": "The published 130 km total includes Lagazuoi and therefore does not establish a narrower core-only total.",
+      "normalization_note": "The aggregate value moves to pass_accessible_terrain; the core-only metric remains unresolved."
+    },
+    {
+      "evidence_id": "cycle2-core-lift-total",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": null,
+      "evidence_summary": "The published 53-lift inventory includes Lagazuoi and therefore does not establish a narrower core-only count.",
+      "normalization_note": "The aggregate value moves to pass_accessible_terrain; the core-only metric remains unresolved."
+    },
+    {
+      "evidence_id": "cycle2-core-difficulty-beginner",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": null,
+      "evidence_summary": "The published 74 km beginner inventory belongs to the aggregate local-pass map scope.",
+      "normalization_note": "The aggregate value moves to pass_accessible_terrain; the core-only metric remains unresolved."
+    },
+    {
+      "evidence_id": "cycle2-core-difficulty-intermediate",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": null,
+      "evidence_summary": "The published 47 km intermediate inventory belongs to the aggregate local-pass map scope.",
+      "normalization_note": "The aggregate value moves to pass_accessible_terrain; the core-only metric remains unresolved."
+    },
+    {
+      "evidence_id": "cycle2-core-difficulty-advanced",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
+      "source_value": null,
+      "evidence_summary": "The published 9 km advanced inventory belongs to the aggregate local-pass map scope.",
+      "normalization_note": "The aggregate value moves to pass_accessible_terrain; the core-only metric remains unresolved."
     },
     {
       "evidence_id": "change-002",
@@ -5621,11 +5866,11 @@
       "target_id": "alta-badia-ski-area",
       "field_path": "summit_elevation_m",
       "source_type": "official",
-      "source_url": "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
-      "source_title": "Direct reviewed source",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia 2025/26 piste map",
       "source_value": 2550,
-      "evidence_summary": "The direct source supports the normalized field and its owner scope.",
-      "normalization_note": "Normalized into the Snowcast catalog/trust contract."
+      "evidence_summary": "The map labels Vallon at 2550 m within the connected Alta Badia core.",
+      "normalization_note": "Vallon is normalized as the representative lift-served core summit; separate Lagazuoi geometry retains its own upper station."
     },
     {
       "evidence_id": "change-008",
@@ -7505,7 +7750,7 @@
       "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
       "source_title": "Alta Badia piste map",
       "source_value": "Alta Badia",
-      "evidence_summary": "Core sectors and representative geometry.",
+      "evidence_summary": "Core sectors, Vallon 2550 m geometry, numbered Lagazuoi local-pass coverage, and the 130 km / 53-lift / 74-47-9 km aggregate inventory.",
       "normalization_note": null
     },
     {
@@ -7557,7 +7802,7 @@
       "source_url": "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
       "source_title": "Alta Badia ski area",
       "source_value": "Alta Badia",
-      "evidence_summary": "Core scope and 53-lift product count.",
+      "evidence_summary": "Connected core identity and operating scope; aggregate lift totals are not assigned to this narrower owner.",
       "normalization_note": null
     },
     {
@@ -7622,7 +7867,7 @@
       "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
       "source_title": "Alta Badia local pass",
       "source_value": "Alta Badia Ski Pass",
-      "evidence_summary": "Core local product.",
+      "evidence_summary": "Local multi-area product covering the modeled Alta Badia core and Lagazuoi.",
       "normalization_note": null
     },
     {
@@ -7634,7 +7879,7 @@
       "source_type": "official",
       "source_url": "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices/alta-badia",
       "source_title": "Dolomiti Superski pricing",
-      "source_value": "The local Alta Badia pass covers the modeled 130 km Alta Badia core. Lagazuoi, Dolomiti Superski, and Sellaronda coverage are not inferred into this product from route or regional-network context.",
+      "source_value": "The local Alta Badia pass covers the modeled Alta Badia core and Lagazuoi. Broader Dolomiti Superski and Sellaronda validity remains regional-network context and is not inferred into this local product.",
       "evidence_summary": "Regional product context.",
       "normalization_note": null
     },
@@ -7647,7 +7892,7 @@
       "source_type": "official",
       "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/DSski_Tessera_valore_2025_26_Alta_Badia.pdf",
       "source_title": "Alta Badia points card",
-      "source_value": "The local Alta Badia pass covers the modeled 130 km Alta Badia core. Lagazuoi, Dolomiti Superski, and Sellaronda coverage are not inferred into this product from route or regional-network context.",
+      "source_value": "The local Alta Badia pass covers the modeled Alta Badia core and Lagazuoi. Broader Dolomiti Superski and Sellaronda validity remains regional-network context and is not inferred into this local product.",
       "evidence_summary": "Stale discovery-only product document.",
       "normalization_note": null
     },
@@ -8247,7 +8492,8 @@
       "evidence_refs": [
         "scope-lagazuoi",
         "scope-lag-piste",
-        "scope-route"
+        "scope-route",
+        "scope-map"
       ],
       "target_refs": [
         {
@@ -8256,20 +8502,21 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Policy-determined complete transfer-required area with independent operations; weather remains parent-owned and local-pass coverage is not inferred.",
+      "rationale": "Policy-determined complete transfer-required area with independent operations; weather remains parent-owned, while the official 2025/26 map establishes full Alta Badia local-pass coverage.",
       "ski_area_boundary": {
         "parent_ski_area_id": "alta-badia-ski-area",
         "terrain_scope": "complete",
         "connectivity_to_parent": "transfer_required",
         "operational_scope": "independent",
         "weather_scope": "parent_owned",
-        "pass_scope": "limited",
+        "pass_scope": "full_local",
         "provider_consensus": "mixed",
         "separation_value": "material",
         "evidence_refs": [
           "scope-lagazuoi",
           "scope-lag-piste",
-          "scope-route"
+          "scope-route",
+          "scope-map"
         ]
       }
     },
@@ -9427,6 +9674,7 @@
       ],
       "evidence_refs": [
         "scope-local-pass",
+        "scope-map",
         "scope-skiresort"
       ],
       "target_refs": [
@@ -9436,7 +9684,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Local single-area product remains limited to the core.",
+      "rationale": "The official 2025/26 map establishes one local multi-area product covering the modeled Alta Badia core and Lagazuoi; the aggregate inventory belongs to pass-accessible terrain.",
       "ski_area_boundary": null
     },
     {
@@ -9708,14 +9956,14 @@
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile docs/catalog-curation/2026-07-05-alta-badia-v2-enrichment.json --base-catalog-path <prepare-time-base>/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path <prepare-time-base>/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json --require-report-schema-version 3 --product-backlog-path docs/product-backlog.md --markdown-output docs/catalog-curation/2026-07-05-alta-badia-v2-enrichment.md",
     "git diff --check 67d68ac3352ab907d0a72c7363c1ceb1bc61ea99 --"
   ],
-  "ranking_impact_summary": "Explicit bases/access improve stay-base evidence; separate Lagazuoi prevents parent weather attribution; the local pass remains core-only. Inherited lodging tuples remain estimated.",
+  "ranking_impact_summary": "Explicit bases/access improve stay-base evidence; separate Lagazuoi prevents parent weather attribution; the local multi-area pass owns the aggregate 130 km / 53-lift / 74-47-9 km inventory. Inherited lodging tuples remain estimated.",
   "unresolved_caveats": [
     "La Val lodging is established, but no exact winter access edge was verified; stay_base:alta-badia-la-val and ski_area_access:alta-badia-la-val--alta-badia-ski-area remain unresolved.",
     "Campolongo Pass and Sompunt need complete base/access boundaries; Pedraces/San Leonardo remains inside Badia.",
-    "No Alta Badia–Lagazuoi terrain domain or Lagazuoi local-pass coverage is inferred. Cortina/Cinque Torri topology is deferred without changing Cortina internals.",
+    "No Alta Badia–Lagazuoi terrain domain is inferred. The official 2025/26 piste map establishes Lagazuoi coverage within the local Alta Badia pass; Cortina/Cinque Torri topology remains deferred without changing Cortina internals.",
     "Val Gardena, Gardena Pass, and Sellaronda are linked-PR dependencies owned by PR #39. Ownership roots PR #35–#38 and #40–#42 remain untouched.",
     "The stale L’Murin URL is removed. Club Moritzino/Las Vegas are individual venue signals only, so Corvara local apres and area-wide ski-day apres remain unknown.",
-    "Official scope pages support 53 lifts while live inventory can enumerate 54; 53 remains the catalog scope with the distinction recorded.",
+    "Official map/pass scope supports 53 lifts while live inventory can enumerate 54; 53 is stored only on pass_accessible_terrain, and narrower core-only terrain metrics remain unresolved.",
     "EUR 80 is a reviewed editorial main-season adult one-day example observed 2026-07-21, not an official 2026/27 tariff.",
     "Retained alta-badia-ski-area upper geometry changes from 2778 m to 2550 m. After merge, force-refetch 1991-01-01 through 2025-12-31 and rebuild climatology through baseline year 2025; new lagazuoi-ski-area uses scheduled completion.",
     "Rollback must restore catalog and trust together, restore Alta Badia geometry with forced refetch/climatology rebuild, and remove Lagazuoi only after checking persisted dependents.",
