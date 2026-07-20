@@ -4,6 +4,7 @@ import type {
   GroupPriorityPatch,
   RefinementPreview,
   SearchIntent,
+  SearchWeatherEvidenceResponse,
   SearchV4Configuration,
   SearchV4PassSummary,
   SearchV4RecommendationGroup,
@@ -718,6 +719,165 @@ export interface TechnicalEvidenceDetail {
   label: string;
   provenance: string;
   evidenceLabel: string;
+}
+
+export interface WeatherEvidencePresentation {
+  sourceType: string;
+  sourceCurrency: string;
+  coverage: string;
+  expectedConditions: string;
+  mainLimitation: string;
+}
+
+const weatherDateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "UTC",
+});
+
+function formatWeatherDateTime(value: string): string {
+  return weatherDateTimeFormatter.format(new Date(value));
+}
+
+function archiveCurrency(
+  historical: Extract<
+    SearchWeatherEvidenceResponse,
+    { status: "available" }
+  >["evidence"]["historical"],
+): string {
+  const parts: string[] = [];
+  if (historical.latest_archive_year != null) {
+    parts.push(`archive through ${historical.latest_archive_year}`);
+  }
+  if (
+    historical.baseline_start_year != null &&
+    historical.baseline_end_year != null
+  ) {
+    parts.push(
+      `${historical.baseline_start_year}-${historical.baseline_end_year} baseline`,
+    );
+  }
+  return parts.length ? parts.join("; ") : "archive year and baseline unavailable";
+}
+
+function formatWeatherMetric(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function forecastConditions(
+  response: Extract<SearchWeatherEvidenceResponse, { status: "available" }>,
+): string {
+  const forecast = response.evidence.forecast;
+  if (!forecast) return "Forecast conditions are unavailable.";
+  const snowfall = forecast.daily_profile
+    .map((point) => point.snowfall_cm)
+    .filter((value): value is number => value != null);
+  const minimums = forecast.daily_profile
+    .map((point) => point.temperature_min_c)
+    .filter((value): value is number => value != null);
+  const maximums = forecast.daily_profile
+    .map((point) => point.temperature_max_c)
+    .filter((value): value is number => value != null);
+  const parts: string[] = [];
+  if (snowfall.length) {
+    parts.push(
+      `Forecast fresh snow ${formatWeatherMetric(
+        snowfall.reduce((total, value) => total + value, 0),
+      )} cm`,
+    );
+  }
+  if (minimums.length || maximums.length) {
+    const lower = minimums.length ? Math.min(...minimums) : Math.min(...maximums);
+    const upper = maximums.length ? Math.max(...maximums) : Math.max(...minimums);
+    parts.push(
+      `forecast temperature range ${formatWeatherMetric(lower)} to ${formatWeatherMetric(upper)} °C`,
+    );
+  }
+  if (response.evidence.historical.snow_depth_cm_p50 != null) {
+    parts.push(
+      `historical median depth ${formatWeatherMetric(
+        response.evidence.historical.snow_depth_cm_p50,
+      )} cm`,
+    );
+  }
+  return parts.length
+    ? parts.join("; ")
+    : "No forecast condition values are available for the requested dates.";
+}
+
+export function weatherEvidencePresentation(
+  response: SearchWeatherEvidenceResponse,
+): WeatherEvidencePresentation {
+  if (response.status === "unavailable") {
+    return {
+      sourceType: "No weather source available",
+      sourceCurrency: "No forecast issue time or archive year is available.",
+      coverage: "Weather coverage is unavailable for this trip window.",
+      expectedConditions: "No data-backed weather conditions are available.",
+      mainLimitation:
+        response.limitations[0] ??
+        (response.unavailable_reason === "travel_window_missing"
+          ? "Add a travel window to assess weather evidence."
+          : "No complete historical profile is available for this trip window."),
+    };
+  }
+
+  const { historical, forecast } = response.evidence;
+  const archive = archiveCurrency(historical);
+  if (response.evidence.mode === "forecast_assisted" && forecast) {
+    const missingDates = Math.max(
+      0,
+      forecast.requested_date_count - forecast.usable_date_count,
+    );
+    return {
+      sourceType: "Forecast and historical pattern",
+      sourceCurrency: [
+        forecast.issued_at
+          ? `Forecast issued ${formatWeatherDateTime(forecast.issued_at)} UTC`
+          : "Forecast issue time unavailable",
+        archive,
+      ].join("; "),
+      coverage: `${forecast.usable_date_count} of ${forecast.requested_date_count} requested dates have forecast values; ${historical.evidence_seasons ?? "No"} historical seasons`,
+      expectedConditions: forecastConditions(response),
+      mainLimitation:
+        response.evidence.limitations[0] ??
+        (missingDates > 0
+          ? `Forecast values are unavailable for ${missingDates} of ${forecast.requested_date_count} requested dates.`
+          : "Forecast conditions can still change before travel."),
+    };
+  }
+
+  const historicalConditions = [
+    historical.snow_depth_cm_p50 == null
+      ? null
+      : `Median depth ${formatWeatherMetric(historical.snow_depth_cm_p50)} cm`,
+    historical.average_daily_snowfall_cm == null
+      ? null
+      : `typical fresh snow ${formatWeatherMetric(
+          historical.average_daily_snowfall_cm,
+        )} cm/day`,
+    historical.average_max_temperature_c == null
+      ? null
+      : `average high ${formatWeatherMetric(
+          historical.average_max_temperature_c,
+        )} °C`,
+  ].filter((value): value is string => value != null);
+  const profileDateCount = historical.daily_profile.length;
+  return {
+    sourceType: "Historical pattern",
+    sourceCurrency: archive.charAt(0).toUpperCase() + archive.slice(1),
+    coverage: `${historical.evidence_seasons ?? "No"} historical seasons; ${profileDateCount} profile ${profileDateCount === 1 ? "date" : "dates"}`,
+    expectedConditions: historicalConditions.length
+      ? historicalConditions.join("; ")
+      : "No historical condition values are available for this trip window.",
+    mainLimitation:
+      response.evidence.limitations[0] ??
+      "Historical patterns do not predict exact trip conditions.",
+  };
 }
 
 function hasAppliedTravelWindow(travelWindow?: TravelWindow): boolean {

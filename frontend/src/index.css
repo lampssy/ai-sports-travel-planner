@@ -2693,6 +2693,49 @@ textarea:focus-visible,
   border-left: 1px solid var(--border);
 }
 
+.snow-evidence__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 1rem 0 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.snow-evidence__summary > div {
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.snow-evidence__summary > div:nth-child(even) {
+  border-left: 1px solid var(--border-soft);
+}
+
+.snow-evidence__summary > div:last-child {
+  grid-column: 1 / -1;
+  border-bottom: 0;
+  border-left: 0;
+}
+
+.snow-evidence__summary dt {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.snow-evidence__summary dd {
+  margin: 0.3rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 .snow-evidence__forecast-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2749,6 +2792,17 @@ textarea:focus-visible,
   line-height: 1.55;
 }
 
+.snow-chart-block__metric {
+  min-width: 0;
+}
+
+.snow-chart-block__summary {
+  margin: 0 0 0.65rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
 .snow-chart-block__visual {
   position: relative;
   min-width: 0;
@@ -2767,6 +2821,23 @@ textarea:focus-visible,
   color: var(--muted);
   font-size: 0.68rem;
   font-weight: 800;
+}
+
+.snow-depth-reference {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.65rem;
+  padding: 0.8rem 0.9rem;
+  border-left: 3px solid var(--amber);
+  background: var(--state-warning-surface);
+  color: var(--ink);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.snow-depth-reference p {
+  margin: 0;
+  color: var(--muted);
 }
 
 .snow-values {
@@ -2808,7 +2879,8 @@ textarea:focus-visible,
   background: var(--white);
 }
 
-.snow-values table {
+.snow-values table,
+.scoring-details .snow-values__scroll table {
   width: max-content;
   min-width: 100%;
   border-collapse: collapse;
@@ -2816,18 +2888,22 @@ textarea:focus-visible,
 }
 
 .snow-values th,
-.snow-values td {
+.snow-values td,
+.scoring-details .snow-values__scroll th,
+.scoring-details .snow-values__scroll td {
   padding: 0.55rem 0.65rem;
   border-bottom: 1px solid var(--border-soft);
   text-align: left;
   white-space: nowrap;
 }
 
-.snow-values td {
+.snow-values td,
+.scoring-details .snow-values__scroll td {
   color: var(--ink);
 }
 
-.snow-values th {
+.snow-values th,
+.scoring-details .snow-values__scroll th {
   color: var(--muted);
   font-weight: 800;
 }
@@ -3148,6 +3224,10 @@ textarea:focus-visible,
 }
 
 .scoring-details__policy {
+  grid-column: 1 / -1;
+}
+
+.scoring-details__weather {
   grid-column: 1 / -1;
 }
 
@@ -3601,7 +3681,9 @@ textarea:focus-visible,
   }
 
   .recommendation-card__verdict {
-    display: none;
+    display: block;
+    font-size: 0.78rem;
+    line-height: 1.45;
   }
 
   .recommendation-card__scores {
@@ -3729,6 +3811,20 @@ textarea:focus-visible,
   .snow-evidence__context span {
     padding-left: 0;
     border-left: 0;
+  }
+
+  .snow-evidence__summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .snow-evidence__summary > div:nth-child(even),
+  .snow-evidence__summary > div:last-child {
+    grid-column: auto;
+    border-left: 0;
+  }
+
+  .snow-evidence__summary > div:last-child {
+    border-bottom: 0;
   }
 
   .snow-evidence__forecast-summary {

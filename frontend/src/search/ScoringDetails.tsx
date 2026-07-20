@@ -1,6 +1,10 @@
 import { Database, Layers3 } from "lucide-react";
 
-import type { SearchV4Configuration, TravelWindow } from "../types";
+import type {
+  SearchWeatherEvidenceResponse,
+  SearchV4Configuration,
+  TravelWindow,
+} from "../types";
 import { Badge } from "../ui/Badge";
 import {
   factorLabelForConfiguration,
@@ -9,15 +13,18 @@ import {
   groupLabels,
   technicalEvidenceDetails,
 } from "./searchPresentation";
+import { WeatherEvidenceTechnicalDetails } from "./WeatherEvidenceTechnicalDetails";
 
 export function ScoringDetails({
   configuration,
   rankingPolicyVersion,
   travelWindow,
+  weatherEvidence,
 }: {
   configuration: SearchV4Configuration;
   rankingPolicyVersion?: string;
   travelWindow?: TravelWindow;
+  weatherEvidence?: SearchWeatherEvidenceResponse | null;
 }) {
   const groups = configuration.groups.filter((group) => groupLabels[group.group_id]);
   const factors = configuration.factors.filter(
@@ -26,6 +33,7 @@ export function ScoringDetails({
   const technicalDetails = technicalEvidenceDetails(configuration, travelWindow);
   if (
     !rankingPolicyVersion &&
+    !weatherEvidence &&
     !technicalDetails.length &&
     !groups.length &&
     !factors.length
@@ -36,9 +44,15 @@ export function ScoringDetails({
     <details className="scoring-details">
       <summary>
         <Layers3 aria-hidden="true" size={17} />
-        Show technical calculation details
+        Technical calculation details
       </summary>
       <div className="scoring-details__content">
+        {weatherEvidence ? (
+          <section className="scoring-details__weather">
+            <h4>Weather calculations and values</h4>
+            <WeatherEvidenceTechnicalDetails response={weatherEvidence} />
+          </section>
+        ) : null}
         {rankingPolicyVersion ? (
           <section className="scoring-details__policy">
             <h4>Ranking policy</h4>

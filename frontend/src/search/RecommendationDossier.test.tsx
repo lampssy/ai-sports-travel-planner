@@ -322,6 +322,10 @@ test("renders the verdict hierarchy, progressive anchors, and selected save targ
   ]) {
     expect(screen.getByRole("link", { name })).toBeVisible();
   }
+  expect(
+    screen.getAllByText("Technical calculation details", { selector: "summary" }),
+  ).toHaveLength(1);
+  expect(document.querySelectorAll("#scoring-details details")).toHaveLength(1);
 
   await user.click(screen.getByRole("button", { name: "Save as current trip" }));
   expect(onSave).toHaveBeenCalledWith(
@@ -375,12 +379,14 @@ test("explains why the trip leads before exposing technical provenance", () => {
   expect(within(section as HTMLElement).getByRole("heading", { name: "What supports this choice" })).toBeVisible();
   expect(within(section as HTMLElement).getByRole("heading", { name: "What remains uncertain" })).toBeVisible();
   expect(
-    within(section as HTMLElement).queryByText("Show technical calculation details"),
+    within(section as HTMLElement).queryByText("Technical calculation details"),
   ).toBeNull();
   expect(
     within(section as HTMLElement).queryByText(/Catalog field-group evidence/),
   ).toBeNull();
-  const disclosures = screen.getAllByText("Show technical calculation details");
+  const disclosures = screen
+    .getAllByText("Technical calculation details")
+    .filter((element) => element.tagName === "SUMMARY");
   expect(disclosures).toHaveLength(1);
   expect(disclosures[0].closest("details")).not.toHaveAttribute("open");
 });
@@ -435,13 +441,11 @@ test("qualifies estimated terrain in dossier essentials, evidence, and scoring",
   const scoringSection = document.querySelector("#scoring-details");
   expect(scoringSection).not.toBeNull();
   const scoring = within(scoringSection as HTMLElement)
-    .getByText("Show technical calculation details")
+    .getByText("Technical calculation details")
     .closest("details");
   expect(scoring).not.toHaveAttribute("open");
   await user.click(
-    within(scoringSection as HTMLElement).getByText(
-      "Show technical calculation details",
-    ),
+    within(scoringSection as HTMLElement).getByText("Technical calculation details"),
   );
   expect(
     within(scoring as HTMLElement).getByText("Estimated from catalog data"),
@@ -497,12 +501,10 @@ test("keeps domain terrain aligned across dossier evidence and scoring", async (
   const scoringSection = document.querySelector("#scoring-details");
   expect(scoringSection).not.toBeNull();
   const scoring = within(scoringSection as HTMLElement)
-    .getByText("Show technical calculation details")
+    .getByText("Technical calculation details")
     .closest("details");
   await user.click(
-    within(scoringSection as HTMLElement).getByText(
-      "Show technical calculation details",
-    ),
+    within(scoringSection as HTMLElement).getByText("Technical calculation details"),
   );
   expect(within(scoring as HTMLElement).getByText("Estimated from source data")).toBeVisible();
 });

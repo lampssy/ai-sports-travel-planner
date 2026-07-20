@@ -1,7 +1,6 @@
 import {
   AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   ChevronDown,
   Save,
 } from "lucide-react";
@@ -79,7 +78,9 @@ export function RecommendationCard({
             {result.ski_region_name}{" "}
             <span>— stay in {configuration.stay_base_name}</span>
           </h2>
-          <span className="recommendation-card__verdict">{narrative.verdict}</span>
+          <span className="recommendation-card__verdict">
+            {narrative.strength ?? narrative.verdict}
+          </span>
         </span>
         <span className="recommendation-card__scores">
           <span>
@@ -130,12 +131,6 @@ export function RecommendationCard({
               </section>
             </div>
             <div className="recommendation-card__signals">
-              {narrative.strength ? (
-                <p className="strength">
-                  <CheckCircle2 aria-hidden="true" size={18} />
-                  <span>{narrative.strength}</span>
-                </p>
-              ) : null}
               {narrative.watchout ? (
                 <p className="watchout">
                   <AlertTriangle aria-hidden="true" size={18} />

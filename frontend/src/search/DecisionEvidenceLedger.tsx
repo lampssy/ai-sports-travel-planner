@@ -8,11 +8,20 @@ import { decisionEvidencePresentation } from "./searchPresentation";
 export function DecisionEvidenceLedger({
   configuration,
   travelWindow,
+  primaryDetails = [],
 }: {
   configuration: SearchV4Configuration;
   travelWindow?: TravelWindow;
+  primaryDetails?: Array<string | undefined>;
 }) {
   const presentation = decisionEvidencePresentation(configuration, travelWindow);
+  const primaryDetailSet = new Set(primaryDetails.filter(Boolean));
+  const supports = presentation.supports.filter(
+    (item) => !primaryDetailSet.has(item.detail),
+  );
+  const uncertainties = presentation.uncertainties.filter(
+    (item) => !primaryDetailSet.has(item.detail),
+  );
 
   return (
     <section className="dossier-section why-trip" id="decision-evidence">
@@ -22,11 +31,11 @@ export function DecisionEvidenceLedger({
         description="Why Snowcast recommends this trip, including important limits."
       />
 
-      {presentation.supports.length ? (
+      {supports.length ? (
         <div className="why-trip__supports">
           <h3>What supports this choice</h3>
           <div className="why-trip__findings">
-            {presentation.supports.map((item) => (
+            {supports.map((item) => (
               <article key={item.id}>
                 <CheckCircle2 aria-hidden="true" size={19} />
                 <div>
@@ -39,13 +48,13 @@ export function DecisionEvidenceLedger({
         </div>
       ) : null}
 
-      {presentation.uncertainties.length ? (
+      {uncertainties.length ? (
         <Alert variant="warning" className="why-trip__uncertainties">
           <TriangleAlert aria-hidden="true" size={19} />
           <div>
             <h3>What remains uncertain</h3>
             <ul>
-              {presentation.uncertainties.map((item) => (
+              {uncertainties.map((item) => (
                 <li key={item.id}>{item.detail}</li>
               ))}
             </ul>

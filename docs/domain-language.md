@@ -229,6 +229,25 @@ Boundaries:
 
 ## Core Glossary
 
+### Public Planning Language
+
+Customer interfaces use `Trip option` for a ranked recommendation group,
+`Trip details` for its detail view, and `Must-haves` for search constraints.
+These public labels do not rename the internal Planning models below.
+
+Trip details present one primary explanation. A separate `Why this trip`
+section adds non-duplicated supporting evidence and limitations. Raw weights,
+points, caps, policy identifiers, catalog trust internals, statistical methods,
+weather source rows, and daily values belong in one collapsed `Technical
+calculation details` disclosure.
+
+In Conditions and Weather Evidence, `source type` identifies historical versus
+forecast-assisted evidence; `source currency` identifies the forecast issue
+time and archive/baseline years; `coverage` identifies usable dates and seasons;
+and `expected conditions` summarizes response values. Request evaluation time
+and cache expiry are not source freshness. A modeled snow-depth reference is
+not a claim about ski-area snow coverage, open runs, comfort, or safety.
+
 ### Accepted Target Catalog Terminology
 
 **Ski region**

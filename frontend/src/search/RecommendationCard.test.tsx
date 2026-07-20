@@ -142,6 +142,24 @@ function StatefulCard({
 }
 
 describe("RecommendationCard", () => {
+  test("keeps decision cues and one concrete rationale visible when collapsed", async () => {
+    const user = userEvent.setup();
+    render(<StatefulCard travelWindow={{ month: 3 }} />);
+
+    await user.click(screen.getByRole("button", { name: /collapse matterhorn/i }));
+    const card = document.querySelector("article.recommendation-card");
+    expect(card).not.toBeNull();
+    expect(within(card as HTMLElement).getByText("Cervinia")).toBeVisible();
+    expect(within(card as HTMLElement).getByText(/stay in breuil-cervinia/i)).toBeVisible();
+    expect(within(card as HTMLElement).getByText("94.8")).toBeVisible();
+    expect(within(card as HTMLElement).getByText("Snow fit for March")).toBeVisible();
+    expect(
+      within(card as HTMLElement).getByText(
+        "The recommended place to stay keeps lift access practical.",
+      ),
+    ).toBeVisible();
+  });
+
   test("exposes an independent expansion control", async () => {
     const user = userEvent.setup();
     render(<StatefulCard />);
@@ -347,10 +365,10 @@ describe("RecommendationCard", () => {
     expect(screen.queryByText("31 km accessible terrain")).toBeNull();
 
     const scoring = screen
-      .getByText("Show technical calculation details")
+      .getByText("Technical calculation details")
       .closest("details");
     expect(scoring).not.toHaveAttribute("open");
-    await user.click(screen.getByText("Show technical calculation details"));
+    await user.click(screen.getByText("Technical calculation details"));
     expect(
       within(scoring as HTMLElement).getByText("Estimated from catalog data"),
     ).toBeVisible();
@@ -401,10 +419,10 @@ describe("RecommendationCard", () => {
     );
 
     const scoring = screen
-      .getByText("Show technical calculation details")
+      .getByText("Technical calculation details")
       .closest("details");
     expect(scoring).not.toHaveAttribute("open");
-    await user.click(screen.getByText("Show technical calculation details"));
+    await user.click(screen.getByText("Technical calculation details"));
     expect(
       within(scoring as HTMLElement).getByText("Source confirmation needed"),
     ).toBeVisible();

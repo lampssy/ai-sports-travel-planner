@@ -107,6 +107,27 @@ The 30 cm and 50 cm thresholds are planning heuristics, not universal ski-area
 operability rules. They give users a legible way to compare marginal, low-base,
 or late-season windows.
 
+### Trip-Details Presentation Contract
+
+The trip-details view keeps weather source type, source currency, coverage,
+expected conditions, and limitations as separate concepts. Forecast currency
+comes from the selected run's `issued_at`. Archive currency comes from
+`latest_archive_year` and the baseline years. Request evaluation time and cache
+expiry are operational metadata and must never be presented as source
+freshness.
+
+Weather charts use the daily values returned by the weather-evidence response.
+Each metric has a programmatic text summary, keyboard-operable controls, and an
+equivalent values table in `Technical calculation details`. The snow-depth
+chart labels its comparison line `30 cm snow-depth reference` and always shows
+this explanation when the line can be shown: `This reference helps compare
+modeled snow depth. It does not show snow coverage, open ski runs, comfort, or
+safety.`
+
+Historical and forecast evidence can support plain-language trip guidance in
+the primary view. Statistical methods, source rows, daily values, request/cache
+metadata, and internal trust labels remain technical details.
+
 ## Search-Time Evidence Order
 
 For a requested travel window, planning uses evidence in this order:

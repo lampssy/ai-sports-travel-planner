@@ -11,7 +11,7 @@ import type { SearchV4Configuration, TravelWindow } from "../types";
 import { EvidenceQualityBadge } from "../ui/EvidenceQualityBadge";
 import { TripEntityStack } from "../ui/TripEntityStack";
 import {
-  buildCandidateNarrative,
+  type CandidateNarrative,
   evidenceQualityMode,
   formatAccess,
   formatPassPrice,
@@ -22,6 +22,7 @@ export function DossierVerdict({
   configuration,
   rank,
   travelWindow,
+  narrative,
   headingRef,
   onSave,
   saveError,
@@ -29,11 +30,11 @@ export function DossierVerdict({
   configuration: SearchV4Configuration;
   rank: number;
   travelWindow?: TravelWindow;
+  narrative: CandidateNarrative;
   headingRef: RefObject<HTMLHeadingElement>;
   onSave: (configuration: SearchV4Configuration) => void;
   saveError: string | null;
 }) {
-  const narrative = buildCandidateNarrative(configuration, travelWindow);
   const evidenceMode = evidenceQualityMode(configuration);
   const unscored = configuration.ranking_status === "unscored";
   const snowFit = snowFitPresentation(configuration, travelWindow);

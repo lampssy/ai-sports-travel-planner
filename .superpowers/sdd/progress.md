@@ -75,9 +75,15 @@ Task 2: complete (commits 14e72e3, be62a2b, 834ea1b, d508ef8, 1bfbff3,
 reviews clean after recovery, focus, announcement, visual-state, and
 weather-context race fixes; 178 focused frontend tests, production build, and
 targeted Chromium recovery journeys passed)
-Task 3: in progress (initial commit 4a29075 plus two review-fix passes; 924
-focused backend tests, all 270 frontend tests, production build, Ruff, format,
-and language scans pass; final five-lane exact-head re-review pending)
-Task 4: pending
+Task 3: complete (commits 4a29075, 1181c85, 213ec04, f6ecdf6, 9379c8e,
+d447aa3, 9c32dcc; final exact-head independent, Content & Language, Product /
+Strategy, UI/UX/Accessibility, and Monetization/Partnerships reviews clean;
+924 focused backend tests, 270 frontend tests, 40 non-visual Playwright
+journeys, production build, Ruff, format, and language scans passed; deliberate
+visual-baseline inspection remains owned by Task 4)
+Task 4: complete (Trip details and weather-evidence redesign; 95 focused
+frontend tests, production build, 6 functional and 15 visual Chromium journeys
+passed; Browser-first desktop/390 px inspection and Data Trust, UI/UX, Content
+& Language, and Accessibility feature reviews clean)
 Task 5: pending
 Task 6: pending

@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import type {
   RefinementPreview,
   SearchIntent,
+  SearchWeatherEvidenceResponse,
   SearchV4Configuration,
   SearchV4RecommendationGroup,
 } from "../types";
@@ -20,6 +21,7 @@ import {
   snowFitLabel,
   technicalEvidenceDetails,
   terrainPresentation,
+  weatherEvidencePresentation,
 } from "./searchPresentation";
 
 const baseIntent: SearchIntent = {
@@ -961,6 +963,160 @@ describe("why this trip presentation", () => {
         "Source confirmation is still needed. The catalog links Base unverified-access to Area unverified-access. The lift-access mode and distance need verification.",
     });
     expect(JSON.stringify(technicalAccess)).not.toMatch(/Plan Maison|250 m/i);
+  });
+});
+
+describe("weather evidence presentation", () => {
+  function archiveResponse(): Extract<
+    SearchWeatherEvidenceResponse,
+    { status: "available" }
+  > {
+    return {
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "available",
+      ski_area_id: "area-weather",
+      evaluated_at: "2026-07-16T12:02:00Z",
+      cache_valid_until: "2026-07-16T13:00:00Z",
+      evidence: {
+        mode: "climatology",
+        window_label: "March",
+        elevation_band: "mid_mountain",
+        elevation_m: 2400,
+        elevation_status: "exact",
+        interpretation: "Historically reliable at mid-mountain in March.",
+        limitations: [],
+        historical: {
+          source_label: "Open-Meteo archive climatology",
+          source_model: "ERA5-Land",
+          computed_at: "2026-07-15T02:00:00Z",
+          baseline_start_year: 1995,
+          baseline_end_year: 2024,
+          evidence_seasons: 30,
+          latest_archive_year: 2024,
+          provenance_status: "homogeneous",
+          sources: [
+            {
+              source_model: "ERA5-Land",
+              computed_at: "2026-07-15T02:00:00Z",
+              baseline_period: "normal_30y",
+              baseline_start_year: 1995,
+              baseline_end_year: 2024,
+              evidence_seasons: 30,
+              latest_archive_year: 2024,
+              elevation_m: 2400,
+              row_count: 1,
+              profile_dates: ["03-15"],
+            },
+          ],
+          snow_depth_cm_p25: 82,
+          snow_depth_cm_p50: 128,
+          snow_depth_cm_p75: 176,
+          probability_snow_depth_ge_30cm: 0.87,
+          average_daily_snowfall_cm: 4.2,
+          average_max_temperature_c: -2.1,
+          daily_profile: [
+            {
+              date_or_month_day: "03-15",
+              snow_depth_cm: null,
+              snow_depth_cm_p25: 82,
+              snow_depth_cm_p50: 128,
+              snow_depth_cm_p75: 176,
+              snowfall_cm: 4.2,
+              temperature_min_c: -8,
+              temperature_max_c: -2.1,
+              rain_risk: null,
+              thaw_risk: 0.18,
+              wind_gust_kmh: null,
+            },
+          ],
+        },
+        forecast: null,
+      },
+    };
+  }
+
+  test("keeps archive source, currency, coverage, conditions, and limitations separate", () => {
+    const response = archiveResponse();
+    const presentation = weatherEvidencePresentation(response);
+
+    expect(presentation).toMatchObject({
+      sourceType: "Historical pattern",
+      sourceCurrency: "Archive through 2024; 1995-2024 baseline",
+      coverage: "30 historical seasons; 1 profile date",
+      expectedConditions:
+        "Median depth 128 cm; typical fresh snow 4.2 cm/day; average high -2.1 °C",
+      mainLimitation: "Historical patterns do not predict exact trip conditions.",
+    });
+    expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
+    expect(JSON.stringify(presentation)).not.toContain(response.cache_valid_until);
+  });
+
+  test("uses forecast issue time and archive year for partial forecast currency", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      mode: "forecast_assisted",
+      forecast: {
+        source_label: "Open-Meteo forecast",
+        source_model: "best_match",
+        issued_at: "2026-07-16T11:00:00Z",
+        provenance_status: "homogeneous",
+        sources: [],
+        coverage_status: "partial",
+        usable_date_count: 2,
+        requested_date_count: 3,
+        average_forecast_share: 0.67,
+        daily_profile: [
+          {
+            date_or_month_day: "2026-07-20",
+            snow_depth_cm: 112,
+            snow_depth_cm_p25: null,
+            snow_depth_cm_p50: null,
+            snow_depth_cm_p75: null,
+            snowfall_cm: 7.4,
+            temperature_min_c: -7,
+            temperature_max_c: -1,
+            rain_risk: 0.1,
+            thaw_risk: 0.2,
+            wind_gust_kmh: 46,
+          },
+        ],
+      },
+    };
+
+    const presentation = weatherEvidencePresentation(response);
+
+    expect(presentation).toMatchObject({
+      sourceType: "Forecast and historical pattern",
+      sourceCurrency:
+        "Forecast issued 16 Jul 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline",
+      coverage: "2 of 3 requested dates have forecast values; 30 historical seasons",
+      expectedConditions:
+        "Forecast fresh snow 7.4 cm; forecast temperature range -7 to -1 °C; historical median depth 128 cm",
+      mainLimitation: "Forecast values are unavailable for 1 of 3 requested dates.",
+    });
+    expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
+    expect(JSON.stringify(presentation)).not.toContain(response.cache_valid_until);
+  });
+
+  test("presents unavailable evidence without inventing source freshness or conditions", () => {
+    const presentation = weatherEvidencePresentation({
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "unavailable",
+      ski_area_id: "area-weather",
+      evaluated_at: "2026-07-16T12:02:00Z",
+      cache_valid_until: "2026-07-16T13:00:00Z",
+      unavailable_reason: "historical_evidence_unavailable",
+      limitations: ["No complete archive profile is available."],
+    });
+
+    expect(presentation).toEqual({
+      sourceType: "No weather source available",
+      sourceCurrency: "No forecast issue time or archive year is available.",
+      coverage: "Weather coverage is unavailable for this trip window.",
+      expectedConditions: "No data-backed weather conditions are available.",
+      mainLimitation: "No complete archive profile is available.",
+    });
   });
 });
 

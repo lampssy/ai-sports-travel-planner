@@ -31,6 +31,7 @@ import {
   weatherEvidenceCacheKey,
   writeWeatherEvidenceCache,
 } from "./weatherEvidenceCache";
+import { weatherEvidencePresentation } from "./searchPresentation";
 
 type AvailableResponse = Extract<SearchWeatherEvidenceResponse, { status: "available" }>;
 type EvidenceState =
@@ -49,25 +50,11 @@ export type WeatherEvidenceLoader = (
   signal?: AbortSignal,
 ) => Promise<SearchWeatherEvidenceResponse>;
 
-const dateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-  timeZone: "UTC",
-});
-
 const LazySnowEvidenceChart = lazy(() =>
   import("./SnowEvidenceChart").then((module) => ({
     default: module.SnowEvidenceChart,
   })),
 );
-
-function formatDateTime(value: string): string {
-  return dateTimeFormatter.format(new Date(value));
-}
 
 function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
@@ -200,46 +187,6 @@ class WeatherChartBoundary extends Component<
   }
 }
 
-function HistoricalSourceDetails({ response }: { response: AvailableResponse }) {
-  const historical = response.evidence.historical;
-  return (
-    <div className="snow-source-details">
-      <p><strong>{historical.source_label}</strong></p>
-      <p>
-        {historical.baseline_start_year != null && historical.baseline_end_year != null
-          ? `Climatology ${historical.baseline_start_year}-${historical.baseline_end_year}`
-          : "Climatology period unavailable"}
-        {historical.computed_at ? ` · Computed ${formatDateTime(historical.computed_at)} UTC` : ""}
-      </p>
-      <ul>
-        {historical.sources.map((source, index) => (
-          <li key={`${source.source_model}-${source.baseline_period}-${index}`}>
-            {source.source_model}, {source.evidence_seasons} seasons, {source.row_count} source rows
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function ForecastSourceDetails({ response }: { response: AvailableResponse }) {
-  const forecast = response.evidence.forecast;
-  if (!forecast) return null;
-  return (
-    <div className="snow-source-details">
-      <p><strong>{forecast.source_label}</strong></p>
-      <p>{forecast.source_model ?? "Forecast model unavailable"}</p>
-      <ul>
-        {forecast.sources.map((source) => (
-          <li key={source.forecast_run_id}>
-            Run {source.forecast_run_id}, issued {formatDateTime(source.issued_at)} UTC, {source.row_count} source rows
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 function EvidenceExplorer({
   response,
   historicalSummary,
@@ -269,7 +216,6 @@ function EvidenceExplorer({
                 ? "Historical climatology provides context for the same requested window."
                 : evidence.interpretation
             }
-            sourceDetails={<HistoricalSourceDetails response={response} />}
           />
         </Suspense>
       </WeatherChartBoundary>
@@ -301,7 +247,6 @@ function EvidenceExplorer({
                   mode="forecast"
                   points={forecast.daily_profile}
                   interpretation={evidence.interpretation}
-                  sourceDetails={<ForecastSourceDetails response={response} />}
                 />
               </Suspense>
             </WeatherChartBoundary>
@@ -317,12 +262,29 @@ function EvidenceExplorer({
   );
 }
 
+function WeatherEvidenceSummary({
+  response,
+}: {
+  response: SearchWeatherEvidenceResponse;
+}) {
+  const presentation = weatherEvidencePresentation(response);
+  return (
+    <dl className="snow-evidence__summary" aria-label="Weather evidence summary">
+      <div><dt>Source</dt><dd>{presentation.sourceType}</dd></div>
+      <div><dt>Source currency</dt><dd>{presentation.sourceCurrency}</dd></div>
+      <div><dt>Coverage</dt><dd>{presentation.coverage}</dd></div>
+      <div><dt>Expected conditions</dt><dd>{presentation.expectedConditions}</dd></div>
+      <div><dt>Main limitation</dt><dd>{presentation.mainLimitation}</dd></div>
+    </dl>
+  );
+}
+
 function AvailableEvidence({ response }: { response: AvailableResponse }) {
   const { evidence } = response;
   const isForecastAssisted = evidence.mode === "forecast_assisted";
-  const forecast = isForecastAssisted ? evidence.forecast : null;
   const historical = evidence.historical;
   const metrics = evidenceMetrics(response);
+  const presentation = weatherEvidencePresentation(response);
   const elevation =
     evidence.elevation_status === "mixed"
       ? "Mixed source elevations across this assessment"
@@ -340,30 +302,16 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
         action={(
           <Badge variant={isForecastAssisted ? "supported" : "info"} className="snow-mode">
           <Snowflake aria-hidden="true" size={15} />
-          {isForecastAssisted ? "Forecast-assisted" : "Historical pattern"}
+          {presentation.sourceType}
           </Badge>
         )}
       />
 
-      <div className="snow-evidence__context" aria-label="Weather evidence context">
+      <div className="snow-evidence__context" aria-label="Weather evidence elevation">
         <strong>{elevation}</strong>
-        {historical.evidence_seasons != null ? (
-          <span>{historical.evidence_seasons} evidence seasons</span>
-        ) : null}
       </div>
 
-      {isForecastAssisted && forecast ? (
-        <div className="snow-evidence__forecast-summary" aria-label="Forecast status">
-          <div><span>Issued</span><strong>{forecast.issued_at ? `${formatDateTime(forecast.issued_at)} UTC` : "Not available"}</strong></div>
-          <div><span>Freshness</span><strong>{`Fresh at ${formatDateTime(response.evaluated_at)} UTC`}</strong></div>
-          <div><span>Requested dates</span><strong>{forecast.usable_date_count} of {forecast.requested_date_count} covered</strong></div>
-          <div><span>Forecast coverage in this assessment</span><strong>{percentage(forecast.average_forecast_share)}</strong></div>
-        </div>
-      ) : (
-        <p className="snow-evidence__mode-note">
-          This view uses climatology rather than a live forecast.
-        </p>
-      )}
+      <WeatherEvidenceSummary response={response} />
 
       <EvidenceExplorer
         response={response}
@@ -374,12 +322,12 @@ function AvailableEvidence({ response }: { response: AvailableResponse }) {
         </div>}
       />
 
-      {evidence.limitations.length ? (
+      {evidence.limitations.slice(1).length ? (
         <Alert variant="warning" className="snow-evidence__limitations">
           <div>
             <strong>Evidence limitations</strong>
             <ul>
-              {evidence.limitations.map((limitation) => (
+              {evidence.limitations.slice(1).map((limitation) => (
                 <li key={limitation}>{limitation}</li>
               ))}
             </ul>
@@ -395,11 +343,13 @@ export function SnowEvidence({
   skiAreaId,
   skiAreaName,
   loadEvidence = fetchSearchWeatherEvidence,
+  onResponseChange,
 }: {
   intent: SearchIntent;
   skiAreaId: string;
   skiAreaName: string;
   loadEvidence?: WeatherEvidenceLoader;
+  onResponseChange?: (response: SearchWeatherEvidenceResponse | null) => void;
 }) {
   const key = useMemo(
     () => weatherEvidenceCacheKey(skiAreaId, intent.constraints.travel_window),
@@ -427,6 +377,12 @@ export function SnowEvidence({
     retryAttempt?.contextKey === key && retryAttempt.pending;
   const retryRequestId =
     retryAttempt?.contextKey === key ? retryAttempt.requestId : 0;
+
+  useEffect(() => {
+    onResponseChange?.(
+      visibleState.kind === "ready" ? visibleState.response : null,
+    );
+  }, [onResponseChange, visibleState]);
 
   const retryEvidence = (clearCache: boolean) => {
     if (retryAttemptRef.current?.contextKey === key) return;
@@ -564,31 +520,22 @@ export function SnowEvidence({
       ) : null}
 
       {visibleState.kind === "ready" && visibleState.response.status === "unavailable" ? (
-        <AsyncState
-          state="error"
-          title="Snow evidence unavailable"
-          retryLabel="Check again"
-          retrying={retrying}
-          retryControlRef={retryButtonRef}
-          onRetry={() => retryEvidence(true)}
-          className="snow-evidence-state"
-          message={(
-            <>
-              <p>
-              {visibleState.response.unavailable_reason === "travel_window_missing"
+        <div className="snow-evidence-state">
+          <AsyncState
+            state="error"
+            title="Snow evidence unavailable"
+            retryLabel="Check again"
+            retrying={retrying}
+            retryControlRef={retryButtonRef}
+            onRetry={() => retryEvidence(true)}
+            message={
+              visibleState.response.unavailable_reason === "travel_window_missing"
                 ? "No applied travel window is available for weather evidence."
-                : "Historical weather evidence is unavailable for this ski area and travel window."}
-              </p>
-            {visibleState.response.limitations.length ? (
-              <ul>
-                {visibleState.response.limitations.map((limitation) => (
-                  <li key={limitation}>{limitation}</li>
-                ))}
-              </ul>
-            ) : null}
-            </>
-          )}
-        />
+                : "Historical weather evidence is unavailable for this ski area and travel window."
+            }
+          />
+          <WeatherEvidenceSummary response={visibleState.response} />
+        </div>
       ) : null}
 
       {visibleState.kind === "ready" && visibleState.response.status === "available" ? (

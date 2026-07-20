@@ -185,6 +185,18 @@ function forecastWeatherResponse(): SearchWeatherEvidenceResponse {
   };
 }
 
+function unavailableWeatherResponse(): SearchWeatherEvidenceResponse {
+  return {
+    weather_evidence_version: "search-weather-evidence-v1",
+    status: "unavailable",
+    ski_area_id: "tignes-ski-area",
+    evaluated_at: fixedNow.toISOString(),
+    cache_valid_until: "2099-07-16T12:05:00Z",
+    unavailable_reason: "historical_evidence_unavailable",
+    limitations: ["Historical evidence is unavailable for the selected window."],
+  };
+}
+
 function denseForecastWeatherResponse(): SearchWeatherEvidenceResponse {
   const response = forecastWeatherResponse();
   if (response.status !== "available" || response.evidence.forecast == null) {
@@ -362,7 +374,6 @@ async function openDossier(
     .getByRole("link", { name: "View trip details" })
     .click();
   await waitForStablePage(page, "Tignes - Val d'Isere - Le Lac");
-  await expect(page.getByRole("heading", { name: /Snow & weather for/ })).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -426,6 +437,26 @@ test("five-option mobile refinement", async ({ page }) => {
   });
 });
 
+test("collapsed results retain decision cues on mobile", async ({ page }) => {
+  await page.setViewportSize(mobile);
+  await openResults(page, resultsResponse());
+  await page
+    .getByRole("button", { name: /collapse tignes - val d'isere/i })
+    .click();
+
+  const firstCard = page.locator("article.recommendation-card").first();
+  await expect(firstCard.getByText("Stay in Le Lac")).toBeVisible();
+  await expect(firstCard.getByText("82.4")).toBeVisible();
+  await expect(firstCard.getByText("Not enough evidence")).toBeVisible();
+  await expect(firstCard.locator(".recommendation-card__verdict")).toBeVisible();
+  await firstCard.scrollIntoViewIfNeeded();
+
+  await expect(page).toHaveScreenshot("results-collapsed-mobile.png", {
+    animations: "disabled",
+    caret: "hide",
+  });
+});
+
 test("month dossier with expanded desktop navigator", async ({ page }) => {
   await page.setViewportSize(desktop);
   await openDossier(page, monthSearchResponse, monthWeatherResponse());
@@ -457,15 +488,25 @@ test("exact-date dossier with collapsed desktop navigator", async ({ page }) => 
     animations: "disabled",
     caret: "hide",
   });
+});
 
-  await page
-    .locator(".snow-source-tabs > .snowcast-segmented-tabs__panel:not([hidden]) details")
-    .getByText("Sources and daily values")
-    .click();
+test("technical calculation details desktop", async ({ page }) => {
+  await page.setViewportSize(desktop);
+  await openDossier(page, exactDateResponse(), forecastWeatherResponse());
+
+  await page.locator("#scoring-details summary").click();
   const table = page.getByRole("table", { name: "Forecast weather values" });
   await expect(table.getByRole("row", { name: /2026-07-20/ })).toContainText("112 cm");
   await expect(table.getByRole("row", { name: /2026-07-20/ })).toContainText("7.4 cm");
   await expect(table.getByRole("row", { name: /2026-07-20/ })).toContainText("-7 °C");
+
+  await expect(page.locator("#scoring-details")).toHaveScreenshot(
+    "dossier-technical-details-desktop.png",
+    {
+      animations: "disabled",
+      caret: "hide",
+    },
+  );
 });
 
 test("mobile dossier switcher", async ({ page }) => {
@@ -486,6 +527,21 @@ test("mobile dossier snow evidence", async ({ page }) => {
   await page.getByRole("heading", { name: "Snow & weather for March" }).scrollIntoViewIfNeeded();
 
   await expect(page).toHaveScreenshot("dossier-mobile-snow-evidence.png", {
+    animations: "disabled",
+    caret: "hide",
+  });
+});
+
+test("mobile dossier unavailable weather evidence", async ({ page }) => {
+  await page.setViewportSize(mobile);
+  await openDossier(page, exactDateResponse(), unavailableWeatherResponse());
+  await page.locator("#snow-evidence").scrollIntoViewIfNeeded();
+
+  await expect(page.getByText("Snow evidence unavailable")).toBeVisible();
+  await expect(page.getByLabel("Weather evidence summary")).toContainText(
+    "Historical evidence is unavailable for the selected window.",
+  );
+  await expect(page).toHaveScreenshot("dossier-mobile-weather-unavailable.png", {
     animations: "disabled",
     caret: "hide",
   });

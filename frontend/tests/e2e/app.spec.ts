@@ -1465,14 +1465,14 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
     name: "View trip details",
   }).click();
 
-  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(page.locator(".snow-mode")).toHaveText(/Historical pattern/);
   await expect(
     page.getByRole("heading", { name: "Snow & weather for March" }),
   ).toBeVisible();
   await expect(
     page.getByRole("img", { name: /historical snow depth chart in cm/i }),
   ).toBeVisible();
-  await page.getByText("Sources and daily values").click();
+  await page.locator("#scoring-details summary").click();
   await expect(
     page.getByRole("table", { name: "Historical weather values" }),
   ).toBeVisible();
@@ -1493,7 +1493,7 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
   });
   await expect(page.getByText(/available rooms|hotel rating/i)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
-  await page.getByText("Sources and daily values").click();
+  await page.locator("#scoring-details summary").click();
   await page.addStyleTag({
     content:
       ".search-command-header,.dossier-anchor-nav,.dossier-navigator{position:static!important}",
@@ -1508,11 +1508,11 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
   await page.locator("article.recommendation-card").first().getByRole("link", {
     name: "View trip details",
   }).click();
-  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(page.locator(".snow-mode")).toHaveText(/Historical pattern/);
   expect(weatherRequests).toHaveLength(1);
 });
 
-test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alternatives", async ({
+test("forecast dossier exposes source currency, coverage, keyboard tabs, and chart alternatives", async ({
   page,
 }) => {
   const searchResponse = structuredClone(monthSearchResponse);
@@ -1536,9 +1536,14 @@ test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alt
     name: "View trip details",
   }).click();
 
-  await expect(page.getByText("Forecast-assisted")).toBeVisible();
-  await expect(page.getByText(/fresh at .* utc/i)).toBeVisible();
-  await expect(page.getByText("2 of 3 covered")).toBeVisible();
+  await expect(page.locator(".snow-mode")).toHaveText(
+    /Forecast and historical pattern/,
+  );
+  await expect(page.getByText(/forecast issued .* utc; archive through/i)).toBeVisible();
+  await expect(
+    page.getByText(/2 of 3 requested dates have forecast values/i),
+  ).toBeVisible();
+  await expect(page.getByText(/fresh at .* utc/i)).toHaveCount(0);
   const forecastTab = page.getByRole("tab", { name: "Forecast" });
   const historicalTab = page.getByRole("tab", { name: "Historical context" });
   await forecastTab.focus();
@@ -1678,7 +1683,11 @@ test("transport failure is not cached and retry announces recovered evidence", a
     page.getByRole("navigation", { name: "Trip option results" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Retry snow evidence" }).click();
-  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(
+    page
+      .getByLabel("Weather evidence summary")
+      .getByText("Historical pattern", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("status").filter({ hasText: "Snow evidence loaded for Tignes." }),
   ).toBeVisible();
@@ -1843,7 +1852,9 @@ test("expired forecast cache refetches and replaces the selected run head", asyn
     }).click();
   const openSourceDetails = () =>
     page
-      .locator("summary:visible", { hasText: "Sources and daily values" })
+      .locator("#scoring-details summary:visible", {
+        hasText: "Technical calculation details",
+      })
       .click();
   await openDossier();
   await openSourceDetails();
