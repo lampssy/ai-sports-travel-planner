@@ -235,6 +235,18 @@ function resultsResponse(): SearchResponse {
   return response;
 }
 
+function longLabelResultsResponse(): SearchResponse {
+  const response = resultsResponse();
+  const first = response.results[0];
+  first.ski_region_name = "Portes du Soleil France-Switzerland International Ski Region";
+  first.top_configuration.ski_region_name = first.ski_region_name;
+  first.top_configuration.stay_base_name =
+    "Chatel Village Centre and Super-Chatel Lift District";
+  first.top_configuration.selected_pass.name =
+    "Portes du Soleil France-Switzerland International Lift Pass";
+  return response;
+}
+
 function fiveOptionResultsResponse(): SearchResponse {
   const response = resultsResponse();
   const refinement = response.refinements[0];
@@ -353,7 +365,7 @@ async function openResults(page: Page, response: SearchResponse) {
   await page
     .getByLabel("Describe your ski trip")
     .fill("A snow-reliable intermediate trip in France for March, close to the lifts");
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   await waitForStablePage(page, "Trip options for you");
 }
 
@@ -367,7 +379,7 @@ async function openDossier(
   await page
     .getByLabel("Describe your ski trip")
     .fill("A snow-reliable intermediate trip in France for March, close to the lifts");
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   await page
     .locator("article.recommendation-card")
     .first()
@@ -456,6 +468,34 @@ test("collapsed results retain decision cues on mobile", async ({ page }) => {
     caret: "hide",
   });
 });
+
+for (const [name, viewport] of [
+  ["desktop", desktop],
+  ["390 px", mobile],
+] as const) {
+  test(`production-length entity and pass labels stay within the ${name} layout`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await openResults(page, longLabelResultsResponse());
+
+    await expect(
+      page.getByRole("heading", {
+        name: /Portes du Soleil France-Switzerland International Ski Region/,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: /Chatel Village Centre and Super-Chatel Lift District with Portes du Soleil France-Switzerland International Lift Pass/,
+      }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      ),
+    ).toBe(false);
+  });
+}
 
 test("month dossier with expanded desktop navigator", async ({ page }) => {
   await page.setViewportSize(desktop);

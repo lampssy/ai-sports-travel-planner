@@ -55,6 +55,7 @@ describe("DecisionEvidenceLedger", () => {
     render(<DecisionEvidenceLedger configuration={configuration()} />);
 
     expect(screen.getByRole("heading", { name: "Why this trip" })).toBeVisible();
+    expect(screen.queryByText("Decision evidence")).toBeNull();
     expect(
       screen.getByText(
         "Why Snowcast recommends this trip, including important limits.",

@@ -81,12 +81,9 @@ function statusAnnouncement(
 function evidenceMetrics(response: AvailableResponse) {
   const { historical } = response.evidence;
   const depthDetails = [
-    historical.snow_depth_cm_p50 == null
-      ? null
-      : "Daily median values averaged across the travel window.",
     historical.probability_snow_depth_ge_30cm == null
       ? null
-      : `Historical data gives an average ${percentage(historical.probability_snow_depth_ge_30cm)} chance of at least 30 cm during this travel window.`,
+      : `Across matching dates, historical data averaged ${percentage(historical.probability_snow_depth_ge_30cm)} of days at or above the 30 cm snow-depth reference.`,
   ].filter((value): value is string => value != null);
   return [
     {
@@ -223,7 +220,7 @@ function EvidenceExplorer({
             points={evidence.historical.daily_profile}
             interpretation={
               forecast
-                ? "Historical climatology provides context for the same requested window."
+                ? "Historical weather patterns provide context for the same requested window."
                 : evidence.interpretation
             }
           />

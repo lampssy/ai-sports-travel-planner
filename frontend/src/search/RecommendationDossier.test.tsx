@@ -160,6 +160,39 @@ test("bounds the navigator to the top three or top two plus current", () => {
   ).toEqual(["region-1", "region-2", "region-4"]);
 });
 
+test("renders evidence-bounded wider-terrain strength in trip details", () => {
+  const currentSession = session();
+  const current = currentSession.response.results[0].top_configuration;
+  current.factors = [
+    {
+      ...current.factors[0],
+      factor_id: "terrain_potential_scale",
+      raw_value: 360,
+      effective_utility: 0.7,
+    },
+  ];
+
+  render(
+    <RecommendationDossier
+      session={currentSession}
+      skiRegionId={current.ski_region_id}
+      candidateId={current.candidate_id}
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen.getByText(
+      "Region 1 offers wider terrain; a different or additional pass may be needed.",
+    ),
+  ).toBeVisible();
+  expect(screen.queryByText(/selected pass supports/i)).toBeNull();
+});
+
 test("does not present unscored options as ranked recommendations", () => {
   const unscoredSession = session();
   unscoredSession.response = {

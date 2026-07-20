@@ -21,6 +21,7 @@ import {
   snowFitLabel,
   technicalEvidenceDetails,
   terrainPresentation,
+  tripOptionCountCopy,
   weatherEvidencePresentation,
 } from "./searchPresentation";
 
@@ -485,7 +486,7 @@ describe("deterministic recommendation copy", () => {
     });
 
     expect(buildCandidateNarrative(candidate)).toEqual({
-      verdict: "A strong match for terrain in the selected ski area.",
+      verdict: "Matches terrain in the selected ski area.",
       strength: "About 31 km in the selected ski area.",
     });
   });
@@ -521,17 +522,17 @@ describe("deterministic recommendation copy", () => {
       "Terrain scale",
     );
     expect(buildCandidateNarrative(candidate)).toEqual({
-      verdict: "A strong terrain match.",
-      strength: "Terrain scale contributes positively to this comparison.",
+      verdict: "Terrain compares well with the other matches.",
+      strength: "Terrain scale compares well with the other matches.",
     });
   });
 
   test.each([
-    ["terrain_potential_scale", "A strong match for wider terrain access."],
-    ["lift_network_scale", "A strong match for a large lift network."],
-    ["travel_effort", "A strong match for a shorter or easier journey."],
-    ["glacier_terrain", "A strong match for glacier terrain."],
-  ])("keeps the %s verdict within the measured evidence", (factorId, verdict) => {
+    ["terrain_potential_scale", "The ski region offers wider terrain."],
+    ["lift_network_scale", "The lift network supports varied ski-day plans."],
+    ["travel_effort", "The route fits a shorter or easier journey."],
+    ["glacier_terrain", "Glacier terrain is available for this trip option."],
+  ])("keeps the %s verdict neutral and within the measured evidence", (factorId, verdict) => {
     const candidate = configuration(`verdict-${factorId}`, {
       factors: [
         {
@@ -554,6 +555,36 @@ describe("deterministic recommendation copy", () => {
     });
 
     expect(buildCandidateNarrative(candidate).verdict).toBe(verdict);
+    expect(buildCandidateNarrative(candidate).verdict).not.toMatch(/strong/i);
+  });
+
+  test("bounds wider-terrain strength to the ski region and pass uncertainty", () => {
+    const candidate = configuration("wider-terrain", {
+      ski_region_name: "Matterhorn Ski Paradise",
+      factors: [
+        {
+          factor_id: "terrain_potential_scale",
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: 360,
+          raw_utility: 0.7,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.7,
+          effective_weight: 1,
+          contribution_points: 7,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Approved source evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(buildCandidateNarrative(candidate).strength).toBe(
+      "Matterhorn Ski Paradise offers wider terrain; a different or additional pass may be needed.",
+    );
+    expect(buildCandidateNarrative(candidate).strength).not.toMatch(/selected pass supports/i);
   });
 
   test("uses approved factor copy without reading arbitrary factor JSON", () => {
@@ -1076,7 +1107,7 @@ describe("weather evidence presentation", () => {
       sourceCurrency: "Archive through 2024; 1995-2024 baseline",
       coverage: "30 historical seasons; 1 profile date",
       expectedConditions:
-        "Typical historical snow depth 128 cm (daily medians averaged across the window); typical fresh snow 4.2 cm/day; average high -2.1 °C",
+        "Typical historical snow depth 128 cm; typical fresh snow 4.2 cm/day; average high -2.1 °C",
       mainLimitation: "Historical patterns do not predict exact trip conditions.",
     });
     expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
@@ -1161,7 +1192,7 @@ describe("weather evidence presentation", () => {
         "Forecast issued Jul 16, 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline",
       coverage: "2 of 3 requested dates have forecast values; 30 historical seasons",
       expectedConditions:
-        "Forecast fresh snow 7.4 cm; forecast temperature range -7 to -1 °C; typical historical snow depth 128 cm (daily medians averaged across the window)",
+        "Forecast fresh snow 7.4 cm; forecast temperature range -7 to -1 °C; typical historical snow depth 128 cm",
       mainLimitation: "Forecast values are unavailable for 1 of 3 requested dates.",
     });
     expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
@@ -1304,7 +1335,12 @@ describe("refinement preview copy", () => {
     [
       "eligibility only",
       { top_rank_changes: [], eligible_candidate_count_delta: -4 },
-      "This choice may change eligibility for 4 trip options.",
+      "This choice may change 4 possible matches.",
+    ],
+    [
+      "one eligibility match",
+      { top_rank_changes: [], eligible_candidate_count_delta: 1 },
+      "This choice may change 1 possible match.",
     ],
     [
       "absent",
@@ -1322,5 +1358,14 @@ describe("refinement preview copy", () => {
         false,
       ),
     ).toBe("Keeps your current trip decisions unchanged.");
+  });
+});
+
+describe("public trip-option count copy", () => {
+  test.each([
+    [1, "1 trip option matches your must-haves"],
+    [2, "2 trip options match your must-haves"],
+  ])("formats %s displayed recommendation groups", (count, expected) => {
+    expect(tripOptionCountCopy(count)).toBe(expected);
   });
 });

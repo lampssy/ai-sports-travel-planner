@@ -71,7 +71,7 @@ export function Homepage({
               />
               <button type="submit" className="primary-command" disabled={loading}>
                 <Search aria-hidden="true" size={22} />
-                {loading ? "Finding resorts for your trip" : "Find resorts"}
+                {loading ? "Finding trip options" : "Find trip options"}
               </button>
             </div>
             <div className="command-form__context">
@@ -91,7 +91,7 @@ export function Homepage({
               </div>
               <div className="understood-status">
                 <ShieldCheck aria-hidden="true" size={20} />
-                <span>{chips.length} preferences understood</span>
+                <span>{chips.length} trip details understood</span>
               </div>
               <button
                 type="button"

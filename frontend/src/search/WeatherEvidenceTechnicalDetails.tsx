@@ -119,6 +119,26 @@ function HistoricalTechnicalDetails({
           ? `Latest archive year ${historical.latest_archive_year}.`
           : "Latest archive year unavailable."}
       </p>
+      {historical.snow_depth_cm_p50 != null ? (
+        <p>
+          Typical historical snow depth averages the daily median values across
+          matching dates in the travel window.
+        </p>
+      ) : null}
+      {historical.snow_depth_cm_p25 != null &&
+      historical.snow_depth_cm_p75 != null ? (
+        <p>
+          The usual historical range averages the daily 25th- and 75th-percentile
+          values across matching dates.
+        </p>
+      ) : null}
+      {historical.probability_snow_depth_ge_30cm != null ? (
+        <p>
+          The 30 cm figure is the average daily historical percentage at or above
+          the reference across matching dates. It is not the chance of reaching 30
+          cm at least once during the trip.
+        </p>
+      ) : null}
       <ul className="weather-source-list">
         {historical.sources.map((source, index) => (
           <li key={`${source.source_model}-${source.baseline_period}-${index}`}>

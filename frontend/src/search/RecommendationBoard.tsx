@@ -11,6 +11,7 @@ import { SearchContextRail } from "./SearchContextRail";
 import {
   partitionParsedChips,
   selectTripEssentialCategories,
+  tripOptionCountCopy,
   type ParsedChip,
 } from "./searchPresentation";
 import type { SearchSession } from "./searchSession";
@@ -103,7 +104,7 @@ export function RecommendationBoard({
             </h1>
           </div>
           <p className="eligible-count">
-            {response.eligible_candidate_count} trip options match your must-haves
+            {tripOptionCountCopy(response.results.length)}
           </p>
         </div>
 

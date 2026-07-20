@@ -384,6 +384,8 @@ test("renders the accepted homepage command stage", () => {
     }),
   ).toBeInTheDocument();
   expect(screen.getByLabelText("Describe your ski trip")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Find trip options" })).toBeVisible();
+  expect(screen.getByText(/trip details understood/)).toBeVisible();
   expect(screen.getAllByText("Example trip option")).toHaveLength(1);
   expect(screen.queryByText(/^Describe$/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/^Review$/i)).not.toBeInTheDocument();
@@ -396,13 +398,14 @@ test("parses and submits the brief, preserves it, and focuses results", async ()
 
   const brief = "A snow-reliable intermediate trip in France for March";
   await user.type(screen.getByLabelText("Describe your ski trip"), brief);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   const resultsHeading = await screen.findByRole("heading", {
     name: /trip options/i,
   });
   expect(resultsHeading).toHaveFocus();
   expect(screen.getByLabelText("Trip brief")).toHaveValue(brief);
+  expect(screen.getByText("1 trip option matches your must-haves")).toBeVisible();
   expect(requests.filter((item) => item.url === "/api/parse-query")).toHaveLength(1);
   expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
 });
@@ -439,10 +442,10 @@ test("names loading work and disables duplicate homepage submission", async () =
   render(<App />);
 
   await user.type(screen.getByLabelText("Describe your ski trip"), "March in France");
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   const loadingButton = await screen.findByRole("button", {
-    name: /finding resorts for your trip/i,
+    name: /finding trip options/i,
   });
   expect(loadingButton).toBeDisabled();
   await user.click(loadingButton);
@@ -497,7 +500,7 @@ test("returns drawer focus to the full preference trigger for every close action
   const user = userEvent.setup();
   const { container } = render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   const trigger = await screen.findByRole("button", {
     name: "View all 5 preferences",
   });
@@ -559,7 +562,7 @@ test("keeps an overflow group priority reachable and removable in the drawer", a
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   expect(
     screen.queryByRole("button", { name: "Trip timing: Highest priority" }),
   ).not.toBeInTheDocument();
@@ -618,7 +621,7 @@ test("keeps origin-based travel ranking visible after removing the maximum drive
   await user.type(screen.getByLabelText("Starting location"), "Warsaw");
   await user.type(screen.getByLabelText("Maximum drive time"), "15");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(
     await screen.findByRole("button", { name: "Remove Prefer closer to Warsaw" }),
@@ -692,7 +695,7 @@ test("restores the previous month when Month mode is selected again", async () =
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(
     await screen.findByRole("button", { name: "Remove March window" }),
   );
@@ -719,7 +722,7 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeInTheDocument();
   expect(screen.getByText("82.4")).toBeInTheDocument();
@@ -765,7 +768,7 @@ test("renders ranking before a separate refinement request resolves", async () =
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(
@@ -831,7 +834,7 @@ test("skips refinement discovery when no result is eligible", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(
     await screen.findByRole("heading", {
@@ -872,7 +875,7 @@ test("keeps ranked results when refinement discovery is rate limited", async () 
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -920,7 +923,7 @@ test("retries one admitted refinement request after Retry-After without replacin
   );
   render(<App />);
 
-  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  fireEvent.click(screen.getByRole("button", { name: /find trip options/i }));
   await act(() => vi.advanceTimersByTimeAsync(0));
 
   expect(screen.getByText("Tignes - Val d'Isere")).toBeVisible();
@@ -1016,7 +1019,7 @@ test("a new ranking aborts a pending refinement retry before its search resolves
   );
   render(<App />);
 
-  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  fireEvent.click(screen.getByRole("button", { name: /find trip options/i }));
   await act(() => vi.advanceTimersByTimeAsync(0));
   screen.getByText(
     "Snowcast is waiting a moment before checking for another useful question.",
@@ -1079,7 +1082,7 @@ test("unmount aborts a pending refinement retry", async () => {
   );
   const view = render(<App />);
 
-  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  fireEvent.click(screen.getByRole("button", { name: /find trip options/i }));
   await act(() => vi.advanceTimersByTimeAsync(0));
   screen.getByText(
     "Snowcast is waiting a moment before checking for another useful question.",
@@ -1116,7 +1119,7 @@ test("a second admission limit terminates the single retry cycle", async () => {
   );
   render(<App />);
 
-  fireEvent.click(screen.getByRole("button", { name: /find resorts/i }));
+  fireEvent.click(screen.getByRole("button", { name: /find trip options/i }));
   await act(() => vi.advanceTimersByTimeAsync(0));
   screen.getByText(
     "Snowcast is waiting a moment before checking for another useful question.",
@@ -1162,7 +1165,7 @@ test.each(["long Retry-After", "network failure"] as const)(
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /find resorts/i }));
+    await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
     expect(await screen.findByRole("alert")).toBeVisible();
     expect(refinementCount).toBe(1);
@@ -1198,7 +1201,7 @@ test("keeps refinement validation details out of the traveller-facing UI", async
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -1242,7 +1245,7 @@ test("keeps terminal refinement failure visible and retries without replacing re
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -1319,7 +1322,7 @@ test("clears the terminal failure when a refinement retry finds a stale baseline
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   const failureCopy =
     "Snowcast could not check for another useful question. Your results are unchanged.";
   expect(await screen.findByRole("alert")).toHaveTextContent(failureCopy);
@@ -1362,7 +1365,7 @@ test("lets the user keep usable results after terminal refinement failure", asyn
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await screen.findByRole("alert");
   await user.click(screen.getByRole("button", { name: "Keep these results" }));
 
@@ -1402,7 +1405,7 @@ test("shows the slow refinement message without blocking the ranking", async () 
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
 
   await act(() => vi.advanceTimersByTimeAsync(2_500));
@@ -1432,7 +1435,7 @@ test("suppresses questions for a stale baseline or ranking policy", async () => 
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(
@@ -1454,7 +1457,7 @@ test("keeps ranking usable when a timed-out refinement baseline is unverified", 
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -1499,7 +1502,7 @@ test("does not retry a current-baseline provider temporarily unavailable respons
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -1567,7 +1570,7 @@ test("aborts and ignores a superseded refinement response", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
   await user.click(
     screen.getByRole("button", {
@@ -1617,7 +1620,7 @@ test("uses safe client copy for a failed search", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "Review your trip choices and try again.",
@@ -1662,7 +1665,7 @@ test("keeps current results and update focus when a manual search update fails",
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeVisible();
 
   const update = screen.getByRole("button", { name: "Search trip options" });
@@ -1688,7 +1691,7 @@ test("bounds the separate refinement brief at 2000 characters", async () => {
     target: { value: "x".repeat(2_100) },
   });
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   await waitFor(() => {
     expect(
@@ -1723,7 +1726,7 @@ test("opens the selected candidate dossier without rerunning search and saves it
   ];
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(
     screen.getByRole("button", { name: /select le lac with tignes local pass/i }),
   );
@@ -1757,7 +1760,7 @@ test("opens the selected candidate dossier without rerunning search and saves it
 test("shows a dossier save failure beside the selected Trip details action", async () => {
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(screen.getByRole("link", { name: "View trip details" }));
   await screen.findByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" });
 
@@ -2029,7 +2032,7 @@ test("ignores trip A summary when a pending save replaces it with trip B", async
   render(<App />);
   expect(await screen.findByRole("heading", { name: "Les Arcs" })).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Back to search" }));
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(
     await screen.findByRole("button", { name: "Save as current trip" }),
   );
@@ -2100,7 +2103,7 @@ test("ignores trip A summary when clear completes before a pending trip B save",
   render(<App />);
   expect(await screen.findByRole("heading", { name: "Les Arcs" })).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Back to search" }));
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(
     await screen.findByRole("button", { name: "Save as current trip" }),
   );
@@ -2180,7 +2183,7 @@ test("restores result state and scroll after returning from a dossier", async ()
   const user = userEvent.setup();
   Object.defineProperty(window, "scrollY", { configurable: true, value: 428 });
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(screen.getByRole("link", { name: "View trip details" }));
   await screen.findByRole("heading", { name: /tignes - val d'isere - le lac/i });
   await user.click(screen.getByRole("button", { name: "All results" }));
@@ -2224,7 +2227,7 @@ test("exact dates take precedence in the POST intent", async () => {
   await user.type(screen.getByLabelText("Trip start date"), "2027-01-16");
   await user.type(screen.getByLabelText("Trip end date"), "2027-01-20");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   await screen.findByText("Tignes - Val d'Isere");
   const searchRequest = requests.find((item) => item.url === "/api/search");
@@ -2250,7 +2253,7 @@ test("rejects invalid hard numeric filters instead of silently omitting them", a
 
   fireEvent.change(maxNightly, { target: { value: "0" } });
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(
     await screen.findByText("Maximum nightly price must be greater than 0."),
@@ -2265,7 +2268,7 @@ test("rejects invalid hard numeric filters instead of silently omitting them", a
     target: { value: "12.5" },
   });
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(
     await screen.findByText("Add a starting location to use a maximum drive time."),
@@ -2280,7 +2283,7 @@ test("rejects invalid hard numeric filters instead of silently omitting them", a
     target: { value: "-1" },
   });
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(
     await screen.findByText("Maximum drive time must be greater than 0 hours."),
@@ -2292,7 +2295,7 @@ test("rejects invalid hard numeric filters instead of silently omitting them", a
     target: { value: "12.5" },
   });
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   await screen.findByText("Tignes - Val d'Isere");
   const searchRequest = requests.find((item) => item.url === "/api/search");
@@ -2363,7 +2366,7 @@ test("previews a validated dynamic refinement before applying it", async () => {
   ];
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   expect(
     await screen.findByRole("heading", {
       level: 2,
@@ -2513,7 +2516,7 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   await user.type(screen.getByLabelText("Starting location"), "Warsaw");
   await user.type(screen.getByLabelText("Maximum drive time"), "15");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(
     await screen.findByRole("radio", { name: /quiet and relaxed/i }),
   );
@@ -2661,7 +2664,7 @@ test("keeps pass-value objectives exclusive through refinement apply and undo", 
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(
     await screen.findByRole("radio", {
       name: /prefer the lowest daily pass price/i,
@@ -2737,7 +2740,7 @@ test("an ordinary successful search clears refinement undo and rank feedback", a
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(
     await screen.findByRole("radio", { name: /quiet and relaxed/i }),
   );
@@ -2784,7 +2787,7 @@ test("preserves previous results and the refinement on a failed rerank", async (
   );
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await waitFor(() => {
     expect(
       requests.filter((item) => item.url === "/api/search/refinements"),
@@ -2883,7 +2886,7 @@ test("shows a lower-card save failure beside only the initiating result", async 
   ];
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await screen.findByText("Tignes - Val d'Isere");
 
   vi.stubGlobal(
@@ -3015,7 +3018,7 @@ test("preserves refinement objectives and answered state when pass priority chan
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(await screen.findByRole("radio", { name: /very important/i }));
   await user.click(screen.getByRole("button", { name: "Update results" }));
 
@@ -3097,7 +3100,7 @@ test("changing a hard constraint starts a new refinement context", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(await screen.findByRole("radio", { name: /quiet and relaxed/i }));
   await user.click(screen.getByRole("button", { name: "Update results" }));
   await screen.findByRole("button", { name: "Undo" });
@@ -3152,7 +3155,7 @@ test("keeps a no-op refinement local and records it as answered", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(
     await screen.findByRole("radio", { name: /keep current balance/i }),
   );
@@ -3252,7 +3255,7 @@ test("keeps keyboard focus stable while refinement follow-ups load", async () =>
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(
     await screen.findByRole("radio", { name: /keep current balance/i }),
   );
@@ -3318,7 +3321,7 @@ test("guards drawer entry and chip mutations during a delayed rerank", async () 
   ];
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await user.click(await screen.findByRole("radio", { name: /very important/i }));
 
   let resolveRerank: ((value: Response) => void) | undefined;
@@ -3408,7 +3411,7 @@ test("lets users remove selected objectives and refinement group priorities", as
   );
   expect(screen.queryByText(/prefer terrain for lift-pass price/i)).not.toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   const firstSearch = requests.find((item) => item.url === "/api/search");
   expect(JSON.parse(String(firstSearch?.init?.body)).intent.objectives).toEqual([]);
 
@@ -3431,7 +3434,7 @@ test("lets users remove selected objectives and refinement group priorities", as
 test("saving a V4 configuration preserves trip entity identities", async () => {
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   const card = (await screen.findByText("Tignes - Val d'Isere")).closest("article");
   expect(card).not.toBeNull();
   await user.click(
@@ -3461,7 +3464,7 @@ test("saving a V4 configuration preserves trip entity identities", async () => {
 test("saving displayed results ignores unapplied draft travel dates", async () => {
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   await user.selectOptions(screen.getByLabelText("Travel window"), "dates");
@@ -3520,7 +3523,7 @@ test("does not present stable unscored order as recommendation strength", async 
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   expect(await screen.findByText("Fit comparison unavailable")).toBeInTheDocument();
   expect(
@@ -3547,7 +3550,7 @@ test("asks for travel dates when results have no applied travel window", async (
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   await screen.findAllByText("Add travel dates to assess snow fit");
   const card = document.querySelector<HTMLElement>(".recommendation-card");
@@ -3595,7 +3598,7 @@ test("renders grouped recommendations with independent expansion and no raw meta
   ];
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
 
   const firstToggle = await screen.findByRole("button", {
     name: /collapse tignes - val d'isere/i,
@@ -3628,7 +3631,7 @@ test("skipping a topic requests the next question from the same baseline", async
   ];
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   expect(await screen.findByText("First refinement?")).toBeInTheDocument();
   expect(screen.queryByText("Second refinement?")).not.toBeInTheDocument();
 
@@ -3670,7 +3673,7 @@ test("skipping the final refinement returns focus to the results heading", async
   ];
   const user = userEvent.setup();
   render(<App />);
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(screen.getByRole("button", { name: /find trip options/i }));
   await screen.findByText("What should matter more?");
 
   await user.click(screen.getByRole("button", { name: /skip this question/i }));

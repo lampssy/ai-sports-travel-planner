@@ -304,6 +304,16 @@ def _conditions_provenance(
         basis_summary=(
             "Using a current forecast-based conditions signal from the latest "
             "weather refresh."
+            if freshness_status == "fresh"
+            else (
+                "Using the latest available forecast-based conditions signal. "
+                "This forecast is out of date."
+                if freshness_status == "stale"
+                else (
+                    "Using the latest available forecast-based conditions signal. "
+                    "Its update time is unavailable."
+                )
+            )
         ),
     )
 
@@ -450,21 +460,28 @@ def _render_ski_area_sections(
         current_snow_label = _current_snow_signal_label(
             current.snow_confidence_label,
             source_available=section.current_provenance.source_type == "forecast",
+            freshness_status=section.current_provenance.freshness_status,
+        )
+        signal_heading = (
+            "Current snow signal"
+            if section.current_provenance.source_type == "forecast"
+            and section.current_provenance.freshness_status == "fresh"
+            else "Latest available snow signal"
         )
         rendered.append(
             f"""
       <section id="ski-area-{_html(area.ski_area_id)}" class="card area-section">
         <div class="area-header">
-          <div><div class="eyebrow">Current snow signal</div><h2>{_html(area.name)} ski-area conditions</h2><p>{_html(current.weather_summary)}</p></div>
+          <div><div class="eyebrow">{_html(signal_heading)}</div><h2>{_html(area.name)} ski-area conditions</h2><p>{_html(current.weather_summary)}</p></div>
           <div class="metrics">
-            <div class="metric"><div class="label">Current snow signal</div><div class="value">{_html(current_snow_label)}</div></div>
+            <div class="metric"><div class="label">{_html(signal_heading)}</div><div class="value">{_html(current_snow_label)}</div></div>
             <div class="metric"><div class="label">Disruption signal</div><div class="value">{_html(_availability_label(current.availability_status))}</div></div>
             <div class="metric"><div class="label">Elevation</div><div class="value">{area.base_elevation_m}-{area.summit_elevation_m}m</div></div>
             <div class="metric"><div class="label">Season</div><div class="value">{_html(_season_label(area))}</div></div>
           </div>
         </div>
         <p class="muted">{_html(section.current_provenance.basis_summary)}</p>
-        <p class="muted"><strong>Source:</strong> {_html(section.current_provenance.source_name or "Estimated")} · <strong>Data status:</strong> {_html(str(section.current_provenance.freshness_status).replace("_", " "))} · <strong>Updated:</strong> {_html(_timestamp_label(section.current_provenance.updated_at))}</p>
+        <p class="muted"><strong>Source:</strong> {_html(section.current_provenance.source_name or "Estimated")} · <strong>Data status:</strong> {_html(_freshness_label(section.current_provenance.freshness_status))} · <strong>Updated:</strong> {_html(_timestamp_label(section.current_provenance.updated_at))}</p>
         <div class="eyebrow">Conditions calendar</div>
         <p class="muted">{_html(_calendar_intro(section.calendar_months, area.name, best_months_label))}</p>
         <div class="calendar">{_render_calendar(section.calendar_months)}</div>
@@ -573,14 +590,41 @@ def _availability_label(value: str) -> str:
     }.get(value, value.replace("_", " ").title())
 
 
-def _current_snow_signal_label(value: str, *, source_available: bool) -> str:
+def _current_snow_signal_label(
+    value: str,
+    *,
+    source_available: bool,
+    freshness_status: str,
+) -> str:
     if not source_available:
         return "Not enough evidence"
-    return {
+    current_label = {
         "good": "Current snow conditions look good",
         "fair": "Current snow conditions are mixed",
         "poor": "Current snow conditions look poor",
-    }.get(value, "Not enough evidence")
+    }.get(value)
+    latest_label = {
+        "good": "Latest available snow conditions look good",
+        "fair": "Latest available snow conditions are mixed",
+        "poor": "Latest available snow conditions look poor",
+    }.get(value)
+    if current_label is None or latest_label is None:
+        return "Not enough evidence"
+    if freshness_status == "fresh":
+        return current_label
+    qualifier = (
+        "out of date" if freshness_status == "stale" else "update time unavailable"
+    )
+    return f"{latest_label} ({qualifier})"
+
+
+def _freshness_label(value: str) -> str:
+    return {
+        "fresh": "fresh",
+        "stale": "out of date",
+        "unknown": "update time unavailable",
+        "historical": "historical",
+    }.get(value, value.replace("_", " "))
 
 
 def _historical_snow_signal_label(value: str) -> str:

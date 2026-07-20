@@ -1436,7 +1436,8 @@ def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:
     local = presentation.answer_by_id["local_apres.low_key"]
 
     assert presentation.topic_by_id["ski_day_apres"].fallback_question == (
-        "What atmosphere do you prefer right after skiing?"
+        "After skiing, would you rather relax somewhere quiet or stay where it "
+        "feels lively?"
     )
     assert ski_day.description == "Prefer a quiet place to relax after skiing."
     assert presentation.answer_by_id["ski_day_apres.moderate"].label == (
@@ -1446,6 +1447,12 @@ def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:
         "Prefer a social atmosphere without a strong party focus."
     )
     assert local.description == "Prioritize a quiet evening near where you stay."
+    assert presentation.topic_by_id["local_apres"].fallback_question == (
+        "In the evening, would you rather stay somewhere quiet or somewhere lively?"
+    )
+    assert presentation.answer_by_id["local_pace.balanced"].description == (
+        "Prefer a place that feels calm but still has some things to do nearby."
+    )
 
 
 def test_refinement_reasons_explain_the_specific_choice() -> None:

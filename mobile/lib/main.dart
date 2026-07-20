@@ -756,13 +756,7 @@ class _RecommendationGroupCardState extends State<RecommendationGroupCard> {
                 Chip(label: Text(tripOption.focusSkiAreaName)),
                 Chip(label: Text(tripOption.stayBaseName)),
                 Chip(label: Text(tripOption.selectedPass.name)),
-                Chip(
-                  label: Text(
-                    tripOption.selectedPass.accessiblePisteKm == null
-                        ? 'Pass terrain details unavailable'
-                        : '${tripOption.selectedPass.accessiblePisteKm} km of pass terrain',
-                  ),
-                ),
+                Chip(label: Text(tripOption.selectedPass.terrainDescription)),
               ],
             ),
             if (result.alternativeConfigurations.isNotEmpty) ...[
@@ -1612,6 +1606,7 @@ class PassOptionItem {
     required this.liftPassProductId,
     required this.name,
     required this.accessiblePisteKm,
+    required this.accessiblePisteKmEvidence,
   });
 
   factory PassOptionItem.fromJson(Map<String, dynamic> json) {
@@ -1619,12 +1614,81 @@ class PassOptionItem {
       liftPassProductId: json['lift_pass_product_id'] as String,
       name: json['name'] as String,
       accessiblePisteKm: (json['accessible_piste_km'] as num?)?.toDouble(),
+      accessiblePisteKmEvidence: json['accessible_piste_km_evidence'] is Map
+          ? PisteKmEvidenceItem.fromJson(
+              Map<String, dynamic>.from(
+                json['accessible_piste_km_evidence'] as Map,
+              ),
+            )
+          : null,
     );
   }
 
   final String liftPassProductId;
   final String name;
   final double? accessiblePisteKm;
+  final PisteKmEvidenceItem? accessiblePisteKmEvidence;
+
+  String get terrainDescription {
+    final kilometres = accessiblePisteKm;
+    if (kilometres == null) return 'Pass terrain details unavailable';
+
+    final evidence = accessiblePisteKmEvidence;
+    if (evidence == null || evidence.scope == PisteKmScope.unknown) {
+      return '$kilometres km reported; terrain scope is not confirmed';
+    }
+    final scopeCopy = switch (evidence.scope) {
+      PisteKmScope.pass => 'terrain covered by this pass',
+      PisteKmScope.terrainDomain => 'terrain in the pass-accessible area',
+      PisteKmScope.skiArea =>
+        'terrain in the ski area; pass coverage is not confirmed',
+      PisteKmScope.unknown => 'terrain with unconfirmed scope',
+    };
+    return switch (evidence.trustStatus) {
+      CatalogTrustStatus.verified => '$kilometres km of $scopeCopy',
+      CatalogTrustStatus.verifiedWithAdjustment =>
+        'About $kilometres km of $scopeCopy',
+      CatalogTrustStatus.estimated => 'Estimated $kilometres km of $scopeCopy',
+      CatalogTrustStatus.needsSource =>
+        '$kilometres km of $scopeCopy; source confirmation is still needed',
+      CatalogTrustStatus.unknown =>
+        '$kilometres km reported; source status is not confirmed',
+    };
+  }
+}
+
+enum PisteKmScope { pass, terrainDomain, skiArea, unknown }
+
+enum CatalogTrustStatus {
+  verified,
+  verifiedWithAdjustment,
+  estimated,
+  needsSource,
+  unknown,
+}
+
+class PisteKmEvidenceItem {
+  const PisteKmEvidenceItem({required this.scope, required this.trustStatus});
+
+  factory PisteKmEvidenceItem.fromJson(Map<String, dynamic> json) {
+    final scope = switch (json['scope']) {
+      'pass' => PisteKmScope.pass,
+      'terrain_domain' => PisteKmScope.terrainDomain,
+      'ski_area' => PisteKmScope.skiArea,
+      _ => PisteKmScope.unknown,
+    };
+    final trustStatus = switch (json['trust_status']) {
+      'verified' => CatalogTrustStatus.verified,
+      'verified_with_adjustment' => CatalogTrustStatus.verifiedWithAdjustment,
+      'estimated' => CatalogTrustStatus.estimated,
+      'needs_source' => CatalogTrustStatus.needsSource,
+      _ => CatalogTrustStatus.unknown,
+    };
+    return PisteKmEvidenceItem(scope: scope, trustStatus: trustStatus);
+  }
+
+  final PisteKmScope scope;
+  final CatalogTrustStatus trustStatus;
 }
 
 class CurrentTripSummaryData {

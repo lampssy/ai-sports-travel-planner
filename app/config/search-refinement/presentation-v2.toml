@@ -138,7 +138,7 @@ topic_id = "ski_day_apres"
 factor_id = "ski_day_apres"
 traveller_topic = "the atmosphere right after skiing"
 question_phrases = ["atmosphere right after skiing", "after-ski atmosphere"]
-fallback_question = "What atmosphere do you prefer right after skiing?"
+fallback_question = "After skiing, would you rather relax somewhere quiet or stay where it feels lively?"
 fallback_reason = "Ski areas differ in how social or lively they feel right after skiing."
 fallback_answer_ids = ["ski_day_apres.low_key", "ski_day_apres.moderate", "ski_day_apres.lively", "ski_day_apres.ignore"]
 answer_ids = ["ski_day_apres.low_key", "ski_day_apres.moderate", "ski_day_apres.lively", "ski_day_apres.destination_defining", "ski_day_apres.ignore"]
@@ -149,7 +149,7 @@ topic_id = "local_apres"
 factor_id = "local_apres"
 traveller_topic = "the evening atmosphere near where you stay"
 question_phrases = ["evening atmosphere near where you stay"]
-fallback_question = "What evening atmosphere do you prefer near where you stay?"
+fallback_question = "In the evening, would you rather stay somewhere quiet or somewhere lively?"
 fallback_reason = "Places to stay differ in how quiet or lively they are in the evening."
 fallback_answer_ids = ["local_apres.low_key", "local_apres.moderate", "local_apres.lively", "local_apres.ignore"]
 answer_ids = ["local_apres.low_key", "local_apres.moderate", "local_apres.lively", "local_apres.destination_defining", "local_apres.ignore"]
@@ -532,7 +532,7 @@ factor_preference_patch = { factor_id = "local_pace", mode = "prefer", values = 
 answer_id = "local_pace.balanced"
 factor_id = "local_pace"
 label = "Balanced"
-description = "Prioritize a balanced pace near where you stay."
+description = "Prefer a place that feels calm but still has some things to do nearby."
 factor_preference_patch = { factor_id = "local_pace", mode = "prefer", values = ["balanced"] }
 
 [[answers]]

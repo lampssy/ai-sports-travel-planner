@@ -160,6 +160,34 @@ describe("RecommendationCard", () => {
     ).toBeVisible();
   });
 
+  test("renders wider-terrain strength without claiming pass coverage", () => {
+    const terrainCandidate = {
+      ...primary,
+      factors: [
+        {
+          ...primary.factors[0],
+          factor_id: "terrain_potential_scale",
+          raw_value: 360,
+          effective_utility: 0.7,
+        },
+      ],
+    };
+
+    render(
+      <StatefulCard
+        recommendation={{ ...result, top_configuration: terrainCandidate }}
+        travelWindow={{ month: 3 }}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "Matterhorn Ski Paradise offers wider terrain; a different or additional pass may be needed.",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/selected pass supports/i)).toBeNull();
+  });
+
   test("exposes an independent expansion control", async () => {
     const user = userEvent.setup();
     render(<StatefulCard />);

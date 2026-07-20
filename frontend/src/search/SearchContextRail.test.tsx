@@ -110,7 +110,7 @@ test("separates hard constraints from preferences and renders one refinement", (
   expect(screen.getByRole("button", { name: "Adjust" })).toBeVisible();
   expect(screen.getAllByText("What should break the tie?")).toHaveLength(1);
   expect(screen.getByRole("status")).toHaveTextContent(
-    "A refinement question is ready. What should break the tie?",
+    "One more question is ready. What should break the tie?",
   );
 });
 
@@ -275,7 +275,7 @@ test("announces initial and replacement refinement questions", () => {
     />,
   );
   expect(screen.getByRole("status")).toHaveTextContent(
-    "A refinement question is ready. What should break the tie?",
+    "One more question is ready. What should break the tie?",
   );
 
   rerender(
@@ -290,7 +290,7 @@ test("announces initial and replacement refinement questions", () => {
     />,
   );
   expect(screen.getByRole("status")).toHaveTextContent(
-    "A refinement question is ready. What should matter next?",
+    "One more question is ready. What should matter next?",
   );
 });
 

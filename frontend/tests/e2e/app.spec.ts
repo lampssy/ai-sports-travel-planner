@@ -508,7 +508,7 @@ async function scrollYAfterLayout(page: Page) {
 
 async function submitHomepageBrief(page: Page, brief: string) {
   await page.getByLabel("Describe your ski trip").fill(brief);
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   const heading = page.getByRole("heading", { name: "Trip options for you" });
   await expect(heading).toBeVisible();
   await expect(heading).toBeFocused();
@@ -2135,7 +2135,7 @@ test("keyboard-only core flow keeps focus and route announcements logical", asyn
   const brief = page.getByLabel("Describe your ski trip");
   await brief.fill("Tignes from 20 to 22 July");
   await brief.press("Tab");
-  await expect(page.getByRole("button", { name: "Find resorts" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Find trip options" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(
     page.getByRole("heading", { name: "Trip options for you" }),
@@ -2212,14 +2212,14 @@ test("failed initial search can be resubmitted without losing the brief", async 
 
   const brief = "March in France with reliable snow";
   await page.getByLabel("Describe your ski trip").fill(brief);
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Trip options could not be loaded. Try again.",
   );
   await expect(page.getByLabel("Describe your ski trip")).toHaveValue(brief);
-  await expect(page.getByRole("button", { name: "Find resorts" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Find trip options" })).toBeEnabled();
 
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   await expect(
     page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
@@ -2245,7 +2245,7 @@ test("no results and missing metrics remain explicit and overflow-free", async (
 
   await mockSearchV4Api(page, [noResults, missingMetrics], []);
   await page.goto("/");
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   await expect(
     page.getByRole("heading", { name: "No trip option matches all of your must-haves" }),
   ).toBeVisible();

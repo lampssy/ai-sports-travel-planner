@@ -31,7 +31,7 @@ const REFINEMENT_ANNOUNCEMENT_COPY: Partial<
 > = {
   ...REFINEMENT_STATUS_COPY,
   temporarily_unavailable:
-    "No additional refinement is available right now. Your results are unchanged.",
+    "No additional question is available right now. Your results are unchanged.",
 };
 
 function ContextGroup({
@@ -115,7 +115,7 @@ export function SearchContextRail({
   const refinementAnnouncement = terminalFailure
     ? null
     : refinement
-      ? `A refinement question is ready. ${refinement.question}`
+      ? `One more question is ready. ${refinement.question}`
       : REFINEMENT_ANNOUNCEMENT_COPY[refinementStatus];
 
   return (

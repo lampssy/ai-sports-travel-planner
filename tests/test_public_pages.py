@@ -6,7 +6,10 @@ from fastapi.testclient import TestClient
 from app.data.catalog_loader import load_catalog
 from app.data.catalog_repository import CatalogRepository
 from app.data.catalog_sync import sync_catalog_snapshot
-from app.data.repositories import RawWeatherHistoryRepository
+from app.data.repositories import (
+    RawWeatherHistoryRepository,
+    ResortConditionsRepository,
+)
 from app.domain.models import RawWeatherObservation, ResortConditions
 from app.domain.planning import PlanningAssessment
 from app.main import create_app
@@ -62,7 +65,7 @@ def test_public_destination_page_returns_server_rendered_html() -> None:
     )
     assert '<meta property="og:title"' in response.text
     assert '<meta name="twitter:description"' in response.text
-    assert "Current snow signal" in response.text
+    assert "Latest available snow signal" in response.text
     assert "Snow fit" not in response.text
     assert "Not enough evidence" in response.text
     assert "Conditions calendar" in response.text
@@ -146,7 +149,7 @@ def test_public_destination_fallback_uses_evidence_limitation_not_a_fit_state() 
         response = client.get("/ski-destinations/tignes")
 
     assert response.status_code == 200
-    assert "Current snow signal" in response.text
+    assert "Latest available snow signal" in response.text
     assert "Not enough evidence" in response.text
     assert "Some concerns" not in response.text
 
@@ -176,22 +179,69 @@ def test_public_calendar_fallback_months_use_seasonal_estimates() -> None:
 
 
 @pytest.mark.parametrize(
-    ("label", "source_available", "expected"),
+    ("label", "source_available", "freshness_status", "expected"),
     [
-        ("good", True, "Current snow conditions look good"),
-        ("fair", True, "Current snow conditions are mixed"),
-        ("poor", True, "Current snow conditions look poor"),
-        ("fair", False, "Not enough evidence"),
+        ("good", True, "fresh", "Current snow conditions look good"),
+        ("fair", True, "fresh", "Current snow conditions are mixed"),
+        ("poor", True, "fresh", "Current snow conditions look poor"),
+        (
+            "good",
+            True,
+            "stale",
+            "Latest available snow conditions look good (out of date)",
+        ),
+        ("fair", False, "unknown", "Not enough evidence"),
     ],
 )
 def test_current_snow_signal_labels_reflect_source_availability(
     label: str,
     source_available: bool,
+    freshness_status: str,
     expected: str,
 ) -> None:
     assert (
-        _current_snow_signal_label(label, source_available=source_available) == expected
+        _current_snow_signal_label(
+            label,
+            source_available=source_available,
+            freshness_status=freshness_status,
+        )
+        == expected
     )
+
+
+def test_public_destination_page_does_not_call_stale_forecast_current() -> None:
+    ResortConditionsRepository().upsert_conditions(
+        entity_id="tignes-ski-area",
+        entity_name="Tignes",
+        conditions=ResortConditions(
+            resort_name="Tignes",
+            snow_confidence_score=0.8,
+            snow_confidence_label="good",
+            availability_status="open",
+            weather_summary="The latest available forecast shows settled weather.",
+            conditions_score=0.8,
+            updated_at="2020-01-01T00:00:00+00:00",
+            source="open-meteo",
+        ),
+    )
+    app = create_app()
+
+    with TestClient(app) as client:
+        response = client.get("/ski-destinations/tignes")
+
+    area_match = re.search(
+        r'<section id="ski-area-tignes-ski-area".*?</section>',
+        response.text,
+        flags=re.DOTALL,
+    )
+    assert area_match is not None
+    area_section = area_match.group(0)
+    assert "Latest available snow signal" in area_section
+    assert "Latest available snow conditions look good (out of date)" in area_section
+    assert "This forecast is out of date." in area_section
+    assert "Data status:</strong> out of date" in area_section
+    assert "Current snow" not in area_section
+    assert "current forecast" not in area_section.lower()
 
 
 def test_public_destination_page_unknown_destination_returns_404() -> None:

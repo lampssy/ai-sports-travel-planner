@@ -33,7 +33,6 @@ export function DecisionEvidenceLedger({
   return (
     <section className="dossier-section why-trip" id="decision-evidence">
       <SectionHeader
-        eyebrow="Decision evidence"
         title="Why this trip"
         description="Why Snowcast recommends this trip, including important limits."
       />

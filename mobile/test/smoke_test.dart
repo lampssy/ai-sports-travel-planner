@@ -36,6 +36,12 @@ Map<String, dynamic> recommendationGroupJson() => {
       'validity_scope': 'local_multi_area',
       'covered_ski_area_ids': ['grands-montets'],
       'accessible_piste_km': 115,
+      'accessible_piste_km_evidence': {
+        'trust_status': 'verified',
+        'scope': 'pass',
+        'source_entity_id': 'chamonix-le-pass',
+        'field_group': 'pass_accessible_terrain',
+      },
       'price': null,
     },
     'lodging_estimate': null,
@@ -139,6 +145,46 @@ void main() {
     expect(filters.tripEndDate, '2026-04-16');
   });
 
+  test('mobile pass model preserves terrain scope and trust', () {
+    final pass = RecommendationGroupItem.fromJson(
+      recommendationGroupJson(),
+    ).topConfiguration.selectedPass;
+
+    expect(pass.accessiblePisteKmEvidence?.scope, PisteKmScope.pass);
+    expect(
+      pass.accessiblePisteKmEvidence?.trustStatus,
+      CatalogTrustStatus.verified,
+    );
+  });
+
+  test('mobile pass terrain copy stays scope-aware and trust-aware', () {
+    String terrainCopy({String? scope, String? trustStatus}) {
+      return PassOptionItem.fromJson({
+        'lift_pass_product_id': 'test-pass',
+        'name': 'Test pass',
+        'accessible_piste_km': 120,
+        if (scope != null && trustStatus != null)
+          'accessible_piste_km_evidence': {
+            'scope': scope,
+            'trust_status': trustStatus,
+          },
+      }).terrainDescription;
+    }
+
+    expect(
+      terrainCopy(
+        scope: 'terrain_domain',
+        trustStatus: 'verified_with_adjustment',
+      ),
+      'About 120.0 km of terrain in the pass-accessible area',
+    );
+    expect(
+      terrainCopy(scope: 'pass', trustStatus: 'needs_source'),
+      '120.0 km of terrain covered by this pass; source confirmation is still needed',
+    );
+    expect(terrainCopy(), '120.0 km reported; terrain scope is not confirmed');
+  });
+
   testWidgets('mobile card renders V4 trip configuration', (tester) async {
     final group = RecommendationGroupItem.fromJson(recommendationGroupJson());
     final session = AppSession(
@@ -174,9 +220,61 @@ void main() {
     );
     expect(find.text('Chamonix Le Pass'), findsOneWidget);
     expect(find.text('84.0 fit / 100'), findsNothing);
-    expect(find.text('115.0 km of pass terrain'), findsOneWidget);
+    expect(
+      find.text('115.0 km of terrain covered by this pass'),
+      findsOneWidget,
+    );
     expect(find.text('Save as current trip'), findsOneWidget);
   });
+
+  testWidgets(
+    'mobile card does not present estimated ski-area terrain as pass terrain',
+    (tester) async {
+      final payload = recommendationGroupJson();
+      final top = payload['top_configuration'] as Map<String, dynamic>;
+      final selectedPass = top['selected_pass'] as Map<String, dynamic>;
+      selectedPass['accessible_piste_km_evidence'] = {
+        'trust_status': 'estimated',
+        'scope': 'ski_area',
+        'source_entity_id': 'grands-montets',
+        'field_group': 'terrain_metrics',
+      };
+      final group = RecommendationGroupItem.fromJson(payload);
+      final session = AppSession(
+        accessToken: 'token',
+        expiresAt: '2026-07-03T00:00:00+00:00',
+        user: AppUser(userId: 'user-1', email: 'user@example.com'),
+      );
+      final api = MobileApiClient(baseUrl: 'http://localhost/api');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RecommendationGroupCard(
+              result: group,
+              session: session,
+              api: api,
+              authController: AuthController(
+                api: api,
+                sessionStore: InMemorySessionStore(),
+              ),
+              travelMonth: 3,
+              tripStartDate: '',
+              tripEndDate: '',
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.text(
+          'Estimated 115.0 km of terrain in the ski area; pass coverage is not confirmed',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('km of pass terrain'), findsNothing);
+    },
+  );
 
   testWidgets('mobile search uses public vocabulary without debug terms', (
     tester,

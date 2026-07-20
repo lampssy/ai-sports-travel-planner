@@ -676,9 +676,9 @@ export function selectTripEssentialCategories(
 }
 
 const strengthCopy: Record<string, string> = {
-  accessible_terrain_scale: "Terrain scale contributes positively to this comparison.",
+  accessible_terrain_scale: "Terrain scale compares well with the other matches.",
   party_skill_coverage: "The selected terrain supports your party's skill mix.",
-  terrain_potential_scale: "The selected pass supports a broad terrain choice.",
+  terrain_potential_scale: "The ski region offers wider terrain.",
   lift_network_scale: "The lift network supports varied ski-day plans.",
   glacier_terrain: "Glacier terrain is available for this trip option.",
   snowmaking_availability: "Snowmaking is available for this trip option.",
@@ -718,26 +718,36 @@ function supportedVerdict(
   if (factorId === "accessible_terrain_scale") {
     switch (configuration.selected_pass.accessible_piste_km_evidence?.scope) {
       case "ski_area":
-        return "A strong match for terrain in the selected ski area.";
+        return "Matches terrain in the selected ski area.";
       case "terrain_domain":
-        return "A strong match for connected terrain covered by this pass.";
+        return "Matches connected terrain covered by this pass.";
       case "pass":
-        return "A strong match for terrain covered by this pass.";
+        return "Matches terrain covered by this pass.";
       default:
-        return "A strong terrain match.";
+        return "Terrain compares well with the other matches.";
     }
   }
   const verdicts: Record<string, string> = {
-    party_skill_coverage: "A strong match for your group's skiing level.",
-    terrain_potential_scale: "A strong match for wider terrain access.",
-    lift_network_scale: "A strong match for a large lift network.",
-    glacier_terrain: "A strong match for glacier terrain.",
-    snowmaking_availability: "A strong match for snowmaking support.",
-    pass_price_per_day: "A strong match for lift-pass price.",
-    pass_terrain_value: "A strong match for terrain and lift-pass value.",
-    travel_effort: "A strong match for a shorter or easier journey.",
+    party_skill_coverage: "Matches your group's skiing level.",
+    terrain_potential_scale: "The ski region offers wider terrain.",
+    lift_network_scale: "The lift network supports varied ski-day plans.",
+    glacier_terrain: "Glacier terrain is available for this trip option.",
+    snowmaking_availability: "Snowmaking is available for this trip option.",
+    pass_price_per_day: "The lift-pass price compares well with the other matches.",
+    pass_terrain_value: "Terrain and lift-pass value compare well with the other matches.",
+    travel_effort: "The route fits a shorter or easier journey.",
   };
-  return verdicts[factorId] ?? "A strong trip match.";
+  return verdicts[factorId] ?? "This trip compares well with the other matches.";
+}
+
+function supportedStrength(
+  configuration: SearchV4Configuration,
+  factorId: string,
+): string {
+  if (factorId === "terrain_potential_scale") {
+    return `${configuration.ski_region_name} offers wider terrain; a different or additional pass may be needed.`;
+  }
+  return strengthCopy[factorId];
 }
 
 export interface CandidateNarrative {
@@ -887,7 +897,7 @@ function forecastConditions(
     parts.push(
       `typical historical snow depth ${formatWeatherMetric(
         response.evidence.historical.snow_depth_cm_p50,
-      )} cm (daily medians averaged across the window)`,
+      )} cm`,
     );
   }
   return parts.length
@@ -976,7 +986,7 @@ export function weatherEvidencePresentation(
       ? null
       : `Typical historical snow depth ${formatWeatherMetric(
           historical.snow_depth_cm_p50,
-        )} cm (daily medians averaged across the window)`,
+        )} cm`,
     historical.average_daily_snowfall_cm == null
       ? null
       : `typical fresh snow ${formatWeatherMetric(
@@ -1263,7 +1273,7 @@ export function buildCandidateNarrative(
                   : strengthCopy[supported.factor_id]
               : supported.factor_id === "trip_window_snow_fit"
                 ? `${snowFitPresentation(configuration, travelWindow).label}: Available snow evidence supports this travel window.`
-              : strengthCopy[supported.factor_id],
+              : supportedStrength(configuration, supported.factor_id),
         }
       : {}),
     ...(watchout ? { watchout } : {}),
@@ -1340,9 +1350,12 @@ export function refinementPreviewCopy(
     return `This choice would change ${changes.length} result positions.`;
   }
   if (preview.eligible_candidate_count_delta !== 0) {
-    return `This choice may change eligibility for ${Math.abs(
-      preview.eligible_candidate_count_delta,
-    )} trip options.`;
+    const count = Math.abs(preview.eligible_candidate_count_delta);
+    return `This choice may change ${count} possible ${count === 1 ? "match" : "matches"}.`;
   }
   return "This changes how your current matches are evaluated.";
+}
+
+export function tripOptionCountCopy(count: number): string {
+  return `${count} trip ${count === 1 ? "option matches" : "options match"} your must-haves`;
 }

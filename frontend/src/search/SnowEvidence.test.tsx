@@ -284,7 +284,7 @@ test("renders month climatology metrics, segmented charts, and collapsed source 
   expect(within(metrics).getByText("Usual historical range")).toBeVisible();
   expect(
     within(metrics).getByText(
-      "Daily median values averaged across the travel window. Historical data gives an average 87% chance of at least 30 cm during this travel window.",
+      "Across matching dates, historical data averaged 87% of days at or above the 30 cm snow-depth reference.",
     ),
   ).toBeVisible();
   expect(within(metrics).getByText("-2.1 °C")).toBeVisible();
@@ -328,6 +328,21 @@ test("keeps source rows and equivalent chart values in technical details", () =>
   expect(screen.getByText("ERA5-Land")).toBeVisible();
   expect(screen.getByText("2,400 m")).toBeVisible();
   expect(screen.getByText("03-01, 03-15, 03-31")).toBeVisible();
+  expect(
+    screen.getByText(
+      "Typical historical snow depth averages the daily median values across matching dates in the travel window.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByText(
+      "The usual historical range averages the daily 25th- and 75th-percentile values across matching dates.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByText(
+      "The 30 cm figure is the average daily historical percentage at or above the reference across matching dates. It is not the chance of reaching 30 cm at least once during the trip.",
+    ),
+  ).toBeVisible();
   expect(screen.getByText("3")).toBeVisible();
   expect(screen.getByText("Baseline years")).toBeVisible();
   expect(screen.getByText("Latest archive year")).toBeVisible();
