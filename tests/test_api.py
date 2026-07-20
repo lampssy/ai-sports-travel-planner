@@ -1450,16 +1450,16 @@ def test_current_trip_summary_uses_last_checked_at_when_present(monkeypatch) -> 
         (
             None,
             "since_trip_saved",
-            "Conditions have not changed since you saved this trip.",
+            "No newer weather information is available since you saved this trip.",
         ),
         (
             timedelta(days=1),
             "since_last_check",
-            "Conditions have not changed since your last check.",
+            "No newer weather information is available since your last check.",
         ),
     ],
 )
-def test_current_trip_summary_uses_basis_aware_unchanged_copy(
+def test_current_trip_summary_uses_basis_aware_no_newer_information_copy(
     monkeypatch,
     checked_at_offset: timedelta | None,
     comparison_kind: str,
@@ -1500,7 +1500,7 @@ def test_current_trip_summary_uses_basis_aware_unchanged_copy(
     payload = response.json()
     assert payload["comparison_basis"]["kind"] == comparison_kind
     assert payload["delta"] == {
-        "status": "unchanged",
+        "status": "insufficient_history",
         "summary": expected_summary,
         "changes": [],
     }

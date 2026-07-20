@@ -1987,6 +1987,7 @@ test("shows and retries a failed saved-trip load", async () => {
   render(<App />);
 
   const error = await screen.findByRole("alert");
+  expect(screen.getByRole("heading", { name: "Current trip" })).toHaveFocus();
   expect(error).toHaveTextContent("Saved trip could not be loaded");
   expect(error).toHaveTextContent("Your current trip could not be loaded. Try again.");
   expect(error).not.toHaveTextContent(/failed to fetch|api|backend/i);

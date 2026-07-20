@@ -101,7 +101,6 @@ export function CurrentTripView({
   onClear: () => void;
 }) {
   const tripHeadingRef = useRef<HTMLHeadingElement>(null);
-  const emptyHeadingRef = useRef<HTMLHeadingElement>(null);
   const conditionsRef = useRef<HTMLDivElement>(null);
   const initialFocusHandledRef = useRef(false);
   const handledTripRecoveryRef = useRef(tripRecoveryRequest);
@@ -117,10 +116,8 @@ export function CurrentTripView({
   useEffect(() => {
     if (initialFocusHandledRef.current || tripLoading) return;
     initialFocusHandledRef.current = true;
-    (trip ? tripHeadingRef.current : emptyHeadingRef.current)?.focus({
-      preventScroll: true,
-    });
-  }, [trip, tripLoading]);
+    tripHeadingRef.current?.focus({ preventScroll: true });
+  }, [tripLoading]);
 
   useEffect(() => {
     if (
@@ -158,6 +155,9 @@ export function CurrentTripView({
       </button>
       <section className="current-trip-panel">
         <p className="eyebrow">Trip updates</p>
+        <h1 ref={tripHeadingRef} tabIndex={-1}>
+          {trip?.ski_region_name ?? "Current trip"}
+        </h1>
         {tripAnnouncementRequest !== null ? (
           <p
             key={`trip-recovery-${tripAnnouncementRequest}`}
@@ -196,7 +196,6 @@ export function CurrentTripView({
         ) : null}
         {trip ? (
           <>
-            <h1 ref={tripHeadingRef} tabIndex={-1}>{trip.ski_region_name}</h1>
             <p className="current-trip-panel__entities">
               {trip.stay_base_name} · {trip.focus_ski_area_name} ·{" "}
               {trip.lift_pass_product_name}
@@ -237,12 +236,9 @@ export function CurrentTripView({
             </button>
           </>
         ) : tripLoadError ? null : (
-          <>
-            <h1 ref={emptyHeadingRef} tabIndex={-1}>Current trip</h1>
-            <p className="current-trip-panel__empty">
-              Sign in to the Snowcast mobile app and save a trip option to track it.
-            </p>
-          </>
+          <p className="current-trip-panel__empty">
+            Sign in to the Snowcast mobile app and save a trip option to track it.
+          </p>
         )}
       </section>
     </main>
