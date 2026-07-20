@@ -687,14 +687,14 @@ def _report_payload(
                         "evidence_refs": ["nendaz-identity"],
                     }
                     for gate_name in (
-                        "independent_stay_context",
-                        "independent_ski_access",
-                        "independent_recommendation_value",
+                        "complete_stay_market_scope",
+                        "independent_stay_market_ownership",
+                        "material_destination_level_separation_value",
                     )
                 ],
                 "identity_signals": [
                     {
-                        "signal_type": "official_destination_treatment",
+                        "signal_type": "official_stay_market_treatment",
                         "status": "pass",
                         "notes": "The official source names the destination.",
                         "evidence_refs": ["nendaz-identity"],

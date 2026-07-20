@@ -183,14 +183,14 @@ The new Snowcast skill should guide Codex through this sequence:
 2. Inspect current catalog, trust manifest, source refs, relevant model docs, and
    whether existing ski-area IDs already have weather/climatology evidence.
 3. Review every target destination boundary before routine field enrichment.
-   All three destination hard gates and at least one strong source-backed
-   identity signal from
-   `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md` must pass
-   for a separate destination.
+   Complete stay-market scope, independent stay-market ownership, and material
+   destination-level separation value must all pass under ADR 0018. Direct
+   official stay-market evidence must support ownership.
 4. If the review indicates a destination or ski-area split or merge, stop
-   routine enrichment and treat the change as an owner-reviewed model migration,
+   routine enrichment and treat the change as a reviewed model migration,
    preserving old-ID weather evidence by default and planning separate backfill
-   for any replacement or new identity.
+   for any replacement or new identity. Ask the owner only when two materially
+   different graphs both pass the applicable policy with comparable evidence.
 5. Research official sources first:
    - official ski-area/resort facts pages;
    - official ticket/price pages;
@@ -217,10 +217,11 @@ are explicitly marked as estimates.
 Do not copy source facts into a narrower entity than the source supports.
 
 - Before enrichment, apply the catalog-wide destination boundary rule from
-  `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md`: all three
-  hard gates and at least one strong source-backed identity signal must pass.
-  Official naming and lift connectivity are supporting evidence, not sufficient
-  identity rules.
+  `docs/architecture/adr/0018-require-independent-stay-market-boundaries.md`:
+  complete stay-market scope, independent stay-market ownership, and material
+  destination-level separation value must all pass. Official naming,
+  municipality boundaries, dedicated pages, and lift connectivity are
+  supporting evidence, not sufficient identity rules.
 - Model `ski_areas[]` as the smallest durable terrain units that merit separate
   weather or operational evidence. Lift-connected areas may remain separate when
   reviewed sources and skier experience show materially distinct access,
@@ -229,8 +230,10 @@ Do not copy source facts into a narrower entity than the source supports.
   migration, not routine enrichment. Do not change an existing `ski_area_id`
   casually. Follow ADR 0007: old archive and climatology stay attached to the old
   ID unless an explicit reviewed migration moves or rewrites them; replacement
-  or new IDs are backfilled separately, and destructive reset remains a separate
-  explicit operator action.
+  or new IDs are backfilled separately by the post-merge Complete Historical
+  Weather workflow, and destructive reset remains a separate explicit operator
+  action. The catalog maintainer records the handoff but does not run production
+  database jobs.
 - If a terrain source describes multiple modeled ski areas under one
   destination, model the values under `terrain_groups` with
   `metric_scope=aggregate` and reviewed source URLs; leave separate child

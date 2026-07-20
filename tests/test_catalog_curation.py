@@ -6,10 +6,13 @@ from pydantic import ValidationError
 
 from app.data.catalog_curation import (
     CANONICAL_FIELD_PATHS,
+    CatalogBoundaryGateAssessment,
     CatalogChangeSummary,
     CatalogCurationReport,
+    CatalogDestinationBoundaryAssessment,
     CatalogEvidenceItem,
     CatalogFieldCoverage,
+    CatalogIdentitySignalAssessment,
     CatalogResultingGraph,
     CatalogReviewedTarget,
     CatalogValidationError,
@@ -39,6 +42,106 @@ NORMALIZED_TARGET_TYPES = {
     "rental_display_fact",
     "trust_manifest",
 }
+
+
+def _destination_boundary_report(
+    *,
+    gate_names: tuple[str, str, str],
+    identity_signal: str,
+    failure_route: str | None = None,
+    source_type: str = "official",
+) -> CatalogCurationReport:
+    evidence = CatalogEvidenceItem(
+        evidence_id="example-stay-market",
+        boundary_target_ids=["example"],
+        target_type="stay_destination",
+        target_id="example",
+        field_path="name",
+        source_type=source_type,
+        source_url="https://example.com/stays",
+        source_title="Official accommodation market",
+        source_value="Example",
+        evidence_summary="Defines the complete independently managed stay market.",
+    )
+    assessment = CatalogDestinationBoundaryAssessment(
+        candidate_id="example",
+        gates=[
+            CatalogBoundaryGateAssessment(
+                gate_name=gate_name,
+                status="pass",
+                notes="The official source supports this gate.",
+                evidence_refs=[evidence.evidence_id],
+            )
+            for gate_name in gate_names
+        ],
+        identity_signals=[
+            CatalogIdentitySignalAssessment(
+                signal_type=identity_signal,
+                status="pass",
+                notes="The official source owns the accommodation market.",
+                evidence_refs=[evidence.evidence_id],
+            )
+        ],
+        failure_route=failure_route,
+    )
+    return CatalogCurationReport(
+        title="Example destination boundary",
+        summary="Reviews one stay-market boundary.",
+        reviewed_targets=[
+            CatalogReviewedTarget(
+                target_type="stay_destination",
+                target_id="example",
+                scope="narrow",
+                required_field_paths=["name"],
+            )
+        ],
+        field_coverage=[
+            CatalogFieldCoverage(
+                target_type="stay_destination",
+                target_id="example",
+                field_path="name",
+                status="reviewed-no-change",
+            )
+        ],
+        evidence=[evidence],
+        destination_boundary_assessments=[assessment],
+        boundary_decision_targets=["example"],
+    )
+
+
+def _current_destination_scope_report() -> CatalogCurationReport:
+    payload = _destination_boundary_report(
+        gate_names=(
+            "complete_stay_market_scope",
+            "independent_stay_market_ownership",
+            "material_destination_level_separation_value",
+        ),
+        identity_signal="official_stay_market_treatment",
+    ).model_dump(mode="json")
+    payload.update(
+        {
+            "report_schema_version": 3,
+            "resulting_graph": {"focus_stay_destination_ids": ["example"]},
+            "entity_scope_assessments": [
+                {
+                    "candidate_id": "example",
+                    "candidate_name": "Example",
+                    "candidate_kind": "stay_destination",
+                    "disposition": "represented",
+                    "signals": ["independent_stay_market"],
+                    "evidence_refs": ["example-stay-market"],
+                    "target_refs": [
+                        {
+                            "target_type": "stay_destination",
+                            "target_id": "example",
+                        }
+                    ],
+                    "rationale": "The official source defines this stay market.",
+                }
+            ],
+        }
+    )
+    return CatalogCurationReport.model_validate(payload)
 
 
 def _access_distance_report(*, status: str = "estimated") -> CatalogCurationReport:
@@ -253,6 +356,107 @@ def test_existing_report_defaults_to_schema_version_one() -> None:
 
     assert report.report_schema_version == 1
     validate_catalog_curation_report(report)
+
+
+def test_current_destination_boundary_policy_is_required_for_current_workflow() -> None:
+    report = _destination_boundary_report(
+        gate_names=(
+            "complete_stay_market_scope",
+            "independent_stay_market_ownership",
+            "material_destination_level_separation_value",
+        ),
+        identity_signal="official_stay_market_treatment",
+    )
+
+    validate_catalog_curation_report(
+        report,
+        require_current_destination_policy=True,
+    )
+
+
+def test_legacy_destination_boundary_policy_remains_historically_loadable() -> None:
+    report = _destination_boundary_report(
+        gate_names=(
+            "independent_stay_context",
+            "independent_ski_access",
+            "independent_recommendation_value",
+        ),
+        identity_signal="official_destination_treatment",
+    )
+
+    validate_catalog_curation_report(report)
+    with pytest.raises(
+        CatalogValidationError,
+        match="current stay-market policy gates",
+    ):
+        validate_catalog_curation_report(
+            report,
+            require_current_destination_policy=True,
+        )
+
+
+def test_current_destination_policy_requires_stay_market_ownership_signal() -> None:
+    report = _destination_boundary_report(
+        gate_names=(
+            "complete_stay_market_scope",
+            "independent_stay_market_ownership",
+            "material_destination_level_separation_value",
+        ),
+        identity_signal="local_pass",
+        failure_route="stay_base",
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="direct stay-market ownership signal assessment",
+    ):
+        validate_catalog_curation_report(
+            report,
+            require_current_destination_policy=True,
+        )
+
+
+def test_passing_stay_market_ownership_requires_official_evidence() -> None:
+    report = _destination_boundary_report(
+        gate_names=(
+            "complete_stay_market_scope",
+            "independent_stay_market_ownership",
+            "material_destination_level_separation_value",
+        ),
+        identity_signal="official_stay_market_treatment",
+        source_type="reviewed_editorial",
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="passing stay-market ownership requires official evidence",
+    ):
+        validate_catalog_curation_report(
+            report,
+            require_current_destination_policy=True,
+        )
+
+
+def test_current_workflow_requires_retained_destination_boundary_assessment() -> None:
+    report = _current_destination_scope_report()
+    validate_catalog_curation_report(
+        report,
+        require_resulting_graph=True,
+        require_current_destination_policy=True,
+    )
+
+    report.destination_boundary_assessments.clear()
+    report.boundary_decision_targets.clear()
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="current stay destination requires a passing boundary assessment",
+    ):
+        validate_catalog_curation_report(
+            report,
+            require_resulting_graph=True,
+            require_current_destination_policy=True,
+        )
 
 
 def test_schema_version_two_requires_entity_scope_assessments() -> None:
