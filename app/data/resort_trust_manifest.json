@@ -66,39 +66,19 @@
         "display_name": "Alta Badia",
         "field_statuses": {
           "identity": "verified",
-          "membership_context": "estimated"
+          "membership_context": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.altabadia.org/en/alta-badia/villages"
           ],
           "membership_context": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.altabadia.org/en/alta-badia/villages"
           ]
         },
         "notes": [
-          "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
-          "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
-          "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
-          "Trip-market membership is retained as reviewed migration context and remains estimated."
+          "Official Alta Badia material identifies one umbrella destination and its six named villages.",
+          "The trip-market region is Snowcast grouping normalization over that official umbrella; it does not turn every village into a ranked stay destination."
         ]
       },
       "auronzo-di-cadore": {
@@ -938,51 +918,20 @@
         "display_name": "Alta Badia",
         "field_statuses": {
           "identity_location": "verified",
-          "coordinates": "verified_with_adjustment",
+          "coordinates": "estimated",
           "price_level": "estimated"
         },
         "field_source_refs": {
           "identity_location": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/all-accommodations"
           ],
-          "coordinates": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
-          ],
-          "price_level": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
-          ]
+          "coordinates": [],
+          "price_level": []
         },
         "notes": [
-          "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
-          "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
-          "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+          "Official village and accommodation inventories support one complete Alta Badia stay market.",
+          "The catalog centre coordinate and medium price level remain product estimates rather than source-verified destination facts."
         ]
       },
       "auronzo-di-cadore": {
@@ -2345,66 +2294,37 @@
           "coordinates": "verified",
           "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "verified",
+          "base_type": "verified_with_adjustment",
           "base_character": "verified_with_adjustment",
-          "local_apres": "verified_with_adjustment"
+          "local_apres": "needs_source"
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/corvara-alta-badia",
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/all-accommodations"
           ],
           "coordinates": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.openstreetmap.org/relation/47252"
           ],
           "elevation": [
             "https://www.altabadia.org/en/villages/corvara-alta-badia"
           ],
-          "lodging_price_quality": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
-          ],
+          "lodging_price_quality": [],
           "base_type": [
-            "https://www.altabadia.org/en/villages/corvara-alta-badia"
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/corvara-alta-badia",
+            "https://www.openstreetmap.org/relation/47252"
           ],
           "base_character": [
             "https://www.altabadia.org/en/villages/corvara-alta-badia"
           ],
-          "local_apres": [
-            "https://www.altabadia.org/en/info/restaurants/detail/gastronomy/lmurin-hotel-la-perla",
-            "https://www.altabadia.org/en/villages/corvara-alta-badia"
-          ]
+          "local_apres": []
         },
         "notes": [
-          "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
-          "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
-          "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
-          "Source-aware v2 enrichment reviewed official Corvara village and apres material on 2026-07-05."
+          "Corvara is a village base within the umbrella Alta Badia stay market.",
+          "Mixed development and lively local pace normalize the official village presentation; they do not assert an apres scene.",
+          "Local apres is reset to unknown because the retired L’Murin URL no longer reproduces the claim."
         ]
       },
       "auronzo-di-cadore-auronzo-di-cadore": {
@@ -5553,6 +5473,196 @@
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence.",
           "Source-aware v2 enrichment reviewed official Zermatt village and apres material on 2026-07-05."
         ]
+      },
+      "alta-badia-colfosco": {
+        "display_name": "Colfosco",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/all-accommodations",
+            "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/287629655"
+          ],
+          "elevation": [
+            "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/colfosco-alta-badia",
+            "https://www.openstreetmap.org/node/287629655"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "This village is a stay base inside the single Alta Badia accommodation market.",
+          "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a village-specific sourced range.",
+          "Local apres remains unknown without base-scoped evidence."
+        ]
+      },
+      "alta-badia-la-villa": {
+        "display_name": "La Villa",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/all-accommodations",
+            "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/223601802"
+          ],
+          "elevation": [
+            "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/la-villa-alta-badia",
+            "https://www.openstreetmap.org/node/223601802"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "This village is a stay base inside the single Alta Badia accommodation market.",
+          "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a village-specific sourced range.",
+          "Local apres remains unknown without base-scoped evidence."
+        ]
+      },
+      "alta-badia-san-cassiano": {
+        "display_name": "San Cassiano",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/all-accommodations",
+            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/223597157"
+          ],
+          "elevation": [
+            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia",
+            "https://www.openstreetmap.org/node/223597157"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "This village is a stay base inside the single Alta Badia accommodation market.",
+          "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a village-specific sourced range.",
+          "Local apres remains unknown without base-scoped evidence."
+        ]
+      },
+      "alta-badia-badia": {
+        "display_name": "Badia",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/all-accommodations",
+            "https://www.altabadia.org/en/villages/badia-alta-badia"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/47255"
+          ],
+          "elevation": [
+            "https://www.altabadia.org/en/villages/badia-alta-badia"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/badia-alta-badia",
+            "https://www.openstreetmap.org/relation/47255"
+          ],
+          "base_character": [
+            "https://www.altabadia.org/en/villages/badia-alta-badia"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "This village is a stay base inside the single Alta Badia accommodation market.",
+          "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a village-specific sourced range.",
+          "Local apres remains unknown without base-scoped evidence."
+        ]
+      },
+      "alta-badia-armentarola": {
+        "display_name": "Armentarola",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified",
+          "elevation": "verified_with_adjustment",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/hotel-armentarola",
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/5951064513"
+          ],
+          "elevation": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.openstreetmap.org/node/5951064513",
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/hotel-armentarola"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official lodging and transfer material support Armentarola as a concrete hamlet/transfer stay base inside the San Cassiano-owned market.",
+          "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a sourced Armentarola price sample.",
+          "Character and local apres remain unknown."
+        ]
       }
     },
     "ski_areas": {
@@ -5568,83 +5678,45 @@
           "snow_park": "verified",
           "night_skiing": "verified",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "verified_with_adjustment",
-          "official_documents": "verified"
+          "ski_day_apres": "needs_source",
+          "official_documents": "needs_source"
         },
         "field_source_refs": {
           "identity_coordinates": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.altabadia.org/en/ski-area-alta-badia-dolomites"
           ],
           "elevation_season": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
+            "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites"
           ],
           "terrain_metrics": [
+            "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
             "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
             "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.skiresort.info/ski-resort/alta-badia/"
           ],
-          "skill_fit": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
-          ],
+          "skill_fit": [],
           "snowmaking": [
             "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
           ],
           "glacier_terrain": [],
           "snow_park": [
-            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail?cHash=0dd1126435a5fdde567630475ec7f36d&tx_zeppelinlistdetailplugin_listdetailplugin%5Baction%5D=show&tx_zeppelinlistdetailplugin_listdetailplugin%5Bcontroller%5D=ListDetailPlugin&tx_zeppelinlistdetailplugin_listdetailplugin%5Bitem%5D=1330"
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/moviment-snowpark-alta-badia"
           ],
           "night_skiing": [
             "https://www.altabadia.org/en/alta-badia-events/detail/event/wolves-night-skiing-by-night"
           ],
           "marked_freeride_routes": [],
-          "ski_day_apres": [
-            "https://www.altabadia.org/en/info/restaurants/detail/gastronomy/lmurin-hotel-la-perla",
-            "https://www.altabadia.org/en/ski-area-alta-badia-dolomites"
-          ],
-          "official_documents": [
-            "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
-          ]
+          "ski_day_apres": [],
+          "official_documents": []
         },
         "notes": [
-          "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
-          "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
-          "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
-          "Source-aware v2 enrichment reviewed official Alta Badia material on 2026-07-05.",
-          "Snow-machine capability is not converted into a piste-length coverage percentage."
+          "The retained core owns the connected 130 km Alta Badia terrain; transfer-required Lagazuoi is modeled separately.",
+          "The core summit is corrected from the Lagazuoi-influenced 2778 m aggregate to the 2550 m representative core geometry shown on the official Alta Badia map.",
+          "Official scope pages publish 53 lift facilities while live inventory can enumerate 54 installations; the catalog retains the 53-lift pass/ski-area scope and records the live count as a scope caveat rather than averaging.",
+          "The regional map is not stored as a core official document because it includes Lagazuoi and broader route context.",
+          "Ski-area-wide apres remains unknown after the stale L’Murin source was removed."
         ]
       },
       "auronzo-monte-agudo": {
@@ -8489,6 +8561,49 @@
           "The new ID starts a separate weather history; no existing Cervinia weather rows are re-keyed.",
           "The 1,524 m base and 3,093 m Gran Sometta upper geometry are normalized from direct owner-scoped official terrain evidence; child-scoped terrain and fit facts remain unresolved."
         ]
+      },
+      "lagazuoi-ski-area": {
+        "display_name": "Lagazuoi",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "needs_source",
+          "skill_fit": "needs_source",
+          "snowmaking": "verified",
+          "glacier_terrain": "needs_source",
+          "snow_park": "needs_source",
+          "night_skiing": "needs_source",
+          "marked_freeride_routes": "needs_source",
+          "ski_day_apres": "needs_source",
+          "official_documents": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
+            "https://www.openstreetmap.org/node/360633380"
+          ],
+          "elevation_season": [
+            "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area",
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ],
+          "terrain_metrics": [],
+          "skill_fit": [],
+          "snowmaking": [
+            "https://lagazuoi.it/EN/Experience-Winter-page7-Lagazuoi-Ski-Area"
+          ],
+          "glacier_terrain": [],
+          "snow_park": [],
+          "night_skiing": [],
+          "marked_freeride_routes": [],
+          "ski_day_apres": [],
+          "official_documents": []
+        },
+        "notes": [
+          "Lagazuoi has a complete lift-served area and independent operating presentation and is transfer-required from the Alta Badia core.",
+          "The catalog uses the lower cable-car station geometry, 2105 m pass/base elevation, and 2732 m lift-served upper station; it does not use the 2778 m mountain peak as child weather geometry.",
+          "Aggregate terrain, local pass coverage, and terrain-domain membership are not inferred.",
+          "The new ski-area ID is handed to scheduled historical-weather completion after merge."
+        ]
       }
     },
     "ski_area_access": {
@@ -8509,9 +8624,8 @@
           ]
         },
         "notes": [
-          "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
-          "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
-          "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+          "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+          "No numeric distance or duration is stored where the accepted source does not establish one."
         ]
       },
       "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo": {
@@ -10011,6 +10125,132 @@
           "The existing Salette edge is retargeted to the Valtournenche ski-area weather owner.",
           "Official lift inventory places the Valtournenche-Salette gondola inside the destination, while OSM geometry records about 1.255 km from the representative stay-base point to the lower station; access is therefore normalized to a medium walk rather than a required drive."
         ]
+      },
+      "alta-badia-colfosco--alta-badia-ski-area": {
+        "display_name": "Colfosco -> Alta Badia",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+            "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+            "https://www.altabadia.org/en/villages/colfosco-alta-badia"
+          ]
+        },
+        "notes": [
+          "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+          "No numeric distance or duration is stored where the accepted source does not establish one."
+        ]
+      },
+      "alta-badia-la-villa--alta-badia-ski-area": {
+        "display_name": "La Villa -> Alta Badia",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+            "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+            "https://www.altabadia.org/en/villages/la-villa-alta-badia"
+          ]
+        },
+        "notes": [
+          "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+          "No numeric distance or duration is stored where the accepted source does not establish one."
+        ]
+      },
+      "alta-badia-san-cassiano--alta-badia-ski-area": {
+        "display_name": "San Cassiano -> Alta Badia",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia"
+          ]
+        },
+        "notes": [
+          "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+          "No numeric distance or duration is stored where the accepted source does not establish one."
+        ]
+      },
+      "alta-badia-badia--alta-badia-ski-area": {
+        "display_name": "Badia -> Alta Badia",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area",
+            "https://www.altabadia.org/en/villages/badia-alta-badia"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area",
+            "https://www.altabadia.org/en/villages/badia-alta-badia"
+          ]
+        },
+        "notes": [
+          "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+          "No numeric distance or duration is stored where the accepted source does not establish one."
+        ]
+      },
+      "alta-badia-san-cassiano--lagazuoi-ski-area": {
+        "display_name": "San Cassiano -> Lagazuoi",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ]
+        },
+        "notes": [
+          "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+          "No numeric distance or duration is stored where the accepted source does not establish one."
+        ]
+      },
+      "alta-badia-armentarola--lagazuoi-ski-area": {
+        "display_name": "Armentarola -> Lagazuoi",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+            "https://www.openstreetmap.org/node/916336242",
+            "https://www.openstreetmap.org/node/360633380"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+            "https://www.openstreetmap.org/node/916336242",
+            "https://www.openstreetmap.org/node/360633380"
+          ]
+        },
+        "notes": [
+          "Official route material establishes a transfer relationship via bus/shuttle and cable car; is_direct=false prevents it being presented as lift-at-base access.",
+          "The approximate 10 km / 20 minute segment is explicitly published for Armentarola to Passo Falzarego."
+        ]
       }
     },
     "terrain_domains": {
@@ -10256,58 +10496,20 @@
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
           ],
           "coverage": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
           ],
           "prices": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.skiresort.info/ski-resort/alta-badia/"
           ],
-          "pass_accessible_terrain": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
-          ]
+          "pass_accessible_terrain": []
         },
         "notes": [
-          "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
-          "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
-          "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+          "The local product is limited to the modeled Alta Badia core; route and regional-network material do not establish Lagazuoi coverage for this product.",
+          "EUR 80 is a reviewed editorial main-season adult one-day example observed on 2026-07-21; it is not represented as an official 2026/27 tariff.",
+          "Broader Dolomiti Superski and Sellaronda validity remains external context."
         ]
       },
       "auronzo-cortina-valle-skipass": {
@@ -12290,34 +12492,14 @@
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
             "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
+            "https://www.varallosport.com/en/"
           ],
-          "price_quality_access": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
-            "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-            "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
-            "https://www.openstreetmap.org/node/224065479",
-            "https://www.openstreetmap.org/relation/47252",
-            "https://www.skiresort.info/ski-resort/alta-badia/",
-            "https://www.varallosport.com/en/",
-            "https://www.varallosport.com/en/ski/book-ski-equipment/"
-          ]
+          "price_quality_access": []
         },
         "notes": [
-          "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
-          "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
-          "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+          "Official destination and provider pages support the rental identity.",
+          "The EUR 30-45 standard/medium display tuple remains a Snowcast estimate and is not attributed to the booking page."
         ]
       },
       "auronzo-di-cadore-monte-agudo-ski-rental": {

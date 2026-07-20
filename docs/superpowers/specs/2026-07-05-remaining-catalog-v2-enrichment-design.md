@@ -3,6 +3,13 @@
 Date: 2026-07-05
 Status: approved
 
+> **Historical campaign design.** This document records the original catalog-v2
+> enrichment campaign and is not the current PR-maintainer control plane. PR
+> #30 acceptance now requires a schema-v3 report, complete candidate/source
+> inventories, fresh independent review, and exact prepare-base reconciliation.
+> The maintainer cycle owns commits; only the merged maintainer helper may push
+> the branch or publish lifecycle state.
+
 ## Objective
 
 Research and populate the source-aware ski-area, stay-base, and aggregate-map

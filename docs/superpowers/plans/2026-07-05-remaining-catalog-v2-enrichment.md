@@ -2,6 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Historical campaign plan.** The commands and branch workflow below describe
+> the original catalog-v2 campaign; they do not authorize current maintainer
+> publication. PR #30 is accepted through its schema-v3 report, complete
+> candidate/source inventories, exact prepare-base reconciliation, and fresh
+> independent review. The maintainer cycle owns commits; the merged maintainer
+> helper exclusively owns branch push and GitHub lifecycle publication.
+
 **Goal:** Publish 13 independent, source-backed draft pull requests that enrich all 17 remaining canonical destinations with the approved catalog-v2 ski-area, stay-base, and aggregate-map facts.
 
 **Architecture:** Each pull request starts from commit `455ed412bc081bf85c016dfe35fa27e85697b74e`, owns a non-overlapping destination/domain batch, and changes only the canonical catalog, trust manifest, and one typed report pair. Research is normalized through a local ignored campaign helper, while repository validators and exact reconciliation remain the acceptance authority.
