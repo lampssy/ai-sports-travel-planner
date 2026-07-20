@@ -97,7 +97,7 @@ Boundaries:
 - Does not claim official lift-operation status unless a future official status
   provider explicitly supports that provenance.
 - Keeps forecast evidence separate from archive evidence.
-- Does not equate modelled snow depth with ski-area snow cover, open pistes, or
+- Does not equate modeled snow depth with ski-area snow cover, open pistes, or
   lift operations.
 
 ### Companion
@@ -170,6 +170,7 @@ Primary concepts:
 - clarification opportunity
 - clarification
 - refinement proposal
+- resolved refinement topic
 - typed capability invocation
 - explicit preference customization
 - retrieved explanatory material
@@ -184,6 +185,10 @@ Boundaries:
   first-class; optional chat is only one possible interaction surface.
 - May dynamically propose which registered factors to clarify, including
   question wording, answer options, and typed preference patches.
+- A resolved refinement topic is one registered clarification topic that the
+  traveler answered or skipped in the current search context. It stays
+  suppressed until the trip context materially changes or the traveler
+  manually changes the preference owned by that topic.
 - Does not own ranking, catalog truth, source trust, or provider data fetching.
 - Does not own weather derivation, companion event or alert eligibility,
   booking handoff, or durable trip and preference persistence.
@@ -223,6 +228,25 @@ Boundaries:
 - Uses bounded labels and sanitized details.
 
 ## Core Glossary
+
+### Public Planning Language
+
+Customer interfaces use `Trip option` for a ranked recommendation group,
+`Trip details` for its detail view, and `Must-haves` for search constraints.
+These public labels do not rename the internal Planning models below.
+
+Trip details present one primary explanation. A separate `Why this trip`
+section adds non-duplicated supporting evidence and limitations. Raw weights,
+points, caps, policy identifiers, catalog trust internals, statistical methods,
+weather source rows, and daily values belong in one collapsed `Technical
+calculation details` disclosure.
+
+In Conditions and Weather Evidence, `source type` identifies historical versus
+forecast-assisted evidence; `source currency` identifies the forecast issue
+time and archive/baseline years; `coverage` identifies usable dates and seasons;
+and `expected conditions` summarizes response values. Request evaluation time
+and cache expiry are not source freshness. A modeled snow-depth reference is
+not a claim about ski-area snow coverage, open runs, comfort, or safety.
 
 ### Accepted Target Catalog Terminology
 
@@ -321,7 +345,7 @@ buckets. `piste_km_by_difficulty` records published or defensibly measured
 lengths. `piste_count_by_difficulty` records published run counts. The two
 bases remain explicit because run segmentation and length vary; count evidence
 may inform a lower-strength planning factor but never becomes claimed piste
-kilometres. Qualitative supported-skill labels are weaker positive-only
+kilometers. Qualitative supported-skill labels are weaker positive-only
 fallback evidence.
 
 **Ski-area access**
@@ -508,11 +532,11 @@ A maximum journey duration or equivalent typed eligibility requirement. A
 candidate outside the limit is excluded before weighted Travel Effort is
 evaluated.
 
-**Modelled snow depth**
+**Modeled snow depth**
 
 Forecast or observed snow depth at a representative coordinate and elevation.
 It is distinct from ski-area snow-cover percentage, skiable piste coverage,
-open-piste kilometres, and open-lift count.
+open-piste kilometers, and open-lift count.
 
 **Evidence profile**
 

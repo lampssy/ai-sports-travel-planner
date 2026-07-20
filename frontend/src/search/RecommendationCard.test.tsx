@@ -4,6 +4,7 @@ import { useState } from "react";
 import { describe, expect, test, vi } from "vitest";
 
 import type {
+  TravelWindow,
   SearchV4Configuration,
   SearchV4RecommendationGroup,
 } from "../types";
@@ -114,8 +115,12 @@ const result: SearchV4RecommendationGroup = {
 
 function StatefulCard({
   onSave = vi.fn(),
+  travelWindow,
+  recommendation = result,
 }: {
   onSave?: (configuration: SearchV4Configuration) => void;
+  travelWindow?: TravelWindow;
+  recommendation?: SearchV4RecommendationGroup;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [selectedCandidateId, setSelectedCandidateId] = useState(
@@ -123,7 +128,8 @@ function StatefulCard({
   );
   return (
     <RecommendationCard
-      result={result}
+      result={recommendation}
+      travelWindow={travelWindow}
       expanded={expanded}
       selectedCandidateId={selectedCandidateId}
       essentialCategories={["terrain", "passValue", "liftAccess"]}
@@ -136,6 +142,52 @@ function StatefulCard({
 }
 
 describe("RecommendationCard", () => {
+  test("keeps decision cues and one concrete rationale visible when collapsed", async () => {
+    const user = userEvent.setup();
+    render(<StatefulCard travelWindow={{ month: 3 }} />);
+
+    await user.click(screen.getByRole("button", { name: /collapse matterhorn/i }));
+    const card = document.querySelector("article.recommendation-card");
+    expect(card).not.toBeNull();
+    expect(within(card as HTMLElement).getByText("Cervinia")).toBeVisible();
+    expect(within(card as HTMLElement).getByText(/stay in breuil-cervinia/i)).toBeVisible();
+    expect(within(card as HTMLElement).getByText("94.8")).toBeVisible();
+    expect(within(card as HTMLElement).getByText("Snow fit for March")).toBeVisible();
+    expect(
+      within(card as HTMLElement).getByText(
+        "The recommended place to stay keeps lift access practical.",
+      ),
+    ).toBeVisible();
+  });
+
+  test("renders wider-terrain strength without claiming pass coverage", () => {
+    const terrainCandidate = {
+      ...primary,
+      factors: [
+        {
+          ...primary.factors[0],
+          factor_id: "terrain_potential_scale",
+          raw_value: 360,
+          effective_utility: 0.7,
+        },
+      ],
+    };
+
+    render(
+      <StatefulCard
+        recommendation={{ ...result, top_configuration: terrainCandidate }}
+        travelWindow={{ month: 3 }}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "Matterhorn Ski Paradise offers wider terrain; a different or additional pass may be needed.",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/selected pass supports/i)).toBeNull();
+  });
+
   test("exposes an independent expansion control", async () => {
     const user = userEvent.setup();
     render(<StatefulCard />);
@@ -148,7 +200,7 @@ describe("RecommendationCard", () => {
     });
     expect(toggle).not.toContainElement(heading);
     expect(toggle).toHaveAccessibleName(
-      /breuil-cervinia.*trip fit 94\.8.*snow window/i,
+      /breuil-cervinia.*trip fit 94\.8.*add travel dates to assess snow fit: not assessed/i,
     );
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(toggle).toHaveAttribute("aria-controls", "recommendation-region-a");
@@ -160,14 +212,81 @@ describe("RecommendationCard", () => {
     );
   });
 
-  test("keeps dossier, save, and alternative controls isolated from expansion", async () => {
+  test("asks for travel dates before presenting a snow fit", () => {
+    const snowCandidate = {
+      ...primary,
+      factors: [
+        ...primary.factors,
+        {
+          factor_id: "trip_window_snow_fit" as const,
+          group_id: "trip_viability",
+          direction: "prefer" as const,
+          raw_value: null,
+          raw_utility: 0.8,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.8,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Historical snow evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    };
+    const snowResult = {
+      ...result,
+      top_configuration: snowCandidate,
+    };
+
+    render(<StatefulCard recommendation={snowResult} travelWindow={undefined} />);
+
+    expect(screen.getAllByText("Add travel dates to assess snow fit").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Not assessed").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Snow fit for your dates")).toBeNull();
+    expect(screen.queryByText("Strong fit")).toBeNull();
+    expect(screen.queryByText("Some concerns")).toBeNull();
+    expect(screen.queryByText(/supports this travel window/i)).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /collapse matterhorn ski paradise/i }),
+    ).toHaveAccessibleName(
+      /add travel dates to assess snow fit: not assessed/i,
+    );
+  });
+
+  test("uses fit comparison unavailable in the unscored card control name", () => {
+    const unscoredCandidate = {
+      ...primary,
+      ranking_status: "unscored" as const,
+      fit_score: null,
+    };
+    const unscoredResult = {
+      ...result,
+      fit_score: null,
+      top_configuration: unscoredCandidate,
+    };
+
+    render(<StatefulCard recommendation={unscoredResult} travelWindow={{ month: 3 }} />);
+
+    const toggle = screen.getByRole("button", {
+      name: /collapse matterhorn ski paradise/i,
+    });
+    expect(toggle).toHaveAccessibleName(/fit comparison unavailable/i);
+    expect(toggle).not.toHaveAccessibleName(/trip fit not scored/i);
+  });
+
+  test("keeps trip-details, save, and alternative controls isolated from expansion", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
     render(<StatefulCard onSave={onSave} />);
 
-    const card = screen.getByRole("article");
+    const card = document.querySelector<HTMLElement>(".recommendation-card");
+    if (!card) throw new Error("recommendation card was not rendered");
     const toggle = within(card).getByRole("button", { name: /collapse matterhorn/i });
-    const dossierLink = within(card).getByRole("link", { name: /view dossier/i });
+    const dossierLink = within(card).getByRole("link", {
+      name: /view trip details/i,
+    });
     expect(dossierLink.querySelector(".lucide-arrow-right")).toBeInTheDocument();
     expect(dossierLink.querySelector(".lucide-external-link")).not.toBeInTheDocument();
     dossierLink.addEventListener("click", (event) => event.preventDefault());
@@ -181,14 +300,21 @@ describe("RecommendationCard", () => {
     await user.click(within(card).getByRole("button", { name: /select valtournenche/i }));
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(within(card).getByRole("heading", { name: /stay in valtournenche/i })).toBeVisible();
-    expect(within(card).getAllByText("Local pass")).toHaveLength(2);
-    expect(within(card).getByText("160 km")).toBeVisible();
-    expect(within(card).getByRole("link", { name: /view dossier/i })).toHaveAttribute(
+    expect(within(card).getAllByText("Local pass")).not.toHaveLength(0);
+    expect(
+      within(card).getAllByText("160 km covered by this pass"),
+    ).not.toHaveLength(0);
+    expect(within(card).getByText("Other ways to plan this trip")).toBeVisible();
+    expect(
+      within(card).getByRole("link", { name: /view trip details/i }),
+    ).toHaveAttribute(
       "href",
       "/recommendations/region-a?candidate=alternative",
     );
 
-    await user.click(within(card).getByRole("button", { name: /save as current trip/i }));
+    await user.click(
+      within(card).getByRole("button", { name: /save as current trip/i }),
+    );
     expect(onSave).toHaveBeenLastCalledWith(alternative);
     expect(within(card).getByText("#1")).toBeVisible();
   });
@@ -217,7 +343,35 @@ describe("RecommendationCard", () => {
     expect(screen.queryByText("future_internal_group")).not.toBeInTheDocument();
     expect(screen.queryByText("future_internal_factor")).not.toBeInTheDocument();
     expect(screen.getByText("Ski experience")).toBeInTheDocument();
-    expect(screen.getByText("Stay-base access")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Place to stay and lift access"),
+    ).not.toHaveLength(0);
+  });
+
+  test("uses nested technical heading levels inside the disclosure", async () => {
+    const user = userEvent.setup();
+    render(
+      <ScoringDetails
+        configuration={primary}
+        rankingPolicyVersion="search-v4-scoring-v1"
+      />,
+    );
+
+    const details = screen
+      .getByText("Technical calculation details", { selector: "summary" })
+      .closest("details");
+    if (!details) throw new Error("Technical details disclosure was not rendered");
+    await user.click(
+      within(details).getByText("Technical calculation details", { selector: "summary" }),
+    );
+    expect(within(details).getByRole("heading", { level: 3, name: "Ranking policy" })).toBeVisible();
+    expect(within(details).getByRole("heading", { level: 3, name: "Evidence and source context" })).toBeVisible();
+    expect(
+      within(details).getAllByRole("heading", {
+        level: 4,
+        name: "Place to stay and lift access",
+      }),
+    ).not.toHaveLength(0);
   });
 
   test("labels estimated ski-area terrain in the result and its collapsed scoring disclosure", async () => {
@@ -259,18 +413,19 @@ describe("RecommendationCard", () => {
       />,
     );
 
-    expect(screen.getByText("Estimated 31 km (ski area only)")).toBeVisible();
     expect(
-      screen.getByText(
-        "Estimated 31 km in selected ski area; pass-wide coverage needs source",
-      ),
-    ).toBeVisible();
+      screen.getAllByText("About 31 km in the selected ski area"),
+    ).not.toHaveLength(0);
     expect(screen.queryByText("31 km accessible terrain")).toBeNull();
 
-    const scoring = screen.getByText("Show scoring details").closest("details");
+    const scoring = screen
+      .getByText("Technical calculation details")
+      .closest("details");
     expect(scoring).not.toHaveAttribute("open");
-    await user.click(screen.getByText("Show scoring details"));
-    expect(within(scoring as HTMLElement).getByText("Estimated")).toBeVisible();
+    await user.click(screen.getByText("Technical calculation details"));
+    expect(
+      within(scoring as HTMLElement).getByText("Estimated from catalog data"),
+    ).toBeVisible();
   });
 
   test("labels needs-source terrain in the result scoring row", async () => {
@@ -317,9 +472,18 @@ describe("RecommendationCard", () => {
       />,
     );
 
-    const scoring = screen.getByText("Show scoring details").closest("details");
+    expect(screen.queryByText(/44 km/i)).toBeNull();
+    expect(
+      screen.getAllByText("Connected terrain needs source confirmation").length,
+    ).toBeGreaterThan(0);
+
+    const scoring = screen
+      .getByText("Technical calculation details")
+      .closest("details");
     expect(scoring).not.toHaveAttribute("open");
-    await user.click(screen.getByText("Show scoring details"));
-    expect(within(scoring as HTMLElement).getByText("Needs source")).toBeVisible();
+    await user.click(screen.getByText("Technical calculation details"));
+    expect(
+      within(scoring as HTMLElement).getByText("Source confirmation needed"),
+    ).toBeVisible();
   });
 });

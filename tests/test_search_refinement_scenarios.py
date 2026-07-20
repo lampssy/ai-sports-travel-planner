@@ -119,14 +119,14 @@ def _development_payload(*, question: str | None = None) -> dict[str, object]:
     return {
         "questions": [
             {
-                "topic_ids": ["development_style"],
+                "topic_id": "development_style",
                 "question": question
                 or "What kind of place would you prefer to stay in?",
                 "options": [
-                    {"answer_ids": ["development_style.traditional"]},
-                    {"answer_ids": ["development_style.mixed"]},
-                    {"answer_ids": ["development_style.planned_resort"]},
-                    {"answer_ids": ["development_style.ignore"]},
+                    {"answer_id": "development_style.traditional"},
+                    {"answer_id": "development_style.mixed"},
+                    {"answer_id": "development_style.planned_resort"},
+                    {"answer_id": "development_style.ignore"},
                 ],
             }
         ]
@@ -140,9 +140,9 @@ def test_development_style_variation_compiles_concrete_options_and_reorders() ->
     proposal = result.proposals[0]
     assert [option.label for option in proposal.proposal.options] == [
         "Traditional mountain village",
-        "A mix of old and new",
+        "Mix of old and new",
         "Purpose-built ski resort",
-        "It doesn't matter",
+        "Not important",
     ]
     assert (
         len({variant.ordered_candidate_ids for variant in proposal.variant_outcomes})
@@ -150,7 +150,7 @@ def test_development_style_variation_compiles_concrete_options_and_reorders() ->
     )
 
 
-def test_terrain_versus_access_compiles_distinct_typed_variants() -> None:
+def test_terrain_priority_compiles_distinct_typed_variants() -> None:
     candidates = _candidates(
         (
             (
@@ -185,24 +185,11 @@ def test_terrain_versus_access_compiles_distinct_typed_variants() -> None:
     payload = {
         "questions": [
             {
-                "topic_ids": ["accessible_terrain_scale", "stay_base_access"],
-                "question": (
-                    "Would you rather have more terrain on your pass or easier access "
-                    "from where you stay?"
-                ),
+                "topic_id": "accessible_terrain_scale",
+                "question": "How much terrain would you like your pass to cover?",
                 "options": [
-                    {
-                        "answer_ids": [
-                            "accessible_terrain_scale.as_much_as_possible",
-                            "stay_base_access.low",
-                        ]
-                    },
-                    {
-                        "answer_ids": [
-                            "accessible_terrain_scale.low",
-                            "stay_base_access.as_easy_as_possible",
-                        ]
-                    },
+                    {"answer_id": "accessible_terrain_scale.as_much_as_possible"},
+                    {"answer_id": "accessible_terrain_scale.low"},
                 ],
             }
         ]
@@ -215,9 +202,8 @@ def test_terrain_versus_access_compiles_distinct_typed_variants() -> None:
     assert options[0].factor_preference_patches[0].factor_id == (
         "accessible_terrain_scale"
     )
-    assert tuple(patch.factor_id for patch in options[1].factor_preference_patches) == (
-        "accessible_terrain_scale",
-        "stay_base_access",
+    assert options[1].factor_preference_patches[0].factor_id == (
+        "accessible_terrain_scale"
     )
     assert options[0].factor_preference_patches != options[1].factor_preference_patches
     assert all(
@@ -257,11 +243,11 @@ def test_requested_glacier_feature_can_produce_material_question() -> None:
     payload = {
         "questions": [
             {
-                "topic_ids": ["glacier_terrain"],
+                "topic_id": "glacier_terrain",
                 "question": "Does glacier terrain matter for this trip?",
                 "options": [
-                    {"answer_ids": ["glacier_terrain.prefer"]},
-                    {"answer_ids": ["glacier_terrain.ignore"]},
+                    {"answer_id": "glacier_terrain.prefer"},
+                    {"answer_id": "glacier_terrain.ignore"},
                 ],
             }
         ]
@@ -289,11 +275,11 @@ def test_no_trusted_factor_variation_produces_no_validated_question() -> None:
     payload = {
         "questions": [
             {
-                "topic_ids": ["accessible_terrain_scale"],
+                "topic_id": "accessible_terrain_scale",
                 "question": "How much terrain would you like your pass to cover?",
                 "options": [
-                    {"answer_ids": ["accessible_terrain_scale.as_much_as_possible"]},
-                    {"answer_ids": ["accessible_terrain_scale.low"]},
+                    {"answer_id": "accessible_terrain_scale.as_much_as_possible"},
+                    {"answer_id": "accessible_terrain_scale.low"},
                 ],
             }
         ]
@@ -316,7 +302,7 @@ def test_unsafe_internal_wording_uses_configured_safe_fallback_copy() -> None:
     )
 
     assert result.proposals[0].proposal.question == (
-        "What kind of place would you prefer to stay in?"
+        "What building and development style do you prefer where you stay?"
     )
 
 
@@ -336,5 +322,6 @@ def test_provider_failure_allows_first_material_registry_fallback() -> None:
     )
     assert fallback is not None
     assert (
-        fallback.proposal.question == "What kind of place would you prefer to stay in?"
+        fallback.proposal.question
+        == "What building and development style do you prefer where you stay?"
     )

@@ -7,7 +7,7 @@ ranking, factor policy, and adaptive refinement.
 
 - Active search contract: `search-v4`
 - Active ranking policy: `search-v4-policy-1`
-- Active refinement presentation policy: `search-refinement-presentation-1`
+- Active refinement presentation policy: `search-refinement-presentation-2`
 - Search V4 architecture: ADR 0012
 - Forecast evidence architecture: ADR 0013
 - Search V4 feature design:
@@ -17,7 +17,7 @@ ranking, factor policy, and adaptive refinement.
 - Planning and forecast evidence details: `docs/planning-model.md`
 - Executable policy: `app/config/search-ranking/search-v4.toml`
 - Executable refinement presentation registry:
-  `app/config/search-refinement/presentation-v1.toml`
+  `app/config/search-refinement/presentation-v2.toml`
 - Policy inspection: `uv run python -m app.data.explain_search_policy --check`
 
 This document and its generated inventory describe the active behavior. The
@@ -70,8 +70,8 @@ app/domain/search_ranking.py
 app/domain/search_refinement.py
   refinement context, proposal validation, and impact simulation
 
-app/config/search-refinement/presentation-v1.toml
-  traveller-facing refinement topics, approved answers, authoritative option
+app/config/search-refinement/presentation-v2.toml
+  traveler-facing refinement topics, approved answers, authoritative option
   copy, typed intent actions, and deterministic fallback order
 
 app/domain/search_refinement_presentation.py
@@ -333,9 +333,9 @@ be derived primarily from source-backed classified piste inventory:
   advanced skiers can use the whole mountain.
 
 The evaluator combines compatible piste amount with the relevant difficulty
-share and applies the balanced saturation policy. Kilometres and published run
+share and applies the balanced saturation policy. Kilometers and published run
 counts are distinct catalog facts: a count profile must never be written into a
-field that claims measured piste kilometres.
+field that claims measured piste kilometers.
 
 The evidence-unadjusted value is named `base_skill_fit`, not raw skill utility:
 
@@ -358,9 +358,9 @@ point and clamp to `[0, 1]`:
 
 For a source-backed run-count profile, compatible share uses run counts. When
 source-backed `total_piste_km` is also available, the evaluator may calculate a
-temporary compatible-amount proxy as total kilometres multiplied by the run
-share. That proxy never becomes a catalog kilometre fact and remains subject to
-the run-count evidence strength. Without total kilometres, amount utility is
+temporary compatible-amount proxy as total kilometers multiplied by the run
+share. That proxy never becomes a catalog kilometer fact and remains subject to
+the run-count evidence strength. Without total kilometers, amount utility is
 neutral `0.50` rather than zero.
 
 The share-dominant composition prevents the skill factor from duplicating
@@ -369,7 +369,7 @@ responsibility. Evidence strengths are:
 
 | Evidence basis | Strength |
 | --- | ---: |
-| source-backed kilometre breakdown | `1.00` |
+| source-backed kilometer breakdown | `1.00` |
 | source-backed run-count breakdown | `0.50` |
 | positive qualitative `supported_skill_levels` label | `0.25` |
 | unknown | `0`, producing neutral `0.50` |
@@ -379,7 +379,7 @@ confident positive or confident negative result. A qualitative level label is
 positive-only fallback evidence; an omitted label is unknown unless separate
 reviewed evidence explicitly establishes that the terrain is unsuitable.
 Source-backed run counts may estimate compatible share and amount for the
-evaluator but do not become catalog kilometres.
+evaluator but do not become catalog kilometers.
 
 When a party contains more than one represented ability level, party skill
 coverage is the minimum effective fit across those levels. This avoids an
@@ -433,11 +433,11 @@ mid-mountain elevation. Open-Meteo supplies ECMWF IFS 0.25 degree ensemble mean
 as the preferred source through lead day 15 and NOAA GEFS 0.5 degree ensemble
 mean for days 16 through 30 and as a shorter-range gap fallback. One source is
 selected per date; the models are not averaged together. The row may contain
-modelled 12:00-local snow depth and spread, daily snowfall and rain,
+modeled 12:00-local snow depth and spread, daily snowfall and rain,
 temperature, optional freezing level, and wind. Lead day is derived from the
 model initialization timestamp supplied by provider metadata rather than
-retrieval time. Forecast snow depth is a modelled point/elevation value; it is not
-ski-area snow-cover percentage, open-piste ratio, or expected open kilometres.
+retrieval time. Forecast snow depth is a modeled point/elevation value; it is not
+ski-area snow-cover percentage, open-piste ratio, or expected open kilometers.
 Those operational predictions remain distinct future factors. GEFS daily
 resolution at a coarse 0.5 degree grid does not imply high daily confidence;
 the `17–30` cap holds its maximum influence to 15%.
@@ -519,7 +519,7 @@ This is a ranking-policy transformation rather than a new physical snowpack
 model. Operational systems such as SNOW-17 and Crocus/Crocus-Resort support the
 importance of snow state, snowfall, temperature, and rain-on-snow, but they
 simulate coupled mass and energy processes and require local calibration or
-managed-piste inputs. Snowcast consumes the provider's modelled snow-depth
+managed-piste inputs. Snowcast consumes the provider's modeled snow-depth
 state and uses the other variables only as bounded surface-condition modifiers;
 it does not re-run a degree-day melt calculation or claim that policy weights
 are scientific constants. The scientific boundary and source references are
@@ -826,30 +826,26 @@ is skipped, so scoring values, summary scope, entity, field group, and trust
 always describe the same evidence owner.
 
 Search may support separate objectives for maximum accessible terrain, lowest
-pass price, and best terrain value. A raw piste-kilometres-per-price ratio must
+pass price, and best terrain value. A raw piste-kilometers-per-price ratio must
 not become a universal always-on definition of value.
 
 ## Dynamic Refinement Questions
 
-The LLM dynamically selects registered factor topics, places registered
-traveller-facing semantic phrases inside one constrained question grammar, and
-selects approved answer IDs rather than emitting labels or raw patches. A
-single-topic semantic body must exactly equal one phrase registered for that
-topic. A multi-topic body is a controlled comparison containing exactly one
-registered phrase per selected topic, joined only by `or`, `versus`, or `rather
-than`. The server owns reason copy, answer copy, and typed intent actions.
-Every option in a multi-topic question contains exactly one registered answer
-for every selected topic. An asymmetric option set is invalid, while a valid
-sibling question can still survive independently.
+The LLM may select one registered factor topic, use one approved
+traveler-facing phrase in one constrained question grammar, and select
+approved answer IDs rather than emitting labels or raw patches. A question
+contains exactly one topic, and each option contains exactly one answer for
+that topic. The server owns reason copy, answer copy, and typed intent actions.
 Unsafe or unregistered compositions use deterministic registry-backed
 fallback copy before the existing legality, actionability, and materiality
 gates run. Group-priority patches remain part of Search V4 but are not generated
 as refinement questions in this slice.
 
 After initial ranking, Snowcast supplies the LLM with a bounded summary of known
-intent, unresolved priorities, registered factor topics, approved answer IDs,
-top-result differences, coverage, and already answered questions. This includes
-preference and objective factors that were inactive in the initial score.
+intent, unresolved priorities, unresolved registered factor topics, approved
+answer IDs, top-result differences, coverage, and already answered questions.
+This includes preference and objective factors that were inactive in the
+initial score.
 Question wording remains dynamic; answer labels, descriptions, and typed intent
 actions are owned by the versioned presentation registry.
 
@@ -857,20 +853,20 @@ Example shape:
 
 ```json
 {
-  "topic_ids": ["development_style"],
+  "topic_id": "development_style",
   "question": "What kind of place would you prefer to stay in?",
   "options": [
     {
-      "answer_ids": ["development_style.traditional"]
+      "answer_id": "development_style.traditional"
     },
     {
-      "answer_ids": ["development_style.mixed"]
+      "answer_id": "development_style.mixed"
     },
     {
-      "answer_ids": ["development_style.planned_resort"]
+      "answer_id": "development_style.planned_resort"
     },
     {
-      "answer_ids": ["development_style.ignore"]
+      "answer_id": "development_style.ignore"
     }
   ]
 }
@@ -879,9 +875,9 @@ Example shape:
 The provider never supplies the labels or patches implied by those IDs. For
 example, the registry resolves the four selections above to `Traditional
 mountain village`, `A mix of old and new`, `Purpose-built ski resort`, and `It
-doesn't matter`, plus their typed `development_style` actions. One option may
-combine approved answer IDs from several selected topics, but at most one
-answer may target each factor.
+doesn't matter`, plus their typed `development_style` actions. A provider
+response may contain no question or one question only. The next question is
+requested from the fresh baseline after an answer or skip.
 
 Deterministic code then validates:
 
@@ -920,25 +916,24 @@ The provider-facing response schema deliberately contains only the compact
 topic/answer-ID structure and bounded question text supported by Gemini.
 Pydantic size and shape validation plus presentation-registry and deterministic
 policy validation remain authoritative. The server accepts provider question
-wording only when it uses an approved traveller-preference or priority form,
+wording only when it uses an approved traveler-preference or priority form,
 anchored as one complete question with no appended clause or comma, semicolon,
 or colon; its extracted semantic body is an exact registered single-topic
-phrase or controlled multi-topic phrase comparison; and it follows the minimal
+phrase; and it follows the minimal
 allowed Unicode letter, mark, whitespace, and punctuation policy. Factual `is`,
 `are`, or `does` claims cannot be rescued by an incidental preference word or a
 conjoined preference clause. Otherwise the server uses registry-backed
-traveller copy, which is config-validated rather than passed through the
+traveler copy, which is config-validated rather than passed through the
 generated-copy grammar, and always supplies the configured single-topic or
-multi-topic reason. A
+topic reason. A
 bounded brief containing a configured sensitive, credential, payment, or
 contact marker forces that fallback for the request; candidate IDs, external
 actions, unsupported claims, internal policy terms, numeric claims, malformed
 questions, and overlong copy are also never shown. Approved reasons, option
 labels, descriptions, and typed actions never come from the provider.
-Questions are validated independently: an invalid or immaterial sibling is
-dropped without discarding a useful question that passed every gate. The
-refinement provider receives one attempt only; no retry can extend the request
-budget.
+The provider question is validated independently of deterministic fallback.
+The refinement provider receives one attempt only; no retry can extend the
+request budget.
 
 Before actionability and materiality validation, every answer variant reruns
 the registered static and weather evaluators from the exact captured baseline
@@ -990,20 +985,22 @@ question-ID fields remain accepted on that endpoint only for mobile/web
 compatibility; they are ignored.
 
 `POST /api/search/refinements` accepts the canonical intent, a bounded brief,
-unique bounded answered question IDs, and the ranking response's
-`baseline_fingerprint`. Ranking stores compact baseline scores plus the exact
-static and weather evaluator inputs needed by refinement in a thread-safe
-process-local LRU/TTL store. Refinement accepts only the exact stored
-fingerprint plus canonical intent digest. It replays the same registered
-evaluators under every variant intent without catalog, weather, routing,
-repository, provider, or network acquisition. The whole endpoint has a
-five-second monotonic deadline: snapshot lookup and validation consume from that
-budget, the provider receives only the remaining timeout, and deterministic
-fallback is skipped once the deadline is exhausted.
+unique bounded answered question IDs, resolved topic IDs, and the ranking
+response's `baseline_fingerprint`. Question IDs preserve compatibility and
+block an exact question from repeating. Topic IDs block the same decision from
+returning with different wording or answer combinations. Ranking stores compact
+baseline scores plus the exact static and weather evaluator inputs needed by
+refinement in a thread-safe process-local LRU/TTL store. Refinement accepts only
+the exact stored fingerprint plus canonical intent digest. It replays the same
+registered evaluators under every variant intent without catalog, weather,
+routing, repository, provider, or network acquisition. The whole endpoint has
+a five-second monotonic deadline: snapshot lookup and validation consume from
+that budget, the provider receives only the remaining timeout, and
+deterministic fallback is skipped once the deadline is exhausted.
 
 The refinement response has exactly one public status:
 
-- `questions_available`: a non-empty validated queue is available;
+- `questions_available`: one validated question is available;
 - `not_needed`: no material question is needed, including a zero-result
   baseline or a captured policy with `max_questions = 0`;
 - `temporarily_unavailable`: provider/output failure, an exhausted deadline,
@@ -1011,7 +1008,7 @@ The refinement response has exactly one public status:
   no valid queue.
 
 Admission rejection is an HTTP `429`, not a refinement response. Its generic
-error body is `{"detail": "Refinement is temporarily unavailable."}` and a
+error body is `{"error":{"code":"refinement_rate_limited"}}` and a
 `Retry-After` header supplies the bounded retry delay. The browser waits for a
 valid delay of at most 15 seconds and retries that admitted request once. It
 shows a compact `retrying` lifecycle message while the ranked results remain
@@ -1021,16 +1018,17 @@ does not leave a visible error or refinement card in the results rail.
 
 `fallback_used` is orthogonal to status. When the provider has no usable
 proposal or is unavailable, Snowcast may return one fallback question only if
-the existing typed proposal validator confirms materiality. It tries registered
-factor topics in configured fallback order, resolves their approved answer IDs
-to the same authoritative option copy and typed actions as provider-selected
-questions, derives a semantic question ID from the presentation-policy version,
-and suppresses already answered IDs. It never creates a group-priority question
-or duplicates ranking or materiality logic.
+the existing typed proposal validator confirms materiality. It tries unresolved
+registered factor topics in configured fallback order, resolves their approved
+answer IDs to the same authoritative option copy and typed actions as
+provider-selected questions, derives a semantic question ID from the
+presentation-policy version, and suppresses both already answered question IDs
+and resolved topic IDs. It never creates a group-priority question or duplicates
+ranking or materiality logic.
 
-`search-refinement-presentation-1` versions presentation ownership separately
+`search-refinement-presentation-2` versions presentation ownership separately
 from `search-v4` and `search-v4-policy-1`. Copy-only changes under a new
-presentation-policy version may change what travellers read, but they do not
+presentation-policy version may change what travelers read, but they do not
 change factor weights, score equations, candidate eligibility, or ranking
 semantics. Every configured fallback question and reason, plus every approved
 answer label and description, passes deterministic public-copy validation when
@@ -1069,7 +1067,12 @@ missing its required replay state returns
 generation. This TTL covers only generation of the next question. Once a
 question reaches the browser, its typed answer remains usable after expiry.
 Applying a material answer performs a full rerank, stores a new baseline and
-fingerprint, and requests the next refinement from that fresh baseline.
+fingerprint, records that topic as resolved only after the rerank succeeds, and
+requests the next unresolved topic from that fresh baseline. Skipping records
+the topic as resolved and requests the next question from the unchanged
+baseline. A materially new trip brief or hard-constraint context clears all
+resolved topics; manually changing the preference owned by one topic clears
+only that topic.
 Active cleanup retains only bounded, data-free expired-fingerprint tombstones,
 at most the entry limit, so a later handoff lookup still reports `expired`
 rather than `miss`. Cleanup emits the expiry outcome once and the later lookup

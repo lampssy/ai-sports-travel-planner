@@ -53,15 +53,28 @@ def _build_conditions_provenance(
     if conditions.updated_at is not None:
         freshness_status = "fresh" if is_condition_fresh(conditions) else "stale"
 
+    if freshness_status == "fresh":
+        basis_summary = (
+            "Using a current forecast-based conditions signal from the latest "
+            "weather refresh."
+        )
+    elif freshness_status == "stale":
+        basis_summary = (
+            "Using the latest available forecast-based conditions signal. "
+            "This forecast is out of date."
+        )
+    else:
+        basis_summary = (
+            "Using the latest available forecast-based conditions signal. "
+            "The update time is unavailable."
+        )
+
     return ProvenanceInfo(
         source_name=conditions.source or "open-meteo",
         source_type="forecast",
         updated_at=conditions.updated_at,
         freshness_status=freshness_status,
-        basis_summary=(
-            "Using a current forecast-based conditions signal from the latest "
-            "weather refresh."
-        ),
+        basis_summary=basis_summary,
     )
 
 
@@ -92,9 +105,7 @@ def _trip_window_status(
             trip_window_status="unscheduled",
             trip_window_label="Trip dates not set",
             notification_eligible=False,
-            eligibility_reason=(
-                "Set exact trip dates to make companion alerts relevant."
-            ),
+            eligibility_reason="Exact trip dates are not available.",
             actionable_change_available=False,
         )
 
@@ -103,17 +114,17 @@ def _trip_window_status(
         status = "upcoming"
         label = "Trip upcoming"
         eligible = True
-        reason = "Companion alerts are eligible because the trip is upcoming."
+        reason = "Trip dates are in the future."
     elif today > trip.trip_end_date:
         status = "past"
         label = "Trip finished"
         eligible = False
-        reason = "Companion alerts are suppressed because the trip window has passed."
+        reason = "Trip dates have ended."
     else:
         status = "active"
         label = "Trip active"
         eligible = True
-        reason = "Companion alerts are eligible because the trip is currently active."
+        reason = "Trip dates include today."
 
     return CompanionStatus(
         trip_window_status=status,
@@ -141,6 +152,7 @@ def _delta_from_conditions(
     current_conditions: ResortConditions,
     provenance: ProvenanceInfo,
     prior_snapshot: ResortConditionSnapshot,
+    comparison_basis: CurrentTripComparisonBasis,
 ) -> CurrentTripDelta:
     changes: list[str] = []
 
@@ -150,42 +162,66 @@ def _delta_from_conditions(
     if current_conditions.snow_confidence_label != prior_snapshot.snow_confidence_label:
         direction = "improved" if snow_delta >= 0 else "weakened"
         changes.append(
-            "Snow confidence "
+            "Snow outlook "
             f"{direction} from {prior_snapshot.snow_confidence_label} "
             f"to {current_conditions.snow_confidence_label}."
         )
     elif abs(snow_delta) >= 0.08:
         direction = "up" if snow_delta > 0 else "down"
         changes.append(
-            f"Snow confidence moved {direction} by "
-            f"{abs(round(snow_delta * 100))} points."
+            f"Snow outlook moved {direction} by {abs(round(snow_delta * 100))} points."
         )
 
     if current_conditions.availability_status != prior_snapshot.availability_status:
-        previous_status = prior_snapshot.availability_status.replace("_", " ")
-        current_status = current_conditions.availability_status.replace("_", " ")
+        previous_status = _weather_disruption_risk_label(
+            prior_snapshot.availability_status
+        )
+        current_status = _weather_disruption_risk_label(
+            current_conditions.availability_status
+        )
         changes.append(
-            f"Availability changed from {previous_status} to {current_status}."
+            "Weather disruption risk changed "
+            f"from {previous_status} to {current_status}."
         )
 
     if current_conditions.weather_summary != prior_snapshot.weather_summary:
-        changes.append("Weather summary shifted since the previous recorded snapshot.")
+        changes.append(
+            f"The weather summary changed {_comparison_basis_copy(comparison_basis)}."
+        )
 
     if provenance.freshness_status == "stale":
-        changes.append("The latest forecast refresh is now stale.")
+        changes.append("The latest forecast is out of date.")
 
     if not changes:
         return CurrentTripDelta(
             status="unchanged",
-            summary="No material conditions changes since the comparison baseline.",
+            summary=(
+                "Conditions have not changed "
+                f"{_comparison_basis_copy(comparison_basis)}."
+            ),
             changes=[],
         )
 
     return CurrentTripDelta(
         status="changed",
-        summary="Conditions changed since the comparison baseline.",
+        summary=f"Conditions have changed {_comparison_basis_copy(comparison_basis)}.",
         changes=changes,
     )
+
+
+def _comparison_basis_copy(comparison_basis: CurrentTripComparisonBasis) -> str:
+    if comparison_basis.kind == "since_trip_saved":
+        return "since you saved this trip"
+    return "since your last check"
+
+
+def _weather_disruption_risk_label(status: str) -> str:
+    return {
+        "open": "low",
+        "limited": "some",
+        "temporarily_closed": "high",
+        "out_of_season": "out of season",
+    }.get(status, status.replace("_", " "))
 
 
 def _event_signature(
@@ -288,16 +324,17 @@ def build_current_trip_summary(
         delta = CurrentTripDelta(
             status="insufficient_history",
             summary=(
-                "Current conditions have not been refreshed yet, so there is not "
-                "enough history to compare."
+                "Current conditions are not available yet, so there is not enough "
+                "history to compare."
             ),
             changes=[],
         )
     elif current_updated_at <= baseline_at:
         delta = CurrentTripDelta(
-            status="unchanged",
+            status="insufficient_history",
             summary=(
-                "No newer conditions refresh has landed since the comparison baseline."
+                "No newer weather information is available "
+                f"{_comparison_basis_copy(basis)}."
             ),
             changes=[],
         )
@@ -307,8 +344,8 @@ def build_current_trip_summary(
             delta = CurrentTripDelta(
                 status="insufficient_history",
                 summary=(
-                    "Conditions were refreshed after the comparison baseline, "
-                    "but there is not enough earlier history to compare yet."
+                    f"Conditions are newer {_comparison_basis_copy(basis)}, but "
+                    "there is not enough earlier history to compare."
                 ),
                 changes=[],
             )
@@ -317,6 +354,7 @@ def build_current_trip_summary(
                 current_conditions=current_conditions,
                 provenance=provenance,
                 prior_snapshot=prior_snapshot,
+                comparison_basis=basis,
             )
 
     companion_status = companion_status.model_copy(

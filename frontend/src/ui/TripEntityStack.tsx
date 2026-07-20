@@ -12,7 +12,7 @@ export function TripEntityStack({
   const items = [
     ["Destination", destination],
     ["Ski area", skiArea],
-    ["Stay base", stayBase],
+    ["Recommended place to stay", stayBase],
   ] as const;
 
   return (

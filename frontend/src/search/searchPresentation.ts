@@ -1,11 +1,19 @@
 import type {
+  CatalogTrustStatus,
+  FactorPreferencePatch,
+  GroupPriorityPatch,
   RefinementPreview,
   SearchIntent,
+  SearchWeatherEvidenceResponse,
   SearchV4Configuration,
   SearchV4PassSummary,
   SearchV4RecommendationGroup,
+  TravelWindow,
 } from "../types";
-import type { EvidenceQualityMode } from "../ui/snowcastCopy";
+import {
+  catalogTrustStatusCopy,
+  type EvidenceQualityMode,
+} from "../ui/snowcastCopy";
 
 export const monthOptions = [
   "January",
@@ -27,40 +35,78 @@ export const featureOptions = [
   ["snow_park", "Snow park"],
   ["night_skiing", "Night skiing"],
   ["glacier_terrain", "Glacier terrain"],
-  ["snowmaking_availability", "Snowmaking resilience"],
+  ["snowmaking_availability", "Snowmaking"],
   ["terrain_potential_scale", "Largest connected terrain"],
   ["lift_network_scale", "Large lift network"],
 ] as const;
 
 export const factorLabels: Record<string, string> = {
-  accessible_terrain_scale: "Pass-accessible terrain",
-  party_skill_coverage: "Party skill fit",
-  terrain_potential_scale: "Connected terrain",
-  lift_network_scale: "Lift network",
+  accessible_terrain_scale: "Terrain covered by your pass",
+  party_skill_coverage: "Skiing level fit",
+  terrain_potential_scale: "Connected ski area",
+  lift_network_scale: "Lift access",
   marked_freeride_routes: "Marked freeride routes",
   snow_park: "Snow park",
   night_skiing: "Night skiing",
   glacier_terrain: "Glacier terrain",
-  snowmaking_availability: "Snowmaking resilience",
-  stay_base_access: "Stay-base access",
-  pass_price_per_day: "Lowest pass price per day",
-  pass_terrain_value: "Terrain per pass price",
-  ski_day_apres: "On-mountain après",
-  local_apres: "Stay-base après",
+  snowmaking_availability: "Snowmaking",
+  stay_base_access: "Place to stay and lift access",
+  pass_price_per_day: "Lift-pass price per day",
+  pass_terrain_value: "Terrain for lift-pass price",
+  ski_day_apres: "After-ski atmosphere",
+  local_apres: "Evening atmosphere",
   local_pace: "Local pace",
-  development_style: "Development style",
-  base_type: "Base type",
-  travel_effort: "Travel effort",
-  trip_window_snow_fit: "Trip-window snow fit",
+  development_style: "Place style",
+  base_type: "Place type",
+  travel_effort: "Drive time and ease",
+  trip_window_snow_fit: "Snow fit for your dates",
 };
 
 export const groupLabels: Record<string, string> = {
-  trip_viability: "Trip viability",
+  trip_viability: "Trip timing",
   ski_experience: "Ski experience",
-  stay_practicality: "Stay practicality",
+  stay_practicality: "Where you stay",
   value: "Value",
   character: "Character",
-  travel_effort: "Travel effort",
+  travel_effort: "Drive time and ease",
+};
+
+const importanceLabels: Record<string, string> = {
+  ignore: "Not a priority",
+  secondary: "Lower priority",
+  normal: "Balanced",
+  important: "Important",
+  primary: "Top priority",
+  very_high: "Highest priority",
+};
+
+export function groupPriorityLabel(priority: GroupPriorityPatch): string | null {
+  const groupLabel = groupLabels[priority.group_id];
+  const importanceLabel = importanceLabels[priority.importance];
+  return groupLabel && importanceLabel
+    ? `${groupLabel}: ${importanceLabel}`
+    : null;
+}
+
+const preferenceValueLabels: Record<string, string> = {
+  "ski_day_apres:low_key": "Quiet",
+  "ski_day_apres:moderate": "Some atmosphere",
+  "ski_day_apres:lively": "Lively",
+  "ski_day_apres:destination_defining": "A major après destination",
+  "local_apres:low_key": "Quiet",
+  "local_apres:moderate": "Some atmosphere",
+  "local_apres:lively": "Lively",
+  "local_apres:destination_defining": "A major après destination",
+  "local_pace:quiet": "Quiet and relaxed",
+  "local_pace:balanced": "Balanced",
+  "local_pace:lively": "Lively",
+  "development_style:traditional": "Traditional mountain village",
+  "development_style:mixed": "A mix of old and new",
+  "development_style:planned_resort": "Purpose-built ski resort",
+  "base_type:town": "Ski town",
+  "base_type:village|hamlet": "Village or hamlet",
+  "base_type:resort_station": "Purpose-built resort base",
+  "base_type:neighbourhood|resort_sector": "Resort neighborhood or area",
 };
 
 export type ParsedChipAction =
@@ -81,8 +127,29 @@ export interface ParsedChip {
   action: ParsedChipAction;
 }
 
+export interface ParsedChipPartitions {
+  mustHaves: ParsedChip[];
+  preferences: ParsedChip[];
+}
+
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
+}
+
+export function factorPreferenceLabel(
+  preference: FactorPreferencePatch,
+): string | null {
+  const factorLabel = factorLabels[preference.factor_id];
+  if (!factorLabel) return null;
+  const valuesLabel = preferenceValueLabels[
+    `${preference.factor_id}:${preference.values.join("|")}`
+  ];
+  if (valuesLabel) {
+    const modePrefix =
+      preference.mode === "prefer" ? "" : `${titleCase(preference.mode)} `;
+    return `${modePrefix}${factorLabel}: ${valuesLabel}`;
+  }
+  return `${titleCase(preference.mode)} ${factorLabel}`;
 }
 
 function monthName(month: number): string {
@@ -121,7 +188,8 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
   }
   if (constraints.minimum_stay_quality) {
     const score = constraints.minimum_stay_quality.minimum_score;
-    const tier = score >= 10 ? "Premium" : score >= 6 ? "Standard+" : "Budget+";
+    const tier =
+      score >= 10 ? "Higher comfort" : score >= 6 ? "Standard comfort" : "Basic comfort";
     chips.push({
       id: "stay-quality",
       label: `${tier} stay`,
@@ -155,31 +223,54 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
     if (!label) continue;
     chips.push({
       id: `objective-${item.factor_id}`,
-      label: `Optimize ${label}`,
+      label: `Prefer ${label}`,
       action: { kind: "objective", id: item.factor_id },
     });
   }
   for (const item of intent.group_priorities) {
-    const label = groupLabels[item.group_id];
+    const label = groupPriorityLabel(item);
     if (!label) continue;
     chips.push({
       id: `group-${item.group_id}`,
-      label: `${label}: ${item.importance}`,
+      label,
       action: { kind: "group", id: item.group_id },
     });
   }
   for (const item of intent.factor_preferences) {
-    const label = factorLabels[item.factor_id];
+    const label = factorPreferenceLabel(item);
     if (!label) continue;
     chips.push({
       id: `factor-${item.factor_id}`,
-      label: `${titleCase(item.mode)} ${label}${
-        item.values.length ? `: ${item.values.join(", ")}` : ""
-      }`,
+      label,
       action: { kind: "preference", id: item.factor_id },
     });
   }
   return chips;
+}
+
+export function partitionParsedChips(intent: SearchIntent): ParsedChipPartitions {
+  const chips = buildParsedChips(intent);
+  const requiredFactorIds = new Set(
+    intent.factor_preferences
+      .filter((preference) => preference.mode === "require")
+      .map((preference) => preference.factor_id),
+  );
+  const mustHaves = chips.filter(
+    (chip) =>
+      [
+        "location",
+        "travelWindow",
+        "lodgingBudget",
+        "stayQuality",
+        "travelLimit",
+        "skill",
+      ].includes(chip.action.kind) ||
+      (chip.action.kind === "preference" && requiredFactorIds.has(chip.action.id)),
+  );
+  return {
+    mustHaves,
+    preferences: chips.filter((chip) => !mustHaves.includes(chip)),
+  };
 }
 
 function accessTrustState(
@@ -199,18 +290,42 @@ function accessTrustState(
 
 function accessTrustPrefix(configuration: SearchV4Configuration): string {
   const trust = accessTrustState(configuration);
-  if (trust === "estimated") return "Estimated ";
-  if (trust === "verified_with_adjustment") return "Adjusted ";
+  if (trust === "estimated" || trust === "verified_with_adjustment") {
+    return "About ";
+  }
   return "";
+}
+
+function accessDescription(
+  configuration: SearchV4Configuration,
+): string | null {
+  const { access } = configuration;
+  const mode = accessModeLabels[access.access_mode];
+  if (!mode) return null;
+  const prefix = accessTrustPrefix(configuration);
+
+  if (access.distance_m != null) {
+    if (mode === "walk") return `${prefix}${access.distance_m} m walk to the lifts`;
+    if (mode === "ski bus") return `${prefix}${access.distance_m} m to the ski bus`;
+    return `${prefix}${access.distance_m} m ${mode} to the lifts`;
+  }
+  if (access.duration_minutes != null) {
+    if (mode === "ski bus") return `${prefix}${access.duration_minutes} min by ski bus`;
+    if (mode === "walk") return `${prefix}${access.duration_minutes} min walk to the lifts`;
+    return `${prefix}${access.duration_minutes} min by ${mode}`;
+  }
+  if (access.is_direct || access.access_mode === "ski_in_ski_out") {
+    return "Ski-in/ski-out access";
+  }
+  const distance = liftDistanceLabels[access.lift_distance];
+  return distance ? `${distance} ${mode} to the lifts` : `${titleCase(mode)} to the lifts`;
 }
 
 export function formatAccess(configuration: SearchV4Configuration): string {
   if (accessTrustState(configuration) === "needs_source") {
-    return "Access details need source verification";
+    return "Lift access needs source confirmation";
   }
-  const mode = accessModeLabels[configuration.access.access_mode];
-  if (!mode) return "Access mode unavailable";
-  return `${accessTrustPrefix(configuration)}${titleCase(mode)}`;
+  return accessDescription(configuration) ?? "Lift access details are unavailable";
 }
 
 export function formatAccommodationAccessContext(
@@ -218,22 +333,11 @@ export function formatAccommodationAccessContext(
 ): string | null {
   if (accessTrustState(configuration) === "needs_source") return null;
   const { access } = configuration;
-  const mode = accessModeLabels[access.access_mode];
-  if (!mode) return null;
-  const detail =
-    access.distance_m != null
-      ? `${access.distance_m} m ${mode}`
-      : access.duration_minutes != null
-        ? `${access.duration_minutes} min ${mode}`
-        : access.is_direct
-          ? "direct access"
-          : null;
-  const context = detail
-    ? access.nearest_lift_name
-      ? `${access.nearest_lift_name} - ${detail}`
-      : detail
-    : access.nearest_lift_name;
-  return context ? `${accessTrustPrefix(configuration)}${context}` : null;
+  const detail = accessDescription(configuration);
+  if (!detail) return access.nearest_lift_name;
+  return access.nearest_lift_name
+    ? `${access.nearest_lift_name} - ${detail}`
+    : detail;
 }
 
 export function formatPassPrice(configuration: SearchV4Configuration): string {
@@ -260,16 +364,7 @@ export function formatLodging(configuration: SearchV4Configuration): string {
 export function lodgingTrustLabel(
   trustStatus: NonNullable<SearchV4Configuration["lodging_estimate"]>["trust_status"],
 ): string {
-  switch (trustStatus) {
-    case "verified":
-      return "Verified";
-    case "verified_with_adjustment":
-      return "Verified with adjustment";
-    case "estimated":
-      return "Estimated";
-    case "needs_source":
-      return "Needs source";
-  }
+  return catalogTrustStatusCopy[trustStatus].primary;
 }
 
 export function formatAccommodationEstimate(
@@ -308,47 +403,52 @@ export function terrainPresentation(
   const evidence = selectedPass.accessible_piste_km_evidence;
   if (kilometres == null || !evidence) return null;
 
-  const prefix =
-    evidence.trust_status === "estimated"
-      ? "Estimated "
-      : evidence.trust_status === "verified_with_adjustment"
-        ? "Adjusted "
-        : "";
-  const needsSource = evidence.trust_status === "needs_source";
-  const unresolvedSuffix = needsSource ? " (needs source)" : "";
+  if (evidence.trust_status === "needs_source") {
+    const scope =
+      evidence.scope === "ski_area"
+        ? "Ski-area terrain"
+        : evidence.scope === "terrain_domain"
+          ? "Connected terrain"
+          : "Pass terrain";
+    const value = `${scope} needs source confirmation`;
+    return { essentialValue: value, evidenceLabel: value };
+  }
+
+  const prefix = approximatePrefix(evidence.trust_status);
 
   if (evidence.scope === "ski_area") {
+    const value = `${prefix}${kilometres} km in the selected ski area`;
     return {
-      essentialValue: `${prefix}${kilometres} km (ski area only${
-        needsSource ? "; needs source" : ""
-      })`,
-      evidenceLabel: `${prefix}${kilometres} km in selected ski area${
-        needsSource ? " (needs source)" : ""
-      }; pass-wide coverage ${needsSource ? "unresolved" : "needs source"}`,
+      essentialValue: value,
+      evidenceLabel: value,
     };
   }
   if (evidence.scope === "terrain_domain") {
+    const value = `${prefix}${kilometres} km in the connected area covered by this pass`;
     return {
-      essentialValue: `${prefix}${kilometres} km (covered domain${
-        needsSource ? "; needs source" : ""
-      })`,
-      evidenceLabel: `${prefix}${kilometres} km in covered terrain domain${unresolvedSuffix}`,
+      essentialValue: value,
+      evidenceLabel: value,
     };
   }
+  const value = `${prefix}${kilometres} km covered by this pass`;
   return {
-    essentialValue: `${prefix}${kilometres} km${unresolvedSuffix}`,
-    evidenceLabel: `${prefix}${kilometres} km pass-accessible terrain${unresolvedSuffix}`,
+    essentialValue: value,
+    evidenceLabel: value,
   };
 }
 
 export function factorLabelForConfiguration(
   configuration: SearchV4Configuration,
   factorId: string,
+  travelWindow?: TravelWindow,
 ): string | undefined {
+  if (factorId === "trip_window_snow_fit") {
+    return snowFitPresentation(configuration, travelWindow).label;
+  }
   if (factorId !== "accessible_terrain_scale") return factorLabels[factorId];
   const scope = configuration.selected_pass.accessible_piste_km_evidence?.scope;
-  if (scope === "ski_area") return "Selected ski-area terrain";
-  if (scope === "terrain_domain") return "Covered terrain-domain scale";
+  if (scope === "ski_area") return "Terrain in the selected ski area";
+  if (scope === "terrain_domain") return "Connected terrain covered by this pass";
   if (scope === "pass") return factorLabels[factorId];
   return "Terrain scale";
 }
@@ -366,13 +466,13 @@ export function factorTrustLabelForConfiguration(
   const status = configuration.selected_pass.accessible_piste_km_evidence?.trust_status;
   switch (status) {
     case "verified":
-      return "Verified";
+      return "Based on source data";
     case "verified_with_adjustment":
-      return "Verified with adjustment";
+      return "Estimated from source data";
     case "estimated":
-      return "Estimated";
+      return "Estimated from catalog data";
     case "needs_source":
-      return "Needs source";
+      return "Source confirmation needed";
     default:
       return null;
   }
@@ -398,6 +498,71 @@ const factorEssentialCategories: Record<string, TripEssentialCategory> = {
 
 function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function approximatePrefix(
+  trust: "verified" | "verified_with_adjustment" | "estimated" | "needs_source",
+): string {
+  return trust === "estimated" || trust === "verified_with_adjustment"
+    ? "About "
+    : "";
+}
+
+function trustProvenance(
+  trust: CatalogTrustStatus,
+): string {
+  return catalogTrustStatusCopy[trust].technical;
+}
+
+const catalogTrustStatuses = [
+  "verified",
+  "verified_with_adjustment",
+  "estimated",
+  "needs_source",
+] as const satisfies readonly CatalogTrustStatus[];
+
+function trustStatusFromProvenance(provenance: string): CatalogTrustStatus | null {
+  return (
+    catalogTrustStatuses.find((status) =>
+      new RegExp(`\\b${status}\\b`, "i").test(provenance),
+    ) ?? null
+  );
+}
+
+function technicalProvenance(provenance: string): string {
+  const trust = trustStatusFromProvenance(provenance);
+  if (!trust) return provenance;
+
+  const detail = provenance
+    .replace(new RegExp(`\\b${trust}\\b`, "i"), "")
+    .replace(/:\s*;/g, ";")
+    .replace(/[:;,]\s*\./g, ".")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return detail ? `${trustProvenance(trust)} ${detail}` : trustProvenance(trust);
+}
+
+function accessProvenance(configuration: SearchV4Configuration): string {
+  const { access } = configuration;
+  const details = [trustProvenance(accessTrustState(configuration))];
+
+  details.push(
+    access.relationship_trust_status === "needs_source"
+      ? `The link between ${configuration.stay_base_name} and ${configuration.ski_area_name} needs verification.`
+      : `The catalog links ${configuration.stay_base_name} to ${configuration.ski_area_name}.`,
+  );
+
+  if (access.access_mode_distance_trust_status === "needs_source") {
+    details.push("The lift-access mode and distance need verification.");
+  } else if (
+    access.relationship_trust_status !== "needs_source" &&
+    access.nearest_lift_name
+  ) {
+    details.push(`Nearest lift: ${access.nearest_lift_name}.`);
+  }
+
+  return details.join(" ");
 }
 
 const accessModeLabels: Record<string, string | null> = {
@@ -430,31 +595,18 @@ function passValue(configuration: SearchV4Configuration): string | null {
 }
 
 function accessValue(configuration: SearchV4Configuration): string | null {
-  const { access } = configuration;
   if (accessTrustState(configuration) === "needs_source") return null;
-  const mode = accessModeLabels[access.access_mode];
-  if (!mode) return null;
-  const prefix = accessTrustPrefix(configuration);
-  if (access.distance_m != null) return `${prefix}${access.distance_m} m ${mode}`;
-  if (access.duration_minutes != null) {
-    return `${prefix}${access.duration_minutes} min ${mode}`;
-  }
-  if (access.is_direct || access.access_mode === "ski_in_ski_out") {
-    return `${prefix}Ski-in/out`;
-  }
-  const distance = liftDistanceLabels[access.lift_distance];
-  return distance ? `${prefix}${distance} ${mode}` : `${prefix}${titleCase(mode)}`;
+  return accessDescription(configuration);
 }
 
 function lodgingValue(configuration: SearchV4Configuration): string | null {
   const estimate = configuration.lodging_estimate;
   if (!estimate || estimate.trust_status === "needs_source") return null;
   const prefix =
-    estimate.trust_status === "estimated"
+    estimate.trust_status === "estimated" ||
+    estimate.trust_status === "verified_with_adjustment"
       ? "Estimated "
-      : estimate.trust_status === "verified_with_adjustment"
-        ? "Adjusted "
-        : "";
+      : "";
   return `${prefix}${estimate.currency} ${estimate.minimum}-${estimate.maximum}/night`;
 }
 
@@ -531,22 +683,22 @@ export function selectTripEssentialCategories(
 }
 
 const strengthCopy: Record<string, string> = {
-  accessible_terrain_scale: "Terrain scale contributes positively to this comparison.",
+  accessible_terrain_scale: "Terrain scale compares well with the other matches.",
   party_skill_coverage: "The selected terrain supports your party's skill mix.",
-  terrain_potential_scale: "The selected pass supports a broad terrain choice.",
+  terrain_potential_scale: "The ski region offers wider terrain.",
   lift_network_scale: "The lift network supports varied ski-day plans.",
-  glacier_terrain: "Glacier terrain adds resilience for the selected window.",
-  snowmaking_availability: "Snowmaking adds resilience for the selected window.",
-  stay_base_access: "The selected stay base keeps lift access practical.",
+  glacier_terrain: "Glacier terrain is available for this trip option.",
+  snowmaking_availability: "Snowmaking is available for this trip option.",
+  stay_base_access: "The recommended place to stay keeps lift access practical.",
   pass_price_per_day: "The selected pass offers competitive daily value.",
   pass_terrain_value: "The selected pass balances terrain access and price.",
   travel_effort: "The route keeps travel effort within the requested plan.",
-  trip_window_snow_fit: "The available evidence supports the selected snow window.",
+  trip_window_snow_fit: "Available snow evidence supports your requested travel dates.",
 };
 
 const watchoutCopy: Record<string, string> = {
   accessible_terrain_scale: "Terrain-scale evidence is limited for this pass.",
-  party_skill_coverage: "Party skill coverage needs a closer terrain review.",
+  party_skill_coverage: "Some terrain may not suit every skier in your group.",
   terrain_potential_scale: "Connected terrain evidence is limited.",
   lift_network_scale: "Lift-network evidence is limited.",
   glacier_terrain: "Glacier access can still be disrupted by weather.",
@@ -558,21 +710,318 @@ const watchoutCopy: Record<string, string> = {
   trip_window_snow_fit: "Snow evidence is limited for the requested travel window.",
 };
 
+function supportedVerdict(
+  configuration: SearchV4Configuration,
+  factorId: string,
+  travelWindow?: TravelWindow,
+): string {
+  if (factorId === "trip_window_snow_fit") {
+    const label = snowFitPresentation(configuration, travelWindow).label.replace(
+      /^Snow/,
+      "snow",
+    );
+    return `Strong ${label}.`;
+  }
+  if (factorId === "accessible_terrain_scale") {
+    switch (configuration.selected_pass.accessible_piste_km_evidence?.scope) {
+      case "ski_area":
+        return "Matches terrain in the selected ski area.";
+      case "terrain_domain":
+        return "Matches connected terrain covered by this pass.";
+      case "pass":
+        return "Matches terrain covered by this pass.";
+      default:
+        return "Terrain compares well with the other matches.";
+    }
+  }
+  const verdicts: Record<string, string> = {
+    party_skill_coverage: "Matches your group's skiing level.",
+    terrain_potential_scale: "The ski region offers wider terrain.",
+    lift_network_scale: "The lift network supports varied ski-day plans.",
+    glacier_terrain: "Glacier terrain is available for this trip option.",
+    snowmaking_availability: "Snowmaking is available for this trip option.",
+    pass_price_per_day: "The lift-pass price compares well with the other matches.",
+    pass_terrain_value: "Terrain and lift-pass value compare well with the other matches.",
+    travel_effort: "The route fits a shorter or easier journey.",
+  };
+  return verdicts[factorId] ?? "This trip compares well with the other matches.";
+}
+
+function supportedStrength(
+  configuration: SearchV4Configuration,
+  factorId: string,
+): string {
+  if (factorId === "terrain_potential_scale") {
+    return `${configuration.ski_region_name} offers wider terrain; a different or additional pass may be needed.`;
+  }
+  return strengthCopy[factorId];
+}
+
 export interface CandidateNarrative {
   verdict: string;
   strength?: string;
   watchout?: string;
+  watchoutEvidenceId?: DecisionEvidenceId;
 }
 
+export type DecisionEvidenceId =
+  | "snow-window"
+  | "skill-match"
+  | "terrain"
+  | "lift-access"
+  | "pass-price"
+  | "lodging"
+  | "constraints";
+
 export interface DecisionEvidencePresentation {
-  supports: Array<{ id: string; title: string; detail: string }>;
-  uncertainties: Array<{ id: string; detail: string }>;
-  technicalDetails: Array<{
-    id: string;
-    label: string;
-    provenance: string;
-    evidenceLabel: string;
-  }>;
+  supports: Array<{ id: DecisionEvidenceId; title: string; detail: string }>;
+  uncertainties: Array<{ id: DecisionEvidenceId; detail: string }>;
+}
+
+export interface TechnicalEvidenceDetail {
+  id: string;
+  label: string;
+  provenance: string;
+  evidenceLabel: string;
+}
+
+export interface WeatherEvidencePresentation {
+  sourceType: string;
+  sourceCurrency: string;
+  coverage: string;
+  expectedConditions: string;
+  mainLimitation: string;
+}
+
+const weatherDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "UTC",
+});
+
+function formatWeatherDateTime(value: string): string {
+  return weatherDateTimeFormatter.format(new Date(value));
+}
+
+function historicalArchiveCurrency(
+  historical: Extract<
+    SearchWeatherEvidenceResponse,
+    { status: "available" }
+  >["evidence"]["historical"],
+): string {
+  const parts: string[] = [];
+  if (historical.latest_archive_year != null) {
+    parts.push(`archive through ${historical.latest_archive_year}`);
+  } else {
+    const archiveYears = [...new Set(
+      historical.sources
+        .map((source) => source.latest_archive_year)
+        .filter((year): year is number => year != null),
+    )].sort((left, right) => left - right);
+    if (archiveYears.length === 1) {
+      parts.push(`archive through ${archiveYears[0]}`);
+    } else if (archiveYears.length > 1) {
+      parts.push(
+        `archives through ${archiveYears[0]}-${archiveYears[archiveYears.length - 1]}`,
+      );
+    }
+  }
+  if (
+    historical.baseline_start_year != null &&
+    historical.baseline_end_year != null
+  ) {
+    parts.push(
+      `${historical.baseline_start_year}-${historical.baseline_end_year} baseline`,
+    );
+  } else {
+    const baselineYears = new Set(
+      historical.sources.map(
+        (source) => `${source.baseline_start_year}-${source.baseline_end_year}`,
+      ),
+    );
+    if (baselineYears.size === 1) {
+      parts.push(`${[...baselineYears][0]} baseline`);
+    } else if (baselineYears.size > 1) {
+      parts.push("baseline years vary across sources");
+    }
+  }
+  return parts.length ? parts.join("; ") : "archive year and baseline unavailable";
+}
+
+function historicalSeasonCoverage(
+  historical: Extract<
+    SearchWeatherEvidenceResponse,
+    { status: "available" }
+  >["evidence"]["historical"],
+): string {
+  if (historical.evidence_seasons != null) {
+    return `${historical.evidence_seasons} historical seasons`;
+  }
+  const seasons = [...new Set(historical.sources.map((source) => source.evidence_seasons))]
+    .sort((left, right) => left - right);
+  if (seasons.length === 1) return `${seasons[0]} historical seasons`;
+  return `${seasons[0]}-${seasons[seasons.length - 1]} historical seasons across sources`;
+}
+
+function formatWeatherMetric(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function forecastConditions(
+  response: Extract<SearchWeatherEvidenceResponse, { status: "available" }>,
+): string {
+  const forecast = response.evidence.forecast;
+  if (!forecast) return "Forecast conditions are unavailable.";
+  const snowfall = forecast.daily_profile
+    .map((point) => point.snowfall_cm)
+    .filter((value): value is number => value != null);
+  const minimums = forecast.daily_profile
+    .map((point) => point.temperature_min_c)
+    .filter((value): value is number => value != null);
+  const maximums = forecast.daily_profile
+    .map((point) => point.temperature_max_c)
+    .filter((value): value is number => value != null);
+  const parts: string[] = [];
+  if (snowfall.length) {
+    parts.push(
+      `Forecast fresh snow ${formatWeatherMetric(
+        snowfall.reduce((total, value) => total + value, 0),
+      )} cm`,
+    );
+  }
+  if (minimums.length || maximums.length) {
+    const lower = minimums.length ? Math.min(...minimums) : Math.min(...maximums);
+    const upper = maximums.length ? Math.max(...maximums) : Math.max(...minimums);
+    parts.push(
+      `forecast temperature range ${formatWeatherMetric(lower)} to ${formatWeatherMetric(upper)} °C`,
+    );
+  }
+  if (response.evidence.historical.snow_depth_cm_p50 != null) {
+    parts.push(
+      `typical historical snow depth ${formatWeatherMetric(
+        response.evidence.historical.snow_depth_cm_p50,
+      )} cm`,
+    );
+  }
+  return parts.length
+    ? parts.join("; ")
+    : "No forecast condition values are available for the requested dates.";
+}
+
+function mainWeatherLimitation(
+  response: Extract<SearchWeatherEvidenceResponse, { status: "available" }>,
+): string {
+  const { evidence } = response;
+  const { historical, forecast } = evidence;
+  const hasMixedProvenance =
+    historical.provenance_status === "mixed" ||
+    forecast?.provenance_status === "mixed";
+  if (evidence.elevation_status === "mixed" && hasMixedProvenance) {
+    return "This assessment combines weather data from different sources and elevations.";
+  }
+  if (evidence.elevation_status === "mixed") {
+    return "This assessment combines weather data from different elevations.";
+  }
+  if (hasMixedProvenance) {
+    return "This assessment combines weather data from different sources.";
+  }
+  if (evidence.limitations[0]) return evidence.limitations[0];
+
+  if (evidence.mode === "forecast_assisted" && forecast) {
+    const missingDates = Math.max(
+      0,
+      forecast.requested_date_count - forecast.usable_date_count,
+    );
+    return missingDates > 0
+      ? `Forecast values are unavailable for ${missingDates} of ${forecast.requested_date_count} requested dates.`
+      : "Forecast conditions can still change before travel.";
+  }
+
+  return "Historical patterns do not predict exact trip conditions.";
+}
+
+export function weatherEvidencePresentation(
+  response: SearchWeatherEvidenceResponse,
+): WeatherEvidencePresentation {
+  if (response.status === "unavailable") {
+    if (response.unavailable_reason === "travel_window_missing") {
+      return {
+        sourceType: "Travel dates needed",
+        sourceCurrency: "Add travel dates to assess weather conditions.",
+        coverage: "Weather coverage will be assessed after travel dates are added.",
+        expectedConditions: "Choose travel dates to see weather conditions.",
+        mainLimitation:
+          response.limitations[0] ?? "Add travel dates to assess weather conditions.",
+      };
+    }
+    return {
+      sourceType: "Historical weather evidence unavailable",
+      sourceCurrency: "Not available for this assessment.",
+      coverage:
+        "No historical profile met Snowcast's evidence requirements for this trip window.",
+      expectedConditions: "Unavailable from the current evidence.",
+      mainLimitation:
+        response.limitations[0] ??
+        "No complete historical profile is available for this trip window.",
+    };
+  }
+
+  const { historical, forecast } = response.evidence;
+  const archive = historicalArchiveCurrency(historical);
+  const seasonCoverage = historicalSeasonCoverage(historical);
+  if (response.evidence.mode === "forecast_assisted" && forecast) {
+    return {
+      sourceType: "Forecast and historical pattern",
+      sourceCurrency: [
+        forecast.issued_at
+          ? `Forecast issued ${formatWeatherDateTime(forecast.issued_at)} UTC`
+          : "Forecast issue time unavailable",
+        archive,
+      ].join("; "),
+      coverage: `${forecast.usable_date_count} of ${forecast.requested_date_count} requested dates have forecast values; ${seasonCoverage}`,
+      expectedConditions: forecastConditions(response),
+      mainLimitation: mainWeatherLimitation(response),
+    };
+  }
+
+  const historicalConditions = [
+    historical.snow_depth_cm_p50 == null
+      ? null
+      : `Typical historical snow depth ${formatWeatherMetric(
+          historical.snow_depth_cm_p50,
+        )} cm`,
+    historical.average_daily_snowfall_cm == null
+      ? null
+      : `typical fresh snow ${formatWeatherMetric(
+          historical.average_daily_snowfall_cm,
+        )} cm/day`,
+    historical.average_max_temperature_c == null
+      ? null
+      : `average high ${formatWeatherMetric(
+          historical.average_max_temperature_c,
+        )} °C`,
+  ].filter((value): value is string => value != null);
+  const profileDateCount = historical.daily_profile.length;
+  return {
+    sourceType: "Historical pattern",
+    sourceCurrency: archive.charAt(0).toUpperCase() + archive.slice(1),
+    coverage: `${seasonCoverage}; ${profileDateCount} profile ${profileDateCount === 1 ? "date" : "dates"}`,
+    expectedConditions: historicalConditions.length
+      ? historicalConditions.join("; ")
+      : "No historical condition values are available for this trip window.",
+    mainLimitation: mainWeatherLimitation(response),
+  };
+}
+
+function hasAppliedTravelWindow(travelWindow?: TravelWindow): boolean {
+  return Boolean(
+    (travelWindow?.start_date && travelWindow.end_date) ||
+      typeof travelWindow?.month === "number",
+  );
 }
 
 function supportedFactor(
@@ -589,13 +1038,14 @@ function supportedFactor(
 
 export function decisionEvidencePresentation(
   configuration: SearchV4Configuration,
+  travelWindow?: TravelWindow,
 ): DecisionEvidencePresentation {
   const supports: DecisionEvidencePresentation["supports"] = [];
   const uncertainties: DecisionEvidencePresentation["uncertainties"] = [];
-  const addSupport = (id: string, title: string, detail: string) => {
+  const addSupport = (id: DecisionEvidenceId, title: string, detail: string) => {
     supports.push({ id, title, detail });
   };
-  const addUncertainty = (id: string, detail: string) => {
+  const addUncertainty = (id: DecisionEvidenceId, detail: string) => {
     if (!uncertainties.some((item) => item.detail === detail)) {
       uncertainties.push({ id, detail });
     }
@@ -604,13 +1054,14 @@ export function decisionEvidencePresentation(
   const snowFactor = configuration.factors.find(
     (item) => item.factor_id === "trip_window_snow_fit",
   );
-  if (supportedFactor(configuration, "trip_window_snow_fit")) {
+  if (hasAppliedTravelWindow(travelWindow) && supportedFactor(configuration, "trip_window_snow_fit")) {
     addSupport(
       "snow-window",
-      "Snow window",
+      snowFitPresentation(configuration, travelWindow).label,
       "Available snow evidence supports the requested travel window.",
     );
   } else if (
+    hasAppliedTravelWindow(travelWindow) &&
     snowFactor &&
     (snowFactor.effective_evidence_cap === 0 || snowFactor.warnings.length > 0)
   ) {
@@ -637,7 +1088,7 @@ export function decisionEvidencePresentation(
     addSupport(
       "terrain",
       "Terrain choice",
-      `${terrain.essentialValue} is covered by the selected pass context.`,
+      terrain.essentialValue,
     );
   } else {
     addUncertainty(
@@ -652,17 +1103,17 @@ export function decisionEvidencePresentation(
     addSupport(
       "lift-access",
       "Lift access",
-      `${configuration.stay_base_name} offers ${access.toLowerCase()} for this configuration.`,
+      `${configuration.stay_base_name}: ${access}`,
     );
   } else if (accessNeedsSource) {
     addUncertainty(
       "lift-access",
-      "Lift access from this stay base still needs source verification.",
+      "Lift access from this place to stay still needs source verification.",
     );
   } else {
     addUncertainty(
       "lift-access",
-      "Lift access may require additional local travel from the selected stay base.",
+      "Lift access may require additional local travel from the recommended place to stay.",
     );
   }
 
@@ -676,7 +1127,7 @@ export function decisionEvidencePresentation(
   } else {
     addUncertainty(
       "pass-price",
-      "A comparable pass price is not available for this configuration.",
+      "A comparable pass price is not available for this trip option.",
     );
   }
 
@@ -690,7 +1141,7 @@ export function decisionEvidencePresentation(
   } else {
     addUncertainty(
       "lodging",
-      "No stay-price estimate is available for this configuration.",
+      "No stay-price estimate is available for this trip option.",
     );
   }
 
@@ -701,79 +1152,79 @@ export function decisionEvidencePresentation(
     );
   }
 
-  const technicalDetails: DecisionEvidencePresentation["technicalDetails"] =
+  return {
+    supports: supports.slice(0, 4),
+    uncertainties,
+  };
+}
+
+export function technicalEvidenceDetails(
+  configuration: SearchV4Configuration,
+  travelWindow?: TravelWindow,
+): TechnicalEvidenceDetail[] {
+  const terrain = terrainPresentation(configuration.selected_pass);
+  const technicalDetails: TechnicalEvidenceDetail[] =
     configuration.factors
       .filter((factor) => factorLabels[factor.factor_id] && factor.provenance_summary)
       .map((factor) => ({
         id: `factor-${factor.factor_id}`,
         label:
-          factorLabelForConfiguration(configuration, factor.factor_id) ??
+          factorLabelForConfiguration(configuration, factor.factor_id, travelWindow) ??
           "Ranking factor",
-        provenance: factor.provenance_summary,
+        provenance: technicalProvenance(factor.provenance_summary),
         evidenceLabel:
           factor.effective_evidence_cap > 0 ? "Supported" : "Limited evidence",
       }));
 
   const accessTrust = accessTrustState(configuration);
-  const accessProvenanceLabel =
-    accessTrust === "estimated"
-      ? "Estimated access"
-      : accessTrust === "verified_with_adjustment"
-        ? "Adjusted access"
-        : "Selected access";
-  const accessEvidencePrefix =
-    accessTrust === "estimated"
-      ? "Estimated "
-      : accessTrust === "verified_with_adjustment"
-        ? "Adjusted "
-        : "";
   technicalDetails.push(
     accessTrust === "needs_source"
       ? {
           id: "catalog-access",
-          label: "Stay base and lift access",
-          provenance:
-            "Lift-access relationship and distance need source verification.",
-          evidenceLabel: "Needs source",
+          label: "Place to stay and lift access",
+          provenance: accessProvenance(configuration),
+          evidenceLabel: "Source confirmation needed",
         }
       : {
           id: "catalog-access",
-          label: "Stay base and lift access",
-          provenance: configuration.access.nearest_lift_name
-            ? `${accessProvenanceLabel} is anchored to ${configuration.access.nearest_lift_name}.`
-            : `${accessProvenanceLabel} uses the catalog stay-base relationship.`,
+          label: "Place to stay and lift access",
+          provenance: accessProvenance(configuration),
           evidenceLabel:
             configuration.access.distance_m != null
-              ? `${accessEvidencePrefix}${configuration.access.distance_m} m`
-              : `${accessEvidencePrefix}Catalog context`,
+              ? `${accessTrustPrefix(configuration)}${configuration.access.distance_m} m`
+              : trustProvenance(accessTrust).replace(/\.$/, ""),
         },
   );
+  const terrainTrust = configuration.selected_pass.accessible_piste_km_evidence?.trust_status;
   technicalDetails.push({
     id: "selected-pass",
     label: "Selected pass",
-    provenance: `${configuration.selected_pass.name} is selected for this configuration.`,
+    provenance: terrainTrust
+      ? `${trustProvenance(terrainTrust)} ${configuration.selected_pass.name} is the pass used for this trip.`
+      : `${configuration.selected_pass.name} is the pass used for this trip.`,
     evidenceLabel: terrain?.evidenceLabel ?? "Coverage unresolved",
   });
   if (configuration.lodging_estimate?.provenance) {
-    technicalDetails.push({
-      id: "lodging-estimate",
-      label: "Lodging estimate",
-      provenance: configuration.lodging_estimate.provenance,
-      evidenceLabel: "Stay-base estimate",
-    });
+      technicalDetails.push({
+        id: "lodging-estimate",
+        label: "Lodging estimate",
+        provenance: technicalProvenance(configuration.lodging_estimate.provenance),
+        evidenceLabel: "Place to stay estimate",
+      });
   }
 
-  return {
-    supports: supports.slice(0, 4),
-    uncertainties,
-    technicalDetails,
-  };
+  return technicalDetails;
 }
 
 export function buildCandidateNarrative(
   configuration: SearchV4Configuration,
+  travelWindow?: TravelWindow,
 ): CandidateNarrative {
   const accessTrust = accessTrustState(configuration);
+  const hasTravelWindow = hasAppliedTravelWindow(travelWindow);
+  const snowPromptRequired =
+    !hasTravelWindow &&
+    configuration.factors.some((factor) => factor.factor_id === "trip_window_snow_fit");
   const supported = configuration.factors
     .filter(
       (factor) =>
@@ -783,24 +1234,32 @@ export function buildCandidateNarrative(
         !(
           factor.factor_id === "stay_base_access" &&
           accessTrust === "needs_source"
-        ),
+        ) &&
+        !(
+          factor.factor_id === "accessible_terrain_scale" &&
+          configuration.selected_pass.accessible_piste_km_evidence?.trust_status ===
+            "needs_source"
+        ) &&
+        (factor.factor_id !== "trip_window_snow_fit" || hasTravelWindow),
     )
     .sort((left, right) => right.effective_utility - left.effective_utility)[0];
   const caution = configuration.factors.find(
     (factor) =>
       watchoutCopy[factor.factor_id] &&
+      (factor.factor_id !== "trip_window_snow_fit" || hasTravelWindow) &&
       (factor.effective_evidence_cap === 0 || factor.warnings.length > 0),
   );
-  const supportedLabel = supported
-    ? factorLabelForConfiguration(configuration, supported.factor_id)
-    : undefined;
   const supportedTerrain =
     supported?.factor_id === "accessible_terrain_scale"
       ? terrainPresentation(configuration.selected_pass)
       : null;
-  const watchout = caution
+  const watchout = snowPromptRequired
+    ? "Add travel dates to assess snow fit."
+    : caution
     ? caution.factor_id === "stay_base_access" && accessTrust === "needs_source"
       ? "Lift-access details need source verification."
+      : caution.factor_id === "trip_window_snow_fit"
+        ? `${snowFitPresentation(configuration, travelWindow).label}: Snow evidence is limited for this travel window.`
       : watchoutCopy[caution.factor_id]
     : undefined;
   const verdict = supported
@@ -808,10 +1267,10 @@ export function buildCandidateNarrative(
       ? accessTrust === "estimated"
         ? "An estimated practical lift-access match for this trip."
         : accessTrust === "verified_with_adjustment"
-          ? "An adjusted practical lift-access match for this trip."
+          ? "A practical lift-access match based on estimated data."
           : "A practical lift-access match for this trip."
-      : `A strong ${supportedLabel?.toLowerCase() ?? "trip"} match.`
-    : "A complete trip configuration for comparison.";
+      : supportedVerdict(configuration, supported.factor_id, travelWindow)
+    : "A complete trip option for comparison.";
   return {
     verdict,
     ...(supported
@@ -820,25 +1279,48 @@ export function buildCandidateNarrative(
             ? `${supportedTerrain.evidenceLabel}.`
             : supported.factor_id === "stay_base_access"
               ? accessTrust === "estimated"
-                ? "Catalog estimates suggest the stay base keeps access practical."
+                ? `Available estimates suggest ${configuration.stay_base_name} offers practical lift access.`
                 : accessTrust === "verified_with_adjustment"
-                  ? "Adjusted access evidence supports the stay base as a practical choice."
+                  ? `Available source data suggests ${configuration.stay_base_name} offers practical lift access.`
                   : strengthCopy[supported.factor_id]
-              : strengthCopy[supported.factor_id],
+              : supported.factor_id === "trip_window_snow_fit"
+                ? `${snowFitPresentation(configuration, travelWindow).label}: Available snow evidence supports this travel window.`
+              : supportedStrength(configuration, supported.factor_id),
         }
       : {}),
     ...(watchout ? { watchout } : {}),
+    ...(caution?.factor_id === "trip_window_snow_fit"
+      ? { watchoutEvidenceId: "snow-window" as const }
+      : {}),
   };
 }
 
-export function snowWindowLabel(configuration: SearchV4Configuration): string {
+export function snowFitLabel(configuration: SearchV4Configuration): string {
   const factor = configuration.factors.find(
     (item) => item.factor_id === "trip_window_snow_fit",
   );
-  if (!factor || factor.effective_evidence_cap === 0) return "Unknown";
-  if (factor.effective_utility >= 0.75) return "Strong";
-  if (factor.effective_utility >= 0.55) return "Good";
-  return "Mixed";
+  if (!factor || factor.effective_evidence_cap === 0) return "Not enough evidence";
+  if (factor.effective_utility >= 0.75) return "Strong fit";
+  return "Some concerns";
+}
+
+export function snowFitPresentation(
+  configuration: SearchV4Configuration,
+  travelWindow: TravelWindow | undefined,
+): { label: string; value: string } {
+  const hasExactDates = Boolean(travelWindow?.start_date && travelWindow?.end_date);
+  if (!hasAppliedTravelWindow(travelWindow)) {
+    return {
+      label: "Add travel dates to assess snow fit",
+      value: "Not assessed",
+    };
+  }
+  const label = hasExactDates
+    ? "Snow fit for your dates"
+    : typeof travelWindow?.month === "number"
+      ? `Snow fit for ${monthName(travelWindow.month)}`
+      : "Snow fit for your dates";
+  return { label, value: snowFitLabel(configuration) };
 }
 
 export function evidenceQualityMode(
@@ -857,7 +1339,7 @@ export function refinementPreviewCopy(
   preview?: RefinementPreview | null,
   intentChanged = true,
 ): string {
-  if (!intentChanged) return "Keeps your current trip decisions and ranking.";
+  if (!intentChanged) return "Keeps your current trip decisions unchanged.";
   if (!preview) return "This changes how your current matches are evaluated.";
   const changes = preview.top_rank_changes;
   if (changes.length === 1) {
@@ -880,9 +1362,12 @@ export function refinementPreviewCopy(
     return `This choice would change ${changes.length} result positions.`;
   }
   if (preview.eligible_candidate_count_delta !== 0) {
-    return `This choice may change eligibility for ${Math.abs(
-      preview.eligible_candidate_count_delta,
-    )} trip configurations.`;
+    const count = Math.abs(preview.eligible_candidate_count_delta);
+    return `This choice may change ${count} possible ${count === 1 ? "match" : "matches"}.`;
   }
   return "This changes how your current matches are evaluated.";
+}
+
+export function tripOptionCountCopy(count: number): string {
+  return `${count} trip ${count === 1 ? "option matches" : "options match"} your must-haves`;
 }

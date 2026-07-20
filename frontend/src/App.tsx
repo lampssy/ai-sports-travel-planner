@@ -16,6 +16,7 @@ import {
   saveCurrentTrip,
   searchResorts,
 } from "./api";
+import { apiErrorMessage, type ApiOperation } from "./apiErrors";
 import {
   APP_NAVIGATION_EVENT,
   buildDossierHref,
@@ -36,6 +37,7 @@ import {
 } from "./search/searchPresentation";
 import {
   buildSearchIntent,
+  clearResolvedTopicsForManualChange,
   createSearchSession,
   defaultSearchFilters,
   dismissRefinement,
@@ -47,6 +49,7 @@ import {
   reconcileSearchSession,
   replaceRefinements,
   upsertBy,
+  upsertResolvedRefinementTopic,
   validateSearchFilters,
   type SearchSession,
   type RefinementLifecycleStatus,
@@ -57,6 +60,8 @@ import type {
   FactorPreferencePatch,
   GroupPriorityPatch,
   RefinementOption,
+  RefinementProposal,
+  ResolvedRefinementTopic,
   SearchFilters,
   SearchIntent,
   SearchObjective,
@@ -73,7 +78,7 @@ interface PreviousSearchState {
   preferences: FactorPreferencePatch[];
   groupPriorities: GroupPriorityPatch[];
   objectives: SearchObjective[];
-  answeredQuestionIds: string[];
+  resolvedTopics: ResolvedRefinementTopic[];
   editorBefore: RefinementEditorPatchState;
   editorAfter: RefinementEditorPatchState;
 }
@@ -88,6 +93,10 @@ interface RefinementEditorPatchState {
 interface FetchSearchOptions {
   exactIntent?: SearchIntent;
   syncEditorFromResponse?: boolean;
+  errorOperation?: Extract<
+    ApiOperation,
+    "search" | "searchUpdate" | "refinementApply"
+  >;
 }
 
 interface PendingRerankScrollRestore {
@@ -100,6 +109,71 @@ interface ChipEditorState {
   preferences: FactorPreferencePatch[];
   groupPriorities: GroupPriorityPatch[];
   objectives: SearchObjective[];
+}
+
+function resolvedQuestionIds(topics: ResolvedRefinementTopic[]): string[] {
+  return topics.map((item) => item.questionId);
+}
+
+function resolvedTopicIds(topics: ResolvedRefinementTopic[]): string[] {
+  return topics.map((item) => item.topicId);
+}
+
+function hardRefinementContext(intent: SearchIntent) {
+  return {
+    constraints: intent.constraints,
+    skillLevels: intent.party.skill_levels,
+    travelContext: intent.travel_context,
+  };
+}
+
+function changedDecisionFactorIds(
+  previous: SearchIntent,
+  next: SearchIntent,
+): Set<string> {
+  const changed = new Set<string>();
+  const compareById = <T,>(
+    before: T[],
+    after: T[],
+    key: (item: T) => string,
+  ) => {
+    const beforeById = new Map(before.map((item) => [key(item), item]));
+    const afterById = new Map(after.map((item) => [key(item), item]));
+    for (const id of new Set([...beforeById.keys(), ...afterById.keys()])) {
+      if (JSON.stringify(beforeById.get(id)) !== JSON.stringify(afterById.get(id))) {
+        changed.add(id);
+      }
+    }
+  };
+  compareById(
+    previous.factor_preferences,
+    next.factor_preferences,
+    (item) => item.factor_id,
+  );
+  compareById(previous.objectives, next.objectives, (item) => item.factor_id);
+  compareById(
+    previous.group_priorities,
+    next.group_priorities,
+    (item) => item.group_id,
+  );
+  return changed;
+}
+
+function resolvedTopicsAfterManualIntentChange(
+  current: ResolvedRefinementTopic[],
+  previousBrief: string,
+  previousIntent: SearchIntent,
+  nextBrief: string,
+  nextIntent: SearchIntent,
+): ResolvedRefinementTopic[] {
+  const startsNewContext =
+    previousBrief.trim() !== nextBrief.trim() ||
+    JSON.stringify(hardRefinementContext(previousIntent)) !==
+      JSON.stringify(hardRefinementContext(nextIntent));
+  return clearResolvedTopicsForManualChange(current, {
+    startsNewContext,
+    changedFactorIds: changedDecisionFactorIds(previousIntent, nextIntent),
+  });
 }
 
 function waitForRefinementRetry(
@@ -221,12 +295,17 @@ function App() {
   const [objectives, setObjectives] = useState<SearchObjective[]>([
     { factor_id: "pass_terrain_value", importance: "normal" },
   ]);
-  const [answeredQuestionIds, setAnsweredQuestionIds] = useState<string[]>([]);
+  const [resolvedTopics, setResolvedTopics] = useState<
+    ResolvedRefinementTopic[]
+  >([]);
   const [session, setSession] = useState<SearchSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveErrorsByCandidate, setSaveErrorsByCandidate] = useState<
+    Record<string, string>
+  >({});
   const [refinementError, setRefinementError] = useState<string | null>(null);
+  const [refinementRetrying, setRefinementRetrying] = useState(false);
   const [refinementStatus, setRefinementStatus] =
     useState<RefinementLifecycleStatus>("idle");
   const [rankFeedback, setRankFeedback] = useState<string | null>(null);
@@ -240,7 +319,30 @@ function App() {
   const [currentTrip, setCurrentTrip] = useState<CurrentTrip | null>(null);
   const [currentTripSummary, setCurrentTripSummary] =
     useState<CurrentTripSummary | null>(null);
+  const [currentTripLoadError, setCurrentTripLoadError] = useState<string | null>(
+    null,
+  );
+  const [currentTripSummaryLoadError, setCurrentTripSummaryLoadError] = useState<
+    string | null
+  >(null);
+  const [currentTripClearError, setCurrentTripClearError] = useState<string | null>(
+    null,
+  );
+  const [currentTripLoadRequest, setCurrentTripLoadRequest] = useState(0);
+  const [currentTripLoadRecoveryRequest, setCurrentTripLoadRecoveryRequest] =
+    useState(0);
+  const [currentTripSummaryLoadRequest, setCurrentTripSummaryLoadRequest] =
+    useState(0);
+  const [currentTripSummaryRecoveryRequest, setCurrentTripSummaryRecoveryRequest] =
+    useState(0);
+  const [currentTripLoading, setCurrentTripLoading] = useState(false);
+  const [currentTripSummaryLoading, setCurrentTripSummaryLoading] =
+    useState(false);
+  const currentTripRef = useRef<CurrentTrip | null>(null);
+  const currentTripLoadIdentityRef = useRef(0);
+  const currentTripSummaryLoadIdentityRef = useRef(0);
   const adjustFiltersRef = useRef<HTMLButtonElement>(null);
+  const drawerReturnFocusRef = useRef<HTMLButtonElement | null>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const refinementControlRef = useRef<HTMLElement>(null);
   const pendingRerankScrollRestoreRef =
@@ -332,22 +434,74 @@ function App() {
   }, [route.name]);
 
   useEffect(() => {
+    const identity = ++currentTripLoadIdentityRef.current;
+    setCurrentTripLoading(true);
     void getCurrentTrip()
       .then((trip) => {
-        if (trip) setCurrentTrip(trip);
+        if (identity !== currentTripLoadIdentityRef.current) return;
+        setCurrentTripLoadError(null);
+        if (currentTripLoadRequest > 0) {
+          setCurrentTripLoadRecoveryRequest((current) => current + 1);
+        }
+        if (currentTripRef.current === trip) return;
+        currentTripRef.current = trip;
+        setCurrentTrip(trip);
       })
-      .catch(() => undefined);
-  }, []);
+      .catch((caught) => {
+        if (identity === currentTripLoadIdentityRef.current) {
+          setCurrentTripLoadError(apiErrorMessage("currentTripLoad", caught));
+        }
+      })
+      .finally(() => {
+        if (identity === currentTripLoadIdentityRef.current) {
+          setCurrentTripLoading(false);
+        }
+      });
+    return () => {
+      if (identity === currentTripLoadIdentityRef.current) {
+        currentTripLoadIdentityRef.current += 1;
+      }
+    };
+  }, [currentTripLoadRequest]);
 
   useEffect(() => {
-    if (route.name !== "currentTrip" || !currentTrip) {
+    if (!currentTrip) {
       setCurrentTripSummary(null);
+      setCurrentTripSummaryLoadError(null);
+      setCurrentTripSummaryLoading(false);
       return;
     }
+    if (route.name !== "currentTrip") return;
+    const identity = ++currentTripSummaryLoadIdentityRef.current;
+    setCurrentTripSummaryLoading(true);
     void getCurrentTripSummary()
-      .then(setCurrentTripSummary)
-      .catch(() => setCurrentTripSummary(null));
-  }, [route.name, currentTrip]);
+      .then((summary) => {
+        if (identity === currentTripSummaryLoadIdentityRef.current) {
+          setCurrentTripSummaryLoadError(null);
+          setCurrentTripSummary(summary);
+          if (currentTripSummaryLoadRequest > 0) {
+            setCurrentTripSummaryRecoveryRequest((current) => current + 1);
+          }
+        }
+      })
+      .catch((caught) => {
+        if (identity === currentTripSummaryLoadIdentityRef.current) {
+          setCurrentTripSummaryLoadError(
+            apiErrorMessage("currentTripSummary", caught),
+          );
+        }
+      })
+      .finally(() => {
+        if (identity === currentTripSummaryLoadIdentityRef.current) {
+          setCurrentTripSummaryLoading(false);
+        }
+      });
+    return () => {
+      if (identity === currentTripSummaryLoadIdentityRef.current) {
+        currentTripSummaryLoadIdentityRef.current += 1;
+      }
+    };
+  }, [route.name, currentTrip, currentTripSummaryLoadRequest]);
 
   useEffect(() => {
     if (focusRequest > 0 && session) {
@@ -494,8 +648,9 @@ function App() {
   async function loadRefinements(
     rankingResponse: SearchSession["response"],
     nextBrief: string,
-    nextAnsweredQuestionIds: string[],
-  ) {
+    nextResolvedTopics: ResolvedRefinementTopic[],
+    { preserveError = false }: { preserveError?: boolean } = {},
+  ): Promise<boolean> {
     const belongsToRanking = (current: SearchSession | null) =>
       current?.response.baseline_fingerprint ===
         rankingResponse.baseline_fingerprint &&
@@ -508,7 +663,7 @@ function App() {
       window.clearTimeout(refinementSlowTimerRef.current);
       refinementSlowTimerRef.current = null;
     }
-    setRefinementError(null);
+    if (!preserveError) setRefinementError(null);
     setSession((current) =>
       belongsToRanking(current) && current
         ? replaceRefinements(current, [])
@@ -520,7 +675,7 @@ function App() {
       rankingResponse.results.length === 0
     ) {
       setRefinementStatus("idle");
-      return;
+      return false;
     }
 
     const controller = new AbortController();
@@ -547,7 +702,8 @@ function App() {
       intent: rankingResponse.applied_intent,
       brief: nextBrief.trim().slice(0, 2_000) || null,
       baseline_fingerprint: rankingResponse.baseline_fingerprint,
-      already_answered_question_ids: nextAnsweredQuestionIds,
+      already_answered_question_ids: resolvedQuestionIds(nextResolvedTopics),
+      resolved_topic_ids: resolvedTopicIds(nextResolvedTopics),
     };
 
     try {
@@ -576,20 +732,23 @@ function App() {
             caught.retryAfterSeconds * 1_000,
             controller.signal,
           );
-          if (refinementRequestIdRef.current !== requestId) return;
+          if (refinementRequestIdRef.current !== requestId) return false;
         }
       }
-      if (!refinementResponse) return;
-      if (refinementRequestIdRef.current !== requestId) return;
+      if (!refinementResponse) return false;
+      if (refinementRequestIdRef.current !== requestId) return false;
 
       if (refinementResponse.baseline_status === "unverified") {
         setRefinementStatus("temporarily_unavailable");
+        setRefinementError(
+          apiErrorMessage("refinementDiscovery", new Error("unverified")),
+        );
         setSession((current) =>
           belongsToRanking(current) && current
             ? replaceRefinements(current, [])
             : current,
         );
-        return;
+        return false;
       }
 
       const baselineMatches =
@@ -600,12 +759,13 @@ function App() {
           rankingResponse.ranking_policy_version;
       if (!baselineMatches) {
         setRefinementStatus("stale");
+        setRefinementError(null);
         setSession((current) =>
           belongsToRanking(current) && current
             ? replaceRefinements(current, [])
             : current,
         );
-        return;
+        return false;
       }
 
       const refinements =
@@ -623,15 +783,24 @@ function App() {
           : current,
       );
       setRefinementStatus(status);
-    } catch {
+      if (status === "temporarily_unavailable") {
+        setRefinementError(
+          apiErrorMessage("refinementDiscovery", new Error("unavailable")),
+        );
+      } else {
+        setRefinementError(null);
+      }
+      return refinements.length > 0;
+    } catch (caught) {
       if (
         controller.signal.aborted ||
         refinementRequestIdRef.current !== requestId
       ) {
-        return;
+        return false;
       }
       setRefinementStatus("temporarily_unavailable");
-      setRefinementError(null);
+      setRefinementError(apiErrorMessage("refinementDiscovery", caught));
+      return false;
     } finally {
       if (refinementRequestIdRef.current === requestId) {
         clearSlowTimer();
@@ -648,7 +817,7 @@ function App() {
     nextPreferences: FactorPreferencePatch[],
     nextGroupPriorities: GroupPriorityPatch[],
     nextObjectives: SearchObjective[],
-    nextAnsweredQuestionIds: string[],
+    nextResolvedTopics: ResolvedRefinementTopic[],
     nextBrief: string,
     focusResults: boolean,
     options: FetchSearchOptions = {},
@@ -675,7 +844,10 @@ function App() {
       refinementSlowTimerRef.current = null;
     }
     setRefinementStatus("idle");
-    const response = await searchResorts({ intent });
+    const response = await searchResorts(
+      { intent },
+      options.errorOperation ?? (session ? "searchUpdate" : "search"),
+    );
     if (options.syncEditorFromResponse !== false) {
       setFilters(nextFilters);
       setAssumptions([...response.applied_intent.assumptions]);
@@ -689,12 +861,13 @@ function App() {
         : createSearchSession(nextBrief, response, nextFilters);
       return { ...next, brief: nextBrief };
     });
+    setSaveErrorsByCandidate({});
     setUndoState(null);
     setRankFeedback(null);
     setChangedRankGroupIds(new Set());
     setError(null);
     if (focusResults) setFocusRequest((current) => current + 1);
-    void loadRefinements(response, nextBrief, nextAnsweredQuestionIds);
+    void loadRefinements(response, nextBrief, nextResolvedTopics);
     return response;
   }
 
@@ -715,43 +888,65 @@ function App() {
         setAssumptions(nextAssumptions);
         setLastParsedBrief(trimmedBrief);
       }
-      await fetchSearch(
+      const nextIntent = buildSearchIntent(
         nextFilters,
         nextAssumptions,
         preferences,
         groupPriorities,
         objectives,
-        answeredQuestionIds,
+      );
+      const nextResolvedTopics = session
+        ? resolvedTopicsAfterManualIntentChange(
+            resolvedTopics,
+            session.brief,
+            session.response.applied_intent,
+            brief,
+            nextIntent,
+          )
+        : [];
+      const nextResponse = await fetchSearch(
+        nextFilters,
+        nextAssumptions,
+        preferences,
+        groupPriorities,
+        objectives,
+        nextResolvedTopics,
         brief,
         true,
       );
+      if (nextResponse) setResolvedTopics(nextResolvedTopics);
     } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Could not complete the search.",
-      );
+      setError(apiErrorMessage(session ? "searchUpdate" : "search", caught));
     } finally {
       setLoading(false);
     }
   }
 
-  async function applyRefinement(questionId: string, option: RefinementOption) {
+  async function applyRefinement(
+    refinement: RefinementProposal,
+    option: RefinementOption,
+  ) {
     const baselineSession = session;
     if (loading || !baselineSession) return;
     const baselineIntent = baselineSession.response.applied_intent;
-    const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
+    const nextResolvedTopics = upsertResolvedRefinementTopic(
+      resolvedTopics,
+      refinement,
+    );
     if (!option.intent_changed) {
-      const hasNextRefinement =
-        session?.refinementQueue.some(
-          (refinement) => refinement.question_id !== questionId,
-        ) ?? false;
-      setAnsweredQuestionIds(nextAnswered);
+      resultsHeadingRef.current?.focus({ preventScroll: true });
+      setResolvedTopics(nextResolvedTopics);
       setSession((current) =>
-        current ? dismissRefinement(current, questionId) : current,
+        current ? dismissRefinement(current, refinement.question_id) : current,
       );
       setRefinementError(null);
-      setRefinementStatus(hasNextRefinement ? "questions_available" : "not_needed");
-      setRankFeedback("Current ranking kept.");
+      setRankFeedback("Current trip choices kept.");
       setChangedRankGroupIds(new Set());
+      const hasNextRefinement = await loadRefinements(
+        baselineSession.response,
+        baselineSession.brief,
+        nextResolvedTopics,
+      );
       if (hasNextRefinement) {
         setRefinementFocusRequest((current) => current + 1);
       } else {
@@ -827,7 +1022,7 @@ function App() {
       preferences: [...baselineIntent.factor_preferences],
       groupPriorities: [...baselineIntent.group_priorities],
       objectives: [...baselineIntent.objectives],
-      answeredQuestionIds,
+      resolvedTopics,
       editorBefore: {
         valueObjective: filters.valueObjective,
         preferences: [...preferences],
@@ -862,12 +1057,13 @@ function App() {
         nextPreferences,
         nextGroups,
         nextObjectives,
-        nextAnswered,
+        nextResolvedTopics,
         baselineSession.brief,
         false,
         {
           exactIntent: nextIntent,
           syncEditorFromResponse: false,
+          errorOperation: "refinementApply",
         },
       );
       if (!nextResponse) {
@@ -878,7 +1074,7 @@ function App() {
       }
       pendingScrollRestore.response = nextResponse;
       setRerankRestoreRequest((current) => current + 1);
-      setAnsweredQuestionIds(nextAnswered);
+      setResolvedTopics(nextResolvedTopics);
       setFilters((current) => ({
         ...current,
         valueObjective: nextEditorValueObjective,
@@ -898,31 +1094,72 @@ function App() {
       if (pendingRerankScrollRestoreRef.current === pendingScrollRestore) {
         pendingRerankScrollRestoreRef.current = null;
       }
-      setRefinementError(
-        caught instanceof Error ? caught.message : "Could not rerank these results.",
-      );
+      setRefinementError(apiErrorMessage("refinementApply", caught));
     } finally {
       setLoading(false);
     }
   }
 
-  function skipRefinement(questionId: string) {
-    const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
-    const hasNextRefinement =
-      session?.refinementQueue.some(
-        (refinement) => refinement.question_id !== questionId,
-      ) ?? false;
-    setAnsweredQuestionIds(nextAnswered);
+  async function skipRefinement(refinement: RefinementProposal) {
+    const baselineSession = session;
+    if (loading || !baselineSession) return;
+    const nextResolvedTopics = upsertResolvedRefinementTopic(
+      resolvedTopics,
+      refinement,
+    );
+    resultsHeadingRef.current?.focus({ preventScroll: true });
+    setResolvedTopics(nextResolvedTopics);
     setSession((current) =>
-      current ? dismissRefinement(current, questionId) : current,
+      current ? dismissRefinement(current, refinement.question_id) : current,
     );
     setRefinementError(null);
-    setRefinementStatus(hasNextRefinement ? "questions_available" : "skipped");
+    setRefinementStatus("skipped");
+    const hasNextRefinement = await loadRefinements(
+      baselineSession.response,
+      baselineSession.brief,
+      nextResolvedTopics,
+    );
     if (hasNextRefinement) {
       setRefinementFocusRequest((current) => current + 1);
     } else {
       setFocusRequest((current) => current + 1);
     }
+  }
+
+  async function retryRefinementDiscovery() {
+    const currentSession = session;
+    if (!currentSession || loading || refinementRetrying) return;
+    setRefinementRetrying(true);
+    try {
+      const hasRefinement = await loadRefinements(
+        currentSession.response,
+        currentSession.brief,
+        resolvedTopics,
+        { preserveError: true },
+      );
+      if (hasRefinement) {
+        setRefinementFocusRequest((current) => current + 1);
+      } else {
+        setFocusRequest((current) => current + 1);
+      }
+    } finally {
+      setRefinementRetrying(false);
+    }
+  }
+
+  function keepCurrentResults() {
+    refinementRequestIdRef.current += 1;
+    refinementAbortRef.current?.abort();
+    refinementAbortRef.current = null;
+    setSession((current) => {
+      const questionId = current?.refinementQueue[0]?.question_id;
+      return current && questionId
+        ? dismissRefinement(current, questionId)
+        : current;
+    });
+    setRefinementError(null);
+    setRefinementStatus("skipped");
+    setFocusRequest((current) => current + 1);
   }
 
   async function undoRefinement() {
@@ -936,7 +1173,7 @@ function App() {
         undoState.preferences,
         undoState.groupPriorities,
         undoState.objectives,
-        undoState.answeredQuestionIds,
+        undoState.resolvedTopics,
         undoState.brief,
         false,
         {
@@ -975,13 +1212,13 @@ function App() {
           (item) => item.factor_id,
         ),
       );
-      setAnsweredQuestionIds(undoState.answeredQuestionIds);
+      setResolvedTopics(undoState.resolvedTopics);
       setUndoState(null);
       setFocusRequest((current) => current + 1);
       setRankFeedback("Previous trip decisions restored.");
       setChangedRankGroupIds(new Set());
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not restore results.");
+      setError(apiErrorMessage("searchUpdate", caught));
     } finally {
       setLoading(false);
     }
@@ -1071,6 +1308,13 @@ function App() {
       group_priorities: nextGroups,
       objectives: nextObjectives,
     };
+    const nextResolvedTopics = resolvedTopicsAfterManualIntentChange(
+      resolvedTopics,
+      baselineSession.brief,
+      baselineIntent,
+      baselineSession.brief,
+      nextIntent,
+    );
     setLoading(true);
     try {
       const nextResponse = await fetchSearch(
@@ -1079,7 +1323,7 @@ function App() {
         nextPreferences,
         nextGroups,
         nextObjectives,
-        answeredQuestionIds,
+        nextResolvedTopics,
         baselineSession.brief,
         false,
         {
@@ -1092,8 +1336,9 @@ function App() {
       setPreferences(nextEditor.preferences);
       setGroupPriorities(nextEditor.groupPriorities);
       setObjectives(nextEditor.objectives);
+      setResolvedTopics(nextResolvedTopics);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Search failed.");
+      setError(apiErrorMessage("searchUpdate", caught));
     } finally {
       setLoading(false);
     }
@@ -1124,10 +1369,35 @@ function App() {
           travelWindow?.end_date ?? null,
         booking_status: "not_booked_yet",
       });
+      currentTripLoadIdentityRef.current += 1;
+      currentTripSummaryLoadIdentityRef.current += 1;
+      currentTripRef.current = saved;
       setCurrentTrip(saved);
-      setSaveError(null);
+      setCurrentTripSummary(null);
+      setCurrentTripLoadError(null);
+      setCurrentTripSummaryLoadError(null);
+      setSaveErrorsByCandidate({});
     } catch (caught) {
-      setSaveError(caught instanceof Error ? caught.message : "Could not save trip.");
+      setSaveErrorsByCandidate((current) => ({
+        ...current,
+        [configuration.candidate_id]: apiErrorMessage("currentTripSave", caught),
+      }));
+    }
+  }
+
+  async function handleClearCurrentTrip() {
+    setCurrentTripClearError(null);
+    try {
+      await clearCurrentTrip();
+      currentTripLoadIdentityRef.current += 1;
+      currentTripSummaryLoadIdentityRef.current += 1;
+      currentTripRef.current = null;
+      setCurrentTrip(null);
+      setCurrentTripSummary(null);
+      setCurrentTripLoadError(null);
+      setCurrentTripSummaryLoadError(null);
+    } catch (caught) {
+      setCurrentTripClearError(apiErrorMessage("currentTripClear", caught));
     }
   }
 
@@ -1149,8 +1419,9 @@ function App() {
     navigate(buildDossierHref(skiRegionId, candidateId));
     window.scrollTo(0, 0);
   };
-  const openFilters = () => {
+  const openFilters = (trigger: HTMLButtonElement) => {
     if (loading) return;
+    drawerReturnFocusRef.current = trigger;
     setDrawerOpen(true);
   };
 
@@ -1164,9 +1435,22 @@ function App() {
         <CurrentTripView
           trip={currentTrip}
           summary={currentTripSummary}
+          tripLoadError={currentTripLoadError}
+          summaryLoadError={currentTripSummaryLoadError}
+          tripLoading={currentTripLoading}
+          summaryLoading={currentTripSummaryLoading}
+          tripRecoveryRequest={currentTripLoadRecoveryRequest}
+          summaryRecoveryRequest={currentTripSummaryRecoveryRequest}
+          clearError={currentTripClearError}
           onBack={goToSearch}
+          onRetryTripLoad={() =>
+            setCurrentTripLoadRequest((current) => current + 1)
+          }
+          onRetrySummaryLoad={() =>
+            setCurrentTripSummaryLoadRequest((current) => current + 1)
+          }
           onClear={() => {
-            void clearCurrentTrip().then(() => setCurrentTrip(null));
+            void handleClearCurrentTrip();
           }}
         />
       </AppShell>
@@ -1182,10 +1466,10 @@ function App() {
           onCurrentTrip={goToCurrentTrip}
         >
           <main className="app-canvas dossier-recovery">
-            <p className="eyebrow">Recommendation context unavailable</p>
+            <p className="eyebrow">Trip details unavailable</p>
             <h1>Run a search first</h1>
             <p>
-              This recommendation needs the ranked results from your current browser
+              Trip details are available from the trip options in your current browser
               session.
             </p>
             <button type="button" className="primary-command" onClick={goToSearch}>
@@ -1211,11 +1495,14 @@ function App() {
           />
         }
       >
-        {saveError ? <p className="error-copy" role="alert">{saveError}</p> : null}
         <RecommendationDossier
           session={session}
           skiRegionId={dossierSelection.group.ski_region_id}
           candidateId={dossierSelection.configuration.candidate_id}
+          saveError={
+            saveErrorsByCandidate[dossierSelection.configuration.candidate_id] ??
+            null
+          }
           onSwitch={switchDossier}
           onReturn={goToSearch}
           onSave={(configuration) =>
@@ -1244,13 +1531,17 @@ function App() {
       disabled={loading}
       filters={filters}
       preferences={preferences}
+      groupPriorities={groupPriorities}
       objectives={objectives}
-      returnFocusRef={adjustFiltersRef}
+      returnFocusRef={drawerReturnFocusRef}
       onFiltersChange={(nextFilters) => {
         if (!loading) setFilters(nextFilters);
       }}
       onPreferencesChange={(nextPreferences) => {
         if (!loading) setPreferences(nextPreferences);
+      }}
+      onGroupPrioritiesChange={(nextGroupPriorities) => {
+        if (!loading) setGroupPriorities(nextGroupPriorities);
       }}
       onObjectivesChange={(nextObjectives) => {
         if (!loading) setObjectives(nextObjectives);
@@ -1280,8 +1571,9 @@ function App() {
           session={session}
           loading={loading}
           error={error}
-          saveError={saveError}
+          saveErrorsByCandidate={saveErrorsByCandidate}
           refinementError={refinementError}
+          refinementRetrying={refinementRetrying}
           refinementStatus={refinementStatus}
           refinementControlRef={refinementControlRef}
           rankFeedback={rankFeedback}
@@ -1291,10 +1583,12 @@ function App() {
           adjustFiltersRef={adjustFiltersRef}
           onOpenFilters={openFilters}
           onRemoveChip={(chip) => void removeChip(chip)}
-          onApplyRefinement={(questionId, option) =>
-            void applyRefinement(questionId, option)
+          onApplyRefinement={(refinement, option) =>
+            void applyRefinement(refinement, option)
           }
-          onSkipRefinement={skipRefinement}
+          onSkipRefinement={(refinement) => void skipRefinement(refinement)}
+          onRetryRefinement={() => void retryRefinementDiscovery()}
+          onKeepResults={keepCurrentResults}
           onToggleGroup={(skiRegionId) =>
             setSession((current) => {
               if (!current) return current;

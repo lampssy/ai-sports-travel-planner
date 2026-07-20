@@ -4,7 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.ai.parser import HeuristicQueryParser, get_query_parser
-from app.auth.google import GoogleIdentity, GoogleIdentityTokenError
+from app.auth.google import (
+    GoogleAuthConfigurationError,
+    GoogleIdentity,
+    GoogleIdentityTokenError,
+)
 from app.data.catalog_loader import load_catalog
 from app.data.catalog_repository import CatalogRepository
 from app.data.catalog_sync import sync_catalog_snapshot
@@ -47,6 +51,7 @@ from app.domain.search_weather_evidence import (
     SearchWeatherEvidenceUnavailableResponse,
     WeatherEvidencePoint,
 )
+from app.domain.trip_companion import _build_conditions_provenance
 from app.main import app, create_app
 from app.observability.metrics import (
     InMemoryMetricsRecorder,
@@ -55,6 +60,59 @@ from app.observability.metrics import (
 )
 
 client = TestClient(app)
+
+
+@pytest.mark.parametrize(
+    ("updated_at", "is_fresh", "expected_status", "expected_summary"),
+    [
+        (
+            "2026-07-20T05:00:00+00:00",
+            True,
+            "fresh",
+            "Using a current forecast-based conditions signal from the latest "
+            "weather refresh.",
+        ),
+        (
+            "2026-07-01T05:00:00+00:00",
+            False,
+            "stale",
+            "Using the latest available forecast-based conditions signal. "
+            "This forecast is out of date.",
+        ),
+        (
+            None,
+            False,
+            "unknown",
+            "Using the latest available forecast-based conditions signal. "
+            "The update time is unavailable.",
+        ),
+    ],
+)
+def test_trip_companion_provenance_explains_weather_freshness(
+    monkeypatch,
+    updated_at: str | None,
+    is_fresh: bool,
+    expected_status: str,
+    expected_summary: str,
+) -> None:
+    monkeypatch.setattr(
+        "app.domain.trip_companion.is_condition_fresh",
+        lambda _conditions: is_fresh,
+    )
+    provenance = _build_conditions_provenance(
+        ResortConditions(
+            resort_name="Tignes",
+            snow_confidence_score=0.8,
+            availability_status="open",
+            weather_summary="Forecast summary.",
+            conditions_score=0.8,
+            updated_at=updated_at,
+            source="open-meteo",
+        )
+    )
+
+    assert provenance.freshness_status == expected_status
+    assert provenance.basis_summary == expected_summary
 
 
 @pytest.fixture(autouse=True)
@@ -145,6 +203,8 @@ def test_search_refinements_serializes_previews_and_preserves_patch_fields(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     refinement = SearchV4RefinementProposal(
+        topic_id="accessible_terrain_scale",
+        target_factor_id="accessible_terrain_scale",
         question_id="terrain-vs-access",
         question="Which tradeoff should lead the ranking?",
         reason="The leading regions trade terrain scale against base access.",
@@ -297,7 +357,7 @@ def test_search_weather_evidence_endpoint_serializes_typed_available_response(
         elevation_m=2000,
         elevation_status="exact",
         interpretation=(
-            "Fresh forecast evidence supplements the historical climatology for "
+            "Fresh forecast data adds to historical weather patterns for "
             "3 of 3 requested days."
         ),
         historical=HistoricalWeatherEvidence(
@@ -464,7 +524,7 @@ def test_search_weather_evidence_endpoint_rejects_bounded_errors(
     )
 
     assert unknown_response.status_code == 422
-    assert unknown_response.json() == {"detail": "Unknown ski area ID."}
+    assert unknown_response.json() == {"error": {"code": "weather_area_not_found"}}
 
     def invalid_intent(**_kwargs):
         raise SearchIntentPolicyError("unknown factor ID: invalid")
@@ -476,7 +536,7 @@ def test_search_weather_evidence_endpoint_rejects_bounded_errors(
     )
 
     assert invalid_response.status_code == 422
-    assert invalid_response.json() == {"detail": "unknown factor ID: invalid"}
+    assert invalid_response.json() == {"error": {"code": "search_request_invalid"}}
 
 
 def test_search_weather_evidence_endpoint_records_bounded_http_route_metric(
@@ -710,11 +770,26 @@ def test_outbound_accommodation_redirect_rejects_unknown_destination_id() -> Non
             "focus_ski_area_id": "tignes-ski-area",
             "source_surface": "selected_result_details",
         },
+        headers={
+            "referer": (
+                "http://testserver/recommendations/tignes-val-disere"
+                "?candidate=tignes-access--local-pass"
+            )
+        },
         follow_redirects=False,
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Unknown trip configuration"
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>Trip option unavailable | Snowcast</title>" in response.text
+    assert "<main" in response.text
+    assert "<h1>This trip option is no longer available</h1>" in response.text
+    assert "Return to trip details" in response.text
+    assert (
+        'href="/recommendations/tignes-val-disere'
+        '?candidate=tignes-access--local-pass"' in response.text
+    )
+    assert "Unknown trip configuration" not in response.text
 
 
 def test_outbound_accommodation_redirect_rejects_invalid_access_pair() -> None:
@@ -729,7 +804,98 @@ def test_outbound_accommodation_redirect_rejects_invalid_access_pair() -> None:
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Unknown trip configuration"
+    assert "text/html" in response.headers["content-type"]
+    assert "Return to Snowcast" in response.text
+
+
+@pytest.mark.parametrize(
+    ("referer", "expected_label", "expected_href"),
+    [
+        (
+            "https://attacker.example/recommendations/tignes",
+            "Return to Snowcast",
+            'href="/"',
+        ),
+        (
+            "http://testserver/recommendations/tignes?candidate=%22%3E%3Cscript%3E",
+            "Return to trip details",
+            'href="/recommendations/tignes?candidate=%22%3E%3Cscript%3E"',
+        ),
+    ],
+)
+def test_outbound_accommodation_recovery_keeps_return_links_safe(
+    referer: str,
+    expected_label: str,
+    expected_href: str,
+) -> None:
+    response = client.get(
+        "/api/outbound/accommodation/unknown-resort",
+        params={
+            "stay_base_id": "tignes-le-lac",
+            "focus_ski_area_id": "tignes-ski-area",
+            "source_surface": "selected_result_details",
+        },
+        headers={"referer": referer},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 404
+    assert expected_label in response.text
+    assert expected_href in response.text
+    assert "attacker.example" not in response.text
+    assert "<script>" not in response.text
+
+
+@pytest.mark.parametrize("frontend_built", [False, True])
+@pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/outbound/accommodation",
+        "/api/outbound/accommodation/tignes/extra",
+    ],
+)
+def test_outbound_accommodation_routing_failures_return_branded_html(
+    path: str,
+    method: str,
+    frontend_built: bool,
+    tmp_path,
+) -> None:
+    dist_dir = tmp_path / "dist"
+    if frontend_built:
+        dist_dir.mkdir()
+        (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    test_app = create_app(frontend_dist_dir=dist_dir)
+
+    with TestClient(test_app) as test_client:
+        response = test_client.request(method, path, follow_redirects=False)
+
+    assert response.status_code == 404
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>Trip option unavailable | Snowcast</title>" in response.text
+    assert "<main" in response.text
+    assert "Return to Snowcast" in response.text
+    assert '"detail"' not in response.text
+
+
+def test_outbound_accommodation_wrong_method_preserves_html_status_and_headers() -> (
+    None
+):
+    response = client.post(
+        "/api/outbound/accommodation/tignes",
+        params={
+            "stay_base_id": "tignes-le-lac",
+            "focus_ski_area_id": "tignes-ski-area",
+            "source_surface": "selected_result_details",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 405
+    assert response.headers["Allow"] == "GET"
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>Trip option unavailable | Snowcast</title>" in response.text
+    assert '"detail"' not in response.text
 
 
 def test_google_sign_in_creates_session_and_reuses_user(monkeypatch) -> None:
@@ -779,21 +945,54 @@ def test_google_sign_in_rejects_invalid_token(monkeypatch) -> None:
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "google identity token is invalid"
+    assert response.json() == {"error": {"code": "sign_in_failed"}}
+
+
+def test_google_sign_in_reports_provider_configuration_failure(monkeypatch) -> None:
+    def _fail_verification(_identity_token: str) -> None:
+        raise GoogleAuthConfigurationError("GOOGLE_OAUTH_CLIENT_IDS missing")
+
+    monkeypatch.setattr(
+        "app.api.routes.verify_google_identity_token",
+        _fail_verification,
+    )
+
+    response = client.post(
+        "/api/auth/google/sign-in",
+        json={"identity_token": "google-token"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"error": {"code": "sign_in_unavailable"}}
 
 
 def test_current_trip_endpoints_require_authentication() -> None:
-    assert client.get("/api/current-trip").status_code == 401
-    assert (
+    responses = (
+        client.get("/api/current-trip"),
         client.put(
             "/api/current-trip",
             json=_tignes_trip_payload(),
-        ).status_code
-        == 401
+        ),
+        client.get("/api/current-trip/summary"),
+        client.post("/api/current-trip/mark-checked"),
+        client.delete("/api/current-trip"),
     )
-    assert client.get("/api/current-trip/summary").status_code == 401
-    assert client.post("/api/current-trip/mark-checked").status_code == 401
-    assert client.delete("/api/current-trip").status_code == 401
+
+    for response in responses:
+        assert response.status_code == 401
+        assert response.json() == {"error": {"code": "authentication_required"}}
+        assert response.headers["WWW-Authenticate"] == "Bearer"
+
+
+def test_current_trip_rejects_expired_session() -> None:
+    response = client.get(
+        "/api/current-trip",
+        headers={"Authorization": "Bearer expired-token"},
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {"error": {"code": "session_expired"}}
+    assert response.headers["WWW-Authenticate"] == "Bearer"
 
 
 def test_current_trip_endpoints_save_read_and_clear(monkeypatch) -> None:
@@ -876,43 +1075,30 @@ def test_current_trip_rejects_base_owned_by_another_destination(monkeypatch) -> 
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "Invalid trip configuration"
+    assert response.json() == {"error": {"code": "trip_option_invalid"}}
 
 
 @pytest.mark.parametrize(
-    ("updates", "expected_detail"),
+    "updates",
     [
-        (
-            {
-                "ski_region_id": "cervinia",
-                "ski_region_name": "Cervinia",
-            },
-            "Invalid trip configuration",
-        ),
-        (
-            {
-                "focus_ski_area_id": "val-disere-ski-area",
-                "focus_ski_area_name": "Val d'Isere",
-            },
-            "Invalid trip configuration",
-        ),
-        (
-            {
-                "lift_pass_product_id": "cervinia-valtournenche-skipass",
-                "lift_pass_product_name": "Breuil-Cervinia Valtournenche Ski Pass",
-            },
-            "Invalid trip configuration",
-        ),
-        (
-            {"stay_base_name": "Not Le Lac"},
-            "Trip display names do not match",
-        ),
+        {
+            "ski_region_id": "cervinia",
+            "ski_region_name": "Cervinia",
+        },
+        {
+            "focus_ski_area_id": "val-disere-ski-area",
+            "focus_ski_area_name": "Val d'Isere",
+        },
+        {
+            "lift_pass_product_id": "cervinia-valtournenche-skipass",
+            "lift_pass_product_name": "Breuil-Cervinia Valtournenche Ski Pass",
+        },
+        {"stay_base_name": "Not Le Lac"},
     ],
 )
 def test_current_trip_rejects_inconsistent_configuration(
     monkeypatch,
     updates: dict[str, str],
-    expected_detail: str,
 ) -> None:
     _install_google_verifier(
         monkeypatch,
@@ -934,7 +1120,7 @@ def test_current_trip_rejects_inconsistent_configuration(
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == expected_detail
+    assert response.json() == {"error": {"code": "trip_option_invalid"}}
 
 
 def test_current_trip_rejects_partial_trip_window(monkeypatch) -> None:
@@ -1121,7 +1307,7 @@ def test_current_trip_summary_returns_404_without_saved_trip(monkeypatch) -> Non
     response = client.get("/api/current-trip/summary", headers=headers)
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "No current trip saved"
+    assert response.json() == {"error": {"code": "current_trip_not_found"}}
 
 
 def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
@@ -1144,6 +1330,10 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
         current_updated_at=trip_created_at + timedelta(days=1),
         prior_snapshot_at=trip_created_at - timedelta(hours=6),
     )
+    monkeypatch.setattr(
+        "app.domain.trip_companion.is_condition_fresh",
+        lambda _conditions: False,
+    )
 
     response = client.get("/api/current-trip/summary", headers=headers)
 
@@ -1152,15 +1342,67 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
     assert payload["trip"]["focus_ski_area_id"] == "tignes-ski-area"
     assert payload["comparison_basis"]["kind"] == "since_trip_saved"
     assert payload["current_conditions_provenance"]["source_type"] == "forecast"
+    assert payload["current_conditions_provenance"]["basis_summary"] == (
+        "Using the latest available forecast-based conditions signal. "
+        "This forecast is out of date."
+    )
     assert payload["delta"]["status"] == "changed"
+    assert payload["delta"]["summary"] == (
+        "Conditions have changed since you saved this trip."
+    )
     assert payload["companion_status"]["trip_window_status"] == "unscheduled"
     assert payload["companion_status"]["notification_eligible"] is False
-    assert any(
-        "Snow confidence improved" in change for change in payload["delta"]["changes"]
+    assert payload["companion_status"]["eligibility_reason"] == (
+        "Exact trip dates are not available."
     )
-    assert any(
-        "Availability changed" in change for change in payload["delta"]["changes"]
+    assert payload["delta"]["changes"] == [
+        "Snow outlook improved from fair to good.",
+        "Weather disruption risk changed from some to low.",
+        "The weather summary changed since you saved this trip.",
+        "The latest forecast is out of date.",
+    ]
+
+
+def test_current_trip_summary_keeps_stale_forecast_visible_before_baseline(
+    monkeypatch,
+) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
     )
+    headers, session = _sign_in(identity_token="google-token")
+    trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
+    _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
+        trip_created_at=trip_created_at,
+        current_updated_at=trip_created_at - timedelta(days=1),
+        prior_snapshot_at=None,
+    )
+    monkeypatch.setattr(
+        "app.domain.trip_companion.is_condition_fresh",
+        lambda _conditions: False,
+    )
+
+    response = client.get("/api/current-trip/summary", headers=headers)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["current_conditions_provenance"]["freshness_status"] == "stale"
+    assert "out of date" in payload["current_conditions_provenance"]["basis_summary"]
+    assert payload["delta"] == {
+        "status": "insufficient_history",
+        "summary": (
+            "No newer weather information is available since you saved this trip."
+        ),
+        "changes": [],
+    }
 
 
 def test_current_trip_summary_uses_last_checked_at_when_present(monkeypatch) -> None:
@@ -1197,6 +1439,71 @@ def test_current_trip_summary_uses_last_checked_at_when_present(monkeypatch) -> 
         == (trip_created_at + timedelta(days=1)).isoformat()
     )
     assert payload["comparison_basis"]["kind"] == "since_last_check"
+    assert payload["delta"]["summary"] == (
+        "Conditions have changed since your last check."
+    )
+
+
+@pytest.mark.parametrize(
+    ("checked_at_offset", "comparison_kind", "expected_summary"),
+    [
+        (
+            None,
+            "since_trip_saved",
+            "No newer weather information is available since you saved this trip.",
+        ),
+        (
+            timedelta(days=1),
+            "since_last_check",
+            "No newer weather information is available since your last check.",
+        ),
+    ],
+)
+def test_current_trip_summary_uses_basis_aware_no_newer_information_copy(
+    monkeypatch,
+    checked_at_offset: timedelta | None,
+    comparison_kind: str,
+    expected_summary: str,
+) -> None:
+    monkeypatch.setattr(
+        "app.domain.trip_companion.is_condition_fresh",
+        lambda _conditions: True,
+    )
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
+    trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
+    _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
+        trip_created_at=trip_created_at,
+        current_updated_at=trip_created_at,
+        prior_snapshot_at=None,
+    )
+    if checked_at_offset is not None:
+        CurrentTripRepository().mark_checked(
+            user_id=session["user"]["user_id"],
+            checked_at=(trip_created_at + checked_at_offset).isoformat(),
+        )
+
+    response = client.get("/api/current-trip/summary", headers=headers)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["comparison_basis"]["kind"] == comparison_kind
+    assert payload["delta"] == {
+        "status": "insufficient_history",
+        "summary": expected_summary,
+        "changes": [],
+    }
 
 
 def test_current_trip_summary_handles_sparse_history_gracefully(monkeypatch) -> None:
@@ -1225,7 +1532,10 @@ def test_current_trip_summary_handles_sparse_history_gracefully(monkeypatch) -> 
     assert response.status_code == 200
     payload = response.json()
     assert payload["delta"]["status"] == "insufficient_history"
-    assert "not enough earlier history" in payload["delta"]["summary"].lower()
+    assert payload["delta"]["summary"] == (
+        "Conditions are newer since you saved this trip, but there is not enough "
+        "earlier history to compare."
+    )
 
 
 def test_mark_checked_updates_only_last_checked_at(monkeypatch) -> None:
@@ -1298,6 +1608,9 @@ def test_current_trip_summary_classifies_upcoming_trip_as_notification_eligible(
     assert payload["companion_status"]["trip_window_status"] == "upcoming"
     assert payload["companion_status"]["notification_eligible"] is True
     assert payload["companion_status"]["actionable_change_available"] is True
+    assert payload["companion_status"]["eligibility_reason"] == (
+        "Trip dates are in the future."
+    )
 
 
 def test_current_trip_summary_suppresses_notifications_for_past_trip(
@@ -1334,6 +1647,7 @@ def test_current_trip_summary_suppresses_notifications_for_past_trip(
     assert payload["companion_status"]["trip_window_status"] == "past"
     assert payload["companion_status"]["notification_eligible"] is False
     assert payload["companion_status"]["actionable_change_available"] is False
+    assert payload["companion_status"]["eligibility_reason"] == "Trip dates have ended."
 
 
 def test_current_trip_events_record_meaningful_change_once(monkeypatch) -> None:
@@ -1456,7 +1770,7 @@ def test_search_readiness_checks_search_dependencies() -> None:
     assert payload["checks"]["factor_count"] > 0
     assert payload["checks"]["factor_registry"] == "ok"
     assert payload["checks"]["refinement_presentation_policy"] == (
-        "search-refinement-presentation-1"
+        "search-refinement-presentation-2"
     )
     assert "Traditional mountain village" not in response.text
     assert payload["checks"]["expected_forecast_head_count"] > 0
@@ -1464,6 +1778,73 @@ def test_search_readiness_checks_search_dependencies() -> None:
     assert "fresh_forecast_head_count" in payload["checks"]
     assert "missing_forecast_head_count" in payload["checks"]
     assert "stale_forecast_head_count" in payload["checks"]
+
+
+def test_search_readiness_keeps_operational_diagnostics(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.api.routes.CatalogRepository.get_snapshot",
+        lambda _self: (_ for _ in ()).throw(RuntimeError("catalog unavailable")),
+    )
+
+    response = client.get("/api/search-readiness")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["database"] == "ok"
+    assert response.json()["detail"]["error"] == "RuntimeError"
+
+
+def test_operational_wrong_method_keeps_framework_diagnostics() -> None:
+    response = client.post("/api/healthz")
+
+    assert response.status_code == 405
+    assert response.headers["Allow"] == "GET"
+    assert response.json() == {"detail": "Method Not Allowed"}
+
+
+@pytest.mark.parametrize("frontend_built", [False, True])
+@pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize("path", ["/api", "/api/not-a-snowcast-route"])
+def test_unknown_customer_api_route_uses_bounded_public_error(
+    tmp_path,
+    frontend_built: bool,
+    method: str,
+    path: str,
+) -> None:
+    dist_dir = tmp_path / "dist"
+    if frontend_built:
+        dist_dir.mkdir()
+        (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    test_app = create_app(frontend_dist_dir=dist_dir)
+
+    with TestClient(test_app) as test_client:
+        response = test_client.request(method, path)
+
+    assert response.status_code == 404
+    assert response.json() == {"error": {"code": "not_found"}}
+
+
+@pytest.mark.parametrize("frontend_built", [False, True])
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_customer_api_trailing_slash_redirect_is_deployment_independent(
+    tmp_path,
+    frontend_built: bool,
+    method: str,
+) -> None:
+    dist_dir = tmp_path / "dist"
+    if frontend_built:
+        dist_dir.mkdir()
+        (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    test_app = create_app(frontend_dist_dir=dist_dir)
+
+    with TestClient(test_app) as test_client:
+        response = test_client.request(
+            method,
+            "/api/search//",
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 307
+    assert response.headers["location"] == "http://testserver/api/search"
 
 
 def test_app_serves_built_frontend_from_single_url(tmp_path, monkeypatch) -> None:

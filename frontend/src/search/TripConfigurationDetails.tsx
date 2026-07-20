@@ -18,12 +18,12 @@ export function TripConfigurationDetails({
 
   return (
     <section className="dossier-section trip-configuration" id="trip-configuration">
-      <p className="section-label">Selected trip configuration</p>
+      <p className="section-label">Trip details</p>
       <h2>{configuration.stay_base_name} and {configuration.selected_pass.name}</h2>
       <dl className="dossier-facts">
         <div><dt>Destination</dt><dd>{configuration.stay_destination_name}</dd></div>
         <div><dt>Ski area</dt><dd>{configuration.ski_area_name}</dd></div>
-        <div><dt>Stay base</dt><dd>{configuration.stay_base_name}</dd></div>
+        <div><dt>Recommended place to stay</dt><dd>{configuration.stay_base_name}</dd></div>
         <div><dt>Selected pass</dt><dd>{configuration.selected_pass.name}</dd></div>
         <div><dt>Pass price</dt><dd>{formatPassPrice(configuration)}</dd></div>
         <div><dt>Access</dt><dd>{formatAccess(configuration)}</dd></div>
@@ -35,8 +35,8 @@ export function TripConfigurationDetails({
       />
 
       <div className="trip-configuration__alternatives" id="alternatives">
-        <p className="section-label">Alternatives</p>
-        <h3>Configurations in {group.ski_region_name}</h3>
+        <p className="section-label">Other ways to plan this trip</p>
+        <h3>Other ways to plan this trip in {group.ski_region_name}</h3>
         <div className="dossier-alternatives">
           {candidates.map((candidate) => {
             const selected = candidate.candidate_id === configuration.candidate_id;
@@ -53,7 +53,7 @@ export function TripConfigurationDetails({
                   <strong>{candidate.stay_base_name}</strong>
                   <small>{candidate.selected_pass.name}</small>
                 </span>
-                <em>{selected ? "Current" : "Alternative"}</em>
+                <em>{selected ? "Current trip option" : "Another way to plan this trip"}</em>
               </button>
             );
           })}

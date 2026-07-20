@@ -206,6 +206,28 @@ describe("Snowcast UI primitives", () => {
     );
   });
 
+  it("keeps an error recovery control mounted and focusable while retrying", async () => {
+    const onRetry = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <AsyncState
+        state="error"
+        title="Saved trip could not be loaded"
+        message="Try again."
+        retrying
+        retryLabel="Retry saved trip"
+        onRetry={onRetry}
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveAttribute("aria-busy", "true");
+    const retry = screen.getByRole("button", { name: "Retry saved trip" });
+    expect(retry).toHaveAttribute("aria-disabled", "true");
+    expect(retry).not.toBeDisabled();
+    await user.click(retry);
+    expect(onRetry).not.toHaveBeenCalled();
+  });
+
   it("renders a labelled section heading without owning layout", () => {
     render(
       <SectionHeader

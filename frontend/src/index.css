@@ -97,6 +97,11 @@ button:disabled {
   cursor: wait;
 }
 
+[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.58;
+}
+
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
@@ -127,7 +132,7 @@ textarea:focus-visible,
     transform 140ms ease;
 }
 
-.snowcast-action:not(:disabled):active {
+.snowcast-action:not(:disabled):not([aria-disabled="true"]):active {
   transform: translateY(1px);
 }
 
@@ -152,7 +157,7 @@ textarea:focus-visible,
   background: var(--alpine-blue);
 }
 
-.snowcast-action--primary:not(:disabled):hover {
+.snowcast-action--primary:not(:disabled):not([aria-disabled="true"]):hover {
   background: var(--alpine-blue-strong);
 }
 
@@ -162,8 +167,8 @@ textarea:focus-visible,
   background: var(--white);
 }
 
-.snowcast-action--secondary:not(:disabled):hover,
-.snowcast-action--ghost:not(:disabled):hover {
+.snowcast-action--secondary:not(:disabled):not([aria-disabled="true"]):hover,
+.snowcast-action--ghost:not(:disabled):not([aria-disabled="true"]):hover {
   border-color: var(--alpine-blue);
   color: var(--alpine-blue);
   background: var(--ice);
@@ -179,7 +184,7 @@ textarea:focus-visible,
   background: var(--danger);
 }
 
-.snowcast-action--danger:not(:disabled):hover {
+.snowcast-action--danger:not(:disabled):not([aria-disabled="true"]):hover {
   background: var(--state-error-strong);
 }
 
@@ -1609,6 +1614,18 @@ textarea:focus-visible,
   gap: 0.65rem;
 }
 
+.search-context__group-action {
+  display: flex;
+  min-width: 0;
+}
+
+.search-context__view-all {
+  min-height: 2.25rem;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .contextual-refinement {
   margin-top: 0.5rem;
   padding: 1.25rem;
@@ -1689,6 +1706,16 @@ textarea:focus-visible,
 .refinement-options label:has(input:checked) {
   border-color: var(--alpenglow);
   background: #fff8fb;
+}
+
+.refinement-options label:has(input[aria-disabled="true"]) {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.refinement-options label:has(input[aria-disabled="true"]) input {
+  cursor: wait;
+  opacity: 1;
 }
 
 .refinement-options input {
@@ -2666,6 +2693,49 @@ textarea:focus-visible,
   border-left: 1px solid var(--border);
 }
 
+.snow-evidence__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 1rem 0 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.snow-evidence__summary > div {
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.snow-evidence__summary > div:nth-child(even) {
+  border-left: 1px solid var(--border-soft);
+}
+
+.snow-evidence__summary > div:last-child {
+  grid-column: 1 / -1;
+  border-bottom: 0;
+  border-left: 0;
+}
+
+.snow-evidence__summary dt {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.snow-evidence__summary dd {
+  margin: 0.3rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 .snow-evidence__forecast-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2722,6 +2792,17 @@ textarea:focus-visible,
   line-height: 1.55;
 }
 
+.snow-chart-block__metric {
+  min-width: 0;
+}
+
+.snow-chart-block__summary {
+  margin: 0 0 0.65rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
 .snow-chart-block__visual {
   position: relative;
   min-width: 0;
@@ -2740,6 +2821,23 @@ textarea:focus-visible,
   color: var(--muted);
   font-size: 0.68rem;
   font-weight: 800;
+}
+
+.snow-depth-reference {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.65rem;
+  padding: 0.8rem 0.9rem;
+  border-left: 3px solid var(--amber);
+  background: var(--state-warning-surface);
+  color: var(--ink);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.snow-depth-reference p {
+  margin: 0;
+  color: var(--muted);
 }
 
 .snow-values {
@@ -2781,7 +2879,41 @@ textarea:focus-visible,
   background: var(--white);
 }
 
-.snow-values table {
+.snow-values__scroll:focus {
+  outline: 2px solid var(--alpine-blue);
+  outline-offset: 3px;
+  box-shadow: var(--focus);
+}
+
+.weather-source-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.weather-source-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.45rem 0.75rem;
+  margin: 0;
+}
+
+.weather-source-details > div {
+  min-width: 0;
+}
+
+.weather-source-details dt {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.weather-source-details dd {
+  margin: 0.1rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.snow-values table,
+.scoring-details .snow-values__scroll table {
   width: max-content;
   min-width: 100%;
   border-collapse: collapse;
@@ -2789,18 +2921,22 @@ textarea:focus-visible,
 }
 
 .snow-values th,
-.snow-values td {
+.snow-values td,
+.scoring-details .snow-values__scroll th,
+.scoring-details .snow-values__scroll td {
   padding: 0.55rem 0.65rem;
   border-bottom: 1px solid var(--border-soft);
   text-align: left;
   white-space: nowrap;
 }
 
-.snow-values td {
+.snow-values td,
+.scoring-details .snow-values__scroll td {
   color: var(--ink);
 }
 
-.snow-values th {
+.snow-values th,
+.scoring-details .snow-values__scroll th {
   color: var(--muted);
   font-weight: 800;
 }
@@ -3121,6 +3257,10 @@ textarea:focus-visible,
 }
 
 .scoring-details__policy {
+  grid-column: 1 / -1;
+}
+
+.scoring-details__weather {
   grid-column: 1 / -1;
 }
 
@@ -3574,7 +3714,9 @@ textarea:focus-visible,
   }
 
   .recommendation-card__verdict {
-    display: none;
+    display: block;
+    font-size: 0.78rem;
+    line-height: 1.45;
   }
 
   .recommendation-card__scores {
@@ -3593,7 +3735,7 @@ textarea:focus-visible,
   .trip-essentials__grid,
   .recommendation-card__evidence-grid,
   .scoring-details__content {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .trip-essential + .trip-essential {
@@ -3608,7 +3750,7 @@ textarea:focus-visible,
   }
 
   .scoring-details {
-    margin-inline: -1rem;
+    margin-inline: -0.625rem;
   }
 
   .rerank-feedback {
@@ -3702,6 +3844,20 @@ textarea:focus-visible,
   .snow-evidence__context span {
     padding-left: 0;
     border-left: 0;
+  }
+
+  .snow-evidence__summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .snow-evidence__summary > div:nth-child(even),
+  .snow-evidence__summary > div:last-child {
+    grid-column: auto;
+    border-left: 0;
+  }
+
+  .snow-evidence__summary > div:last-child {
+    border-bottom: 0;
   }
 
   .snow-evidence__forecast-summary {

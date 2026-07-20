@@ -11,13 +11,15 @@ export function RefinementCard({
   focusControlRef,
   onApply,
   onSkip,
+  onKeepResults,
 }: {
   refinement: RefinementProposal;
   loading: boolean;
   error: string | null;
   focusControlRef?: Ref<HTMLElement>;
-  onApply: (questionId: string, option: RefinementOption) => void;
-  onSkip: (questionId: string) => void;
+  onApply: (refinement: RefinementProposal, option: RefinementOption) => void;
+  onSkip: (refinement: RefinementProposal) => void;
+  onKeepResults?: () => void;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -39,7 +41,7 @@ export function RefinementCard({
     <article className="contextual-refinement">
       <p className="contextual-refinement__eyebrow">
         <GitBranch aria-hidden="true" size={17} />
-        Next refinement
+        One more question
       </p>
       <h2 id={questionHeadingId}>{refinement.question}</h2>
       {isNarrow ? (
@@ -75,8 +77,10 @@ export function RefinementCard({
                 type="radio"
                 name={`refinement-${refinement.question_id}`}
                 checked={selectedIndex === index}
-                onChange={() => setSelectedIndex(index)}
-                disabled={loading}
+                aria-disabled={loading || undefined}
+                onChange={() => {
+                  if (!loading) setSelectedIndex(index);
+                }}
               />
               <span>
                 <strong>{option.label}</strong>
@@ -85,7 +89,7 @@ export function RefinementCard({
             </label>
           ))}
         </fieldset>
-        {selected ? (
+        {selected && !error ? (
           <p className="refinement-preview" role="status">
             {refinementPreviewCopy(selected.preview, selected.intent_changed)}
           </p>
@@ -99,35 +103,53 @@ export function RefinementCard({
           <button
             type="button"
             className="primary-refinement-action"
-            disabled={!selected || loading}
-            onClick={() => selected && onApply(refinement.question_id, selected)}
+            disabled={!selected}
+            aria-disabled={loading || undefined}
+            onClick={() => {
+              if (selected && !loading) onApply(refinement, selected);
+            }}
           >
             {error ? <RotateCcw aria-hidden="true" size={17} /> : null}
-            {error
-              ? "Retry apply and rerank"
-              : selected?.intent_changed === false
-                ? "Keep current ranking"
-                : "Apply and rerank"}
+            {!error && selected?.intent_changed === false
+              ? "Continue"
+              : "Update results"}
           </button>
-          {selected ? (
+          {selected && !error ? (
             <button
               type="button"
               className="text-action"
-              disabled={loading}
-              onClick={() => setSelectedIndex(null)}
+              aria-disabled={loading || undefined}
+              onClick={() => {
+                if (!loading) setSelectedIndex(null);
+              }}
             >
               <X aria-hidden="true" size={16} />
               Clear
             </button>
           ) : null}
-          <button
-            type="button"
-            className="text-action"
-            disabled={loading}
-            onClick={() => onSkip(refinement.question_id)}
-          >
-            Skip for now
-          </button>
+          {error ? (
+            <button
+              type="button"
+              className="text-action"
+              aria-disabled={loading || undefined}
+              onClick={() => {
+                if (!loading) onKeepResults?.();
+              }}
+            >
+              Keep these results
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="text-action"
+              aria-disabled={loading || undefined}
+              onClick={() => {
+                if (!loading) onSkip(refinement);
+              }}
+            >
+              Skip this question
+            </button>
+          )}
         </div>
       </div>
     </article>

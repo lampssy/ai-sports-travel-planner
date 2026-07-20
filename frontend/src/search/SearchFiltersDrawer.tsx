@@ -3,11 +3,18 @@ import { useEffect, useRef, type RefObject } from "react";
 
 import type {
   FactorPreferencePatch,
+  GroupPriorityPatch,
   SearchFilters,
   SearchObjective,
   TravelMonth,
 } from "../types";
-import { featureOptions, monthOptions } from "./searchPresentation";
+import {
+  factorPreferenceLabel,
+  factorLabels,
+  featureOptions,
+  groupPriorityLabel,
+  monthOptions,
+} from "./searchPresentation";
 import {
   isPassValueObjective,
   mergeObjectivePatches,
@@ -29,15 +36,21 @@ function Field({
   );
 }
 
+const featureOptionIds = new Set<string>(
+  featureOptions.map(([factorId]) => factorId),
+);
+
 export function SearchFiltersDrawer({
   open,
   disabled,
   filters,
   preferences,
+  groupPriorities,
   objectives,
   returnFocusRef,
   onFiltersChange,
   onPreferencesChange,
+  onGroupPrioritiesChange,
   onObjectivesChange,
   onClose,
 }: {
@@ -45,10 +58,12 @@ export function SearchFiltersDrawer({
   disabled: boolean;
   filters: SearchFilters;
   preferences: FactorPreferencePatch[];
+  groupPriorities: GroupPriorityPatch[];
   objectives: SearchObjective[];
   returnFocusRef: RefObject<HTMLButtonElement>;
   onFiltersChange: (filters: SearchFilters) => void;
   onPreferencesChange: (preferences: FactorPreferencePatch[]) => void;
+  onGroupPrioritiesChange: (groupPriorities: GroupPriorityPatch[]) => void;
   onObjectivesChange: (objectives: SearchObjective[]) => void;
   onClose: () => void;
 }) {
@@ -56,6 +71,28 @@ export function SearchFiltersDrawer({
   const dialogRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const preferencesByFactor = new Map<string, FactorPreferencePatch>();
+  for (const preference of preferences) {
+    if (factorLabels[preference.factor_id]) {
+      preferencesByFactor.set(preference.factor_id, preference);
+    }
+  }
+  const additionalPreferences = [...preferencesByFactor.values()].filter(
+    (preference) => !featureOptionIds.has(preference.factor_id),
+  );
+  const objectivesByFactor = new Map<string, SearchObjective>();
+  for (const objective of objectives) {
+    if (factorLabels[objective.factor_id]) {
+      objectivesByFactor.set(objective.factor_id, objective);
+    }
+  }
+  const additionalObjectives = [...objectivesByFactor.values()].filter(
+    (objective) => !isPassValueObjective(objective.factor_id),
+  );
+  const visibleGroupPriorities = groupPriorities.flatMap((priority) => {
+    const label = groupPriorityLabel(priority);
+    return label ? [{ priority, label }] : [];
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -143,6 +180,11 @@ export function SearchFiltersDrawer({
     onPreferencesChange(nextPreferences);
   };
 
+  const changeObjectives = (nextObjectives: SearchObjective[]) => {
+    if (disabled) return;
+    onObjectivesChange(nextObjectives);
+  };
+
   return (
     <div className="drawer-layer">
       <div
@@ -160,7 +202,7 @@ export function SearchFiltersDrawer({
       >
         <header className="filters-drawer__header">
           <div>
-            <p className="eyebrow">Exact controls</p>
+            <p className="eyebrow">Search details</p>
             <h2 id="filters-drawer-title">Adjust filters</h2>
           </div>
           <button
@@ -217,7 +259,7 @@ export function SearchFiltersDrawer({
                 className="control"
               />
             </Field>
-            <Field label="Minimum stay tier">
+            <Field label="Minimum stay quality">
               <select
                 value={filters.stars}
                 disabled={disabled}
@@ -230,9 +272,9 @@ export function SearchFiltersDrawer({
                 className="control"
               >
                 <option value="">Any</option>
-                <option value="1">Budget+</option>
-                <option value="2">Standard+</option>
-                <option value="3">Premium</option>
+                <option value="1">Basic comfort</option>
+                <option value="2">Standard comfort</option>
+                <option value="3">Higher comfort</option>
               </select>
             </Field>
           </div>
@@ -303,7 +345,7 @@ export function SearchFiltersDrawer({
           ) : null}
 
           <div className="drawer-grid">
-            <Field label="Origin">
+            <Field label="Starting location">
               <input
                 value={filters.originText}
                 disabled={disabled}
@@ -314,7 +356,7 @@ export function SearchFiltersDrawer({
                 className="control"
               />
             </Field>
-            <Field label="Hard drive limit">
+            <Field label="Maximum drive time">
               <input
                 type="number"
                 min="0.1"
@@ -330,7 +372,7 @@ export function SearchFiltersDrawer({
             </Field>
           </div>
 
-          <Field label="Value objective">
+          <Field label="What matters most for value?">
             <select
               value={filters.valueObjective}
               disabled={disabled}
@@ -356,22 +398,72 @@ export function SearchFiltersDrawer({
             </select>
           </Field>
 
+          {additionalObjectives.length ? (
+            <fieldset className="preference-fieldset">
+              <legend>Other preferences</legend>
+              <div className="preference-options">
+                {additionalObjectives.map((objective) => (
+                  <button
+                    type="button"
+                    key={objective.factor_id}
+                    aria-pressed="true"
+                    disabled={disabled}
+                    onClick={() =>
+                      changeObjectives(
+                        objectives.filter(
+                          (item) => item.factor_id !== objective.factor_id,
+                        ),
+                      )
+                    }
+                    className="preference-option"
+                  >
+                    Prefer {factorLabels[objective.factor_id]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+
+          {visibleGroupPriorities.length ? (
+            <fieldset className="preference-fieldset">
+              <legend>What matters most</legend>
+              <div className="preference-options">
+                {visibleGroupPriorities.map(({ priority, label }) => (
+                  <button
+                    type="button"
+                    key={priority.group_id}
+                    aria-pressed="true"
+                    disabled={disabled}
+                    onClick={() =>
+                      onGroupPrioritiesChange(
+                        groupPriorities.filter(
+                          (item) => item.group_id !== priority.group_id,
+                        ),
+                      )
+                    }
+                    className="preference-option"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+
           <fieldset className="preference-fieldset">
             <legend>Extra preferences</legend>
             <div className="preference-options">
               {featureOptions.map(([factorId, label]) => {
-                const active = preferences.some(
-                  (item) => item.factor_id === factorId && item.mode === "prefer",
-                );
+                const activePreference = preferencesByFactor.get(factorId);
                 return (
                   <button
                     type="button"
                     key={factorId}
-                    aria-pressed={active}
+                    aria-pressed={Boolean(activePreference)}
                     disabled={disabled}
                     onClick={() =>
                       changePreferences(
-                        active
+                        activePreference
                           ? preferences.filter((item) => item.factor_id !== factorId)
                           : upsertBy(
                               preferences,
@@ -389,10 +481,30 @@ export function SearchFiltersDrawer({
                     }
                     className="preference-option"
                   >
-                    {label}
+                    {activePreference
+                      ? factorPreferenceLabel(activePreference)
+                      : label}
                   </button>
                 );
               })}
+              {additionalPreferences.map((preference) => (
+                <button
+                  type="button"
+                  key={`${preference.factor_id}-${preference.mode}`}
+                  aria-pressed="true"
+                  disabled={disabled}
+                  onClick={() =>
+                    changePreferences(
+                      preferences.filter(
+                        (item) => item.factor_id !== preference.factor_id,
+                      ),
+                    )
+                  }
+                  className="preference-option"
+                >
+                  {factorPreferenceLabel(preference)}
+                </button>
+              ))}
             </div>
           </fieldset>
         </div>

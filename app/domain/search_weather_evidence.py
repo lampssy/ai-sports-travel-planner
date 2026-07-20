@@ -549,7 +549,7 @@ def _historical_limitations(
     )
     if len(rows) < expected_count:
         limitations.append(
-            "Historical climatology is available for "
+            "Historical weather patterns cover "
             f"{len(rows)} of {expected_count} requested days."
         )
     if any(row.baseline_period == "recent_15y" for row in rows):
@@ -558,7 +558,7 @@ def _historical_limitations(
             "unavailable."
         )
     if len(rows) > _PROFILE_LIMIT:
-        limitations.append("Daily profiles are limited to the first 31 dates.")
+        limitations.append("Daily details are shown for the first 31 dates.")
     return tuple(limitations)
 
 
@@ -576,20 +576,20 @@ def _forecast_limitations(
     )
     limitations: list[str] = []
     if any(row.run.forecast_run_id in context.stale_run_ids for row in relevant):
-        limitations.append("Stale forecast runs were excluded.")
+        limitations.append("Older forecasts were not used.")
     if any(
         row.run.status != "complete" or not row.daily.is_complete for row in relevant
     ):
-        limitations.append("Incomplete forecast rows were excluded.")
+        limitations.append("Incomplete forecast days were not used.")
     if forecast is None:
         limitations.append(
-            "No fresh usable forecast is available for the requested dates."
+            "No up-to-date forecast is available for the requested dates."
         )
     elif forecast.usable_date_count < forecast.requested_date_count:
         limitations.append(
-            "Fresh usable forecast coverage is available for "
+            "Up-to-date forecast coverage is available for "
             f"{forecast.usable_date_count} of {forecast.requested_date_count} "
-            "requested days."
+            "days."
         )
     return tuple(limitations)
 
@@ -601,11 +601,11 @@ def _interpretation(
     if mode == "forecast_assisted":
         assert forecast is not None
         return (
-            "Fresh forecast evidence supplements the historical climatology for "
+            "Fresh forecast data adds to historical weather patterns for "
             f"{forecast.usable_date_count} of {forecast.requested_date_count} "
             "requested days."
         )
-    return "Historical climatology describes the requested travel window."
+    return "Historical weather patterns describe the requested travel window."
 
 
 def _window_label(window: TravelWindow) -> str:

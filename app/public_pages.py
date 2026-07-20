@@ -304,6 +304,16 @@ def _conditions_provenance(
         basis_summary=(
             "Using a current forecast-based conditions signal from the latest "
             "weather refresh."
+            if freshness_status == "fresh"
+            else (
+                "Using the latest available forecast-based conditions signal. "
+                "This forecast is out of date."
+                if freshness_status == "stale"
+                else (
+                    "Using the latest available forecast-based conditions signal. "
+                    "Its update time is unavailable."
+                )
+            )
         ),
     )
 
@@ -366,7 +376,7 @@ def _render_html(page: PublicDestinationPage) -> str:
     <meta name="twitter:title" content="{_html(title)}" />
     <meta name="twitter:description" content="{_html(description)}" />
     <style>
-      :root {{ --ink: #14202d; --slate: #526174; --frost: #e5f0f2; --alpine: #176b5b; --ember: #d6532f; --paper: #f6f8f7; }}
+      :root {{ --ink: #14202d; --slate: #526174; --frost: #e5f0f2; --alpine: #176b5b; --ember: #b83d1d; --ember-on-dark: #ff8fb1; --paper: #f6f8f7; }}
       * {{ box-sizing: border-box; }}
       body {{ margin: 0; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: var(--paper); }}
       a {{ color: inherit; }}
@@ -380,6 +390,7 @@ def _render_html(page: PublicDestinationPage) -> str:
       .card {{ border: 1px solid #d8e1e4; border-radius: 8px; background: white; padding: 26px; box-shadow: 0 12px 35px rgba(20,32,45,.07); }}
       .hero-main {{ background: #102a43; color: white; }}
       .brand, .eyebrow, .label {{ color: var(--ember); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }}
+      .hero-main .eyebrow {{ color: var(--ember-on-dark); }}
       .pill, .cta-primary, .cta-secondary {{ display: inline-flex; align-items: center; padding: 11px 15px; border-radius: 6px; font-weight: 800; text-decoration: none; }}
       .pill, .cta-secondary {{ border: 1px solid #cbd5df; background: white; }}
       .cta-primary {{ background: var(--ember); color: white; }}
@@ -409,25 +420,25 @@ def _render_html(page: PublicDestinationPage) -> str:
         <div class="card hero-main">
           <div class="eyebrow">Ski destination guide</div>
           <h1>{_html(destination.name)}</h1>
-          <p class="lede">Stay in {_html(destination.name)}, {_html(destination.region)}, {_html(destination.country)}, with access to {_html(page.ski_region_name)}. Snow and historical evidence stay attached to each ski area below.</p>
+          <p class="lede">Stay in {_html(destination.name)}, {_html(destination.region)}, {_html(destination.country)}, with access to {_html(page.ski_region_name)}. Snowcast shows forecast and historical weather information separately for each ski area below.</p>
           <div class="cta-row"><a class="cta-primary" href="{_html(page.planner_url)}">Plan with Snowcast</a><a class="cta-secondary" href="#ski-area-{_html(first_area_id)}">View calendar</a></div>
         </div>
         <aside class="card">
           <div class="eyebrow">Destination facts</div>
           <div class="metrics">
-            <div class="metric"><div class="label">Stay bases</div><div class="value">{len(page.stay_bases)}</div></div>
+            <div class="metric"><div class="label">Places to stay</div><div class="value">{len(page.stay_bases)}</div></div>
             <div class="metric"><div class="label">Accessible ski areas</div><div class="value">{len(page.ski_area_sections)}</div></div>
-            <div class="metric"><div class="label">Trip market</div><div class="value">{_html(page.ski_region_name)}</div></div>
+            <div class="metric"><div class="label">Ski region</div><div class="value">{_html(page.ski_region_name)}</div></div>
             <div class="metric"><div class="label">Price level</div><div class="value">{_html(destination.price_level.title())}</div></div>
           </div>
         </aside>
       </section>
       {_render_ski_area_sections(page.ski_area_sections)}
       <section class="grid">
-        <div class="card"><div class="eyebrow">Stay bases</div><h2>Where Snowcast can place you</h2><div class="list">{_render_stay_bases(page.stay_bases)}</div></div>
-        <div class="card"><div class="eyebrow">Rental display facts</div><h2>Equipment options</h2><div class="list">{_render_rentals(page.rentals)}</div></div>
+        <div class="card"><div class="eyebrow">Places to stay</div><h2>Stay areas Snowcast can consider</h2><div class="list">{_render_stay_bases(page.stay_bases)}</div></div>
+        <div class="card"><div class="eyebrow">Equipment rentals</div><h2>Equipment options</h2><div class="list">{_render_rentals(page.rentals)}</div></div>
       </section>
-      <section class="card" style="margin-top: 22px;"><div class="eyebrow">Trust and provenance</div><h2>What this guide is based on</h2><p class="muted">This page combines curated destination and access metadata with current conditions and archive weather stored under each stable ski-area ID. It does not blend several ski areas into one weather score.</p></section>
+      <section class="card" style="margin-top: 22px;"><div class="eyebrow">How we use source data</div><h2>What this guide is based on</h2><p class="muted">This guide combines reviewed destination and access details with forecast and historical weather records. Weather information is shown separately for each ski area.</p></section>
     </main>
   </body>
 </html>
@@ -447,22 +458,33 @@ def _render_ski_area_sections(
             reverse=True,
         )[:3]
         best_months_label = ", ".join(month.month_name for month in best_months)
+        current_snow_label = _current_snow_signal_label(
+            current.snow_confidence_label,
+            source_available=section.current_provenance.source_type == "forecast",
+            freshness_status=section.current_provenance.freshness_status,
+        )
+        signal_heading = (
+            "Current snow signal"
+            if section.current_provenance.source_type == "forecast"
+            and section.current_provenance.freshness_status == "fresh"
+            else "Latest available snow signal"
+        )
         rendered.append(
             f"""
       <section id="ski-area-{_html(area.ski_area_id)}" class="card area-section">
         <div class="area-header">
-          <div><div class="eyebrow">Current snow signal</div><h2>{_html(area.name)} ski-area conditions</h2><p>{_html(current.weather_summary)}</p></div>
+          <div><div class="eyebrow">{_html(signal_heading)}</div><h2>{_html(area.name)} ski-area conditions</h2><p>{_html(current.weather_summary)}</p></div>
           <div class="metrics">
-            <div class="metric"><div class="label">Snow confidence</div><div class="value">{_html(current.snow_confidence_label.title())}</div></div>
+            <div class="metric"><div class="label">{_html(signal_heading)}</div><div class="value">{_html(current_snow_label)}</div></div>
             <div class="metric"><div class="label">Disruption signal</div><div class="value">{_html(_availability_label(current.availability_status))}</div></div>
             <div class="metric"><div class="label">Elevation</div><div class="value">{area.base_elevation_m}-{area.summit_elevation_m}m</div></div>
             <div class="metric"><div class="label">Season</div><div class="value">{_html(_season_label(area))}</div></div>
           </div>
         </div>
         <p class="muted">{_html(section.current_provenance.basis_summary)}</p>
-        <p class="muted"><strong>Source:</strong> {_html(section.current_provenance.source_name or "Estimated")} · <strong>Freshness:</strong> {_html(str(section.current_provenance.freshness_status).replace("_", " "))} · <strong>Updated:</strong> {_html(_timestamp_label(section.current_provenance.updated_at))}</p>
+        <p class="muted"><strong>Source:</strong> {_html(section.current_provenance.source_name or "Estimated")} · <strong>Data status:</strong> {_html(_freshness_label(section.current_provenance.freshness_status))} · <strong>Updated:</strong> {_html(_timestamp_label(section.current_provenance.updated_at))}</p>
         <div class="eyebrow">Conditions calendar</div>
-        <p class="muted">Historically strongest months: {_html(best_months_label)}. These month cards use only {_html(area.name)} archive weather and ski-area season facts.</p>
+        <p class="muted">{_html(_calendar_intro(section.calendar_months, area.name, best_months_label))}</p>
         <div class="calendar">{_render_calendar(section.calendar_months)}</div>
       </section>
             """
@@ -474,7 +496,7 @@ def _render_calendar(months: tuple[PublicCalendarMonth, ...]) -> str:
     return "\n".join(
         f"""
           <article class="month {"good" if month.snow_confidence_label == "good" else ""}">
-            <span class="badge">{_html(month.snow_confidence_label)}</span>
+            <span class="badge">{_html(_calendar_snow_signal_label(month))}</span>
             <h3>{_html(month.month_name)}</h3>
             <p>{_html(_calendar_summary(month))}</p>
             {_render_weather_metrics(month.weather_metrics)}
@@ -532,7 +554,7 @@ def _render_stay_bases(stay_bases: tuple[PublicStayBaseView, ...]) -> str:
         f"""
         <div class="list-item">
           <strong>{_html(view.stay_base.name)}</strong>
-          <div class="muted">{_html(view.stay_base.price_range)} nightly stay estimate · {_html(view.stay_base.quality.title())} quality tier · access to {_html(", ".join(view.ski_area_names))}</div>
+          <div class="muted">{_html(view.stay_base.price_range)} nightly stay estimate · access to {_html(", ".join(view.ski_area_names))}</div>
         </div>
         """
         for view in stay_bases
@@ -541,12 +563,12 @@ def _render_stay_bases(stay_bases: tuple[PublicStayBaseView, ...]) -> str:
 
 def _render_rentals(rentals: tuple[RentalDisplayFact, ...]) -> str:
     if not rentals:
-        return '<div class="list-item muted">No curated rental display facts.</div>'
+        return '<div class="list-item muted">No reviewed rental information is available.</div>'
     return "\n".join(
         f"""
         <div class="list-item">
           <strong>{_html(rental.name)}</strong>
-          <div class="muted">{_html(rental.price_range)} daily rental estimate · {_html(rental.quality.title())} quality tier · {_html(rental.lift_distance.title())} lift access</div>
+          <div class="muted">{_html(rental.price_range)} daily rental estimate · {_html(rental.lift_distance.title())} lift access</div>
         </div>
         """
         for rental in rentals
@@ -569,7 +591,101 @@ def _availability_label(value: str) -> str:
     }.get(value, value.replace("_", " ").title())
 
 
+def _current_snow_signal_label(
+    value: str,
+    *,
+    source_available: bool,
+    freshness_status: str,
+) -> str:
+    if not source_available:
+        return "Not enough evidence"
+    current_label = {
+        "good": "Current snow conditions look good",
+        "fair": "Current snow conditions are mixed",
+        "poor": "Current snow conditions look poor",
+    }.get(value)
+    latest_label = {
+        "good": "Latest available snow conditions look good",
+        "fair": "Latest available snow conditions are mixed",
+        "poor": "Latest available snow conditions look poor",
+    }.get(value)
+    if current_label is None or latest_label is None:
+        return "Not enough evidence"
+    if freshness_status == "fresh":
+        return current_label
+    qualifier = (
+        "out of date" if freshness_status == "stale" else "update time unavailable"
+    )
+    return f"{latest_label} ({qualifier})"
+
+
+def _freshness_label(value: str) -> str:
+    return {
+        "fresh": "fresh",
+        "stale": "out of date",
+        "unknown": "update time unavailable",
+        "historical": "historical",
+    }.get(value, value.replace("_", " "))
+
+
+def _historical_snow_signal_label(value: str) -> str:
+    return {
+        "good": "Historical snow conditions look good",
+        "fair": "Historical snow conditions are mixed",
+        "poor": "Historical snow conditions look poor",
+    }.get(value, "Not enough historical evidence")
+
+
+def _has_historical_weather_evidence(month: PublicCalendarMonth) -> bool:
+    return (
+        month.evidence_profile in {"archive_backed", "forecast_assisted"}
+        and month.weather_metrics is not None
+    )
+
+
+def _calendar_snow_signal_label(month: PublicCalendarMonth) -> str:
+    if not _has_historical_weather_evidence(month):
+        return "Seasonal estimate"
+    return _historical_snow_signal_label(month.snow_confidence_label)
+
+
+def _calendar_intro(
+    months: tuple[PublicCalendarMonth, ...],
+    ski_area_name: str,
+    best_months_label: str,
+) -> str:
+    historical_count = sum(_has_historical_weather_evidence(month) for month in months)
+    if historical_count == len(months):
+        return (
+            f"Historically strongest months: {best_months_label}. These month "
+            f"cards use only {ski_area_name} historical weather records and "
+            "ski-area season facts."
+        )
+    if historical_count == 0:
+        return (
+            f"Highest seasonal estimates: {best_months_label}. These month cards "
+            "use ski-area elevation and season facts because there are not enough "
+            "historical weather records."
+        )
+    return (
+        f"Highest snow estimates: {best_months_label}. Cards with enough evidence "
+        "use historical weather records; other cards show a seasonal estimate."
+    )
+
+
 def _calendar_summary(month: PublicCalendarMonth) -> str:
+    if not _has_historical_weather_evidence(month):
+        seasonal_signal = {
+            "good": "Seasonal factors suggest stronger snow potential this month.",
+            "fair": "Seasonal factors suggest mixed snow potential this month.",
+            "poor": "Seasonal factors suggest weaker snow potential this month.",
+        }.get(
+            month.snow_confidence_label,
+            "Seasonal factors provide only a limited snow estimate for this month.",
+        )
+        return (
+            f"{seasonal_signal} Not enough historical snow-depth evidence is available."
+        )
     signal = {
         "good": "Historically strong snow signal",
         "fair": "Historically mixed snow signal",
@@ -587,9 +703,10 @@ def _calendar_summary(month: PublicCalendarMonth) -> str:
 
 
 def _historical_basis(month: PublicCalendarMonth) -> str:
-    if month.weather_metrics is None:
+    if not _has_historical_weather_evidence(month):
         return (
-            "Using seasonal resort traits because archive weather coverage is limited."
+            "Using seasonal ski-area details because historical weather records "
+            "are limited."
         )
     return _historical_data_label(month.weather_metrics.latest_observed_on)
 

@@ -7,7 +7,7 @@
 - Owner: solo-builder
 - Active search contract: `search-v4`
 - Active ranking policy: `search-v4-policy-1`
-- Active refinement presentation policy: `search-refinement-presentation-1`
+- Active refinement presentation policy: `search-refinement-presentation-2`
 - Accepted visual pack:
   `docs/ui-concepts/2026-07-16-search-v4-web-experience/`
 - Interactive visuals:
@@ -143,8 +143,8 @@ search results.
 - New post-search response state: `refinement_status`, with
   `questions_available`, `not_needed`, or `temporarily_unavailable`. This is an
   orchestration outcome, not a ranking factor or confidence score.
-- Domain-language changes: none required; all durable terms already exist in
-  `docs/domain-language.md`.
+- Domain-language change: `resolved refinement topic` records a clarification
+  answered or skipped in the current search context.
 
 Important state transitions:
 
@@ -158,12 +158,14 @@ Important state transitions:
    changes.
 4. The user may expand or collapse any recommendation independently while the
    refinement request is pending.
-5. The user selects a refinement option and sees its deterministic impact
-   preview when the API provides one.
+5. At most one refinement topic is shown. The user selects one directly
+   comparable option and sees its deterministic impact preview when the API
+   provides one, or skips that topic without changing the ranking.
 6. The user applies the option, Search V4 reruns with the updated intent, stores
    a new evaluated baseline, and changed positions are announced without moving
-   the viewport unexpectedly. The client immediately requests the next
-   refinement from that new baseline. The rerank uses the displayed session's
+   the viewport unexpectedly. Only after the rerank succeeds does the client
+   mark that topic resolved and request the next unresolved topic from the new
+   baseline. The rerank uses the displayed session's
    applied filters, intent, and brief; unsubmitted drawer or header edits remain
    drafts and cannot change the previewed action. The selected answer patches
    only its owned editor fields; unrelated drafts remain intact, and Undo
@@ -213,6 +215,14 @@ Invariants:
 - deterministic fallback refinements use the same typed patches, validation,
   materiality thresholds, answered-question suppression, and rerank path as
   LLM-proposed refinements;
+- each response exposes at most one refinement proposal, with one topic and one
+  typed factor or objective decision;
+- answered and skipped topic IDs are suppressed even when a provider could ask
+  the same decision with different wording or answer combinations;
+- a materially new brief or hard-constraint context resets all resolved topics,
+  while a manual change to one related preference resets only that topic;
+- applying an answer requests the next topic from a successful new ranking;
+  skipping requests the next topic from the unchanged valid baseline;
 - refinement questions are factor-topic-only in this slice. Group-priority
   patches remain part of Search V4 intent but are not generated as refinement
   questions;
@@ -535,14 +545,14 @@ preview, and actions and focuses the first radio. Desktop remains expanded.
 Replacing the current question resets the narrow disclosure to collapsed, and
 recommendations remain reachable without opening it.
 
-Search V4 may return several validated refinement questions. The results rail
-shows one primary question at a time and keeps the remaining questions in a
-bounded client-side queue. Applying, skipping, or dismissing the current
-question advances to the next still-relevant question. Applying a question
-reruns Search V4 first, then starts a new refinement request from the returned
-applied intent and newly stored baseline. The new queue replaces unanswered
-questions from the previous request rather than carrying stale refinements
-forward.
+Search V4 returns at most one validated refinement question per request. Each
+question contains one registered topic and directly comparable answers for that
+topic. Applying a question reruns Search V4 first, records the topic as resolved
+only after success, then starts a new refinement request from the returned
+applied intent and newly stored baseline. Skipping records the topic as resolved
+and requests the next unresolved question from the unchanged valid baseline.
+The client never carries an unanswered sibling from an earlier request into a
+new ranking.
 
 The refinement rail is a progressive state. It initially says
 `Checking whether one answer could improve this ranking.`; after 2.5 seconds it
@@ -569,8 +579,8 @@ Clearing the preview returns to the unselected state.
 One validated baseline option may reproduce the current intent when another
 option is materially distinct. The response exposes `intent_changed` for every
 option. A false value uses baseline-preserving preview and action copy, records
-the question as answered, advances the queue, and does not issue an unnecessary
-rerank or announce ranking movement.
+the topic as resolved, requests the next unresolved question, and does not issue
+an unnecessary rerank or announce ranking movement.
 
 The preview text is rendered deterministically from structured rank changes.
 Examples:
@@ -927,8 +937,8 @@ Ranking endpoint:
 Post-search refinement endpoint:
 
 - `POST /api/search/refinements` accepts the canonical `applied_intent`, the
-  brief, answered question IDs, and public baseline fingerprint after ranking
-  has rendered;
+  brief, answered question IDs, resolved topic IDs, and public baseline
+  fingerprint after ranking has rendered;
 - it loads the exact evaluated baseline stored by `POST /api/search` and accepts
   it only when the stored fingerprint and the SHA-256 digest recomputed from the
   request's canonical intent both match. Canonical serialization supplies the
@@ -941,8 +951,8 @@ Post-search refinement endpoint:
   in-memory inputs for each typed variant, with no fresh acquisition;
 - it returns `search_model_version`, `ranking_policy_version`,
   `refinement_presentation_policy_version`, `baseline_fingerprint`,
-  `baseline_status`, `refinement_status`, orthogonal `fallback_used`, and a
-  bounded `refinements` queue;
+  `baseline_status`, `refinement_status`, orthogonal `fallback_used`, and zero
+  or one item in `refinements`;
 - the client cancels or ignores a stale request when the active applied intent
   changes and suppresses a response that does not belong to the visible
   ranking;
@@ -1460,7 +1470,8 @@ API and integration tests:
 - every option outcome matches a full evaluator rerun from the same captured
   inputs, including intent-sensitive categories and snowmaking's trip-window
   snow effect, without new repository or provider acquisition;
-- multi-topic options represent every selected topic symmetrically, and zero
+- provider output contains at most one topic and one answer ID per option;
+  resolved topic IDs suppress semantically repeated decisions, and zero
   configured questions skip provider construction and fallback generation;
 - preview omits score and policy internals;
 - refinement response without preview remains schema-valid;

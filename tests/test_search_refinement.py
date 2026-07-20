@@ -82,27 +82,30 @@ def _candidates() -> tuple[RefinementCandidateState, ...]:
 
 def _material_proposal() -> RefinementProposal:
     return RefinementProposal(
-        question_id="terrain-vs-access",
-        question="Would you prioritize a larger ski area or easier base access?",
-        reason="The leading candidates trade terrain scale against access.",
+        topic_id="accessible_terrain_scale",
+        target_factor_id="accessible_terrain_scale",
+        question_id="terrain-priority",
+        question="How important is terrain covered by your pass?",
+        reason="Terrain size can change which trip suits you best.",
         options=(
             RefinementOption(
                 label="Larger terrain",
-                description="Give the ski experience more influence.",
-                group_priority_patches=(
-                    GroupPriorityPatch(
-                        group_id="ski_experience",
-                        importance="very_high",
+                description="Make terrain covered by the pass a major priority.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="accessible_terrain_scale",
+                        mode="prefer",
+                        importance="high",
                     ),
                 ),
             ),
             RefinementOption(
-                label="Easier access",
-                description="Give stay practicality more influence.",
-                group_priority_patches=(
-                    GroupPriorityPatch(
-                        group_id="stay_practicality",
-                        importance="very_high",
+                label="Less important",
+                description="Keep terrain size behind other trip preferences.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="accessible_terrain_scale",
+                        mode="ignore",
                     ),
                 ),
             ),
@@ -110,7 +113,29 @@ def _material_proposal() -> RefinementProposal:
     )
 
 
-def test_material_group_question_passes_deterministic_impact_gate() -> None:
+def test_refinement_proposal_exposes_topic_and_target_factor() -> None:
+    proposal = _material_proposal()
+
+    assert proposal.topic_id == "accessible_terrain_scale"
+    assert proposal.target_factor_id == "accessible_terrain_scale"
+
+
+def test_resolved_topic_is_rejected_even_with_new_question_id() -> None:
+    proposal = _material_proposal().model_copy(
+        update={"question_id": "new-question-shape"}
+    )
+
+    with pytest.raises(RefinementValidationError, match="topic already resolved"):
+        validate_refinement_proposal(
+            proposal=proposal,
+            intent=SearchIntent(),
+            candidates=_candidates(),
+            policy=load_search_policy(),
+            resolved_topic_ids=frozenset({"accessible_terrain_scale"}),
+        )
+
+
+def test_material_single_topic_question_passes_deterministic_impact_gate() -> None:
     result = validate_refinement_proposal(
         proposal=_material_proposal(),
         intent=SearchIntent(),
@@ -118,7 +143,7 @@ def test_material_group_question_passes_deterministic_impact_gate() -> None:
         policy=load_search_policy(),
     )
 
-    assert result.proposal.question_id == "terrain-vs-access"
+    assert result.proposal.question_id == "terrain-priority"
     assert result.impact.winner_changed is True
     assert result.impact.material is True
 
@@ -175,11 +200,17 @@ def test_validated_refinement_preserves_each_variant_ranking() -> None:
 
 def test_validated_refinement_marks_a_baseline_option_as_intent_unchanged() -> None:
     current = SearchIntent(
-        group_priorities=(
-            GroupPriorityPatch(group_id="ski_experience", importance="normal"),
+        factor_preferences=(
+            FactorPreferencePatch(
+                factor_id="accessible_terrain_scale",
+                mode="prefer",
+                importance="normal",
+            ),
         )
     )
     proposal = RefinementProposal(
+        topic_id="accessible_terrain_scale",
+        target_factor_id="accessible_terrain_scale",
         question_id="terrain-priority",
         question="How much should terrain influence the ranking?",
         reason="The leading candidates trade terrain against access.",
@@ -187,9 +218,10 @@ def test_validated_refinement_marks_a_baseline_option_as_intent_unchanged() -> N
             RefinementOption(
                 label="Keep current balance",
                 description="Keep the current ski-experience importance.",
-                group_priority_patches=(
-                    GroupPriorityPatch(
-                        group_id="ski_experience",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="accessible_terrain_scale",
+                        mode="prefer",
                         importance="normal",
                     ),
                 ),
@@ -197,10 +229,10 @@ def test_validated_refinement_marks_a_baseline_option_as_intent_unchanged() -> N
             RefinementOption(
                 label="Prioritize terrain",
                 description="Give ski experience much more influence.",
-                group_priority_patches=(
-                    GroupPriorityPatch(
-                        group_id="ski_experience",
-                        importance="very_high",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="accessible_terrain_scale",
+                        mode="ignore",
                     ),
                 ),
             ),
@@ -277,6 +309,8 @@ def test_refinement_rejects_relaxing_a_synthesized_require() -> None:
         )
     )
     proposal = RefinementProposal(
+        topic_id="night_skiing",
+        target_factor_id="night_skiing",
         question_id="relax-night-skiing",
         question="How important is recurring night skiing?",
         reason="This preference changes which options remain available.",
@@ -328,6 +362,8 @@ def test_explicit_factor_requirement_is_not_treated_as_synthesized_widening() ->
         ),
     )
     proposal = RefinementProposal(
+        topic_id="night_skiing",
+        target_factor_id="night_skiing",
         question_id="explicit-night-skiing",
         question="How important is recurring night skiing?",
         reason="The explicit trip requirement remains authoritative.",
@@ -517,6 +553,7 @@ def test_objective_patch_activates_only_configured_objective_factor() -> None:
 def test_unknown_or_non_clarifiable_patch_is_rejected() -> None:
     unknown = _material_proposal().model_copy(
         update={
+            "target_factor_id": "secret_factor",
             "options": (
                 RefinementOption(
                     label="Invented",
@@ -526,7 +563,7 @@ def test_unknown_or_non_clarifiable_patch_is_rejected() -> None:
                     ),
                 ),
                 _material_proposal().options[1],
-            )
+            ),
         }
     )
 
@@ -546,31 +583,35 @@ def test_repeated_or_immaterial_question_is_rejected() -> None:
             intent=SearchIntent(),
             candidates=_candidates(),
             policy=load_search_policy(),
-            already_answered_question_ids=frozenset({"terrain-vs-access"}),
+            already_answered_question_ids=frozenset({"terrain-priority"}),
         )
 
     immaterial = RefinementProposal(
+        topic_id="stay_base_access",
+        target_factor_id="stay_base_access",
         question_id="minor-access",
         question="How much should access matter?",
         reason="This checks an access-priority distinction.",
         options=(
             RefinementOption(
                 label="Normal access",
-                description="Use the default access group importance.",
-                group_priority_patches=(
-                    GroupPriorityPatch(
-                        group_id="stay_practicality",
+                description="Use access as a normal consideration.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="stay_base_access",
+                        mode="prefer",
                         importance="normal",
                     ),
                 ),
             ),
             RefinementOption(
                 label="Slightly more access",
-                description="Give the access group slightly more influence.",
-                group_priority_patches=(
-                    GroupPriorityPatch(
-                        group_id="stay_practicality",
-                        importance="important",
+                description="Make access a major consideration.",
+                factor_preference_patches=(
+                    FactorPreferencePatch(
+                        factor_id="stay_base_access",
+                        mode="prefer",
+                        importance="high",
                     ),
                 ),
             ),
@@ -588,7 +629,10 @@ def test_repeated_or_immaterial_question_is_rejected() -> None:
         for index in range(3)
     )
 
-    with pytest.raises(RefinementValidationError, match="material impact"):
+    with pytest.raises(
+        RefinementValidationError,
+        match="not actionable|material impact",
+    ):
         validate_refinement_proposal(
             proposal=immaterial,
             intent=SearchIntent(),
@@ -599,6 +643,8 @@ def test_repeated_or_immaterial_question_is_rejected() -> None:
 
 def test_positive_presence_question_requires_trusted_variation() -> None:
     proposal = RefinementProposal(
+        topic_id="night_skiing",
+        target_factor_id="night_skiing",
         question_id="night-skiing",
         question="Would recurring night skiing improve the trip?",
         reason="Some candidates may offer verified night skiing.",

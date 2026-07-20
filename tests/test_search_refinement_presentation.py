@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -24,12 +25,63 @@ from app.domain.search_v4_models import SearchIntent
 
 pytestmark = pytest.mark.db_free
 
+_PUBLIC_REFINEMENT_COPY_FIELDS = (
+    ("topics", "fallback_question"),
+    ("topics", "fallback_reason"),
+    ("answers", "label"),
+    ("answers", "description"),
+)
+
+_BRITISH_SPELLINGS = (
+    "favour",
+    "favourite",
+    "maximise",
+    "optimise",
+    "colour",
+    "centre",
+)
+
 _CONFIGURED_PUBLIC_COPY_FIELDS = (
     ("topics", "fallback_question"),
     ("topics", "fallback_reason"),
     ("answers", "label"),
     ("answers", "description"),
 )
+
+_INTERNAL_ONLY_REFINEMENT_TERMS = (
+    "configuration",
+    "dossier",
+    "hard constraint",
+    "rerank",
+    "eligible configuration",
+    "selected pass context",
+    "adjusted",
+    "evidence ledger",
+    "comparison baseline",
+    "notification eligible",
+    "suppressed",
+)
+
+
+def test_refinement_registry_uses_american_public_language() -> None:
+    raw_policy = (
+        Path("app/config/search-refinement/presentation-v2.toml")
+        .read_text(encoding="utf-8")
+        .lower()
+    )
+
+    for spelling in _BRITISH_SPELLINGS:
+        assert spelling not in raw_policy
+
+    policy = load_refinement_presentation_policy()
+    public_copy = " ".join(
+        str(getattr(item, field_name))
+        for collection_name, field_name in _PUBLIC_REFINEMENT_COPY_FIELDS
+        for item in getattr(policy, collection_name)
+    ).lower()
+    for term in ("configuration", "ranking", "rerank", "factor", "group"):
+        assert term not in public_copy
+
 
 _SAFE_NON_DIRECTIVE_TRANSACTION_COPY = (
     "Pass purchase timing",
@@ -1041,6 +1093,16 @@ def test_default_registry_registers_safe_question_phrases_for_every_topic() -> N
     ) == sum(len(topic.question_phrases) for topic in presentation.topics)
 
 
+def test_wider_area_question_does_not_capture_an_extra_pass_decision() -> None:
+    presentation = load_refinement_presentation_policy()
+    topic = presentation.topic_by_id["terrain_potential_scale"]
+
+    assert topic.fallback_question == (
+        "How important is access to a wider ski area for this trip?"
+    )
+    assert "pass" not in topic.fallback_question.casefold()
+
+
 def test_default_registry_visible_copy_rejects_blocked_audience_terms() -> None:
     presentation = load_refinement_presentation_policy()
     visible_copy = [
@@ -1343,13 +1405,28 @@ def test_registry_copy_resolves_to_typed_actions() -> None:
     )
     assert resolved.label == "Traditional mountain village + Quiet and relaxed"
     assert resolved.description == (
-        "Prefer a base with traditional settlement character. "
-        "Prefer a calm base rather than a lively one."
+        "Prioritize traditional mountain building style. "
+        "Prioritize a quiet and relaxed pace near where you stay."
     )
     assert [item.factor_id for item in resolved.factor_preferences] == [
         "development_style",
         "local_pace",
     ]
+
+
+@pytest.mark.parametrize("term", _INTERNAL_ONLY_REFINEMENT_TERMS)
+def test_registry_rejects_internal_only_copy_without_changing_typed_actions(
+    term: str,
+) -> None:
+    presentation = load_refinement_presentation_policy()
+    payload = presentation.model_dump(mode="python")
+    payload["topics"][0]["fallback_reason"] = f"This uses {term}."
+    configured = RefinementPresentationPolicy.model_validate(payload)
+
+    assert configured.topics[0].topic_id == presentation.topics[0].topic_id
+    assert configured.answers == presentation.answers
+    with pytest.raises(ValueError, match="blocked traveller-facing copy"):
+        validate_refinement_presentation_policy(configured, load_search_policy())
 
 
 def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:
@@ -1358,15 +1435,70 @@ def test_apres_answer_descriptions_name_their_distinct_contexts() -> None:
     ski_day = presentation.answer_by_id["ski_day_apres.low_key"]
     local = presentation.answer_by_id["local_apres.low_key"]
 
-    assert ski_day.description == "Prefer low-key ski-day après."
-    assert local.description == (
-        "Prefer a low-key evening near the accommodation base."
+    assert presentation.topic_by_id["ski_day_apres"].fallback_question == (
+        "After skiing, would you rather relax somewhere quiet or stay where it "
+        "feels lively?"
     )
+    assert ski_day.description == "Prefer a quiet place to relax after skiing."
+    assert presentation.answer_by_id["ski_day_apres.moderate"].label == (
+        "Social, not party-focused"
+    )
+    assert presentation.answer_by_id["ski_day_apres.moderate"].description == (
+        "Prefer a social atmosphere without a strong party focus."
+    )
+    assert local.description == "Prioritize a quiet evening near where you stay."
+    assert presentation.topic_by_id["local_apres"].fallback_question == (
+        "In the evening, would you rather stay somewhere quiet or somewhere lively?"
+    )
+    assert presentation.answer_by_id["local_pace.balanced"].description == (
+        "Prefer a place that feels calm but still has some things to do nearby."
+    )
+
+
+def test_refinement_reasons_explain_the_specific_choice() -> None:
+    presentation = load_refinement_presentation_policy()
+    generic_reasons = {
+        "This choice can change which trip option suits you best.",
+        "This choice can change which place to stay suits you best.",
+    }
+
+    for topic in presentation.topics:
+        assert topic.fallback_reason not in generic_reasons
+
+
+def test_development_style_and_base_type_have_distinct_visible_contexts() -> None:
+    presentation = load_refinement_presentation_policy()
+    development = presentation.topic_by_id["development_style"]
+    base_type = presentation.topic_by_id["base_type"]
+
+    assert development.fallback_question == (
+        "What building and development style do you prefer where you stay?"
+    )
+    assert base_type.fallback_question == (
+        "What type of town or area do you prefer to stay in?"
+    )
+    assert development.fallback_question != base_type.fallback_question
+    assert presentation.answer_by_id["development_style.traditional"].description == (
+        "Prioritize traditional mountain building style."
+    )
+    assert presentation.answer_by_id["base_type.town"].description == (
+        "Prioritize staying in a ski town."
+    )
+
+
+def test_dynamic_approved_phrases_use_where_you_stay() -> None:
+    presentation = load_refinement_presentation_policy()
+
+    for topic in presentation.topics:
+        approved_copy = " ".join(
+            (topic.traveller_topic, *topic.question_phrases)
+        ).lower()
+        assert "accommodation base" not in approved_copy
 
 
 def test_safe_dynamic_interaction_copy_survives_unchanged() -> None:
     presentation = load_refinement_presentation_policy()
-    question = "What kind of place would you prefer to stay in?"
+    question = "What building and development style do you prefer where you stay?"
 
     assert resolve_interaction_copy(
         question,
@@ -1375,8 +1507,7 @@ def test_safe_dynamic_interaction_copy_survives_unchanged() -> None:
         presentation,
     ) == (
         question,
-        "Your preferred village or resort style can change which stay base "
-        "fits you best.",
+        "Places to stay differ in building style and resort layout.",
     )
 
 
@@ -1405,15 +1536,14 @@ def test_unsafe_dynamic_question_uses_topic_fallback(question: str) -> None:
     )
 
     assert resolved == (
-        "What kind of place would you prefer to stay in?",
-        "Your preferred village or resort style can change which stay base "
-        "fits you best.",
+        "What building and development style do you prefer where you stay?",
+        "Places to stay differ in building style and resort layout.",
     )
 
 
 def test_reason_is_always_server_owned_without_discarding_safe_question() -> None:
     presentation = load_refinement_presentation_policy()
-    question = "What kind of place would you prefer to stay in?"
+    question = "What building and development style do you prefer where you stay?"
 
     resolved = resolve_interaction_copy(
         question,
@@ -1424,8 +1554,7 @@ def test_reason_is_always_server_owned_without_discarding_safe_question() -> Non
 
     assert resolved == (
         question,
-        "Your preferred village or resort style can change which stay base "
-        "fits you best.",
+        "Places to stay differ in building style and resort layout.",
     )
 
 
@@ -1454,8 +1583,7 @@ def test_blocked_terms_and_candidate_ids_match_whole_tokens_only() -> None:
         presentation,
     ) == (
         question,
-        "Your preferred village or resort style can change which stay base "
-        "fits you best.",
+        "Places to stay differ in building style and resort layout.",
     )
 
 
@@ -1478,7 +1606,7 @@ def test_factual_selected_topic_question_uses_registered_fallback() -> None:
             (),
             presentation,
         )[0]
-        == "Would snowmaking backup matter if natural snow looks weak?"
+        == "How important is snowmaking when natural snow is limited?"
     )
 
 
@@ -1542,7 +1670,7 @@ def test_dynamic_question_accepts_only_controlled_comparison_connectors(
     presentation = load_refinement_presentation_policy()
     question = (
         f"Would you prefer selected pass terrain {connector} "
-        "access from your accommodation base?"
+        "access from where you stay?"
     )
 
     assert (
@@ -1557,8 +1685,7 @@ def test_dynamic_question_accepts_only_controlled_comparison_connectors(
 
     assert (
         resolve_interaction_copy(
-            "Would you prefer selected pass terrain and access from your "
-            "accommodation base?",
+            "Would you prefer selected pass terrain and access from where you stay?",
             ("accessible_terrain_scale", "stay_base_access"),
             (),
             presentation,
@@ -1572,43 +1699,43 @@ def test_dynamic_question_accepts_only_controlled_comparison_connectors(
     [
         (
             ("trip_window_snow_fit",),
-            "How important are dependable snow conditions for your trip?",
+            "How important is snow fit for your dates?",
         ),
         (
             ("pass_price_per_day",),
-            "How much should lift-pass price influence your choice?",
+            "How important is a lower lift-pass price per day?",
         ),
         (
             ("accessible_terrain_scale",),
-            "Would you prefer more terrain covered by the selected pass?",
+            "How important is the terrain covered by your pass?",
         ),
         (
             ("pass_terrain_value",),
-            "Would you rather maximise terrain covered for the pass price?",
+            "How important is more terrain for the lift-pass price?",
         ),
         (
             ("night_skiing",),
-            "Would recurring night skiing add value to your trip?",
+            "How important is night skiing for this trip?",
         ),
         (
             ("glacier_terrain",),
-            "Does glacier terrain matter to you?",
+            "How important is glacier terrain for this trip?",
         ),
         (
             ("trip_window_snow_fit",),
-            "Are dependable snow conditions important to you?",
+            "How important is snow fit for your dates?",
         ),
         (
             ("development_style",),
-            "What kind of village or resort development style would you prefer?",
+            "What building and development style do you prefer where you stay?",
         ),
         (
             ("development_style",),
-            "Which traditional mountain village would you choose?",
+            "What building and development style do you prefer where you stay?",
         ),
         (
             ("stay_base_access",),
-            "How easy should access from your accommodation base be?",
+            "How important is easy access to the slopes from where you stay?",
         ),
     ],
 )
@@ -1634,8 +1761,8 @@ def test_registered_preference_question_forms_accept_safe_paraphrases(
     [
         (
             ("stay_base_access",),
-            "Would your accommodation base have easy access to the slopes?",
-            "How easy should it be to reach the slopes from where you stay?",
+            "Would where you stay have easy access to the slopes?",
+            "How important is easy access to the slopes from where you stay?",
         ),
         (
             ("glacier_terrain", "trip_window_snow_fit"),
@@ -1672,7 +1799,7 @@ def test_registered_preference_question_forms_accept_safe_paraphrases(
         (
             ("glacier_terrain",),
             "Would glacier terrain matter to you improve your trip?",
-            "Does glacier terrain matter for this trip?",
+            "How important is glacier terrain for this trip?",
         ),
     ],
 )
@@ -1726,7 +1853,7 @@ def test_dynamic_question_rejects_symbols_outside_the_character_policy(
             (),
             presentation,
         )[0]
-        == "What kind of place would you prefer to stay in?"
+        == "What building and development style do you prefer where you stay?"
     )
 
 
@@ -1765,7 +1892,7 @@ def test_dynamic_question_rejects_clause_separators(separator: str) -> None:
             (),
             presentation,
         )[0]
-        == "What kind of place would you prefer to stay in?"
+        == "What building and development style do you prefer where you stay?"
     )
 
 
@@ -1780,7 +1907,7 @@ def test_sensitive_marker_anywhere_in_brief_forces_registered_fallback() -> None
             presentation,
             untrusted_brief="password is blue traditional mountain village",
         )[0]
-        == "What kind of place would you prefer to stay in?"
+        == "What building and development style do you prefer where you stay?"
     )
 
 
@@ -1802,18 +1929,17 @@ def test_registry_fallback_uses_first_material_topic_and_authoritative_copy() ->
         ),
         presentation=presentation,
     )
-    assert (
-        fallback.proposal.question == "What kind of place would you prefer to stay in?"
+    assert fallback.proposal.question == (
+        "What building and development style do you prefer where you stay?"
     )
     assert fallback.proposal.reason == (
-        "Your preferred village or resort style can change which stay base "
-        "fits you best."
+        "Places to stay differ in building style and resort layout."
     )
     assert [option.label for option in fallback.proposal.options] == [
         "Traditional mountain village",
-        "A mix of old and new",
+        "Mix of old and new",
         "Purpose-built ski resort",
-        "It doesn't matter",
+        "Not important",
     ]
     assert fallback.impact.material is True
 
@@ -1863,6 +1989,29 @@ def test_registry_fallback_suppresses_answered_semantic_id() -> None:
 
     assert next_fallback is None or next_fallback.proposal.question_id != (
         first.proposal.question_id
+    )
+
+
+def test_registry_fallback_suppresses_resolved_topic_with_new_question_shape() -> None:
+    presentation = load_refinement_presentation_policy()
+    first = build_deterministic_refinement_fallback(
+        intent=SearchIntent(),
+        candidates=_fallback_candidates(),
+        policy=load_search_policy(),
+        presentation=presentation,
+    )
+    assert first is not None
+
+    next_fallback = build_deterministic_refinement_fallback(
+        intent=SearchIntent(),
+        candidates=_fallback_candidates(),
+        policy=load_search_policy(),
+        presentation=presentation,
+        resolved_topic_ids=frozenset({first.proposal.topic_id}),
+    )
+
+    assert next_fallback is None or next_fallback.proposal.topic_id != (
+        first.proposal.topic_id
     )
 
 
@@ -2022,7 +2171,8 @@ def test_provider_topics_expose_only_approved_copy_for_allowed_factors() -> None
     topic = topics[0]
     assert topic["topic_id"] == "development_style"
     assert topic["question_phrases"] == (
-        "village or resort development style",
+        "building and development style",
+        "traditional mountain buildings",
         "traditional mountain village",
         "a traditional mountain village",
         "traditional mountain village or resort",
@@ -2031,29 +2181,56 @@ def test_provider_topics_expose_only_approved_copy_for_allowed_factors() -> None
         {
             "answer_id": "development_style.traditional",
             "label": "Traditional mountain village",
-            "description": ("Prefer a base with traditional settlement character."),
+            "description": "Prioritize traditional mountain building style.",
         },
         {
             "answer_id": "development_style.mixed",
-            "label": "A mix of old and new",
-            "description": (
-                "Prefer a base with a mix of old and new settlement character."
-            ),
+            "label": "Mix of old and new",
+            "description": "Prioritize a mix of traditional and modern buildings.",
         },
         {
             "answer_id": "development_style.planned_resort",
             "label": "Purpose-built ski resort",
-            "description": "Prefer a purpose-built ski resort base.",
+            "description": "Prioritize purpose-built ski-resort design.",
         },
         {
             "answer_id": "development_style.ignore",
-            "label": "It doesn't matter",
-            "description": (
-                "Do not use the village or resort development style as an "
-                "extra preference."
-            ),
+            "label": "Not important",
+            "description": "Do not use place style to compare trip options.",
         },
     )
+
+
+def test_version_two_is_default_and_version_one_remains_loadable() -> None:
+    current = load_refinement_presentation_policy()
+    version_one = load_refinement_presentation_policy(
+        presentation_module.DEFAULT_REFINEMENT_PRESENTATION_PATH.with_name(
+            "presentation-v1.toml"
+        )
+    )
+
+    assert current.presentation_policy_version == "search-refinement-presentation-2"
+    assert version_one.presentation_policy_version == "search-refinement-presentation-1"
+    assert current.answer_by_id["accessible_terrain_scale.normal"].label == (
+        "Somewhat important"
+    )
+    assert version_one.answer_by_id["accessible_terrain_scale.normal"].label == (
+        "Use the standard balance"
+    )
+
+
+def test_active_fallback_sets_fit_the_active_option_limit() -> None:
+    search_policy = load_search_policy()
+    presentation = load_refinement_presentation_policy()
+    maximum = search_policy.refinement.max_options_per_question
+
+    oversized = {
+        topic.topic_id: len(topic.fallback_answer_ids)
+        for topic in presentation.topics
+        if len(topic.fallback_answer_ids) > maximum
+    }
+
+    assert oversized == {}
 
 
 def test_registry_rejects_duplicate_topic_and_answer_ids() -> None:

@@ -33,6 +33,7 @@ _global_instrumentors_configured = False
 _configured_signature: tuple[str, str | None, str | None, bool, float] | None = None
 
 HEALTHCHECK_TRACE_EXCLUDED_URLS = "/api/healthz,/api/readyz,/healthz,/readyz"
+URLLIB_TRACE_EXCLUDED_URLS = r"https://oauth2\.googleapis\.com/tokeninfo.*"
 
 _DURATION_SECONDS_BUCKETS = (
     0.01,
@@ -187,7 +188,7 @@ def _instrument_global_libraries_once() -> None:
         return
     LoggingInstrumentor().instrument(set_logging_format=False)
     PsycopgInstrumentor().instrument()
-    URLLibInstrumentor().instrument()
+    URLLibInstrumentor().instrument(excluded_urls=URLLIB_TRACE_EXCLUDED_URLS)
     _global_instrumentors_configured = True
 
 

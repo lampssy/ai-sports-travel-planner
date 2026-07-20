@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 
@@ -12,12 +12,15 @@ import {
   buildWeatherChartData,
   formatWeatherChartTickLabel,
   selectWeatherChartTickLabels,
+  snowDepthReferenceCopy,
   weatherMetricDefinition,
 } from "./SnowEvidenceChart";
+import { WeatherEvidenceTechnicalDetails } from "./WeatherEvidenceTechnicalDetails";
 import {
   clearWeatherEvidenceCache,
   readWeatherEvidenceCache,
   weatherEvidenceCacheKey,
+  writeWeatherEvidenceCache,
 } from "./weatherEvidenceCache";
 
 const monthIntent: SearchIntent = {
@@ -163,13 +166,6 @@ function forecastResponse(
 
 beforeEach(clearWeatherEvidenceCache);
 
-async function openVisibleSources(user: ReturnType<typeof userEvent.setup>) {
-  const summaries = await screen.findAllByText("Sources and daily values");
-  const visibleSummary = summaries.find((summary) => !summary.closest("[hidden]"));
-  expect(visibleSummary).toBeDefined();
-  await user.click(visibleSummary!);
-}
-
 test("maps historical ranges and preserves missing observations as null chart gaps", () => {
   const missing: WeatherEvidencePoint = {
     date_or_month_day: "03-16",
@@ -273,18 +269,24 @@ test("renders month climatology metrics, segmented charts, and collapsed source 
     />,
   );
 
-  expect(await screen.findByText("Historical pattern")).toBeVisible();
+  expect((await screen.findAllByText("Historical pattern")).length).toBeGreaterThan(0);
   expect(screen.getByRole("heading", { name: "Snow & weather for March" })).toBeVisible();
-  expect(screen.getByText(/climatology rather than a live forecast/i)).toBeVisible();
+  expect(screen.getByText("Archive through 2024; 1995-2024 baseline")).toBeVisible();
   expect(screen.getByText(/mid-mountain.*2,400 m/i)).toBeVisible();
-  expect(screen.getByText(/30 evidence seasons/i)).toBeVisible();
+  expect(screen.getByText(/30 historical seasons; 1 profile date/i)).toBeVisible();
   const metrics = document.querySelector(".snow-metrics") as HTMLElement;
   expect(
     within(metrics).getByText("128 cm"),
   ).toBeVisible();
   expect(within(metrics).getByText("82-176 cm")).toBeVisible();
   expect(within(metrics).getByText("4.2 cm/day")).toBeVisible();
-  expect(within(metrics).getByText(/87% average historical likelihood/i)).toBeVisible();
+  expect(within(metrics).getByText("Typical historical snow depth")).toBeVisible();
+  expect(within(metrics).getByText("Usual historical range")).toBeVisible();
+  expect(
+    within(metrics).getByText(
+      "Across matching dates, historical data averaged 87% of days at or above the 30 cm snow-depth reference.",
+    ),
+  ).toBeVisible();
   expect(within(metrics).getByText("-2.1 °C")).toBeVisible();
   expect(screen.queryByRole("tab", { name: "Forecast" })).toBeNull();
   expect(
@@ -299,6 +301,9 @@ test("renders month climatology metrics, segmented charts, and collapsed source 
   expect(
     screen.getByRole("img", { name: /historical snow depth chart in cm/i }),
   ).toBeVisible();
+  expect(screen.getByText("30 cm snow-depth reference")).toBeVisible();
+  expect(screen.getByText(snowDepthReferenceCopy)).toBeVisible();
+  expect(screen.getByText(/chart summary:.*median snow depth is 128 cm/i)).toBeVisible();
   await user.click(screen.getByRole("tab", { name: "Fresh snow" }));
   expect(
     screen.getByRole("img", { name: /historical fresh snow chart in cm/i }),
@@ -310,18 +315,52 @@ test("renders month climatology metrics, segmented charts, and collapsed source 
   expect(
     screen.getByRole("img", { name: /historical temperature chart in °c/i }),
   ).toBeVisible();
-  expect(screen.getByRole("table", { name: "Historical weather values", hidden: true })).not.toBeVisible();
-  expect(screen.getByText("Open-Meteo archive climatology")).not.toBeVisible();
+  expect(screen.queryByRole("table", { name: "Historical weather values" })).toBeNull();
+  expect(screen.queryByText(/typed weather evidence/i)).toBeNull();
+  expect(await screen.findByRole("status")).toHaveTextContent(/snow evidence loaded/i);
+});
 
-  await user.click(screen.getByText("Sources and daily values"));
+test("keeps source rows and equivalent chart values in technical details", () => {
+  render(<WeatherEvidenceTechnicalDetails response={historicalResponse()} />);
+
   const table = screen.getByRole("table", { name: "Historical weather values" });
   expect(screen.getByText("Open-Meteo archive climatology")).toBeVisible();
+  expect(screen.getByText("ERA5-Land")).toBeVisible();
+  expect(screen.getByText("2,400 m")).toBeVisible();
+  expect(screen.getByText("03-01, 03-15, 03-31")).toBeVisible();
+  expect(
+    screen.getByText(
+      "Typical historical snow depth averages the daily median values across matching dates in the travel window.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByText(
+      "The usual historical range averages the daily 25th- and 75th-percentile values across matching dates.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByText(
+      "The 30 cm figure is the average daily historical percentage at or above the reference across matching dates. It is not the chance of reaching 30 cm at least once during the trip.",
+    ),
+  ).toBeVisible();
+  expect(screen.getByText("3")).toBeVisible();
+  expect(screen.getByText("Baseline years")).toBeVisible();
+  expect(screen.getByText("Latest archive year")).toBeVisible();
   expect(within(table).getByText("03-15")).toBeVisible();
   expect(within(table).getByText("128 cm")).toBeVisible();
   expect(within(table).queryByText("0 cm")).toBeNull();
   expect(within(table).getAllByText("Not available").length).toBeGreaterThan(0);
-  expect(screen.queryByText(/typed weather evidence/i)).toBeNull();
-  expect(await screen.findByRole("status")).toHaveTextContent(/snow evidence loaded/i);
+});
+
+test("shows complete forecast source provenance only in technical details", () => {
+  render(<WeatherEvidenceTechnicalDetails response={forecastResponse()} />);
+
+  expect(screen.getByText("forecast-head-1")).toBeVisible();
+  expect(screen.getByText("open-meteo")).toBeVisible();
+  expect(screen.getByText("2026-07-16T11:00:00Z")).toBeVisible();
+  expect(screen.getByText("Run ID")).toBeVisible();
+  expect(screen.getByText("Source key")).toBeVisible();
+  expect(screen.getByText("Issued")).toBeVisible();
 });
 
 test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
@@ -335,22 +374,24 @@ test("trusts forecast-assisted mode and supports keyboard tabs", async () => {
     />,
   );
 
-  expect(await screen.findByText("Forecast-assisted")).toBeVisible();
-  expect(screen.getByText("16 Jul 2026, 11:00 UTC")).toBeVisible();
-  expect(screen.getByText(/fresh at 16 jul 2026, 12:02 utc/i)).toBeVisible();
-  expect(screen.getByText("2 of 3 covered")).toBeVisible();
-  expect(screen.getByText("67%")).toBeVisible();
-  expect(screen.getByText("Forecast coverage in this assessment")).toBeVisible();
+  expect(
+    (await screen.findAllByText("Forecast and historical pattern")).length,
+  ).toBeGreaterThan(0);
+  expect(screen.getByText("Data dates")).toBeVisible();
+  expect(screen.getByText("Forecast issued Jul 16, 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline")).toBeVisible();
+  expect(screen.getByText("2 of 3 requested dates have forecast values; 30 historical seasons")).toBeVisible();
+  expect(screen.queryByText(/fresh at 16 jul 2026, 12:02 utc/i)).toBeNull();
+  expect(screen.queryByText(/cache_valid_until|evaluated_at/i)).toBeNull();
   const forecastTab = screen.getByRole("tab", { name: "Forecast" });
   const historicalTab = screen.getByRole("tab", { name: "Historical context" });
-  expect(screen.getByText("Average daily median depth")).not.toBeVisible();
+  expect(screen.getByText("Typical historical snow depth")).not.toBeVisible();
   expect(forecastTab).toHaveAttribute("aria-selected", "true");
   forecastTab.focus();
   await user.keyboard("{ArrowRight}");
   expect(historicalTab).toHaveFocus();
   expect(historicalTab).toHaveAttribute("aria-selected", "true");
   expect(screen.getByRole("tabpanel", { name: "Historical context" })).toBeVisible();
-  expect(screen.getByText("Average daily median depth")).toBeVisible();
+  expect(screen.getByText("Typical historical snow depth")).toBeVisible();
   await user.keyboard("{ArrowRight}");
   expect(forecastTab).toHaveFocus();
   expect(forecastTab).toHaveAttribute("aria-selected", "true");
@@ -371,7 +412,8 @@ test("keeps selected forecast freshness separate from excluded stale rows", asyn
     />,
   );
 
-  expect(await screen.findByText(/fresh at 16 jul 2026, 12:02 utc/i)).toBeVisible();
+  expect(await screen.findByText(/forecast issued jul 16, 2026, 11:00 utc/i)).toBeVisible();
+  expect(screen.queryByText(/fresh at 16 jul 2026, 12:02 utc/i)).toBeNull();
   expect(screen.queryByText("Stale at evaluation")).toBeNull();
   expect(screen.getByText(/stale forecast rows were excluded/i)).toBeVisible();
 });
@@ -435,30 +477,67 @@ test("distinguishes mixed source elevations from unavailable elevation", async (
   expect(screen.queryByText(/elevation unavailable/i)).toBeNull();
 });
 
-test("shows API risk and wind values only in the complete daily-values table", async () => {
-  const user = userEvent.setup();
+test("retains response limitations when mixed evidence becomes the main limitation", async () => {
+  const response = forecastResponse();
+  response.evidence = {
+    ...response.evidence,
+    elevation_m: null,
+    elevation_status: "mixed",
+    limitations: [
+      "Forecast coverage is incomplete.",
+      "Historical coverage is limited for one requested date.",
+    ],
+    historical: {
+      ...response.evidence.historical,
+      provenance_status: "mixed",
+    },
+  };
   render(
     <SnowEvidence
       intent={datesIntent}
       skiAreaId="tignes-ski-area"
       skiAreaName="Tignes"
-      loadEvidence={vi.fn().mockResolvedValue(forecastResponse("forecast-head-1", {
-        rain_risk: 0,
-        thaw_risk: 0,
-        wind_gust_kmh: 10,
-      }))}
+      loadEvidence={vi.fn().mockResolvedValue(response)}
     />,
   );
 
-  await screen.findByText("Forecast-assisted");
-  const summaries = screen.getAllByText("Sources and daily values");
-  const visibleSummary = summaries.find((summary) => !summary.closest("[hidden]"));
-  expect(visibleSummary).toBeDefined();
-  await user.click(visibleSummary!);
+  expect(
+    await screen.findByText(
+      "This assessment combines weather data from different sources and elevations.",
+    ),
+  ).toBeVisible();
+  expect(screen.getByText("Forecast coverage is incomplete.")).toBeVisible();
+  expect(
+    screen.getByText("Historical coverage is limited for one requested date."),
+  ).toBeVisible();
+});
+
+test("shows API risk and wind values only in the complete daily-values table", () => {
+  render(
+    <WeatherEvidenceTechnicalDetails
+      response={forecastResponse("forecast-head-1", {
+        rain_risk: 0,
+        thaw_risk: 0,
+        wind_gust_kmh: 10,
+      })}
+    />,
+  );
+
   const table = screen.getByRole("table", { name: "Forecast weather values" });
   const row = within(table).getByRole("row", { name: /2026-07-20/ });
   expect(row).toHaveTextContent("0 %");
   expect(row).toHaveTextContent("10 km/h");
+});
+
+test("labels and exposes weather value tables as keyboard-scrollable regions", () => {
+  render(<WeatherEvidenceTechnicalDetails response={forecastResponse()} />);
+
+  const region = screen.getByRole("region", {
+    name: "Forecast weather values. Scroll horizontally to view all values.",
+  });
+  region.focus();
+  expect(region).toHaveFocus();
+  expect(region).toHaveAttribute("tabindex", "0");
 });
 
 test("renders server fallback limitations and typed unavailability without generic factor inference", async () => {
@@ -477,7 +556,7 @@ test("renders server fallback limitations and typed unavailability without gener
       loadEvidence={vi.fn().mockResolvedValue(fallback)}
     />,
   );
-  expect(await screen.findByText("Historical pattern")).toBeVisible();
+  expect((await screen.findAllByText("Historical pattern")).length).toBeGreaterThan(0);
   expect(screen.getByText(/selected forecast run was stale/i)).toBeVisible();
   expect(screen.queryByRole("tab", { name: "Forecast" })).toBeNull();
 
@@ -499,8 +578,19 @@ test("renders server fallback limitations and typed unavailability without gener
     />,
   );
   expect(await screen.findByText("Snow evidence unavailable")).toBeVisible();
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Snowcast could not find enough reliable historical data for this ski area and trip window.",
+  );
+  const unavailableSummary = screen.getByLabelText("Weather evidence summary");
+  expect(unavailableSummary).toHaveTextContent("Historical weather evidence unavailable");
+  expect(unavailableSummary).toHaveTextContent("Not available for this assessment.");
+  expect(unavailableSummary).toHaveTextContent(
+    "No historical profile met Snowcast's evidence requirements for this trip window.",
+  );
+  expect(unavailableSummary).toHaveTextContent("Unavailable from the current evidence.");
   expect(screen.getByText(/no supported historical evidence/i)).toBeVisible();
-  expect(screen.getByRole("status")).toHaveTextContent(/unavailable for les arcs/i);
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+  expect(screen.queryByRole("status")).toBeNull();
   expect(document.body.textContent).not.toContain("trip_window_snow_fit");
 });
 
@@ -520,13 +610,174 @@ test("preserves the section during retryable failure and announces a successful 
   );
 
   expect(await screen.findByText("Snow evidence could not be loaded")).toBeVisible();
-  expect(screen.getByRole("status")).toHaveTextContent(/could not be loaded/i);
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Snow and weather could not be loaded. Try again.",
+  );
+  expect(screen.getByRole("alert")).not.toHaveTextContent("Stored weather evidence");
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+  expect(screen.queryByRole("status")).toBeNull();
   const retry = screen.getByRole("button", { name: "Retry snow evidence" });
   await user.click(retry);
-  expect(await screen.findByText("Historical pattern")).toBeVisible();
+  expect((await screen.findAllByText("Historical pattern")).length).toBeGreaterThan(0);
   expect(screen.getByRole("status")).toHaveTextContent(/snow evidence loaded/i);
   expect(screen.getByRole("button", { name: "Reload snow evidence" })).toHaveFocus();
   expect(loadEvidence).toHaveBeenCalledTimes(2);
+});
+
+test("keeps one recovery action after weather remains unavailable on retry", async () => {
+  const user = userEvent.setup();
+  const unavailable = {
+    weather_evidence_version: "search-weather-evidence-v1" as const,
+    status: "unavailable" as const,
+    ski_area_id: "tignes-ski-area",
+    evaluated_at: "2026-07-16T12:00:00Z",
+    cache_valid_until: "2026-07-16T12:05:00Z",
+    unavailable_reason: "historical_evidence_unavailable" as const,
+    limitations: [],
+  };
+  let resolveRetry: ((response: typeof unavailable) => void) | undefined;
+  const retryResponse = new Promise<typeof unavailable>((resolve) => {
+    resolveRetry = resolve;
+  });
+  const loadEvidence = vi
+    .fn()
+    .mockResolvedValueOnce(unavailable)
+    .mockReturnValueOnce(retryResponse);
+  render(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={loadEvidence}
+    />,
+  );
+
+  const retry = await screen.findByRole("button", { name: "Check again" });
+  retry.focus();
+  await user.click(retry);
+
+  expect(retry).toHaveFocus();
+  expect(retry).toHaveAttribute("aria-disabled", "true");
+  expect(retry).not.toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveAttribute("aria-busy", "true");
+
+  resolveRetry?.(unavailable);
+  expect(await screen.findByRole("heading", { name: "Snow evidence unavailable" })).toBeVisible();
+  expect(screen.getAllByRole("button", { name: /snow evidence|check again/i })).toHaveLength(1);
+  expect(screen.queryByRole("button", { name: "Reload snow evidence" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Check again" })).toHaveFocus();
+  expect(loadEvidence).toHaveBeenCalledTimes(2);
+});
+
+test("asks for travel dates without presenting unavailable weather evidence or a retry", async () => {
+  render(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={vi.fn().mockResolvedValue({
+        weather_evidence_version: "search-weather-evidence-v1",
+        status: "unavailable",
+        ski_area_id: "tignes-ski-area",
+        evaluated_at: "2026-07-16T12:00:00Z",
+        cache_valid_until: "2026-07-16T12:05:00Z",
+        unavailable_reason: "travel_window_missing",
+        limitations: ["A travel month or exact travel dates are required."],
+      })}
+    />,
+  );
+
+  expect(
+    await screen.findByRole("heading", { name: "Add travel dates to assess weather" }),
+  ).toBeVisible();
+  expect(
+    screen.getByText("Choose travel dates to see weather conditions for this ski area."),
+  ).toBeVisible();
+  expect(screen.getByText("Travel dates needed")).toBeVisible();
+  expect(screen.queryByRole("button", { name: /check again|retry/i })).toBeNull();
+  expect(screen.queryByText(/weather evidence is unavailable/i)).toBeNull();
+});
+
+test("scopes a pending retry to its weather context when the cached target retries independently", async () => {
+  const user = userEvent.setup();
+  const unavailable = (skiAreaId: string) => ({
+    weather_evidence_version: "search-weather-evidence-v1" as const,
+    status: "unavailable" as const,
+    ski_area_id: skiAreaId,
+    evaluated_at: "2026-07-16T12:00:00Z",
+    cache_valid_until: "2099-07-16T12:05:00Z",
+    unavailable_reason: "historical_evidence_unavailable" as const,
+    limitations: [],
+  });
+  const tignesUnavailable = unavailable("tignes-ski-area");
+  const lesArcsUnavailable = unavailable("les-arcs-ski-area");
+  let resolveTignesRetry:
+    | ((response: SearchWeatherEvidenceResponse) => void)
+    | undefined;
+  let resolveLesArcsRetry:
+    | ((response: SearchWeatherEvidenceResponse) => void)
+    | undefined;
+  const tignesRetry = new Promise<SearchWeatherEvidenceResponse>((resolve) => {
+    resolveTignesRetry = resolve;
+  });
+  const lesArcsRetry = new Promise<SearchWeatherEvidenceResponse>((resolve) => {
+    resolveLesArcsRetry = resolve;
+  });
+  const loadEvidence = vi
+    .fn()
+    .mockResolvedValueOnce(tignesUnavailable)
+    .mockReturnValueOnce(tignesRetry)
+    .mockReturnValueOnce(lesArcsRetry);
+  writeWeatherEvidenceCache(
+    weatherEvidenceCacheKey("les-arcs-ski-area", monthIntent.constraints.travel_window),
+    lesArcsUnavailable,
+  );
+  const { rerender } = render(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={loadEvidence}
+    />,
+  );
+
+  await user.click(await screen.findByRole("button", { name: "Check again" }));
+  expect(screen.getByRole("button", { name: "Check again" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+
+  rerender(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="les-arcs-ski-area"
+      skiAreaName="Les Arcs"
+      loadEvidence={loadEvidence}
+    />,
+  );
+  const lesArcsRetryControl = await screen.findByRole("button", {
+    name: "Check again",
+  });
+  expect(lesArcsRetryControl).not.toHaveAttribute("aria-disabled");
+  expect(loadEvidence).toHaveBeenCalledTimes(2);
+
+  await user.click(lesArcsRetryControl);
+  expect(lesArcsRetryControl).toHaveAttribute("aria-disabled", "true");
+  await act(async () => {
+    resolveTignesRetry?.(tignesUnavailable);
+    await tignesRetry;
+  });
+  expect(lesArcsRetryControl).toHaveAttribute("aria-disabled", "true");
+
+  await act(async () => {
+    resolveLesArcsRetry?.(lesArcsUnavailable);
+    await lesArcsRetry;
+  });
+  await waitFor(() => {
+    expect(lesArcsRetryControl).not.toHaveAttribute("aria-disabled");
+  });
+  expect(lesArcsRetryControl).toHaveFocus();
+  expect(loadEvidence).toHaveBeenCalledTimes(3);
 });
 
 test("changes the cache context when the applied travel window changes", async () => {
@@ -539,7 +790,7 @@ test("changes the cache context when the applied travel window changes", async (
       loadEvidence={loadEvidence}
     />,
   );
-  expect(await screen.findByText("Historical pattern")).toBeVisible();
+  expect((await screen.findAllByText("Historical pattern")).length).toBeGreaterThan(0);
 
   rerender(
     <SnowEvidence
@@ -559,7 +810,6 @@ test("changes the cache context when the applied travel window changes", async (
 });
 
 test("reuses an unexpired cache entry and refetches an expired entry with a new head", async () => {
-  const user = userEvent.setup();
   vi.setSystemTime("2026-07-16T12:00:00Z");
   const loadEvidence = vi
     .fn()
@@ -573,8 +823,12 @@ test("reuses an unexpired cache entry and refetches an expired entry with a new 
       loadEvidence={loadEvidence}
     />,
   );
-  await openVisibleSources(user);
-  expect(await screen.findByText(/run forecast-head-1/i)).toBeVisible();
+  await screen.findByText(/forecast issued jul 16, 2026, 11:00 utc/i);
+  expect(
+    readWeatherEvidenceCache(
+      weatherEvidenceCacheKey("tignes-ski-area", datesIntent.constraints.travel_window),
+    ),
+  ).toEqual(forecastResponse("forecast-head-1"));
   first.unmount();
 
   const cached = render(
@@ -585,23 +839,23 @@ test("reuses an unexpired cache entry and refetches an expired entry with a new 
       loadEvidence={loadEvidence}
     />,
   );
-  await openVisibleSources(user);
-  expect(await screen.findByText(/run forecast-head-1/i)).toBeVisible();
+  await screen.findByText(/forecast issued jul 16, 2026, 11:00 utc/i);
   expect(loadEvidence).toHaveBeenCalledTimes(1);
   cached.unmount();
 
   vi.setSystemTime("2026-07-16T13:00:00Z");
+  const responseChanges = vi.fn();
   render(
     <SnowEvidence
       intent={datesIntent}
       skiAreaId="tignes-ski-area"
       skiAreaName="Tignes"
       loadEvidence={loadEvidence}
+      onResponseChange={responseChanges}
     />,
   );
-  await openVisibleSources(user);
-  expect(await screen.findByText(/run forecast-head-2/i)).toBeVisible();
-  expect(screen.queryByText(/run forecast-head-1/i)).toBeNull();
+  await screen.findByText(/forecast issued jul 16, 2026, 12:30 utc/i);
+  expect(responseChanges).toHaveBeenCalledWith(forecastResponse("forecast-head-2"));
   vi.useRealTimers();
 });
 

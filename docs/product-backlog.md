@@ -1112,6 +1112,9 @@ Potential scope:
   - budget flexibility if kept in mobile
 - Register mobile devices against the existing backend device-registration
   endpoint when real notification delivery gets closer.
+- Move bearer sessions and user identity out of shared preferences into
+  platform secure storage, add server-side session revocation, and shorten or
+  rotate session lifetime before distributing the mobile app to users.
 - Reconcile Android package identifiers, signing config, and other release
   readiness details before treating mobile as production-ready.
 - Keep UI cleanup companion-specific.
@@ -1640,6 +1643,39 @@ Promotion trigger:
 
 - Promote before adding registered refinement wording that uses one of these
   fused action forms, or before claiming generalized action-copy coverage.
+
+### Mobile Validation In CI
+
+Status: candidate
+Area: Mobile companion; Release quality
+Source: product-language remediation release review
+
+Why it matters:
+
+- Flutter analysis and tests currently run only during local review. The main
+  CI workflow can therefore pass after a mobile regression, even though the
+  public error contract spans the backend, web application, and Flutter
+  companion.
+- There are no current mobile users, so this is release hardening rather than a
+  blocker for the present draft PR.
+
+First scope:
+
+- Add a bounded CI job that installs the repository-supported Flutter version,
+  runs `flutter analyze`, and runs `flutter test`.
+- Add a deployed smoke check for the public API error envelope and the
+  authentication/accommodation recovery paths before declaring the mobile
+  companion production-supported.
+
+Not now:
+
+- Do not add Android or iOS signing, store publication, emulator matrices, or
+  full device testing until a production mobile release is planned.
+
+Promotion trigger:
+
+- Promote before the Flutter companion is offered to real users or when the
+  next mobile feature changes the shared public API contract.
 
 ## Recovered But Not Active
 

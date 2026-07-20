@@ -6,6 +6,8 @@ import type { RefinementProposal } from "../types";
 import { RefinementCard } from "./RefinementCard";
 
 const refinement: RefinementProposal = {
+  topic_id: "snow_priority",
+  target_factor_id: "trip_window_snow_fit",
   question_id: "snow-priority",
   question: "What should break the tie?",
   reason: "One answer could reorder your top results.",
@@ -64,6 +66,7 @@ test("uses the concrete question as the heading and reason as support text", () 
       error={null}
       onApply={vi.fn()}
       onSkip={vi.fn()}
+      onKeepResults={vi.fn()}
     />,
   );
 
@@ -89,6 +92,7 @@ test("supports keyboard-only radio selection, apply, and skip focus", async () =
       error={null}
       onApply={onApply}
       onSkip={onSkip}
+      onKeepResults={vi.fn()}
     />,
   );
 
@@ -102,20 +106,20 @@ test("supports keyboard-only radio selection, apply, and skip focus", async () =
   expect(shorterJourney).toBeChecked();
 
   await user.tab();
-  const apply = screen.getByRole("button", { name: /keep current ranking/i });
+  const apply = screen.getByRole("button", { name: "Continue" });
   expect(document.activeElement).toBe(apply);
   await user.keyboard("{Enter}");
-  expect(onApply).toHaveBeenCalledWith(refinement.question_id, refinement.options[1]);
+  expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[1]);
 
   await user.tab();
   expect(document.activeElement).toBe(
     screen.getByRole("button", { name: "Clear" }),
   );
   await user.tab();
-  const skip = screen.getByRole("button", { name: /skip for now/i });
+  const skip = screen.getByRole("button", { name: /skip this question/i });
   expect(document.activeElement).toBe(skip);
   await user.keyboard("{Enter}");
-  expect(onSkip).toHaveBeenCalledWith(refinement.question_id);
+  expect(onSkip).toHaveBeenCalledWith(refinement);
 });
 
 test("previews a selected option before apply and supports clear and skip", async () => {
@@ -129,6 +133,7 @@ test("previews a selected option before apply and supports clear and skip", asyn
       error={null}
       onApply={onApply}
       onSkip={onSkip}
+      onKeepResults={vi.fn()}
     />,
   );
 
@@ -141,24 +146,47 @@ test("previews a selected option before apply and supports clear and skip", asyn
 
   await user.click(screen.getByRole("radio", { name: /shorter journey/i }));
   expect(
-    screen.getByText("Keeps your current trip decisions and ranking."),
+    screen.getByText("Keeps your current trip decisions unchanged."),
   ).toBeVisible();
-  await user.click(screen.getByRole("button", { name: /keep current ranking/i }));
-  expect(onApply).toHaveBeenCalledWith(refinement.question_id, refinement.options[1]);
+  await user.click(screen.getByRole("button", { name: "Continue" }));
+  expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[1]);
 
-  await user.click(screen.getByRole("button", { name: /skip for now/i }));
-  expect(onSkip).toHaveBeenCalledWith(refinement.question_id);
+  await user.click(screen.getByRole("button", { name: /skip this question/i }));
+  expect(onSkip).toHaveBeenCalledWith(refinement);
 });
 
-test("preserves the selected option after apply failure for retry", async () => {
+test("uses Continue only when the selected answer leaves intent unchanged", async () => {
   const user = userEvent.setup();
-  const { rerender } = render(
+  render(
     <RefinementCard
       refinement={refinement}
       loading={false}
       error={null}
       onApply={vi.fn()}
       onSkip={vi.fn()}
+      onKeepResults={vi.fn()}
+    />,
+  );
+
+  await user.click(screen.getByRole("radio", { name: /snow reliability/i }));
+  expect(screen.getByRole("button", { name: "Update results" })).toBeVisible();
+
+  await user.click(screen.getByRole("radio", { name: /shorter journey/i }));
+  expect(screen.getByRole("button", { name: "Continue" })).toBeVisible();
+});
+
+test("preserves the selected option and offers update or exit after apply failure", async () => {
+  const user = userEvent.setup();
+  const onApply = vi.fn();
+  const onKeepResults = vi.fn();
+  const { rerender } = render(
+    <RefinementCard
+      refinement={refinement}
+      loading={false}
+      error={null}
+      onApply={onApply}
+      onSkip={vi.fn()}
+      onKeepResults={onKeepResults}
     />,
   );
   await user.click(screen.getByRole("radio", { name: /snow reliability/i }));
@@ -167,15 +195,21 @@ test("preserves the selected option after apply failure for retry", async () => 
     <RefinementCard
       refinement={refinement}
       loading={false}
-      error="Could not rerank."
-      onApply={vi.fn()}
+      error="Results could not be updated."
+      onApply={onApply}
       onSkip={vi.fn()}
+      onKeepResults={onKeepResults}
     />,
   );
 
   expect(screen.getByRole("radio", { name: /snow reliability/i })).toBeChecked();
-  expect(screen.getByRole("alert")).toHaveTextContent("Could not rerank.");
-  expect(screen.getByRole("button", { name: /retry apply and rerank/i })).toBeEnabled();
+  expect(screen.getByRole("alert")).toHaveTextContent("Results could not be updated.");
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Update results" }));
+  expect(onApply).toHaveBeenCalledWith(refinement, refinement.options[0]);
+  await user.click(screen.getByRole("button", { name: "Keep these results" }));
+  expect(onKeepResults).toHaveBeenCalledOnce();
+  expect(screen.queryByRole("button", { name: /skip this question/i })).toBeNull();
 });
 
 test("keeps the concrete question visible in a collapsed narrow disclosure", async () => {
@@ -188,6 +222,7 @@ test("keeps the concrete question visible in a collapsed narrow disclosure", asy
       error={null}
       onApply={vi.fn()}
       onSkip={vi.fn()}
+      onKeepResults={vi.fn()}
     />,
   );
 
@@ -216,6 +251,7 @@ test("a replacement question resets the narrow disclosure to collapsed", async (
     error: null,
     onApply: vi.fn(),
     onSkip: vi.fn(),
+    onKeepResults: vi.fn(),
   };
   const { rerender } = render(
     <RefinementCard refinement={refinement} {...shared} />,

@@ -3,13 +3,15 @@ import type { RefObject } from "react";
 
 import type {
   RefinementOption,
+  RefinementProposal,
   SearchV4Configuration,
 } from "../types";
 import { RecommendationCard } from "./RecommendationCard";
 import { SearchContextRail } from "./SearchContextRail";
 import {
-  buildParsedChips,
+  partitionParsedChips,
   selectTripEssentialCategories,
+  tripOptionCountCopy,
   type ParsedChip,
 } from "./searchPresentation";
 import type { SearchSession } from "./searchSession";
@@ -19,8 +21,9 @@ export function RecommendationBoard({
   session,
   loading,
   error,
-  saveError,
+  saveErrorsByCandidate,
   refinementError,
+  refinementRetrying,
   refinementStatus,
   refinementControlRef,
   rankFeedback,
@@ -32,6 +35,8 @@ export function RecommendationBoard({
   onRemoveChip,
   onApplyRefinement,
   onSkipRefinement,
+  onRetryRefinement,
+  onKeepResults,
   onToggleGroup,
   onSelectCandidate,
   onSave,
@@ -40,8 +45,9 @@ export function RecommendationBoard({
   session: SearchSession;
   loading: boolean;
   error: string | null;
-  saveError: string | null;
+  saveErrorsByCandidate: Record<string, string>;
   refinementError: string | null;
+  refinementRetrying: boolean;
   refinementStatus: RefinementLifecycleStatus;
   refinementControlRef: RefObject<HTMLElement>;
   rankFeedback: string | null;
@@ -49,10 +55,15 @@ export function RecommendationBoard({
   canUndo: boolean;
   headingRef: RefObject<HTMLHeadingElement>;
   adjustFiltersRef: RefObject<HTMLButtonElement>;
-  onOpenFilters: () => void;
+  onOpenFilters: (trigger: HTMLButtonElement) => void;
   onRemoveChip: (chip: ParsedChip) => void;
-  onApplyRefinement: (questionId: string, option: RefinementOption) => void;
-  onSkipRefinement: (questionId: string) => void;
+  onApplyRefinement: (
+    refinement: RefinementProposal,
+    option: RefinementOption,
+  ) => void;
+  onSkipRefinement: (refinement: RefinementProposal) => void;
+  onRetryRefinement: () => void;
+  onKeepResults: () => void;
   onToggleGroup: (skiRegionId: string) => void;
   onSelectCandidate: (skiRegionId: string, candidateId: string) => void;
   onSave: (configuration: SearchV4Configuration) => void;
@@ -63,11 +74,7 @@ export function RecommendationBoard({
     session.intent,
     response.results,
   );
-  const hardConstraints = buildParsedChips(session.intent).filter((chip) =>
-    ["location", "travelWindow", "lodgingBudget", "stayQuality", "travelLimit", "skill"].includes(
-      chip.action.kind,
-    ),
-  );
+  const { mustHaves: hardConstraints } = partitionParsedChips(session.intent);
 
   return (
     <main className="app-canvas results-workspace">
@@ -77,31 +84,34 @@ export function RecommendationBoard({
         refinementStatus={refinementStatus}
         loading={loading}
         refinementError={refinementError}
+        refinementRetrying={refinementRetrying}
         refinementControlRef={refinementControlRef}
         adjustFiltersRef={adjustFiltersRef}
         onOpenFilters={onOpenFilters}
         onRemoveChip={onRemoveChip}
         onApplyRefinement={onApplyRefinement}
         onSkipRefinement={onSkipRefinement}
+        onRetryRefinement={onRetryRefinement}
+        onKeepResults={onKeepResults}
       />
 
       <section className="results-board" aria-busy={loading || undefined}>
         <div className="results-board__heading">
           <div>
-            <p className="eyebrow">Conditions-aware ranking</p>
-            <h1 ref={headingRef} tabIndex={-1} aria-label="Recommended ski trips">
-              Recommended for you
+            <p className="eyebrow">Conditions-aware trip options</p>
+            <h1 ref={headingRef} tabIndex={-1}>
+              Trip options for you
             </h1>
           </div>
           <p className="eligible-count">
-            {response.eligible_candidate_count} eligible configurations
+            {tripOptionCountCopy(response.results.length)}
           </p>
         </div>
 
         {response.ranking_status === "unscored" ? (
           <p className="warning-status">
             <AlertTriangle aria-hidden="true" size={17} />
-            Unranked options: comparable scoring is unavailable
+            This trip option is shown without a fit comparison because key details are unavailable.
           </p>
         ) : null}
         {rankFeedback ? (
@@ -120,7 +130,7 @@ export function RecommendationBoard({
         </p>
         {loading ? (
           <p className="results-loading" role="status">
-            Reranking these recommendations with your updated trip decisions.
+            Updating trip options with your new choice.
           </p>
         ) : null}
         {error ? (
@@ -128,24 +138,25 @@ export function RecommendationBoard({
             {error}
           </p>
         ) : null}
-        {saveError ? (
-          <p className="error-copy" role="alert">
-            {saveError}
-          </p>
-        ) : null}
-
         {response.results.length ? (
           <div className="recommendation-list">
             {response.results.map((result) => (
               <RecommendationCard
                 key={result.ski_region_id}
                 result={result}
+                travelWindow={response.applied_intent.constraints.travel_window}
                 selectedCandidateId={
                   session.selectedCandidateIdByGroup[result.ski_region_id]
                 }
                 expanded={session.expandedGroupIds.has(result.ski_region_id)}
                 essentialCategories={essentialCategories}
                 changedRank={changedRankGroupIds.has(result.ski_region_id)}
+                saveError={
+                  saveErrorsByCandidate[
+                    session.selectedCandidateIdByGroup[result.ski_region_id] ??
+                      result.top_configuration.candidate_id
+                  ] ?? null
+                }
                 onToggle={() => onToggleGroup(result.ski_region_id)}
                 onSelectCandidate={(candidateId) =>
                   onSelectCandidate(result.ski_region_id, candidateId)
@@ -157,12 +168,16 @@ export function RecommendationBoard({
         ) : (
           <section className="empty-state" aria-labelledby="no-results-heading">
             <div>
-              <h2 id="no-results-heading">No trip matches every hard constraint</h2>
+              <h2 id="no-results-heading">No trip option matches all of your must-haves</h2>
               <p>
                 Review {hardConstraints.map((chip) => chip.label).join(", ") || "your trip limits"}.
               </p>
-              <button type="button" className="secondary-command" onClick={onOpenFilters}>
-                Adjust hard constraints
+              <button
+                type="button"
+                className="secondary-command"
+                onClick={(event) => onOpenFilters(event.currentTarget)}
+              >
+                Adjust must-haves
               </button>
             </div>
           </section>

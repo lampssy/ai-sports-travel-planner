@@ -1,6 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
 import type {
+  CurrentTrip,
+  CurrentTripSummary,
   SearchResponse,
   SearchWeatherEvidenceRequest,
   SearchWeatherEvidenceResponse,
@@ -22,19 +24,25 @@ type WeatherResponder = (
 
 function refinementPayloadFor(
   ranking: SearchResponse,
+  request?: SearchV4RefinementRequest,
 ): SearchV4RefinementResponse {
+  const resolvedTopicIds = new Set(request?.resolved_topic_ids ?? []);
+  const refinement = ranking.refinements.find(
+    (candidate) =>
+      !resolvedTopicIds.has(candidate.topic_id ?? candidate.question_id),
+  );
   return {
     search_model_version: "search-v4",
     ranking_policy_version: ranking.ranking_policy_version,
     baseline_fingerprint: ranking.baseline_fingerprint,
     baseline_status: "current",
-    refinement_status: ranking.refinements.length
+    refinement_status: refinement
       ? "questions_available"
       : "not_needed",
     fallback_used: false,
-    refinements: ranking.refinements,
+    refinements: refinement ? [refinement] : [],
     refinement_presentation_policy_version:
-      "search-refinement-presentation-1",
+      "search-refinement-presentation-2",
   };
 }
 
@@ -79,6 +87,62 @@ const historicalProfile: WeatherEvidencePoint[] = [
     wind_gust_kmh: null,
   },
 ];
+
+const savedTrip: CurrentTrip = {
+  ski_region_id: "tignes-val-disere",
+  ski_region_name: "Tignes - Val d'Isere",
+  stay_destination_id: "tignes",
+  stay_destination_name: "Tignes",
+  stay_base_id: "tignes-le-lac",
+  stay_base_name: "Le Lac",
+  focus_ski_area_id: "tignes-ski-area",
+  focus_ski_area_name: "Tignes",
+  lift_pass_product_id: "tignes-pass",
+  lift_pass_product_name: "Tignes - Val d'Isere pass",
+  travel_month: 3,
+  booking_status: "not_booked_yet",
+  created_at: "2026-07-15T00:00:00Z",
+  updated_at: "2026-07-15T00:00:00Z",
+  last_checked_at: null,
+};
+
+const savedTripSummary: CurrentTripSummary = {
+  trip: savedTrip,
+  current_conditions: {
+    resort_name: "Tignes",
+    snow_confidence_score: 78,
+    snow_confidence_label: "good",
+    availability_status: "open",
+    weather_summary: "Light snow is expected this week.",
+    conditions_score: 76,
+    updated_at: "2026-07-19T08:00:00Z",
+    source: "Historical weather model",
+  },
+  current_conditions_provenance: {
+    source_name: "Historical weather model",
+    source_type: "forecast",
+    updated_at: "2026-07-19T08:00:00Z",
+    freshness_status: "fresh",
+    basis_summary: "Weather evidence for the saved trip window.",
+  },
+  comparison_basis: {
+    kind: "since_trip_saved",
+    baseline_at: "2026-07-15T00:00:00Z",
+    label: "Since this trip was saved",
+  },
+  delta: {
+    status: "unchanged",
+    summary: "No important change since this trip was saved.",
+    changes: [],
+  },
+  companion_status: {
+    trip_window_status: "upcoming",
+    trip_window_label: "Upcoming trip",
+    notification_eligible: true,
+    eligibility_reason: "The trip is upcoming.",
+    actionable_change_available: false,
+  },
+};
 
 function monthWeatherResponse(
   skiAreaId = "tignes-ski-area",
@@ -276,9 +340,9 @@ async function mockSearchV4Api(
   });
 
   await page.route(/\/api\/search\/refinements$/, async (route) => {
-    refinementRequests.push(
-      route.request().postDataJSON() as SearchV4RefinementRequest,
-    );
+    const refinementRequest =
+      route.request().postDataJSON() as SearchV4RefinementRequest;
+    refinementRequests.push(refinementRequest);
     const ranking = responses[
       Math.min(Math.max(responseIndex - 1, 0), responses.length - 1)
     ];
@@ -290,7 +354,7 @@ async function mockSearchV4Api(
       });
       return;
     }
-    const payload = refinementPayloadFor(ranking);
+    const payload = refinementPayloadFor(ranking, refinementRequest);
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -324,6 +388,8 @@ function refinementResponse(): SearchResponse {
   const response = structuredClone(monthSearchResponse);
   response.refinements = [
     {
+      topic_id: "trip_window_snow_fit",
+      target_factor_id: "trip_window_snow_fit",
       question_id: "snow-priority",
       question: "What should break the tie?",
       reason: "One answer could reorder your top results.",
@@ -359,6 +425,8 @@ function refinementResponse(): SearchResponse {
       ],
     },
     {
+      topic_id: "development_style",
+      target_factor_id: "development_style",
       question_id: "stay-style",
       question: "Which stay style fits?",
       reason: "Your stay preference can change the leading base.",
@@ -399,6 +467,8 @@ function rerankedResponse(): SearchResponse {
   response.results[1].rank = 2;
   response.refinements = [
     {
+      topic_id: "local_pace",
+      target_factor_id: "local_pace",
       question_id: "replacement",
       question: "Replacement refinement?",
       reason: "The reranked result has one remaining decision.",
@@ -438,8 +508,8 @@ async function scrollYAfterLayout(page: Page) {
 
 async function submitHomepageBrief(page: Page, brief: string) {
   await page.getByLabel("Describe your ski trip").fill(brief);
-  await page.getByRole("button", { name: "Find resorts" }).click();
-  const heading = page.getByRole("heading", { name: "Recommended ski trips" });
+  await page.getByRole("button", { name: "Find trip options" }).click();
+  const heading = page.getByRole("heading", { name: "Trip options for you" });
   await expect(heading).toBeVisible();
   await expect(heading).toBeFocused();
   await expect(page.getByLabel("Trip brief")).toHaveValue(brief);
@@ -495,8 +565,11 @@ test("filter drawer preserves edited-control focus, traps focus, and restores th
   await expect(skill).toBeFocused();
 
   await lastControl.click();
-  await expect(lastControl).toHaveAttribute("aria-pressed", "true");
-  await expect(lastControl).toBeFocused();
+  const activeLastControl = dialog.getByRole("button", {
+    name: "Prefer Lift access",
+  });
+  await expect(activeLastControl).toHaveAttribute("aria-pressed", "true");
+  await expect(activeLastControl).toBeFocused();
   expect(
     await page.locator(".app-shell > :not(.drawer-layer)").evaluateAll((elements) =>
       elements.every((element) => (element as HTMLElement).inert),
@@ -506,7 +579,7 @@ test("filter drawer preserves edited-control focus, traps focus, and restores th
   await page.keyboard.press("Tab");
   await expect(close).toBeFocused();
   await page.keyboard.press("Shift+Tab");
-  await expect(lastControl).toBeFocused();
+  await expect(activeLastControl).toBeFocused();
   await page.keyboard.press("Escape");
 
   await expect(dialog).toBeHidden();
@@ -554,7 +627,7 @@ for (const [name, viewport] of [
     await page
       .locator("article.recommendation-card")
       .first()
-      .getByRole("link", { name: "View dossier" })
+      .getByRole("link", { name: "View trip details" })
       .click();
     await expect(currentTrip).toBeVisible();
     await currentTrip.click();
@@ -564,13 +637,189 @@ for (const [name, viewport] of [
 
 test("anonymous current-trip route remains available", async ({ page }) => {
   await mockSearchV4Api(page, monthSearchResponse, []);
+  await page.route(/\/api\/current-trip$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ trip: null }),
+    });
+  });
   await page.goto("/current-trip");
   await expect(
-    page.locator("main").getByText("Trip companion", { exact: true }),
+    page.locator("main").getByText("Trip updates", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(/save a ranked configuration/i)).toBeVisible();
+  await expect(page.getByText(/save a trip option to track it/i)).toBeVisible();
   await page.getByRole("button", { name: /back to search/i }).click();
   await expect(page).toHaveURL(/\/$/);
+});
+
+test("saved-trip retry keeps keyboard focus while the request is pending", async ({
+  page,
+}) => {
+  await mockSearchV4Api(page, monthSearchResponse, []);
+  let attempts = 0;
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>((resolve) => {
+    releaseRetry = resolve;
+  });
+  await page.route(/\/api\/current-trip$/, async (route) => {
+    attempts += 1;
+    if (attempts === 1) {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "request_failed" } }),
+      });
+      return;
+    }
+    await retryGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ trip: savedTrip }),
+    });
+  });
+  await page.route(/\/api\/current-trip\/summary$/, async (route) => {
+    await route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: "current_trip_not_found" } }),
+    });
+  });
+
+  await page.goto("/current-trip");
+  const retry = page.getByRole("button", { name: "Retry saved trip" });
+  await expect(retry).toBeVisible();
+  await retry.focus();
+  await retry.click();
+
+  await expect(retry).toBeFocused();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).not.toHaveAttribute("disabled");
+  await expect(retry).toHaveCSS("cursor", "wait");
+  await expect(retry).toHaveCSS("opacity", "0.58");
+  releaseRetry?.();
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere" }),
+  ).toBeFocused();
+  await expect(page.getByRole("status")).toHaveText("Saved trip loaded.");
+  expect(attempts).toBe(2);
+});
+
+test("weather-summary retry keeps keyboard focus while the request is pending", async ({
+  page,
+}) => {
+  await mockSearchV4Api(page, monthSearchResponse, []);
+  let summaryAttempts = 0;
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>((resolve) => {
+    releaseRetry = resolve;
+  });
+  await page.route(/\/api\/current-trip$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ trip: savedTrip }),
+    });
+  });
+  await page.route(/\/api\/current-trip\/summary$/, async (route) => {
+    summaryAttempts += 1;
+    if (summaryAttempts === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(savedTripSummary),
+      });
+      return;
+    }
+    if (summaryAttempts === 2) {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "request_failed" } }),
+      });
+      return;
+    }
+    await retryGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...savedTripSummary,
+        current_conditions: {
+          ...savedTripSummary.current_conditions,
+          weather_summary: "Fresh snow is now expected before the trip.",
+        },
+      }),
+    });
+  });
+
+  await page.goto("/current-trip");
+  await expect(page.getByText("Light snow is expected this week.")).toBeVisible();
+  await page.getByRole("button", { name: "Back to search" }).click();
+  await page.getByRole("button", { name: "Current trip", exact: true }).click();
+
+  const retry = page.getByRole("button", { name: "Retry weather summary" });
+  await expect(retry).toBeVisible();
+  await retry.focus();
+  await retry.click();
+
+  await expect(retry).toBeFocused();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).not.toHaveAttribute("disabled");
+  await expect(retry).toHaveCSS("cursor", "wait");
+  await expect(retry).toHaveCSS("opacity", "0.58");
+  releaseRetry?.();
+  await expect(
+    page.getByText("Fresh snow is now expected before the trip."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Current conditions" }),
+  ).toBeFocused();
+  await expect(page.getByRole("status")).toHaveText(
+    "Weather summary updated.",
+  );
+  expect(summaryAttempts).toBe(3);
+});
+
+test("Current trip receives route focus for loaded and empty states", async ({
+  page,
+}) => {
+  let hasTrip = true;
+  await page.route(/\/api\/current-trip$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(
+        hasTrip
+          ? { trip: savedTrip }
+          : { trip: null },
+      ),
+    });
+  });
+  await page.route(/\/api\/current-trip\/summary$/, async (route) => {
+    await route.fulfill({
+      status: hasTrip ? 200 : 404,
+      contentType: "application/json",
+      body: JSON.stringify(
+        hasTrip
+          ? savedTripSummary
+          : { error: { code: "current_trip_not_found" } },
+      ),
+    });
+  });
+
+  await page.goto("/current-trip");
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere" }),
+  ).toBeFocused();
+
+  hasTrip = false;
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Current trip" })).toBeFocused();
 });
 
 test("desktop board compares, selects alternatives, and reranks in place", async ({
@@ -598,7 +847,7 @@ test("desktop board compares, selects alternatives, and reranks in place", async
   await expect(firstToggle).toHaveAttribute("aria-expanded", "true");
 
   await page.getByRole("button", { name: "Current trip", exact: true }).click();
-  await expect(page.getByText("Trip companion", { exact: true })).toBeVisible();
+  await expect(page.getByText("Trip updates", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: /back to search/i }).click();
   await expect(
     page.getByRole("button", { name: /select le lac with espace killy pass/i }),
@@ -615,8 +864,12 @@ test("desktop board compares, selects alternatives, and reranks in place", async
     .getByRole("button", { name: /select le lac with tignes local pass/i })
     .click();
   await expect(firstCard.getByText("Tignes local pass", { exact: true }).first()).toBeVisible();
-  await expect(firstCard.getByText("150 km", { exact: true })).toBeVisible();
-  await expect(firstCard.getByRole("link", { name: "View dossier" })).toHaveAttribute(
+  await expect(
+    firstCard
+      .getByText("150 km covered by this pass", { exact: true })
+      .first(),
+  ).toBeVisible();
+  await expect(firstCard.getByRole("link", { name: "View trip details" })).toHaveAttribute(
     "href",
     "/recommendations/tignes-val-disere?candidate=tignes-access--tignes-local-pass",
   );
@@ -630,15 +883,15 @@ test("desktop board compares, selects alternatives, and reranks in place", async
   });
   await page.evaluate(() => window.scrollTo({ top: 260 }));
   const scrollBeforeRerank = await page.evaluate(() => window.scrollY);
-  await page.getByRole("button", { name: "Apply and rerank" }).click();
+  await page.getByRole("button", { name: "Update results" }).click();
   await expect(
     page.getByRole("heading", { name: /tignes - val d'isere/i }),
   ).toBeVisible();
   await expect(
-    page.locator(".rerank-feedback").getByText(/2 recommendations changed position/i),
+    page.locator(".rerank-feedback").getByText(/2 trip options changed position/i),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
   await expect(
     page.getByRole("heading", { name: "Replacement refinement?" }),
@@ -693,19 +946,19 @@ test("refinement objective survives pass-priority edits and reranks", async ({
   await submitHomepageBrief(page, "March in France with reliable snow");
 
   await page.getByRole("radio", { name: /snow reliability/i }).click();
-  await page.getByRole("button", { name: "Apply and rerank" }).click();
+  await page.getByRole("button", { name: "Update results" }).click();
   await expect.poll(() => searchRequests.length).toBe(2);
 
   await page.getByRole("button", { name: "Adjust" }).click();
-  await page.getByLabel("Value objective").selectOption("pass_price_per_day");
+  await page.getByLabel("What matters most for value?").selectOption("pass_price_per_day");
   await page.getByRole("button", { name: "Close filters" }).click();
-  await page.getByRole("button", { name: "Update results" }).click();
+  await page.getByRole("button", { name: "Search trip options" }).click();
   await expect.poll(() => searchRequests.length).toBe(3);
 
   await page.getByRole("button", { name: "Adjust" }).click();
-  await page.getByLabel("Value objective").selectOption("");
+  await page.getByLabel("What matters most for value?").selectOption("");
   await page.getByRole("button", { name: "Close filters" }).click();
-  await page.getByRole("button", { name: "Update results" }).click();
+  await page.getByRole("button", { name: "Search trip options" }).click();
   await expect.poll(() => searchRequests.length).toBe(4);
 
   expect(searchRequests[1].intent.objectives).toEqual(refined.applied_intent.objectives);
@@ -746,7 +999,7 @@ test("refinement admission retry keeps reranked results usable without a persist
   await submitHomepageBrief(page, "March in France with reliable snow");
 
   await page.getByRole("radio", { name: /snow reliability/i }).click();
-  await page.getByRole("button", { name: "Apply and rerank" }).click();
+  await page.getByRole("button", { name: "Update results" }).click();
 
   await expect(
     page.getByRole("heading", { name: /les arcs - peisey vallandry/i }),
@@ -786,21 +1039,23 @@ test("keyboard refinement selection keeps Apply and Skip focus predictable", asy
   await expect(page.getByRole("radio", { name: /shorter journey/i })).toBeFocused();
   await expect(page.getByRole("radio", { name: /shorter journey/i })).toBeChecked();
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: "Keep current ranking" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Continue" })).toBeFocused();
   await page.keyboard.press("Enter");
 
   await expect(page.locator(".rerank-feedback")).toContainText(
-    "Current ranking kept.",
+    "Current trip choices kept.",
   );
   await expect(page.getByRole("radio", { name: /quiet base/i })).toBeFocused();
   expect(searchRequests).toHaveLength(1);
   await expect.poll(() => scrollYAfterLayout(page)).toBe(scrollBeforeApply);
 
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: "Skip for now" })).toBeFocused();
+  await expect(
+    page.getByRole("button", { name: "Skip this question" }),
+  ).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
 });
 
@@ -853,11 +1108,11 @@ test("a delayed rerank cannot restore results scroll on Current trip", async ({
   await submitHomepageBrief(page, "March in France with reliable snow");
   await page.getByRole("radio", { name: /snow reliability/i }).click();
   await page.evaluate(() => window.scrollTo(0, 260));
-  await page.getByRole("button", { name: "Apply and rerank" }).click();
+  await page.getByRole("button", { name: "Update results" }).click();
   await expect.poll(() => searchRequests.length).toBe(2);
 
   await page.getByRole("button", { name: "Current trip", exact: true }).click();
-  await expect(page.getByText("Trip companion", { exact: true })).toBeVisible();
+  await expect(page.getByText("Trip updates", { exact: true })).toBeVisible();
   await page.evaluate(() => {
     document.body.style.minHeight = "2000px";
     window.scrollTo(0, 40);
@@ -890,7 +1145,7 @@ test("a delayed rerank blocks chip edits and drawer entry", async ({ page }) => 
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with reliable snow");
   await page.getByRole("radio", { name: /snow reliability/i }).click();
-  await page.getByRole("button", { name: "Apply and rerank" }).click();
+  await page.getByRole("button", { name: "Update results" }).click();
   await expect.poll(() => searchRequests.length).toBe(2);
 
   await expect(page.getByRole("button", { name: "Adjust" })).toBeDisabled();
@@ -911,6 +1166,10 @@ test("a delayed rerank blocks chip edits and drawer entry", async ({ page }) => 
 test("failed refinement apply preserves results and the selected option", async ({
   page,
 }) => {
+  let releaseRerank: (() => void) | undefined;
+  const rerankGate = new Promise<void>((resolve) => {
+    releaseRerank = resolve;
+  });
   await mockSearchV4Api(
     page,
     [
@@ -918,21 +1177,93 @@ test("failed refinement apply preserves results and the selected option", async 
       { status: 503, detail: "Reranking is temporarily unavailable." },
     ],
     [],
+    [undefined, rerankGate],
   );
   await page.goto("/");
   await submitHomepageBrief(page, "March in France");
   const option = page.getByRole("radio", { name: /snow reliability/i });
   await option.click();
-  await page.getByRole("button", { name: "Apply and rerank" }).click();
+  await page.getByRole("button", { name: "Update results" }).click();
+
+  await expect(option).toHaveAttribute("aria-disabled", "true");
+  const optionLabel = option.locator("..");
+  await expect(optionLabel).toHaveCSS("cursor", "wait");
+  await expect(optionLabel).toHaveCSS("opacity", "0.58");
+  releaseRerank?.();
 
   await expect(
     page.getByRole("heading", { name: /tignes - val d'isere/i }),
   ).toBeVisible();
   await expect(option).toBeChecked();
   await expect(page.getByRole("alert")).toContainText(
-    "Snowcast is temporarily unavailable. Try again shortly.",
+    "Results could not be updated. Your current results and answer are still available. Try again.",
   );
-  await expect(page.getByRole("button", { name: /retry apply and rerank/i })).toBeEnabled();
+  const searchContext = page.getByLabel("Search context");
+  await expect(
+    searchContext.getByRole("button", { name: "Update results" }),
+  ).toBeEnabled();
+  await expect(
+    searchContext.getByRole("button", { name: "Keep these results" }),
+  ).toBeEnabled();
+  await expect(
+    searchContext.getByRole("button", { name: "Update results" }),
+  ).toBeFocused();
+});
+
+test("refinement retry keeps keyboard focus while the request is pending", async ({
+  page,
+}) => {
+  await mockSearchV4Api(page, monthSearchResponse, []);
+  let attempts = 0;
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>((resolve) => {
+    releaseRetry = resolve;
+  });
+  await page.route(/\/api\/search\/refinements$/, async (route) => {
+    attempts += 1;
+    if (attempts === 1) {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "request_failed" } }),
+      });
+      return;
+    }
+    await retryGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...refinementPayloadFor(monthSearchResponse),
+        refinement_status: "not_needed",
+        refinements: [],
+      }),
+    });
+  });
+
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  const retry = page.getByRole("button", { name: "Try again" });
+  await expect(retry).toBeVisible();
+  await retry.focus();
+  await retry.click();
+
+  await expect(retry).toBeFocused();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).not.toHaveAttribute("disabled");
+  await expect(
+    page.getByRole("button", { name: "Keep these results" }),
+  ).toHaveAttribute("aria-disabled", "true");
+  releaseRetry?.();
+  await expect(
+    page.locator(".contextual-refinement").getByText(
+      "No more questions would materially change these results.",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Trip options for you" }),
+  ).toBeFocused();
+  expect(attempts).toBe(2);
 });
 
 test("mobile board advances refinements in document flow without overflow", async ({
@@ -948,7 +1279,7 @@ test("mobile board advances refinements in document flow without overflow", asyn
     page.getByRole("heading", { name: "What should break the tie?" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Choose a preference" }).click();
-  await page.getByRole("button", { name: /skip for now/i }).click();
+  await page.getByRole("button", { name: /skip this question/i }).click();
   await expect(
     page.getByRole("heading", { name: "Which stay style fits?" }),
   ).toBeVisible();
@@ -991,7 +1322,7 @@ test("five-option mobile refinement disclosure preserves reachability and focus"
   await expect(page.getByRole("radio", { name: /snow reliability/i })).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await expect(page.getByRole("radio", { name: /shorter journey/i })).toBeChecked();
-  await page.getByRole("button", { name: "Keep current ranking" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
 
   const nextDisclosure = page.getByRole("button", { name: "Choose a preference" });
   await expect(
@@ -1000,9 +1331,9 @@ test("five-option mobile refinement disclosure preserves reachability and focus"
   await expect(nextDisclosure).toBeFocused();
   await expect(nextDisclosure).toHaveAttribute("aria-expanded", "false");
   await nextDisclosure.click();
-  await page.getByRole("button", { name: "Skip for now" }).click();
+  await page.getByRole("button", { name: "Skip this question" }).click();
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
   await expectNoHorizontalOverflow(page);
 });
@@ -1017,7 +1348,7 @@ test("desktop dossier switches without search and collapses to the compact rail"
   await submitHomepageBrief(page, "March in France with reliable snow");
 
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
   await expect(page).toHaveURL(
     /\/recommendations\/tignes-val-disere\?candidate=tignes-access--tignes-val-disere-pass$/,
@@ -1029,7 +1360,7 @@ test("desktop dossier switches without search and collapses to the compact rail"
   expect(searchRequests).toHaveLength(1);
 
   const navigator = page.getByRole("navigation", {
-    name: "Recommendation results",
+    name: "Trip option results",
   });
   await expect(navigator).toHaveCSS("width", "260px");
   await scrollYAfterLayout(page);
@@ -1038,7 +1369,7 @@ test("desktop dossier switches without search and collapses to the compact rail"
     fullPage: true,
   });
   await page.getByRole("button", {
-    name: "Collapse recommendation navigator",
+    name: "Collapse trip option navigator",
   }).click();
   await expect(navigator).toHaveCSS("width", "64px");
   await expect(firstHeading).toBeVisible();
@@ -1110,19 +1441,19 @@ for (const [name, viewport] of [
     await page
       .locator("article.recommendation-card")
       .first()
-      .getByRole("link", { name: "View dossier" })
+      .getByRole("link", { name: "View trip details" })
       .click();
 
     if (name === "desktop navigator") {
       const navigator = page.getByRole("navigation", {
-        name: "Recommendation results",
+        name: "Trip option results",
       });
       await expect(navigator.getByText("Peisey 2000")).toBeVisible();
       await navigator
         .getByRole("button", { name: /les arcs - peisey vallandry, rank 2/i })
         .click();
     } else {
-      await page.getByRole("button", { name: /recommendation 1 of 2/i }).click();
+      await page.getByRole("button", { name: /trip option 1 of 2/i }).click();
       const switchOption = page.getByRole("button", {
         name: "Switch to Les Arcs - Peisey Vallandry",
       });
@@ -1168,22 +1499,26 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with reliable snow");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
 
-  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(page.locator(".snow-mode")).toHaveText(/Historical pattern/);
   await expect(
     page.getByRole("heading", { name: "Snow & weather for March" }),
   ).toBeVisible();
   await expect(
     page.getByRole("img", { name: /historical snow depth chart in cm/i }),
   ).toBeVisible();
-  await page.getByText("Sources and daily values").click();
+  await page.locator("#scoring-details summary").click();
   await expect(
     page.getByRole("table", { name: "Historical weather values" }),
   ).toBeVisible();
-  await expect(page.getByText("Stay-base estimate, not live hotel inventory")).toBeVisible();
-  const outbound = page.getByRole("link", { name: "Open accommodation search" });
+  await expect(
+    page.getByText("Le Lac is planning guidance, not live hotel inventory."),
+  ).toBeVisible();
+  const outbound = page.getByRole("link", {
+    name: "Search stays in Tignes on Booking.com",
+  });
   await expect(outbound).toHaveAttribute(
     "href",
     "/api/outbound/accommodation/tignes?stay_base_id=tignes-le-lac&focus_ski_area_id=tignes-ski-area&source_surface=recommendation_dossier",
@@ -1193,9 +1528,9 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
     intent: monthSearchResponse.applied_intent,
     ski_area_id: "tignes-ski-area",
   });
-  await expect(page.getByText(/booking\.com|available rooms|hotel rating/i)).toHaveCount(0);
+  await expect(page.getByText(/available rooms|hotel rating/i)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
-  await page.getByText("Sources and daily values").click();
+  await page.locator("#scoring-details summary").click();
   await page.addStyleTag({
     content:
       ".search-command-header,.dossier-anchor-nav,.dossier-navigator{position:static!important}",
@@ -1208,13 +1543,13 @@ test("month dossier loads one typed area, reuses cache, and renders the honest h
 
   await page.getByRole("button", { name: "All results" }).click();
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
-  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(page.locator(".snow-mode")).toHaveText(/Historical pattern/);
   expect(weatherRequests).toHaveLength(1);
 });
 
-test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alternatives", async ({
+test("forecast dossier exposes source currency, coverage, keyboard tabs, and chart alternatives", async ({
   page,
 }) => {
   const searchResponse = structuredClone(monthSearchResponse);
@@ -1235,12 +1570,17 @@ test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alt
   await page.goto("/");
   await submitHomepageBrief(page, "Tignes from 20 to 22 July");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
 
-  await expect(page.getByText("Forecast-assisted")).toBeVisible();
-  await expect(page.getByText(/fresh at .* utc/i)).toBeVisible();
-  await expect(page.getByText("2 of 3 covered")).toBeVisible();
+  await expect(page.locator(".snow-mode")).toHaveText(
+    /Forecast and historical pattern/,
+  );
+  await expect(page.getByText(/forecast issued .* utc; archive through/i)).toBeVisible();
+  await expect(
+    page.getByText(/2 of 3 requested dates have forecast values/i),
+  ).toBeVisible();
+  await expect(page.getByText(/fresh at .* utc/i)).toHaveCount(0);
   const forecastTab = page.getByRole("tab", { name: "Forecast" });
   const historicalTab = page.getByRole("tab", { name: "Historical context" });
   await forecastTab.focus();
@@ -1316,7 +1656,7 @@ test("stale fallback and typed unavailable states keep dossier controls intact",
   await page.goto("/");
   await submitHomepageBrief(page, "March in France");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
   const snowAnchor = page.getByRole("link", { name: "Snow & weather" });
   await snowAnchor.focus();
@@ -1331,16 +1671,17 @@ test("stale fallback and typed unavailable states keep dossier controls intact",
   await expect(
     page.getByRole("heading", { name: "Snow evidence unavailable" }),
   ).toBeVisible();
-  await expect(page.getByRole("status")).toContainText(
-    "Snow evidence is unavailable for Les Arcs.",
+  await expect(page.getByRole("alert")).toContainText(
+    "Snowcast could not find enough reliable historical data for this ski area and trip window.",
   );
+  await expect(page.getByRole("status")).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
       name: "Les Arcs - Peisey Vallandry - Arc 1800",
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("navigation", { name: "Recommendation results" }),
+    page.getByRole("navigation", { name: "Trip option results" }),
   ).toBeVisible();
   expect(weatherRequests).toHaveLength(2);
 });
@@ -1363,21 +1704,27 @@ test("transport failure is not cached and retry announces recovered evidence", a
   await page.goto("/");
   await submitHomepageBrief(page, "March in France");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
 
   await expect(
     page.getByRole("heading", { name: "Snow evidence could not be loaded" }),
   ).toBeVisible();
-  await expect(page.getByRole("status")).toContainText("could not be loaded");
+  await expect(page.getByRole("alert")).toContainText(
+    "Snow and weather could not be loaded. Try again.",
+  );
   await expect(
     page.getByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("navigation", { name: "Recommendation results" }),
+    page.getByRole("navigation", { name: "Trip option results" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Retry snow evidence" }).click();
-  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(
+    page
+      .getByLabel("Weather evidence summary")
+      .getByText("Historical pattern", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("status").filter({ hasText: "Snow evidence loaded for Tignes." }),
   ).toBeVisible();
@@ -1385,6 +1732,137 @@ test("transport failure is not cached and retry announces recovered evidence", a
     page.getByRole("button", { name: "Reload snow evidence" }),
   ).toBeFocused();
   expect(weatherRequests).toHaveLength(2);
+});
+
+test("weather retry keeps focus while pending and after repeated unavailability", async ({
+  page,
+}) => {
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>((resolve) => {
+    releaseRetry = resolve;
+  });
+  const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+  await mockSearchV4Api(
+    page,
+    monthSearchResponse,
+    [],
+    [],
+    (request) => ({
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "unavailable",
+      ski_area_id: request.ski_area_id,
+      evaluated_at: "2026-07-16T12:00:00Z",
+      cache_valid_until: "2099-07-16T12:05:00Z",
+      unavailable_reason: "historical_evidence_unavailable",
+      limitations: [],
+    }),
+    weatherRequests,
+    [undefined, retryGate],
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  await page.locator("article.recommendation-card").first().getByRole("link", {
+    name: "View trip details",
+  }).click();
+
+  const retry = page.getByRole("button", { name: "Check again" });
+  await expect(retry).toBeVisible();
+  await retry.focus();
+  await retry.click();
+
+  await expect(retry).toBeFocused();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).not.toHaveAttribute("disabled");
+  await expect(page.getByRole("alert")).toHaveAttribute("aria-busy", "true");
+  await retry.hover();
+  await expect(retry).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(retry).toHaveCSS("color", "rgb(2, 26, 53)");
+  await page.mouse.down();
+  await expect(retry).toHaveCSS("transform", "none");
+  await page.mouse.up();
+
+  releaseRetry?.();
+  await expect(page.getByRole("heading", { name: "Snow evidence unavailable" })).toBeVisible();
+  await expect(retry).toBeFocused();
+  await expect(page.getByRole("button", { name: "Check again" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Reload snow evidence" })).toHaveCount(0);
+  expect(weatherRequests).toHaveLength(2);
+});
+
+test("weather retry state does not cross a cached dossier context", async ({
+  page,
+}) => {
+  let releaseTignesRetry: (() => void) | undefined;
+  let releaseLesArcsRetry: (() => void) | undefined;
+  const tignesRetryGate = new Promise<void>((resolve) => {
+    releaseTignesRetry = resolve;
+  });
+  const lesArcsRetryGate = new Promise<void>((resolve) => {
+    releaseLesArcsRetry = resolve;
+  });
+  const weatherRequests: SearchWeatherEvidenceRequest[] = [];
+  await mockSearchV4Api(
+    page,
+    monthSearchResponse,
+    [],
+    [],
+    (request) => ({
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "unavailable",
+      ski_area_id: request.ski_area_id,
+      evaluated_at: "2026-07-16T12:00:00Z",
+      cache_valid_until: "2099-07-16T12:05:00Z",
+      unavailable_reason: "historical_evidence_unavailable",
+      limitations: [],
+    }),
+    weatherRequests,
+    [undefined, undefined, tignesRetryGate, lesArcsRetryGate],
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France");
+  const lesArcsCard = page.locator("article.recommendation-card").nth(1);
+  await lesArcsCard.getByRole("button", { name: /expand les arcs/i }).click();
+  await lesArcsCard.getByRole("link", {
+    name: "View trip details",
+  }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Les Arcs - Peisey Vallandry - Arc 1800",
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Check again" })).toBeVisible();
+
+  await page.getByRole("button", {
+    name: /tignes - val d'isere, rank 1/i,
+  }).click();
+  await expect(
+    page.getByRole("heading", { name: "Tignes - Val d'Isere - Le Lac" }),
+  ).toBeVisible();
+  const retry = page.getByRole("button", { name: "Check again" });
+  await retry.click();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+
+  await page.getByRole("button", {
+    name: /les arcs - peisey vallandry, rank 2/i,
+  }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Les Arcs - Peisey Vallandry - Arc 1800",
+    }),
+  ).toBeVisible();
+  await expect(retry).not.toHaveAttribute("aria-disabled");
+  expect(weatherRequests).toHaveLength(3);
+
+  await retry.click();
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  releaseTignesRetry?.();
+  await page.waitForTimeout(100);
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+
+  releaseLesArcsRetry?.();
+  await expect(retry).not.toHaveAttribute("aria-disabled");
+  await expect(retry).toBeFocused();
+  expect(weatherRequests).toHaveLength(4);
 });
 
 test("expired forecast cache refetches and replaces the selected run head", async ({
@@ -1407,27 +1885,29 @@ test("expired forecast cache refetches and replaces the selected run head", asyn
   await submitHomepageBrief(page, "March in France");
   const openDossier = () =>
     page.locator("article.recommendation-card").first().getByRole("link", {
-      name: "View dossier",
+      name: "View trip details",
     }).click();
   const openSourceDetails = () =>
     page
-      .locator("summary:visible", { hasText: "Sources and daily values" })
+      .locator("#scoring-details summary:visible", {
+        hasText: "Technical calculation details",
+      })
       .click();
   await openDossier();
   await openSourceDetails();
-  await expect(page.getByText(/run forecast-head-1,/i)).toBeVisible();
+  await expect(page.getByText("forecast-head-1")).toBeVisible();
   await page.getByRole("button", { name: "All results" }).click();
   await openDossier();
   await openSourceDetails();
-  await expect(page.getByText(/run forecast-head-1,/i)).toBeVisible();
+  await expect(page.getByText("forecast-head-1")).toBeVisible();
   expect(weatherRequests).toHaveLength(1);
 
   await page.getByRole("button", { name: "All results" }).click();
   await page.waitForTimeout(3100);
   await openDossier();
   await openSourceDetails();
-  await expect(page.getByText(/run forecast-head-2,/i)).toBeVisible();
-  await expect(page.getByText(/run forecast-head-1,/i)).toHaveCount(0);
+  await expect(page.getByText("forecast-head-2")).toBeVisible();
+  await expect(page.getByText("forecast-head-1")).toHaveCount(0);
   expect(weatherRequests).toHaveLength(2);
 });
 
@@ -1456,7 +1936,7 @@ test("late weather response cannot cross the selected ski-area context", async (
   await page.goto("/");
   await submitHomepageBrief(page, "March in France");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
   await expect(
     page.getByRole("heading", { name: "Loading snow evidence for Tignes" }),
@@ -1497,7 +1977,7 @@ test("All results restores selected candidates, expansion state, and exact scrol
   await page.evaluate(() => window.scrollTo(0, 360));
   const expectedScroll = await page.evaluate(() => window.scrollY);
   expect(expectedScroll).toBeGreaterThan(0);
-  await firstCard.getByRole("link", { name: "View dossier" }).dispatchEvent("click");
+  await firstCard.getByRole("link", { name: "View trip details" }).dispatchEvent("click");
   await expect(page).toHaveURL(/candidate=tignes-access--tignes-local-pass$/);
 
   await page.getByRole("button", { name: "All results" }).click();
@@ -1509,7 +1989,7 @@ test("All results restores selected candidates, expansion state, and exact scrol
     page.getByRole("button", { name: /collapse les arcs - peisey vallandry/i }),
   ).toHaveAttribute("aria-expanded", "true");
   await expect.poll(() => scrollYAfterLayout(page)).toBe(expectedScroll);
-  await expect(firstCard.getByRole("link", { name: "View dossier" })).toBeFocused();
+  await expect(firstCard.getByRole("link", { name: "View trip details" })).toBeFocused();
   expect(searchRequests).toHaveLength(1);
 });
 
@@ -1530,10 +2010,10 @@ test("browser Back restores the exact results scroll without rerunning search", 
   }).click();
   await page.evaluate(() => window.scrollTo(0, 320));
   const expectedScroll = await page.evaluate(() => window.scrollY);
-  await firstCard.getByRole("link", { name: "View dossier" }).dispatchEvent("click");
+  await firstCard.getByRole("link", { name: "View trip details" }).dispatchEvent("click");
 
   await page.goBack();
-  await expect(page.getByRole("heading", { name: "Recommended ski trips" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Trip options for you" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: /select le lac with tignes local pass/i }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -1541,7 +2021,7 @@ test("browser Back restores the exact results scroll without rerunning search", 
     page.getByRole("button", { name: /collapse les arcs - peisey vallandry/i }),
   ).toHaveAttribute("aria-expanded", "true");
   await expect.poll(() => scrollYAfterLayout(page)).toBe(expectedScroll);
-  await expect(firstCard.getByRole("link", { name: "View dossier" })).toBeFocused();
+  await expect(firstCard.getByRole("link", { name: "View trip details" })).toBeFocused();
   expect(searchRequests).toHaveLength(1);
 });
 
@@ -1554,7 +2034,7 @@ test("dossier return focuses the results heading when the originating control no
   await page
     .locator("article.recommendation-card")
     .first()
-    .getByRole("link", { name: "View dossier" })
+    .getByRole("link", { name: "View trip details" })
     .click();
   await page
     .getByRole("button", { name: /select le lac with tignes local pass/i })
@@ -1562,7 +2042,7 @@ test("dossier return focuses the results heading when the originating control no
   await page.getByRole("button", { name: "Back to results" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
 });
 
@@ -1615,13 +2095,13 @@ test("mobile dossier uses a keyboard-operable bounded switcher", async ({ page }
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with easy lift access");
   await page.locator("article.recommendation-card").first().getByRole("link", {
-    name: "View dossier",
+    name: "View trip details",
   }).click();
 
   await expect(
-    page.getByRole("navigation", { name: "Recommendation results" }),
+    page.getByRole("navigation", { name: "Trip option results" }),
   ).toBeHidden();
-  const switcher = page.getByRole("button", { name: /recommendation 1 of 2/i });
+  const switcher = page.getByRole("button", { name: /trip option 1 of 2/i });
   await expect(switcher).toBeVisible();
   await switcher.focus();
   await page.keyboard.press("Enter");
@@ -1635,8 +2115,14 @@ test("mobile dossier uses a keyboard-operable bounded switcher", async ({ page }
       name: "Les Arcs - Peisey Vallandry - Arc 1800",
     }),
   ).toBeFocused();
-  await expect(page.getByText("Historical pattern")).toBeVisible();
-  await expect(page.getByText("Stay-base estimate, not live hotel inventory")).toBeVisible();
+  await expect(
+    page
+      .getByLabel("Weather evidence summary")
+      .getByText("Historical pattern", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/is planning guidance, not live hotel inventory/i),
+  ).toBeVisible();
   expect(searchRequests).toHaveLength(1);
   await expectNoHorizontalOverflow(page);
   await scrollYAfterLayout(page);
@@ -1653,7 +2139,13 @@ test("direct dossier load without search state offers recovery", async ({ page }
     "/recommendations/tignes-val-disere?candidate=tignes-access--tignes-val-disere-pass",
   );
 
+  await expect(page.getByText("Trip details unavailable")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Run a search first" })).toBeVisible();
+  await expect(
+    page.getByText(
+      "Trip details are available from the trip options in your current browser session.",
+    ),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Return to search" }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByLabel("Describe your ski trip")).toBeVisible();
@@ -1680,10 +2172,10 @@ test("keyboard-only core flow keeps focus and route announcements logical", asyn
   const brief = page.getByLabel("Describe your ski trip");
   await brief.fill("Tignes from 20 to 22 July");
   await brief.press("Tab");
-  await expect(page.getByRole("button", { name: "Find resorts" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Find trip options" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
 
   const secondCardToggle = page.getByRole("button", {
@@ -1705,7 +2197,7 @@ test("keyboard-only core flow keeps focus and route announcements logical", asyn
   const dossier = page
     .locator("article.recommendation-card")
     .first()
-    .getByRole("link", { name: "View dossier" });
+    .getByRole("link", { name: "View trip details" });
   await dossier.focus();
   await page.keyboard.press("Enter");
   await expect(
@@ -1757,16 +2249,16 @@ test("failed initial search can be resubmitted without losing the brief", async 
 
   const brief = "March in France with reliable snow";
   await page.getByLabel("Describe your ski trip").fill(brief);
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   await expect(page.getByRole("alert")).toContainText(
-    "Snowcast is temporarily unavailable. Try again shortly.",
+    "Trip options could not be loaded. Try again.",
   );
   await expect(page.getByLabel("Describe your ski trip")).toHaveValue(brief);
-  await expect(page.getByRole("button", { name: "Find resorts" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Find trip options" })).toBeEnabled();
 
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeFocused();
   expect(searchRequests).toHaveLength(2);
 });
@@ -1790,15 +2282,15 @@ test("no results and missing metrics remain explicit and overflow-free", async (
 
   await mockSearchV4Api(page, [noResults, missingMetrics], []);
   await page.goto("/");
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   await expect(
-    page.getByRole("heading", { name: "No trip matches every hard constraint" }),
+    page.getByRole("heading", { name: "No trip option matches all of your must-haves" }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Adjust hard constraints" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Adjust must-haves" })).toBeVisible();
 
   await page.getByLabel("Trip brief").press("Enter");
   await expect(
-    page.getByRole("heading", { name: "Recommended ski trips" }),
+    page.getByRole("heading", { name: "Trip options for you" }),
   ).toBeVisible();
   await expect(page.locator("article.recommendation-card").first()).toContainText("—");
   await expect(page.locator("body")).not.toContainText(/undefined|NaN|\[object Object\]/);
@@ -1813,8 +2305,14 @@ test("results reflow at a 1440 viewport equivalent to 200 percent zoom", async (
   await page.goto("/");
   await submitHomepageBrief(page, "March in France with reliable snow");
 
-  await expect(page.getByText("Fallback-heavy", { exact: true })).toBeVisible();
-  await expect(page.getByText("Snow evidence is limited for the requested travel window.")).toBeVisible();
+  await expect(
+    page
+      .locator("article.recommendation-card")
+      .first()
+      .getByText("Limited evidence", { exact: true })
+      .first(),
+  ).toBeVisible();
+  await expect(page.getByText("Snow evidence is limited for this travel window.")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   const motion = await page.locator(".recommendation-card__toggle").first().evaluate(
     (element) => getComputedStyle(element).transitionDuration,

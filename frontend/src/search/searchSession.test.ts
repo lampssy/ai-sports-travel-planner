@@ -1,17 +1,71 @@
 import { expect, test } from "vitest";
 
 import type {
+  ResolvedRefinementTopic,
   SearchIntent,
   SearchResponse,
   SearchV4RecommendationGroup,
 } from "../types";
 import {
   createSearchSession,
+  clearResolvedTopicsForManualChange,
+  defaultSearchFilters,
   findSelectedCandidate,
   mergeObjectivePatches,
   rankChangeSummary,
   reconcileSearchSession,
+  validateSearchFilters,
 } from "./searchSession";
+
+test("uses plain-language maximum drive time validation messages", () => {
+  expect(
+    validateSearchFilters({
+      ...defaultSearchFilters,
+      location: "France",
+      maxDriveHours: "0",
+    }),
+  ).toBe("Maximum drive time must be greater than 0 hours.");
+
+  expect(
+    validateSearchFilters({
+      ...defaultSearchFilters,
+      location: "France",
+      maxDriveHours: "5",
+      originText: "",
+    }),
+  ).toBe("Add a starting location to use a maximum drive time.");
+});
+
+const resolvedTopics: ResolvedRefinementTopic[] = [
+  {
+    topicId: "night_skiing",
+    targetFactorId: "night_skiing",
+    questionId: "night-skiing-question",
+  },
+  {
+    topicId: "glacier_terrain",
+    targetFactorId: "glacier_terrain",
+    questionId: "glacier-question",
+  },
+];
+
+test("changing one related preference re-enables only its topic", () => {
+  expect(
+    clearResolvedTopicsForManualChange(resolvedTopics, {
+      changedFactorIds: new Set(["night_skiing"]),
+      startsNewContext: false,
+    }).map((item) => item.topicId),
+  ).toEqual(["glacier_terrain"]);
+});
+
+test("a changed hard constraint starts a new refinement context", () => {
+  expect(
+    clearResolvedTopicsForManualChange(resolvedTopics, {
+      changedFactorIds: new Set(),
+      startsNewContext: true,
+    }),
+  ).toEqual([]);
+});
 
 test("replaces the exclusive pass-value objective family but only exact unrelated IDs", () => {
   expect(
@@ -104,6 +158,8 @@ test("creates an in-memory session with the winner expanded and selected", () =>
 
 test("does not hydrate or reconcile the refinement queue from the legacy search field", () => {
   const legacyRefinement = {
+    topic_id: "legacy-topic",
+    target_factor_id: "legacy-factor",
     question_id: "legacy-question",
     question: "Legacy question?",
     reason: "Returned only for compatibility.",
@@ -170,12 +226,38 @@ test("rerank preserves present selections, expansions, and scroll and expands th
   expect(reranked.resultsScrollY).toBe(640);
 });
 
-test("does not announce a changed ranking when result positions are unchanged", () => {
+test("uses canonical trip-option wording when result positions are unchanged", () => {
   const unchanged = response([group("region-a", "candidate-a")]);
 
   expect(rankChangeSummary(unchanged, unchanged)).toEqual({
     changedGroupIds: new Set(),
-    announcement: "Ranking unchanged.",
+    announcement: "Trip options unchanged.",
+  });
+});
+
+test("announces singular and plural trip-option position changes", () => {
+  const previousA = group("region-a", "candidate-a");
+  const previousB = group("region-b", "candidate-b");
+  previousA.rank = 1;
+  previousB.rank = 2;
+
+  const nextA = group("region-a", "candidate-a");
+  nextA.rank = 2;
+  expect(rankChangeSummary(response([previousA]), response([nextA]))).toEqual({
+    changedGroupIds: new Set(["region-a"]),
+    announcement: "1 trip option changed position. region-a is now #2.",
+  });
+
+  const nextB = group("region-b", "candidate-b");
+  nextB.rank = 1;
+  expect(
+    rankChangeSummary(
+      response([previousA, previousB]),
+      response([nextB, nextA]),
+    ),
+  ).toEqual({
+    changedGroupIds: new Set(["region-a", "region-b"]),
+    announcement: "2 trip options changed position. region-b is now #1.",
   });
 });
 

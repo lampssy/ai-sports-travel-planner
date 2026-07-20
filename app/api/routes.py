@@ -6,12 +6,18 @@ from contextvars import copy_context
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from app.ai.gemini_client import GeminiClient
 from app.ai.parser import QueryParser, get_query_parser
+from app.api.public_errors import (
+    PublicApiError,
+    PublicErrorCode,
+    accommodation_recovery_response,
+    public_error_responses,
+)
 from app.api.refinement_admission import RefinementAdmissionGuard
 from app.api.refinement_workers import (
     RefinementWorkerPool,
@@ -98,47 +104,55 @@ class SearchReadinessResponse(BaseModel):
     checks: dict[str, str | int]
 
 
-class ApiErrorResponse(BaseModel):
-    detail: str
-
-
 def get_authenticated_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> AuthenticatedUser:
     if credentials is None or credentials.scheme.lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Authentication required")
+        raise PublicApiError(
+            PublicErrorCode.AUTHENTICATION_REQUIRED,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     user = AppSessionRepository().get_user_for_access_token(
         access_token=credentials.credentials
     )
     if user is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired session")
+        raise PublicApiError(
+            PublicErrorCode.SESSION_EXPIRED,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
 
 
-@router.post("/search", response_model=SearchV4Response)
+@router.post(
+    "/search",
+    response_model=SearchV4Response,
+    responses=public_error_responses(422, 500),
+)
 def search(payload: SearchV4Request) -> SearchV4Response:
     try:
         return search_trip_configurations(intent=payload.intent)
     except SearchIntentPolicyError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        raise PublicApiError(PublicErrorCode.SEARCH_REQUEST_INVALID) from error
 
 
 @router.post(
     "/search/refinements",
     response_model=SearchV4RefinementResponse,
-    responses={
-        429: {
-            "model": ApiErrorResponse,
-            "description": "Refinement admission limit reached",
-            "headers": {
+    responses=public_error_responses(
+        422,
+        429,
+        500,
+        descriptions={429: "Refinement admission limit reached"},
+        headers={
+            429: {
                 "Retry-After": {
                     "description": "Seconds before another refinement request",
                     "schema": {"type": "integer", "minimum": 1},
                 }
-            },
-        }
-    },
+            }
+        },
+    ),
 )
 def search_refinements(
     payload: SearchV4RefinementRequest,
@@ -153,9 +167,8 @@ def search_refinements(
             if admission.retry_after_seconds is not None
             else None
         )
-        raise HTTPException(
-            status_code=429,
-            detail="Refinement is temporarily unavailable.",
+        raise PublicApiError(
+            PublicErrorCode.REFINEMENT_RATE_LIMITED,
             headers=headers,
         )
     worker_context = copy_context()
@@ -169,6 +182,7 @@ def search_refinements(
             already_answered_question_ids=frozenset(
                 payload.already_answered_question_ids
             ),
+            resolved_topic_ids=frozenset(payload.resolved_topic_ids),
             llm_client_factory=lambda timeout_seconds: GeminiClient(
                 timeout_seconds=timeout_seconds
             ),
@@ -181,10 +195,7 @@ def search_refinements(
     except Exception as error:
         admission.release()
         record_search_refinement_route_outcome("executor_rejected")
-        raise HTTPException(
-            status_code=500,
-            detail="Unable to load refinements.",
-        ) from error
+        raise PublicApiError(PublicErrorCode.REQUEST_FAILED) from error
     remaining_seconds = max(
         0.0,
         SEARCH_REFINEMENT_REQUEST_BUDGET_SECONDS
@@ -200,13 +211,10 @@ def search_refinements(
         return _temporarily_unavailable_refinement(payload)
     except SearchIntentPolicyError as error:
         record_search_refinement_route_outcome("invalid_intent")
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        raise PublicApiError(PublicErrorCode.SEARCH_REQUEST_INVALID) from error
     except Exception as error:
         record_search_refinement_route_outcome("route_error")
-        raise HTTPException(
-            status_code=500,
-            detail="Unable to load refinements.",
-        ) from error
+        raise PublicApiError(PublicErrorCode.REQUEST_FAILED) from error
     finally:
         admission.release()
 
@@ -243,6 +251,7 @@ def _refinement_client_key(request: Request) -> str:
 @router.post(
     "/search/weather-evidence",
     response_model=SearchWeatherEvidenceResponse,
+    responses=public_error_responses(422, 500),
 )
 def search_weather_evidence(
     payload: SearchWeatherEvidenceRequest,
@@ -253,9 +262,9 @@ def search_weather_evidence(
             ski_area_id=payload.ski_area_id,
         )
     except SearchIntentPolicyError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        raise PublicApiError(PublicErrorCode.SEARCH_REQUEST_INVALID) from error
     except UnknownSearchWeatherAreaError as error:
-        raise HTTPException(status_code=422, detail="Unknown ski area ID.") from error
+        raise PublicApiError(PublicErrorCode.WEATHER_AREA_NOT_FOUND) from error
 
 
 @router.get("/healthz", response_model=HealthResponse)
@@ -342,7 +351,11 @@ def search_readiness() -> SearchReadinessResponse:
         raise HTTPException(status_code=503, detail=checks) from error
 
 
-@router.post("/parse-query", response_model=None)
+@router.post(
+    "/parse-query",
+    response_model=None,
+    responses=public_error_responses(422, 500),
+)
 def parse_query(
     payload: ParseQueryRequest,
     parser: QueryParser = Depends(get_query_parser),
@@ -359,14 +372,18 @@ def parse_query(
     return ParsedQueryResponse.model_validate(parsed)
 
 
-@router.post("/auth/google/sign-in", response_model=AuthSessionResponse)
+@router.post(
+    "/auth/google/sign-in",
+    response_model=AuthSessionResponse,
+    responses=public_error_responses(401, 422, 500, 503),
+)
 def google_sign_in(payload: GoogleSignInRequest) -> AuthSessionResponse:
     try:
         identity = verify_google_identity_token(payload.identity_token)
     except GoogleAuthConfigurationError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        raise PublicApiError(PublicErrorCode.SIGN_IN_UNAVAILABLE) from error
     except GoogleIdentityTokenError as error:
-        raise HTTPException(status_code=401, detail=str(error)) from error
+        raise PublicApiError(PublicErrorCode.SIGN_IN_FAILED) from error
 
     user = AppUserRepository().upsert_google_user(
         provider_subject=identity.subject,
@@ -376,7 +393,11 @@ def google_sign_in(payload: GoogleSignInRequest) -> AuthSessionResponse:
     return AppSessionRepository().create_session(user=user)
 
 
-@router.get("/current-trip", response_model=CurrentTripResponse)
+@router.get(
+    "/current-trip",
+    response_model=CurrentTripResponse,
+    responses=public_error_responses(401, 500),
+)
 def get_current_trip(
     current_user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> CurrentTripResponse:
@@ -384,7 +405,11 @@ def get_current_trip(
     return CurrentTripResponse(trip=trip)
 
 
-@router.put("/current-trip", response_model=CurrentTrip)
+@router.put(
+    "/current-trip",
+    response_model=CurrentTrip,
+    responses=public_error_responses(401, 422, 500),
+)
 def upsert_current_trip(
     payload: UpsertCurrentTripRequest,
     current_user: AuthenticatedUser = Depends(get_authenticated_user),
@@ -396,7 +421,7 @@ def upsert_current_trip(
     area = graph.areas_by_id.get(payload.focus_ski_area_id)
     product = graph.passes_by_id.get(payload.lift_pass_product_id)
     if any(item is None for item in (region, destination, base, area, product)):
-        raise HTTPException(status_code=422, detail="Unknown trip configuration ID")
+        raise PublicApiError(PublicErrorCode.TRIP_OPTION_INVALID)
     assert region is not None
     assert destination is not None
     assert base is not None
@@ -418,7 +443,7 @@ def upsert_current_trip(
         or not access_exists
         or product.lift_pass_product_id not in covering_pass_ids
     ):
-        raise HTTPException(status_code=422, detail="Invalid trip configuration")
+        raise PublicApiError(PublicErrorCode.TRIP_OPTION_INVALID)
     if (
         payload.ski_region_name != region.name
         or payload.stay_destination_name != destination.name
@@ -426,7 +451,7 @@ def upsert_current_trip(
         or payload.focus_ski_area_name != area.name
         or payload.lift_pass_product_name != product.name
     ):
-        raise HTTPException(status_code=422, detail="Trip display names do not match")
+        raise PublicApiError(PublicErrorCode.TRIP_OPTION_INVALID)
 
     repository = CurrentTripRepository()
     existing = repository.get_current_trip(user_id=current_user.user_id)
@@ -453,7 +478,12 @@ def upsert_current_trip(
     return repository.upsert_current_trip(user_id=current_user.user_id, trip=trip)
 
 
-@router.delete("/current-trip", status_code=204, response_model=None)
+@router.delete(
+    "/current-trip",
+    status_code=204,
+    response_model=None,
+    responses=public_error_responses(401, 500),
+)
 def delete_current_trip(
     current_user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> None:
@@ -461,28 +491,40 @@ def delete_current_trip(
     return None
 
 
-@router.get("/current-trip/summary", response_model=CurrentTripSummary)
+@router.get(
+    "/current-trip/summary",
+    response_model=CurrentTripSummary,
+    responses=public_error_responses(401, 404, 500),
+)
 def get_current_trip_summary(
     current_user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> CurrentTripSummary:
     summary = build_current_trip_summary(user_id=current_user.user_id)
     if summary is None:
-        raise HTTPException(status_code=404, detail="No current trip saved")
+        raise PublicApiError(PublicErrorCode.CURRENT_TRIP_NOT_FOUND)
     maybe_record_companion_event(user_id=current_user.user_id, summary=summary)
     return summary
 
 
-@router.post("/current-trip/mark-checked", response_model=CurrentTrip)
+@router.post(
+    "/current-trip/mark-checked",
+    response_model=CurrentTrip,
+    responses=public_error_responses(401, 404, 500),
+)
 def mark_current_trip_checked_endpoint(
     current_user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> CurrentTrip:
     trip = mark_current_trip_checked(user_id=current_user.user_id)
     if trip is None:
-        raise HTTPException(status_code=404, detail="No current trip saved")
+        raise PublicApiError(PublicErrorCode.CURRENT_TRIP_NOT_FOUND)
     return trip
 
 
-@router.post("/devices/register", response_model=RegisteredDevice)
+@router.post(
+    "/devices/register",
+    response_model=RegisteredDevice,
+    responses=public_error_responses(401, 422, 500),
+)
 def register_device(
     payload: DeviceRegistrationRequest,
     current_user: AuthenticatedUser = Depends(get_authenticated_user),
@@ -496,7 +538,11 @@ def register_device(
     )
 
 
-@router.get("/current-trip/events", response_model=CompanionEventsResponse)
+@router.get(
+    "/current-trip/events",
+    response_model=CompanionEventsResponse,
+    responses=public_error_responses(401, 500),
+)
 def get_current_trip_events(
     current_user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> CompanionEventsResponse:
@@ -514,6 +560,16 @@ def get_current_trip_events(
     "/outbound/accommodation/{stay_destination_id}",
     response_class=RedirectResponse,
     response_model=None,
+    responses={
+        404: {
+            "description": "Trip option unavailable",
+            "content": {"text/html": {"schema": {"type": "string"}}},
+        },
+        422: {
+            "description": "Accommodation link incomplete",
+            "content": {"text/html": {"schema": {"type": "string"}}},
+        },
+    },
 )  # pragma: no cover - response model intentionally omitted for redirects
 def outbound_accommodation_redirect(
     stay_destination_id: str,
@@ -521,7 +577,7 @@ def outbound_accommodation_redirect(
     stay_base_id: str,
     focus_ski_area_id: str,
     source_surface: str = Query(min_length=1),
-) -> RedirectResponse:
+) -> RedirectResponse | HTMLResponse:
     graph = CatalogGraph.from_snapshot(CatalogRepository().get_snapshot())
     destination = graph.destinations_by_id.get(stay_destination_id)
     base = graph.bases_by_id.get(stay_base_id)
@@ -536,7 +592,7 @@ def outbound_accommodation_redirect(
         or focus_ski_area_id not in graph.areas_by_id
         or not access_exists
     ):
-        raise HTTPException(status_code=404, detail="Unknown trip configuration")
+        return accommodation_recovery_response(request, status_code=404)
 
     target_url = build_accommodation_link(
         destination_name=destination.name,

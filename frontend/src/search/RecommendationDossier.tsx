@@ -1,7 +1,10 @@
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { SearchV4Configuration } from "../types";
+import type {
+  SearchWeatherEvidenceResponse,
+  SearchV4Configuration,
+} from "../types";
 import { AccommodationHandoff } from "./AccommodationHandoff";
 import { DecisionEvidenceLedger } from "./DecisionEvidenceLedger";
 import { DossierVerdict } from "./DossierVerdict";
@@ -10,14 +13,15 @@ import { ScoringDetails } from "./ScoringDetails";
 import { SnowEvidence } from "./SnowEvidence";
 import { TripConfigurationDetails } from "./TripConfigurationDetails";
 import { findSelectedCandidate, type SearchSession } from "./searchSession";
+import { buildCandidateNarrative } from "./searchPresentation";
 
 const anchors = [
   ["snow-evidence", "Snow & weather"],
   ["trip-configuration", "Trip details"],
-  ["alternatives", "Alternatives"],
+  ["alternatives", "Other ways to plan this trip"],
   ["accommodation", "Accommodation"],
   ["decision-evidence", "Why this trip"],
-  ["scoring-details", "How ranking works"],
+  ["scoring-details", "Technical calculation details"],
 ] as const;
 
 export function RecommendationDossier({
@@ -27,6 +31,7 @@ export function RecommendationDossier({
   onSwitch,
   onReturn,
   onSave,
+  saveError = null,
   onSelectCandidate,
   onToggleNavigator,
 }: {
@@ -36,6 +41,7 @@ export function RecommendationDossier({
   onSwitch: (skiRegionId: string, candidateId: string) => void;
   onReturn: () => void;
   onSave: (configuration: SearchV4Configuration) => void;
+  saveError?: string | null;
   onSelectCandidate: (skiRegionId: string, candidateId: string) => void;
   onToggleNavigator: () => void;
 }) {
@@ -45,8 +51,25 @@ export function RecommendationDossier({
   const configuration = findSelectedCandidate(group, candidateId);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const unscored = configuration.ranking_status === "unscored";
+  const travelWindow = session.response.applied_intent.constraints.travel_window;
+  const narrative = buildCandidateNarrative(configuration, travelWindow);
+  const weatherContextKey = `${configuration.ski_area_id}:${JSON.stringify(travelWindow ?? null)}`;
+  const [weatherState, setWeatherState] = useState<{
+    contextKey: string;
+    response: SearchWeatherEvidenceResponse | null;
+  }>({ contextKey: weatherContextKey, response: null });
+  const weatherEvidence =
+    weatherState.contextKey === weatherContextKey ? weatherState.response : null;
+  const handleWeatherResponse = useCallback(
+    (response: SearchWeatherEvidenceResponse | null) => {
+      setWeatherState({ contextKey: weatherContextKey, response });
+    },
+    [weatherContextKey],
+  );
   const visibleAnchors = unscored
-    ? anchors.filter(([id]) => id !== "scoring-details")
+    ? anchors.filter(
+        ([id]) => id !== "scoring-details" || weatherEvidence != null,
+      )
     : anchors;
 
   useEffect(() => {
@@ -82,11 +105,14 @@ export function RecommendationDossier({
         <DossierVerdict
           configuration={configuration}
           rank={group.rank}
+          travelWindow={travelWindow}
+          narrative={narrative}
           headingRef={headingRef}
           onSave={onSave}
+          saveError={saveError}
         />
 
-        <nav className="dossier-anchor-nav" aria-label="Dossier sections">
+        <nav className="dossier-anchor-nav" aria-label="Trip details sections">
           {visibleAnchors.map(([id, label]) => (
             <a key={id} href={`#${id}`}>
               {label}
@@ -98,6 +124,7 @@ export function RecommendationDossier({
           intent={session.response.applied_intent}
           skiAreaId={configuration.ski_area_id}
           skiAreaName={configuration.ski_area_name}
+          onResponseChange={handleWeatherResponse}
         />
 
         <TripConfigurationDetails
@@ -108,15 +135,25 @@ export function RecommendationDossier({
 
         <AccommodationHandoff configuration={configuration} />
 
-        <DecisionEvidenceLedger configuration={configuration} />
+        <DecisionEvidenceLedger
+          configuration={configuration}
+          travelWindow={travelWindow}
+          primaryDetails={[narrative.strength, narrative.watchout]}
+          primaryEvidenceIds={
+            narrative.watchoutEvidenceId ? [narrative.watchoutEvidenceId] : []
+          }
+        />
 
-        {!unscored ? (
+        {!unscored || weatherEvidence ? (
           <section className="dossier-section" id="scoring-details">
-            <p className="section-label">Decision evidence</p>
-            <h2>Scoring details</h2>
+            <h2 className="section-label">Advanced details</h2>
             <ScoringDetails
               configuration={configuration}
-              rankingPolicyVersion={session.response.ranking_policy_version}
+              rankingPolicyVersion={
+                unscored ? undefined : session.response.ranking_policy_version
+              }
+              travelWindow={travelWindow}
+              weatherEvidence={weatherEvidence}
             />
           </section>
         ) : null}

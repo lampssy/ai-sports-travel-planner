@@ -15,12 +15,14 @@ test("disables an open drawer when loading starts but keeps close available", as
     open: true,
     filters: { ...defaultSearchFilters, location: "France" },
     preferences: [],
+    groupPriorities: [],
     objectives: [
       { factor_id: "pass_terrain_value", importance: "normal" as const },
     ],
     returnFocusRef: createRef<HTMLButtonElement>(),
     onFiltersChange,
     onPreferencesChange,
+    onGroupPrioritiesChange: vi.fn(),
     onObjectivesChange,
     onClose,
   };
@@ -68,17 +70,19 @@ test("changes only the drawer-owned pass objective", async () => {
     disabled: false,
     filters: { ...defaultSearchFilters },
     preferences: [],
+    groupPriorities: [],
     objectives,
     returnFocusRef: createRef<HTMLButtonElement>(),
     onFiltersChange,
     onPreferencesChange: vi.fn(),
+    onGroupPrioritiesChange: vi.fn(),
     onObjectivesChange,
     onClose: vi.fn(),
   };
   const { rerender } = render(<SearchFiltersDrawer {...props} />);
 
   await user.selectOptions(
-    screen.getByLabelText("Value objective"),
+    screen.getByLabelText("What matters most for value?"),
     "pass_price_per_day",
   );
   expect(onObjectivesChange).toHaveBeenLastCalledWith([
@@ -96,8 +100,205 @@ test("changes only the drawer-owned pass objective", async () => {
       ]}
     />,
   );
-  await user.selectOptions(screen.getByLabelText("Value objective"), "");
+  await user.selectOptions(
+    screen.getByLabelText("What matters most for value?"),
+    "",
+  );
   expect(onObjectivesChange).toHaveBeenLastCalledWith([
     { factor_id: "trip_window_snow_fit", importance: "high" },
   ]);
+});
+
+test("uses plain-language labels for detailed search controls", () => {
+  render(
+    <SearchFiltersDrawer
+      open
+      disabled={false}
+      filters={defaultSearchFilters}
+      preferences={[]}
+      groupPriorities={[
+        { group_id: "ski_experience", importance: "important" },
+      ]}
+      objectives={[]}
+      returnFocusRef={createRef<HTMLButtonElement>()}
+      onFiltersChange={vi.fn()}
+      onPreferencesChange={vi.fn()}
+      onGroupPrioritiesChange={vi.fn()}
+      onObjectivesChange={vi.fn()}
+      onClose={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText("Search details")).toBeVisible();
+  expect(screen.getByLabelText("Starting location")).toBeVisible();
+  expect(screen.getByLabelText("Maximum drive time")).toBeVisible();
+  expect(screen.getByLabelText("What matters most for value?")).toBeVisible();
+  expect(screen.getByRole("group", { name: "What matters most" })).toBeVisible();
+});
+
+test("shows and removes active factor and objective choices outside the defaults", async () => {
+  const user = userEvent.setup();
+  const onPreferencesChange = vi.fn();
+  const onObjectivesChange = vi.fn();
+  const preferences = [
+    {
+      factor_id: "stay_base_access",
+      mode: "prefer" as const,
+      values: ["near"],
+      importance: "normal" as const,
+    },
+  ];
+  const objectives = [
+    { factor_id: "pass_terrain_value", importance: "normal" as const },
+    { factor_id: "trip_window_snow_fit", importance: "high" as const },
+  ];
+
+  render(
+    <SearchFiltersDrawer
+      open
+      disabled={false}
+      filters={{
+        ...defaultSearchFilters,
+        valueObjective: "pass_terrain_value",
+      }}
+      preferences={preferences}
+      groupPriorities={[]}
+      objectives={objectives}
+      returnFocusRef={createRef<HTMLButtonElement>()}
+      onFiltersChange={vi.fn()}
+      onPreferencesChange={onPreferencesChange}
+      onGroupPrioritiesChange={vi.fn()}
+      onObjectivesChange={onObjectivesChange}
+      onClose={vi.fn()}
+    />,
+  );
+
+  const factorChoice = screen.getByRole("button", {
+    name: "Prefer Place to stay and lift access",
+  });
+  const objectiveChoice = screen.getByRole("button", {
+    name: "Prefer Snow fit for your dates",
+  });
+  expect(factorChoice).toHaveAttribute("aria-pressed", "true");
+  expect(objectiveChoice).toHaveAttribute("aria-pressed", "true");
+
+  await user.click(factorChoice);
+  expect(onPreferencesChange).toHaveBeenCalledWith([]);
+
+  await user.click(objectiveChoice);
+  expect(onObjectivesChange).toHaveBeenCalledWith([
+    { factor_id: "pass_terrain_value", importance: "normal" },
+  ]);
+});
+
+test("renders one mode-aware control for each active feature factor", async () => {
+  const user = userEvent.setup();
+  const onPreferencesChange = vi.fn();
+  const preferences = [
+    {
+      factor_id: "marked_freeride_routes",
+      mode: "prefer" as const,
+      values: [],
+      importance: "normal" as const,
+    },
+    {
+      factor_id: "glacier_terrain",
+      mode: "avoid" as const,
+      values: ["internal_glacier_state"],
+      importance: "normal" as const,
+    },
+    {
+      factor_id: "snow_park",
+      mode: "require" as const,
+      values: [],
+      importance: "high" as const,
+    },
+  ];
+
+  render(
+    <SearchFiltersDrawer
+      open
+      disabled={false}
+      filters={defaultSearchFilters}
+      preferences={preferences}
+      groupPriorities={[]}
+      objectives={[]}
+      returnFocusRef={createRef<HTMLButtonElement>()}
+      onFiltersChange={vi.fn()}
+      onPreferencesChange={onPreferencesChange}
+      onGroupPrioritiesChange={vi.fn()}
+      onObjectivesChange={vi.fn()}
+      onClose={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen.getAllByRole("button", { name: /Marked freeride routes/ }),
+  ).toHaveLength(1);
+  expect(
+    screen.getByRole("button", { name: "Prefer Marked freeride routes" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getAllByRole("button", { name: /Glacier terrain/ }),
+  ).toHaveLength(1);
+  const avoidGlacier = screen.getByRole("button", {
+    name: "Avoid Glacier terrain",
+  });
+  expect(avoidGlacier).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByRole("button", { name: "Require Snow park" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(screen.queryByText("internal_glacier_state")).not.toBeInTheDocument();
+
+  await user.click(avoidGlacier);
+  expect(onPreferencesChange).toHaveBeenCalledWith([
+    preferences[0],
+    preferences[2],
+  ]);
+});
+
+test("hides unknown factors, objectives, and raw controlled values", () => {
+  render(
+    <SearchFiltersDrawer
+      open
+      disabled={false}
+      filters={defaultSearchFilters}
+      preferences={[
+        {
+          factor_id: "local_pace",
+          mode: "prefer",
+          values: ["sensitive_controlled_value"],
+          importance: "normal",
+        },
+        {
+          factor_id: "secret_internal_factor",
+          mode: "require",
+          values: ["private_value"],
+          importance: "high",
+        },
+      ]}
+      groupPriorities={[]}
+      objectives={[
+        { factor_id: "trip_window_snow_fit", importance: "high" },
+        { factor_id: "secret_internal_objective", importance: "normal" },
+      ]}
+      returnFocusRef={createRef<HTMLButtonElement>()}
+      onFiltersChange={vi.fn()}
+      onPreferencesChange={vi.fn()}
+      onGroupPrioritiesChange={vi.fn()}
+      onObjectivesChange={vi.fn()}
+      onClose={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen.getByRole("button", { name: "Prefer Local pace" }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Prefer Snow fit for your dates" }),
+  ).toBeVisible();
+  expect(document.body).not.toHaveTextContent("sensitive_controlled_value");
+  expect(document.body).not.toHaveTextContent("private_value");
+  expect(document.body).not.toHaveTextContent("secret internal factor");
+  expect(document.body).not.toHaveTextContent("secret internal objective");
 });

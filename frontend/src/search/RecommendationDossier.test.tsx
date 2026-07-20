@@ -9,7 +9,10 @@ import type {
   SearchV4RecommendationGroup,
 } from "../types";
 import { RecommendationDossier } from "./RecommendationDossier";
-import { boundedNavigatorGroups } from "./RecommendationNavigator";
+import {
+  boundedNavigatorGroups,
+  tripOptionCountLabel,
+} from "./RecommendationNavigator";
 import { createSearchSession } from "./searchSession";
 
 beforeEach(() => {
@@ -160,6 +163,46 @@ test("bounds the navigator to the top three or top two plus current", () => {
   ).toEqual(["region-1", "region-2", "region-4"]);
 });
 
+test.each([
+  [1, "1 trip option"],
+  [2, "2 trip options"],
+])("uses singular-aware trip option counts", (count, expected) => {
+  expect(tripOptionCountLabel(count)).toBe(expected);
+});
+
+test("renders evidence-bounded wider-terrain strength in trip details", () => {
+  const currentSession = session();
+  const current = currentSession.response.results[0].top_configuration;
+  current.factors = [
+    {
+      ...current.factors[0],
+      factor_id: "terrain_potential_scale",
+      raw_value: 360,
+      effective_utility: 0.7,
+    },
+  ];
+
+  render(
+    <RecommendationDossier
+      session={currentSession}
+      skiRegionId={current.ski_region_id}
+      candidateId={current.candidate_id}
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen.getByText(
+      "Region 1 offers wider terrain; a different or additional pass may be needed.",
+    ),
+  ).toBeVisible();
+  expect(screen.queryByText(/selected pass supports/i)).toBeNull();
+});
+
 test("does not present unscored options as ranked recommendations", () => {
   const unscoredSession = session();
   unscoredSession.response = {
@@ -197,13 +240,92 @@ test("does not present unscored options as ranked recommendations", () => {
     />,
   );
 
-  expect(screen.getAllByText(/unranked option/i).length).toBeGreaterThan(0);
-  expect(screen.getByText("Why consider it")).toBeVisible();
-  expect(screen.queryByText("Why it leads")).toBeNull();
-  expect(screen.queryByRole("heading", { name: "Scoring details" })).toBeNull();
+  expect(screen.getAllByText("Fit comparison unavailable").length).toBeGreaterThan(0);
+  expect(screen.queryByText("Unscored")).toBeNull();
+  expect(screen.getByText("Why this option is shown")).toBeVisible();
+  expect(screen.getByText("Main concern")).toBeVisible();
+  expect(
+    screen.queryByRole("heading", { name: "Technical calculation details" }),
+  ).toBeNull();
   expect(screen.queryByText(/complete ranked trip configuration/i)).toBeNull();
-  expect(screen.getByText("Alternative")).toBeVisible();
+  expect(screen.getByText("Another way to plan this trip")).toBeVisible();
   expect(screen.queryByText("#4")).toBeNull();
+  const navigator = screen.getByRole("navigation", {
+    name: "Trip option results",
+  });
+  const unavailableRow = within(navigator).getByRole("button", {
+    name: /region 4.*fit comparison unavailable/i,
+  });
+  expect(unavailableRow).toHaveAccessibleName(/fit comparison unavailable/i);
+  expect(unavailableRow).not.toHaveAccessibleName(/trip fit not scored/i);
+});
+
+test("prompts for travel dates instead of narrating a snow fit without a window", () => {
+  const noWindowSession = session();
+  noWindowSession.response = {
+    ...noWindowSession.response,
+    applied_intent: {
+      ...noWindowSession.response.applied_intent,
+      constraints: { location: { country: "France" } },
+    },
+  };
+
+  render(
+    <RecommendationDossier
+      session={noWindowSession}
+      skiRegionId="region-4"
+      candidateId="region-4-alternative"
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(screen.getAllByText("Add travel dates to assess snow fit").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("Not assessed").length).toBeGreaterThan(0);
+  expect(screen.queryByText("Strong fit")).toBeNull();
+  expect(screen.queryByText("Some concerns")).toBeNull();
+  expect(screen.queryByText(/supports this travel window/i)).toBeNull();
+  const navigator = screen.getByRole("navigation", {
+    name: "Trip option results",
+  });
+  expect(
+    within(navigator).getByRole("button", {
+      name: /region 4.*add travel dates to assess snow fit: not assessed/i,
+    }),
+  ).toBeVisible();
+});
+
+test("de-duplicates the snow warning between the verdict and remaining uncertainty by evidence id", () => {
+  const currentSession = session();
+  const current = currentSession.response.results[0].top_configuration;
+  current.factors[0] = {
+    ...current.factors[0],
+    effective_evidence_cap: 0,
+    warnings: ["Historical evidence is limited."],
+  };
+
+  render(
+    <RecommendationDossier
+      session={currentSession}
+      skiRegionId={current.ski_region_id}
+      candidateId={current.candidate_id}
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText("Main concern").parentElement).toHaveTextContent(
+    "Snow fit for March: Snow evidence is limited for this travel window.",
+  );
+  expect(
+    screen.queryByText("Snow evidence is limited for the requested travel window."),
+  ).toBeNull();
 });
 
 test("shows the top two plus an out-of-band current recommendation", () => {
@@ -221,7 +343,7 @@ test("shows the top two plus an out-of-band current recommendation", () => {
   );
 
   const navigator = screen.getByRole("navigation", {
-    name: "Recommendation results",
+    name: "Trip option results",
   });
   expect(within(navigator).getByRole("button", { name: /region 1/i })).toBeVisible();
   expect(within(navigator).getByRole("button", { name: /region 2/i })).toBeVisible();
@@ -250,22 +372,36 @@ test("renders the verdict hierarchy, progressive anchors, and selected save targ
   );
 
   expect(screen.getByRole("heading", { name: "Region 4 - Base 4" })).toBeVisible();
+  expect(screen.getByText("Recommended place to stay: Base 4")).toBeVisible();
   expect(screen.getByText("Trip fit")).toBeVisible();
-  expect(screen.getAllByText("Snow window")[0]).toBeVisible();
+  expect(screen.getAllByText("Snow fit for March")[0]).toBeVisible();
   expect(screen.getByText("Evidence quality")).toBeVisible();
   expect(screen.getAllByText("Destination 4")[0]).toBeVisible();
   expect(screen.getAllByText("Area 4")[0]).toBeVisible();
   expect(screen.getAllByText("Pass region-4-alternative")[0]).toBeVisible();
+  expect(
+    screen.getByRole("heading", {
+      name: "Other ways to plan this trip in Region 4",
+    }),
+  ).toBeVisible();
+  expect(document.body.textContent).not.toMatch(/configuration|dossier/i);
   for (const name of [
     "Snow & weather",
     "Trip details",
-    "Alternatives",
+    "Other ways to plan this trip",
     "Accommodation",
     "Why this trip",
-    "How ranking works",
+    "Technical calculation details",
   ]) {
     expect(screen.getByRole("link", { name })).toBeVisible();
   }
+  expect(
+    screen.getAllByText("Technical calculation details", { selector: "summary" }),
+  ).toHaveLength(1);
+  expect(
+    screen.getByRole("heading", { level: 2, name: "Advanced details" }),
+  ).toBeVisible();
+  expect(document.querySelectorAll("#scoring-details details")).toHaveLength(1);
 
   await user.click(screen.getByRole("button", { name: "Save as current trip" }));
   expect(onSave).toHaveBeenCalledWith(
@@ -317,17 +453,21 @@ test("explains why the trip leads before exposing technical provenance", () => {
   expect(section).not.toBeNull();
   expect(within(section as HTMLElement).getByRole("heading", { name: "Why this trip" })).toBeVisible();
   expect(within(section as HTMLElement).getByRole("heading", { name: "What supports this choice" })).toBeVisible();
-  expect(within(section as HTMLElement).getByRole("heading", { name: "What remains uncertain" })).toBeVisible();
+  expect(within(section as HTMLElement).queryByRole("heading", { name: "What remains uncertain" })).toBeNull();
+  expect(screen.getByText("Main concern").parentElement).toHaveTextContent(
+    "Snow fit for March: Snow evidence is limited for this travel window.",
+  );
   expect(
-    within(section as HTMLElement).getByText("Sources and calculation details"),
-  ).toBeVisible();
-  const disclosure = within(section as HTMLElement)
-    .getByText("Sources and calculation details")
-    .closest("details");
-  expect(disclosure).not.toHaveAttribute("open");
+    within(section as HTMLElement).queryByText("Technical calculation details"),
+  ).toBeNull();
   expect(
-    within(section as HTMLElement).getByText(/Catalog field-group evidence/),
-  ).not.toBeVisible();
+    within(section as HTMLElement).queryByText(/Catalog field-group evidence/),
+  ).toBeNull();
+  const disclosures = screen
+    .getAllByText("Technical calculation details")
+    .filter((element) => element.tagName === "SUMMARY");
+  expect(disclosures).toHaveLength(1);
+  expect(disclosures[0].closest("details")).not.toHaveAttribute("open");
 });
 
 test("qualifies estimated terrain in dossier essentials, evidence, and scoring", async () => {
@@ -367,21 +507,28 @@ test("qualifies estimated terrain in dossier essentials, evidence, and scoring",
     />,
   );
 
-  expect(screen.getByText("Estimated 31 km (ski area only)")).toBeVisible();
-  await user.click(screen.getByText("Sources and calculation details"));
   expect(
-    screen.getByText(
-      "Estimated 31 km in selected ski area; pass-wide coverage needs source",
-    ),
-  ).toBeVisible();
-  expect(screen.getAllByText("Selected ski-area terrain")).toHaveLength(2);
+    screen.getAllByText("About 31 km in the selected ski area"),
+  ).not.toHaveLength(0);
+  expect(
+    screen.getAllByText("About 31 km in the selected ski area"),
+  ).not.toHaveLength(0);
+  expect(screen.getAllByText("Terrain in the selected ski area")).toHaveLength(2);
   expect(screen.queryByText("Pass-accessible terrain")).toBeNull();
   expect(screen.queryByText("31 km accessible")).toBeNull();
 
-  const scoring = screen.getByText("Show scoring details").closest("details");
+  const scoringSection = document.querySelector("#scoring-details");
+  expect(scoringSection).not.toBeNull();
+  const scoring = within(scoringSection as HTMLElement)
+    .getByText("Technical calculation details")
+    .closest("details");
   expect(scoring).not.toHaveAttribute("open");
-  await user.click(screen.getByText("Show scoring details"));
-  expect(within(scoring as HTMLElement).getByText("Estimated")).toBeVisible();
+  await user.click(
+    within(scoringSection as HTMLElement).getByText("Technical calculation details"),
+  );
+  expect(
+    within(scoring as HTMLElement).getByText("Estimated from catalog data"),
+  ).toBeVisible();
 });
 
 test("keeps domain terrain aligned across dossier evidence and scoring", async () => {
@@ -422,16 +569,56 @@ test("keeps domain terrain aligned across dossier evidence and scoring", async (
     />,
   );
 
-  expect(screen.getByText("Adjusted 300 km (covered domain)")).toBeVisible();
-  await user.click(screen.getByText("Sources and calculation details"));
   expect(
-    screen.getByText("Adjusted 300 km in covered terrain domain"),
-  ).toBeVisible();
-  expect(screen.getAllByText("Covered terrain-domain scale")).toHaveLength(2);
+    screen.getAllByText("About 300 km in the connected area covered by this pass"),
+  ).not.toHaveLength(0);
+  expect(
+    screen.getAllByText("About 300 km in the connected area covered by this pass"),
+  ).not.toHaveLength(0);
+  expect(screen.getAllByText("Connected terrain covered by this pass")).toHaveLength(2);
 
-  const scoring = screen.getByText("Show scoring details").closest("details");
-  await user.click(screen.getByText("Show scoring details"));
-  expect(within(scoring as HTMLElement).getByText("Verified with adjustment")).toBeVisible();
+  const scoringSection = document.querySelector("#scoring-details");
+  expect(scoringSection).not.toBeNull();
+  const scoring = within(scoringSection as HTMLElement)
+    .getByText("Technical calculation details")
+    .closest("details");
+  await user.click(
+    within(scoringSection as HTMLElement).getByText("Technical calculation details"),
+  );
+  expect(within(scoring as HTMLElement).getByText("Estimated from source data")).toBeVisible();
+});
+
+test("keeps needs-source terrain qualified in dossier essentials", () => {
+  const needsSourceSession = session();
+  const selected = needsSourceSession.response.results[0].top_configuration;
+  selected.selected_pass = {
+    ...selected.selected_pass,
+    accessible_piste_km: 42,
+    accessible_piste_km_evidence: {
+      trust_status: "needs_source",
+      scope: "pass",
+      source_entity_id: "unconfirmed-pass",
+      field_group: "pass_accessible_terrain",
+    },
+  } as SearchV4Configuration["selected_pass"];
+
+  render(
+    <RecommendationDossier
+      session={needsSourceSession}
+      skiRegionId="region-1"
+      candidateId="region-1-top"
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(screen.queryByText(/42 km/i)).toBeNull();
+  expect(
+    screen.getAllByText("Pass terrain needs source confirmation").length,
+  ).toBeGreaterThan(0);
 });
 
 test("exposes desktop collapse and the bounded mobile switcher", async () => {
@@ -452,13 +639,13 @@ test("exposes desktop collapse and the bounded mobile switcher", async () => {
   );
 
   const collapse = screen.getByRole("button", {
-    name: "Collapse recommendation navigator",
+    name: "Collapse trip option navigator",
   });
   expect(collapse).toHaveAttribute("aria-expanded", "true");
   await user.click(collapse);
   expect(onToggleNavigator).toHaveBeenCalledOnce();
 
-  const switcher = screen.getByRole("button", { name: /recommendation 1 of 4/i });
+  const switcher = screen.getByRole("button", { name: /trip option 1 of 4/i });
   expect(switcher).toHaveAttribute("aria-expanded", "false");
   await user.click(switcher);
   expect(switcher).toHaveAttribute("aria-expanded", "true");
@@ -496,14 +683,16 @@ test("navigator and mobile switcher open the selected alternative they display",
   );
 
   const navigator = screen.getByRole("navigation", {
-    name: "Recommendation results",
+    name: "Trip option results",
   });
   expect(within(navigator).getByText("Selected Base 2")).toBeVisible();
   expect(
     within(navigator).getByRole("button", {
       name: /region 2, rank 2, open option/i,
     }),
-  ).toHaveAccessibleName(/selected base 2.*88 trip fit.*strong snow/i);
+  ).toHaveAccessibleName(
+    /selected base 2.*88 trip fit.*snow fit for march: strong fit/i,
+  );
   await user.click(
     within(navigator).getByRole("button", {
       name: /region 2, rank 2, open option/i,
@@ -514,7 +703,7 @@ test("navigator and mobile switcher open the selected alternative they display",
     "region-2-selected-alternative",
   );
 
-  await user.click(screen.getByRole("button", { name: /recommendation 1 of 4/i }));
+  await user.click(screen.getByRole("button", { name: /trip option 1 of 4/i }));
   await user.click(screen.getByRole("button", { name: /switch to region 2/i }));
   expect(onSwitch).toHaveBeenLastCalledWith(
     "region-2",

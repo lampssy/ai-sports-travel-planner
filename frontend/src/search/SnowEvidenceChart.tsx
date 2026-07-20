@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import {
   Area,
   CartesianGrid,
@@ -13,11 +12,13 @@ import {
 } from "recharts";
 
 import type { WeatherEvidencePoint } from "../types";
-import { Disclosure } from "../ui/Disclosure";
 import { SegmentedTabs } from "../ui/SegmentedTabs";
 
 export type ChartMode = "historical" | "forecast";
 export type WeatherMetric = "depth" | "freshSnow" | "temperature";
+
+export const snowDepthReferenceCopy =
+  "This reference helps compare modeled snow depth. It does not show snow coverage, open ski runs, comfort, or safety.";
 
 export interface WeatherChartDatum {
   label: string;
@@ -49,19 +50,6 @@ export const weatherMetricDefinition = {
   WeatherMetric,
   { label: string; unit: string; referenceValue: number | null }
 >;
-
-const valueColumns = [
-  ["snow_depth_cm", "Snow depth", "cm"],
-  ["snow_depth_cm_p25", "Depth p25", "cm"],
-  ["snow_depth_cm_p50", "Median depth", "cm"],
-  ["snow_depth_cm_p75", "Depth p75", "cm"],
-  ["snowfall_cm", "Fresh snow", "cm"],
-  ["temperature_min_c", "Minimum temperature", "°C"],
-  ["temperature_max_c", "Maximum temperature", "°C"],
-  ["rain_risk", "Rain risk", "%"],
-  ["thaw_risk", "Thaw risk", "%"],
-  ["wind_gust_kmh", "Wind gust", "km/h"],
-] as const;
 
 function displayValue(value: number, unit: string): string {
   const normalized = unit === "%" ? value * 100 : value;
@@ -141,6 +129,50 @@ function hasMetricData(data: WeatherChartDatum[], metric: WeatherMetric): boolea
   );
 }
 
+function numericRange(values: Array<number | null>): [number, number] | null {
+  const available = values.filter((value): value is number => value != null);
+  return available.length
+    ? [Math.min(...available), Math.max(...available)]
+    : null;
+}
+
+function rangeCopy(range: [number, number], unit: string): string {
+  return range[0] === range[1]
+    ? displayValue(range[0], unit)
+    : `${displayValue(range[0], unit)} to ${displayValue(range[1], unit)}`;
+}
+
+export function weatherChartSummary(
+  mode: ChartMode,
+  metric: WeatherMetric,
+  points: WeatherEvidencePoint[],
+): string {
+  const data = buildWeatherChartData(mode, metric, points);
+  if (metric === "depth") {
+    const range = numericRange(
+      data.map((point) =>
+        mode === "historical" ? point.medianDepth : point.depth,
+      ),
+    );
+    return range
+      ? `Chart summary: ${mode === "historical" ? "Median" : "Forecast"} snow depth is ${rangeCopy(range, "cm")} across dates with values.`
+      : "Chart summary: No snow-depth values are available for this window.";
+  }
+  if (metric === "freshSnow") {
+    const range = numericRange(data.map((point) => point.freshSnow));
+    return range
+      ? `Chart summary: Fresh snow is ${rangeCopy(range, "cm")} across dates with values.`
+      : "Chart summary: No fresh-snow values are available for this window.";
+  }
+  const minimums = numericRange(data.map((point) => point.minimumTemperature));
+  const maximums = numericRange(data.map((point) => point.maximumTemperature));
+  const lower = minimums?.[0] ?? maximums?.[0];
+  const upper = maximums?.[1] ?? minimums?.[1];
+  return lower != null && upper != null
+    ? `Chart summary: Temperature ranges from ${displayValue(lower, "°C")} to ${displayValue(upper, "°C")} across dates with values.`
+    : "Chart summary: No temperature values are available for this window.";
+}
+
 function WeatherChart({
   mode,
   metric,
@@ -154,6 +186,7 @@ function WeatherChart({
   const data = buildWeatherChartData(mode, metric, points);
   const xAxisTicks = selectWeatherChartTickLabels(data);
   const available = hasMetricData(data, metric);
+  const summary = weatherChartSummary(mode, metric, points);
 
   if (!available) {
     const valueKind = mode === "forecast" ? "forecast values" : "observations";
@@ -174,15 +207,17 @@ function WeatherChart({
   };
 
   return (
-    <div
-      className="snow-chart-block__visual"
-      role="img"
-      aria-label={`${mode === "forecast" ? "Forecast" : "Historical"} ${definition.label.toLowerCase()} chart in ${definition.unit}. Missing ${mode === "forecast" ? "forecast values" : "observations"} are shown as gaps.`}
-    >
-      <div className="snow-chart__unit" aria-hidden="true">
-        {definition.unit}
-      </div>
-      <ResponsiveContainer width="100%" height={320}>
+    <section className="snow-chart-block__metric">
+      <p className="snow-chart-block__summary">{summary}</p>
+      <div
+        className="snow-chart-block__visual"
+        role="img"
+        aria-label={`${mode === "forecast" ? "Forecast" : "Historical"} ${definition.label.toLowerCase()} chart in ${definition.unit}. ${summary} Missing ${mode === "forecast" ? "forecast values" : "observations"} are shown as gaps.`}
+      >
+        <div className="snow-chart__unit" aria-hidden="true">
+          {definition.unit}
+        </div>
+        <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 16, right: 20, bottom: 8, left: 4 }}>
           <CartesianGrid strokeDasharray="3 5" vertical={false} />
           <XAxis
@@ -281,52 +316,19 @@ function WeatherChart({
               y={definition.referenceValue}
               stroke="#a15d00"
               strokeDasharray="5 5"
-              label={{ value: "30 cm guide", fill: "#704300", position: "insideTopRight" }}
+              label={{ value: "30 cm snow-depth reference", fill: "#704300", position: "insideTopRight" }}
             />
           ) : null}
         </ComposedChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function WeatherValuesTable({
-  mode,
-  points,
-}: {
-  mode: ChartMode;
-  points: WeatherEvidencePoint[];
-}) {
-  const tableLabel =
-    mode === "forecast" ? "Forecast weather values" : "Historical weather values";
-
-  return (
-    <div className="snow-values__scroll">
-      <table aria-label={tableLabel}>
-        <thead>
-          <tr>
-            <th scope="col">Date</th>
-            {valueColumns.map(([key, label, unit]) => (
-              <th key={key} scope="col">
-                {label} ({unit})
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {points.map((point) => (
-            <tr key={point.date_or_month_day}>
-              <th scope="row">{point.date_or_month_day}</th>
-              {valueColumns.map(([key, , unit]) => (
-                <td key={key}>
-                  {point[key] == null ? "Not available" : displayValue(point[key], unit)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        </ResponsiveContainer>
+      </div>
+      {metric === "depth" && definition.referenceValue != null ? (
+        <div className="snow-depth-reference">
+          <strong>30 cm snow-depth reference</strong>
+          <p>{snowDepthReferenceCopy}</p>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -334,12 +336,10 @@ export function SnowEvidenceChart({
   mode,
   points,
   interpretation,
-  sourceDetails,
 }: {
   mode: ChartMode;
   points: WeatherEvidencePoint[];
   interpretation: string;
-  sourceDetails: ReactNode;
 }) {
   const metricTabs = (Object.keys(weatherMetricDefinition) as WeatherMetric[]).map(
     (metric) => ({
@@ -358,14 +358,6 @@ export function SnowEvidenceChart({
         defaultValue="depth"
         className="snow-metric-tabs"
       />
-      <Disclosure label="Sources and daily values" className="snow-values">
-        <div className="snow-values__sources">{sourceDetails}</div>
-        {points.length ? (
-          <WeatherValuesTable mode={mode} points={points} />
-        ) : (
-          <p>No daily weather values are available.</p>
-        )}
-      </Disclosure>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import type {
   SearchIntent,
   SearchObjective,
   RefinementProposal,
+  ResolvedRefinementTopic,
   SearchResponse,
   SearchV4Configuration,
   SearchV4RecommendationGroup,
@@ -167,10 +168,10 @@ export function validateSearchFilters(filters: SearchFilters): string | null {
     maximumDriveText &&
     (!Number.isFinite(maximumDrive) || maximumDrive <= 0)
   ) {
-    return "Hard drive limit must be greater than 0 hours.";
+    return "Maximum drive time must be greater than 0 hours.";
   }
   if (maximumDriveText && !filters.originText.trim()) {
-    return "Provide an origin to use a hard drive limit.";
+    return "Add a starting location to use a maximum drive time.";
   }
   const flex = Number(filters.budgetFlex);
   if (filters.budgetFlex && (!Number.isFinite(flex) || flex < 0 || flex > 0.5)) {
@@ -308,6 +309,30 @@ export function dismissRefinement(
   };
 }
 
+export function upsertResolvedRefinementTopic(
+  current: ResolvedRefinementTopic[],
+  refinement: RefinementProposal,
+): ResolvedRefinementTopic[] {
+  return [
+    ...current.filter((item) => item.topicId !== refinement.topic_id),
+    {
+      topicId: refinement.topic_id,
+      targetFactorId: refinement.target_factor_id,
+      questionId: refinement.question_id,
+    },
+  ];
+}
+
+export function clearResolvedTopicsForManualChange(
+  current: ResolvedRefinementTopic[],
+  change: { changedFactorIds: Set<string>; startsNewContext: boolean },
+): ResolvedRefinementTopic[] {
+  if (change.startsNewContext) return [];
+  return current.filter(
+    (item) => !change.changedFactorIds.has(item.targetFactorId),
+  );
+}
+
 export interface RankChangeSummary {
   changedGroupIds: Set<string>;
   announcement: string;
@@ -324,12 +349,12 @@ export function rankChangeSummary(
     (result) => previousRanks.get(result.ski_region_id) !== result.rank,
   );
   if (!changed.length) {
-    return { changedGroupIds: new Set(), announcement: "Ranking unchanged." };
+    return { changedGroupIds: new Set(), announcement: "Trip options unchanged." };
   }
   const winner = next.results[0];
   return {
     changedGroupIds: new Set(changed.map((result) => result.ski_region_id)),
-    announcement: `${changed.length} recommendation${
+    announcement: `${changed.length} trip option${
       changed.length === 1 ? "" : "s"
     } changed position. ${winner.ski_region_name} is now #${winner.rank}.`,
   };

@@ -7,57 +7,62 @@ import {
 } from "lucide-react";
 import type { RefObject } from "react";
 
-import type { SearchV4Configuration } from "../types";
+import type { SearchV4Configuration, TravelWindow } from "../types";
 import { EvidenceQualityBadge } from "../ui/EvidenceQualityBadge";
 import { TripEntityStack } from "../ui/TripEntityStack";
 import {
-  buildCandidateNarrative,
+  type CandidateNarrative,
   evidenceQualityMode,
   formatAccess,
   formatPassPrice,
-  snowWindowLabel,
+  snowFitPresentation,
 } from "./searchPresentation";
 
 export function DossierVerdict({
   configuration,
   rank,
+  travelWindow,
+  narrative,
   headingRef,
   onSave,
+  saveError,
 }: {
   configuration: SearchV4Configuration;
   rank: number;
+  travelWindow?: TravelWindow;
+  narrative: CandidateNarrative;
   headingRef: RefObject<HTMLHeadingElement>;
   onSave: (configuration: SearchV4Configuration) => void;
+  saveError: string | null;
 }) {
-  const narrative = buildCandidateNarrative(configuration);
   const evidenceMode = evidenceQualityMode(configuration);
   const unscored = configuration.ranking_status === "unscored";
-  const reasonHeadingId = unscored ? "why-consider-it" : "why-it-leads";
+  const snowFit = snowFitPresentation(configuration, travelWindow);
 
   return (
     <header className="dossier-verdict">
       <div className="dossier-verdict__title">
         <p className="eyebrow">
-          {unscored ? "Unranked option" : `#${rank}`} ·{" "}
+          {unscored ? "Fit comparison unavailable" : `#${rank}`} ·{" "}
           {configuration.stay_destination_name}
         </p>
         <h1 ref={headingRef} tabIndex={-1}>
           {configuration.ski_region_name} - {configuration.stay_base_name}
         </h1>
         <p className="dossier-verdict__selection">
-          Selected configuration - stay in {configuration.stay_base_name}
+          Recommended place to stay: {configuration.stay_base_name}
         </p>
         <p className="dossier-verdict__summary">{narrative.verdict}</p>
       </div>
 
       <div className="dossier-verdict__signals" aria-label="Recommendation verdict">
         <div>
-          <strong>{configuration.fit_score?.toFixed(1) ?? "Unscored"}</strong>
+          <strong>{configuration.fit_score?.toFixed(1) ?? "—"}</strong>
           <span>Trip fit</span>
         </div>
         <div>
-          <strong>{snowWindowLabel(configuration)}</strong>
-          <span>Snow window</span>
+          <strong>{snowFit.value}</strong>
+          <span>{snowFit.label}</span>
         </div>
         <EvidenceQualityBadge mode={evidenceMode} compact />
       </div>
@@ -70,26 +75,28 @@ export function DossierVerdict({
         <Save aria-hidden="true" size={18} />
         Save as current trip
       </button>
-
-      <section className="dossier-verdict__reasons" aria-labelledby={reasonHeadingId}>
-        <p className="section-label" id={reasonHeadingId}>
-          {unscored ? "Why consider it" : "Why it leads"}
+      {saveError ? (
+        <p className="error-copy" role="alert">
+          {saveError}
         </p>
+      ) : null}
+
+      <section className="dossier-verdict__reasons" aria-label="Trip reasons">
         <div>
           <p>
             <CheckCircle2 aria-hidden="true" size={20} />
             <span>
-              <strong>Supported strength</strong>
+              <strong>{unscored ? "Why this option is shown" : "Why it fits"}</strong>
               {narrative.strength ??
                 (unscored
-                  ? "This is a complete trip configuration with available supporting evidence."
-                  : "This is a complete ranked trip configuration.")}
+                  ? "This trip option is shown without a fit comparison because key details are unavailable."
+                  : "This trip option has available supporting evidence.")}
             </span>
           </p>
           <p>
             <AlertTriangle aria-hidden="true" size={20} />
             <span>
-              <strong>Watchout</strong>
+              <strong>Main concern</strong>
               {narrative.watchout ?? "Conditions and operations can change before travel."}
             </span>
           </p>

@@ -84,6 +84,7 @@ export interface SearchV4RefinementRequest {
   brief: string | null;
   baseline_fingerprint: string;
   already_answered_question_ids: string[];
+  resolved_topic_ids: string[];
 }
 
 export interface FactorScoreBreakdown {
@@ -341,10 +342,18 @@ export interface RefinementOption {
 }
 
 export interface RefinementProposal {
+  topic_id: string;
+  target_factor_id: string;
   question_id: string;
   question: string;
   reason: string;
   options: RefinementOption[];
+}
+
+export interface ResolvedRefinementTopic {
+  topicId: string;
+  targetFactorId: string;
+  questionId: string;
 }
 
 export interface SearchResponse {

@@ -31,7 +31,37 @@ const intent: SearchIntent = {
   assumptions: [],
 };
 
+const intentWithFivePreferences: SearchIntent = {
+  ...intent,
+  objectives: [
+    { factor_id: "pass_terrain_value", importance: "normal" },
+    { factor_id: "trip_window_snow_fit", importance: "high" },
+  ],
+  factor_preferences: [
+    {
+      factor_id: "stay_base_access",
+      mode: "prefer",
+      values: ["near"],
+      importance: "normal",
+    },
+    {
+      factor_id: "local_pace",
+      mode: "prefer",
+      values: ["quiet"],
+      importance: "normal",
+    },
+    {
+      factor_id: "glacier_terrain",
+      mode: "prefer",
+      values: [],
+      importance: "normal",
+    },
+  ],
+};
+
 const refinement: RefinementProposal = {
+  topic_id: "tie_break",
+  target_factor_id: "stay_base_access",
   question_id: "tie-break",
   question: "What should break the tie?",
   reason: "One answer could reorder your top results.",
@@ -61,23 +91,129 @@ test("separates hard constraints from preferences and renders one refinement", (
       onRemoveChip={vi.fn()}
       onApplyRefinement={vi.fn()}
       onSkipRefinement={vi.fn()}
+      onRetryRefinement={vi.fn()}
+      onKeepResults={vi.fn()}
     />,
   );
 
-  const hard = screen.getByRole("group", { name: "Hard constraints" });
+  const hard = screen.getByRole("group", { name: "Must-haves" });
   expect(within(hard).getByText("France")).toBeVisible();
   expect(within(hard).getByText("March window")).toBeVisible();
   expect(within(hard).getByText("Intermediate")).toBeVisible();
   expect(within(hard).getByText("Max EUR 320/night")).toBeVisible();
 
   const preferences = screen.getByRole("group", { name: "Preferences" });
-  expect(within(preferences).getByText(/terrain per pass price/i)).toBeVisible();
-  expect(within(preferences).getByText(/stay-base access/i)).toBeVisible();
+  expect(within(preferences).getByText(/terrain for lift-pass price/i)).toBeVisible();
+  expect(
+    within(preferences).getByText(/place to stay and lift access/i),
+  ).toBeVisible();
   expect(screen.getByRole("button", { name: "Adjust" })).toBeVisible();
   expect(screen.getAllByText("What should break the tie?")).toHaveLength(1);
   expect(screen.getByRole("status")).toHaveTextContent(
-    "A refinement question is ready. What should break the tie?",
+    "One more question is ready. What should break the tie?",
   );
+});
+
+test("shows three preferences and a full-list count", () => {
+  render(
+    <SearchContextRail
+      intent={intentWithFivePreferences}
+      refinement={null}
+      refinementStatus="idle"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  const preferences = screen.getByRole("group", { name: "Preferences" });
+  expect(
+    within(preferences).getAllByRole("button", { name: /^Remove / }),
+  ).toHaveLength(3);
+  expect(
+    within(preferences).getByRole("button", {
+      name: "View all 5 preferences",
+    }),
+  ).toBeVisible();
+});
+
+test("keeps required factor preferences visible with hard constraints", () => {
+  render(
+    <SearchContextRail
+      intent={{
+        ...intentWithFivePreferences,
+        factor_preferences: [
+          ...intentWithFivePreferences.factor_preferences,
+          {
+            factor_id: "snowmaking_availability",
+            mode: "require",
+            values: [],
+            importance: "high",
+          },
+        ],
+      }}
+      refinement={null}
+      refinementStatus="idle"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  const hard = screen.getByRole("group", { name: "Must-haves" });
+  expect(
+    within(hard).getByRole("button", {
+      name: "Remove Require Snowmaking",
+    }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "View all 5 preferences" }),
+  ).toBeVisible();
+});
+
+test("uses required factor preferences in the no-results must-have review", () => {
+  const requiredIntent: SearchIntent = {
+    ...intent,
+    factor_preferences: [
+      {
+        factor_id: "snowmaking_availability",
+        mode: "require",
+        values: [],
+        importance: "high",
+      },
+    ],
+  };
+  render(
+    <SearchContextRail
+      intent={requiredIntent}
+      refinement={null}
+      refinementStatus="idle"
+      loading={false}
+      refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+    />,
+  );
+
+  expect(
+    within(screen.getByRole("group", { name: "Must-haves" })).getByText(
+      "Require Snowmaking",
+    ),
+  ).toBeVisible();
 });
 
 test("disables context mutations while recommendations are loading", () => {
@@ -128,7 +264,7 @@ test("announces initial and replacement refinement questions", () => {
   );
 
   expect(screen.getByRole("status")).toHaveTextContent(
-    "Checking whether one answer could improve this ranking.",
+    "Checking whether one answer could improve these trip options.",
   );
 
   rerender(
@@ -139,7 +275,7 @@ test("announces initial and replacement refinement questions", () => {
     />,
   );
   expect(screen.getByRole("status")).toHaveTextContent(
-    "A refinement question is ready. What should break the tie?",
+    "One more question is ready. What should break the tie?",
   );
 
   rerender(
@@ -154,21 +290,21 @@ test("announces initial and replacement refinement questions", () => {
     />,
   );
   expect(screen.getByRole("status")).toHaveTextContent(
-    "A refinement question is ready. What should matter next?",
+    "One more question is ready. What should matter next?",
   );
 });
 
 test.each([
-  ["loading", "Checking whether one answer could improve this ranking."],
+    ["loading", "Checking whether one answer could improve these trip options."],
   [
     "slow",
-    "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
+      "Your trip options are ready. Snowcast is checking whether one answer could improve them.",
   ],
   [
     "retrying",
     "Snowcast is waiting a moment before checking for another useful question.",
   ],
-  ["stale", "A newer ranking replaced this refinement check."],
+    ["stale", "New trip options replaced this question."],
 ] as const)("renders the %s refinement lifecycle state", (status, copy) => {
   render(
     <SearchContextRail
@@ -189,28 +325,69 @@ test.each([
   expect(screen.getByRole("status")).toHaveTextContent(copy);
 });
 
-test("announces terminal optional failure without rendering a visible card", () => {
+test("keeps a terminal refinement failure visible with recovery actions", () => {
+  const onRetryRefinement = vi.fn();
+  const onKeepResults = vi.fn();
   render(
     <SearchContextRail
       intent={intent}
       refinement={null}
       refinementStatus="temporarily_unavailable"
       loading={false}
-      refinementError={null}
+      refinementError="Snowcast could not check for another useful question. Your results are unchanged."
       refinementControlRef={createRef<HTMLInputElement>()}
       adjustFiltersRef={createRef<HTMLButtonElement>()}
       onOpenFilters={vi.fn()}
       onRemoveChip={vi.fn()}
       onApplyRefinement={vi.fn()}
       onSkipRefinement={vi.fn()}
+      onRetryRefinement={onRetryRefinement}
+      onKeepResults={onKeepResults}
     />,
   );
 
-  expect(screen.getByRole("status")).toHaveTextContent(
-    "No additional refinement is available right now. Your results are unchanged.",
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Snowcast could not check for another useful question. Your results are unchanged.",
   );
-  expect(document.querySelector(".contextual-refinement")).toBeNull();
-  expect(screen.queryByText(/refinement is temporarily unavailable/i)).toBeNull();
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  screen.getByRole("button", { name: "Try again" }).click();
+  screen.getByRole("button", { name: "Keep these results" }).click();
+  expect(onRetryRefinement).toHaveBeenCalledOnce();
+  expect(onKeepResults).toHaveBeenCalledOnce();
+});
+
+test("keeps the terminal recovery card busy and guards both actions during retry", () => {
+  const onRetryRefinement = vi.fn();
+  const onKeepResults = vi.fn();
+  render(
+    <SearchContextRail
+      intent={intent}
+      refinement={null}
+      refinementStatus="loading"
+      loading={false}
+      refinementRetrying
+      refinementError="Snowcast could not check for another useful question. Your results are unchanged."
+      refinementControlRef={createRef<HTMLButtonElement>()}
+      adjustFiltersRef={createRef<HTMLButtonElement>()}
+      onOpenFilters={vi.fn()}
+      onRemoveChip={vi.fn()}
+      onApplyRefinement={vi.fn()}
+      onSkipRefinement={vi.fn()}
+      onRetryRefinement={onRetryRefinement}
+      onKeepResults={onKeepResults}
+    />,
+  );
+
+  const recovery = screen.getByText("One more question").closest("div");
+  expect(recovery).toHaveAttribute("aria-busy", "true");
+  const retry = screen.getByRole("button", { name: "Try again" });
+  const keep = screen.getByRole("button", { name: "Keep these results" });
+  expect(retry).toHaveAttribute("aria-disabled", "true");
+  expect(keep).toHaveAttribute("aria-disabled", "true");
+  retry.click();
+  keep.click();
+  expect(onRetryRefinement).not.toHaveBeenCalled();
+  expect(onKeepResults).not.toHaveBeenCalled();
 });
 
 test("keeps the idle lifecycle state compact", () => {
@@ -251,7 +428,7 @@ test("shows when no useful follow-up is needed", () => {
   );
 
   expect(screen.getByRole("status")).toHaveTextContent(
-    "No follow-up would materially change these results.",
+    "No more questions would materially change these results.",
   );
 });
 
@@ -273,6 +450,6 @@ test("reports a skipped follow-up without claiming it was unnecessary", () => {
   );
 
   expect(screen.getByRole("status")).toHaveTextContent(
-    "Follow-up skipped. Results unchanged.",
+    "Question skipped. Results unchanged.",
   );
 });

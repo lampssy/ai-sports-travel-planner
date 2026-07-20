@@ -30,7 +30,7 @@ export function Homepage({
   adjustFiltersRef: RefObject<HTMLButtonElement>;
   onBriefChange: (brief: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onOpenFilters: () => void;
+  onOpenFilters: (trigger: HTMLButtonElement) => void;
   onRemoveChip: (chip: ParsedChip) => void;
 }) {
   return (
@@ -41,8 +41,8 @@ export function Homepage({
             <p className="homepage-stage__eyebrow">Conditions-aware planning</p>
             <h1>Conditions-aware ski trips, planned around your window.</h1>
             <p className="homepage-stage__summary">
-              Snowcast ranks complete ski trips by snow window, mountain fit,
-              stay fit, travel effort, value, and evidence.
+              Snowcast compares complete ski trips using snow fit for your dates,
+              mountain fit, where to stay, travel effort, value, and evidence.
             </p>
           </div>
           <div className="planning-signal">
@@ -71,7 +71,7 @@ export function Homepage({
               />
               <button type="submit" className="primary-command" disabled={loading}>
                 <Search aria-hidden="true" size={22} />
-                {loading ? "Finding resorts for your trip" : "Find resorts"}
+                {loading ? "Finding trip options" : "Find trip options"}
               </button>
             </div>
             <div className="command-form__context">
@@ -91,13 +91,13 @@ export function Homepage({
               </div>
               <div className="understood-status">
                 <ShieldCheck aria-hidden="true" size={20} />
-                <span>{chips.length} preferences understood</span>
+                <span>{chips.length} trip details understood</span>
               </div>
               <button
                 type="button"
                 ref={adjustFiltersRef}
                 className="text-action"
-                onClick={onOpenFilters}
+                onClick={(event) => onOpenFilters(event.currentTarget)}
               >
                 <SlidersHorizontal aria-hidden="true" size={18} />
                 Adjust filters
@@ -118,7 +118,7 @@ export function Homepage({
 
           <article className="example-recommendation">
             <div className="example-recommendation__label">
-              Example recommendation
+              Example trip option
             </div>
             <div className="example-recommendation__grid">
               <div className="example-recommendation__identity">
@@ -134,8 +134,8 @@ export function Homepage({
               </div>
               <div className="example-metric">
                 <CalendarDays aria-hidden="true" size={20} />
-                <span>Snow window</span>
-                <strong>Strong for March</strong>
+                <span>Snow fit for your dates</span>
+                <strong>Strong fit</strong>
               </div>
               <div className="example-metric">
                 <ShieldCheck aria-hidden="true" size={20} />
@@ -146,7 +146,7 @@ export function Homepage({
             <div className="example-recommendation__reasoning">
               <p>
                 <MountainSnow aria-hidden="true" size={19} />
-                <span>High-elevation terrain supports the requested snow window.</span>
+                <span>High-elevation terrain supports a strong snow fit for March.</span>
               </p>
               <p className="watchout">
                 <AlertTriangle aria-hidden="true" size={19} />

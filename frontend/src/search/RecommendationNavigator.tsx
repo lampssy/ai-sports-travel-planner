@@ -7,7 +7,7 @@ import {
 import { useState } from "react";
 
 import type { SearchV4RecommendationGroup } from "../types";
-import { snowWindowLabel } from "./searchPresentation";
+import { snowFitPresentation } from "./searchPresentation";
 import { findSelectedCandidate, type SearchSession } from "./searchSession";
 
 export function boundedNavigatorGroups(
@@ -20,6 +20,10 @@ export function boundedNavigatorGroups(
     return topThree;
   }
   return [...groups.slice(0, 2), current];
+}
+
+export function tripOptionCountLabel(count: number): string {
+  return `${count} trip ${count === 1 ? "option" : "options"}`;
 }
 
 export function RecommendationNavigator({
@@ -41,29 +45,27 @@ export function RecommendationNavigator({
     currentGroup.ski_region_id,
   );
   const collapsed = session.dossierNavigatorCollapsed;
-  const recommendationCount = session.response.results.length;
+  const tripOptionCount = session.response.results.length;
   const unscored = session.response.ranking_status === "unscored";
 
   return (
     <>
       <nav
         className={`dossier-navigator${collapsed ? " dossier-navigator--collapsed" : ""}`}
-        aria-label="Recommendation results"
+        aria-label="Trip option results"
         data-collapsed={collapsed || undefined}
       >
         <div className="dossier-navigator__heading">
           <div>
             <span>Search results</span>
-            <strong>
-              {recommendationCount} {unscored ? "options" : "recommendations"}
-            </strong>
+            <strong>{tripOptionCountLabel(tripOptionCount)}</strong>
           </div>
           <button
             type="button"
             className="icon-button"
-            aria-label={`${collapsed ? "Expand" : "Collapse"} recommendation navigator`}
+            aria-label={`${collapsed ? "Expand" : "Collapse"} trip option navigator`}
             aria-expanded={!collapsed}
-            title={`${collapsed ? "Expand" : "Collapse"} recommendation navigator`}
+            title={`${collapsed ? "Expand" : "Collapse"} trip option navigator`}
             onClick={onToggle}
           >
             {collapsed ? (
@@ -85,6 +87,10 @@ export function RecommendationNavigator({
               session.selectedCandidateIdByGroup[group.ski_region_id],
             );
             const rowUnscored = configuration.ranking_status === "unscored";
+            const snowFit = snowFitPresentation(
+              configuration,
+              session.response.applied_intent.constraints.travel_window,
+            );
             return (
               <button
                 type="button"
@@ -92,14 +98,14 @@ export function RecommendationNavigator({
                 key={group.ski_region_id}
                 aria-current={selected ? "page" : undefined}
                 aria-label={`${group.ski_region_name}, ${
-                  rowUnscored ? "unranked option" : `rank ${group.rank}`
+                  rowUnscored ? "Fit comparison unavailable" : `rank ${group.rank}`
                 }, ${selected ? "viewing" : "open option"}. Stay in ${
                   configuration.stay_base_name
                 }. ${
                   rowUnscored
-                    ? "Trip fit not scored"
+                    ? "Fit comparison unavailable"
                     : `${configuration.fit_score?.toFixed(0)} trip fit`
-                }. ${snowWindowLabel(configuration)} snow.`}
+                }. ${snowFit.label}: ${snowFit.value}.`}
                 onClick={() =>
                   onSwitch(
                     group.ski_region_id,
@@ -115,8 +121,8 @@ export function RecommendationNavigator({
                   <small>{configuration.stay_base_name}</small>
                   <small>
                     {rowUnscored
-                      ? `Unranked option · ${snowWindowLabel(configuration)} snow`
-                      : `${configuration.fit_score?.toFixed(0)} trip fit · ${snowWindowLabel(configuration)} snow`}
+                      ? `Fit comparison unavailable · ${snowFit.label}: ${snowFit.value}`
+                      : `${configuration.fit_score?.toFixed(0)} trip fit · ${snowFit.label}: ${snowFit.value}`}
                   </small>
                 </span>
               </button>
@@ -128,7 +134,7 @@ export function RecommendationNavigator({
         </p>
       </nav>
 
-      <section className="dossier-switcher" aria-label="Recommendation switcher">
+      <section className="dossier-switcher" aria-label="Trip option switcher">
         <button
           type="button"
           className="dossier-switcher__trigger"
@@ -138,8 +144,8 @@ export function RecommendationNavigator({
         >
           <span>
             {unscored
-              ? "Viewing unranked option"
-              : `Recommendation ${currentGroup.rank} of ${recommendationCount}`}
+              ? "Fit comparison unavailable"
+              : `Trip option ${currentGroup.rank} of ${tripOptionCount}`}
             <strong>{currentGroup.ski_region_name}</strong>
           </span>
           <ChevronDown aria-hidden="true" size={19} />

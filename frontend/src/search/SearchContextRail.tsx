@@ -1,5 +1,5 @@
 import { SlidersHorizontal } from "lucide-react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 
 import type {
   RefinementOption,
@@ -7,7 +7,7 @@ import type {
   SearchIntent,
 } from "../types";
 import {
-  buildParsedChips,
+  partitionParsedChips,
   type ParsedChip,
 } from "./searchPresentation";
 import { RefinementCard } from "./RefinementCard";
@@ -16,14 +16,14 @@ import type { RefinementLifecycleStatus } from "./searchSession";
 const REFINEMENT_STATUS_COPY: Partial<
   Record<RefinementLifecycleStatus, string>
 > = {
-  loading: "Checking whether one answer could improve this ranking.",
+  loading: "Checking whether one answer could improve these trip options.",
   slow:
-    "Your ranking is ready. Snowcast is checking whether one answer could improve it.",
+    "Your trip options are ready. Snowcast is checking whether one answer could improve them.",
   retrying:
     "Snowcast is waiting a moment before checking for another useful question.",
-  stale: "A newer ranking replaced this refinement check.",
-  not_needed: "No follow-up would materially change these results.",
-  skipped: "Follow-up skipped. Results unchanged.",
+  stale: "New trip options replaced this question.",
+  not_needed: "No more questions would materially change these results.",
+  skipped: "Question skipped. Results unchanged.",
 };
 
 const REFINEMENT_ANNOUNCEMENT_COPY: Partial<
@@ -31,7 +31,7 @@ const REFINEMENT_ANNOUNCEMENT_COPY: Partial<
 > = {
   ...REFINEMENT_STATUS_COPY,
   temporarily_unavailable:
-    "No additional refinement is available right now. Your results are unchanged.",
+    "No additional question is available right now. Your results are unchanged.",
 };
 
 function ContextGroup({
@@ -39,11 +39,13 @@ function ContextGroup({
   chips,
   disabled,
   onRemove,
+  action,
 }: {
   label: string;
   chips: ParsedChip[];
   disabled: boolean;
   onRemove: (chip: ParsedChip) => void;
+  action?: ReactNode;
 }) {
   if (!chips.length) return null;
   return (
@@ -63,6 +65,7 @@ function ContextGroup({
           </button>
         ))}
       </div>
+      {action}
     </div>
   );
 }
@@ -73,36 +76,47 @@ export function SearchContextRail({
   refinementStatus,
   loading,
   refinementError,
+  refinementRetrying = false,
   refinementControlRef,
   adjustFiltersRef,
   onOpenFilters,
   onRemoveChip,
   onApplyRefinement,
   onSkipRefinement,
+  onRetryRefinement,
+  onKeepResults,
 }: {
   intent: SearchIntent;
   refinement: RefinementProposal | null;
   refinementStatus: RefinementLifecycleStatus;
   loading: boolean;
   refinementError: string | null;
+  refinementRetrying?: boolean;
   refinementControlRef: RefObject<HTMLElement>;
   adjustFiltersRef: RefObject<HTMLButtonElement>;
-  onOpenFilters: () => void;
+  onOpenFilters: (trigger: HTMLButtonElement) => void;
   onRemoveChip: (chip: ParsedChip) => void;
-  onApplyRefinement: (questionId: string, option: RefinementOption) => void;
-  onSkipRefinement: (questionId: string) => void;
+  onApplyRefinement: (
+    refinement: RefinementProposal,
+    option: RefinementOption,
+  ) => void;
+  onSkipRefinement: (refinement: RefinementProposal) => void;
+  onRetryRefinement?: () => void;
+  onKeepResults?: () => void;
 }) {
-  const chips = buildParsedChips(intent);
-  const hard = chips.filter((chip) =>
-    ["location", "travelWindow", "lodgingBudget", "stayQuality", "travelLimit", "skill"].includes(
-      chip.action.kind,
-    ),
-  );
-  const preferences = chips.filter((chip) => !hard.includes(chip));
+  const { mustHaves: hard, preferences } = partitionParsedChips(intent);
+  const visiblePreferences = preferences.slice(0, 3);
+  const hasHiddenPreferences = preferences.length > visiblePreferences.length;
   const lifecycleCopy = REFINEMENT_STATUS_COPY[refinementStatus];
-  const refinementAnnouncement = refinement
-    ? `A refinement question is ready. ${refinement.question}`
-    : REFINEMENT_ANNOUNCEMENT_COPY[refinementStatus];
+  const terminalFailure =
+    !refinement &&
+    (refinementStatus === "temporarily_unavailable" || refinementRetrying) &&
+    refinementError;
+  const refinementAnnouncement = terminalFailure
+    ? null
+    : refinement
+      ? `One more question is ready. ${refinement.question}`
+      : REFINEMENT_ANNOUNCEMENT_COPY[refinementStatus];
 
   return (
     <aside className="search-context" aria-label="Search context">
@@ -126,23 +140,37 @@ export function SearchContextRail({
           ref={adjustFiltersRef}
           className="text-action search-context__adjust"
           disabled={loading}
-          onClick={onOpenFilters}
+          onClick={(event) => onOpenFilters(event.currentTarget)}
         >
           <SlidersHorizontal aria-hidden="true" size={17} />
           Adjust
         </button>
       </div>
       <ContextGroup
-        label="Hard constraints"
+        label="Must-haves"
         chips={hard}
         disabled={loading}
         onRemove={onRemoveChip}
       />
       <ContextGroup
         label="Preferences"
-        chips={preferences}
+        chips={visiblePreferences}
         disabled={loading}
         onRemove={onRemoveChip}
+        action={
+          hasHiddenPreferences ? (
+            <div className="search-context__group-action">
+              <button
+                type="button"
+                className="text-action search-context__view-all"
+                disabled={loading}
+                onClick={(event) => onOpenFilters(event.currentTarget)}
+              >
+                View all {preferences.length} preferences
+              </button>
+            </div>
+          ) : null
+        }
       />
       {refinement ? (
         <RefinementCard
@@ -153,9 +181,44 @@ export function SearchContextRail({
           focusControlRef={refinementControlRef}
           onApply={onApplyRefinement}
           onSkip={onSkipRefinement}
+          onKeepResults={onKeepResults}
         />
       ) : null}
-      {!refinement && lifecycleCopy ? (
+      {terminalFailure ? (
+        <div
+          className="contextual-refinement contextual-refinement--error"
+          aria-busy={refinementRetrying || undefined}
+        >
+          <p className="contextual-refinement__eyebrow">One more question</p>
+          <p className="refinement-error" role="alert">
+            {refinementError}
+          </p>
+          <div className="refinement-actions">
+            <button
+              type="button"
+              ref={refinementControlRef as RefObject<HTMLButtonElement>}
+              className="primary-refinement-action"
+              aria-disabled={loading || refinementRetrying || undefined}
+              onClick={() => {
+                if (!loading && !refinementRetrying) onRetryRefinement?.();
+              }}
+            >
+              Try again
+            </button>
+            <button
+              type="button"
+              className="text-action"
+              aria-disabled={loading || refinementRetrying || undefined}
+              onClick={() => {
+                if (!loading && !refinementRetrying) onKeepResults?.();
+              }}
+            >
+              Keep these results
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {!refinement && !terminalFailure && lifecycleCopy ? (
         <div className="contextual-refinement">
           <p>{lifecycleCopy}</p>
           {refinementError ? (

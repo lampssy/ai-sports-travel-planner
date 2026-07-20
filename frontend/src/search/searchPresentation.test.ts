@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import type {
   RefinementPreview,
   SearchIntent,
+  SearchWeatherEvidenceResponse,
   SearchV4Configuration,
   SearchV4RecommendationGroup,
 } from "../types";
@@ -16,7 +17,12 @@ import {
   formatTripEssential,
   refinementPreviewCopy,
   selectTripEssentialCategories,
+  snowFitPresentation,
+  snowFitLabel,
+  technicalEvidenceDetails,
   terrainPresentation,
+  tripOptionCountCopy,
+  weatherEvidencePresentation,
 } from "./searchPresentation";
 
 const baseIntent: SearchIntent = {
@@ -220,26 +226,32 @@ describe("trip essentials", () => {
     });
 
     expect(formatTripEssential("terrain", estimatedTerrain)?.value).toBe(
-      "Estimated 31 km (ski area only)",
+      "About 31 km in the selected ski area",
     );
   });
 
-  test("labels needs-source ski-area terrain at the field level", () => {
-    const selectedPass = {
-      ...configuration("needs-source-terrain").selected_pass,
-      accessible_piste_km: 31,
-      accessible_piste_km_evidence: {
-        trust_status: "needs_source" as const,
-        scope: "ski_area" as const,
-        source_entity_id: "pinzolo-ski-area",
-        field_group: "terrain_metrics" as const,
-      },
-    };
+  test.each([
+    ["ski_area", "Ski-area terrain needs source confirmation"],
+    ["terrain_domain", "Connected terrain needs source confirmation"],
+    ["pass", "Pass terrain needs source confirmation"],
+  ] as const)(
+    "hides the number for needs-source %s terrain",
+    (scope, expected) => {
+      const selectedPass = {
+        ...configuration("needs-source-terrain").selected_pass,
+        accessible_piste_km: 31,
+        accessible_piste_km_evidence: {
+          trust_status: "needs_source" as const,
+          scope,
+          source_entity_id: "terrain-source",
+          field_group: "terrain_metrics" as const,
+        },
+      };
 
-    expect(terrainPresentation(selectedPass)?.evidenceLabel).toBe(
-      "31 km in selected ski area (needs source); pass-wide coverage unresolved",
-    );
-  });
+      expect(terrainPresentation(selectedPass)?.essentialValue).toBe(expected);
+      expect(terrainPresentation(selectedPass)?.evidenceLabel).toBe(expected);
+    },
+  );
 
   test("does not expose an unknown access-mode identifier", () => {
     const unknownAccess = configuration("unknown-access", {
@@ -255,6 +267,128 @@ describe("trip essentials", () => {
     });
 
     expect(formatTripEssential("liftAccess", unknownAccess)).toBeNull();
+  });
+});
+
+describe("snow fit label", () => {
+  test.each([
+    [undefined, "Not enough evidence"],
+    [
+      {
+        factor_id: "trip_window_snow_fit",
+        group_id: "trip_viability",
+        direction: "prefer",
+        raw_value: null,
+        raw_utility: 0.9,
+        neutral_utility: 0.5,
+        effective_evidence_cap: 1,
+        effective_utility: 0.75,
+        effective_weight: 1,
+        contribution_points: 10,
+        evidence_cap_components: {},
+        warnings: [],
+        provenance_summary: "Historical evidence.",
+        explanation_inputs: {},
+      },
+      "Strong fit",
+    ],
+    [
+      {
+        factor_id: "trip_window_snow_fit",
+        group_id: "trip_viability",
+        direction: "prefer",
+        raw_value: null,
+        raw_utility: 0.4,
+        neutral_utility: 0.5,
+        effective_evidence_cap: 1,
+        effective_utility: 0.4,
+        effective_weight: 1,
+        contribution_points: -4,
+        evidence_cap_components: {},
+        warnings: [],
+        provenance_summary: "Historical evidence.",
+        explanation_inputs: {},
+      },
+      "Some concerns",
+    ],
+    [
+      {
+        factor_id: "trip_window_snow_fit",
+        group_id: "trip_viability",
+        direction: "prefer",
+        raw_value: null,
+        raw_utility: 0.8,
+        neutral_utility: 0.5,
+        effective_evidence_cap: 0,
+        effective_utility: 0.8,
+        effective_weight: 1,
+        contribution_points: 0,
+        evidence_cap_components: {},
+        warnings: ["No archive data"],
+        provenance_summary: "No evidence.",
+        explanation_inputs: {},
+      },
+      "Not enough evidence",
+    ],
+  ] as const)("uses %s for the canonical public snow state", (factor, expected) => {
+    const factors = factor
+      ? [
+          {
+            ...factor,
+            evidence_cap_components: { ...factor.evidence_cap_components },
+            warnings: [...factor.warnings],
+            explanation_inputs: { ...factor.explanation_inputs },
+          },
+        ]
+      : [];
+    expect(snowFitLabel(configuration("snow", { factors }))).toBe(expected);
+  });
+});
+
+describe("snow fit presentation", () => {
+  test.each([
+    [
+      { start_date: "2027-01-16", end_date: "2027-01-20" },
+      "Snow fit for your dates",
+      "Not enough evidence",
+    ],
+    [{ month: 3 }, "Snow fit for March", "Not enough evidence"],
+    [undefined, "Add travel dates to assess snow fit", "Not assessed"],
+  ] as const)("uses the applied travel window %o", (travelWindow, label, value) => {
+    expect(
+      snowFitPresentation(configuration("snow"), travelWindow),
+    ).toEqual({ label, value });
+  });
+
+  test.each([
+    [0.8, "Strong fit"],
+    [0.4, "Some concerns"],
+  ])("does not present %s without an applied travel window", (utility) => {
+    const candidate = configuration("snow-without-window", {
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: utility,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: utility,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Historical snow evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(snowFitPresentation(candidate, undefined)).toEqual({
+      label: "Add travel dates to assess snow fit",
+      value: "Not assessed",
+    });
   });
 });
 
@@ -302,7 +436,7 @@ describe("applied travel-window presentation", () => {
 });
 
 describe("applied travel-origin presentation", () => {
-  test("shows origin-driven travel ranking separately from a hard drive limit", () => {
+  test("shows origin-driven travel ranking separately from a maximum drive time", () => {
     const chips = buildParsedChips({
       ...baseIntent,
       constraints: {
@@ -358,9 +492,8 @@ describe("deterministic recommendation copy", () => {
     });
 
     expect(buildCandidateNarrative(candidate)).toEqual({
-      verdict: "A strong selected ski-area terrain match.",
-      strength:
-        "Estimated 31 km in selected ski area; pass-wide coverage needs source.",
+      verdict: "Matches terrain in the selected ski area.",
+      strength: "About 31 km in the selected ski area.",
     });
   });
 
@@ -395,9 +528,69 @@ describe("deterministic recommendation copy", () => {
       "Terrain scale",
     );
     expect(buildCandidateNarrative(candidate)).toEqual({
-      verdict: "A strong terrain scale match.",
-      strength: "Terrain scale contributes positively to this comparison.",
+      verdict: "Terrain compares well with the other matches.",
+      strength: "Terrain scale compares well with the other matches.",
     });
+  });
+
+  test.each([
+    ["terrain_potential_scale", "The ski region offers wider terrain."],
+    ["lift_network_scale", "The lift network supports varied ski-day plans."],
+    ["travel_effort", "The route fits a shorter or easier journey."],
+    ["glacier_terrain", "Glacier terrain is available for this trip option."],
+  ])("keeps the %s verdict neutral and within the measured evidence", (factorId, verdict) => {
+    const candidate = configuration(`verdict-${factorId}`, {
+      factors: [
+        {
+          factor_id: factorId,
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: 0.8,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.8,
+          effective_weight: 1,
+          contribution_points: 8,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Approved source evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(buildCandidateNarrative(candidate).verdict).toBe(verdict);
+    expect(buildCandidateNarrative(candidate).verdict).not.toMatch(/strong/i);
+  });
+
+  test("bounds wider-terrain strength to the ski region and pass uncertainty", () => {
+    const candidate = configuration("wider-terrain", {
+      ski_region_name: "Matterhorn Ski Paradise",
+      factors: [
+        {
+          factor_id: "terrain_potential_scale",
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: 360,
+          raw_utility: 0.7,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.7,
+          effective_weight: 1,
+          contribution_points: 7,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Approved source evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(buildCandidateNarrative(candidate).strength).toBe(
+      "Matterhorn Ski Paradise offers wider terrain; a different or additional pass may be needed.",
+    );
+    expect(buildCandidateNarrative(candidate).strength).not.toMatch(/selected pass supports/i);
   });
 
   test("uses approved factor copy without reading arbitrary factor JSON", () => {
@@ -440,9 +633,104 @@ describe("deterministic recommendation copy", () => {
 
     expect(buildCandidateNarrative(candidate)).toEqual({
       verdict: "A practical lift-access match for this trip.",
-      strength: "The selected stay base keeps lift access practical.",
-      watchout: "Snow evidence is limited for the requested travel window.",
+      strength: "The recommended place to stay keeps lift access practical.",
+      watchout: "Add travel dates to assess snow fit.",
     });
+  });
+
+  test.each([
+    [{ month: 3 }, "Snow fit for March", "Strong snow fit for March."],
+    [
+      { start_date: "2027-01-16", end_date: "2027-01-20" },
+      "Snow fit for your dates",
+      "Strong snow fit for your dates.",
+    ],
+  ] as const)(
+    "uses %s in a snow-led narrative",
+    (travelWindow, snowLabel, expectedVerdict) => {
+      const candidate = configuration("supported-snow-narrative", {
+        factors: [
+          {
+            factor_id: "trip_window_snow_fit",
+            group_id: "trip_viability",
+            direction: "prefer",
+            raw_value: null,
+            raw_utility: 0.8,
+            neutral_utility: 0.5,
+            effective_evidence_cap: 1,
+            effective_utility: 0.8,
+            effective_weight: 1,
+            contribution_points: 10,
+            evidence_cap_components: {},
+            warnings: [],
+            provenance_summary: "Historical snow evidence.",
+            explanation_inputs: {},
+          },
+        ],
+      });
+
+      expect(buildCandidateNarrative(candidate, travelWindow)).toEqual({
+        verdict: expectedVerdict,
+        strength: `${snowLabel}: Available snow evidence supports this travel window.`,
+      });
+    },
+  );
+
+  test("prompts for dates instead of assessing snow fit without a travel window", () => {
+    const candidate = configuration("supported-snow-without-window", {
+      factors: [
+        {
+          factor_id: "trip_window_snow_fit",
+          group_id: "trip_viability",
+          direction: "prefer",
+          raw_value: null,
+          raw_utility: 0.8,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 0.8,
+          effective_weight: 1,
+          contribution_points: 10,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Historical snow evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(buildCandidateNarrative(candidate)).toEqual({
+      verdict: "A complete trip option for comparison.",
+      watchout: "Add travel dates to assess snow fit.",
+    });
+  });
+
+  test.each([
+    ["glacier_terrain", "Glacier terrain is available for this trip option."],
+    ["snowmaking_availability", "Snowmaking is available for this trip option."],
+  ])("states %s availability without claiming resilience", (factorId, strength) => {
+    const candidate = configuration(factorId, {
+      factors: [
+        {
+          factor_id: factorId,
+          group_id: "ski_experience",
+          direction: "prefer",
+          raw_value: true,
+          raw_utility: 1,
+          neutral_utility: 0.5,
+          effective_evidence_cap: 1,
+          effective_utility: 1,
+          effective_weight: 1,
+          contribution_points: 12,
+          evidence_cap_components: {},
+          warnings: [],
+          provenance_summary: "Catalog availability evidence.",
+          explanation_inputs: {},
+        },
+      ],
+    });
+
+    expect(buildCandidateNarrative(candidate).strength).toBe(strength);
+    expect(buildCandidateNarrative(candidate).strength).not.toMatch(/resilien/i);
   });
 
   test("qualifies or suppresses access strengths from non-verified catalog evidence", () => {
@@ -497,18 +785,19 @@ describe("deterministic recommendation copy", () => {
 
     expect(buildCandidateNarrative(estimated)).toEqual({
       verdict: "An estimated practical lift-access match for this trip.",
-      strength: "Catalog estimates suggest the stay base keeps access practical.",
+      strength:
+        "Available estimates suggest Base estimated-access offers practical lift access.",
     });
     expect(buildCandidateNarrative(needsSource)).toEqual({
-      verdict: "A complete trip configuration for comparison.",
+      verdict: "A complete trip option for comparison.",
     });
     expect(buildCandidateNarrative(adjusted)).toEqual({
-      verdict: "An adjusted practical lift-access match for this trip.",
+      verdict: "A practical lift-access match based on estimated data.",
       strength:
-        "Adjusted access evidence supports the stay base as a practical choice.",
+        "Available source data suggests Base adjusted-access offers practical lift access.",
     });
     expect(buildCandidateNarrative(missingEvidence)).toEqual({
-      verdict: "A complete trip configuration for comparison.",
+      verdict: "A complete trip option for comparison.",
       watchout: "Lift-access details need source verification.",
     });
   });
@@ -567,6 +856,50 @@ describe("deterministic recommendation copy", () => {
       "Intermediate",
     ]);
   });
+
+  test("uses approved public labels for controlled preference values", () => {
+    const intent: SearchIntent = {
+      ...baseIntent,
+      factor_preferences: [
+        {
+          factor_id: "development_style",
+          mode: "prefer",
+          values: ["planned_resort"],
+          importance: "normal",
+        },
+        {
+          factor_id: "base_type",
+          mode: "prefer",
+          values: ["village", "hamlet"],
+          importance: "normal",
+        },
+      ],
+    };
+
+    expect(buildParsedChips(intent).map((chip) => chip.label)).toEqual([
+      "Intermediate",
+      "Place style: Purpose-built ski resort",
+      "Place type: Village or hamlet",
+    ]);
+  });
+
+  test("uses public labels for group-priority values", () => {
+    const intent: SearchIntent = {
+      ...baseIntent,
+      group_priorities: [
+        { group_id: "trip_viability", importance: "very_high" },
+      ],
+    };
+
+    expect(buildParsedChips(intent)).toContainEqual({
+      id: "group-trip_viability",
+      label: "Trip timing: Highest priority",
+      action: { kind: "group", id: "trip_viability" },
+    });
+    expect(
+      buildParsedChips(intent).some((chip) => chip.label.includes("very_high")),
+    ).toBe(false);
+  });
 });
 
 describe("why this trip presentation", () => {
@@ -608,7 +941,7 @@ describe("why this trip presentation", () => {
       ],
     });
 
-    const presentation = decisionEvidencePresentation(candidate);
+    const presentation = decisionEvidencePresentation(candidate, { month: 3 });
     const primaryCopy = JSON.stringify({
       supports: presentation.supports,
       uncertainties: presentation.uncertainties,
@@ -616,15 +949,13 @@ describe("why this trip presentation", () => {
 
     expect(presentation.supports).toHaveLength(4);
     expect(presentation.supports.map((item) => item.title)).toEqual([
-      "Snow window",
+      "Snow fit for March",
       "Skill match",
       "Terrain choice",
       "Lift access",
     ]);
     expect(primaryCopy).not.toMatch(/verified_with_adjustment|Catalog field-group|source reference|trip_window_snow_fit/);
-    expect(presentation.technicalDetails[0].provenance).toContain(
-      "Catalog field-group evidence",
-    );
+    expect(presentation).not.toHaveProperty("technicalDetails");
   });
 
   test("states missing snow, pass coverage, and lodging evidence as uncertainties", () => {
@@ -656,14 +987,14 @@ describe("why this trip presentation", () => {
       ],
     });
 
-    const presentation = decisionEvidencePresentation(candidate);
+    const presentation = decisionEvidencePresentation(candidate, { month: 3 });
 
     expect(presentation.uncertainties.map((item) => item.detail)).toEqual(
       expect.arrayContaining([
         "Snow evidence is limited for the requested travel window.",
         "Comparable pass-wide terrain coverage is not available yet.",
-        "A comparable pass price is not available for this configuration.",
-        "No stay-price estimate is available for this configuration.",
+        "A comparable pass price is not available for this trip option.",
+        "No stay-price estimate is available for this trip option.",
       ]),
     );
     expect(new Set(presentation.uncertainties.map((item) => item.detail)).size).toBe(
@@ -686,20 +1017,292 @@ describe("why this trip presentation", () => {
       "Lift access",
     );
     expect(presentation.uncertainties.map((item) => item.detail)).toContain(
-      "Lift access from this stay base still needs source verification.",
+      "Lift access from this place to stay still needs source verification.",
     );
     expect(formatTripEssential("liftAccess", candidate)).toBeNull();
     expect(formatAccess(candidate)).toBe(
-      "Access details need source verification",
+      "Lift access needs source confirmation",
     );
-    const technicalAccess = presentation.technicalDetails.find(
+    const technicalAccess = technicalEvidenceDetails(candidate).find(
       (item) => item.id === "catalog-access",
     );
     expect(technicalAccess).toMatchObject({
-      evidenceLabel: "Needs source",
-      provenance: "Lift-access relationship and distance need source verification.",
+      evidenceLabel: "Source confirmation needed",
+      provenance:
+        "Source confirmation is still needed. The catalog links Base unverified-access to Area unverified-access. The lift-access mode and distance need verification.",
     });
     expect(JSON.stringify(technicalAccess)).not.toMatch(/Plan Maison|250 m/i);
+  });
+});
+
+describe("weather evidence presentation", () => {
+  function archiveResponse(): Extract<
+    SearchWeatherEvidenceResponse,
+    { status: "available" }
+  > {
+    return {
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "available",
+      ski_area_id: "area-weather",
+      evaluated_at: "2026-07-16T12:02:00Z",
+      cache_valid_until: "2026-07-16T13:00:00Z",
+      evidence: {
+        mode: "climatology",
+        window_label: "March",
+        elevation_band: "mid_mountain",
+        elevation_m: 2400,
+        elevation_status: "exact",
+        interpretation: "Historically reliable at mid-mountain in March.",
+        limitations: [],
+        historical: {
+          source_label: "Open-Meteo archive climatology",
+          source_model: "ERA5-Land",
+          computed_at: "2026-07-15T02:00:00Z",
+          baseline_start_year: 1995,
+          baseline_end_year: 2024,
+          evidence_seasons: 30,
+          latest_archive_year: 2024,
+          provenance_status: "homogeneous",
+          sources: [
+            {
+              source_model: "ERA5-Land",
+              computed_at: "2026-07-15T02:00:00Z",
+              baseline_period: "normal_30y",
+              baseline_start_year: 1995,
+              baseline_end_year: 2024,
+              evidence_seasons: 30,
+              latest_archive_year: 2024,
+              elevation_m: 2400,
+              row_count: 1,
+              profile_dates: ["03-15"],
+            },
+          ],
+          snow_depth_cm_p25: 82,
+          snow_depth_cm_p50: 128,
+          snow_depth_cm_p75: 176,
+          probability_snow_depth_ge_30cm: 0.87,
+          average_daily_snowfall_cm: 4.2,
+          average_max_temperature_c: -2.1,
+          daily_profile: [
+            {
+              date_or_month_day: "03-15",
+              snow_depth_cm: null,
+              snow_depth_cm_p25: 82,
+              snow_depth_cm_p50: 128,
+              snow_depth_cm_p75: 176,
+              snowfall_cm: 4.2,
+              temperature_min_c: -8,
+              temperature_max_c: -2.1,
+              rain_risk: null,
+              thaw_risk: 0.18,
+              wind_gust_kmh: null,
+            },
+          ],
+        },
+        forecast: null,
+      },
+    };
+  }
+
+  test("keeps archive source, currency, coverage, conditions, and limitations separate", () => {
+    const response = archiveResponse();
+    const presentation = weatherEvidencePresentation(response);
+
+    expect(presentation).toMatchObject({
+      sourceType: "Historical pattern",
+      sourceCurrency: "Archive through 2024; 1995-2024 baseline",
+      coverage: "30 historical seasons; 1 profile date",
+      expectedConditions:
+        "Typical historical snow depth 128 cm; typical fresh snow 4.2 cm/day; average high -2.1 °C",
+      mainLimitation: "Historical patterns do not predict exact trip conditions.",
+    });
+    expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
+    expect(JSON.stringify(presentation)).not.toContain(response.cache_valid_until);
+  });
+
+  test("derives mixed historical timing and coverage from source rows", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      historical: {
+        ...response.evidence.historical,
+        baseline_start_year: null,
+        baseline_end_year: null,
+        evidence_seasons: null,
+        latest_archive_year: null,
+        provenance_status: "mixed",
+        sources: [
+          {
+            ...response.evidence.historical.sources[0],
+            baseline_start_year: 1995,
+            baseline_end_year: 2024,
+            evidence_seasons: 30,
+            latest_archive_year: 2024,
+          },
+          {
+            ...response.evidence.historical.sources[0],
+            baseline_period: "recent_15y",
+            baseline_start_year: 2009,
+            baseline_end_year: 2023,
+            evidence_seasons: 15,
+            latest_archive_year: 2023,
+          },
+        ],
+      },
+    };
+
+    expect(weatherEvidencePresentation(response)).toMatchObject({
+      sourceCurrency: "Archives through 2023-2024; baseline years vary across sources",
+      coverage: "15-30 historical seasons across sources; 1 profile date",
+    });
+  });
+
+  test("uses forecast issue time and archive year for partial forecast currency", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      mode: "forecast_assisted",
+      forecast: {
+        source_label: "Open-Meteo forecast",
+        source_model: "best_match",
+        issued_at: "2026-07-16T11:00:00Z",
+        provenance_status: "homogeneous",
+        sources: [],
+        coverage_status: "partial",
+        usable_date_count: 2,
+        requested_date_count: 3,
+        average_forecast_share: 0.67,
+        daily_profile: [
+          {
+            date_or_month_day: "2026-07-20",
+            snow_depth_cm: 112,
+            snow_depth_cm_p25: null,
+            snow_depth_cm_p50: null,
+            snow_depth_cm_p75: null,
+            snowfall_cm: 7.4,
+            temperature_min_c: -7,
+            temperature_max_c: -1,
+            rain_risk: 0.1,
+            thaw_risk: 0.2,
+            wind_gust_kmh: 46,
+          },
+        ],
+      },
+    };
+
+    const presentation = weatherEvidencePresentation(response);
+
+    expect(presentation).toMatchObject({
+      sourceType: "Forecast and historical pattern",
+      sourceCurrency:
+        "Forecast issued Jul 16, 2026, 11:00 UTC; archive through 2024; 1995-2024 baseline",
+      coverage: "2 of 3 requested dates have forecast values; 30 historical seasons",
+      expectedConditions:
+        "Forecast fresh snow 7.4 cm; forecast temperature range -7 to -1 °C; typical historical snow depth 128 cm",
+      mainLimitation: "Forecast values are unavailable for 1 of 3 requested dates.",
+    });
+    expect(JSON.stringify(presentation)).not.toContain(response.evaluated_at);
+    expect(JSON.stringify(presentation)).not.toContain(response.cache_valid_until);
+  });
+
+  test("promotes mixed forecast provenance at one elevation to the main limitation", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      mode: "forecast_assisted",
+      limitations: ["Forecast coverage is incomplete."],
+      forecast: {
+        source_label: "Open-Meteo forecast",
+        source_model: "best_match",
+        issued_at: "2026-07-16T11:00:00Z",
+        provenance_status: "mixed",
+        sources: [],
+        coverage_status: "complete",
+        usable_date_count: 3,
+        requested_date_count: 3,
+        average_forecast_share: 1,
+        daily_profile: [],
+      },
+    };
+
+    expect(weatherEvidencePresentation(response).mainLimitation).toBe(
+      "This assessment combines weather data from different sources.",
+    );
+  });
+
+  test("promotes mixed historical provenance to the main limitation", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      limitations: ["Historical coverage is incomplete."],
+      historical: {
+        ...response.evidence.historical,
+        provenance_status: "mixed",
+      },
+    };
+
+    expect(weatherEvidencePresentation(response).mainLimitation).toBe(
+      "This assessment combines weather data from different sources.",
+    );
+  });
+
+  test("names both mixed source provenance and elevations in the main limitation", () => {
+    const response = archiveResponse();
+    response.evidence = {
+      ...response.evidence,
+      elevation_m: null,
+      elevation_status: "mixed",
+      limitations: ["Historical coverage is incomplete."],
+      historical: {
+        ...response.evidence.historical,
+        provenance_status: "mixed",
+      },
+    };
+
+    expect(weatherEvidencePresentation(response).mainLimitation).toBe(
+      "This assessment combines weather data from different sources and elevations.",
+    );
+  });
+
+  test("presents unavailable evidence without claiming the archive is absent", () => {
+    const presentation = weatherEvidencePresentation({
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "unavailable",
+      ski_area_id: "area-weather",
+      evaluated_at: "2026-07-16T12:02:00Z",
+      cache_valid_until: "2026-07-16T13:00:00Z",
+      unavailable_reason: "historical_evidence_unavailable",
+      limitations: ["No complete archive profile is available."],
+    });
+
+    expect(presentation.sourceType).toBe("Historical weather evidence unavailable");
+    expect(presentation.sourceCurrency).toBe("Not available for this assessment.");
+    expect(presentation.coverage).toBe(
+      "No historical profile met Snowcast's evidence requirements for this trip window.",
+    );
+    expect(presentation.expectedConditions).toBe("Unavailable from the current evidence.");
+    expect(presentation.mainLimitation).toBe("No complete archive profile is available.");
+    expect(`${presentation.sourceCurrency} ${presentation.coverage}`).not.toMatch(/archive/i);
+  });
+
+  test("presents missing travel dates as an informational not-assessed state", () => {
+    const presentation = weatherEvidencePresentation({
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "unavailable",
+      ski_area_id: "area-weather",
+      evaluated_at: "2026-07-16T12:02:00Z",
+      cache_valid_until: "2026-07-16T13:00:00Z",
+      unavailable_reason: "travel_window_missing",
+      limitations: ["A travel month or exact travel dates are required."],
+    });
+
+    expect(presentation).toEqual({
+      sourceType: "Travel dates needed",
+      sourceCurrency: "Add travel dates to assess weather conditions.",
+      coverage: "Weather coverage will be assessed after travel dates are added.",
+      expectedConditions: "Choose travel dates to see weather conditions.",
+      mainLimitation: "A travel month or exact travel dates are required.",
+    });
   });
 });
 
@@ -738,7 +1341,12 @@ describe("refinement preview copy", () => {
     [
       "eligibility only",
       { top_rank_changes: [], eligible_candidate_count_delta: -4 },
-      "This choice may change eligibility for 4 trip configurations.",
+      "This choice may change 4 possible matches.",
+    ],
+    [
+      "one eligibility match",
+      { top_rank_changes: [], eligible_candidate_count_delta: 1 },
+      "This choice may change 1 possible match.",
     ],
     [
       "absent",
@@ -755,6 +1363,15 @@ describe("refinement preview copy", () => {
         { top_rank_changes: [], eligible_candidate_count_delta: 0 },
         false,
       ),
-    ).toBe("Keeps your current trip decisions and ranking.");
+    ).toBe("Keeps your current trip decisions unchanged.");
+  });
+});
+
+describe("public trip-option count copy", () => {
+  test.each([
+    [1, "1 trip option matches your must-haves"],
+    [2, "2 trip options match your must-haves"],
+  ])("formats %s displayed recommendation groups", (count, expected) => {
+    expect(tripOptionCountCopy(count)).toBe(expected);
   });
 });

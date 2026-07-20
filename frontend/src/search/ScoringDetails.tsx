@@ -1,41 +1,90 @@
-import { Layers3 } from "lucide-react";
+import { Database, Layers3 } from "lucide-react";
 
-import type { SearchV4Configuration } from "../types";
+import type {
+  SearchWeatherEvidenceResponse,
+  SearchV4Configuration,
+  TravelWindow,
+} from "../types";
+import { Badge } from "../ui/Badge";
 import {
   factorLabelForConfiguration,
   factorLabels,
   factorTrustLabelForConfiguration,
   groupLabels,
+  technicalEvidenceDetails,
 } from "./searchPresentation";
+import { WeatherEvidenceTechnicalDetails } from "./WeatherEvidenceTechnicalDetails";
 
 export function ScoringDetails({
   configuration,
   rankingPolicyVersion,
+  travelWindow,
+  weatherEvidence,
 }: {
   configuration: SearchV4Configuration;
   rankingPolicyVersion?: string;
+  travelWindow?: TravelWindow;
+  weatherEvidence?: SearchWeatherEvidenceResponse | null;
 }) {
   const groups = configuration.groups.filter((group) => groupLabels[group.group_id]);
   const factors = configuration.factors.filter(
     (factor) => factorLabels[factor.factor_id],
   );
-  if (!groups.length && !factors.length) return null;
+  const technicalDetails = technicalEvidenceDetails(configuration, travelWindow);
+  if (
+    !rankingPolicyVersion &&
+    !weatherEvidence &&
+    !technicalDetails.length &&
+    !groups.length &&
+    !factors.length
+  ) {
+    return null;
+  }
   return (
     <details className="scoring-details">
       <summary>
         <Layers3 aria-hidden="true" size={17} />
-        Show scoring details
+        Technical calculation details
       </summary>
       <div className="scoring-details__content">
+        {weatherEvidence ? (
+          <section className="scoring-details__weather">
+            <h3>Weather calculations and values</h3>
+            <WeatherEvidenceTechnicalDetails response={weatherEvidence} />
+          </section>
+        ) : null}
         {rankingPolicyVersion ? (
           <section className="scoring-details__policy">
-            <h4>Ranking policy</h4>
+            <h3>Ranking policy</h3>
             <code>{rankingPolicyVersion}</code>
+          </section>
+        ) : null}
+        {technicalDetails.length ? (
+          <section>
+            <h3>Evidence and source context</h3>
+            <div className="why-trip__technical-rows">
+              {technicalDetails.map((item) => (
+                <article key={item.id}>
+                  <Database aria-hidden="true" size={18} />
+                  <div>
+                    <h4>{item.label}</h4>
+                    <p>{item.provenance}</p>
+                  </div>
+                  <Badge
+                    variant={
+                      item.evidenceLabel === "Limited evidence" ? "warning" : "info"
+                    }
+                  >
+                    {item.evidenceLabel}
+                  </Badge>
+                </article>
+              ))}
+            </div>
           </section>
         ) : null}
         {groups.length ? (
           <section>
-            <h4>Decision groups</h4>
+            <h3>Decision groups</h3>
             <dl className="scoring-details__groups">
               {groups.map((group) => (
                 <div key={group.group_id}>
@@ -48,7 +97,7 @@ export function ScoringDetails({
         ) : null}
         {factors.length ? (
           <section>
-            <h4>Raw factor contributions</h4>
+            <h3>Raw factor contributions</h3>
             <dl className="scoring-details__factors">
               {factors.map((factor) => {
                 const trustLabel = factorTrustLabelForConfiguration(
@@ -59,7 +108,11 @@ export function ScoringDetails({
                   <div key={factor.factor_id}>
                     <dt>
                       <span>
-                        {factorLabelForConfiguration(configuration, factor.factor_id)}
+                        {factorLabelForConfiguration(
+                          configuration,
+                          factor.factor_id,
+                          travelWindow,
+                        )}
                       </span>
                       {trustLabel ? (
                         <small className="scoring-details__trust">{trustLabel}</small>

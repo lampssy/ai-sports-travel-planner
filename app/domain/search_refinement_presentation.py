@@ -413,7 +413,7 @@ DEFAULT_REFINEMENT_PRESENTATION_PATH = (
     Path(__file__).resolve().parents[1]
     / "config"
     / "search-refinement"
-    / "presentation-v1.toml"
+    / "presentation-v2.toml"
 )
 
 
@@ -551,6 +551,27 @@ class RefinementPresentationPolicy(_PresentationModel):
             ),
         )
 
+    def resolve_answer_id(self, answer_id: str) -> ResolvedRefinementAnswer:
+        """Resolve one registered answer for the active single-topic path."""
+
+        try:
+            answer = self.answer_by_id[answer_id]
+        except KeyError as error:
+            raise KeyError(f"unknown refinement answer ID: {answer_id}") from error
+        return ResolvedRefinementAnswer(
+            answer_ids=(answer_id,),
+            label=answer.label,
+            description=answer.description,
+            factor_preferences=(
+                (answer.factor_preference_patch,)
+                if answer.factor_preference_patch is not None
+                else ()
+            ),
+            objectives=(
+                (answer.objective_patch,) if answer.objective_patch is not None else ()
+            ),
+        )
+
 
 def resolve_interaction_copy(
     question: str,
@@ -606,16 +627,21 @@ def build_deterministic_refinement_fallback(
     policy: SearchPolicy,
     presentation: RefinementPresentationPolicy,
     already_answered_question_ids: frozenset[str] = frozenset(),
+    resolved_topic_ids: frozenset[str] = frozenset(),
 ) -> ValidatedRefinementProposal | None:
     """Return the first material registry-backed fallback question."""
 
     for topic in sorted(presentation.topics, key=lambda item: item.fallback_priority):
+        if topic.topic_id in resolved_topic_ids:
+            continue
         try:
             options = tuple(
                 _fallback_option(answer_id, presentation)
                 for answer_id in topic.fallback_answer_ids
             )
             proposal = RefinementProposal(
+                topic_id=topic.topic_id,
+                target_factor_id=topic.factor_id,
                 question_id=semantic_refinement_question_id(
                     topic_ids=(topic.topic_id,),
                     answer_id_sets=tuple(
@@ -633,6 +659,7 @@ def build_deterministic_refinement_fallback(
                 candidates=candidates,
                 policy=policy,
                 already_answered_question_ids=already_answered_question_ids,
+                resolved_topic_ids=resolved_topic_ids,
             )
         except RefinementValidationError:
             continue
@@ -643,7 +670,7 @@ def _fallback_option(
     answer_id: str,
     presentation: RefinementPresentationPolicy,
 ) -> RefinementOption:
-    resolved = presentation.resolve_answer_ids((answer_id,))
+    resolved = presentation.resolve_answer_id(answer_id)
     return RefinementOption(
         label=resolved.label,
         description=resolved.description,
@@ -1116,7 +1143,7 @@ def validate_refinement_presentation_policy(
 
         for answer_id in topic.fallback_answer_ids:
             _validate_fallback_option_bounds(
-                presentation.resolve_answer_ids((answer_id,)),
+                presentation.resolve_answer_id(answer_id),
                 topic.topic_id,
                 answer_id,
                 search_policy,

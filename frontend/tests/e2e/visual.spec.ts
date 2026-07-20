@@ -185,6 +185,18 @@ function forecastWeatherResponse(): SearchWeatherEvidenceResponse {
   };
 }
 
+function unavailableWeatherResponse(): SearchWeatherEvidenceResponse {
+  return {
+    weather_evidence_version: "search-weather-evidence-v1",
+    status: "unavailable",
+    ski_area_id: "tignes-ski-area",
+    evaluated_at: fixedNow.toISOString(),
+    cache_valid_until: "2099-07-16T12:05:00Z",
+    unavailable_reason: "historical_evidence_unavailable",
+    limitations: ["Historical evidence is unavailable for the selected window."],
+  };
+}
+
 function denseForecastWeatherResponse(): SearchWeatherEvidenceResponse {
   const response = forecastWeatherResponse();
   if (response.status !== "available" || response.evidence.forecast == null) {
@@ -220,6 +232,18 @@ function denseForecastWeatherResponse(): SearchWeatherEvidenceResponse {
 function resultsResponse(): SearchResponse {
   const response = structuredClone(monthSearchResponse);
   response.refinements = [structuredClone(developmentStyleRefinement)];
+  return response;
+}
+
+function longLabelResultsResponse(): SearchResponse {
+  const response = resultsResponse();
+  const first = response.results[0];
+  first.ski_region_name = "Portes du Soleil France-Switzerland International Ski Region";
+  first.top_configuration.ski_region_name = first.ski_region_name;
+  first.top_configuration.stay_base_name =
+    "Chatel Village Centre and Super-Chatel Lift District";
+  first.top_configuration.selected_pass.name =
+    "Portes du Soleil France-Switzerland International Lift Pass";
   return response;
 }
 
@@ -296,14 +320,14 @@ async function mockApi(
     const payload: SearchV4RefinementResponse = {
       search_model_version: "search-v4",
       ranking_policy_version: response.ranking_policy_version,
-      refinement_presentation_policy_version: "search-refinement-presentation-1",
+      refinement_presentation_policy_version: "search-refinement-presentation-2",
       baseline_fingerprint: response.baseline_fingerprint,
       baseline_status: "current",
       refinement_status: response.refinements.length
         ? "questions_available"
         : "not_needed",
       fallback_used: false,
-      refinements: response.refinements,
+      refinements: response.refinements.slice(0, 1),
     };
     return route.fulfill({
       status: 200,
@@ -341,8 +365,8 @@ async function openResults(page: Page, response: SearchResponse) {
   await page
     .getByLabel("Describe your ski trip")
     .fill("A snow-reliable intermediate trip in France for March, close to the lifts");
-  await page.getByRole("button", { name: "Find resorts" }).click();
-  await waitForStablePage(page, "Recommended ski trips");
+  await page.getByRole("button", { name: "Find trip options" }).click();
+  await waitForStablePage(page, "Trip options for you");
 }
 
 async function openDossier(
@@ -355,14 +379,13 @@ async function openDossier(
   await page
     .getByLabel("Describe your ski trip")
     .fill("A snow-reliable intermediate trip in France for March, close to the lifts");
-  await page.getByRole("button", { name: "Find resorts" }).click();
+  await page.getByRole("button", { name: "Find trip options" }).click();
   await page
     .locator("article.recommendation-card")
     .first()
-    .getByRole("link", { name: "View dossier" })
+    .getByRole("link", { name: "View trip details" })
     .click();
   await waitForStablePage(page, "Tignes - Val d'Isere - Le Lac");
-  await expect(page.getByRole("heading", { name: /Snow & weather for/ })).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -406,6 +429,8 @@ for (const [name, viewport] of [
     await expect(page).toHaveScreenshot(`results-expanded-${name}.png`, {
       animations: "disabled",
       caret: "hide",
+      // Chromium can vary the bottom-edge text antialiasing at 1024x768.
+      maxDiffPixels: name === "tablet" ? 300 : 0,
     });
   });
 }
@@ -423,6 +448,54 @@ test("five-option mobile refinement", async ({ page }) => {
     fullPage: true,
   });
 });
+
+test("collapsed results retain decision cues on mobile", async ({ page }) => {
+  await page.setViewportSize(mobile);
+  await openResults(page, resultsResponse());
+  await page
+    .getByRole("button", { name: /collapse tignes - val d'isere/i })
+    .click();
+
+  const firstCard = page.locator("article.recommendation-card").first();
+  await expect(firstCard.getByText("Stay in Le Lac")).toBeVisible();
+  await expect(firstCard.getByText("82.4")).toBeVisible();
+  await expect(firstCard.getByText("Not enough evidence")).toBeVisible();
+  await expect(firstCard.locator(".recommendation-card__verdict")).toBeVisible();
+  await firstCard.scrollIntoViewIfNeeded();
+
+  await expect(page).toHaveScreenshot("results-collapsed-mobile.png", {
+    animations: "disabled",
+    caret: "hide",
+  });
+});
+
+for (const [name, viewport] of [
+  ["desktop", desktop],
+  ["390 px", mobile],
+] as const) {
+  test(`production-length entity and pass labels stay within the ${name} layout`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await openResults(page, longLabelResultsResponse());
+
+    await expect(
+      page.getByRole("heading", {
+        name: /Portes du Soleil France-Switzerland International Ski Region/,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: /Chatel Village Centre and Super-Chatel Lift District with Portes du Soleil France-Switzerland International Lift Pass/,
+      }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      ),
+    ).toBe(false);
+  });
+}
 
 test("month dossier with expanded desktop navigator", async ({ page }) => {
   await page.setViewportSize(desktop);
@@ -443,9 +516,9 @@ test("exact-date dossier with collapsed desktop navigator", async ({ page }) => 
   await page.setViewportSize(desktop);
   await openDossier(page, exactDateResponse(), forecastWeatherResponse());
   await page
-    .getByRole("button", { name: "Collapse recommendation navigator" })
+    .getByRole("button", { name: "Collapse trip option navigator" })
     .click();
-  await expect(page.getByRole("navigation", { name: "Recommendation results" })).toHaveAttribute(
+  await expect(page.getByRole("navigation", { name: "Trip option results" })).toHaveAttribute(
     "data-collapsed",
     "true",
   );
@@ -455,21 +528,58 @@ test("exact-date dossier with collapsed desktop navigator", async ({ page }) => 
     animations: "disabled",
     caret: "hide",
   });
+});
 
-  await page
-    .locator(".snow-source-tabs > .snowcast-segmented-tabs__panel:not([hidden]) details")
-    .getByText("Sources and daily values")
-    .click();
+test("technical calculation details desktop", async ({ page }) => {
+  await page.setViewportSize(desktop);
+  await openDossier(page, exactDateResponse(), forecastWeatherResponse());
+
+  await page.locator("#scoring-details summary").click();
   const table = page.getByRole("table", { name: "Forecast weather values" });
   await expect(table.getByRole("row", { name: /2026-07-20/ })).toContainText("112 cm");
   await expect(table.getByRole("row", { name: /2026-07-20/ })).toContainText("7.4 cm");
   await expect(table.getByRole("row", { name: /2026-07-20/ })).toContainText("-7 °C");
+
+  await expect(page.locator("#scoring-details")).toHaveScreenshot(
+    "dossier-technical-details-desktop.png",
+    {
+      animations: "disabled",
+      caret: "hide",
+    },
+  );
+});
+
+test("technical calculation details at 390 px with enlarged text", async ({ page }) => {
+  await page.setViewportSize(mobile);
+  await page.addStyleTag({ content: "html { font-size: 20px; }" });
+  await openDossier(page, exactDateResponse(), forecastWeatherResponse());
+
+  await page.locator("#scoring-details summary").click();
+  const values = page.getByRole("region", {
+    name: "Forecast weather values. Scroll horizontally to view all values.",
+  });
+  await values.focus();
+  await expect(values).toBeFocused();
+  await expect(values).toHaveCSS("outline-style", "solid");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+
+  await expect(page.locator("#scoring-details")).toHaveScreenshot(
+    "dossier-technical-details-mobile-enlarged.png",
+    {
+      animations: "disabled",
+      caret: "hide",
+    },
+  );
 });
 
 test("mobile dossier switcher", async ({ page }) => {
   await page.setViewportSize(mobile);
   await openDossier(page, monthSearchResponse, monthWeatherResponse());
-  await page.getByRole("button", { name: /recommendation 1 of 2/i }).click();
+  await page.getByRole("button", { name: /trip option 1 of 2/i }).click();
   await expect(page.getByRole("button", { name: /switch to les arcs/i })).toBeVisible();
 
   await expect(page).toHaveScreenshot("dossier-mobile-switcher.png", {
@@ -484,6 +594,31 @@ test("mobile dossier snow evidence", async ({ page }) => {
   await page.getByRole("heading", { name: "Snow & weather for March" }).scrollIntoViewIfNeeded();
 
   await expect(page).toHaveScreenshot("dossier-mobile-snow-evidence.png", {
+    animations: "disabled",
+    caret: "hide",
+  });
+});
+
+test("mobile dossier unavailable weather evidence", async ({ page }) => {
+  await page.setViewportSize(mobile);
+  await openDossier(page, exactDateResponse(), unavailableWeatherResponse());
+  await page.locator("#snow-evidence").scrollIntoViewIfNeeded();
+
+  await expect(page.getByText("Snow evidence unavailable")).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText(
+    "Snowcast could not find enough reliable historical data for this ski area and trip window.",
+  );
+  const summary = page.getByLabel("Weather evidence summary");
+  await expect(summary).toContainText("Historical weather evidence unavailable");
+  await expect(summary).toContainText("Not available for this assessment.");
+  await expect(summary).toContainText(
+    "No historical profile met Snowcast's evidence requirements for this trip window.",
+  );
+  await expect(summary).toContainText("Unavailable from the current evidence.");
+  await expect(summary).toContainText(
+    "Historical evidence is unavailable for the selected window.",
+  );
+  await expect(page).toHaveScreenshot("dossier-mobile-weather-unavailable.png", {
     animations: "disabled",
     caret: "hide",
   });
