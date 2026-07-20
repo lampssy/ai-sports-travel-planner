@@ -2078,7 +2078,11 @@ test("mobile dossier uses a keyboard-operable bounded switcher", async ({ page }
       name: "Les Arcs - Peisey Vallandry - Arc 1800",
     }),
   ).toBeFocused();
-  await expect(page.getByText("Historical pattern")).toBeVisible();
+  await expect(
+    page
+      .getByLabel("Weather evidence summary")
+      .getByText("Historical pattern", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText(/is planning guidance, not live hotel inventory/i),
   ).toBeVisible();
