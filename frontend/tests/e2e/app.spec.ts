@@ -2015,6 +2015,8 @@ test("browser Back restores the exact results scroll without rerunning search", 
   await page.evaluate(() => window.scrollTo(0, 320));
   const expectedScroll = await page.evaluate(() => window.scrollY);
   await firstCard.getByRole("link", { name: "View trip details" }).dispatchEvent("click");
+  await expect(page).toHaveURL(/candidate=tignes-access--tignes-local-pass$/);
+  await expect(page.getByRole("button", { name: "All results" })).toBeVisible();
 
   await page.goBack();
   await expect(page.getByRole("heading", { name: "Trip options for you" })).toBeVisible();
