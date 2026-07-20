@@ -733,7 +733,7 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
   expect(
     screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
   ).toBeInTheDocument();
-  expect(screen.getByText(/show technical calculation details/i)).toBeInTheDocument();
+  expect(screen.getByText(/^technical calculation details$/i)).toBeInTheDocument();
   expect(screen.getByText("Not enough evidence")).toBeInTheDocument();
 });
 
