@@ -1,9 +1,9 @@
 # Snowcast Content And Language Domain Audit
 
-**Date:** 2026-07-19  
-**Mode:** `domain-audit`  
-**Branch:** `codex/content-language-refinement-clarity`  
-**Reviewed head:** `d276bc8de9bf65ab614a0352cf7d5fbe9c6c253e`  
+**Date:** 2026-07-19
+**Mode:** `domain-audit`
+**Branch:** `codex/content-language-refinement-clarity`
+**Reviewed head:** `d276bc8de9bf65ab614a0352cf7d5fbe9c6c253e`
 **Draft PR:** [#52](https://github.com/lampssy/ai-sports-travel-planner/pull/52)
 
 This audit applies the `content-language` contract from
@@ -13,7 +13,7 @@ dossier, weather evidence, accommodations, current trip, public pages, mobile
 companion, backend errors, and product-facing README content.
 
 The audit was source-backed and included relevant copy tests and rendered
-component behaviour. It records recommendations only and does not implement
+component behavior. It records recommendations only and does not implement
 them.
 
 ## Current Strengths
@@ -209,7 +209,7 @@ them.
 
     `frontend/src/api.ts:57-79` passes string `detail` values through and
     can construct validation messages from raw field paths. Current-trip calls
-    have similar behaviour. Relevant backend messages originate in:
+    have similar behavior. Relevant backend messages originate in:
     - `app/api/routes.py:123-259`
     - `app/domain/search_intent_policy.py:15-73`
 
@@ -228,7 +228,7 @@ them.
     A short message should say: "We couldn't load another question. Your current
     results are still ready."
 
-12. **Public resort pages contain internal catalogue language and imply more
+12. **Public resort pages contain internal catalog language and imply more
     booking agency than Snowcast provides.**
 
     **Type:** Product positioning
@@ -321,7 +321,7 @@ them.
 6. Decide whether raw scoring factors remain available behind an advanced
    disclosure.
 7. Decide whether mobile must reach full public-language parity now or should be
-   clearly labelled as an internal preview.
+   clearly labeled as an internal preview.
 8. Decide whether accommodation search will become truly stay-base-specific or
    remain destination-level.
 9. Select one English spelling convention. B2 complexity can remain the

@@ -295,7 +295,7 @@ Severity guidance:
 
 Use the narrowest authoritative owner:
 
-- refinement questions, answers, descriptions, and traveller-topic vocabulary
+- refinement questions, answers, descriptions, and traveler-topic vocabulary
   live in a versioned server presentation policy;
 - data-dependent result and dossier sentences live in typed presentation
   builders, not JSX fragments;

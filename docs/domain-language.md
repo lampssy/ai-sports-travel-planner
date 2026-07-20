@@ -97,7 +97,7 @@ Boundaries:
 - Does not claim official lift-operation status unless a future official status
   provider explicitly supports that provenance.
 - Keeps forecast evidence separate from archive evidence.
-- Does not equate modelled snow depth with ski-area snow cover, open pistes, or
+- Does not equate modeled snow depth with ski-area snow cover, open pistes, or
   lift operations.
 
 ### Companion
@@ -186,8 +186,8 @@ Boundaries:
 - May dynamically propose which registered factors to clarify, including
   question wording, answer options, and typed preference patches.
 - A resolved refinement topic is one registered clarification topic that the
-  traveller answered or skipped in the current search context. It stays
-  suppressed until the trip context materially changes or the traveller
+  traveler answered or skipped in the current search context. It stays
+  suppressed until the trip context materially changes or the traveler
   manually changes the preference owned by that topic.
 - Does not own ranking, catalog truth, source trust, or provider data fetching.
 - Does not own weather derivation, companion event or alert eligibility,
@@ -345,7 +345,7 @@ buckets. `piste_km_by_difficulty` records published or defensibly measured
 lengths. `piste_count_by_difficulty` records published run counts. The two
 bases remain explicit because run segmentation and length vary; count evidence
 may inform a lower-strength planning factor but never becomes claimed piste
-kilometres. Qualitative supported-skill labels are weaker positive-only
+kilometers. Qualitative supported-skill labels are weaker positive-only
 fallback evidence.
 
 **Ski-area access**
@@ -532,11 +532,11 @@ A maximum journey duration or equivalent typed eligibility requirement. A
 candidate outside the limit is excluded before weighted Travel Effort is
 evaluated.
 
-**Modelled snow depth**
+**Modeled snow depth**
 
 Forecast or observed snow depth at a representative coordinate and elevation.
 It is distinct from ski-area snow-cover percentage, skiable piste coverage,
-open-piste kilometres, and open-lift count.
+open-piste kilometers, and open-lift count.
 
 **Evidence profile**
 

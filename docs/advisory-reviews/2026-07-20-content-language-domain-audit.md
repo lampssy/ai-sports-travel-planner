@@ -1,10 +1,10 @@
 # Snowcast Content And Language Domain Audit Close-Out
 
-**Date:** 2026-07-20  
-**Mode:** `domain-audit`  
-**Branch:** `codex/content-language-refinement-clarity`  
-**Reviewed implementation head:** `70fd820`  
-**Draft PR:** [#52](https://github.com/lampssy/ai-sports-travel-planner/pull/52)  
+**Date:** 2026-07-20
+**Mode:** `domain-audit`
+**Branch:** `codex/content-language-refinement-clarity`
+**Reviewed implementation head:** `70fd820`
+**Draft PR:** [#52](https://github.com/lampssy/ai-sports-travel-planner/pull/52)
 **Status:** complete
 
 This close-out repeats the product-wide Content & Language audit after the
@@ -24,7 +24,7 @@ trip, public destination guides, mobile companion, and public API errors.
   weights, identifiers, source rows, and calculation methods remain available
   in the advanced technical disclosure.
 - Weather evidence distinguishes expected conditions, source type, freshness,
-  coverage, and limitations. The 30 cm marker is labelled as a snow-depth
+  coverage, and limitations. The 30 cm marker is labeled as a snow-depth
   reference and does not claim comfort, safety, open runs, or skiability.
 - Accommodation copy separates the recommended place to stay from the broader
   destination-level provider search.

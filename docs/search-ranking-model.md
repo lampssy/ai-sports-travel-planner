@@ -17,7 +17,7 @@ ranking, factor policy, and adaptive refinement.
 - Planning and forecast evidence details: `docs/planning-model.md`
 - Executable policy: `app/config/search-ranking/search-v4.toml`
 - Executable refinement presentation registry:
-  `app/config/search-refinement/presentation-v1.toml`
+  `app/config/search-refinement/presentation-v2.toml`
 - Policy inspection: `uv run python -m app.data.explain_search_policy --check`
 
 This document and its generated inventory describe the active behavior. The
@@ -70,8 +70,8 @@ app/domain/search_ranking.py
 app/domain/search_refinement.py
   refinement context, proposal validation, and impact simulation
 
-app/config/search-refinement/presentation-v1.toml
-  traveller-facing refinement topics, approved answers, authoritative option
+app/config/search-refinement/presentation-v2.toml
+  traveler-facing refinement topics, approved answers, authoritative option
   copy, typed intent actions, and deterministic fallback order
 
 app/domain/search_refinement_presentation.py
@@ -333,9 +333,9 @@ be derived primarily from source-backed classified piste inventory:
   advanced skiers can use the whole mountain.
 
 The evaluator combines compatible piste amount with the relevant difficulty
-share and applies the balanced saturation policy. Kilometres and published run
+share and applies the balanced saturation policy. Kilometers and published run
 counts are distinct catalog facts: a count profile must never be written into a
-field that claims measured piste kilometres.
+field that claims measured piste kilometers.
 
 The evidence-unadjusted value is named `base_skill_fit`, not raw skill utility:
 
@@ -358,9 +358,9 @@ point and clamp to `[0, 1]`:
 
 For a source-backed run-count profile, compatible share uses run counts. When
 source-backed `total_piste_km` is also available, the evaluator may calculate a
-temporary compatible-amount proxy as total kilometres multiplied by the run
-share. That proxy never becomes a catalog kilometre fact and remains subject to
-the run-count evidence strength. Without total kilometres, amount utility is
+temporary compatible-amount proxy as total kilometers multiplied by the run
+share. That proxy never becomes a catalog kilometer fact and remains subject to
+the run-count evidence strength. Without total kilometers, amount utility is
 neutral `0.50` rather than zero.
 
 The share-dominant composition prevents the skill factor from duplicating
@@ -369,7 +369,7 @@ responsibility. Evidence strengths are:
 
 | Evidence basis | Strength |
 | --- | ---: |
-| source-backed kilometre breakdown | `1.00` |
+| source-backed kilometer breakdown | `1.00` |
 | source-backed run-count breakdown | `0.50` |
 | positive qualitative `supported_skill_levels` label | `0.25` |
 | unknown | `0`, producing neutral `0.50` |
@@ -379,7 +379,7 @@ confident positive or confident negative result. A qualitative level label is
 positive-only fallback evidence; an omitted label is unknown unless separate
 reviewed evidence explicitly establishes that the terrain is unsuitable.
 Source-backed run counts may estimate compatible share and amount for the
-evaluator but do not become catalog kilometres.
+evaluator but do not become catalog kilometers.
 
 When a party contains more than one represented ability level, party skill
 coverage is the minimum effective fit across those levels. This avoids an
@@ -433,11 +433,11 @@ mid-mountain elevation. Open-Meteo supplies ECMWF IFS 0.25 degree ensemble mean
 as the preferred source through lead day 15 and NOAA GEFS 0.5 degree ensemble
 mean for days 16 through 30 and as a shorter-range gap fallback. One source is
 selected per date; the models are not averaged together. The row may contain
-modelled 12:00-local snow depth and spread, daily snowfall and rain,
+modeled 12:00-local snow depth and spread, daily snowfall and rain,
 temperature, optional freezing level, and wind. Lead day is derived from the
 model initialization timestamp supplied by provider metadata rather than
-retrieval time. Forecast snow depth is a modelled point/elevation value; it is not
-ski-area snow-cover percentage, open-piste ratio, or expected open kilometres.
+retrieval time. Forecast snow depth is a modeled point/elevation value; it is not
+ski-area snow-cover percentage, open-piste ratio, or expected open kilometers.
 Those operational predictions remain distinct future factors. GEFS daily
 resolution at a coarse 0.5 degree grid does not imply high daily confidence;
 the `17–30` cap holds its maximum influence to 15%.
@@ -519,7 +519,7 @@ This is a ranking-policy transformation rather than a new physical snowpack
 model. Operational systems such as SNOW-17 and Crocus/Crocus-Resort support the
 importance of snow state, snowfall, temperature, and rain-on-snow, but they
 simulate coupled mass and energy processes and require local calibration or
-managed-piste inputs. Snowcast consumes the provider's modelled snow-depth
+managed-piste inputs. Snowcast consumes the provider's modeled snow-depth
 state and uses the other variables only as bounded surface-condition modifiers;
 it does not re-run a degree-day melt calculation or claim that policy weights
 are scientific constants. The scientific boundary and source references are
@@ -826,13 +826,13 @@ is skipped, so scoring values, summary scope, entity, field group, and trust
 always describe the same evidence owner.
 
 Search may support separate objectives for maximum accessible terrain, lowest
-pass price, and best terrain value. A raw piste-kilometres-per-price ratio must
+pass price, and best terrain value. A raw piste-kilometers-per-price ratio must
 not become a universal always-on definition of value.
 
 ## Dynamic Refinement Questions
 
 The LLM may select one registered factor topic, use one approved
-traveller-facing phrase in one constrained question grammar, and select
+traveler-facing phrase in one constrained question grammar, and select
 approved answer IDs rather than emitting labels or raw patches. A question
 contains exactly one topic, and each option contains exactly one answer for
 that topic. The server owns reason copy, answer copy, and typed intent actions.
@@ -916,14 +916,14 @@ The provider-facing response schema deliberately contains only the compact
 topic/answer-ID structure and bounded question text supported by Gemini.
 Pydantic size and shape validation plus presentation-registry and deterministic
 policy validation remain authoritative. The server accepts provider question
-wording only when it uses an approved traveller-preference or priority form,
+wording only when it uses an approved traveler-preference or priority form,
 anchored as one complete question with no appended clause or comma, semicolon,
 or colon; its extracted semantic body is an exact registered single-topic
 phrase; and it follows the minimal
 allowed Unicode letter, mark, whitespace, and punctuation policy. Factual `is`,
 `are`, or `does` claims cannot be rescued by an incidental preference word or a
 conjoined preference clause. Otherwise the server uses registry-backed
-traveller copy, which is config-validated rather than passed through the
+traveler copy, which is config-validated rather than passed through the
 generated-copy grammar, and always supplies the configured single-topic or
 topic reason. A
 bounded brief containing a configured sensitive, credential, payment, or
@@ -1028,7 +1028,7 @@ ranking or materiality logic.
 
 `search-refinement-presentation-2` versions presentation ownership separately
 from `search-v4` and `search-v4-policy-1`. Copy-only changes under a new
-presentation-policy version may change what travellers read, but they do not
+presentation-policy version may change what travelers read, but they do not
 change factor weights, score equations, candidate eligibility, or ranking
 semantics. Every configured fallback question and reason, plus every approved
 answer label and description, passes deterministic public-copy validation when

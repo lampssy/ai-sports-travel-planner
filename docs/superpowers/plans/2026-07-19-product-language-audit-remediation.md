@@ -273,7 +273,7 @@ npm run build
 - Clear persisted state and return to sign-in for `session_expired`.
 - Load trip summary and events independently; retain summary/events when a
   secondary request or mark-checked action fails.
-- Add semantic announcements, labelled recovery actions, standard touch targets,
+- Add semantic announcements, labeled recovery actions, standard touch targets,
   and enlarged-text reflow coverage.
 - Do not add refinements, detailed dossier weather, or accommodation handoff to
   Flutter in this task.

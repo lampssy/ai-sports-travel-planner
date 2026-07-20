@@ -36,7 +36,7 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   Saving that recommendation must use its applied travel window, not newer
   draft controls that the user has not searched with yet.
 - Weather headings derive from typed freshness provenance. Only fresh data is
-  called current; stale data is labelled out of date, and unknown freshness is
+  called current; stale data is labeled out of date, and unknown freshness is
   presented as the latest available information without a current-data claim.
 
 ### Current shape
@@ -354,8 +354,8 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   complete run per source/day through two years, and one complete run per
   source/week through five years. The earliest complete daily run is the
   fallback when `00Z` is missing; current head-referenced runs are never purged.
-- Modelled snow depth at representative elevations is distinct from skiable
-  snow coverage, open-piste kilometres, and open lifts.
+- Modeled snow depth at representative elevations is distinct from skiable
+  snow coverage, open-piste kilometers, and open lifts.
 - The depth-led snowpack-outlook utility is a transparent ranking policy over
   forecast-model output, not a physical snowpack simulator. SNOW-17 and
   Crocus-Resort support the selected driver families, but their coupled and
@@ -490,7 +490,7 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 ### Target web UI route boundaries
 - The React web app remains the anonymous planning and demo surface, not the authenticated mobile companion.
 - `lucide-react` is the presentation icon system for the web experience. Icons
-  inside labelled controls are decorative; icon-only controls carry an
+  inside labeled controls are decorative; icon-only controls carry an
   accessible name and tooltip. Domain charts remain semantic application UI,
   not Lucide illustrations.
 - Search should open as an editorial command surface, then collapse into a compact command bar after results exist.
@@ -531,7 +531,7 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   after five minutes. Transport failures remain retryable. Evidence loaded
   later may be fresher than the original ranking request, so issue times and
   provenance stay visible.
-- Snow charts use bounded semantic inline SVG with labelled chart roles and an
+- Snow charts use bounded semantic inline SVG with labeled chart roles and an
   equivalent expandable structured-value table. The visual trend is therefore
   not the only way to access the underlying dates, depth, snowfall,
   temperature, and risk values.
@@ -1212,7 +1212,7 @@ Access claims likewise require both relationship and distance/mode trust; a
 `needs_source` component cannot render as a positive near-lift claim.
 Recommendation evidence mode is also backend-owned. Search V4 emits
 `archive_backed`, `forecast_assisted`, or `fallback_heavy` from the evaluated
-trip-window snow evidence; React only maps that typed value to traveller copy.
+trip-window snow evidence; React only maps that typed value to traveler copy.
 
 Repeated React interaction semantics live in a deliberately small internal UI
 foundation under `frontend/src/ui`. It owns actions, alerts, async states,

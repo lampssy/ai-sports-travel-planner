@@ -90,7 +90,7 @@ Out of scope:
   - weather charts use response values rather than decorative sample data
   - evidence availability is distinct from expected snow conditions
   - booking copy matches the provider query's destination-level scope
-  - `evaluated_at` is request evaluation time and is never labelled data
+  - `evaluated_at` is request evaluation time and is never labeled data
     freshness
 - `docs/domain-language.md` and `docs/snow-evidence-model.md` must stay aligned.
 
@@ -182,7 +182,7 @@ Out of scope:
 | Initial or updated search | Keep the last successful results when present; keep the entered trip brief and filters | Results heading area | `Try again` | Visible alert; do not move focus away from the search control |
 | Refinement discovery | Keep results, applied intent, answered topics, and unsubmitted drafts | Refinement rail/card | `Try again` and `Keep these results` | Announce one terminal status; keep focus on the triggering control |
 | Apply refinement | Keep current results and the selected answer | Refinement card | `Update results` retry and `Keep these results` | Associate the error with the question; keep the selection perceivable |
-| Weather evidence | Keep the trip details page and every other section | Snow and weather section | `Try again` | Inline alert labelled with the ski area; no route focus reset |
+| Weather evidence | Keep the trip details page and every other section | Snow and weather section | `Try again` | Inline alert labeled with the ski area; no route focus reset |
 | Invalid accommodation handoff | Keep the browser on a Snowcast-branded recovery page | Recovery-page main region | `Return to trip details` | Descriptive document title, main heading, and keyboard-reachable return link |
 | Sign-in attempt | Keep the sign-in screen | Sign-in form | `Try again` | Visible and announced once; sign-in remains reachable |
 | Expired mobile session | Clear persisted session and protected current-trip state | Sign-in screen | `Sign in` | Announce the session-ended state, then focus the sign-in heading |
@@ -333,7 +333,7 @@ never appear as source freshness.
 - Desktop and 390 px mobile views have no overlap, clipped actions, or
   inaccessible disclosure controls.
 - Errors are visible without color, announced once by web and Flutter semantics,
-  and paired with labelled recovery actions without unexpected focus movement.
+  and paired with labeled recovery actions without unexpected focus movement.
 - Drawer Escape/focus return, tab/disclosure keyboard operation, refinement
   replacement, route-heading focus, and public-404 navigation remain intact.
 - Weather charts retain a programmatic summary, equivalent values table,
