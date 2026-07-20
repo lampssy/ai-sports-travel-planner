@@ -594,7 +594,7 @@ test("renders removable parsed chips with user-language names", async () => {
   expect(screen.queryByRole("button", { name: "Remove France" })).not.toBeInTheDocument();
 });
 
-test("keeps origin-based travel ranking visible after removing the hard drive limit", async () => {
+test("keeps origin-based travel ranking visible after removing the maximum drive time", async () => {
   const originOnlyIntent: SearchIntent = {
     ...intent,
     travel_context: { origin_text: "Warsaw", mode: "car" },
@@ -615,8 +615,8 @@ test("keeps origin-based travel ranking visible after removing the hard drive li
   render(<App />);
 
   await openFilters(user);
-  await user.type(screen.getByLabelText("Origin"), "Warsaw");
-  await user.type(screen.getByLabelText("Hard drive limit"), "15");
+  await user.type(screen.getByLabelText("Starting location"), "Warsaw");
+  await user.type(screen.getByLabelText("Maximum drive time"), "15");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
@@ -627,8 +627,8 @@ test("keeps origin-based travel ranking visible after removing the hard drive li
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   await user.clear(screen.getByLabelText("Country"));
   await user.type(screen.getByLabelText("Country"), "Italy");
-  await user.clear(screen.getByLabelText("Origin"));
-  await user.type(screen.getByLabelText("Origin"), "Berlin");
+  await user.clear(screen.getByLabelText("Starting location"));
+  await user.type(screen.getByLabelText("Starting location"), "Berlin");
   await user.selectOptions(screen.getByLabelText("Travel window"), "dates");
   await user.type(screen.getByLabelText("Trip start date"), "2027-01-16");
   await user.type(screen.getByLabelText("Trip end date"), "2027-01-20");
@@ -657,8 +657,8 @@ test("keeps origin-based travel ranking visible after removing the hard drive li
 
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   expect(screen.getByLabelText("Country")).toHaveValue("Italy");
-  expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
-  expect(screen.getByLabelText("Hard drive limit")).toHaveValue(null);
+  expect(screen.getByLabelText("Starting location")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("Maximum drive time")).toHaveValue(null);
   expect(screen.getByLabelText("Travel window")).toHaveValue("dates");
   expect(screen.getByLabelText("Trip start date")).toHaveValue("2027-01-16");
   expect(screen.getByLabelText("Trip end date")).toHaveValue("2027-01-20");
@@ -2242,7 +2242,7 @@ test("rejects invalid hard numeric filters instead of silently omitting them", a
 
   await openFilters(user);
   const maxNightly = screen.getByLabelText("Max nightly");
-  const maxDriveHours = screen.getByLabelText("Hard drive limit");
+  const maxDriveHours = screen.getByLabelText("Maximum drive time");
   expect(maxNightly).toHaveAttribute("min", "0.01");
   expect(maxNightly).toHaveAttribute("step", "0.01");
   expect(maxDriveHours).toHaveAttribute("min", "0.1");
@@ -2261,34 +2261,34 @@ test("rejects invalid hard numeric filters instead of silently omitting them", a
   fireEvent.change(screen.getByLabelText("Max nightly"), {
     target: { value: "250" },
   });
-  fireEvent.change(screen.getByLabelText("Hard drive limit"), {
+  fireEvent.change(screen.getByLabelText("Maximum drive time"), {
     target: { value: "12.5" },
   });
   await user.click(screen.getByRole("button", { name: /close filters/i }));
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByText("Provide an origin to use a hard drive limit."),
+    await screen.findByText("Add a starting location to use a maximum drive time."),
   ).toBeInTheDocument();
   expect(requests.some((item) => item.url === "/api/search")).toBe(false);
 
   await openFilters(user);
-  fireEvent.change(screen.getByLabelText("Origin"), {
+  fireEvent.change(screen.getByLabelText("Starting location"), {
     target: { value: "Berlin" },
   });
-  fireEvent.change(screen.getByLabelText("Hard drive limit"), {
+  fireEvent.change(screen.getByLabelText("Maximum drive time"), {
     target: { value: "-1" },
   });
   await user.click(screen.getByRole("button", { name: /close filters/i }));
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByText("Hard drive limit must be greater than 0 hours."),
+    await screen.findByText("Maximum drive time must be greater than 0 hours."),
   ).toBeInTheDocument();
   expect(requests.some((item) => item.url === "/api/search")).toBe(false);
 
   await openFilters(user);
-  fireEvent.change(screen.getByLabelText("Hard drive limit"), {
+  fireEvent.change(screen.getByLabelText("Maximum drive time"), {
     target: { value: "12.5" },
   });
   await user.click(screen.getByRole("button", { name: /close filters/i }));
@@ -2510,8 +2510,8 @@ test("applies a refinement to the displayed session instead of unsent drawer and
 
   await user.type(screen.getByLabelText("Describe your ski trip"), appliedBrief);
   await openFilters(user);
-  await user.type(screen.getByLabelText("Origin"), "Warsaw");
-  await user.type(screen.getByLabelText("Hard drive limit"), "15");
+  await user.type(screen.getByLabelText("Starting location"), "Warsaw");
+  await user.type(screen.getByLabelText("Maximum drive time"), "15");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   await user.click(
@@ -2524,13 +2524,13 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   await user.clear(screen.getByLabelText("Country"));
   await user.type(screen.getByLabelText("Country"), "Italy");
-  await user.clear(screen.getByLabelText("Origin"));
-  await user.type(screen.getByLabelText("Origin"), "Berlin");
-  await user.clear(screen.getByLabelText("Hard drive limit"));
-  await user.type(screen.getByLabelText("Hard drive limit"), "5");
+  await user.clear(screen.getByLabelText("Starting location"));
+  await user.type(screen.getByLabelText("Starting location"), "Berlin");
+  await user.clear(screen.getByLabelText("Maximum drive time"));
+  await user.type(screen.getByLabelText("Maximum drive time"), "5");
   await user.click(screen.getByRole("button", { name: "Glacier terrain" }));
   await user.selectOptions(
-    screen.getByLabelText("Value preference"),
+    screen.getByLabelText("What matters most for value?"),
     "pass_price_per_day",
   );
   await user.click(screen.getByRole("button", { name: /close filters/i }));
@@ -2564,9 +2564,9 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   );
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   expect(screen.getByLabelText("Country")).toHaveValue("Italy");
-  expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
-  expect(screen.getByLabelText("Hard drive limit")).toHaveValue(5);
-  expect(screen.getByLabelText("Value preference")).toHaveValue(
+  expect(screen.getByLabelText("Starting location")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("Maximum drive time")).toHaveValue(5);
+  expect(screen.getByLabelText("What matters most for value?")).toHaveValue(
     "pass_price_per_day",
   );
   expect(
@@ -2593,9 +2593,9 @@ test("applies a refinement to the displayed session instead of unsent drawer and
   );
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   expect(screen.getByLabelText("Country")).toHaveValue("Italy");
-  expect(screen.getByLabelText("Origin")).toHaveValue("Berlin");
-  expect(screen.getByLabelText("Hard drive limit")).toHaveValue(5);
-  expect(screen.getByLabelText("Value preference")).toHaveValue(
+  expect(screen.getByLabelText("Starting location")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("Maximum drive time")).toHaveValue(5);
+  expect(screen.getByLabelText("What matters most for value?")).toHaveValue(
     "pass_price_per_day",
   );
   expect(
@@ -2677,7 +2677,7 @@ test("keeps pass-value objectives exclusive through refinement apply and undo", 
   );
   expect(applyBody.intent.objectives).toEqual([unrelatedObjective, priceObjective]);
   await user.click(screen.getByRole("button", { name: "Adjust" }));
-  expect(screen.getByLabelText("Value preference")).toHaveValue(
+  expect(screen.getByLabelText("What matters most for value?")).toHaveValue(
     "pass_price_per_day",
   );
   await user.click(screen.getByRole("button", { name: /close filters/i }));
@@ -2691,7 +2691,7 @@ test("keeps pass-value objectives exclusive through refinement apply and undo", 
   );
   expect(undoBody.intent.objectives).toEqual([terrainObjective, unrelatedObjective]);
   await user.click(screen.getByRole("button", { name: "Adjust" }));
-  expect(screen.getByLabelText("Value preference")).toHaveValue(
+  expect(screen.getByLabelText("What matters most for value?")).toHaveValue(
     "pass_terrain_value",
   );
 });
@@ -3021,14 +3021,14 @@ test("preserves refinement objectives and answered state when pass priority chan
 
   await user.click(screen.getByRole("button", { name: "Adjust" }));
   await user.selectOptions(
-    screen.getByLabelText("Value preference"),
+    screen.getByLabelText("What matters most for value?"),
     "pass_price_per_day",
   );
   await user.click(screen.getByRole("button", { name: /close filters/i }));
   await user.click(screen.getByRole("button", { name: "Search trip options" }));
 
   await user.click(screen.getByRole("button", { name: "Adjust" }));
-  await user.selectOptions(screen.getByLabelText("Value preference"), "");
+  await user.selectOptions(screen.getByLabelText("What matters most for value?"), "");
   await user.click(screen.getByRole("button", { name: /close filters/i }));
   await user.click(screen.getByRole("button", { name: "Search trip options" }));
 

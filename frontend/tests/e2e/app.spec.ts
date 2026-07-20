@@ -913,13 +913,13 @@ test("refinement objective survives pass-priority edits and reranks", async ({
   await expect.poll(() => searchRequests.length).toBe(2);
 
   await page.getByRole("button", { name: "Adjust" }).click();
-  await page.getByLabel("Value preference").selectOption("pass_price_per_day");
+  await page.getByLabel("What matters most for value?").selectOption("pass_price_per_day");
   await page.getByRole("button", { name: "Close filters" }).click();
   await page.getByRole("button", { name: "Search trip options" }).click();
   await expect.poll(() => searchRequests.length).toBe(3);
 
   await page.getByRole("button", { name: "Adjust" }).click();
-  await page.getByLabel("Value preference").selectOption("");
+  await page.getByLabel("What matters most for value?").selectOption("");
   await page.getByRole("button", { name: "Close filters" }).click();
   await page.getByRole("button", { name: "Search trip options" }).click();
   await expect.poll(() => searchRequests.length).toBe(4);

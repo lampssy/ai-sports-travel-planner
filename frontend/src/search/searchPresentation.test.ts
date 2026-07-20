@@ -429,7 +429,7 @@ describe("applied travel-window presentation", () => {
 });
 
 describe("applied travel-origin presentation", () => {
-  test("shows origin-driven travel ranking separately from a hard drive limit", () => {
+  test("shows origin-driven travel ranking separately from a maximum drive time", () => {
     const chips = buildParsedChips({
       ...baseIntent,
       constraints: {
