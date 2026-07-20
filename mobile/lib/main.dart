@@ -6,6 +6,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'api_errors.dart';
+import 'public_copy.dart';
+
 const _apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: 'http://10.0.2.2:8000/api',
@@ -46,7 +49,7 @@ class SnowcastApp extends StatelessWidget {
         );
 
     return MaterialApp(
-      title: 'Snowcast Mobile',
+      title: PublicCopy.appName,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F766E)),
         useMaterial3: true,
@@ -96,18 +99,18 @@ class AuthController extends ChangeNotifier {
       final authentication = account.authentication;
       final identityToken = authentication.idToken;
       if (identityToken == null || identityToken.isEmpty) {
-        throw const MobileApiException(
-          'Google sign-in did not return an identity token.',
+        throw PublicApiException.response(
+          '{"error":{"code":"sign_in_failed"}}',
         );
       }
 
       final newSession = await api.exchangeGoogleIdentityToken(identityToken);
       await sessionStore.write(newSession);
       session = newSession;
-    } on GoogleSignInException catch (error) {
-      errorMessage = error.description ?? error.code.name;
-    } on MobileApiException catch (error) {
-      errorMessage = error.message;
+    } on GoogleSignInException {
+      errorMessage = 'Sign-in could not be completed. Try again.';
+    } on PublicApiException catch (error) {
+      errorMessage = apiErrorMessage(ApiOperation.signIn, error);
     } finally {
       isBusy = false;
       notifyListeners();
@@ -120,6 +123,19 @@ class AuthController extends ChangeNotifier {
     session = null;
     errorMessage = null;
     notifyListeners();
+  }
+
+  Future<bool> handleProtectedFailure(PublicApiException error) async {
+    if (error.code != PublicApiErrorCode.sessionExpired) {
+      return false;
+    }
+    if (session != null) {
+      await sessionStore.clear();
+      session = null;
+      errorMessage = PublicCopy.sessionEnded;
+      notifyListeners();
+    }
+    return true;
   }
 
   Future<void> _ensureGoogleInitialized() async {
@@ -147,49 +163,61 @@ class SignInScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Padding(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Snowcast Mobile',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Sign in with Google to keep one current trip attached to your account and use the mobile planning flow.',
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: authController.isBusy
-                          ? null
-                          : authController.signInWithGoogle,
-                      icon: const Icon(Icons.login),
-                      label: const Text('Sign in with Google'),
-                    ),
-                    if (authController.errorMessage != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        authController.errorMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Semantics(
+                    container: true,
+                    explicitChildNodes: true,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Semantics(
+                          container: true,
+                          header: true,
+                          child: Focus(
+                            autofocus: true,
+                            child: Text(
+                              PublicCopy.signInHeading,
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    Text(
-                      'API base: $_apiBaseUrl',
-                      style: Theme.of(context).textTheme.bodySmall,
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Sign in with Google to save one current trip and receive trip updates.',
+                        ),
+                        if (authController.errorMessage != null) ...[
+                          const SizedBox(height: 16),
+                          Semantics(
+                            container: true,
+                            liveRegion: true,
+                            child: Text(
+                              authController.errorMessage!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          onPressed: authController.isBusy
+                              ? null
+                              : authController.signInWithGoogle,
+                          icon: const Icon(Icons.login),
+                          label: const Text('Sign in with Google'),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -221,18 +249,22 @@ class _MobileShellState extends State<MobileShell> {
   Widget build(BuildContext context) {
     final session = widget.authController.session!;
     final pages = [
-      SearchScreen(api: widget.api, session: session),
-      CurrentTripScreen(api: widget.api, session: session),
+      SearchScreen(
+        api: widget.api,
+        session: session,
+        authController: widget.authController,
+      ),
+      CurrentTripScreen(
+        api: widget.api,
+        session: session,
+        authController: widget.authController,
+      ),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedIndex == 0 ? 'Plan trip' : 'Current trip'),
+        title: Text(_selectedIndex == 0 ? 'Plan trip' : PublicCopy.currentTrip),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Center(child: Text(session.user.email)),
-          ),
           IconButton(
             onPressed: widget.authController.signOut,
             icon: const Icon(Icons.logout),
@@ -252,7 +284,7 @@ class _MobileShellState extends State<MobileShell> {
           NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
           NavigationDestination(
             icon: Icon(Icons.downhill_skiing),
-            label: 'Current trip',
+            label: PublicCopy.currentTrip,
           ),
         ],
       ),
@@ -261,10 +293,16 @@ class _MobileShellState extends State<MobileShell> {
 }
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, required this.api, required this.session});
+  const SearchScreen({
+    super.key,
+    required this.api,
+    required this.session,
+    required this.authController,
+  });
 
   final MobileApiClient api;
   final AppSession session;
+  final AuthController authController;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -274,12 +312,12 @@ class _SearchScreenState extends State<SearchScreen> {
   final _briefController = TextEditingController();
   final _locationController = TextEditingController(text: 'France');
   final _maxPriceController = TextEditingController(text: '320');
-  final _travelMonthController = TextEditingController(text: '3');
-  final _tripStartDateController = TextEditingController();
-  final _tripEndDateController = TextEditingController();
 
   String _skillLevel = 'intermediate';
   int _stars = 1;
+  int? _travelMonth = 3;
+  String? _tripStartDate;
+  String? _tripEndDate;
   bool _isBusy = false;
   String? _errorMessage;
   List<RecommendationGroupItem> _results = const [];
@@ -289,9 +327,6 @@ class _SearchScreenState extends State<SearchScreen> {
     _briefController.dispose();
     _locationController.dispose();
     _maxPriceController.dispose();
-    _travelMonthController.dispose();
-    _tripStartDateController.dispose();
-    _tripEndDateController.dispose();
     super.dispose();
   }
 
@@ -314,19 +349,19 @@ class _SearchScreenState extends State<SearchScreen> {
         _maxPriceController.text = parsed.maxPrice!.toStringAsFixed(0);
       }
       if (parsed.tripStartDate != null && parsed.tripEndDate != null) {
-        _tripStartDateController.text = parsed.tripStartDate!;
-        _tripEndDateController.text = parsed.tripEndDate!;
-        _travelMonthController.clear();
+        _tripStartDate = parsed.tripStartDate;
+        _tripEndDate = parsed.tripEndDate;
+        _travelMonth = null;
       } else if (parsed.travelMonth != null) {
-        _travelMonthController.text = parsed.travelMonth!.toString();
-        _tripStartDateController.clear();
-        _tripEndDateController.clear();
+        _travelMonth = parsed.travelMonth;
+        _tripStartDate = null;
+        _tripEndDate = null;
       }
       if (parsed.skillLevel != null) {
         _skillLevel = parsed.skillLevel!;
       }
-    } on MobileApiException catch (error) {
-      _errorMessage = error.message;
+    } on PublicApiException catch (error) {
+      _errorMessage = apiErrorMessage(ApiOperation.parseTripBrief, error);
     } finally {
       setState(() {
         _isBusy = false;
@@ -341,10 +376,10 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final tripStartDate = _tripStartDateController.text.trim();
-      final tripEndDate = _tripEndDateController.text.trim();
-      final hasTripStartDate = tripStartDate.isNotEmpty;
-      final hasTripEndDate = tripEndDate.isNotEmpty;
+      final tripStartDate = _tripStartDate;
+      final tripEndDate = _tripEndDate;
+      final hasTripStartDate = tripStartDate != null;
+      final hasTripEndDate = tripEndDate != null;
 
       if (hasTripStartDate != hasTripEndDate) {
         setState(() {
@@ -354,18 +389,9 @@ class _SearchScreenState extends State<SearchScreen> {
         return;
       }
 
-      if (hasTripStartDate && hasTripEndDate) {
-        final startDate = DateTime.tryParse(tripStartDate);
-        final endDate = DateTime.tryParse(tripEndDate);
-        if (!_isIsoDate(tripStartDate) ||
-            !_isIsoDate(tripEndDate) ||
-            startDate == null ||
-            endDate == null) {
-          setState(() {
-            _errorMessage = 'Trip dates must use YYYY-MM-DD format.';
-          });
-          return;
-        }
+      if (tripStartDate != null && tripEndDate != null) {
+        final startDate = DateTime.parse(tripStartDate);
+        final endDate = DateTime.parse(tripEndDate);
         if (endDate.isBefore(startDate)) {
           setState(() {
             _errorMessage = 'Trip end date must be on or after start date.';
@@ -379,9 +405,7 @@ class _SearchScreenState extends State<SearchScreen> {
         maxPrice: double.parse(_maxPriceController.text),
         stars: _stars,
         skillLevel: _skillLevel,
-        travelMonth: hasTripStartDate && hasTripEndDate
-            ? null
-            : int.tryParse(_travelMonthController.text.trim()),
+        travelMonth: hasTripStartDate && hasTripEndDate ? null : _travelMonth,
         tripStartDate: hasTripStartDate ? tripStartDate : null,
         tripEndDate: hasTripEndDate ? tripEndDate : null,
         brief: _briefController.text.trim(),
@@ -393,9 +417,9 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         _errorMessage = 'Prices must be valid numbers.';
       });
-    } on MobileApiException catch (error) {
+    } on PublicApiException catch (error) {
       setState(() {
-        _errorMessage = error.message;
+        _errorMessage = apiErrorMessage(ApiOperation.search, error);
       });
     } finally {
       setState(() {
@@ -404,12 +428,29 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  bool _isIsoDate(String value) {
-    if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
-      return false;
+  Future<void> _pickTripDate({required bool start}) async {
+    final current = DateTime.tryParse(
+      start ? _tripStartDate ?? '' : _tripEndDate ?? '',
+    );
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: current ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+      helpText: start ? 'Choose trip start date' : 'Choose trip end date',
+    );
+    if (selected == null || !mounted) {
+      return;
     }
-    final parsed = DateTime.tryParse(value);
-    return parsed != null && parsed.toIso8601String().substring(0, 10) == value;
+    final value = selected.toIso8601String().substring(0, 10);
+    setState(() {
+      if (start) {
+        _tripStartDate = value;
+      } else {
+        _tripEndDate = value;
+      }
+      _travelMonth = null;
+    });
   }
 
   @override
@@ -455,7 +496,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Structured filters',
+                  '${PublicCopy.mustHaves} and ${PublicCopy.preferences}',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 12),
@@ -479,14 +520,17 @@ class _SearchScreenState extends State<SearchScreen> {
                 DropdownButtonFormField<int>(
                   initialValue: _stars,
                   decoration: const InputDecoration(
-                    labelText: 'Quality tier',
+                    labelText: 'Stay comfort',
                     border: OutlineInputBorder(),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 1, child: Text('1')),
-                    DropdownMenuItem(value: 2, child: Text('2')),
-                    DropdownMenuItem(value: 3, child: Text('3')),
-                  ],
+                  items: PublicCopy.qualityLabels.entries
+                      .map(
+                        (entry) => DropdownMenuItem(
+                          value: entry.key,
+                          child: Text(entry.value),
+                        ),
+                      )
+                      .toList(),
                   onChanged: (value) {
                     setState(() {
                       _stars = value ?? 1;
@@ -521,36 +565,67 @@ class _SearchScreenState extends State<SearchScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _travelMonthController,
-                  keyboardType: TextInputType.number,
+                DropdownButtonFormField<int?>(
+                  initialValue: _travelMonth,
                   decoration: const InputDecoration(
                     labelText: 'Travel month (optional)',
                     border: OutlineInputBorder(),
                   ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('Choose exact dates'),
+                    ),
+                    for (var month = 1; month <= 12; month += 1)
+                      DropdownMenuItem<int?>(
+                        value: month,
+                        child: Text(PublicCopy.monthNames[month - 1]),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _travelMonth = value;
+                      if (value != null) {
+                        _tripStartDate = null;
+                        _tripEndDate = null;
+                      }
+                    });
+                  },
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _tripStartDateController,
-                  decoration: const InputDecoration(
-                    labelText: 'Trip start date (YYYY-MM-DD)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _tripEndDateController,
-                  decoration: const InputDecoration(
-                    labelText: 'Trip end date (YYYY-MM-DD)',
-                    border: OutlineInputBorder(),
-                  ),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => _pickTripDate(start: true),
+                      icon: const Icon(Icons.calendar_today),
+                      label: Text(
+                        _tripStartDate == null
+                            ? 'Choose start date'
+                            : 'Starts ${formatPublicDate(_tripStartDate!)}',
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _pickTripDate(start: false),
+                      icon: const Icon(Icons.event),
+                      label: Text(
+                        _tripEndDate == null
+                            ? 'Choose end date'
+                            : 'Ends ${formatPublicDate(_tripEndDate!)}',
+                      ),
+                    ),
+                  ],
                 ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 12),
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ),
                 ],
@@ -563,16 +638,24 @@ class _SearchScreenState extends State<SearchScreen> {
         if (_results.isEmpty && !_isBusy)
           const Padding(
             padding: EdgeInsets.all(12),
-            child: Text('Run a search to load mobile planning results.'),
+            child: Text('Search to find trip options.'),
           ),
+        if (_results.isNotEmpty) ...[
+          Text(
+            PublicCopy.tripOptions,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 12),
+        ],
         for (final result in _results)
           RecommendationGroupCard(
             result: result,
             session: widget.session,
             api: widget.api,
-            travelMonth: int.tryParse(_travelMonthController.text.trim()),
-            tripStartDate: _tripStartDateController.text.trim(),
-            tripEndDate: _tripEndDateController.text.trim(),
+            authController: widget.authController,
+            travelMonth: _travelMonth,
+            tripStartDate: _tripStartDate ?? '',
+            tripEndDate: _tripEndDate ?? '',
           ),
       ],
     );
@@ -585,6 +668,7 @@ class RecommendationGroupCard extends StatefulWidget {
     required this.result,
     required this.session,
     required this.api,
+    required this.authController,
     required this.travelMonth,
     required this.tripStartDate,
     required this.tripEndDate,
@@ -593,6 +677,7 @@ class RecommendationGroupCard extends StatefulWidget {
   final RecommendationGroupItem result;
   final AppSession session;
   final MobileApiClient api;
+  final AuthController authController;
   final int? travelMonth;
   final String tripStartDate;
   final String tripEndDate;
@@ -625,21 +710,27 @@ class _RecommendationGroupCardState extends State<RecommendationGroupCard> {
       setState(() {
         _message = 'Saved as current trip.';
       });
-    } on MobileApiException catch (error) {
+    } on PublicApiException catch (error) {
+      if (await widget.authController.handleProtectedFailure(error) ||
+          !mounted) {
+        return;
+      }
       setState(() {
-        _message = error.message;
+        _message = apiErrorMessage(ApiOperation.currentTripSave, error);
       });
     } finally {
-      setState(() {
-        _saving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _saving = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final result = widget.result;
-    final configuration = result.topConfiguration;
+    final tripOption = result.topConfiguration;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -653,29 +744,23 @@ class _RecommendationGroupCardState extends State<RecommendationGroupCard> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Stay in ${configuration.stayBaseName} - '
-              'Ski ${configuration.focusSkiAreaName}',
-            ),
-            const SizedBox(height: 8),
-            Text(
-              configuration.fitScore == null
-                  ? 'Unranked configuration'
-                  : '${configuration.fitScore!.toStringAsFixed(1)} fit / 100',
+              '${PublicCopy.tripOption}: stay in ${tripOption.stayBaseName} '
+              'and ski ${tripOption.focusSkiAreaName}.',
             ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                Chip(label: Text(configuration.stayDestinationName)),
-                Chip(label: Text(configuration.focusSkiAreaName)),
-                Chip(label: Text(configuration.stayBaseName)),
-                Chip(label: Text(configuration.selectedPass.name)),
+                Chip(label: Text(tripOption.stayDestinationName)),
+                Chip(label: Text(tripOption.focusSkiAreaName)),
+                Chip(label: Text(tripOption.stayBaseName)),
+                Chip(label: Text(tripOption.selectedPass.name)),
                 Chip(
                   label: Text(
-                    configuration.selectedPass.accessiblePisteKm == null
-                        ? 'Pass terrain unresolved'
-                        : '${configuration.selectedPass.accessiblePisteKm} km pass coverage',
+                    tripOption.selectedPass.accessiblePisteKm == null
+                        ? 'Pass terrain details unavailable'
+                        : '${tripOption.selectedPass.accessiblePisteKm} km of pass terrain',
                   ),
                 ),
               ],
@@ -683,18 +768,18 @@ class _RecommendationGroupCardState extends State<RecommendationGroupCard> {
             if (result.alternativeConfigurations.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
-                '${result.alternativeConfigurations.length} alternative '
-                'configuration${result.alternativeConfigurations.length == 1 ? '' : 's'}',
+                '${result.alternativeConfigurations.length} alternative trip '
+                'option${result.alternativeConfigurations.length == 1 ? '' : 's'}',
               ),
             ],
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _saving ? null : _saveCurrentTrip,
-              child: Text(_saving ? 'Saving...' : 'Save current trip'),
+              child: Text(_saving ? 'Saving...' : 'Save as current trip'),
             ),
             if (_message != null) ...[
               const SizedBox(height: 8),
-              Text(_message!),
+              Semantics(liveRegion: true, child: Text(_message!)),
             ],
           ],
         ),
@@ -708,18 +793,24 @@ class CurrentTripScreen extends StatefulWidget {
     super.key,
     required this.api,
     required this.session,
+    required this.authController,
   });
 
   final MobileApiClient api;
   final AppSession session;
+  final AuthController authController;
 
   @override
   State<CurrentTripScreen> createState() => _CurrentTripScreenState();
 }
 
 class _CurrentTripScreenState extends State<CurrentTripScreen> {
-  bool _loading = true;
-  String? _errorMessage;
+  bool _summaryLoading = true;
+  bool _eventsLoading = true;
+  bool _markingChecked = false;
+  String? _summaryError;
+  String? _eventsError;
+  String? _markCheckedError;
   CurrentTripSummaryData? _summary;
   List<CurrentTripEvent> _events = const [];
 
@@ -727,158 +818,313 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
   void initState() {
     super.initState();
     unawaited(_loadSummary());
+    unawaited(_loadEvents());
   }
 
   Future<void> _loadSummary() async {
     setState(() {
-      _loading = true;
-      _errorMessage = null;
+      _summaryLoading = true;
+      _summaryError = null;
     });
 
     try {
       final summary = await widget.api.getCurrentTripSummary(
         token: widget.session.accessToken,
       );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _summary = summary;
+      });
+    } on PublicApiException catch (error) {
+      if (await widget.authController.handleProtectedFailure(error) ||
+          !mounted) {
+        return;
+      }
+      setState(() {
+        _summaryError = apiErrorMessage(ApiOperation.currentTripSummary, error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _summaryLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadEvents() async {
+    setState(() {
+      _eventsLoading = true;
+      _eventsError = null;
+    });
+
+    try {
       final events = await widget.api.getCurrentTripEvents(
         token: widget.session.accessToken,
       );
+      if (!mounted) {
+        return;
+      }
       setState(() {
-        _summary = summary;
         _events = events;
       });
-    } on MobileApiException catch (error) {
+    } on PublicApiException catch (error) {
+      if (await widget.authController.handleProtectedFailure(error) ||
+          !mounted) {
+        return;
+      }
       setState(() {
-        _errorMessage = error.message;
+        if (error.code == PublicApiErrorCode.currentTripNotFound) {
+          _events = const [];
+          _eventsError = null;
+        } else {
+          _eventsError = apiErrorMessage(ApiOperation.currentTripEvents, error);
+        }
       });
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _eventsLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _markChecked() async {
+    setState(() {
+      _markingChecked = true;
+      _markCheckedError = null;
+    });
+
     try {
       await widget.api.markCurrentTripChecked(
         token: widget.session.accessToken,
       );
-      await _loadSummary();
-    } on MobileApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      await Future.wait([_loadSummary(), _loadEvents()]);
+    } on PublicApiException catch (error) {
+      if (await widget.authController.handleProtectedFailure(error) ||
+          !mounted) {
+        return;
+      }
       setState(() {
-        _errorMessage = error.message;
+        if (error.code == PublicApiErrorCode.currentTripNotFound) {
+          _summary = null;
+          _events = const [];
+          _markCheckedError = null;
+        } else {
+          _markCheckedError = apiErrorMessage(
+            ApiOperation.currentTripMarkChecked,
+            error,
+          );
+        }
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _markingChecked = false;
+        });
+      }
     }
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([_loadSummary(), _loadEvents()]);
+  }
+
+  Widget _buildSummary(BuildContext context) {
+    if (_summaryLoading && _summary == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_summaryError != null && _summary == null) {
+      return InlineRecovery(
+        message: _summaryError!,
+        semanticsLabel: 'Try loading current trip again',
+        onRetry: _loadSummary,
+      );
+    }
+    if (_summary == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Center(child: Text('No current trip is saved.')),
+      );
+    }
+
+    final summary = _summary!;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              summary.skiRegionName,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(summary.focusSkiAreaName),
+            Text(summary.stayBaseName),
+            if (summary.tripStartDate != null && summary.tripEndDate != null)
+              Text(
+                formatPublicDateRange(
+                  summary.tripStartDate!,
+                  summary.tripEndDate!,
+                ),
+              ),
+            const SizedBox(height: 12),
+            Text(summary.currentWeatherSummary),
+            const SizedBox(height: 12),
+            Text(summary.eligibilityReason),
+            Text(summary.deltaSummary),
+            if (summary.changes.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'What changed',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              for (final change in summary.changes)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text('• $change'),
+                ),
+            ],
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _markingChecked ? null : _markChecked,
+              icon: const Icon(Icons.check),
+              label: Text(_markingChecked ? 'Updating...' : 'Mark checked'),
+            ),
+            if (_markCheckedError != null) ...[
+              const SizedBox(height: 12),
+              InlineRecovery(
+                message: _markCheckedError!,
+                semanticsLabel: 'Try marking current trip checked again',
+                onRetry: _markChecked,
+              ),
+            ],
+            if (_summaryError != null) ...[
+              const SizedBox(height: 12),
+              InlineRecovery(
+                message: _summaryError!,
+                semanticsLabel: 'Try loading current trip again',
+                onRetry: _loadSummary,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEvents(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              PublicCopy.tripUpdates,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            if (_eventsLoading && _events.isEmpty) ...[
+              const SizedBox(height: 12),
+              const LinearProgressIndicator(),
+            ],
+            if (!_eventsLoading && _events.isEmpty && _eventsError == null) ...[
+              const SizedBox(height: 8),
+              const Text('No trip updates yet.'),
+            ],
+            if (_events.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              for (final event in _events) ...[
+                Text(event.summary),
+                const SizedBox(height: 2),
+                Text(
+                  formatPublicDate(event.recordedAt),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+              ],
+            ],
+            if (_eventsError != null) ...[
+              InlineRecovery(
+                message: _eventsError!,
+                semanticsLabel: 'Try loading trip updates again',
+                onRetry: _loadEvents,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_errorMessage != null) {
-      return Center(child: Text(_errorMessage!));
-    }
-    if (_summary == null) {
-      return RefreshIndicator(
-        onRefresh: _loadSummary,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: const [
-            SizedBox(height: 120),
-            Center(child: Text('No current trip saved yet.')),
-          ],
-        ),
-      );
-    }
-
+    final showEvents =
+        _summary != null || _summaryLoading || _summaryError != null;
     return RefreshIndicator(
-      onRefresh: _loadSummary,
+      onRefresh: _refreshAll,
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _summary!.skiRegionName,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(_summary!.focusSkiAreaName),
-                  Text(_summary!.stayBaseName),
-                  if (_summary!.tripStartDate != null &&
-                      _summary!.tripEndDate != null)
-                    Text(
-                      '${_summary!.tripStartDate} to ${_summary!.tripEndDate}',
-                    ),
-                  const SizedBox(height: 12),
-                  Text(_summary!.currentWeatherSummary),
-                  const SizedBox(height: 12),
-                  Text('Comparison basis: ${_summary!.comparisonLabel}'),
-                  Text('Trip relevance: ${_summary!.tripWindowLabel}'),
-                  Text(_summary!.eligibilityReason),
-                  Text(_summary!.deltaSummary),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: _markChecked,
-                    child: const Text('Mark checked'),
-                  ),
-                ],
-              ),
+          _buildSummary(context),
+          if (showEvents) ...[
+            const SizedBox(height: 12),
+            _buildEvents(context),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class InlineRecovery extends StatelessWidget {
+  const InlineRecovery({
+    super.key,
+    required this.message,
+    required this.semanticsLabel,
+    required this.onRetry,
+  });
+
+  final String message;
+  final String semanticsLabel;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      explicitChildNodes: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            container: true,
+            child: Text(
+              message,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
-          if (_summary!.changes.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Changes',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    for (final change in _summary!.changes)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text('• $change'),
-                      ),
-                  ],
-                ),
-              ),
+          const SizedBox(height: 8),
+          Semantics(
+            button: true,
+            label: semanticsLabel,
+            excludeSemantics: true,
+            child: OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try again'),
             ),
-          ],
-          if (_events.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Companion history',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    for (final event in _events) ...[
-                      Text(event.summary),
-                      Text(
-                        '${event.actionable ? "Actionable" : "Informational"} • ${event.recordedAt}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ],
       ),
     );
@@ -893,26 +1139,28 @@ class MobileApiClient {
   final http.Client _client;
 
   Future<AppSession> exchangeGoogleIdentityToken(String identityToken) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl/auth/google/sign-in'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'identity_token': identityToken}),
+    final payload = await _requestJson(
+      () => _client.post(
+        Uri.parse('$baseUrl/auth/google/sign-in'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'identity_token': identityToken}),
+      ),
     );
-    final payload = await _decodeJsonMap(response);
-    _ensureSuccess(response, payload);
-    return AppSession.fromJson(payload);
+    return _decodeModel(() => AppSession.fromJson(payload));
   }
 
   Future<ParsedFilters> parseTripBrief(String query) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl/parse-query'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'query': query}),
+    final payload = await _requestJson(
+      () => _client.post(
+        Uri.parse('$baseUrl/parse-query'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'query': query}),
+      ),
     );
-    final payload = await _decodeJsonMap(response);
-    _ensureSuccess(response, payload);
-    return ParsedFilters.fromJson(
-      (payload['filters'] as Map<String, dynamic>? ?? const {}),
+    return _decodeModel(
+      () => ParsedFilters.fromJson(
+        payload['filters'] as Map<String, dynamic>? ?? const {},
+      ),
     );
   }
 
@@ -936,41 +1184,41 @@ class MobileApiClient {
         : travelMonth != null
         ? {'month': travelMonth}
         : null;
-    final response = await _client.post(
-      Uri.parse('$baseUrl/search'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'intent': {
-          'constraints': {
-            'location': {'country': location},
-            'travel_window': ?travelWindow,
-            'lodging_budget': {
-              'mode': 'lodging_nightly',
-              'maximum': maxPrice,
-              'currency': 'EUR',
-              'budget_flex': 0.10,
+    final payload = await _requestJson(
+      () => _client.post(
+        Uri.parse('$baseUrl/search'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'intent': {
+            'constraints': {
+              'location': {'country': location},
+              'travel_window': ?travelWindow,
+              'lodging_budget': {
+                'mode': 'lodging_nightly',
+                'maximum': maxPrice,
+                'currency': 'EUR',
+                'budget_flex': 0.10,
+              },
+              'minimum_stay_quality': {'minimum_score': stars / 3 * 10},
             },
-            'minimum_stay_quality': {'minimum_score': stars / 3 * 10},
+            'party': {
+              'skill_levels': [skillLevel],
+            },
+            'travel_context': <String, dynamic>{},
+            'objectives': [
+              {'factor_id': 'pass_terrain_value', 'importance': 'normal'},
+            ],
+            'group_priorities': <Map<String, dynamic>>[],
+            'factor_preferences': <Map<String, dynamic>>[],
+            'assumptions': <String>[],
           },
-          'party': {
-            'skill_levels': [skillLevel],
-          },
-          'travel_context': <String, dynamic>{},
-          'objectives': [
-            {'factor_id': 'pass_terrain_value', 'importance': 'normal'},
-          ],
-          'group_priorities': <Map<String, dynamic>>[],
-          'factor_preferences': <Map<String, dynamic>>[],
-          'assumptions': <String>[],
-        },
-        'brief': brief == null || brief.isEmpty ? null : brief,
-        'generate_refinements': false,
-        'already_answered_question_ids': <String>[],
-      }),
+          'brief': brief == null || brief.isEmpty ? null : brief,
+          'generate_refinements': false,
+          'already_answered_question_ids': <String>[],
+        }),
+      ),
     );
-    final payload = await _decodeJsonMap(response);
-    _ensureSuccess(response, payload);
-    return SearchResponseItem.fromJson(payload);
+    return _decodeModel(() => SearchResponseItem.fromJson(payload));
   }
 
   Future<void> saveCurrentTrip({
@@ -981,69 +1229,121 @@ class MobileApiClient {
     String? tripEndDate,
   }) async {
     final configuration = result.topConfiguration;
-    final response = await _client.put(
-      Uri.parse('$baseUrl/current-trip'),
-      headers: _authorizedHeaders(token),
-      body: jsonEncode({
-        'ski_region_id': result.skiRegionId,
-        'ski_region_name': result.skiRegionName,
-        'stay_destination_id': configuration.stayDestinationId,
-        'stay_destination_name': configuration.stayDestinationName,
-        'stay_base_id': configuration.stayBaseId,
-        'stay_base_name': configuration.stayBaseName,
-        'focus_ski_area_id': configuration.focusSkiAreaId,
-        'focus_ski_area_name': configuration.focusSkiAreaName,
-        'lift_pass_product_id': configuration.selectedPass.liftPassProductId,
-        'lift_pass_product_name': configuration.selectedPass.name,
-        'travel_month': travelMonth,
-        'trip_start_date': tripStartDate,
-        'trip_end_date': tripEndDate,
-        'booking_status': 'not_booked_yet',
-      }),
+    await _requestJson(
+      () => _client.put(
+        Uri.parse('$baseUrl/current-trip'),
+        headers: _authorizedHeaders(token),
+        body: jsonEncode({
+          'ski_region_id': result.skiRegionId,
+          'ski_region_name': result.skiRegionName,
+          'stay_destination_id': configuration.stayDestinationId,
+          'stay_destination_name': configuration.stayDestinationName,
+          'stay_base_id': configuration.stayBaseId,
+          'stay_base_name': configuration.stayBaseName,
+          'focus_ski_area_id': configuration.focusSkiAreaId,
+          'focus_ski_area_name': configuration.focusSkiAreaName,
+          'lift_pass_product_id': configuration.selectedPass.liftPassProductId,
+          'lift_pass_product_name': configuration.selectedPass.name,
+          'travel_month': travelMonth,
+          'trip_start_date': tripStartDate,
+          'trip_end_date': tripEndDate,
+          'booking_status': 'not_booked_yet',
+        }),
+      ),
     );
-    final payload = await _decodeJsonMap(response);
-    _ensureSuccess(response, payload);
   }
 
   Future<CurrentTripSummaryData?> getCurrentTripSummary({
     required String token,
   }) async {
-    final response = await _client.get(
-      Uri.parse('$baseUrl/current-trip/summary'),
-      headers: _authorizedHeaders(token, includeContentType: false),
+    final response = await _request(
+      () => _client.get(
+        Uri.parse('$baseUrl/current-trip/summary'),
+        headers: _authorizedHeaders(token, includeContentType: false),
+      ),
     );
-    if (response.statusCode == 404) {
-      return null;
+    if (response.statusCode >= 400) {
+      final failure = PublicApiException.response(response.body);
+      if (failure.code == PublicApiErrorCode.currentTripNotFound) {
+        return null;
+      }
+      throw failure;
     }
-    final payload = await _decodeJsonMap(response);
-    _ensureSuccess(response, payload);
-    return CurrentTripSummaryData.fromJson(payload);
+    final payload = _decodeSuccessJson(response);
+    return _decodeModel(() => CurrentTripSummaryData.fromJson(payload));
   }
 
   Future<void> markCurrentTripChecked({required String token}) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl/current-trip/mark-checked'),
-      headers: _authorizedHeaders(token, includeContentType: false),
+    await _requestJson(
+      () => _client.post(
+        Uri.parse('$baseUrl/current-trip/mark-checked'),
+        headers: _authorizedHeaders(token, includeContentType: false),
+      ),
     );
-    final payload = await _decodeJsonMap(response);
-    _ensureSuccess(response, payload);
   }
 
   Future<List<CurrentTripEvent>> getCurrentTripEvents({
     required String token,
   }) async {
-    final response = await _client.get(
-      Uri.parse('$baseUrl/current-trip/events'),
-      headers: _authorizedHeaders(token, includeContentType: false),
+    final payload = await _requestJson(
+      () => _client.get(
+        Uri.parse('$baseUrl/current-trip/events'),
+        headers: _authorizedHeaders(token, includeContentType: false),
+      ),
     );
-    final payload = await _decodeJsonMap(response);
-    _ensureSuccess(response, payload);
-    final events = payload['events'] as List<dynamic>? ?? const [];
-    return events
-        .map(
-          (event) => CurrentTripEvent.fromJson(event as Map<String, dynamic>),
-        )
-        .toList();
+    return _decodeModel(() {
+      final events = payload['events'] as List<dynamic>? ?? const [];
+      return events
+          .map(
+            (event) => CurrentTripEvent.fromJson(event as Map<String, dynamic>),
+          )
+          .toList();
+    });
+  }
+
+  Future<http.Response> _request(Future<http.Response> Function() send) async {
+    try {
+      return await send();
+    } on PublicApiException {
+      rethrow;
+    } catch (error) {
+      throw PublicApiException.transport(error);
+    }
+  }
+
+  Future<Map<String, dynamic>> _requestJson(
+    Future<http.Response> Function() send,
+  ) async {
+    final response = await _request(send);
+    if (response.statusCode >= 400) {
+      throw PublicApiException.response(response.body);
+    }
+    return _decodeSuccessJson(response);
+  }
+
+  Map<String, dynamic> _decodeSuccessJson(http.Response response) {
+    if (response.body.isEmpty) {
+      return const {};
+    }
+    try {
+      final payload = jsonDecode(response.body);
+      if (payload is! Map<String, dynamic>) {
+        throw const FormatException('Expected a JSON object.');
+      }
+      return payload;
+    } catch (error) {
+      throw PublicApiException.decode(error);
+    }
+  }
+
+  T _decodeModel<T>(T Function() decode) {
+    try {
+      return decode();
+    } on PublicApiException {
+      rethrow;
+    } catch (error) {
+      throw PublicApiException.decode(error);
+    }
   }
 
   Map<String, String> _authorizedHeaders(
@@ -1054,23 +1354,6 @@ class MobileApiClient {
       if (includeContentType) 'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     };
-  }
-
-  Future<Map<String, dynamic>> _decodeJsonMap(http.Response response) async {
-    if (response.body.isEmpty) {
-      return const {};
-    }
-    return jsonDecode(response.body) as Map<String, dynamic>;
-  }
-
-  void _ensureSuccess(http.Response response, Map<String, dynamic> payload) {
-    if (response.statusCode < 400) {
-      return;
-    }
-    throw MobileApiException(
-      payload['detail'] as String? ??
-          'Request failed with ${response.statusCode}.',
-    );
   }
 }
 
@@ -1145,12 +1428,6 @@ class InMemorySessionStore implements SessionStore {
   Future<void> write(AppSession session) async {
     _session = session;
   }
-}
-
-class MobileApiException implements Exception {
-  const MobileApiException(this.message);
-
-  final String message;
 }
 
 class AppSession {

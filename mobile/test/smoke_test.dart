@@ -79,8 +79,9 @@ void main() {
       ),
     );
 
-    expect(find.text('Snowcast Mobile'), findsOneWidget);
+    expect(find.text('Sign in to Snowcast'), findsOneWidget);
     expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.textContaining('API base:'), findsNothing);
   });
 
   test('mobile search POSTs V4 intent with exact-date precedence', () async {
@@ -146,13 +147,18 @@ void main() {
       user: AppUser(userId: 'user-1', email: 'user@example.com'),
     );
 
+    final api = MobileApiClient(baseUrl: 'http://localhost/api');
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: RecommendationGroupCard(
             result: group,
             session: session,
-            api: MobileApiClient(baseUrl: 'http://localhost/api'),
+            api: api,
+            authController: AuthController(
+              api: api,
+              sessionStore: InMemorySessionStore(),
+            ),
             travelMonth: 3,
             tripStartDate: '',
             tripEndDate: '',
@@ -163,12 +169,95 @@ void main() {
 
     expect(find.text('Chamonix Valley'), findsOneWidget);
     expect(
-      find.text('Stay in Argentiere - Ski Grands Montets'),
+      find.text('Trip option: stay in Argentiere and ski Grands Montets.'),
       findsOneWidget,
     );
     expect(find.text('Chamonix Le Pass'), findsOneWidget);
-    expect(find.text('84.0 fit / 100'), findsOneWidget);
-    expect(find.text('115.0 km pass coverage'), findsOneWidget);
+    expect(find.text('84.0 fit / 100'), findsNothing);
+    expect(find.text('115.0 km of pass terrain'), findsOneWidget);
+    expect(find.text('Save as current trip'), findsOneWidget);
+  });
+
+  testWidgets('mobile search uses public vocabulary without debug terms', (
+    tester,
+  ) async {
+    final api = MobileApiClient(baseUrl: 'http://localhost/api');
+    final session = AppSession(
+      accessToken: 'token',
+      expiresAt: '2026-07-03T00:00:00Z',
+      user: AppUser(userId: 'user-1', email: 'user@example.com'),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchScreen(
+          api: api,
+          session: session,
+          authController: AuthController(
+            api: api,
+            sessionStore: InMemorySessionStore(),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Must-haves and Preferences'), findsOneWidget);
+    expect(find.text('Stay comfort'), findsOneWidget);
+    expect(find.text('Simple'), findsOneWidget);
+    expect(find.text('Choose start date'), findsOneWidget);
+    expect(find.text('Choose end date'), findsOneWidget);
+    expect(find.textContaining('YYYY-MM-DD'), findsNothing);
+    expect(find.textContaining('Quality tier'), findsNothing);
+    expect(find.textContaining('API base:'), findsNothing);
+    expect(find.textContaining('configuration'), findsNothing);
+    expect(find.textContaining('ranking'), findsNothing);
+    expect(find.textContaining('companion'), findsNothing);
+  });
+
+  testWidgets('mobile search controls reflow at enlarged text scale', (
+    tester,
+  ) async {
+    final api = MobileApiClient(baseUrl: 'http://localhost/api');
+    final session = AppSession(
+      accessToken: 'token',
+      expiresAt: '2026-07-03T00:00:00Z',
+      user: AppUser(userId: 'user-1', email: 'user@example.com'),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(320, 700),
+            textScaler: TextScaler.linear(2),
+          ),
+          child: SearchScreen(
+            api: api,
+            session: session,
+            authController: AuthController(
+              api: api,
+              sessionStore: InMemorySessionStore(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getSize(find.widgetWithText(FilledButton, 'Parse brief')).height,
+      greaterThanOrEqualTo(48),
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -1200));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Choose start date'), findsOneWidget);
+    expect(
+      tester
+          .getSize(find.widgetWithText(OutlinedButton, 'Choose start date'))
+          .height,
+      greaterThanOrEqualTo(48),
+    );
   });
 
   test('saving a mobile trip sends every normalized V4 identity', () async {
