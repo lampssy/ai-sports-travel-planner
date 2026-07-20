@@ -196,7 +196,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mark checked'));
+    await tester.tap(find.text('Mark conditions as reviewed'));
     await tester.pumpAndSettle();
 
     expect(
@@ -253,7 +253,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mark checked'));
+    await tester.tap(find.text('Mark conditions as reviewed'));
     await tester.pumpAndSettle();
 
     expect(find.text('Chamonix Valley'), findsOneWidget);
@@ -266,12 +266,12 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.bySemanticsLabel('Try marking current trip checked again'),
+      find.bySemanticsLabel('Try marking conditions as reviewed again'),
       findsOneWidget,
     );
 
     await tester.tap(
-      find.bySemanticsLabel('Try marking current trip checked again'),
+      find.bySemanticsLabel('Try marking conditions as reviewed again'),
     );
     await tester.pumpAndSettle();
 

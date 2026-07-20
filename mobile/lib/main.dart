@@ -486,7 +486,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   children: [
                     FilledButton(
                       onPressed: _isBusy ? null : _parseBrief,
-                      child: const Text('Parse brief'),
+                      child: const Text('Use this trip brief'),
                     ),
                     OutlinedButton(
                       onPressed: _isBusy ? null : _runSearch,
@@ -503,7 +503,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 TextField(
                   controller: _locationController,
                   decoration: const InputDecoration(
-                    labelText: 'Country / location',
+                    labelText: 'Country',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -512,7 +512,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   controller: _maxPriceController,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Maximum nightly lodging estimate',
+                    labelText: 'Maximum stay price per night (EUR)',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -997,13 +997,15 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
             FilledButton.icon(
               onPressed: _markingChecked ? null : _markChecked,
               icon: const Icon(Icons.check),
-              label: Text(_markingChecked ? 'Updating...' : 'Mark checked'),
+              label: Text(
+                _markingChecked ? 'Updating...' : 'Mark conditions as reviewed',
+              ),
             ),
             if (_markCheckedError != null) ...[
               const SizedBox(height: 12),
               InlineRecovery(
                 message: _markCheckedError!,
-                semanticsLabel: 'Try marking current trip checked again',
+                semanticsLabel: 'Try marking conditions as reviewed again',
                 onRetry: _markChecked,
               ),
             ],

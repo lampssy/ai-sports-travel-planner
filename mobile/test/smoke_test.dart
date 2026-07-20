@@ -202,6 +202,11 @@ void main() {
     );
 
     expect(find.text('Must-haves and Preferences'), findsOneWidget);
+    expect(find.text('Use this trip brief'), findsOneWidget);
+    expect(find.text('Country'), findsOneWidget);
+    expect(find.text('Maximum stay price per night (EUR)'), findsOneWidget);
+    expect(find.text('Country / location'), findsNothing);
+    expect(find.text('Maximum nightly lodging estimate'), findsNothing);
     expect(find.text('Stay comfort'), findsOneWidget);
     expect(find.text('Simple'), findsOneWidget);
     expect(find.text('Choose start date'), findsOneWidget);
@@ -245,7 +250,9 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(
-      tester.getSize(find.widgetWithText(FilledButton, 'Parse brief')).height,
+      tester
+          .getSize(find.widgetWithText(FilledButton, 'Use this trip brief'))
+          .height,
       greaterThanOrEqualTo(48),
     );
     await tester.drag(find.byType(ListView), const Offset(0, -1200));
