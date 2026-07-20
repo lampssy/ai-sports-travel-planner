@@ -81,9 +81,18 @@ Strategy, UI/UX/Accessibility, and Monetization/Partnerships reviews clean;
 924 focused backend tests, 270 frontend tests, 40 non-visual Playwright
 journeys, production build, Ruff, format, and language scans passed; deliberate
 visual-baseline inspection remains owned by Task 4)
-Task 4: complete (Trip details and weather-evidence redesign; 95 focused
-frontend tests, production build, 6 functional and 15 visual Chromium journeys
-passed; Browser-first desktop/390 px inspection and Data Trust, UI/UX, Content
-& Language, and Accessibility feature reviews clean)
-Task 5: pending
-Task 6: pending
+Task 4: complete (commits 8b07725, 5cb015a, 04cb6a8, 5c3fa38, bc1a8bf,
+5ec0316; Trip details and weather-evidence redesign, real response-backed
+charts, layered technical details, mixed-evidence disclosure, and exact
+unavailable-state wording; 88 cumulative focused tests, production build,
+targeted functional/visual Chromium journeys, Browser-first desktop/390 px
+inspection, enlarged-text table coverage, and final exact-head Data Trust,
+UI/UX, Content & Language, and Accessibility reviews clean)
+Task 5: complete (commits 82790eb, 7b16d9b, 684e1df; typed Flutter public
+errors, terminal authentication recovery, independent Current trip states,
+local retries, direct public copy, persistent field labels, semantic actions,
+live announcements, and enlarged-text coverage; Flutter analysis and 20 tests
+passed; final exact-scope Mobile Companion, Backend/API, Content & Language,
+and Accessibility reviews clean; APK build blocked only by the missing local
+Android SDK)
+Task 6: in progress
