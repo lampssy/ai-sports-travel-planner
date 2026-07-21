@@ -52,6 +52,7 @@ class CatalogCurationReconciliationResult:
 @dataclass(frozen=True)
 class _CatalogSnapshot:
     catalog: CatalogSnapshot
+    trust_manifest: CatalogTrustManifest
     targets: dict[TargetKey, dict[str, JsonValue]]
     ski_areas: dict[str, SkiArea]
     access_by_id: dict[str, SkiAreaAccess]
@@ -171,6 +172,7 @@ def _load_snapshot(
         raise CatalogValidationError(sorted(set(issues)))
     return _CatalogSnapshot(
         catalog=catalog,
+        trust_manifest=trust,
         targets=targets,
         ski_areas={area.ski_area_id: area for area in catalog.ski_areas},
         access_by_id={
@@ -332,6 +334,52 @@ def _validate_weather_geometry(
             )
 
 
+def _validate_pass_validity_window_trust(
+    report: CatalogCurationReport,
+    current: _CatalogSnapshot,
+    issues: list[str],
+) -> None:
+    evidence_urls_by_pass: dict[str, set[str]] = {}
+    for evidence in report.evidence:
+        if (
+            evidence.target_type == "lift_pass_product"
+            and evidence.field_path == "validity_windows"
+            and evidence.source_type == "official"
+        ):
+            evidence_urls_by_pass.setdefault(evidence.target_id, set()).add(
+                evidence.source_url
+            )
+
+    for change in report.changes:
+        if (
+            change.target_type != "lift_pass_product"
+            or change.field_path != "validity_windows"
+            or change.after is None
+        ):
+            continue
+        trust = current.trust_manifest.entities["lift_pass_products"][change.target_id]
+        owning_status = trust.field_statuses["identity_scope_availability"]
+        if owning_status != change.trust_status:
+            issues.append(
+                f"lift_pass_product:{change.target_id} validity_windows "
+                f"trust_status={change.trust_status} does not match "
+                "identity_scope_availability "
+                f"status={owning_status}"
+            )
+        if not isinstance(change.after, list) or not change.after:
+            continue
+        missing_source_urls = sorted(
+            evidence_urls_by_pass.get(change.target_id, set())
+            - set(trust.field_source_refs["identity_scope_availability"])
+        )
+        if missing_source_urls:
+            issues.append(
+                f"lift_pass_product:{change.target_id} "
+                "identity_scope_availability source refs omit validity evidence: "
+                + ", ".join(missing_source_urls)
+            )
+
+
 def reconcile_catalog_curation_report(
     report: CatalogCurationReport,
     *,
@@ -357,6 +405,7 @@ def reconcile_catalog_curation_report(
     _validate_access_link_endpoints(report, deltas, base, current, issues)
     _validate_full_access_mode_resolution(report, current, issues)
     _validate_weather_geometry(report, base, current, issues)
+    _validate_pass_validity_window_trust(report, current, issues)
     if issues:
         raise CatalogValidationError(sorted(set(issues)))
     return CatalogCurationReconciliationResult(deltas=deltas)

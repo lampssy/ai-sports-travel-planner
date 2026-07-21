@@ -343,7 +343,7 @@ def test_canonical_paths_cover_only_normalized_catalog_entities() -> None:
     assert "source_refs" not in CANONICAL_FIELD_PATHS["trust_manifest"]
 
 
-def test_report_accepts_operator_evidence_for_complete_pass_validity_windows() -> None:
+def _pass_validity_report_payload() -> dict:
     windows = [
         {
             "season_label": "2026-2027",
@@ -352,76 +352,150 @@ def test_report_accepts_operator_evidence_for_complete_pass_validity_windows() -
             "status": "planned",
         }
     ]
-    report = CatalogCurationReport.model_validate(
+    return {
+        "report_schema_version": 3,
+        "title": "Example pass validity review",
+        "summary": "Adds the operator-published pass validity window.",
+        "resulting_graph": {"focus_stay_destination_ids": ["example"]},
+        "reviewed_targets": [
+            {
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "scope": "narrow",
+                "required_field_paths": ["name", "validity_windows"],
+            }
+        ],
+        "changes": [
+            {
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "field_path": "validity_windows",
+                "before": [],
+                "after": windows,
+                "trust_status": "verified",
+            }
+        ],
+        "field_coverage": [
+            {
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+            {
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "field_path": "validity_windows",
+                "status": "changed",
+                "notes": (
+                    "An empty list means no separate pass window was modeled; "
+                    "it did not assert year-round validity."
+                ),
+            },
+        ],
+        "evidence": [
+            {
+                "evidence_id": "example-pass-scope",
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://operator.example.com/winter/tariff",
+                "source_title": "Official operator winter tariff",
+                "source_value": "Example Local Pass",
+                "evidence_summary": "The tariff identifies the pass product.",
+            },
+            {
+                "evidence_id": "example-pass-tariff",
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "field_path": "validity_windows",
+                "source_type": "official",
+                "source_url": "https://operator.example.com/winter/tariff",
+                "source_title": "Official operator winter tariff",
+                "source_value": windows,
+                "evidence_summary": (
+                    "The operator tariff publishes the complete modeled window."
+                ),
+            },
+        ],
+        "entity_scope_assessments": [
+            {
+                "candidate_id": "example-local-pass",
+                "candidate_name": "Example Local Pass",
+                "candidate_kind": "lift_pass_product",
+                "disposition": "represented",
+                "signals": ["official_product_identity"],
+                "evidence_refs": ["example-pass-scope"],
+                "target_refs": [
+                    {
+                        "target_type": "lift_pass_product",
+                        "target_id": "example-local-pass",
+                    }
+                ],
+                "rationale": "The operator tariff identifies the pass product.",
+            }
+        ],
+    }
+
+
+def test_report_accepts_operator_evidence_for_complete_pass_validity_windows() -> None:
+    report = CatalogCurationReport.model_validate(_pass_validity_report_payload())
+
+    validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_report_requires_pass_validity_window_evidence() -> None:
+    payload = _pass_validity_report_payload()
+    payload["evidence"] = [payload["evidence"][0]]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="validity_windows: non-empty change requires official root-path evidence",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_report_rejects_unrelated_nested_pass_validity_window_evidence() -> None:
+    payload = _pass_validity_report_payload()
+    payload["evidence"][1]["field_path"] = "validity_windows[0].start_date"
+    payload["field_coverage"].append(
         {
-            "report_schema_version": 3,
-            "title": "Example pass validity review",
-            "summary": "Adds the operator-published pass validity window.",
-            "resulting_graph": {"focus_stay_destination_ids": ["example"]},
-            "reviewed_targets": [
-                {
-                    "target_type": "lift_pass_product",
-                    "target_id": "example-local-pass",
-                    "scope": "narrow",
-                    "required_field_paths": ["validity_windows"],
-                }
-            ],
-            "changes": [
-                {
-                    "target_type": "lift_pass_product",
-                    "target_id": "example-local-pass",
-                    "field_path": "validity_windows",
-                    "before": [],
-                    "after": windows,
-                    "trust_status": "verified",
-                }
-            ],
-            "field_coverage": [
-                {
-                    "target_type": "lift_pass_product",
-                    "target_id": "example-local-pass",
-                    "field_path": "validity_windows",
-                    "status": "changed",
-                    "notes": (
-                        "An empty list means no separate pass window was modeled; "
-                        "it did not assert year-round validity."
-                    ),
-                }
-            ],
-            "evidence": [
-                {
-                    "evidence_id": "example-pass-tariff",
-                    "target_type": "lift_pass_product",
-                    "target_id": "example-local-pass",
-                    "field_path": "validity_windows",
-                    "source_type": "official",
-                    "source_url": "https://operator.example.com/winter/tariff",
-                    "source_title": "Official operator winter tariff",
-                    "source_value": windows,
-                    "evidence_summary": (
-                        "The operator tariff publishes the complete modeled window."
-                    ),
-                }
-            ],
-            "entity_scope_assessments": [
-                {
-                    "candidate_id": "example-local-pass",
-                    "candidate_name": "Example Local Pass",
-                    "candidate_kind": "lift_pass_product",
-                    "disposition": "represented",
-                    "signals": ["official_product_identity"],
-                    "evidence_refs": ["example-pass-tariff"],
-                    "target_refs": [
-                        {
-                            "target_type": "lift_pass_product",
-                            "target_id": "example-local-pass",
-                        }
-                    ],
-                    "rationale": "The operator tariff identifies the pass product.",
-                }
-            ],
+            "target_type": "lift_pass_product",
+            "target_id": "example-local-pass",
+            "field_path": "validity_windows[0].start_date",
+            "status": "reviewed-no-change",
         }
     )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="validity_windows: non-empty change requires official root-path evidence",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_report_rejects_non_official_pass_validity_window_evidence() -> None:
+    payload = _pass_validity_report_payload()
+    payload["evidence"][1]["source_type"] = "reviewed_editorial"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="validity_windows: non-empty change requires official root-path evidence",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_report_allows_empty_pass_validity_windows_without_direct_evidence() -> None:
+    payload = _pass_validity_report_payload()
+    payload["changes"][0]["before"] = payload["changes"][0]["after"]
+    payload["changes"][0]["after"] = []
+    payload["changes"][0]["trust_status"] = "estimated"
+    payload["evidence"] = [payload["evidence"][0]]
+    report = CatalogCurationReport.model_validate(payload)
 
     validate_catalog_curation_report(report, require_resulting_graph=True)
 

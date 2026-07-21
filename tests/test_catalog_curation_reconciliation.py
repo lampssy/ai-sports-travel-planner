@@ -340,8 +340,11 @@ def _relationship_snapshots(
 
 def _pass_validity_snapshots(
     tmp_path: Path,
+    *,
+    trust_status: str = "verified",
+    trust_source_url: str | None = "https://operator.example.com/winter/tariff",
+    update_trust: bool = True,
 ) -> tuple[tuple[Path, Path], tuple[Path, Path], list[dict], dict, dict]:
-    operator_url = "https://operator.example.com/winter/tariff"
     windows = [
         {
             "season_label": "2026-2027",
@@ -358,8 +361,11 @@ def _pass_validity_snapshots(
 
     current_trust = json.loads(current_paths[1].read_text(encoding="utf-8"))
     pass_trust = current_trust["entities"]["lift_pass_products"]["example-local-pass"]
-    pass_trust["field_statuses"]["identity_scope_availability"] = "verified"
-    pass_trust["field_source_refs"]["identity_scope_availability"] = [operator_url]
+    if update_trust:
+        pass_trust["field_statuses"]["identity_scope_availability"] = trust_status
+        pass_trust["field_source_refs"]["identity_scope_availability"] = (
+            [trust_source_url] if trust_source_url is not None else []
+        )
     current_paths[1].write_text(json.dumps(current_trust), encoding="utf-8")
 
     return (
@@ -376,8 +382,10 @@ def _pass_validity_report(
     windows: list[dict],
     field_statuses_after: dict,
     field_source_refs_after: dict,
+    validity_trust_status: str = "verified",
+    include_trust_changes: bool = True,
+    evidence_url: str = "https://operator.example.com/winter/tariff",
 ) -> CatalogCurationReport:
-    operator_url = "https://operator.example.com/winter/tariff"
     base_trust = _trust_payload(minimal_catalog_payload())["entities"][
         "lift_pass_products"
     ]["example-local-pass"]
@@ -388,48 +396,57 @@ def _pass_validity_report(
             "field_path": "validity_windows",
             "before": [],
             "after": windows,
-            "trust_status": "verified",
-        },
-        {
-            "target_type": "trust_manifest",
-            "target_id": "lift_pass_products:example-local-pass",
-            "field_path": "field_statuses",
-            "before": base_trust["field_statuses"],
-            "after": field_statuses_after,
-            "trust_status": "verified",
-        },
-        {
-            "target_type": "trust_manifest",
-            "target_id": "lift_pass_products:example-local-pass",
-            "field_path": "field_source_refs",
-            "before": base_trust["field_source_refs"],
-            "after": field_source_refs_after,
-            "trust_status": "verified",
-        },
+            "trust_status": validity_trust_status,
+        }
     ]
+    if include_trust_changes:
+        changes.extend(
+            [
+                {
+                    "target_type": "trust_manifest",
+                    "target_id": "lift_pass_products:example-local-pass",
+                    "field_path": "field_statuses",
+                    "before": base_trust["field_statuses"],
+                    "after": field_statuses_after,
+                    "trust_status": "verified",
+                },
+                {
+                    "target_type": "trust_manifest",
+                    "target_id": "lift_pass_products:example-local-pass",
+                    "field_path": "field_source_refs",
+                    "before": base_trust["field_source_refs"],
+                    "after": field_source_refs_after,
+                    "trust_status": "verified",
+                },
+            ]
+        )
+    reviewed_targets = [
+        {
+            "target_type": "lift_pass_product",
+            "target_id": "example-local-pass",
+            "scope": "narrow",
+            "required_field_paths": ["validity_windows"],
+        }
+    ]
+    if include_trust_changes:
+        reviewed_targets.append(
+            {
+                "target_type": "trust_manifest",
+                "target_id": "lift_pass_products:example-local-pass",
+                "scope": "narrow",
+                "required_field_paths": [
+                    "field_statuses",
+                    "field_source_refs",
+                ],
+            }
+        )
     return CatalogCurationReport.model_validate(
         {
             "report_schema_version": 3,
             "title": "Example pass validity reconciliation",
             "summary": "Adds one operator-published pass validity window.",
             "resulting_graph": {"focus_stay_destination_ids": ["example"]},
-            "reviewed_targets": [
-                {
-                    "target_type": "lift_pass_product",
-                    "target_id": "example-local-pass",
-                    "scope": "narrow",
-                    "required_field_paths": ["validity_windows"],
-                },
-                {
-                    "target_type": "trust_manifest",
-                    "target_id": "lift_pass_products:example-local-pass",
-                    "scope": "narrow",
-                    "required_field_paths": [
-                        "field_statuses",
-                        "field_source_refs",
-                    ],
-                },
-            ],
+            "reviewed_targets": reviewed_targets,
             "changes": changes,
             "field_coverage": [
                 {
@@ -453,7 +470,7 @@ def _pass_validity_report(
                     "target_id": change["target_id"],
                     "field_path": change["field_path"],
                     "source_type": "official",
-                    "source_url": operator_url,
+                    "source_url": evidence_url,
                     "source_title": "Official operator winter tariff",
                     "source_value": change["after"],
                     "evidence_summary": (
@@ -566,6 +583,97 @@ def test_reconcile_accepts_exact_pass_validity_windows_and_owning_trust_deltas(
         ),
     )
     assert "valid 2026-12-05 to 2027-04-11" in graph
+
+
+def test_reconcile_rejects_pass_validity_trust_status_mismatch(
+    tmp_path: Path,
+) -> None:
+    (
+        base_paths,
+        current_paths,
+        windows,
+        field_statuses_after,
+        field_source_refs_after,
+    ) = _pass_validity_snapshots(tmp_path)
+    report = _pass_validity_report(
+        windows=windows,
+        field_statuses_after=field_statuses_after,
+        field_source_refs_after=field_source_refs_after,
+        validity_trust_status="verified_with_adjustment",
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="validity_windows trust_status=verified_with_adjustment does not match",
+    ):
+        reconcile_catalog_curation_report(
+            report,
+            base_catalog_path=base_paths[0],
+            current_catalog_path=current_paths[0],
+            base_trust_manifest_path=base_paths[1],
+            current_trust_manifest_path=current_paths[1],
+        )
+
+
+def test_reconcile_rejects_stale_pass_validity_source_refs(tmp_path: Path) -> None:
+    (
+        base_paths,
+        current_paths,
+        windows,
+        field_statuses_after,
+        field_source_refs_after,
+    ) = _pass_validity_snapshots(
+        tmp_path,
+        trust_source_url="https://operator.example.com/old-tariff",
+    )
+    report = _pass_validity_report(
+        windows=windows,
+        field_statuses_after=field_statuses_after,
+        field_source_refs_after=field_source_refs_after,
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="identity_scope_availability source refs omit validity evidence",
+    ):
+        reconcile_catalog_curation_report(
+            report,
+            base_catalog_path=base_paths[0],
+            current_catalog_path=current_paths[0],
+            base_trust_manifest_path=base_paths[1],
+            current_trust_manifest_path=current_paths[1],
+        )
+
+
+def test_reconcile_rejects_unchanged_unowned_pass_validity_trust(
+    tmp_path: Path,
+) -> None:
+    (
+        base_paths,
+        current_paths,
+        windows,
+        field_statuses_after,
+        field_source_refs_after,
+    ) = _pass_validity_snapshots(tmp_path, update_trust=False)
+    report = _pass_validity_report(
+        windows=windows,
+        field_statuses_after=field_statuses_after,
+        field_source_refs_after=field_source_refs_after,
+        validity_trust_status="estimated",
+        include_trust_changes=False,
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="identity_scope_availability source refs omit validity evidence",
+    ):
+        reconcile_catalog_curation_report(
+            report,
+            base_catalog_path=base_paths[0],
+            current_catalog_path=current_paths[0],
+            base_trust_manifest_path=base_paths[1],
+            current_trust_manifest_path=current_paths[1],
+        )
 
 
 def test_reconcile_cli_uses_normalized_catalog_paths(tmp_path: Path, capsys) -> None:

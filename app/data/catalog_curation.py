@@ -1121,6 +1121,20 @@ def validate_catalog_curation_report(
 
     for change in report.changes:
         matching_evidence = evidence_by_key.get(change.target_key, [])
+        if (
+            report.report_schema_version == 3
+            and change.target_type == "lift_pass_product"
+            and change.field_path == "validity_windows"
+            and isinstance(change.after, list)
+            and change.after
+            and not any(
+                evidence.source_type == "official" for evidence in matching_evidence
+            )
+        ):
+            issues.append(
+                f"lift_pass_product:{change.target_id} validity_windows: "
+                "non-empty change requires official root-path evidence"
+            )
         if change.ranking_relevant and not matching_evidence:
             issues.append(
                 f"{change.target_type}:{change.target_id} {change.field_path}: "
