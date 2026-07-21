@@ -1210,7 +1210,11 @@ dependency. Terrain domains, access edges, pass coverage, and owner decisions
 that depend on the linked boundary belong to the owning PR. The selected PR may
 still correct its own local metrics, evidence scope, and unsupported linked
 claims. An owner choice confined to the linked dependency must never be
-published against the selected PR.
+published against the selected PR. A dependency-only entity retained in
+`reviewed_targets[]` for evidence uses
+`resulting_graph_role=linked_dependency`; it remains visible in the review
+inventory but cannot own changes or force its destination into the canonical
+Resulting Graph.
 
 When curation changes ranking or fit inputs, include ranking-impact notes and
 run the Search V4 factor-readiness audit plus affected golden scenarios.

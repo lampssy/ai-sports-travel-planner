@@ -44,6 +44,7 @@ CatalogFieldCoverageStatus = Literal[
 ]
 CatalogIssueSeverity = Literal["error", "warning"]
 CatalogReviewScope = Literal["full", "narrow"]
+CatalogResultingGraphRole = Literal["focus", "linked_dependency"]
 CatalogReportSchemaVersion = Literal[1, 2, 3]
 CatalogScopeCandidateKind = Literal[
     "stay_destination",
@@ -646,6 +647,7 @@ class CatalogReviewedTarget(CatalogCurationContractModel):
     target_id: str = Field(min_length=1)
     scope: CatalogReviewScope
     required_field_paths: list[str] = Field(default_factory=list)
+    resulting_graph_role: CatalogResultingGraphRole = "focus"
 
     @field_validator("required_field_paths")
     @classmethod
@@ -662,6 +664,8 @@ class CatalogReviewedTarget(CatalogCurationContractModel):
             raise ValueError("full reviewed targets forbid required_field_paths")
         if self.scope == "narrow" and not self.required_field_paths:
             raise ValueError("narrow reviewed targets require required_field_paths")
+        if self.resulting_graph_role == "linked_dependency" and self.scope != "narrow":
+            raise ValueError("linked_dependency reviewed targets require narrow scope")
         unsupported = sorted(
             set(self.required_field_paths) - CANONICAL_FIELD_PATHS[self.target_type]
         )
@@ -973,6 +977,13 @@ def validate_catalog_curation_report(
     issues: list[str] = []
     if report.resulting_graph is not None and report.report_schema_version < 3:
         issues.append("resulting_graph requires report schema version 3")
+    if report.report_schema_version < 3 and any(
+        target.resulting_graph_role == "linked_dependency"
+        for target in report.reviewed_targets
+    ):
+        issues.append(
+            "linked_dependency reviewed targets require report schema version 3"
+        )
     if (
         require_resulting_graph
         and report.report_schema_version == 3
@@ -999,10 +1010,16 @@ def validate_catalog_curation_report(
                 "duplicate change"
             )
         changes_by_key[change.target_key] = change
-        if (change.target_type, change.target_id) not in reviewed_by_key:
+        reviewed_target = reviewed_by_key.get((change.target_type, change.target_id))
+        if reviewed_target is None:
             issues.append(
                 f"{change.target_type}:{change.target_id}: target is not declared "
                 "in reviewed_targets"
+            )
+        elif reviewed_target.resulting_graph_role == "linked_dependency":
+            issues.append(
+                f"{change.target_type}:{change.target_id}: linked_dependency "
+                "reviewed target cannot own changes"
             )
 
     coverage_by_key: dict[tuple[str, str, str], CatalogFieldCoverage] = {}
@@ -1662,6 +1679,8 @@ def _required_resulting_graph_destination_ids(
 
     required: set[str] = set()
     for target in report.reviewed_targets:
+        if target.resulting_graph_role == "linked_dependency":
+            continue
         target_type: CatalogTargetType = target.target_type
         target_id = target.target_id
         if target_type == "trust_manifest":
@@ -1918,8 +1937,8 @@ def render_catalog_curation_report_markdown(
             "",
             "## Reviewed Targets",
             "",
-            "| Target | Scope | Required Fields |",
-            "| --- | --- | --- |",
+            "| Target | Scope | Graph Role | Required Fields |",
+            "| --- | --- | --- | --- |",
         ]
     )
     for target in report.reviewed_targets:
@@ -1930,7 +1949,8 @@ def render_catalog_curation_report_markdown(
         )
         lines.append(
             f"| {_code_cell(f'{target.target_type}:{target.target_id}')} | "
-            f"{_code_cell(target.scope)} | {required} |"
+            f"{_code_cell(target.scope)} | "
+            f"{_code_cell(target.resulting_graph_role)} | {required} |"
         )
     if report.entity_scope_assessments:
         lines.extend(

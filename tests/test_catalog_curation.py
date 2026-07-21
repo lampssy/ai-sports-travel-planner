@@ -1180,6 +1180,96 @@ def test_resulting_graph_requires_destinations_owning_reviewed_graph_targets() -
     validate_catalog_resulting_graph(report, catalog, require=True)
 
 
+def test_resulting_graph_excludes_linked_dependency_review_targets() -> None:
+    catalog_payload = minimal_catalog_payload()
+    add_second_destination_base_with_access(catalog_payload)
+    catalog = CatalogSnapshot.model_validate(catalog_payload)
+    payload = _scope_report_payload()
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area_access",
+            "target_id": "other-village--example-area",
+            "scope": "narrow",
+            "required_field_paths": ["source_urls"],
+            "resulting_graph_role": "linked_dependency",
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "ski_area_access",
+            "target_id": "other-village--example-area",
+            "field_path": "source_urls",
+            "status": "reviewed-no-change",
+        }
+    )
+    payload["evidence"].append(
+        {
+            "evidence_id": "other-access-scope",
+            "target_type": "ski_area_access",
+            "target_id": "other-village--example-area",
+            "field_path": "source_urls",
+            "source_type": "official",
+            "source_url": "https://example.com/other-ski-map",
+            "source_title": "Official linked ski map",
+            "source_value": ["https://example.com/other-ski-map"],
+            "evidence_summary": "Reviews a dependency owned outside this graph.",
+        }
+    )
+    payload["entity_scope_assessments"].append(
+        {
+            "candidate_id": "other-village--example-area",
+            "candidate_name": "Other access",
+            "candidate_kind": "ski_area_access",
+            "disposition": "deferred",
+            "signals": ["direct_access_relationship"],
+            "evidence_refs": ["other-access-scope"],
+            "target_refs": [],
+            "backlog_ref": "docs/product-backlog.md#other-access",
+            "rationale": "The linked access belongs to a separately owned graph.",
+        }
+    )
+    payload.update(
+        {
+            "report_schema_version": 3,
+            "resulting_graph": {
+                "focus_stay_destination_ids": ["example"],
+            },
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_resulting_graph(report, catalog, require=True)
+    rendered = render_catalog_curation_report_markdown(report, catalog)
+
+    assert "Stay destination<br/>Other Destination" not in rendered
+    assert "`linked_dependency`" in rendered
+
+
+def test_linked_dependency_review_target_cannot_own_changes() -> None:
+    payload = _scope_report_payload()
+    payload["reviewed_targets"][0]["resulting_graph_role"] = "linked_dependency"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="linked_dependency reviewed target cannot own changes",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_linked_dependency_review_target_requires_narrow_scope() -> None:
+    with pytest.raises(
+        ValidationError,
+        match="linked_dependency reviewed targets require narrow scope",
+    ):
+        CatalogReviewedTarget(
+            target_type="ski_area",
+            target_id="example-area",
+            scope="full",
+            resulting_graph_role="linked_dependency",
+        )
+
+
 def test_scope_assessment_markdown_renders_backlog_reference() -> None:
     payload = _scope_report_payload(
         disposition="deferred",

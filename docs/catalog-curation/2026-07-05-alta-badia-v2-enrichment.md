@@ -7,22 +7,12 @@ Keeps Alta Badia as the trip-market ski region, represents six independently own
 ```mermaid
 flowchart LR
   region_1["Trip market<br/>Alta Badia"]
-  region_2["Trip market<br/>Auronzo di Cadore"]
-  region_3["Trip market<br/>Cortina d&#x27;Ampezzo"]
-  region_4["Trip market<br/>Misurina"]
-  region_5["Trip market<br/>San Vito di Cadore"]
-  region_6["Trip market<br/>Val Gardena"]
-  destination_1["Stay destination<br/>Auronzo di Cadore"]
-  destination_2["Stay destination<br/>Badia"]
-  destination_3["Stay destination<br/>Colfosco"]
-  destination_4["Stay destination<br/>Cortina d&#x27;Ampezzo"]
-  destination_5["Stay destination<br/>Corvara"]
-  destination_6["Stay destination<br/>La Val"]
-  destination_7["Stay destination<br/>La Villa"]
-  destination_8["Stay destination<br/>Misurina"]
-  destination_9["Stay destination<br/>San Cassiano"]
-  destination_10["Stay destination<br/>San Vito di Cadore"]
-  destination_11["Stay destination<br/>Val Gardena"]
+  destination_1["Stay destination<br/>Badia"]
+  destination_2["Stay destination<br/>Colfosco"]
+  destination_3["Stay destination<br/>Corvara"]
+  destination_4["Stay destination<br/>La Val"]
+  destination_5["Stay destination<br/>La Villa"]
+  destination_6["Stay destination<br/>San Cassiano"]
   base_1["Stay base<br/>Armentarola"]
   base_2["Stay base<br/>Badia"]
   base_3["Stay base<br/>Colfosco"]
@@ -31,190 +21,138 @@ flowchart LR
   base_6["Stay base<br/>La Villa"]
   base_7["Stay base<br/>San Cassiano"]
   base_8["Stay base<br/>Sass Dlacia"]
-  base_9["Stay base<br/>Auronzo di Cadore"]
-  base_10["Stay base<br/>Taiarezze"]
-  base_11["Stay base<br/>Cortina d&#x27;Ampezzo"]
-  base_12["Stay base<br/>Misurina"]
-  base_13["Stay base<br/>San Vito di Cadore"]
-  base_14["Stay base<br/>Ortisei"]
   area_1["Ski area<br/>Alta Badia"]
-  area_2["Ski area<br/>Auronzo di Cadore - Monte Agudo"]
-  area_3["Ski area<br/>Cortina d&#x27;Ampezzo"]
-  area_4["Ski area<br/>Lagazuoi"]
-  area_5["Ski area<br/>Misurina - Passo Tre Croci"]
-  area_6["Ski area<br/>San Vito di Cadore"]
-  area_7["Ski area<br/>Val Gardena"]
+  area_2["Ski area<br/>Lagazuoi"]
   pass_1["Lift pass<br/>Alta Badia Ski Pass"]
-  pass_2["Lift pass<br/>Valle Skipass Cortina"]
-  pass_3["Lift pass<br/>Auronzo di Cadore - Monte Agudo Skipass"]
-  pass_4["Lift pass<br/>Valle Skipass Cortina"]
-  pass_5["Lift pass<br/>Valle Skipass Cortina"]
-  pass_6["Lift pass<br/>Misurina - Passo Tre Croci Skipass"]
-  pass_7["Lift pass<br/>Valle Skipass Cortina"]
-  pass_8["Lift pass<br/>San Vito Ski Area Skipass"]
-  pass_9["Lift pass<br/>Val Gardena/Seiser Alm Ski Pass"]
-  region_2 -->|"trip market"| destination_1
+  region_1 -->|"trip market"| destination_1
   region_1 -->|"trip market"| destination_2
   region_1 -->|"trip market"| destination_3
-  region_3 -->|"trip market"| destination_4
+  region_1 -->|"trip market"| destination_4
   region_1 -->|"trip market"| destination_5
   region_1 -->|"trip market"| destination_6
-  region_1 -->|"trip market"| destination_7
-  region_4 -->|"trip market"| destination_8
-  region_1 -->|"trip market"| destination_9
-  region_5 -->|"trip market"| destination_10
-  region_6 -->|"trip market"| destination_11
-  destination_9 -->|"stay base"| base_1
-  destination_2 -->|"stay base"| base_2
-  destination_3 -->|"stay base"| base_3
-  destination_5 -->|"stay base"| base_4
-  destination_6 -->|"stay base"| base_5
-  destination_7 -->|"stay base"| base_6
-  destination_9 -->|"stay base"| base_7
-  destination_9 -->|"stay base"| base_8
-  destination_1 -->|"stay base"| base_9
-  destination_1 -->|"stay base"| base_10
-  destination_4 -->|"stay base"| base_11
-  destination_8 -->|"stay base"| base_12
-  destination_10 -->|"stay base"| base_13
-  destination_11 -->|"stay base"| base_14
+  destination_6 -->|"stay base"| base_1
+  destination_1 -->|"stay base"| base_2
+  destination_2 -->|"stay base"| base_3
+  destination_3 -->|"stay base"| base_4
+  destination_4 -->|"stay base"| base_5
+  destination_5 -->|"stay base"| base_6
+  destination_6 -->|"stay base"| base_7
+  destination_6 -->|"stay base"| base_8
   base_1 -->|"access: ski_in_ski_out"| area_1
-  base_1 -->|"access: ski_bus via Lagazuoi cable car, 10000 m"| area_4
+  base_1 -->|"access: ski_bus via Lagazuoi cable car, 10000 m"| area_2
   base_2 -->|"access: walk via La Crusc, 255 m"| area_1
-  base_2 -->|"access: mixed via Lagazuoi cable car"| area_4
+  base_2 -->|"access: mixed via Lagazuoi cable car"| area_2
   base_3 -->|"access: walk via Colfosco gondola, 479 m"| area_1
-  base_3 -->|"access: ski_bus via Lagazuoi cable car"| area_4
+  base_3 -->|"access: ski_bus via Lagazuoi cable car"| area_2
   base_4 -->|"access: walk via Boè, 214 m"| area_1
-  base_4 -->|"access: ski_bus via Lagazuoi cable car"| area_4
+  base_4 -->|"access: ski_bus via Lagazuoi cable car"| area_2
   base_5 -->|"access: ski_bus via Alta Badia ski lifts"| area_1
-  base_5 -->|"access: mixed via Lagazuoi cable car"| area_4
+  base_5 -->|"access: mixed via Lagazuoi cable car"| area_2
   base_6 -->|"access: walk via Piz La Ila, 322 m"| area_1
-  base_6 -->|"access: ski_bus via Lagazuoi cable car"| area_4
+  base_6 -->|"access: ski_bus via Lagazuoi cable car"| area_2
   base_7 -->|"access: walk via Piz Sorega, 589 m"| area_1
-  base_7 -->|"access: ski_bus via Lagazuoi cable car"| area_4
+  base_7 -->|"access: ski_bus via Lagazuoi cable car"| area_2
   base_8 -->|"access: ski_bus via Armentarola ski lift"| area_1
-  base_9 -->|"access: ski_bus via Taiarezze-Malon Chairlift, 2100 m"| area_2
-  base_10 -->|"access: walk via Taiarezze-Malon Chairlift"| area_2
-  base_11 -->|"access: walk via Funivia Faloria, 472 m"| area_3
-  base_12 -->|"access: walk via Col de Varda Chairlift, 900 m"| area_5
-  base_13 -->|"access: ski_bus via Tambres Chairlift, 800 m"| area_6
-  base_14 -->|"access: walk via Ortisei - Furnes, 269 m"| area_7
+  destination_1 -->|"default pass"| pass_1
   destination_2 -->|"default pass"| pass_1
   destination_3 -->|"default pass"| pass_1
+  destination_4 -->|"default pass"| pass_1
   destination_5 -->|"default pass"| pass_1
   destination_6 -->|"default pass"| pass_1
-  destination_7 -->|"default pass"| pass_1
-  destination_9 -->|"default pass"| pass_1
   pass_1 -->|"covers area"| area_1
-  pass_1 -->|"covers area"| area_4
-  destination_1 -->|"pass available"| pass_2
-  pass_2 -->|"covers area"| area_2
-  destination_1 -->|"default pass"| pass_3
-  pass_3 -->|"covers area"| area_2
-  destination_4 -->|"default pass"| pass_4
-  pass_4 -->|"covers area"| area_3
-  destination_8 -->|"pass available"| pass_5
-  pass_5 -->|"covers area"| area_5
-  destination_8 -->|"default pass"| pass_6
-  pass_6 -->|"covers area"| area_5
-  destination_10 -->|"pass available"| pass_7
-  pass_7 -->|"covers area"| area_6
-  destination_10 -->|"default pass"| pass_8
-  pass_8 -->|"covers area"| area_6
-  destination_11 -->|"default pass"| pass_9
-  pass_9 -->|"covers area"| area_7
+  pass_1 -->|"covers area"| area_2
 ```
 
 ## Reviewed Targets
 
-| Target | Scope | Required Fields |
-| --- | --- | --- |
-| `lift_pass_product:alta-badia-skipass` | `full` | all canonical fields |
-| `rental_display_fact:alta-badia-marcello-varallo-sport` | `full` | all canonical fields |
-| `ski_area:alta-badia-ski-area` | `full` | all canonical fields |
-| `ski_area:lagazuoi-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-armentarola--alta-badia-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-armentarola--lagazuoi-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-badia--alta-badia-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-badia--lagazuoi-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-colfosco--alta-badia-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-colfosco--lagazuoi-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-corvara--alta-badia-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-corvara--lagazuoi-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-la-val--alta-badia-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-la-val--lagazuoi-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-la-villa--alta-badia-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-la-villa--lagazuoi-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-san-cassiano--alta-badia-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-san-cassiano--lagazuoi-ski-area` | `full` | all canonical fields |
-| `ski_area_access:alta-badia-sass-dlacia--alta-badia-ski-area` | `full` | all canonical fields |
-| `stay_base:alta-badia-armentarola` | `full` | all canonical fields |
-| `stay_base:alta-badia-badia` | `full` | all canonical fields |
-| `stay_base:alta-badia-colfosco` | `full` | all canonical fields |
-| `stay_base:alta-badia-corvara` | `full` | all canonical fields |
-| `stay_base:alta-badia-la-val` | `full` | all canonical fields |
-| `stay_base:alta-badia-la-villa` | `full` | all canonical fields |
-| `stay_base:alta-badia-san-cassiano` | `full` | all canonical fields |
-| `stay_base:alta-badia-sass-dlacia` | `full` | all canonical fields |
-| `stay_destination:alta-badia` | `full` | all canonical fields |
-| `stay_destination:badia` | `full` | all canonical fields |
-| `stay_destination:colfosco` | `full` | all canonical fields |
-| `stay_destination:corvara` | `full` | all canonical fields |
-| `stay_destination:la-val` | `full` | all canonical fields |
-| `stay_destination:la-villa` | `full` | all canonical fields |
-| `stay_destination:san-cassiano` | `full` | all canonical fields |
-| `trust_manifest:lift_pass_products:alta-badia-skipass` | `full` | all canonical fields |
-| `trust_manifest:rental_display_facts:alta-badia-marcello-varallo-sport` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-armentarola--alta-badia-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-armentarola--lagazuoi-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-badia--alta-badia-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-badia--lagazuoi-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-colfosco--alta-badia-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-colfosco--lagazuoi-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-corvara--alta-badia-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-corvara--lagazuoi-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-la-val--alta-badia-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-la-val--lagazuoi-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-la-villa--alta-badia-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-la-villa--lagazuoi-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-san-cassiano--alta-badia-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-san-cassiano--lagazuoi-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_area_access:alta-badia-sass-dlacia--alta-badia-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_areas:alta-badia-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_areas:lagazuoi-ski-area` | `full` | all canonical fields |
-| `trust_manifest:ski_regions:alta-badia` | `full` | all canonical fields |
-| `trust_manifest:stay_bases:alta-badia-armentarola` | `full` | all canonical fields |
-| `trust_manifest:stay_bases:alta-badia-badia` | `full` | all canonical fields |
-| `trust_manifest:stay_bases:alta-badia-colfosco` | `full` | all canonical fields |
-| `trust_manifest:stay_bases:alta-badia-corvara` | `full` | all canonical fields |
-| `trust_manifest:stay_bases:alta-badia-la-val` | `full` | all canonical fields |
-| `trust_manifest:stay_bases:alta-badia-la-villa` | `full` | all canonical fields |
-| `trust_manifest:stay_bases:alta-badia-san-cassiano` | `full` | all canonical fields |
-| `trust_manifest:stay_bases:alta-badia-sass-dlacia` | `full` | all canonical fields |
-| `trust_manifest:stay_destinations:alta-badia` | `full` | all canonical fields |
-| `trust_manifest:stay_destinations:badia` | `full` | all canonical fields |
-| `trust_manifest:stay_destinations:colfosco` | `full` | all canonical fields |
-| `trust_manifest:stay_destinations:corvara` | `full` | all canonical fields |
-| `trust_manifest:stay_destinations:la-val` | `full` | all canonical fields |
-| `trust_manifest:stay_destinations:la-villa` | `full` | all canonical fields |
-| `trust_manifest:stay_destinations:san-cassiano` | `full` | all canonical fields |
-| `ski_area:arabba-marmolada-ski-area` | `narrow` | `name` |
-| `ski_area:val-di-fassa-canazei-ski-area` | `narrow` | `name` |
-| `ski_area:kronplatz-plan-de-corones-ski-area` | `narrow` | `name` |
-| `ski_area:cortina-dampezzo-ski-area` | `narrow` | `name` |
-| `ski_area:gardena-pass-sector` | `narrow` | `name` |
-| `ski_area:civetta` | `narrow` | `name` |
-| `ski_area:val-gardena-ski-area` | `narrow` | `name` |
-| `ski_area:sella-pass` | `narrow` | `name` |
-| `ski_area:pordoi-pass` | `narrow` | `name` |
-| `ski_area:five-torri-averau` | `narrow` | `name` |
-| `ski_area:falzarego-col-gallina` | `narrow` | `name` |
-| `ski_area:tofana-socrepes-pocol` | `narrow` | `name` |
-| `ski_area:passo-giau-croda-negra` | `narrow` | `name` |
-| `ski_area:faloria-cristallo` | `narrow` | `name` |
-| `ski_area:auronzo-monte-agudo` | `narrow` | `name` |
-| `ski_area:misurina-passo-tre-croci` | `narrow` | `name` |
-| `ski_area:san-vito-di-cadore-ski-area` | `narrow` | `name` |
+| Target | Scope | Graph Role | Required Fields |
+| --- | --- | --- | --- |
+| `lift_pass_product:alta-badia-skipass` | `full` | `focus` | all canonical fields |
+| `rental_display_fact:alta-badia-marcello-varallo-sport` | `full` | `focus` | all canonical fields |
+| `ski_area:alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area:lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-armentarola--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-armentarola--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-badia--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-badia--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-colfosco--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-colfosco--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-corvara--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-corvara--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-la-val--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-la-val--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-la-villa--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-la-villa--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-san-cassiano--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-san-cassiano--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `ski_area_access:alta-badia-sass-dlacia--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `stay_base:alta-badia-armentarola` | `full` | `focus` | all canonical fields |
+| `stay_base:alta-badia-badia` | `full` | `focus` | all canonical fields |
+| `stay_base:alta-badia-colfosco` | `full` | `focus` | all canonical fields |
+| `stay_base:alta-badia-corvara` | `full` | `focus` | all canonical fields |
+| `stay_base:alta-badia-la-val` | `full` | `focus` | all canonical fields |
+| `stay_base:alta-badia-la-villa` | `full` | `focus` | all canonical fields |
+| `stay_base:alta-badia-san-cassiano` | `full` | `focus` | all canonical fields |
+| `stay_base:alta-badia-sass-dlacia` | `full` | `focus` | all canonical fields |
+| `stay_destination:alta-badia` | `full` | `focus` | all canonical fields |
+| `stay_destination:badia` | `full` | `focus` | all canonical fields |
+| `stay_destination:colfosco` | `full` | `focus` | all canonical fields |
+| `stay_destination:corvara` | `full` | `focus` | all canonical fields |
+| `stay_destination:la-val` | `full` | `focus` | all canonical fields |
+| `stay_destination:la-villa` | `full` | `focus` | all canonical fields |
+| `stay_destination:san-cassiano` | `full` | `focus` | all canonical fields |
+| `trust_manifest:lift_pass_products:alta-badia-skipass` | `full` | `focus` | all canonical fields |
+| `trust_manifest:rental_display_facts:alta-badia-marcello-varallo-sport` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-armentarola--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-armentarola--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-badia--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-badia--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-colfosco--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-colfosco--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-corvara--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-corvara--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-la-val--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-la-val--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-la-villa--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-la-villa--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-san-cassiano--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-san-cassiano--lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_area_access:alta-badia-sass-dlacia--alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_areas:alta-badia-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_areas:lagazuoi-ski-area` | `full` | `focus` | all canonical fields |
+| `trust_manifest:ski_regions:alta-badia` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_bases:alta-badia-armentarola` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_bases:alta-badia-badia` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_bases:alta-badia-colfosco` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_bases:alta-badia-corvara` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_bases:alta-badia-la-val` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_bases:alta-badia-la-villa` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_bases:alta-badia-san-cassiano` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_bases:alta-badia-sass-dlacia` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_destinations:alta-badia` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_destinations:badia` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_destinations:colfosco` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_destinations:corvara` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_destinations:la-val` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_destinations:la-villa` | `full` | `focus` | all canonical fields |
+| `trust_manifest:stay_destinations:san-cassiano` | `full` | `focus` | all canonical fields |
+| `ski_area:arabba-marmolada-ski-area` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:val-di-fassa-canazei-ski-area` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:kronplatz-plan-de-corones-ski-area` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:cortina-dampezzo-ski-area` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:gardena-pass-sector` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:civetta` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:val-gardena-ski-area` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:sella-pass` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:pordoi-pass` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:five-torri-averau` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:falzarego-col-gallina` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:tofana-socrepes-pocol` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:passo-giau-croda-negra` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:faloria-cristallo` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:auronzo-monte-agudo` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:misurina-passo-tre-croci` | `narrow` | `linked_dependency` | `name` |
+| `ski_area:san-vito-di-cadore-ski-area` | `narrow` | `linked_dependency` | `name` |
 
 ## Entity Scope Assessments
 

@@ -493,7 +493,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -501,7 +502,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -509,7 +511,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -517,7 +520,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -525,7 +529,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -533,7 +538,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -541,7 +547,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -549,7 +556,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -557,7 +565,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -565,7 +574,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -573,7 +583,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -581,7 +592,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -589,7 +601,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -597,7 +610,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -605,7 +619,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -613,7 +628,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -621,7 +637,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "linked_dependency"
     }
   ],
   "changes": [
@@ -18536,17 +18553,12 @@
   ],
   "resulting_graph": {
     "focus_stay_destination_ids": [
-      "auronzo-di-cadore",
       "badia",
       "colfosco",
-      "cortina-dampezzo",
       "corvara",
       "la-val",
       "la-villa",
-      "misurina",
-      "san-cassiano",
-      "san-vito-di-cadore",
-      "val-gardena"
+      "san-cassiano"
     ]
   },
   "validation_commands": [
