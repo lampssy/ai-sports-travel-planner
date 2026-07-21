@@ -1381,5 +1381,7 @@ replaced. It is history, not current operational instruction:
   enabled the local schedules; later amendments use this spec and the post-merge
   checklist as their current contract and rollback reference. The
   reviewed-continuation amendment is owner-approved, implemented, feature-
-  reviewed, and verified on its isolated branch, but is not yet merged or
-  activated in the installed personal skill.
+  reviewed, verified, merged through PR #57, and activated in the installed
+  personal skill. Scheduled runs use only the generic helper-owned continuation
+  inventory and lifecycle; migration of any pre-existing legacy reviewed record
+  remains an explicit owner-run operation outside the recurring schedule.
