@@ -18,8 +18,10 @@ PassValidityStatus = Literal[
 PassCoverageStatus = Literal["full", "partial", "unverified"]
 
 PARTIAL_COVERAGE_WARNING = (
-    "Some areas covered by this pass are outside their operating season for "
-    "your dates. The published full-network terrain is not date-adjusted."
+    "Some areas covered by this pass are outside their operating season for your dates."
+)
+PUBLISHED_FULL_NETWORK_TERRAIN_WARNING = (
+    "The published full-network terrain is not date-adjusted."
 )
 UNVERIFIED_PASS_DATES_WARNING = (
     "Exact pass dates are not yet confirmed for this season."

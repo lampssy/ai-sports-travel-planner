@@ -78,6 +78,18 @@ class UntrustedTerrainResolver(VerifiedTrustResolver):
         return super().resolve(entity_type, entity_id, field_group)
 
 
+class EstimatedTerrainResolver(VerifiedTrustResolver):
+    def __init__(self, *estimated_keys: tuple[str, str, str]) -> None:
+        self._estimated_keys = frozenset(estimated_keys)
+
+    def resolve(
+        self, entity_type: str, entity_id: str, field_group: str
+    ) -> ResolvedCatalogEvidence:
+        if (entity_type, entity_id, field_group) in self._estimated_keys:
+            return ResolvedCatalogEvidence(status="estimated", source_refs=())
+        return super().resolve(entity_type, entity_id, field_group)
+
+
 def _candidate() -> StaticFactorCandidate:
     region = SkiRegion(
         ski_region_id="region",
@@ -261,6 +273,25 @@ def test_accessible_terrain_preserves_pass_aggregate_for_full_coverage() -> None
     assert selection.warnings == ("coverage warning",)
 
 
+def test_full_confirmed_coverage_preserves_estimated_terrain_behavior() -> None:
+    candidate = _terrain_candidate()
+    resolver = EstimatedTerrainResolver(
+        ("lift_pass_products", "pass", "pass_accessible_terrain")
+    )
+
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=resolver,
+        pass_coverage=candidate.pass_coverage,
+    )
+
+    assert selection.value == 500
+    assert selection.summary_scope == "pass"
+    assert selection.evidence.status == "estimated"
+
+
 def test_accessible_terrain_does_not_use_full_network_for_unverified_pass_dates() -> (
     None
 ):
@@ -406,6 +437,133 @@ def test_accessible_terrain_needs_source_when_no_safe_metric_exists() -> None:
     assert terrain.effective_evidence_cap == 0
     assert value.raw_utility == 0.5
     assert value.effective_evidence_cap == 0
+
+
+@pytest.mark.parametrize(
+    (
+        "validity_status",
+        "coverage_status",
+        "operating_ids",
+        "unavailable_ids",
+        "unverified_ids",
+    ),
+    [
+        ("confirmed", "partial", ("area",), ("other-area", "closed-area"), ()),
+        ("confirmed", "unverified", (), (), ("area", "other-area", "closed-area")),
+        (
+            "unverified_for_requested_season",
+            "full",
+            ("area", "other-area", "closed-area"),
+            (),
+            (),
+        ),
+    ],
+)
+def test_limited_coverage_does_not_use_estimated_selected_area_terrain(
+    validity_status: PassValidityStatus,
+    coverage_status: PassCoverageStatus,
+    operating_ids: tuple[str, ...],
+    unavailable_ids: tuple[str, ...],
+    unverified_ids: tuple[str, ...],
+) -> None:
+    candidate = _terrain_candidate(
+        validity_status=validity_status,
+        coverage_status=coverage_status,
+        operating_ids=operating_ids,
+        unavailable_ids=unavailable_ids,
+        unverified_ids=unverified_ids,
+    )
+    resolver = EstimatedTerrainResolver(("ski_areas", "area", "terrain_metrics"))
+
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=resolver,
+        pass_coverage=candidate.pass_coverage,
+    )
+    context = replace(
+        _context(
+            SearchIntent(objectives=(SearchObjective(factor_id="pass_terrain_value"),))
+        ),
+        trust_resolver=resolver,
+        numeric_bounds={},
+    )
+    registry = build_static_factor_registry()
+    terrain = registry.get("accessible_terrain_scale").evaluate(context, candidate)
+    value = registry.get("pass_terrain_value").evaluate(context, candidate)
+    bounds = derive_numeric_bounds(
+        candidates=(candidate,),
+        pass_duration_days=6,
+        pass_audience="adult",
+        pass_season_label="2026-2027",
+        trust_resolver=resolver,
+    )
+
+    assert selection.value is None
+    assert selection.evidence.status == "needs_source"
+    assert terrain.raw_value is None
+    assert terrain.raw_utility == 0.5
+    assert terrain.effective_evidence_cap == 0
+    assert value.raw_value is None
+    assert value.raw_utility == 0.5
+    assert value.effective_evidence_cap == 0
+    assert "accessible_terrain_scale" not in bounds
+    assert "pass_terrain_value" not in bounds
+
+
+def test_limited_coverage_skips_estimated_domain_for_verified_area_terrain() -> None:
+    candidate = _terrain_candidate(
+        coverage_status="partial",
+        operating_ids=("area", "other-area"),
+        unavailable_ids=("closed-area",),
+        include_domain=True,
+    )
+    resolver = EstimatedTerrainResolver(
+        ("terrain_domains", "operating-domain", "aggregate_terrain")
+    )
+
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=resolver,
+        pass_coverage=candidate.pass_coverage,
+    )
+    context = replace(
+        _context(
+            SearchIntent(objectives=(SearchObjective(factor_id="pass_terrain_value"),))
+        ),
+        trust_resolver=resolver,
+        numeric_bounds={
+            **_context(SearchIntent()).numeric_bounds,
+            "accessible_terrain_scale": NumericBounds(100, 100),
+            "pass_terrain_value": NumericBounds(1 / 3, 1 / 3),
+        },
+    )
+    registry = build_static_factor_registry()
+    terrain = registry.get("accessible_terrain_scale").evaluate(context, candidate)
+    value = registry.get("pass_terrain_value").evaluate(context, candidate)
+    bounds = derive_numeric_bounds(
+        candidates=(candidate,),
+        pass_duration_days=6,
+        pass_audience="adult",
+        pass_season_label="2026-2027",
+        trust_resolver=resolver,
+    )
+
+    assert selection.value == 100
+    assert selection.summary_scope == "ski_area"
+    assert selection.evidence.status == "verified"
+    assert terrain.raw_value == 100
+    assert terrain.effective_evidence_cap == 1
+    assert value.raw_value == pytest.approx(1 / 3)
+    assert value.effective_evidence_cap == 1
+    assert bounds["accessible_terrain_scale"] == NumericBounds(100, 100)
+    assert bounds["pass_terrain_value"] == NumericBounds(
+        pytest.approx(1 / 3),
+        pytest.approx(1 / 3),
+    )
 
 
 def test_party_skill_uses_balanced_share_and_amount_then_party_minimum() -> None:

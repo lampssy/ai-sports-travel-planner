@@ -262,6 +262,42 @@ test("shows pass coverage uncertainty in trip details without replacing safe ter
   ).toBeVisible();
 });
 
+test("does not invent full-network terrain context when the backend omits it", () => {
+  const currentSession = session();
+  const current = currentSession.response.results[0].top_configuration;
+  current.selected_pass = {
+    ...current.selected_pass,
+    operating_covered_ski_area_ids: ["area-1"],
+    unavailable_covered_ski_area_ids: ["other-area"],
+    coverage_status: "partial",
+    coverage_warning:
+      "Some areas covered by this pass are outside their operating season for your dates.",
+    published_full_network_piste_km: null,
+  };
+
+  render(
+    <RecommendationDossier
+      session={currentSession}
+      skiRegionId={current.ski_region_id}
+      candidateId={current.candidate_id}
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen.getByText(
+      "Some areas covered by this pass are outside their operating season for your dates.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.queryByText(/published full-network figure and is not date-adjusted/i),
+  ).toBeNull();
+});
+
 test("does not present unscored options as ranked recommendations", () => {
   const unscoredSession = session();
   unscoredSession.response = {

@@ -92,7 +92,7 @@ git commit -m "docs: resolve lift pass validity design review"
 - Produces: `LiftPassProduct.validity_windows: tuple[CatalogSeasonWindow, ...]`, normalized `lift_pass_products.validity_windows_json`, and lossless snapshot round trips.
 - Consumes: existing `CatalogSeasonWindow`, `_model_list_json()`, `_decode_json()`, and additive schema expansion conventions.
 
-- [ ] **Step 1: Write failing model tests for the additive field**
+- [x] **Step 1: Write failing model tests for the additive field**
 
 Add tests to `tests/test_catalog_models.py` proving the default and typed values:
 
@@ -130,7 +130,7 @@ def test_lift_pass_validity_windows_use_typed_complete_date_ranges() -> None:
 
 Also add an invalid reversed-window case and assert Pydantic rejects it through the inherited `SeasonWindow` validator.
 
-- [ ] **Step 2: Run the model tests and verify RED**
+- [x] **Step 2: Run the model tests and verify RED**
 
 Run:
 
@@ -140,7 +140,7 @@ uv run --no-config pytest -q tests/test_catalog_models.py -k lift_pass_validity_
 
 Expected: failure because `LiftPassProduct` forbids the new field.
 
-- [ ] **Step 3: Add the minimal typed catalog field**
+- [x] **Step 3: Add the minimal typed catalog field**
 
 Add one defaulted field after `terrain_domain_ids`:
 
@@ -153,7 +153,7 @@ class LiftPassProduct(_CatalogModel):
 
 Do not add a new date model or catalog version; reuse the frozen typed window already used by ski areas and terrain domains.
 
-- [ ] **Step 4: Write failing schema, sync, and repository round-trip tests**
+- [x] **Step 4: Write failing schema, sync, and repository round-trip tests**
 
 Extend `NORMALIZED_TABLE_COLUMNS["lift_pass_products"]` in `tests/test_catalog_schema_v2.py` with `validity_windows_json`. In `tests/test_catalog_sync.py` and `tests/test_catalog_repository.py`, add cases for zero, one, and two windows and assert:
 
@@ -163,7 +163,7 @@ assert loaded.lift_pass_products[0].validity_windows == snapshot.lift_pass_produ
 
 Add an upgrade-path assertion that an existing `lift_pass_products` table receives a non-null `[]` default without destructive recreation.
 
-- [ ] **Step 5: Run persistence tests and verify RED**
+- [x] **Step 5: Run persistence tests and verify RED**
 
 Run:
 
@@ -173,7 +173,7 @@ uv run --no-config pytest -q tests/test_catalog_schema_v2.py tests/test_catalog_
 
 Expected: schema-column and round-trip failures because the JSON column is absent.
 
-- [ ] **Step 6: Add additive normalized storage**
+- [x] **Step 6: Add additive normalized storage**
 
 Add this column to both create and upgrade paths:
 
@@ -192,7 +192,7 @@ Update `_upsert_passes()` to insert/update `_model_list_json(product.validity_wi
 ),
 ```
 
-- [ ] **Step 7: Run Task 2 verification and commit**
+- [x] **Step 7: Run Task 2 verification and commit**
 
 Run:
 
@@ -223,7 +223,7 @@ git commit -m "feat: persist lift pass validity windows"
 - Consumes: `SkiArea`, `LiftPassProduct`, their owning catalog trust statuses,
   raw month/exact-date inputs, and existing season-year/month semantics.
 
-- [ ] **Step 1: Write the full failing applicability matrix**
+- [x] **Step 1: Write the full failing applicability matrix**
 
 Create `tests/test_catalog_applicability.py` with table-driven tests for:
 
@@ -263,7 +263,7 @@ class PassCoverageProjection:
     warnings: tuple[str, ...] = ()
 ```
 
-- [ ] **Step 2: Run the new tests and verify RED**
+- [x] **Step 2: Run the new tests and verify RED**
 
 Run:
 
@@ -273,7 +273,7 @@ uv run --no-config pytest -q tests/test_catalog_applicability.py
 
 Expected: import failure because the pure applicability module does not exist.
 
-- [ ] **Step 3: Implement the smallest pure evaluator**
+- [x] **Step 3: Implement the smallest pure evaluator**
 
 Use these exact status vocabularies:
 
@@ -327,7 +327,7 @@ Define centralized B2 warnings so backend and frontend do not invent divergent p
 ```python
 PARTIAL_COVERAGE_WARNING = (
     "Some areas covered by this pass are outside their operating season for "
-    "your dates. The published full-network terrain is not date-adjusted."
+    "your dates."
 )
 UNVERIFIED_PASS_DATES_WARNING = (
     "Exact pass dates are not yet confirmed for this season."
@@ -351,11 +351,11 @@ area's operation is unverified. Add both only when both conditions apply; pass
 uncertainty alone must not imply that confirmed area operation is uncertain.
 Add the partial warning when known unavailable and operating subsets coexist.
 
-- [ ] **Step 4: Replace planning’s private duplicate season logic**
+- [x] **Step 4: Replace planning’s private duplicate season logic**
 
 Change `_is_planning_window_in_season()` to call `evaluate_ski_area_operation()` and return `status != "unavailable"`. Remove only the now-duplicate private `_season_year_for_date()`; retain `_is_month_in_season()` if other planning behavior uses it.
 
-- [ ] **Step 5: Add planning regression tests**
+- [x] **Step 5: Add planning regression tests**
 
 Extend `tests/test_planning.py` to prove the legacy companion path still:
 
@@ -363,7 +363,7 @@ Extend `tests/test_planning.py` to prove the legacy companion path still:
 - rejects an exact trip outside a matching-season known window;
 - accepts the recurring-month fallback when no matching-season window exists.
 
-- [ ] **Step 6: Run Task 3 verification and commit**
+- [x] **Step 6: Run Task 3 verification and commit**
 
 Run:
 
@@ -395,7 +395,7 @@ git commit -m "feat: evaluate pass and area date applicability"
 - Produces: date-aware `V4CandidateRecord.pass_coverage` and additive `SearchV4PassSummary` validity/coverage fields.
 - Consumes: `PassCoverageProjection`, `project_pass_coverage()`, `candidate_is_applicable()`, the existing catalog graph, and `SearchIntent.constraints.travel_window`.
 
-- [ ] **Step 1: Write failing candidate-generation tests**
+- [x] **Step 1: Write failing candidate-generation tests**
 
 Build a two-area pass fixture in `tests/test_search_v4_service.py` and test exact dates for:
 
@@ -413,7 +413,7 @@ Build a two-area pass fixture in `tests/test_search_v4_service.py` and test exac
 
 Keep the current assertion that `covered_ski_area_ids` equals the full static contract set.
 
-- [ ] **Step 2: Write failing response compatibility tests**
+- [x] **Step 2: Write failing response compatibility tests**
 
 Add assertions for this additive response contract:
 
@@ -452,7 +452,7 @@ PublicPassValidityStatus = Literal[
 ]
 ```
 
-- [ ] **Step 3: Run Search V4 tests and verify RED**
+- [x] **Step 3: Run Search V4 tests and verify RED**
 
 Run:
 
@@ -462,7 +462,7 @@ uv run --no-config pytest -q tests/test_search_v4_service.py tests/test_api.py -
 
 Expected: failures because records and summaries do not carry a projection.
 
-- [ ] **Step 4: Derive and gate coverage during candidate generation**
+- [x] **Step 4: Derive and gate coverage during candidate generation**
 
 Replace `V4CandidateRecord.pass_covered_ski_area_ids` with a required `pass_coverage: PassCoverageProjection`. In `generate_v4_candidate_records()`:
 
@@ -483,15 +483,15 @@ legacy raw-window fallback only for direct callers that omit the new field.
 This prevents the old exact-window constraint logic from rejecting the
 central evaluator's cautious unknown-season fallback.
 
-- [ ] **Step 5: Emit default-safe API fields**
+- [x] **Step 5: Emit default-safe API fields**
 
-Keep `covered_ski_area_ids=record.pass_coverage.contract_covered_ski_area_ids`. Fill the derived area sets/statuses and collapse `projection.warnings` into a deterministic single public warning with `" ".join(...) or None`. Set `published_full_network_piste_km` from `product.pass_accessible_terrain.total_piste_km` when present; this is contextual catalog data, not the safe ranking metric.
+Keep `covered_ski_area_ids=record.pass_coverage.contract_covered_ski_area_ids`. Fill the derived area sets/statuses and collapse `projection.warnings` into a deterministic single public warning with `" ".join(...) or None`. Set `published_full_network_piste_km` from source-backed `product.pass_accessible_terrain.total_piste_km` when present; this is contextual catalog data, not the safe ranking metric. Append the non-date-adjusted terrain sentence to the partial-coverage warning only when that contextual figure is actually serialized.
 
-- [ ] **Step 6: Pass the projection into static evaluation**
+- [x] **Step 6: Pass the projection into static evaluation**
 
 Add `pass_coverage: PassCoverageProjection | None = None` as the final defaulted field on `StaticFactorCandidate`, then set it in `_static_candidate(record)`. The default preserves existing direct factor-test constructors until their coverage-specific cases opt in.
 
-- [ ] **Step 7: Run Task 4 verification and commit**
+- [x] **Step 7: Run Task 4 verification and commit**
 
 Run:
 
@@ -520,7 +520,7 @@ git commit -m "feat: apply pass coverage to search candidates"
 - Produces: coverage-aware accessible-terrain selection used consistently by `accessible_terrain_scale`, `pass_terrain_value`, numeric bounds, result summaries, and explanations.
 - Consumes: `StaticFactorCandidate.pass_coverage`, the existing trust resolver, and source-backed pass/domain/area metrics.
 
-- [ ] **Step 1: Write failing terrain-source tests**
+- [x] **Step 1: Write failing terrain-source tests**
 
 Add direct tests for `select_accessible_terrain_source()`:
 
@@ -535,7 +535,7 @@ no safe source -> value None and needs_source/neutral behavior
 
 Add factor tests proving both `accessible_terrain_scale` and `pass_terrain_value` do not use the published full-network total when coverage is partial or unverified.
 
-- [ ] **Step 2: Run focused factor tests and verify RED**
+- [x] **Step 2: Run focused factor tests and verify RED**
 
 Run:
 
@@ -545,7 +545,7 @@ uv run --no-config pytest -q tests/test_search_static_factors.py tests/test_sear
 
 Expected: current selection still prefers `pass_accessible_terrain` regardless of operation.
 
-- [ ] **Step 3: Make terrain selection projection-aware**
+- [x] **Step 3: Make terrain selection projection-aware**
 
 Add an optional argument for compatibility:
 
@@ -570,11 +570,11 @@ Selection order:
 
 The `published_full_network_piste_km` response field remains separate and must not enter this selector.
 
-- [ ] **Step 4: Propagate safe selection to every numeric path**
+- [x] **Step 4: Propagate safe selection to every numeric path**
 
 Pass `candidate.pass_coverage` through `_accessible_terrain_source()`. Ensure raw bound derivation and both active factors use the same selector. In `_pass_terrain_value()`, include `terrain.warnings` in the evaluation and add `coverage_status` to `explanation_inputs`; do not duplicate terrain logic locally.
 
-- [ ] **Step 5: Run Task 5 verification and commit**
+- [x] **Step 5: Run Task 5 verification and commit**
 
 Run:
 
@@ -605,7 +605,7 @@ git commit -m "fix: exclude unavailable pass terrain from ranking"
 - Produces: canonical `lift_pass_product.validity_windows` change/review paths accepted and reconciled by existing report schema v3; direct evidence remains in `identity_scope_availability`.
 - Consumes: `CANONICAL_FIELD_PATHS`, `NESTED_FIELD_PATH_ROOTS`, generic catalog/trust delta reconciliation, and existing report evidence rules.
 
-- [ ] **Step 1: Write failing canonical-path tests**
+- [x] **Step 1: Write failing canonical-path tests**
 
 Extend `test_canonical_paths_cover_only_normalized_catalog_entities()`:
 
@@ -623,7 +623,7 @@ nested evidence path such as `validity_windows[0].start_date`: current schema-v3
 validation intentionally matches evidence to catalog deltas by exact field path,
 and reconciliation emits one root `validity_windows` delta.
 
-- [ ] **Step 2: Write failing exact reconciliation and trust tests**
+- [x] **Step 2: Write failing exact reconciliation and trust tests**
 
 In `tests/test_catalog_curation_reconciliation.py`, change one pass from `[]` to an explicit window and require one exact `lift_pass_product:<id>/validity_windows` delta. Change the corresponding trust-manifest `identity_scope_availability` source refs and require exact trust delta parity.
 
@@ -640,7 +640,7 @@ In `tests/test_catalog_trust.py`, assert the lift-pass group inventory remains e
 
 No new trust group or version is allowed.
 
-- [ ] **Step 3: Run curation tests and verify RED**
+- [x] **Step 3: Run curation tests and verify RED**
 
 Run:
 
@@ -650,7 +650,7 @@ uv run --no-config pytest -q tests/test_catalog_curation.py tests/test_catalog_c
 
 Expected: unsupported field-path or missing-delta failures.
 
-- [ ] **Step 4: Register the additive canonical path**
+- [x] **Step 4: Register the additive canonical path**
 
 Add `"validity_windows"` to both lift-pass collections. Rely on generic nested-path validation and snapshot reconciliation; do not special-case report schema v3 or create a schema-v4 branch.
 
@@ -658,7 +658,7 @@ Document in test fixtures that a changed explicit window needs direct operator/t
 
 Extend `render_catalog_resulting_graph_markdown()` so a pass with explicit windows includes deterministic compact lines in its node label, for example `valid 2026-12-05 to 2027-04-11`. Keep undated pass labels unchanged. Add a rendering assertion so a material pass-window change is visible in the schema-v3 graph as well as in the change ledger.
 
-- [ ] **Step 5: Run Task 6 verification and commit**
+- [x] **Step 5: Run Task 6 verification and commit**
 
 Run:
 
@@ -692,7 +692,7 @@ git commit -m "feat: reconcile pass validity in curation reports"
 - Produces: typed additive API fields, contextual published full-network terrain, and one visible coverage warning in recommendation and dossier/detail paths.
 - Consumes: backend-owned `coverage_warning`, `coverage_status`, `validity_status`, safe `accessible_piste_km`, and contextual `published_full_network_piste_km`.
 
-- [ ] **Step 1: Add failing TypeScript presentation tests**
+- [x] **Step 1: Add failing TypeScript presentation tests**
 
 Update the central pass fixture with:
 
@@ -719,7 +719,7 @@ Test that:
   backend-defined deterministic order;
 - full coverage with no warning adds no warning block.
 
-- [ ] **Step 2: Run focused frontend tests and verify RED**
+- [x] **Step 2: Run focused frontend tests and verify RED**
 
 Run:
 
@@ -730,7 +730,7 @@ npm test -- src/search/searchPresentation.test.ts src/search/RecommendationCard.
 
 Expected: type and assertion failures because the new presentation does not exist.
 
-- [ ] **Step 3: Extend the frontend type additively**
+- [x] **Step 3: Extend the frontend type additively**
 
 Add these fields to `SearchV4PassSummary`:
 
@@ -749,7 +749,7 @@ published_full_network_piste_km: number | null;
 
 Update shared fixtures instead of weakening the interface with optional client fields; the backend always serializes the default-safe values.
 
-- [ ] **Step 4: Add one presentation helper and render it consistently**
+- [x] **Step 4: Add one presentation helper and render it consistently**
 
 Implement:
 
@@ -775,7 +775,7 @@ export function passCoveragePresentation(
 
 Render it next to the selected-pass terrain in `RecommendationCard` and in `TripConfigurationDetails`, which is used by the dossier route. Use the existing warning visual pattern; do not reconstruct area dates or counts in the client.
 
-- [ ] **Step 5: Run Task 7 verification and commit**
+- [x] **Step 5: Run Task 7 verification and commit**
 
 Run:
 
@@ -808,7 +808,7 @@ git commit -m "feat: explain date-specific pass coverage"
 - Produces: aligned human-readable runtime, ranking, trust, and implementation status; final backend/frontend verification; required advisory feature review.
 - Consumes: the exact implemented statuses, response fields, source selection, and test evidence.
 
-- [ ] **Step 1: Update the owning documentation**
+- [x] **Step 1: Update the owning documentation**
 
 Document:
 
@@ -819,7 +819,7 @@ Document:
 
 Do not duplicate the ADR rationale or add a changelog transcript.
 
-- [ ] **Step 2: Run the complete focused backend suite**
+- [x] **Step 2: Run the complete focused backend suite**
 
 Run:
 
@@ -843,7 +843,7 @@ uv run --no-config pytest -q \
 
 Expected: all selected tests pass.
 
-- [ ] **Step 3: Validate the canonical catalog and trust manifest**
+- [x] **Step 3: Validate the canonical catalog and trust manifest**
 
 Run:
 
@@ -855,7 +855,7 @@ uv run --no-config python -m app.data.validate_catalog \
 
 Expected: one `[catalog-valid] schema_version=2 ...` line and exit 0.
 
-- [ ] **Step 4: Run the full backend regression suite**
+- [x] **Step 4: Run the full backend regression suite**
 
 Run:
 
@@ -865,7 +865,7 @@ uv run --no-config pytest -q
 
 Expected: the complete backend suite passes. Investigate failures rather than excluding unrelated test files unless the failure is independently reproduced on unchanged main and recorded in the handoff.
 
-- [ ] **Step 5: Run lint and frontend verification**
+- [x] **Step 5: Run lint and frontend verification**
 
 Run:
 
@@ -878,7 +878,7 @@ npm run build
 
 Expected: Ruff, Vitest, TypeScript, and Vite all exit 0.
 
-- [ ] **Step 6: Smoke-test the date-aware API and UI locally**
+- [x] **Step 6: Smoke-test the date-aware API and UI locally**
 
 Start the backend and frontend in separate terminals:
 
@@ -924,16 +924,20 @@ curl --request POST http://127.0.0.1:8000/api/search \
 
 Open `http://localhost:5173`, run the same dates, and inspect the selected-pass block and dossier. Confirm a contextual full-network figure is visibly non-date-adjusted, while the ranked terrain figure uses a safe area/domain scope. If canonical data does not yet contain explicit Zillertal windows, use the Task 4/5 automated fixtures for the partial case and repeat this manual path after Task 9 recovers PR #35.
 
-- [ ] **Step 7: Run the required advisory feature review**
+- [x] **Step 7: Run the required advisory feature review**
 
 Invoke `snowcast-advisory-review` in `feature-review` mode with `backend-api` and `data-trust-source-integrity` against the exact final diff and verification evidence. Fix every concrete Blocker/High and material Medium finding, then rerun affected tests and the exact-head feature review.
 
-- [ ] **Step 8: Commit documentation and any final reviewed corrections**
+- [x] **Step 8: Commit documentation and any final reviewed corrections**
 
 ```bash
 git add docs/planning-model.md docs/search-ranking-model.md docs/data-trust-model.md docs/superpowers/specs/2026-07-21-lift-pass-validity-windows-design.md docs/domain-language.md docs/architecture/adr/0019-separate-pass-validity-from-ski-area-operation.md
 git commit -m "docs: explain lift pass date applicability"
 ```
+
+- [x] **Final whole-branch review:** resolved the limited-coverage terrain-trust
+  and conditional-warning findings, then reran the affected backend and
+  frontend verification. Canonical catalog adoption remains Task 9.
 
 ### Task 9: Recover the source-backed Mayrhofen/Hintertux curation after merge
 
@@ -972,23 +976,23 @@ Confirm the exact pushed head is labeled `maintainer:ready`, `maintainer:owner-d
 
 ## Final Self-Review Checklist
 
-- [ ] Every acceptance criterion in the accepted spec maps to a test step above.
-- [ ] `validity_windows` is additive in catalog schema v2 and curation report schema v3.
-- [ ] The requested season is derived from dates and `season_start_month`, never free-text labels.
-- [ ] The same season-year function classifies both trip and pass-window starts,
+- [x] Every generic-feature acceptance criterion in the accepted spec maps to a test step above; canonical adoption remains Task 9.
+- [x] `validity_windows` is additive in catalog schema v2 and curation report schema v3.
+- [x] The requested season is derived from dates and `season_start_month`, never free-text labels.
+- [x] The same season-year function classifies both trip and pass-window starts,
       including post-main-winter windows in cross-calendar seasons.
-- [ ] Only source-backed planned windows confirm or exclude; estimated and
+- [x] Only source-backed planned windows confirm or exclude; estimated and
       source-needed evidence stays unverified.
-- [ ] Mixed same-season window evidence uses cautious precedence: authoritative
+- [x] Mixed same-season window evidence uses cautious precedence: authoritative
       containment confirms, any remaining non-authoritative window prevents
       exclusion, and only wholly authoritative misses exclude.
-- [ ] Known invalidity excludes; missing future evidence retains with uncertainty.
-- [ ] Closed focus areas are excluded while operating alternatives survive.
-- [ ] Unverified areas are never called open.
-- [ ] Published full-network terrain is context only under partial/unverified coverage.
-- [ ] No component-terrain summation, ranking-weight change, or request-path LLM was introduced.
-- [ ] API additions are default-safe and frontend copy comes from the backend warning.
-- [ ] Pass-date and area-operation warnings remain condition-specific and combine
+- [x] Known invalidity excludes; missing future evidence retains with uncertainty.
+- [x] Closed focus areas are excluded while operating alternatives survive.
+- [x] Unverified areas are never called open.
+- [x] Published full-network terrain is context only under partial/unverified coverage.
+- [x] No component-terrain summation, ranking-weight change, or request-path LLM was introduced.
+- [x] API additions are default-safe and frontend copy comes from the backend warning.
+- [x] Pass-date and area-operation warnings remain condition-specific and combine
       only in deterministic backend order.
 - [ ] PR #35 recovery remains helper-controlled and independently reviewed.
-- [ ] No placeholder text, unresolved type mismatch, or unspecified verification command remains.
+- [x] No placeholder text, unresolved type mismatch, or unspecified verification command remains.

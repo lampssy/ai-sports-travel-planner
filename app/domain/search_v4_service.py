@@ -39,6 +39,8 @@ from app.domain.catalog import (
     TerrainDomain,
 )
 from app.domain.catalog_applicability import (
+    PARTIAL_COVERAGE_WARNING,
+    PUBLISHED_FULL_NETWORK_TERRAIN_WARNING,
     AreaOperationStatus,
     PassCoverageProjection,
     PassCoverageStatus,
@@ -2075,6 +2077,19 @@ def _pass_summary(
         audience=audience,
         season_label=season_label,
     )
+    published_full_network_piste_km = (
+        product.pass_accessible_terrain.total_piste_km
+        if (
+            product.pass_accessible_terrain is not None
+            and trust_resolver.resolve(
+                "lift_pass_products",
+                product.lift_pass_product_id,
+                "pass_accessible_terrain",
+            ).status
+            in {"verified", "verified_with_adjustment"}
+        )
+        else None
+    )
     return SearchV4PassSummary(
         lift_pass_product_id=product.lift_pass_product_id,
         name=product.name,
@@ -2101,21 +2116,27 @@ def _pass_summary(
         unverified_covered_ski_area_ids=(projection.unverified_covered_ski_area_ids),
         coverage_status=projection.coverage_status,
         validity_status=projection.validity_status,
-        coverage_warning=" ".join(projection.warnings) or None,
-        published_full_network_piste_km=(
-            product.pass_accessible_terrain.total_piste_km
-            if (
-                product.pass_accessible_terrain is not None
-                and trust_resolver.resolve(
-                    "lift_pass_products",
-                    product.lift_pass_product_id,
-                    "pass_accessible_terrain",
-                ).status
-                in {"verified", "verified_with_adjustment"}
-            )
-            else None
+        coverage_warning=_pass_coverage_warning(
+            projection,
+            has_published_full_network_terrain=(
+                published_full_network_piste_km is not None
+            ),
         ),
+        published_full_network_piste_km=published_full_network_piste_km,
     )
+
+
+def _pass_coverage_warning(
+    projection: PassCoverageProjection,
+    *,
+    has_published_full_network_terrain: bool,
+) -> str | None:
+    warnings: list[str] = []
+    for warning in projection.warnings:
+        warnings.append(warning)
+        if warning == PARTIAL_COVERAGE_WARNING and has_published_full_network_terrain:
+            warnings.append(PUBLISHED_FULL_NETWORK_TERRAIN_WARNING)
+    return " ".join(warnings) or None
 
 
 def _refinements(

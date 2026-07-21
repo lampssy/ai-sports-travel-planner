@@ -2610,7 +2610,9 @@ def test_service_constrains_then_bulk_loads_weather_once_and_ranks() -> None:
     assert argentiere_balme.access.access_mode_distance_trust_status == "needs_source"
 
 
-def test_service_qualifies_ski_area_terrain_fallback_with_owning_trust() -> None:
+def test_service_does_not_publish_estimated_area_terrain_for_unverified_coverage() -> (
+    None
+):
     snapshot, manifest = _catalog_and_trust()
 
     result = search_trip_configurations(
@@ -2641,13 +2643,17 @@ def test_service_qualifies_ski_area_terrain_fallback_with_owning_trust() -> None
         if configuration.selected_pass.lift_pass_product_id == "pinzolo-local-pass"
     )
 
-    assert pinzolo.selected_pass.accessible_piste_km == 31
-    assert pinzolo.selected_pass.accessible_piste_km_evidence.model_dump() == {
-        "trust_status": "estimated",
-        "scope": "ski_area",
-        "source_entity_id": "pinzolo-ski-area",
-        "field_group": "terrain_metrics",
-    }
+    assert pinzolo.selected_pass.coverage_status == "unverified"
+    assert pinzolo.selected_pass.accessible_piste_km is None
+    assert pinzolo.selected_pass.accessible_piste_km_evidence is None
+    terrain = next(
+        factor
+        for factor in pinzolo.factors
+        if factor.factor_id == "accessible_terrain_scale"
+    )
+    assert terrain.raw_value is None
+    assert terrain.raw_utility == 0.5
+    assert terrain.effective_evidence_cap == 0
 
 
 def test_service_uses_selected_area_when_domain_operation_is_unverified() -> None:
@@ -3284,6 +3290,10 @@ def test_candidate_generation_projects_full_and_partial_pass_coverage() -> None:
     assert summary.published_full_network_piste_km == (
         partial_records[0].selected_pass.pass_accessible_terrain.total_piste_km
     )
+    assert summary.coverage_warning == (
+        "Some areas covered by this pass are outside their operating season for "
+        "your dates. The published full-network terrain is not date-adjusted."
+    )
 
 
 @pytest.mark.parametrize("trust_status", ("estimated", "needs_source"))
@@ -3320,6 +3330,47 @@ def test_pass_summary_does_not_publish_untrusted_full_network_terrain(
 
     assert summary.coverage_status == "partial"
     assert summary.published_full_network_piste_km is None
+    assert summary.coverage_warning == (
+        "Some areas covered by this pass are outside their operating season for "
+        "your dates."
+    )
+
+
+def test_pass_summary_orders_partial_context_before_pass_date_uncertainty() -> None:
+    pass_windows = (_season_window(date(2026, 12, 1), date(2027, 4, 30)),)
+    snapshot, manifest = _two_area_pass_catalog(
+        pass_windows=pass_windows,
+        area_windows={
+            "alta-badia-ski-area": pass_windows,
+            "lagazuoi-ski-area": (
+                _season_window(date(2026, 12, 1), date(2026, 12, 31)),
+            ),
+        },
+        pass_trust_status="estimated",
+        pass_terrain_trust_status="verified",
+    )
+    records = _records_for_alta_badia_pass(
+        snapshot=snapshot,
+        manifest=manifest,
+        travel_window=TravelWindow(
+            start_date=date(2027, 1, 10),
+            end_date=date(2027, 1, 12),
+        ),
+    )
+
+    summary = search_v4_service._pass_summary(
+        records[0],
+        duration_days=3,
+        audience="adult",
+        season_label=None,
+        manifest=manifest,
+    )
+
+    assert summary.coverage_warning == (
+        "Some areas covered by this pass are outside their operating season for "
+        "your dates. The published full-network terrain is not date-adjusted. "
+        "Exact pass dates are not yet confirmed for this season."
+    )
 
 
 def test_candidate_generation_excludes_pass_when_all_areas_are_closed() -> None:

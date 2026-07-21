@@ -202,6 +202,34 @@ describe("RecommendationCard", () => {
     ).toBeNull();
   });
 
+  test("shows the base partial warning without inventing absent terrain context", () => {
+    const partialCoverage = {
+      ...primary,
+      selected_pass: {
+        ...primary.selected_pass,
+        coverage_status: "partial" as const,
+        coverage_warning:
+          "Some areas covered by this pass are outside their operating season for your dates.",
+        published_full_network_piste_km: null,
+      },
+    };
+
+    render(
+      <StatefulCard
+        recommendation={{ ...result, top_configuration: partialCoverage }}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "Some areas covered by this pass are outside their operating season for your dates.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/published full-network figure and is not date-adjusted/i),
+    ).toBeNull();
+  });
+
   test("keeps decision cues and one concrete rationale visible when collapsed", async () => {
     const user = userEvent.setup();
     render(<StatefulCard travelWindow={{ month: 3 }} />);

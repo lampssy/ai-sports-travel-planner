@@ -337,6 +337,9 @@ describe("trip essentials", () => {
         "Some areas covered by this pass are outside their operating season for your dates.",
       publishedTerrainContext: null,
     });
+    expect(passCoveragePresentation(selectedPass)?.warning).not.toMatch(
+      /published full-network terrain/i,
+    );
   });
 
   test("does not expose an unknown access-mode identifier", () => {

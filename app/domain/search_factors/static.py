@@ -35,6 +35,7 @@ _TRUST_CAPS: Mapping[CatalogTrustStatus, float] = {
     "estimated": 0.25,
     "needs_source": 0,
 }
+_SOURCE_BACKED_TERRAIN_STATUSES = frozenset({"verified", "verified_with_adjustment"})
 _NUMERIC_FACTOR_IDS = (
     "accessible_terrain_scale",
     "terrain_potential_scale",
@@ -1067,7 +1068,9 @@ def select_accessible_terrain_source(
         )
     for source, summary_scope in candidates:
         evidence = _source_evidence_for_resolver(trust_resolver, source)
-        if evidence.cap > 0:
+        if evidence.cap > 0 and (
+            not limited_coverage or evidence.status in _SOURCE_BACKED_TERRAIN_STATUSES
+        ):
             return AccessibleTerrainSelection(
                 value=source.value,
                 scoring_scope=source.scope,
