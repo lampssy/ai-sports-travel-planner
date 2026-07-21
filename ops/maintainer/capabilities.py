@@ -209,6 +209,7 @@ def handle_inspect_curation(
         pull_requests,
         _comments_by_pr(dependencies.github, pull_requests),
         StateStore.list_unresolved_for_inspection(args.state_dir),
+        StateStore.list_continuations_for_inspection_path(args.state_dir),
     )
     dependencies.tracker.terminal_reason = (
         "recovery-required" if inventory.unresolved_pushes else "inspected"
