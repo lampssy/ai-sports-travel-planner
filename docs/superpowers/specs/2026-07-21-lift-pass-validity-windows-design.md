@@ -9,7 +9,8 @@
   - `docs/data-trust-model.md`
   - `docs/planning-model.md`
   - `docs/search-ranking-model.md`
-- Related plan: pending owner review of this spec
+- Related plan:
+  `docs/superpowers/plans/2026-07-21-lift-pass-validity-windows.md`
 - Related ADRs:
   - `docs/architecture/adr/0005-catalog-scope-model.md`
   - `docs/architecture/adr/0019-separate-pass-validity-from-ski-area-operation.md`
