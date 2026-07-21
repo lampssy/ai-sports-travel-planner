@@ -56,7 +56,7 @@ entity namespaces and field groups are contract-defined:
 - ski_area_access: relationship, access mode/distance;
 - terrain_domains: `membership_connectivity`, `aggregate_terrain`, `season`,
   `official_documents`;
-- lift_pass_products: identity/scope/availability, coverage, prices,
+- lift_pass_products: `identity_scope_availability`, coverage, prices,
   pass-accessible terrain; and
 - rental_display_facts: identity/ownership, price/quality/access.
 
@@ -91,6 +91,14 @@ Season labels stay with catalog values because they qualify the meaning of the
 fact. Retrieval context, source URLs, verification status, and normalization
 notes stay in the trust manifest and curation artifacts.
 
+Lift-pass validity dates belong to the existing
+`identity_scope_availability` group. A non-empty `validity_windows` value can
+confirm or exclude an exact trip only when its planned window and that owning
+trust group are source-backed by direct operator, tariff, or official regional-
+pass evidence. Estimated or insufficiently sourced windows remain unverified.
+An empty list means no separate window was modeled; it is not evidence of year-
+round validity and does not inherit or duplicate ski-area operating dates.
+
 The version-2 cutover is proved by a typed migration report containing canonical
 before/after hashes for both catalog and trust payloads. Reconciliation reruns
 the deterministic transforms and requires exact payload and report equality.
@@ -123,6 +131,12 @@ actual external source reviewed by the owner.
   source scope. A pass summary may retain a ski-area or terrain-domain fallback,
   but the API and UI must not promote that fallback into unqualified
   pass-accessible terrain.
+- Under partial or unverified date-specific coverage, or unverified pass
+  validity, a source-backed published full-network terrain value is contextual
+  catalog evidence only. It is not recalculated, does not describe confirmed
+  entitlement for the trip, and cannot influence terrain-scale or pass-terrain-
+  value scoring. Ranking may use only a source-backed scope known not to include
+  an unavailable area.
 - A regional-network pass may reference modeled terrain but does not create a
   terrain domain unless the member areas are physically ski-connected.
 - Stay-base lodging estimates and rental examples are separate.

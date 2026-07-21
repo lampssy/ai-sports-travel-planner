@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: accepted design; implementation not started
+- Status: implemented; final verification complete
 - Owner: solo-builder
 - Related docs:
   - `docs/domain-language.md`
@@ -318,7 +318,8 @@ without claiming confirmed applicability for an unspecified year.
   `data-trust-source-integrity`, completed after documentation corrections; no
   unresolved Blocker, High, or material Medium findings
 - Advisory feature-review: `backend-api` and
-  `data-trust-source-integrity`, required before implementation handoff
+  `data-trust-source-integrity`, completed after trust-boundary corrections; no
+  unresolved Blocker, High, or material Medium findings
 
 ## Alternatives Considered
 

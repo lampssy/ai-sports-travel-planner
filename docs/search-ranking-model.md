@@ -322,6 +322,14 @@ excluded. A candidate inside the known window is eligible. Missing or
 approximate season evidence is retained cautiously and never receives a false
 positive season claim.
 
+Pass validity is a second eligibility gate for exact dates. A source-backed
+planned pass window must contain the complete trip; a known same-season miss is
+excluded. No modeled pass window adds no separate restriction, while missing,
+estimated, or insufficiently trusted evidence remains explicitly unverified
+rather than being treated as confirmed. A configuration focused on a covered
+ski area known to be unavailable is excluded even when another area on the pass
+is operating.
+
 ### Skill Ability And Terrain Preferences
 
 `party_skill_coverage` replaces the Search V3 supported-level bonus. It should
@@ -877,6 +885,17 @@ one matching terrain-domain aggregate, then selected ski-area terrain only for
 a pass without terrain-domain ownership. A numeric source with a zero trust cap
 is skipped, so scoring values, summary scope, entity, field group, and trust
 always describe the same evidence owner.
+
+That normal source order applies only when date-specific pass coverage is
+`full` and pass validity is confirmed or has no separate modeled restriction.
+For `partial` or `unverified` coverage, or unverified pass validity, full-
+network pass and terrain-domain aggregates are contextual display facts, not
+date-adjusted scoring inputs. Search uses only a source-backed terrain scope
+known not to include an unavailable covered area, normally the selected ski
+area. If no such safe scope exists, accessible-terrain and pass-terrain-value
+scoring stay neutral. A source-backed published full-network figure may remain
+visible with an explicit warning that it is not date-adjusted; Snowcast does
+not recompute it from child areas.
 
 Search may support separate objectives for maximum accessible terrain, lowest
 pass price, and best terrain value. A raw piste-kilometers-per-price ratio must

@@ -51,6 +51,31 @@ winning configuration defines the group score. Up to three materially distinct
 alternatives may expose another stay destination or focus ski area in the same
 market. Weather evidence always remains scoped to the selected ski area.
 
+### Date-Aware Pass Applicability
+
+For exact dates, a pass configuration is eligible only when both the selected
+ski area and the pass cover the complete trip. `SkiArea.season_windows` owns
+planned operation; `LiftPassProduct.validity_windows` owns any separately
+published ticket-entitlement period. Partial overlap with either window is not
+enough, and a candidate focused on a source-backed closed area is excluded.
+
+An empty pass-window list means no additional modeled pass-date restriction,
+not verified year-round entitlement. The selected ski area's operation still
+applies. Month-only searches keep the cautious month-level area check and do
+not manufacture exact pass dates.
+
+When a previously dated pass has no window for the requested future season,
+Search may retain an otherwise season-applicable configuration, but marks the
+pass dates unverified and never shifts the prior season's calendar dates. Area-
+operation uncertainty is tracked separately. Both conditions remain visible
+when both are unresolved.
+
+For a multi-area product, Search derives the operating, unavailable, and
+unverified subsets of its static coverage for the trip. An unavailable covered
+area removes only configurations focused on that area. If another covered area
+remains applicable, the pass may continue with partial or unverified coverage;
+if all covered areas are unavailable, no configuration for the pass remains.
+
 ## Search V4 Snow Evidence
 
 Search V4 uses one composed ranking factor, `trip_window_snow_fit`. It combines
@@ -226,6 +251,8 @@ target-date forecast.
 
 - Ranking and weather numerical policy:
   `app/config/search-ranking/search-v4.toml`
+- Pass and ski-area date applicability:
+  `app/domain/catalog_applicability.py`
 - Generic grouped scorer: `app/domain/search_ranking.py`
 - Weather factor evaluators: `app/domain/search_factors/weather.py`
 - Forecast run and daily models: `app/domain/weather_forecast.py`
