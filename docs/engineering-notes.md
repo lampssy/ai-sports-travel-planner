@@ -841,6 +841,19 @@ and immutable canonical graph. This lets journal-only recovery enforce the same
 publication input as the original run; historical or incomplete journals
 without that evidence stop rather than publishing a caller-supplied graph.
 
+A third owner-private record preserves reviewed-but-unpushed curation work.
+`validate reviewed` binds one exact local reviewed commit to the unchanged
+remote PR head, guarded-sync lineage, single report, a persistent reviewed ref,
+and a helper-created one-commit squash ref. A successor on the same base reruns
+only missing deterministic gates. If `main` advanced, the helper replays that
+single delta and requires one fresh full independent review; one conflict set
+may be resolved only within the helper-returned curation scope before the
+helper completes and revalidates the replay. Interrupted conflict worktrees are
+never trusted by a successor, which recreates the attempt from immutable refs.
+The continuation remains local authority only until push authorization; the
+push journal then becomes the sole recovery authority and the continuation is
+terminalized.
+
 Normal curation push remains validation-gated. The narrow exception is
 `publish manual-check`: after an unresolved bounded review, it revalidates the
 scope-safe local reviewed head, journals and exact-lease pushes that head, and

@@ -1363,10 +1363,23 @@ replaced. It is history, not current operational instruction:
   worktree rather than trusting an abandoned dirty worktree. Exact review reuse
   is limited to an unchanged commit/base; any replayed head receives a fresh
   independent full review. No unresolved Blocker or High finding remains.
+- Advisory reviewed-continuation amendment feature review: complete for AI/LLM
+  reliability, security/privacy, observability/ops, and release/change
+  management. It found and resolved two High implementation gaps: replay now
+  rejects a rewritten `main` that does not descend from the reviewed base, and
+  a later legitimate cycle can replace a terminal continuation only after the
+  remote PR head changes. Exact checkpoint retries, successor adoption,
+  validation failure, clean replay, bounded conflict cleanup, and
+  continuation-to-journal handoff are covered by focused tests. No unresolved
+  Blocker or High finding remains. The residual Low operational cost is that
+  immutable local checkpoint refs are retained for diagnosis until deliberate
+  maintenance is introduced; they contain commits only, no credentials or
+  authority-bearing lease data.
 - Implementation and activation: the base design is complete. Its feature work
   passed the recorded maintainer, focused catalog, lint/format, full-suite,
   prospective-merge, and CI checks before merge. The owner then approved and
   enabled the local schedules; later amendments use this spec and the post-merge
   checklist as their current contract and rollback reference. The
-  reviewed-continuation amendment is owner-approved and design-reviewed but not
-  yet implemented or activated.
+  reviewed-continuation amendment is owner-approved, implemented, feature-
+  reviewed, and verified on its isolated branch, but is not yet merged or
+  activated in the installed personal skill.
