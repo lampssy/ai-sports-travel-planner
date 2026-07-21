@@ -459,8 +459,73 @@ class StateStore:
                     )
                 if continuation.origin_run_id != continuation.recovery_run_id:
                     raise StateStoreError("new continuation must originate in this run")
+            elif (
+                existing.status
+                in {ContinuationStatus.CONSUMED, ContinuationStatus.INVALIDATED}
+                and continuation.status is ContinuationStatus.AVAILABLE
+                and continuation.origin_run_id == continuation.recovery_run_id
+                and continuation.selected_head != existing.selected_head
+                and continuation.updated_at > existing.updated_at
+            ):
+                pass
             else:
                 self._validate_continuation_transition(existing, continuation)
+            self._save_model(
+                self.continuation_dir,
+                continuation.work_id,
+                continuation,
+            )
+
+    def save_adopted_continuation(
+        self,
+        continuation: ReviewedContinuation,
+        lease: RunLease,
+    ) -> None:
+        """Create a continuation from exact legacy reviewed work."""
+        continuation = _revalidate_model(continuation, ReviewedContinuation)
+        with _transition_mutex(self.state_dir):
+            self._assert_continuation_lease(continuation, lease)
+            if continuation.origin_run_id == continuation.recovery_run_id:
+                raise StateStoreError("legacy adoption requires a successor run")
+            if self.load_continuation(continuation.work_id) is not None:
+                raise StateStoreError("reviewed continuation already exists")
+            if self._list_unresolved_pushes():
+                raise StateStoreError("unresolved push journal blocks continuation")
+            self._save_model(
+                self.continuation_dir,
+                continuation.work_id,
+                continuation,
+            )
+
+    def replace_resolved_continuation(
+        self,
+        continuation: ReviewedContinuation,
+        lease: RunLease,
+    ) -> None:
+        """Replace one replaying checkpoint after its mandatory fresh review."""
+        continuation = _revalidate_model(continuation, ReviewedContinuation)
+        with _transition_mutex(self.state_dir):
+            self._assert_continuation_lease(continuation, lease)
+            existing = self.load_continuation(continuation.work_id)
+            if existing is None:
+                raise StateStoreError("reviewed continuation is missing")
+            if (
+                existing.recovery_run_id != lease.run_id
+                or existing.status is not ContinuationStatus.RESOLVING
+            ):
+                raise StateStoreError("only the resolving owner can replace checkpoint")
+            if (
+                continuation.work_id != existing.work_id
+                or continuation.pr_number != existing.pr_number
+                or continuation.selected_head != existing.selected_head
+                or continuation.origin_run_id != existing.origin_run_id
+                or continuation.recovery_run_id != existing.recovery_run_id
+                or continuation.status is not ContinuationStatus.AVAILABLE
+                or continuation.validation_status
+                is not ContinuationValidationStatus.NOT_RUN
+                or continuation.updated_at <= existing.updated_at
+            ):
+                raise StateStoreError("replacement continuation facts are invalid")
             self._save_model(
                 self.continuation_dir,
                 continuation.work_id,
@@ -791,7 +856,12 @@ class StateStore:
                 ContinuationValidationStatus.PASSED,
             },
         }
-        if (
+        replay_reset = (
+            existing.validation_status is ContinuationValidationStatus.PASSED
+            and continuation.status is ContinuationStatus.RESOLVING
+            and continuation.validation_status is ContinuationValidationStatus.NOT_RUN
+        )
+        if not replay_reset and (
             continuation.validation_status
             not in allowed_validation[existing.validation_status]
         ):

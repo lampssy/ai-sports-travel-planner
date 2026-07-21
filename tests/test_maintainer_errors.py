@@ -157,6 +157,7 @@ def test_error_enums_cover_the_accepted_contract() -> None:
         "stale-head",
         "rebase-conflict",
         "intent-drift",
+        "continuation-required",
         "validation-failed",
         "validation-required",
         "proposal-cap",

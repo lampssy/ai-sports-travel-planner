@@ -643,6 +643,22 @@ class GitRepository:
             base_head,
         )
 
+    def revalidate_reviewed_checkpoint(
+        self,
+        pull_request: PullRequest,
+        sync: GuardedSyncResult,
+        reviewed_head: str,
+        refs: ReviewedCheckpointRefs,
+    ) -> None:
+        """Recheck exact reviewed lineage and its persistent recovery refs."""
+        self.revalidate_prepared_result(pull_request, sync, reviewed_head)
+        self._validate_checkpoint_refs(
+            pull_request.number,
+            sync,
+            reviewed_head,
+            refs,
+        )
+
     def continue_reviewed_conflict(
         self,
         pull_request: PullRequest,

@@ -103,6 +103,10 @@ def _parser() -> argparse.ArgumentParser:
     prepare_curation = prepare_commands.add_parser("curation")
     prepare_curation.add_argument("--pr", type=int, required=True)
     _add_run_id(prepare_curation)
+    prepare_continuation = prepare_commands.add_parser("continuation")
+    prepare_continuation.add_argument("--pr", type=int, required=True)
+    prepare_continuation.add_argument("--continue-conflict", action="store_true")
+    _add_run_id(prepare_continuation)
 
     validate = families.add_parser("validate")
     validate_commands = validate.add_subparsers(dest="command", required=True)
@@ -112,6 +116,12 @@ def _parser() -> argparse.ArgumentParser:
     validate_curation_parser.add_argument("--report", required=True)
     validate_curation_parser.add_argument("--base-dir", type=Path, required=True)
     _add_run_id(validate_curation_parser)
+    validate_reviewed_parser = validate_commands.add_parser("reviewed")
+    validate_reviewed_parser.add_argument("--pr", type=int, required=True)
+    validate_reviewed_parser.add_argument("--reviewed-head", type=_sha, required=True)
+    validate_reviewed_parser.add_argument("--report", required=True)
+    validate_reviewed_parser.add_argument("--adopt-existing", action="store_true")
+    _add_run_id(validate_reviewed_parser)
     validate_proposal_parser = validate_commands.add_parser("proposal")
     validate_proposal_parser.add_argument("--candidate-key", required=True)
     validate_proposal_parser.add_argument(
@@ -215,7 +225,9 @@ def _compose_dependencies(
     root = (repository_root or Path.cwd()).resolve()
     needs_repository = (args.family, args.command) in {
         ("prepare", "curation"),
+        ("prepare", "continuation"),
         ("validate", "curation"),
+        ("validate", "reviewed"),
         ("validate", "proposal"),
         ("publish", "push"),
         ("publish", "manual-check"),

@@ -15,6 +15,7 @@ class ErrorReason(StrEnum):
     STALE_HEAD = "stale-head"
     REBASE_CONFLICT = "rebase-conflict"
     INTENT_DRIFT = "intent-drift"
+    CONTINUATION_REQUIRED = "continuation-required"
     VALIDATION_FAILED = "validation-failed"
     VALIDATION_REQUIRED = "validation-required"
     PROPOSAL_CAP = "proposal-cap"
