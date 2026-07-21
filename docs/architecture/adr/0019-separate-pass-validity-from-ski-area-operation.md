@@ -72,6 +72,22 @@ ticket has materially different coverage in different date regimes, model
 separate product variants with stable coverage and appropriate validity
 windows. Do not add date windows to individual pass-to-area edges yet.
 
+For each trip, derive the operating subset of the pass's static contract
+coverage from the covered ski areas' season evidence. A closed covered area
+invalidates only candidates focused on that area, not the pass for other
+operating areas. Expose partial coverage and unavailable areas explicitly.
+Keep season-unknown covered areas separate and mark effective coverage
+unverified rather than treating missing evidence as confirmed operation.
+
+Under partial coverage, retain an official full-network terrain figure only as
+labeled contextual information with a warning that practical terrain is lower
+and has not been recalculated. Do not use the unadjusted aggregate for ranking
+or pass-value scoring. Prefer source-backed terrain for the selected operating
+area or another wholly operating scope; otherwise leave the date-adjusted value
+unavailable. Do not dynamically sum component areas until Snowcast can prove
+complete membership, compatible metric scopes, no overlap, and applicable
+operating state.
+
 ## Consequences
 
 - Ticket entitlement is not inferred from lift operation.
@@ -85,6 +101,10 @@ windows. Do not add date windows to individual pass-to-area edges yet.
   curation-report schema-version increment.
 - Some publisher-facing tickets may appear as multiple internal product
   variants when their usable coverage materially changes by date.
+- A pass can remain usable with `partial` coverage while closed covered areas
+  are removed from trip-specific candidates.
+- Full-network terrain can remain visible as published context, but partial
+  operation prevents it from influencing ranking or pass-value calculations.
 - Live closures remain a separate operational concern and do not rewrite either
   canonical window.
 
@@ -100,6 +120,10 @@ windows. Do not add date windows to individual pass-to-area edges yet.
   official tariff.
 - **Add validity windows to every pass-to-area edge.** Deferred because product
   variants cover the current use cases with a smaller and clearer contract.
+- **Invalidate the whole pass when one covered area is closed.** Rejected
+  because entitlement and useful coverage remain for other operating areas.
+- **Recalculate partial terrain by summing open areas.** Deferred because
+  independently sourced figures may use incompatible scopes or overlap.
 - **Keep dates only in labels and curation notes.** Rejected because runtime
   eligibility cannot safely depend on prose parsing.
 
@@ -108,5 +132,7 @@ windows. Do not add date windows to individual pass-to-area edges yet.
 - A materially used pass cannot be represented by stable product variants
   without confusing identity or price selection.
 - A provider supplies structured per-area entitlement calendars.
+- Complete, compatible, non-overlapping component terrain metrics make
+  date-adjusted pass terrain reproducible.
 - Live operational status becomes part of exact-trip eligibility and needs an
   explicit relationship to planned season and pass entitlement.

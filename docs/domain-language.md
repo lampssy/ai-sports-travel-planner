@@ -385,6 +385,14 @@ pass has no published window for a requested future season, Snowcast may retain
 the configuration only with exact pass validity marked unverified; it never
 projects an older tariff's dates into the future.
 
+**Effective pass coverage** is the date-specific operating subset of a pass's
+static contract coverage. A closed covered ski area does not invalidate the
+pass for other operating areas, while an area with insufficient season evidence
+remains explicitly unverified. Under partial coverage, a published full-network
+terrain figure may remain visible only as non-date-adjusted context with a clear
+warning; it does not contribute to terrain or pass-value ranking until a
+reliable reduced value can be reproduced.
+
 **Rental display fact**
 
 A reviewed equipment-rental example scoped to a stay destination and optionally

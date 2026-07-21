@@ -67,6 +67,8 @@ Out of scope:
 - live lift-status or temporary closure handling;
 - per-lift operating calendars;
 - arbitrary date windows on individual pass-to-ski-area edges;
+- dynamic recalculation of pass terrain from whichever component areas happen
+  to be operating;
 - inferring a future tariff by repeating the previous year's dates;
 - acquisition of exact pass windows for every existing catalog product;
 - ranking-weight changes.
@@ -104,6 +106,21 @@ Examples:
 - ordinary local pass without separately published dates: no pass validity
   window; applicability is limited by the selected ski area's operation.
 
+For a requested trip, runtime derives rather than stores:
+
+```text
+contract_covered_ski_area_ids
+operating_covered_ski_area_ids
+unavailable_covered_ski_area_ids
+unverified_covered_ski_area_ids
+coverage_status = full | partial | unverified
+```
+
+The contract set remains the catalog truth. The operating and unavailable sets
+are date-specific projections of that truth through ski-area season evidence.
+The unverified set preserves covered areas whose operation cannot be confirmed
+for the requested season.
+
 ## Applicability Rules
 
 For an exact-date trip, a pass/area configuration is applicable only when:
@@ -130,6 +147,35 @@ pass_applicable =
 Partial overlap is not enough: a pass window must cover the complete requested
 trip. Month-only searches continue using the existing cautious seasonal
 behavior; they must not manufacture exact pass dates.
+
+### Partial Coverage
+
+One closed covered ski area does not invalidate the pass for every other
+covered area. Generate and retain candidates only for covered ski areas that
+are season-applicable to the requested trip. Exclude a candidate focused on a
+known closed area. If no covered area is operating, no candidate for that pass
+remains.
+
+When only part of the pass network is operating:
+
+- expose both operating and unavailable covered area IDs;
+- expose unverified covered areas separately rather than treating them as open;
+- set `coverage_status=partial` when at least one area is known unavailable and
+  another covered candidate remains; use `unverified` when complete effective
+  coverage cannot otherwise be confirmed;
+- preserve the official full-network terrain figure only as contextual catalog
+  information;
+- label that figure as published full-network coverage, warn that practical
+  terrain is lower, and state that Snowcast has not recalculated it;
+- do not use the unadjusted aggregate for terrain-scale ranking or pass-terrain
+  value scoring;
+- prefer a source-backed metric for the selected operating ski area or another
+  wholly operating terrain scope; otherwise treat the date-adjusted terrain
+  value as unavailable and neutral.
+
+The initial implementation must not sum component ski-area values. Such a sum
+is reliable only when every component and its season state are known, the
+metrics use compatible scopes, and no terrain overlaps or is double-counted.
 
 ### Future-Season Fallback
 
@@ -162,6 +208,12 @@ without claiming confirmed applicability for an unspecified year.
   selected ski area is season-applicable.
 - A future-season fallback may remain eligible but must expose an uncertainty
   marker in the pass summary and explanation inputs.
+- A partially operating pass must expose its contract, operating, and
+  unavailable area sets plus a coverage warning; season-unknown covered areas
+  must remain explicitly unverified.
+- A published full-network terrain metric may remain visible under partial
+  coverage, but must be marked non-date-adjusted and excluded from ranking and
+  value scoring.
 - A known out-of-window pass is excluded rather than merely down-ranked.
 - Existing clients remain compatible: the catalog field is additive and API
   uncertainty fields must use optional/default-safe additions.
@@ -216,6 +268,8 @@ without claiming confirmed applicability for an unspecified year.
   - resolved: absent pass windows impose no additional date constraint;
   - resolved: future seasons without a newly published pass window remain
     eligible with explicit unverified-date wording;
+  - resolved: partial coverage retains operating-area candidates, displays a
+    warning, and does not recalculate or rank on the full-network aggregate;
   - unresolved: none.
 - ADR status: ADR 0019 accepted with this design
 - Advisory design-review: `backend-api` and
@@ -252,6 +306,16 @@ Before implementation, tests should cover:
 - a future season with no matching pass window remains eligible and reports
   unverified pass dates;
 - a previous season's exact dates are never presented as future dates;
+- one closed covered area produces partial coverage without excluding candidates
+  for other operating covered areas;
+- a candidate focused on a closed covered area is excluded;
+- all covered areas closed produces no candidate for that pass;
+- partial coverage exposes the unavailable area and warning while retaining the
+  published full-network figure only as non-date-adjusted context;
+- partial coverage prevents the full-network aggregate from influencing
+  terrain-scale and pass-terrain-value scoring;
+- selected-area terrain may be used when source-backed and not known closed;
+  an unverified operating season must remain visible in the explanation;
 - catalog round-trip persistence preserves zero, one, and multiple validity
   windows;
 - trust and schema-v3 curation validation bind changed windows to direct source
@@ -267,4 +331,6 @@ and advisory feature review.
 
 Revisit relationship-level coverage windows only when a materially used ticket
 cannot be represented as stable product variants without confusing identity,
-pricing, or user-facing selection.
+pricing, or user-facing selection. Revisit date-adjusted terrain calculation
+only when complete, compatible, non-overlapping component metrics and operating
+states can make the result reproducible.
