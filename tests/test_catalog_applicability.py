@@ -373,6 +373,23 @@ def test_month_only_area_operation_is_cautious(
     )
 
 
+def test_single_day_date_max_recurring_fallback_does_not_overflow() -> None:
+    area = _ski_area(
+        season_start_month=12,
+        season_end_month=12,
+    )
+
+    assert (
+        evaluate_ski_area_operation(
+            ski_area=area,
+            travel_month=None,
+            trip_start_date=date.max,
+            trip_end_date=date.max,
+        )
+        == "unverified"
+    )
+
+
 def test_no_travel_window_retains_candidate_without_date_specific_warnings() -> None:
     area = _ski_area()
     projection = _projection(
@@ -496,6 +513,7 @@ def test_all_covered_areas_closed_leaves_no_applicable_candidate() -> None:
         "focus-area",
         "other-area",
     )
+    assert projection.coverage_status is None
     assert not candidate_is_applicable(
         projection=projection,
         focus_ski_area_id="focus-area",

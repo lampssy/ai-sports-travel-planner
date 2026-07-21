@@ -34,7 +34,7 @@ _SOURCE_BACKED_STATUSES = frozenset({"verified", "verified_with_adjustment"})
 @dataclass(frozen=True)
 class PassCoverageProjection:
     validity_status: PassValidityStatus
-    coverage_status: PassCoverageStatus
+    coverage_status: PassCoverageStatus | None
     contract_covered_ski_area_ids: tuple[str, ...]
     operating_covered_ski_area_ids: tuple[str, ...]
     unavailable_covered_ski_area_ids: tuple[str, ...]
@@ -219,7 +219,8 @@ def candidate_is_applicable(
     focus_ski_area_id: str,
 ) -> bool:
     return (
-        projection.validity_status != "inapplicable"
+        projection.coverage_status is not None
+        and projection.validity_status != "inapplicable"
         and focus_ski_area_id not in projection.unavailable_covered_ski_area_ids
     )
 
@@ -239,6 +240,8 @@ def _all_trip_dates_are_in_recurring_season(
             season_end_month,
         ):
             return False
+        if current_date == trip_end_date:
+            return True
         current_date += timedelta(days=1)
     return True
 
@@ -254,14 +257,14 @@ def _coverage_status(
     operating_ids: list[str],
     unavailable_ids: list[str],
     unverified_ids: list[str],
-) -> PassCoverageStatus:
+) -> PassCoverageStatus | None:
     if unverified_ids:
         return "unverified"
-    if unavailable_ids:
+    if unavailable_ids and operating_ids:
         return "partial"
     if operating_ids:
         return "full"
-    return "unverified"
+    return None
 
 
 def _coverage_warnings(
