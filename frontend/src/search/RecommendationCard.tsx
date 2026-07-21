@@ -16,6 +16,7 @@ import { TripEntityStack } from "../ui/TripEntityStack";
 import {
   buildCandidateNarrative,
   evidenceQualityMode,
+  passCoveragePresentation,
   snowFitPresentation,
   terrainPresentation,
   type TripEssentialCategory,
@@ -49,6 +50,7 @@ export function RecommendationCard({
 }) {
   const configuration = findSelectedCandidate(result, selectedCandidateId);
   const terrain = terrainPresentation(configuration.selected_pass);
+  const passCoverage = passCoveragePresentation(configuration.selected_pass);
   const detailsId = `recommendation-${result.ski_region_id}`;
   const narrative = buildCandidateNarrative(configuration, travelWindow);
   const evidenceMode = evidenceQualityMode(configuration);
@@ -132,6 +134,17 @@ export function RecommendationCard({
                 <p className="section-label">Selected pass</p>
                 <strong>{configuration.selected_pass.name}</strong>
                 {terrain ? <span>{terrain.evidenceLabel}</span> : null}
+                {passCoverage ? (
+                  <>
+                    <p className="watchout">
+                      <AlertTriangle aria-hidden="true" size={18} />
+                      <span>{passCoverage.warning}</span>
+                    </p>
+                    {passCoverage.publishedTerrainContext ? (
+                      <span>{passCoverage.publishedTerrainContext}</span>
+                    ) : null}
+                  </>
+                ) : null}
               </section>
             </div>
             <div className="recommendation-card__signals">

@@ -15,6 +15,7 @@ import {
   factorLabelForConfiguration,
   formatAccess,
   formatTripEssential,
+  passCoveragePresentation,
   refinementPreviewCopy,
   selectTripEssentialCategories,
   snowFitPresentation,
@@ -66,6 +67,13 @@ function configuration(
       name: `Pass ${candidateId}`,
       validity_scope: "regional",
       covered_ski_area_ids: [`area-${candidateId}`],
+      operating_covered_ski_area_ids: [`area-${candidateId}`],
+      unavailable_covered_ski_area_ids: [],
+      unverified_covered_ski_area_ids: [],
+      coverage_status: "full",
+      validity_status: "confirmed",
+      coverage_warning: null,
+      published_full_network_piste_km: null,
       accessible_piste_km: 300,
       accessible_piste_km_evidence: {
         trust_status: "verified",
@@ -257,6 +265,63 @@ describe("trip essentials", () => {
       expect(terrainPresentation(selectedPass)?.evidenceLabel).toBe(expected);
     },
   );
+
+  test("keeps selected-area terrain separate from a non-date-adjusted full-network figure", () => {
+    const selectedPass = {
+      ...configuration("partial-coverage").selected_pass,
+      accessible_piste_km: 126,
+      accessible_piste_km_evidence: {
+        trust_status: "verified" as const,
+        scope: "ski_area" as const,
+        source_entity_id: "mayrhofen-ski-area",
+        field_group: "terrain_metrics" as const,
+      },
+      operating_covered_ski_area_ids: ["mayrhofen-ski-area"],
+      unavailable_covered_ski_area_ids: ["hintertux-glacier"],
+      coverage_status: "partial" as const,
+      coverage_warning:
+        "Some areas covered by this pass are outside their operating season for your dates. The published full-network terrain is not date-adjusted.",
+      published_full_network_piste_km: 548,
+    };
+
+    expect(terrainPresentation(selectedPass)?.essentialValue).toBe(
+      "126 km in the selected ski area",
+    );
+    expect(passCoveragePresentation(selectedPass)).toEqual({
+      warning:
+        "Some areas covered by this pass are outside their operating season for your dates. The published full-network terrain is not date-adjusted.",
+      publishedTerrainContext:
+        "548 km is the published full-network figure and is not date-adjusted.",
+    });
+  });
+
+  test.each([
+    [
+      "pass-date-only",
+      "Exact pass dates are not yet confirmed for this season.",
+    ],
+    [
+      "area-operation-only",
+      "Operation dates are not confirmed for every area covered by this pass.",
+    ],
+    [
+      "combined",
+      "Exact pass dates are not yet confirmed for this season. Operation dates are not confirmed for every area covered by this pass.",
+    ],
+  ])("keeps backend-defined %s coverage uncertainty wording intact", (_kind, warning) => {
+    const selectedPass = {
+      ...configuration(`coverage-${_kind}`).selected_pass,
+      coverage_status: "unverified" as const,
+      validity_status: "unverified_for_requested_season" as const,
+      coverage_warning: warning,
+    };
+
+    expect(passCoveragePresentation(selectedPass)).toMatchObject({ warning });
+  });
+
+  test("adds no coverage presentation for full coverage without a backend warning", () => {
+    expect(passCoveragePresentation(configuration("full-coverage").selected_pass)).toBeNull();
+  });
 
   test("does not expose an unknown access-mode identifier", () => {
     const unknownAccess = configuration("unknown-access", {

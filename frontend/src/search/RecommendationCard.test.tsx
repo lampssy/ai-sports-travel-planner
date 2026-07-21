@@ -44,6 +44,13 @@ function candidate(
       name: passName,
       validity_scope: "regional",
       covered_ski_area_ids: ["cervinia-area"],
+      operating_covered_ski_area_ids: ["cervinia-area"],
+      unavailable_covered_ski_area_ids: [],
+      unverified_covered_ski_area_ids: [],
+      coverage_status: "full",
+      validity_status: "confirmed",
+      coverage_warning: null,
+      published_full_network_piste_km: null,
       accessible_piste_km: terrainKm,
       accessible_piste_km_evidence: {
         trust_status: "verified",
@@ -147,6 +154,54 @@ function StatefulCard({
 }
 
 describe("RecommendationCard", () => {
+  test("shows the backend pass-coverage warning and non-date-adjusted terrain context", () => {
+    const partialCoverage = {
+      ...primary,
+      selected_pass: {
+        ...primary.selected_pass,
+        accessible_piste_km: 126,
+        accessible_piste_km_evidence: {
+          trust_status: "verified" as const,
+          scope: "ski_area" as const,
+          source_entity_id: "cervinia-area",
+          field_group: "terrain_metrics" as const,
+        },
+        operating_covered_ski_area_ids: ["cervinia-area"],
+        unavailable_covered_ski_area_ids: ["zermatt-area"],
+        coverage_status: "partial" as const,
+        coverage_warning:
+          "Some areas covered by this pass are outside their operating season for your dates. The published full-network terrain is not date-adjusted.",
+        published_full_network_piste_km: 360,
+      },
+    };
+
+    render(
+      <StatefulCard
+        recommendation={{ ...result, top_configuration: partialCoverage }}
+      />,
+    );
+
+    expect(screen.getAllByText("126 km in the selected ski area").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(
+        "Some areas covered by this pass are outside their operating season for your dates. The published full-network terrain is not date-adjusted.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "360 km is the published full-network figure and is not date-adjusted.",
+      ),
+    ).toBeVisible();
+  });
+
+  test("does not add a pass-coverage warning for full coverage", () => {
+    render(<StatefulCard />);
+
+    expect(
+      screen.queryByText(/published full-network figure and is not date-adjusted/i),
+    ).toBeNull();
+  });
+
   test("keeps decision cues and one concrete rationale visible when collapsed", async () => {
     const user = userEvent.setup();
     render(<StatefulCard travelWindow={{ month: 3 }} />);

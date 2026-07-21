@@ -162,6 +162,16 @@ export interface SearchV4PassSummary {
   name: string;
   validity_scope: string;
   covered_ski_area_ids: string[];
+  operating_covered_ski_area_ids: string[];
+  unavailable_covered_ski_area_ids: string[];
+  unverified_covered_ski_area_ids: string[];
+  coverage_status: "full" | "partial" | "unverified";
+  validity_status:
+    | "not_constrained"
+    | "confirmed"
+    | "unverified_for_requested_season";
+  coverage_warning: string | null;
+  published_full_network_piste_km: number | null;
   accessible_piste_km: number | null;
   accessible_piste_km_evidence: SearchV4TerrainEvidence | null;
   price: SearchV4PassPriceSummary | null;

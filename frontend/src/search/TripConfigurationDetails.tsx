@@ -2,8 +2,13 @@ import type {
   SearchV4Configuration,
   SearchV4RecommendationGroup,
 } from "../types";
+import { Alert } from "../ui/Alert";
 import { TripEssentials } from "./TripEssentials";
-import { formatAccess, formatPassPrice } from "./searchPresentation";
+import {
+  formatAccess,
+  formatPassPrice,
+  passCoveragePresentation,
+} from "./searchPresentation";
 
 export function TripConfigurationDetails({
   group,
@@ -15,6 +20,7 @@ export function TripConfigurationDetails({
   onSelectCandidate: (skiRegionId: string, candidateId: string) => void;
 }) {
   const candidates = [group.top_configuration, ...group.alternative_configurations];
+  const passCoverage = passCoveragePresentation(configuration.selected_pass);
 
   return (
     <section className="dossier-section trip-configuration" id="trip-configuration">
@@ -33,6 +39,15 @@ export function TripConfigurationDetails({
         configuration={configuration}
         categories={["terrain", "passValue", "liftAccess", "lodging"]}
       />
+
+      {passCoverage ? (
+        <Alert variant="warning" className="trip-configuration__coverage">
+          <p>{passCoverage.warning}</p>
+          {passCoverage.publishedTerrainContext ? (
+            <p>{passCoverage.publishedTerrainContext}</p>
+          ) : null}
+        </Alert>
+      ) : null}
 
       <div className="trip-configuration__alternatives" id="alternatives">
         <p className="section-label">Other ways to plan this trip</p>

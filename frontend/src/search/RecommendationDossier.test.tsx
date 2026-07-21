@@ -71,6 +71,13 @@ function configuration(
       name: `Pass ${candidateId}`,
       validity_scope: "single_ski_area",
       covered_ski_area_ids: [`area-${rank}`],
+      operating_covered_ski_area_ids: [`area-${rank}`],
+      unavailable_covered_ski_area_ids: [],
+      unverified_covered_ski_area_ids: [],
+      coverage_status: "full",
+      validity_status: "confirmed",
+      coverage_warning: null,
+      published_full_network_piste_km: null,
       accessible_piste_km: 100 + rank,
       accessible_piste_km_evidence: {
         trust_status: "verified",
@@ -207,6 +214,52 @@ test("renders evidence-bounded wider-terrain strength in trip details", () => {
     ),
   ).toBeVisible();
   expect(screen.queryByText(/selected pass supports/i)).toBeNull();
+});
+
+test("shows pass coverage uncertainty in trip details without replacing safe terrain", () => {
+  const currentSession = session();
+  const current = currentSession.response.results[0].top_configuration;
+  current.selected_pass = {
+    ...current.selected_pass,
+    accessible_piste_km: 101,
+    accessible_piste_km_evidence: {
+      trust_status: "verified",
+      scope: "ski_area",
+      source_entity_id: "area-1",
+      field_group: "terrain_metrics",
+    },
+    operating_covered_ski_area_ids: ["area-1"],
+    unavailable_covered_ski_area_ids: ["other-area"],
+    coverage_status: "partial",
+    coverage_warning:
+      "Some areas covered by this pass are outside their operating season for your dates. The published full-network terrain is not date-adjusted.",
+    published_full_network_piste_km: 548,
+  };
+
+  render(
+    <RecommendationDossier
+      session={currentSession}
+      skiRegionId={current.ski_region_id}
+      candidateId={current.candidate_id}
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(screen.getAllByText("101 km in the selected ski area").length).toBeGreaterThan(0);
+  expect(
+    screen.getByText(
+      "Some areas covered by this pass are outside their operating season for your dates. The published full-network terrain is not date-adjusted.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByText(
+      "548 km is the published full-network figure and is not date-adjusted.",
+    ),
+  ).toBeVisible();
 });
 
 test("does not present unscored options as ranked recommendations", () => {

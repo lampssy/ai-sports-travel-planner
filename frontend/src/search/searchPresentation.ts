@@ -397,6 +397,24 @@ export interface TerrainPresentation {
   evidenceLabel: string;
 }
 
+export interface PassCoveragePresentation {
+  warning: string;
+  publishedTerrainContext: string | null;
+}
+
+export function passCoveragePresentation(
+  selectedPass: SearchV4PassSummary,
+): PassCoveragePresentation | null {
+  if (!selectedPass.coverage_warning) return null;
+  return {
+    warning: selectedPass.coverage_warning,
+    publishedTerrainContext:
+      selectedPass.published_full_network_piste_km == null
+        ? null
+        : `${selectedPass.published_full_network_piste_km} km is the published full-network figure and is not date-adjusted.`,
+  };
+}
+
 export function terrainPresentation(
   selectedPass: SearchV4PassSummary,
 ): TerrainPresentation | null {

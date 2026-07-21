@@ -57,6 +57,13 @@ function configuration(): SearchV4Configuration {
       name: "Ischgl/Samnaun VIP Skipass",
       validity_scope: "regional",
       covered_ski_area_ids: ["ischgl-ski-area"],
+      operating_covered_ski_area_ids: ["ischgl-ski-area"],
+      unavailable_covered_ski_area_ids: [],
+      unverified_covered_ski_area_ids: [],
+      coverage_status: "full",
+      validity_status: "confirmed",
+      coverage_warning: null,
+      published_full_network_piste_km: null,
       accessible_piste_km: 239,
       accessible_piste_km_evidence: {
         trust_status: "verified_with_adjustment",

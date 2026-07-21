@@ -63,6 +63,13 @@ const tignesConfiguration: SearchV4Configuration = {
     name: "Tignes - Val d'Isere pass",
     validity_scope: "local_multi_area",
     covered_ski_area_ids: ["tignes-ski-area", "val-disere-ski-area"],
+    operating_covered_ski_area_ids: ["tignes-ski-area", "val-disere-ski-area"],
+    unavailable_covered_ski_area_ids: [],
+    unverified_covered_ski_area_ids: [],
+    coverage_status: "full",
+    validity_status: "confirmed",
+    coverage_warning: null,
+    published_full_network_piste_km: null,
     accessible_piste_km: 300,
     accessible_piste_km_evidence: {
       trust_status: "verified",
