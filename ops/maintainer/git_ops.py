@@ -7,7 +7,7 @@ import subprocess
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import Protocol
+from typing import Literal, Protocol
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -20,11 +20,13 @@ from ops.maintainer.intent import (
     IntentValidationError,
     build_intent_snapshot,
     build_preparation_intent_snapshot,
+    is_allowed_curation_path,
 )
 from ops.maintainer.models import PullRequest
 
 __all__ = [
     "GitRepository",
+    "ContinuationReplayResult",
     "GitAuthenticationError",
     "GitOperationTimeoutError",
     "GitPushRejectedError",
@@ -35,6 +37,7 @@ __all__ = [
     "RebaseConflictError",
     "RepositorySafetyError",
     "RemotePolicy",
+    "ReviewedCheckpointRefs",
     "StaleRemoteHeadError",
 ]
 
@@ -56,6 +59,14 @@ _BACKUP_REF = re.compile(
 _PREPARED_REF = re.compile(
     r"^refs/snowcast-maintainer/prepared/pr-[1-9][0-9]*/"
     r"(?P<base>[0-9a-f]{12})-(?P<rebased>[0-9a-f]{12})$"
+)
+_REVIEWED_REF = re.compile(
+    r"^refs/snowcast-maintainer/reviewed/pr-[1-9][0-9]*/"
+    r"(?P<selected>[0-9a-f]{12})-(?P<reviewed>[0-9a-f]{12})$"
+)
+_CONTINUATION_REF = re.compile(
+    r"^refs/snowcast-maintainer/continuations/pr-[1-9][0-9]*/"
+    r"(?P<base>[0-9a-f]{12})-(?P<reviewed>[0-9a-f]{12})$"
 )
 _RAW_DIFF_HEADER = re.compile(
     r"^:(?P<old_mode>[0-7]{6}) (?P<new_mode>[0-7]{6}) "
@@ -110,6 +121,23 @@ class GuardedSyncResult(BaseModel):
     prepared_ref: str
     base_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     merge_base: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+
+class ReviewedCheckpointRefs(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    reviewed_ref: str
+    squash_ref: str
+
+
+class ContinuationReplayResult(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    result: Literal["unchanged", "prepared", "conflict"]
+    base_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    head: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
+    conflict_paths: tuple[str, ...] = ()
+    sync: GuardedSyncResult | None = None
 
 
 class CommandRunner(Protocol):
@@ -485,6 +513,197 @@ class GitRepository:
             builder=build_preparation_intent_snapshot,
         )
 
+    def checkpoint_reviewed_continuation(
+        self,
+        pull_request: PullRequest,
+        sync: GuardedSyncResult,
+        reviewed_head: str,
+    ) -> ReviewedCheckpointRefs:
+        """Persist immutable refs for one exact reviewed curation tree."""
+        self.revalidate_prepared_result(pull_request, sync, reviewed_head)
+        reviewed_ref = (
+            f"refs/snowcast-maintainer/reviewed/pr-{pull_request.number}/"
+            f"{sync.original_head[:12]}-{reviewed_head[:12]}"
+        )
+        squash_ref = (
+            f"refs/snowcast-maintainer/continuations/pr-{pull_request.number}/"
+            f"{sync.base_head[:12]}-{reviewed_head[:12]}"
+        )
+        self._create_exact_ref(reviewed_ref, reviewed_head)
+        existing_squash = self._optional_ref_head(squash_ref)
+        if existing_squash is None:
+            tree = self._commit_tree(reviewed_head)
+            commit = self._git(
+                "commit-tree",
+                tree,
+                "-p",
+                sync.base_head,
+                "-m",
+                f"Snowcast reviewed continuation for PR #{pull_request.number}",
+            )
+            if commit.returncode != 0:
+                raise RepositorySafetyError(
+                    "reviewed continuation commit cannot be created"
+                )
+            squash_head = commit.stdout.strip()
+            _validate_sha(squash_head)
+            self._create_exact_ref(squash_ref, squash_head)
+        self._validate_checkpoint_refs(
+            pull_request.number,
+            sync,
+            reviewed_head,
+            ReviewedCheckpointRefs(
+                reviewed_ref=reviewed_ref,
+                squash_ref=squash_ref,
+            ),
+        )
+        return ReviewedCheckpointRefs(
+            reviewed_ref=reviewed_ref,
+            squash_ref=squash_ref,
+        )
+
+    def prepare_reviewed_continuation(
+        self,
+        pull_request: PullRequest,
+        sync: GuardedSyncResult,
+        reviewed_head: str,
+        refs: ReviewedCheckpointRefs,
+    ) -> ContinuationReplayResult:
+        """Restore or replay one helper-checkpointed reviewed curation tree."""
+        _validate_pull_request(pull_request)
+        if self._cherry_pick_in_progress():
+            raise RepositorySafetyError("pre-existing Git operation blocks prepare")
+        self._ensure_clean_preflight()
+        self.verify_repository()
+        self.fetch_for_pr(pull_request.head_ref_name)
+        fetched_head = self._rev_parse(
+            f"refs/remotes/origin/{pull_request.head_ref_name}"
+        )
+        if fetched_head != pull_request.head_sha or fetched_head != sync.original_head:
+            raise StaleRemoteHeadError("remote PR head changed after review")
+        squash_head = self._validate_checkpoint_refs(
+            pull_request.number,
+            sync,
+            reviewed_head,
+            refs,
+        )
+        base_head = self._rev_parse("refs/remotes/origin/main")
+        if base_head == sync.base_head:
+            switch = self._git("switch", "--detach", refs.reviewed_ref)
+            if switch.returncode != 0:
+                raise RepositorySafetyError("cannot restore exact reviewed head")
+            self._revalidate_prepared_result(
+                pull_request,
+                sync,
+                reviewed_head,
+                builder=build_preparation_intent_snapshot,
+            )
+            return ContinuationReplayResult(
+                result="unchanged",
+                base_head=base_head,
+                head=reviewed_head,
+                sync=sync,
+            )
+
+        switch = self._git("switch", "--detach", base_head)
+        if switch.returncode != 0:
+            raise RepositorySafetyError("cannot detach at continuation replay base")
+        replay = self._git("cherry-pick", "--no-edit", refs.squash_ref)
+        if replay.returncode != 0:
+            if not self._cherry_pick_in_progress():
+                raise RepositorySafetyError(
+                    "continuation replay failed without conflict state"
+                )
+            conflict_paths = self._nul_paths(
+                "diff",
+                "--name-only",
+                "--diff-filter=U",
+                "-z",
+            )
+            expected_paths = frozenset(
+                entry.path for entry in self.diff_entries(sync.base_head, squash_head)
+            )
+            if (
+                not conflict_paths
+                or not set(conflict_paths).issubset(expected_paths)
+                or not all(is_allowed_curation_path(path) for path in conflict_paths)
+            ):
+                self._abort_cherry_pick_if_active()
+                raise RepositorySafetyError(
+                    "continuation conflict includes a disallowed path"
+                )
+            return ContinuationReplayResult(
+                result="conflict",
+                base_head=base_head,
+                conflict_paths=conflict_paths,
+            )
+        return self._completed_continuation_replay(
+            pull_request,
+            sync,
+            base_head,
+        )
+
+    def continue_reviewed_conflict(
+        self,
+        pull_request: PullRequest,
+        sync: GuardedSyncResult,
+        reviewed_head: str,
+        refs: ReviewedCheckpointRefs,
+    ) -> ContinuationReplayResult:
+        """Complete one already-resolved helper-owned squash replay conflict."""
+        _validate_pull_request(pull_request)
+        self.verify_repository()
+        if not self._cherry_pick_in_progress():
+            raise RepositorySafetyError("continuation cherry-pick is not active")
+        self.fetch_for_pr(pull_request.head_ref_name)
+        if (
+            self._rev_parse(f"refs/remotes/origin/{pull_request.head_ref_name}")
+            != pull_request.head_sha
+        ):
+            self._abort_cherry_pick_if_active()
+            raise StaleRemoteHeadError("remote PR head changed during replay")
+        squash_head = self._validate_checkpoint_refs(
+            pull_request.number,
+            sync,
+            reviewed_head,
+            refs,
+        )
+        base_head = self.current_head()
+        if self._rev_parse("refs/remotes/origin/main") != base_head:
+            self._abort_cherry_pick_if_active()
+            raise StaleRemoteHeadError("main moved during continuation conflict")
+        if self._nul_paths("diff", "--name-only", "--diff-filter=U", "-z"):
+            raise RepositorySafetyError("continuation conflicts remain unresolved")
+        if self._nul_paths("diff", "--name-only", "-z") or self._nul_paths(
+            "ls-files", "--others", "--exclude-standard", "-z"
+        ):
+            self._abort_cherry_pick_if_active()
+            raise RepositorySafetyError(
+                "continuation worktree contains unrelated unstaged changes"
+            )
+        staged_paths = self._nul_paths("diff", "--cached", "--name-only", "-z", "HEAD")
+        expected_paths = frozenset(
+            entry.path for entry in self.diff_entries(sync.base_head, squash_head)
+        )
+        if (
+            not staged_paths
+            or not set(staged_paths).issubset(expected_paths)
+            or not all(is_allowed_curation_path(path) for path in staged_paths)
+        ):
+            self._abort_cherry_pick_if_active()
+            raise RepositorySafetyError(
+                "continuation resolution changed a path outside reviewed scope"
+            )
+        completed = self._git("cherry-pick", "--continue")
+        if completed.returncode != 0:
+            self._abort_cherry_pick_if_active()
+            raise RepositorySafetyError("continuation replay did not complete once")
+        return self._completed_continuation_replay(
+            pull_request,
+            sync,
+            base_head,
+        )
+
     def _revalidate_prepared_result(
         self,
         pull_request: PullRequest,
@@ -796,6 +1015,113 @@ class GitRepository:
             raise RepositorySafetyError("prepared ref cannot be recorded safely")
         return prepared_ref
 
+    def _completed_continuation_replay(
+        self,
+        pull_request: PullRequest,
+        prior_sync: GuardedSyncResult,
+        base_head: str,
+    ) -> ContinuationReplayResult:
+        head = self.current_head()
+        intent = build_preparation_intent_snapshot(self, base_head, head)
+        if not intent.changed_paths:
+            raise IntentDriftError("replayed curation diff is empty")
+        prepared_ref = self._create_prepared_ref(
+            pull_request.number,
+            base_head,
+            head,
+        )
+        sync = GuardedSyncResult(
+            target_branch=pull_request.head_ref_name,
+            original_head=pull_request.head_sha,
+            rebased_head=head,
+            backup_ref=prior_sync.backup_ref,
+            prepared_ref=prepared_ref,
+            base_head=base_head,
+            merge_base=self._merge_base(base_head, pull_request.head_sha),
+        )
+        self._ensure_clean_preflight()
+        return ContinuationReplayResult(
+            result="prepared",
+            base_head=base_head,
+            head=head,
+            sync=sync,
+        )
+
+    def _validate_checkpoint_refs(
+        self,
+        pr_number: int,
+        sync: GuardedSyncResult,
+        reviewed_head: str,
+        refs: ReviewedCheckpointRefs,
+    ) -> str:
+        _validate_reviewed_ref(
+            refs.reviewed_ref,
+            pr_number,
+            sync.original_head,
+            reviewed_head,
+        )
+        _validate_continuation_ref(
+            refs.squash_ref,
+            pr_number,
+            sync.base_head,
+            reviewed_head,
+        )
+        if self._resolve_ref(refs.reviewed_ref) != reviewed_head:
+            raise RepositorySafetyError("reviewed ref no longer matches checkpoint")
+        squash_head = self._resolve_ref(refs.squash_ref)
+        self._verify_commit(squash_head)
+        if self._commit_tree(squash_head) != self._commit_tree(reviewed_head):
+            raise RepositorySafetyError("continuation tree no longer matches review")
+        parents = self._git("show", "-s", "--format=%P", squash_head)
+        if parents.returncode != 0 or parents.stdout.strip() != sync.base_head:
+            raise RepositorySafetyError("continuation parent no longer matches base")
+        return squash_head
+
+    def _commit_tree(self, revision: str) -> str:
+        _validate_sha(revision)
+        result = self._git("show", "-s", "--format=%T", revision)
+        if result.returncode != 0:
+            raise RepositorySafetyError("cannot resolve continuation commit tree")
+        tree = result.stdout.strip()
+        _validate_sha(tree)
+        return tree
+
+    def _create_exact_ref(self, ref: str, head: str) -> None:
+        _validate_sha(head)
+        result = self._git("update-ref", ref, head, "0" * 40)
+        if result.returncode == 0:
+            return
+        if self._optional_ref_head(ref) == head:
+            return
+        raise RepositorySafetyError("continuation ref collision or creation failure")
+
+    def _optional_ref_head(self, ref: str) -> str | None:
+        result = self._git("rev-parse", "--verify", ref)
+        if result.returncode != 0:
+            return None
+        head = result.stdout.strip()
+        _validate_sha(head)
+        return head
+
+    def _resolve_ref(self, ref: str) -> str:
+        head = self._optional_ref_head(ref)
+        if head is None:
+            raise RepositorySafetyError("continuation ref cannot be resolved")
+        return head
+
+    def _nul_paths(self, *arguments: str) -> tuple[str, ...]:
+        result = self._git(*arguments)
+        if result.returncode != 0:
+            raise RepositorySafetyError("cannot inspect continuation paths")
+        if not result.stdout:
+            return ()
+        if not result.stdout.endswith("\0"):
+            raise RepositorySafetyError("Git returned malformed continuation paths")
+        paths = tuple(result.stdout[:-1].split("\0"))
+        for path in paths:
+            _validate_git_path(path)
+        return tuple(sorted(paths))
+
     def _verify_commit(self, sha: str) -> None:
         _validate_sha(sha)
         result = self._git("cat-file", "-e", f"{sha}^{{commit}}")
@@ -883,6 +1209,24 @@ class GitRepository:
         abort = self._git("rebase", "--abort")
         if abort.returncode != 0 or self._rebase_in_progress():
             raise RebaseConflictError("active rebase could not be aborted safely")
+
+    def _cherry_pick_in_progress(self) -> bool:
+        result = self._git("rev-parse", "--git-path", "CHERRY_PICK_HEAD")
+        if result.returncode != 0:
+            raise RepositorySafetyError("cannot inspect Git cherry-pick state")
+        state_path = Path(result.stdout.strip())
+        if not state_path.is_absolute():
+            state_path = self.root / state_path
+        return state_path.exists()
+
+    def _abort_cherry_pick_if_active(self) -> None:
+        if not self._cherry_pick_in_progress():
+            return
+        abort = self._git("cherry-pick", "--abort")
+        if abort.returncode != 0 or self._cherry_pick_in_progress():
+            raise RepositorySafetyError(
+                "active continuation replay could not be aborted safely"
+            )
 
     def _effective_remote_urls(self, *, push: bool) -> tuple[str, ...]:
         arguments = ["remote", "get-url"]
@@ -993,6 +1337,42 @@ def _validate_prepared_ref(
         or match.group("rebased") != rebased_head[:12]
     ):
         raise RepositorySafetyError("prepared ref is not bound to prepared heads")
+
+
+def _validate_reviewed_ref(
+    reviewed_ref: str,
+    pr_number: int,
+    selected_head: str,
+    reviewed_head: str,
+) -> None:
+    _validate_pr_number(pr_number)
+    match = _REVIEWED_REF.fullmatch(reviewed_ref)
+    expected_prefix = f"refs/snowcast-maintainer/reviewed/pr-{pr_number}/"
+    if (
+        match is None
+        or not reviewed_ref.startswith(expected_prefix)
+        or match.group("selected") != selected_head[:12]
+        or match.group("reviewed") != reviewed_head[:12]
+    ):
+        raise RepositorySafetyError("reviewed ref is not bound to reviewed heads")
+
+
+def _validate_continuation_ref(
+    squash_ref: str,
+    pr_number: int,
+    base_head: str,
+    reviewed_head: str,
+) -> None:
+    _validate_pr_number(pr_number)
+    match = _CONTINUATION_REF.fullmatch(squash_ref)
+    expected_prefix = f"refs/snowcast-maintainer/continuations/pr-{pr_number}/"
+    if (
+        match is None
+        or not squash_ref.startswith(expected_prefix)
+        or match.group("base") != base_head[:12]
+        or match.group("reviewed") != reviewed_head[:12]
+    ):
+        raise RepositorySafetyError("continuation ref is not bound to reviewed heads")
 
 
 def _raise_sanitized_push_error(stderr: str) -> None:
