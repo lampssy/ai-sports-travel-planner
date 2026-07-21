@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from ops.maintainer.git_ops import (
+    ContinuationReplayResult,
     GitAuthenticationError,
     GitOperationTimeoutError,
     GitPushRejectedError,
@@ -20,6 +21,7 @@ from ops.maintainer.git_ops import (
     RebaseConflictError,
     RemotePolicy,
     RepositorySafetyError,
+    ReviewedCheckpointRefs,
     StaleRemoteHeadError,
     _SubprocessRunner,
 )
@@ -1473,6 +1475,220 @@ def test_v2_git_entry_points_build_prepare_and_revalidate_objective_intent(
     assert immutable.catalog_targets == frozenset({"ski_area:alpha"})
     assert reviewed.catalog_targets == immutable.catalog_targets
     assert reviewed.changed_paths == immutable.changed_paths
+
+
+def test_reviewed_checkpoint_creates_exact_reviewed_and_squash_refs(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+
+    refs = repository.checkpoint_reviewed_continuation(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+    )
+
+    assert isinstance(refs, ReviewedCheckpointRefs)
+    assert _git(local.checkout, "rev-parse", refs.reviewed_ref) == prepared.rebased_head
+    assert (
+        _git(local.checkout, "rev-parse", f"{refs.squash_ref}^") == prepared.base_head
+    )
+    assert _git(local.checkout, "show", "-s", "--format=%T", refs.squash_ref) == _git(
+        local.checkout, "show", "-s", "--format=%T", prepared.rebased_head
+    )
+
+
+def test_reviewed_checkpoint_rejects_dirty_or_non_descendant_head(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    (local.checkout / "untracked.txt").write_text("dirty\n", encoding="utf-8")
+
+    with pytest.raises(RepositorySafetyError, match="clean"):
+        repository.checkpoint_reviewed_continuation(
+            local.pull_request,
+            prepared,
+            prepared.rebased_head,
+        )
+
+    (local.checkout / "untracked.txt").unlink()
+    _git(local.checkout, "switch", "--detach", prepared.base_head)
+    with pytest.raises(RepositorySafetyError, match="descend"):
+        repository.checkpoint_reviewed_continuation(
+            local.pull_request,
+            prepared,
+            prepared.base_head,
+        )
+
+
+def test_continuation_replay_restores_unchanged_reviewed_head(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    refs = repository.checkpoint_reviewed_continuation(
+        local.pull_request, prepared, prepared.rebased_head
+    )
+    _git(local.checkout, "switch", "--detach", local.target_sha)
+
+    replay = repository.prepare_reviewed_continuation(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+        refs,
+    )
+
+    assert replay == ContinuationReplayResult(
+        result="unchanged",
+        base_head=prepared.base_head,
+        head=prepared.rebased_head,
+        sync=prepared,
+    )
+    assert _git(local.checkout, "rev-parse", "HEAD") == prepared.rebased_head
+
+
+def test_continuation_replay_squashes_onto_advanced_main(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    refs = repository.checkpoint_reviewed_continuation(
+        local.pull_request, prepared, prepared.rebased_head
+    )
+    seed = tmp_path / "seed"
+    _git(seed, "switch", "main")
+    (seed / "README.md").write_text("base\nmain update\nagain\n", encoding="utf-8")
+    _git(seed, "add", "README.md")
+    _git(seed, "commit", "-m", "advance main again")
+    _git(seed, "push", "origin", "main")
+    advanced_main = _git(seed, "rev-parse", "HEAD")
+
+    replay = repository.prepare_reviewed_continuation(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+        refs,
+    )
+
+    assert replay.result == "prepared"
+    assert replay.base_head == advanced_main
+    assert replay.head is not None
+    assert replay.sync is not None
+    assert _git(local.checkout, "rev-parse", f"{replay.head}^") == advanced_main
+    assert _git(local.checkout, "show", f"{replay.head}:app/data/catalog.json") == (
+        _catalog(alpha_name="Target Alpha").strip()
+    )
+
+
+def test_continuation_replay_rejects_rewritten_main_history(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    refs = repository.checkpoint_reviewed_continuation(
+        local.pull_request, prepared, prepared.rebased_head
+    )
+    _git(
+        local.remote,
+        "update-ref",
+        "refs/heads/main",
+        local.target_sha,
+        local.main_sha,
+    )
+
+    with pytest.raises(RepositorySafetyError, match="main must descend"):
+        repository.prepare_reviewed_continuation(
+            local.pull_request,
+            prepared,
+            prepared.rebased_head,
+            refs,
+        )
+
+
+def test_continuation_replay_returns_one_allowed_conflict_and_completes_it(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    refs = repository.checkpoint_reviewed_continuation(
+        local.pull_request, prepared, prepared.rebased_head
+    )
+    seed = tmp_path / "seed"
+    _git(seed, "switch", "main")
+    (seed / "app/data/catalog.json").write_text(
+        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
+    )
+    _git(seed, "add", "app/data/catalog.json")
+    _git(seed, "commit", "-m", "change alpha on main")
+    _git(seed, "push", "origin", "main")
+    advanced_main = _git(seed, "rev-parse", "HEAD")
+
+    replay = repository.prepare_reviewed_continuation(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+        refs,
+    )
+
+    assert replay.result == "conflict"
+    assert replay.base_head == advanced_main
+    assert replay.conflict_paths == ("app/data/catalog.json",)
+    (local.checkout / "app/data/catalog.json").write_text(
+        _catalog(alpha_name="Target Alpha"), encoding="utf-8"
+    )
+    _git(local.checkout, "add", "app/data/catalog.json")
+    completed = repository.continue_reviewed_conflict(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+        refs,
+    )
+
+    assert completed.result == "prepared"
+    assert completed.sync is not None
+    assert completed.sync.base_head == advanced_main
+    assert _git(local.checkout, "status", "--porcelain") == ""
+
+
+def test_continuation_conflict_rejects_unrelated_staged_path_and_cleans_up(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    refs = repository.checkpoint_reviewed_continuation(
+        local.pull_request, prepared, prepared.rebased_head
+    )
+    seed = tmp_path / "seed"
+    _git(seed, "switch", "main")
+    (seed / "app/data/catalog.json").write_text(
+        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
+    )
+    _git(seed, "add", "app/data/catalog.json")
+    _git(seed, "commit", "-m", "change alpha on main")
+    _git(seed, "push", "origin", "main")
+    replay = repository.prepare_reviewed_continuation(
+        local.pull_request, prepared, prepared.rebased_head, refs
+    )
+    assert replay.result == "conflict"
+    (local.checkout / "app/data/catalog.json").write_text(
+        _catalog(alpha_name="Target Alpha"), encoding="utf-8"
+    )
+    (local.checkout / "README.md").write_text("unauthorized\n", encoding="utf-8")
+    _git(local.checkout, "add", "app/data/catalog.json", "README.md")
+
+    with pytest.raises(RepositorySafetyError, match="outside reviewed scope"):
+        repository.continue_reviewed_conflict(
+            local.pull_request, prepared, prepared.rebased_head, refs
+        )
+
+    assert _git(local.checkout, "status", "--porcelain") == ""
 
 
 def test_prepare_accepts_unrelated_catalog_changes_on_main(tmp_path: Path) -> None:

@@ -19,10 +19,12 @@ from ops.maintainer.errors import (
     MaintainerError,
 )
 from ops.maintainer.git_ops import (
+    ContinuationReplayResult,
     GitTransportError,
     GuardedSyncResult,
     RebaseConflictError,
     RepositorySafetyError,
+    ReviewedCheckpointRefs,
     StaleRemoteHeadError,
 )
 from ops.maintainer.github import GitHubComment, GitHubError
@@ -35,8 +37,11 @@ from ops.maintainer.publication import (
 )
 from ops.maintainer.runtime import RunLease
 from ops.maintainer.state import (
+    ContinuationStatus,
+    ContinuationValidationStatus,
     PushJournal,
     PushPhase,
+    ReviewedContinuation,
     StateStore,
     WorkPhase,
     WorkState,
@@ -349,6 +354,7 @@ class FakeRepository:
     main_head: str = SHA_A
     main_catalog_json: str = field(default_factory=_catalog_json)
     fetch_main_calls: int = 0
+    continuation_result: str = "unchanged"
 
     def current_head(self) -> str:
         return self.head
@@ -390,6 +396,84 @@ class FakeRepository:
         assert result == self.prepared
         assert reviewed_head == self.head
         return self.snapshot
+
+    def checkpoint_reviewed_continuation(
+        self,
+        pull_request: PullRequest,
+        result: GuardedSyncResult,
+        reviewed_head: str,
+    ) -> ReviewedCheckpointRefs:
+        assert pull_request.number == 42
+        assert result == self.prepared
+        assert reviewed_head == self.head
+        return ReviewedCheckpointRefs(
+            reviewed_ref=(
+                f"refs/snowcast-maintainer/reviewed/pr-42/"
+                f"{result.original_head[:12]}-{reviewed_head[:12]}"
+            ),
+            squash_ref=(
+                f"refs/snowcast-maintainer/continuations/pr-42/"
+                f"{result.base_head[:12]}-{reviewed_head[:12]}"
+            ),
+        )
+
+    def revalidate_reviewed_checkpoint(
+        self,
+        pull_request: PullRequest,
+        result: GuardedSyncResult,
+        reviewed_head: str,
+        refs: ReviewedCheckpointRefs,
+    ) -> None:
+        assert pull_request.number == 42
+        assert result == self.prepared
+        assert reviewed_head == self.head
+        assert refs.reviewed_ref.startswith("refs/snowcast-maintainer/reviewed/pr-42/")
+
+    def prepare_reviewed_continuation(
+        self,
+        pull_request: PullRequest,
+        result: GuardedSyncResult,
+        reviewed_head: str,
+        refs: ReviewedCheckpointRefs,
+    ) -> ContinuationReplayResult:
+        self.revalidate_reviewed_checkpoint(pull_request, result, reviewed_head, refs)
+        if self.continuation_result == "conflict":
+            return ContinuationReplayResult(
+                result="conflict",
+                base_head=SHA_D,
+                conflict_paths=("app/data/catalog.json",),
+            )
+        if self.continuation_result == "prepared":
+            replay_sync = result.model_copy(
+                update={"base_head": SHA_C, "rebased_head": SHA_D}
+            )
+            self.prepared = replay_sync
+            self.head = SHA_D
+            return ContinuationReplayResult(
+                result="prepared",
+                base_head=SHA_C,
+                head=SHA_D,
+                sync=replay_sync,
+            )
+        self.head = reviewed_head
+        return ContinuationReplayResult(
+            result="unchanged",
+            base_head=result.base_head,
+            head=reviewed_head,
+            sync=result,
+        )
+
+    def continue_reviewed_conflict(
+        self,
+        pull_request: PullRequest,
+        result: GuardedSyncResult,
+        reviewed_head: str,
+        refs: ReviewedCheckpointRefs,
+    ) -> ContinuationReplayResult:
+        self.continuation_result = "prepared"
+        return self.prepare_reviewed_continuation(
+            pull_request, result, reviewed_head, refs
+        )
 
     def push_with_lease(self, sync: GuardedSyncResult, reviewed_head: str) -> None:
         self.push_calls += 1
@@ -504,7 +588,9 @@ EXPECTED_HANDLERS = {
     ("inspect", "curation"),
     ("inspect", "discovery"),
     ("prepare", "curation"),
+    ("prepare", "continuation"),
     ("validate", "curation"),
+    ("validate", "reviewed"),
     ("validate", "proposal"),
     ("publish", "push"),
     ("publish", "manual-check"),
@@ -947,6 +1033,249 @@ def test_prepare_curation_persists_one_phase_record_for_requested_safe_pr(
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
 
 
+def test_reviewed_checkpoint_blocks_ordinary_prepare_and_resumes_validation_only(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    origin_run = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, origin_run, github, repository)
+
+    blocked, blocked_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            origin_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert blocked == 2
+    assert blocked_payload["reason"] == "continuation-required"
+    RunLease.load_owner(state_dir, "curation", origin_run).release()
+    successor = _acquire(capsys, state_dir, "curation")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "continuation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0
+    assert payload["continuation"]["result"] == "validation-only"
+    work = StateStore(state_dir).load_work("curation-pr-42")
+    assert work is not None and work.phase is WorkPhase.REVIEWED
+    assert work.run_id == successor
+
+
+def test_advanced_continuation_requires_one_fresh_review(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    origin_run = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, origin_run, github, repository)
+    RunLease.load_owner(state_dir, "curation", origin_run).release()
+    successor = _acquire(capsys, state_dir, "curation")
+    repository.continuation_result = "prepared"
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "continuation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0
+    assert payload["continuation"]["result"] == "review-required"
+    store = StateStore(state_dir)
+    work = store.load_work("curation-pr-42")
+    continuation = store.load_continuation("curation-pr-42")
+    assert work is not None and work.phase is WorkPhase.PREPARED
+    assert continuation is not None
+    assert continuation.status is ContinuationStatus.RESOLVING
+    _checkpoint_reviewed(
+        capsys,
+        state_dir,
+        successor,
+        github,
+        repository,
+        reviewed_head=SHA_D,
+    )
+    replaced = store.load_continuation("curation-pr-42")
+    assert replaced is not None
+    assert replaced.reviewed_head == SHA_D
+    assert replaced.status is ContinuationStatus.AVAILABLE
+
+
+def test_continuation_conflict_is_bounded_then_returns_to_fresh_review(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    origin_run = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, origin_run, github, repository)
+    RunLease.load_owner(state_dir, "curation", origin_run).release()
+    successor = _acquire(capsys, state_dir, "curation")
+    repository.continuation_result = "conflict"
+
+    first, first_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "continuation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+    second, second_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "continuation",
+            "--pr",
+            "42",
+            "--continue-conflict",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert first == 0
+    assert first_payload["continuation"] == {
+        "result": "conflict-resolution-required",
+        "base_head": SHA_D,
+        "conflict_paths": ["app/data/catalog.json"],
+    }
+    assert second == 0
+    assert second_payload["continuation"]["result"] == "review-required"
+
+
+def test_validation_failure_preserves_exact_retryable_continuation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "validate",
+            "curation",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--base-dir",
+            str(tmp_path / "base"),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        curation_validator=lambda **_kwargs: (_ for _ in ()).throw(
+            MaintainerError(ErrorReason.VALIDATION_FAILED, ErrorStage.VALIDATE)
+        ),
+    )
+
+    assert code == 2
+    assert payload["reason"] == "validation-failed"
+    continuation = StateStore(state_dir).load_continuation("curation-pr-42")
+    assert continuation is not None
+    assert continuation.status is ContinuationStatus.AVAILABLE
+    assert continuation.validation_status is ContinuationValidationStatus.FAILED
+
+
+def test_legacy_reviewed_work_can_be_adopted_only_by_successor_lease(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    origin_run = _prepare_curation(capsys, state_dir, github, repository)
+    store = StateStore(state_dir)
+    lease = RunLease.load_owner(state_dir, "curation", origin_run)
+    prepared = store.load_work("curation-pr-42")
+    assert prepared is not None
+    store.save_work(
+        prepared.model_copy(
+            update={
+                "phase": WorkPhase.REVIEWED,
+                "reviewed_head": SHA_B,
+                "updated_at": NOW + timedelta(seconds=1),
+            }
+        ),
+        lease,
+    )
+    lease.release()
+    successor = _acquire(capsys, state_dir, "curation")
+
+    _checkpoint_reviewed(
+        capsys,
+        state_dir,
+        successor,
+        github,
+        repository,
+        adopt_existing=True,
+    )
+
+    continuation = store.load_continuation("curation-pr-42")
+    assert continuation is not None
+    assert continuation.origin_run_id == origin_run
+    assert continuation.recovery_run_id == successor
+
+
 @pytest.mark.parametrize(
     ("error", "reason"),
     [
@@ -1026,6 +1355,7 @@ def test_validate_curation_binds_reviewed_head_and_objective_result(
     github = FakeGitHub()
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
     observed: dict[str, object] = {}
 
     def validator(**kwargs: object) -> ValidationResult:
@@ -1072,6 +1402,7 @@ def test_validate_curation_exact_retry_returns_existing_receipt(
     github = FakeGitHub()
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
     validator_calls = 0
 
     def validator(**kwargs: object) -> ValidationResult:
@@ -1135,6 +1466,7 @@ def test_validate_curation_retry_rejects_a_different_report(
     github = FakeGitHub()
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
     first_code, _first_payload = _invoke(
         capsys,
         [
@@ -1196,6 +1528,7 @@ def test_validate_curation_retry_rejects_a_changed_validation_base(
     github = FakeGitHub()
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
     command = [
         "--state-dir",
         str(state_dir),
@@ -1244,6 +1577,7 @@ def test_validate_failure_exposes_only_allowlisted_check_and_kind(
     github = FakeGitHub()
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
 
     def fail(**kwargs: object) -> ValidationResult:
         raise MaintainerError(
@@ -1515,6 +1849,14 @@ def _validated_curation(
     resulting_graph_markdown: str | None = None,
 ) -> str:
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        reviewed_head=repository.head,
+    )
     code, _payload = _invoke(
         capsys,
         [
@@ -1544,6 +1886,44 @@ def _validated_curation(
     return run_id
 
 
+def _checkpoint_reviewed(
+    capsys: pytest.CaptureFixture[str],
+    state_dir: Path,
+    run_id: str,
+    github: FakeGitHub,
+    repository: FakeRepository,
+    *,
+    reviewed_head: str = SHA_B,
+    adopt_existing: bool = False,
+    expect_success: bool = True,
+) -> tuple[int, dict[str, object]]:
+    arguments = [
+        "--state-dir",
+        str(state_dir),
+        "validate",
+        "reviewed",
+        "--pr",
+        "42",
+        "--reviewed-head",
+        reviewed_head,
+        "--report",
+        "docs/catalog-curation/nendaz.json",
+        "--run-id",
+        run_id,
+    ]
+    if adopt_existing:
+        arguments.insert(-2, "--adopt-existing")
+    code, payload = _invoke(
+        capsys,
+        arguments,
+        github=github,
+        repository=repository,
+    )
+    if expect_success:
+        assert code == 0, payload
+    return code, payload
+
+
 def _manual_check_publication_files(state_dir: Path) -> tuple[str, str]:
     return (
         _private_text(state_dir, "manual-check-summary.md", "Owner review required."),
@@ -1563,6 +1943,19 @@ def _publish_manual_check(
     repository: FakeRepository,
     reviewed_head: str = SHA_B,
 ) -> tuple[int, dict[str, object]]:
+    work = StateStore(state_dir).load_work("curation-pr-42")
+    if work is not None and work.phase is WorkPhase.PREPARED:
+        checkpoint_code, checkpoint_payload = _checkpoint_reviewed(
+            capsys,
+            state_dir,
+            run_id,
+            github,
+            repository,
+            reviewed_head=reviewed_head,
+            expect_success=False,
+        )
+        if checkpoint_code != 0:
+            return checkpoint_code, checkpoint_payload
     summary, body = _manual_check_publication_files(state_dir)
     return _invoke(
         capsys,
@@ -1608,7 +2001,7 @@ def test_publish_manual_check_pushes_reviewed_unvalidated_head(
 
     assert code == 0
     assert repository.push_calls == 1
-    assert repository.revalidate_calls == 1
+    assert repository.revalidate_calls == 2
     assert github.pull_requests[42].head_sha == SHA_B
     assert MaintainerState.MANUAL_CHECK.value in github.pull_requests[42].labels
     machine = trusted_machine_state(github.list_issue_comments(42))
@@ -1631,6 +2024,7 @@ def test_publish_manual_check_reuses_head_recorded_before_validation_failure(
     github = FakeGitHub()
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
 
     def fail_validation(**_kwargs: object) -> ValidationResult:
         raise MaintainerError(
@@ -1674,7 +2068,7 @@ def test_publish_manual_check_reuses_head_recorded_before_validation_failure(
     )
 
     assert code == 0
-    assert repository.revalidate_calls == 1
+    assert repository.revalidate_calls == 2
     machine = trusted_machine_state(github.list_issue_comments(42))
     assert machine is not None and machine.last_operation == "reviewed"
 
@@ -1799,6 +2193,7 @@ def test_publish_manual_check_binds_publication_text_before_push(
 
     repository = FakeRepository(github=github, after_push=replace_publication_text)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
 
     code, _ = _invoke(
         capsys,
@@ -1882,6 +2277,7 @@ def test_publish_manual_check_rejects_report_outside_the_prepared_diff(
     github = FakeGitHub()
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
     summary, body = _manual_check_publication_files(state_dir)
 
     code, payload = _invoke(
@@ -2415,8 +2811,11 @@ def test_publish_push_journals_before_exact_force_with_lease_mutation(
     assert repository.push_calls == 1
     journal = StateStore(state_dir).load_push("curation-pr-42")
     work = StateStore(state_dir).load_work("curation-pr-42")
+    continuation = StateStore(state_dir).load_continuation("curation-pr-42")
     assert journal is not None and journal.phase is PushPhase.PUSHED
     assert work is not None and work.phase is WorkPhase.PUSHED
+    assert continuation is not None
+    assert continuation.status is ContinuationStatus.CONSUMED
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
 
 
@@ -2538,6 +2937,36 @@ def test_completed_curation_journal_can_start_a_second_fix_cycle(
         }
     )
     store.save_work(validated, lease)
+    continuation = ReviewedContinuation(
+        work_id="curation-pr-42",
+        origin_run_id=second_run,
+        recovery_run_id=second_run,
+        updated_at=cycle_time + timedelta(seconds=4),
+        pr_number=42,
+        selected_head=SHA_B,
+        reviewed_head=SHA_C,
+        report_path="docs/catalog-curation/nendaz.json",
+        sync=sync,
+        reviewed_ref=(
+            f"refs/snowcast-maintainer/reviewed/pr-42/{SHA_B[:12]}-{SHA_C[:12]}"
+        ),
+        squash_ref=(
+            f"refs/snowcast-maintainer/continuations/pr-42/{SHA_D[:12]}-{SHA_C[:12]}"
+        ),
+        status=ContinuationStatus.AVAILABLE,
+        validation_status=ContinuationValidationStatus.NOT_RUN,
+    )
+    store.save_continuation(continuation, lease)
+    store.save_continuation(
+        continuation.model_copy(
+            update={
+                "updated_at": cycle_time + timedelta(seconds=5),
+                "status": ContinuationStatus.VALIDATED,
+                "validation_status": ContinuationValidationStatus.PASSED,
+            }
+        ),
+        lease,
+    )
     repository.prepared = sync
     repository.head = SHA_C
     repository.remote = SHA_B

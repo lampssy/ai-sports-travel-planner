@@ -6,7 +6,7 @@ import re
 import stat
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
 from typing import Iterator, Literal, TypeVar
@@ -52,6 +52,20 @@ class PushPhase(StrEnum):
     PUSHED = "pushed"
     PR_CREATED = "pr-created"
     PUBLISHED = "published"
+
+
+class ContinuationStatus(StrEnum):
+    AVAILABLE = "available"
+    RESOLVING = "resolving"
+    VALIDATED = "validated"
+    CONSUMED = "consumed"
+    INVALIDATED = "invalidated"
+
+
+class ContinuationValidationStatus(StrEnum):
+    NOT_RUN = "not-run"
+    FAILED = "failed"
+    PASSED = "passed"
 
 
 _WORK_PHASES = tuple(WorkPhase)
@@ -145,6 +159,60 @@ class WorkState(BaseModel):
                 raise ValueError("curation sync facts do not match work state")
         elif phase_index >= 3 and self.report_path is None:
             raise ValueError("validated discovery work requires report path")
+        return self
+
+
+class ReviewedContinuation(BaseModel):
+    """Durable authority for one exact reviewed-but-unpushed curation tree."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    work_id: str = Field(min_length=1, max_length=128, pattern=_ID_PATTERN.pattern)
+    origin_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
+    recovery_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
+    updated_at: datetime
+    pr_number: int = Field(ge=1)
+    selected_head: str = Field(pattern=_SHA_PATTERN)
+    reviewed_head: str = Field(pattern=_SHA_PATTERN)
+    report_path: str = Field(
+        pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$",
+    )
+    sync: GuardedSyncResult
+    reviewed_ref: str = Field(pattern=_REF_PATTERN)
+    squash_ref: str = Field(pattern=_REF_PATTERN)
+    status: ContinuationStatus
+    validation_status: ContinuationValidationStatus
+
+    @model_validator(mode="after")
+    def validate_reviewed_continuation(self) -> ReviewedContinuation:
+        if self.updated_at.tzinfo is None or self.updated_at.utcoffset() is None:
+            raise ValueError("updated_at must include a timezone")
+        object.__setattr__(self, "updated_at", self.updated_at.astimezone(UTC))
+        if self.work_id != f"curation-pr-{self.pr_number}":
+            raise ValueError("continuation identity does not match its PR")
+        if self.sync.original_head != self.selected_head:
+            raise ValueError("continuation sync does not match selected head")
+        reviewed_prefix = f"refs/snowcast-maintainer/reviewed/pr-{self.pr_number}/"
+        squash_prefix = f"refs/snowcast-maintainer/continuations/pr-{self.pr_number}/"
+        if not self.reviewed_ref.startswith(reviewed_prefix):
+            raise ValueError("reviewed ref does not match continuation identity")
+        if not self.squash_ref.startswith(squash_prefix):
+            raise ValueError("squash ref does not match continuation identity")
+        if (
+            self.status is ContinuationStatus.VALIDATED
+            and self.validation_status is not ContinuationValidationStatus.PASSED
+        ):
+            raise ValueError("validated continuation requires passed validation")
+        if (
+            self.validation_status is ContinuationValidationStatus.PASSED
+            and self.status
+            not in {
+                ContinuationStatus.VALIDATED,
+                ContinuationStatus.CONSUMED,
+                ContinuationStatus.INVALIDATED,
+            }
+        ):
+            raise ValueError("passed validation requires a terminal-ready status")
         return self
 
 
@@ -247,7 +315,12 @@ class RunOutcome(BaseModel):
         return self
 
 
-_StateModel = TypeVar("_StateModel", WorkState, PushJournal)
+_StateModel = TypeVar(
+    "_StateModel",
+    WorkState,
+    PushJournal,
+    ReviewedContinuation,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -277,6 +350,20 @@ class StateStore:
             raise StateStoreError("maintainer state directory is unsafe") from exc
         return cls(state_path, _read_only=True).list_unresolved_pushes()
 
+    @classmethod
+    def list_continuations_for_inspection_path(
+        cls,
+        state_dir: str | Path,
+    ) -> tuple[ReviewedContinuation, ...]:
+        state_path = Path(state_dir)
+        try:
+            state_path.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("maintainer state directory is unsafe") from exc
+        return cls(state_path, _read_only=True).list_continuations_for_inspection()
+
     @property
     def work_dir(self) -> Path:
         return self.state_dir / "work"
@@ -284,6 +371,10 @@ class StateStore:
     @property
     def push_dir(self) -> Path:
         return self.state_dir / "push"
+
+    @property
+    def continuation_dir(self) -> Path:
+        return self.state_dir / "continuations"
 
     def load_work(self, work_id: str) -> WorkState | None:
         _validate_identifier(work_id, "work_id")
@@ -340,6 +431,171 @@ class StateStore:
         if loaded is not None and loaded.work_id != work_id:
             raise StateStoreError("push journal identity does not match its path")
         return loaded
+
+    def load_continuation(self, work_id: str) -> ReviewedContinuation | None:
+        _validate_identifier(work_id, "work_id")
+        loaded = self._load_model(
+            self.continuation_dir,
+            work_id,
+            ReviewedContinuation,
+        )
+        if loaded is not None and loaded.work_id != work_id:
+            raise StateStoreError("continuation identity does not match its path")
+        return loaded
+
+    def save_continuation(
+        self,
+        continuation: ReviewedContinuation,
+        lease: RunLease,
+    ) -> None:
+        continuation = _revalidate_model(continuation, ReviewedContinuation)
+        with _transition_mutex(self.state_dir):
+            self._assert_continuation_lease(continuation, lease)
+            existing = self.load_continuation(continuation.work_id)
+            if existing is None:
+                if continuation.status is not ContinuationStatus.AVAILABLE:
+                    raise StateStoreError(
+                        "new continuation must start in the available state"
+                    )
+                if continuation.origin_run_id != continuation.recovery_run_id:
+                    raise StateStoreError("new continuation must originate in this run")
+            elif (
+                existing.status
+                in {ContinuationStatus.CONSUMED, ContinuationStatus.INVALIDATED}
+                and continuation.status is ContinuationStatus.AVAILABLE
+                and continuation.origin_run_id == continuation.recovery_run_id
+                and continuation.selected_head != existing.selected_head
+                and continuation.updated_at > existing.updated_at
+            ):
+                pass
+            else:
+                self._validate_continuation_transition(existing, continuation)
+            self._save_model(
+                self.continuation_dir,
+                continuation.work_id,
+                continuation,
+            )
+
+    def save_adopted_continuation(
+        self,
+        continuation: ReviewedContinuation,
+        lease: RunLease,
+    ) -> None:
+        """Create a continuation from exact legacy reviewed work."""
+        continuation = _revalidate_model(continuation, ReviewedContinuation)
+        with _transition_mutex(self.state_dir):
+            self._assert_continuation_lease(continuation, lease)
+            if continuation.origin_run_id == continuation.recovery_run_id:
+                raise StateStoreError("legacy adoption requires a successor run")
+            if self.load_continuation(continuation.work_id) is not None:
+                raise StateStoreError("reviewed continuation already exists")
+            if self._list_unresolved_pushes():
+                raise StateStoreError("unresolved push journal blocks continuation")
+            self._save_model(
+                self.continuation_dir,
+                continuation.work_id,
+                continuation,
+            )
+
+    def replace_resolved_continuation(
+        self,
+        continuation: ReviewedContinuation,
+        lease: RunLease,
+    ) -> None:
+        """Replace one replaying checkpoint after its mandatory fresh review."""
+        continuation = _revalidate_model(continuation, ReviewedContinuation)
+        with _transition_mutex(self.state_dir):
+            self._assert_continuation_lease(continuation, lease)
+            existing = self.load_continuation(continuation.work_id)
+            if existing is None:
+                raise StateStoreError("reviewed continuation is missing")
+            if (
+                existing.recovery_run_id != lease.run_id
+                or existing.status is not ContinuationStatus.RESOLVING
+            ):
+                raise StateStoreError("only the resolving owner can replace checkpoint")
+            if (
+                continuation.work_id != existing.work_id
+                or continuation.pr_number != existing.pr_number
+                or continuation.selected_head != existing.selected_head
+                or continuation.origin_run_id != existing.origin_run_id
+                or continuation.recovery_run_id != existing.recovery_run_id
+                or continuation.status is not ContinuationStatus.AVAILABLE
+                or continuation.validation_status
+                is not ContinuationValidationStatus.NOT_RUN
+                or continuation.updated_at <= existing.updated_at
+            ):
+                raise StateStoreError("replacement continuation facts are invalid")
+            self._save_model(
+                self.continuation_dir,
+                continuation.work_id,
+                continuation,
+            )
+
+    def list_continuations_for_inspection(
+        self,
+    ) -> tuple[ReviewedContinuation, ...]:
+        try:
+            self.continuation_dir.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("continuation directory is unsafe") from exc
+        try:
+            self._validate_existing_directory(self.state_dir)
+            self._validate_existing_directory(self.continuation_dir)
+        except RunLeaseError as exc:
+            raise StateStoreError("continuation directory is unsafe") from exc
+        active = []
+        for path in sorted(
+            self.continuation_dir.glob("*.json"),
+            key=lambda item: item.name,
+        ):
+            work_id = path.name.removesuffix(".json")
+            continuation = self.load_continuation(work_id)
+            if continuation is None:
+                raise StateStoreError("continuation disappeared during inventory")
+            if continuation.status not in {
+                ContinuationStatus.CONSUMED,
+                ContinuationStatus.INVALIDATED,
+            }:
+                active.append(continuation)
+        return tuple(sorted(active, key=lambda item: item.work_id))
+
+    def adopt_continuation(
+        self,
+        work_id: str,
+        lease: RunLease,
+    ) -> ReviewedContinuation:
+        _validate_identifier(work_id, "work_id")
+        self._assert_lease_location(lease)
+        with _transition_mutex(self.state_dir):
+            RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+            if lease.worker != "curation":
+                raise StateStoreError("only curation can adopt continuations")
+            if self._list_unresolved_pushes():
+                raise StateStoreError("unresolved push journal blocks continuation")
+            continuation = self.load_continuation(work_id)
+            if continuation is None:
+                raise StateStoreError("reviewed continuation is missing")
+            if continuation.status in {
+                ContinuationStatus.CONSUMED,
+                ContinuationStatus.INVALIDATED,
+            }:
+                raise StateStoreError("reviewed continuation is terminal")
+            if continuation.recovery_run_id == lease.run_id:
+                raise StateStoreError("continuation adoption requires a successor run")
+            updated_at = datetime.now(UTC)
+            if updated_at <= continuation.updated_at:
+                updated_at = continuation.updated_at + timedelta(microseconds=1)
+            adopted = continuation.model_copy(
+                update={
+                    "recovery_run_id": lease.run_id,
+                    "updated_at": updated_at,
+                }
+            )
+            self._save_model(self.continuation_dir, work_id, adopted)
+            return adopted
 
     @contextmanager
     def guard_push_mutation(
@@ -455,6 +711,16 @@ class StateStore:
             journal.recovery_run_id,
         )
 
+    def _assert_continuation_lease(
+        self,
+        continuation: ReviewedContinuation,
+        lease: RunLease,
+    ) -> None:
+        self._assert_lease_location(lease)
+        if lease.worker != "curation" or continuation.recovery_run_id != lease.run_id:
+            raise LeaseOwnershipError("continuation is not owned by this lease")
+        RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+
     def _assert_lease_location(self, lease: RunLease) -> None:
         if lease.state_dir.absolute() != self.state_dir.absolute():
             raise LeaseOwnershipError("lease belongs to another state directory")
@@ -527,6 +793,85 @@ class StateStore:
                 and getattr(state, field_name) != existing_value
             ):
                 raise StateStoreError("work identity changed across phase transition")
+
+    def _validate_continuation_transition(
+        self,
+        existing: ReviewedContinuation,
+        continuation: ReviewedContinuation,
+    ) -> None:
+        immutable_fields = (
+            "work_id",
+            "origin_run_id",
+            "recovery_run_id",
+            "pr_number",
+            "selected_head",
+            "reviewed_head",
+            "report_path",
+            "sync",
+            "reviewed_ref",
+            "squash_ref",
+        )
+        if any(
+            getattr(existing, field_name) != getattr(continuation, field_name)
+            for field_name in immutable_fields
+        ):
+            raise StateStoreError("continuation immutable facts changed")
+        if continuation.updated_at <= existing.updated_at:
+            raise StateStoreError("updated_at must increase on continuation transition")
+        allowed_statuses = {
+            ContinuationStatus.AVAILABLE: {
+                ContinuationStatus.AVAILABLE,
+                ContinuationStatus.RESOLVING,
+                ContinuationStatus.VALIDATED,
+                ContinuationStatus.CONSUMED,
+                ContinuationStatus.INVALIDATED,
+            },
+            ContinuationStatus.RESOLVING: {
+                ContinuationStatus.RESOLVING,
+                ContinuationStatus.AVAILABLE,
+                ContinuationStatus.CONSUMED,
+                ContinuationStatus.INVALIDATED,
+            },
+            ContinuationStatus.VALIDATED: {
+                ContinuationStatus.VALIDATED,
+                ContinuationStatus.CONSUMED,
+                ContinuationStatus.INVALIDATED,
+            },
+            ContinuationStatus.CONSUMED: set(),
+            ContinuationStatus.INVALIDATED: set(),
+        }
+        if continuation.status not in allowed_statuses[existing.status]:
+            raise StateStoreError("continuation status transition is invalid")
+        allowed_validation = {
+            ContinuationValidationStatus.NOT_RUN: {
+                ContinuationValidationStatus.NOT_RUN,
+                ContinuationValidationStatus.FAILED,
+                ContinuationValidationStatus.PASSED,
+            },
+            ContinuationValidationStatus.FAILED: {
+                ContinuationValidationStatus.FAILED,
+                ContinuationValidationStatus.PASSED,
+            },
+            ContinuationValidationStatus.PASSED: {
+                ContinuationValidationStatus.PASSED,
+            },
+        }
+        replay_reset = (
+            existing.validation_status is ContinuationValidationStatus.PASSED
+            and continuation.status is ContinuationStatus.RESOLVING
+            and continuation.validation_status is ContinuationValidationStatus.NOT_RUN
+        )
+        if not replay_reset and (
+            continuation.validation_status
+            not in allowed_validation[existing.validation_status]
+        ):
+            raise StateStoreError("continuation validation transition is invalid")
+        if (
+            continuation.status is ContinuationStatus.VALIDATED
+            and continuation.validation_status
+            is not ContinuationValidationStatus.PASSED
+        ):
+            raise StateStoreError("continuation transition requires passed validation")
 
     def _require_push_journal(self, state: WorkState) -> None:
         journal = self.load_push(state.work_id)
@@ -611,7 +956,7 @@ class StateStore:
         self,
         directory: Path,
         work_id: str,
-        model: WorkState | PushJournal,
+        model: WorkState | PushJournal | ReviewedContinuation,
     ) -> None:
         _ensure_private_directory(directory, parents=False)
         _write_json_atomic(

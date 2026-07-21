@@ -68,6 +68,9 @@ The installed skill must:
   chunks, and parse helper JSON only after completion instead of retrying a
   still-running mutation;
 - inspect and choose at most one safe curation PR;
+- prefer an exact resumable `reviewed_continuations` entry for the selected PR
+  over an automation-memory-only unpublished follow-up; an unresolved push
+  journal still has global priority;
 - read curation automation memory using `CODEX_HOME` or the `$HOME/.codex`
   fallback, revalidate any unpublished-follow-up PR/head against helper
   inspection, and prioritize the oldest still-exact eligible follow-up before
@@ -97,6 +100,22 @@ The installed skill must:
   `manual-check` only for a complete scope-safe reviewed handoff, route an
   incomplete review to status-only `blocked/review-incomplete`, and reserve
   `owner-decision` for a real owner/model choice;
+- after every final exact-head independent review, call `validate reviewed`
+  with the PR, reviewed head, and its single curation report before running
+  deterministic validation or requesting manual-check publication;
+- resume a checkpoint only through `prepare continuation`: `validation-only`
+  reruns the missing deterministic/finalization gates without semantic review,
+  while `review-required` receives exactly one fresh independent full review
+  before a new `validate reviewed` checkpoint;
+- when continuation preparation returns `conflict-resolution-required`, edit
+  only the helper-returned catalog/report/backlog/focused-test paths through
+  `snowcast-catalog-curation` in `maintainer-managed` mode, call
+  `prepare continuation --continue-conflict`, and then run exactly one fresh
+  independent full review; stop on remote drift, a disallowed or unrelated
+  path, a repeated conflict, missing checkpoint refs, or unsafe Git state;
+- treat the push journal as the sole recovery authority after the helper
+  authorizes it; never attempt to resume or recreate the consumed local
+  continuation once a journal exists;
 - use the helper's explicit `publish manual-check` capability to preserve a
   scope-safe unresolved reviewed head; never push it directly or represent it
   as validated;
@@ -180,6 +199,20 @@ For each schedule, confirm:
 - a curation cycle with no GitHub mutation remains a semantic follow-up in
   automation memory and is selected first on the next run only while its exact
   PR/head remains eligible;
+- a deterministic validation failure leaves an exact resumable continuation,
+  and a successor run on the same prepare-time base returns `validation-only`
+  without repeating semantic review;
+- clean movement of `main` replays the one reviewed squash and returns
+  `review-required`; exactly one fresh full review is completed before any new
+  validation or publication;
+- an allowlisted replay conflict returns only its bounded paths, survives an
+  interrupted attempt by being recreated from immutable refs in a clean
+  successor worktree, and reaches `review-required` only after helper-owned
+  completion;
+- remote PR-head drift, missing/tampered checkpoint refs, a disallowed conflict,
+  or an unrelated staged file stops without push; and
+- push authorization consumes the continuation before external mutation, after
+  which inspection and recovery expose only the matching push journal;
 - multi-paragraph owner-decision and blocked summaries publish successfully,
   while unsafe controls and reserved comment markers still fail closed;
 - proposal validation accepts an explicitly reported same-kind re-key but still

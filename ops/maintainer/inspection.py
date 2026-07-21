@@ -21,7 +21,12 @@ from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
 from ops.maintainer.intent import CATALOG_SECTIONS, is_allowed_curation_path
 from ops.maintainer.models import PullRequest
 from ops.maintainer.publication import trusted_hold_head, trusted_machine_state
-from ops.maintainer.state import PushJournal, PushPhase
+from ops.maintainer.state import (
+    ContinuationValidationStatus,
+    PushJournal,
+    PushPhase,
+    ReviewedContinuation,
+)
 
 _SELECTION_HOLD_LABELS = frozenset(
     {
@@ -75,6 +80,19 @@ class CurationCandidate(_InspectionModel):
 class CurationInventory(_InspectionModel):
     eligible: tuple[CurationCandidate, ...] = ()
     unresolved_pushes: tuple[PushJournal, ...] = ()
+    reviewed_continuations: tuple[ReviewedContinuationSummary, ...] = ()
+
+
+class ReviewedContinuationSummary(_InspectionModel):
+    pr_number: int = Field(gt=0)
+    selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    base_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    report_path: str = Field(
+        pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$"
+    )
+    validation_status: ContinuationValidationStatus
+    resumable: bool
 
 
 class ProposalSummary(_InspectionModel):
@@ -121,11 +139,13 @@ def inspect_curation(
     pull_requests: Iterable[PullRequest],
     comments_by_pr: Mapping[int, Sequence[GitHubComment]],
     unresolved_pushes: Sequence[PushJournal] = (),
+    reviewed_continuations: Sequence[ReviewedContinuation] = (),
 ) -> CurationInventory:
     journals = _normalize_journals(unresolved_pushes)
     if journals:
         return CurationInventory(unresolved_pushes=journals)
     pull_requests = _deduplicate_pull_requests(pull_requests)
+    pull_requests_by_number = {item.number: item for item in pull_requests}
 
     eligible = tuple(
         sorted(
@@ -140,7 +160,30 @@ def inspect_curation(
             key=lambda pull_request: pull_request.number,
         )
     )
-    return CurationInventory(eligible=eligible)
+    summaries = tuple(
+        ReviewedContinuationSummary(
+            pr_number=continuation.pr_number,
+            selected_head=continuation.selected_head,
+            reviewed_head=continuation.reviewed_head,
+            base_head=continuation.sync.base_head,
+            report_path=continuation.report_path,
+            validation_status=continuation.validation_status,
+            resumable=_is_resumable_continuation(
+                continuation,
+                pull_requests_by_number.get(continuation.pr_number),
+                comments_by_pr.get(continuation.pr_number, ()),
+            ),
+        )
+        for continuation in sorted(
+            reviewed_continuations,
+            key=lambda item: item.pr_number,
+        )
+        if continuation.pr_number in pull_requests_by_number
+    )
+    return CurationInventory(
+        eligible=eligible,
+        reviewed_continuations=summaries,
+    )
 
 
 def inspect_discovery(
@@ -302,6 +345,19 @@ def _is_safe_curation_candidate(
         return True
     hold_head = trusted_hold_head(pull_request, comments)
     return hold_head is not None and hold_head != pull_request.head_sha
+
+
+def _is_resumable_continuation(
+    continuation: ReviewedContinuation,
+    pull_request: PullRequest | None,
+    comments: Sequence[GitHubComment],
+) -> bool:
+    return (
+        pull_request is not None
+        and continuation.selected_head == pull_request.head_sha
+        and pull_request.labels.isdisjoint(_SELECTION_HOLD_LABELS)
+        and _is_safe_curation_candidate(pull_request, comments)
+    )
 
 
 def _proposal_summary(

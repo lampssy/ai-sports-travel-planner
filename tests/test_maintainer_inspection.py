@@ -8,6 +8,7 @@ import pytest
 
 from ops.maintainer import SUMMARY_MARKER
 from ops.maintainer.errors import MaintainerError
+from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.github import GitHubComment
 from ops.maintainer.inspection import (
     catalog_entity_keys,
@@ -16,12 +17,19 @@ from ops.maintainer.inspection import (
 )
 from ops.maintainer.models import MachineState, OutcomeState, PullRequest
 from ops.maintainer.publication import render_machine_state, render_outcome_state
-from ops.maintainer.state import PushJournal, PushPhase
+from ops.maintainer.state import (
+    ContinuationStatus,
+    ContinuationValidationStatus,
+    PushJournal,
+    PushPhase,
+    ReviewedContinuation,
+)
 
 pytestmark = pytest.mark.db_free
 
 SHA_A = "a" * 40
 SHA_B = "b" * 40
+SHA_C = "c" * 40
 
 
 def _pull_request(number: int = 42, **overrides: object) -> PullRequest:
@@ -102,6 +110,93 @@ def _journal(
         new_head=new_head,
         phase=phase,
     )
+
+
+def _continuation(
+    *,
+    pr_number: int = 42,
+    selected_head: str = SHA_A,
+    reviewed_head: str = SHA_B,
+    validation_status: ContinuationValidationStatus = (
+        ContinuationValidationStatus.FAILED
+    ),
+) -> ReviewedContinuation:
+    sync = GuardedSyncResult(
+        target_branch=f"codex/catalog-{pr_number}",
+        original_head=selected_head,
+        rebased_head=SHA_C,
+        backup_ref=f"refs/maintainer-backups/pr-{pr_number}",
+        prepared_ref=f"refs/maintainer-prepared/pr-{pr_number}",
+        base_head=SHA_C,
+        merge_base=SHA_C,
+    )
+    return ReviewedContinuation(
+        work_id=f"curation-pr-{pr_number}",
+        origin_run_id="1" * 32,
+        recovery_run_id="2" * 32,
+        updated_at=datetime(2026, 7, 8, 10, tzinfo=UTC),
+        pr_number=pr_number,
+        selected_head=selected_head,
+        reviewed_head=reviewed_head,
+        report_path=f"docs/catalog-curation/pr-{pr_number}.json",
+        sync=sync,
+        reviewed_ref=(
+            f"refs/snowcast-maintainer/reviewed/pr-{pr_number}/"
+            f"{selected_head[:12]}-{reviewed_head[:12]}"
+        ),
+        squash_ref=(
+            f"refs/snowcast-maintainer/continuations/pr-{pr_number}/"
+            f"{SHA_C[:12]}-{reviewed_head[:12]}"
+        ),
+        status=ContinuationStatus.AVAILABLE,
+        validation_status=validation_status,
+    )
+
+
+def test_curation_inventory_exposes_only_safe_continuation_summary() -> None:
+    continuation = _continuation()
+    pull_request = _pull_request()
+
+    inventory = inspect_curation(
+        (pull_request, _pull_request(43)),
+        {},
+        (),
+        (continuation,),
+    )
+
+    assert inventory.reviewed_continuations[0].model_dump(mode="json") == {
+        "pr_number": 42,
+        "selected_head": SHA_A,
+        "reviewed_head": SHA_B,
+        "base_head": SHA_C,
+        "report_path": "docs/catalog-curation/pr-42.json",
+        "validation_status": "failed",
+        "resumable": True,
+    }
+    assert [candidate.number for candidate in inventory.eligible] == [42, 43]
+    serialized = json.dumps(inventory.model_dump(mode="json"))
+    assert continuation.origin_run_id not in serialized
+    assert continuation.reviewed_ref not in serialized
+
+
+def test_curation_continuation_stays_visible_but_paused_and_yields_to_journal() -> None:
+    continuation = _continuation()
+    pull_request = _pull_request(
+        labels=frozenset({"lane:catalog-curation", "maintainer:blocked"})
+    )
+
+    paused = inspect_curation((pull_request,), {}, (), (continuation,))
+    recovery = inspect_curation(
+        (pull_request,),
+        {},
+        (_journal(),),
+        (continuation,),
+    )
+
+    assert paused.eligible == ()
+    assert paused.reviewed_continuations[0].resumable is False
+    assert recovery.reviewed_continuations == ()
+    assert len(recovery.unresolved_pushes) == 1
 
 
 def test_curation_inventory_filters_objective_scope_and_orders_by_number() -> None:

@@ -19,6 +19,7 @@ from ops.maintainer.errors import (
     MaintainerError,
 )
 from ops.maintainer.git_ops import (
+    ContinuationReplayResult,
     GitAuthenticationError,
     GitOperationTimeoutError,
     GitPushRejectedError,
@@ -28,6 +29,7 @@ from ops.maintainer.git_ops import (
     IntentDriftError,
     RebaseConflictError,
     RepositorySafetyError,
+    ReviewedCheckpointRefs,
     StaleRemoteHeadError,
 )
 from ops.maintainer.github import (
@@ -63,8 +65,11 @@ from ops.maintainer.runtime import (
     RunLeaseError,
 )
 from ops.maintainer.state import (
+    ContinuationStatus,
+    ContinuationValidationStatus,
     PushJournal,
     PushPhase,
+    ReviewedContinuation,
     RunOutcome,
     StateStore,
     StateStoreError,
@@ -139,7 +144,7 @@ def _work_id_for_candidate(candidate_key: str) -> str:
 
 def _current_time(
     dependencies: Dependencies,
-    existing: WorkState | None = None,
+    existing: WorkState | ReviewedContinuation | None = None,
 ) -> datetime:
     observed = dependencies.now()
     if observed.tzinfo is None or observed.utcoffset() is None:
@@ -209,6 +214,7 @@ def handle_inspect_curation(
         pull_requests,
         _comments_by_pr(dependencies.github, pull_requests),
         StateStore.list_unresolved_for_inspection(args.state_dir),
+        StateStore.list_continuations_for_inspection_path(args.state_dir),
     )
     dependencies.tracker.terminal_reason = (
         "recovery-required" if inventory.unresolved_pushes else "inspected"
@@ -270,6 +276,25 @@ def handle_prepare_curation(
     dependencies.tracker.stage = ErrorStage.PREPARE
     pull_request = dependencies.github.get_pull_request(args.pr)
     _require_exact_curation_candidate(pull_request, dependencies, store)
+    continuation = store.load_continuation(work_id)
+    if continuation is not None and continuation.status not in {
+        ContinuationStatus.CONSUMED,
+        ContinuationStatus.INVALIDATED,
+    }:
+        if continuation.selected_head == pull_request.head_sha:
+            raise MaintainerError(
+                ErrorReason.CONTINUATION_REQUIRED,
+                ErrorStage.PREPARE,
+            )
+        if continuation.recovery_run_id != lease.run_id:
+            continuation = store.adopt_continuation(work_id, lease)
+        invalidated = continuation.model_copy(
+            update={
+                "status": ContinuationStatus.INVALIDATED,
+                "updated_at": _current_time(dependencies, continuation),
+            }
+        )
+        store.save_continuation(invalidated, lease)
     selected = WorkState(
         work_id=work_id,
         worker="curation",
@@ -296,6 +321,323 @@ def handle_prepare_curation(
     dependencies.tracker.last_phase = WorkPhase.PREPARED
     dependencies.tracker.terminal_reason = "prepared"
     return {"work_id": work_id, "prepared": sync.model_dump(mode="json")}
+
+
+def _checkpoint_refs(continuation: ReviewedContinuation) -> ReviewedCheckpointRefs:
+    return ReviewedCheckpointRefs(
+        reviewed_ref=continuation.reviewed_ref,
+        squash_ref=continuation.squash_ref,
+    )
+
+
+def _new_reviewed_continuation(
+    *,
+    work: WorkState,
+    lease: RunLease,
+    report_path: str,
+    refs: ReviewedCheckpointRefs,
+    dependencies: Dependencies,
+    origin_run_id: str | None = None,
+    previous: ReviewedContinuation | None = None,
+) -> ReviewedContinuation:
+    if work.pr_number is None or work.sync is None or work.reviewed_head is None:
+        raise StateStoreError("reviewed curation facts are incomplete")
+    return ReviewedContinuation(
+        work_id=work.work_id,
+        origin_run_id=origin_run_id or lease.run_id,
+        recovery_run_id=lease.run_id,
+        updated_at=_current_time(dependencies, previous),
+        pr_number=work.pr_number,
+        selected_head=work.selected_head,
+        reviewed_head=work.reviewed_head,
+        report_path=report_path,
+        sync=work.sync,
+        reviewed_ref=refs.reviewed_ref,
+        squash_ref=refs.squash_ref,
+        status=ContinuationStatus.AVAILABLE,
+        validation_status=ContinuationValidationStatus.NOT_RUN,
+    )
+
+
+def handle_validate_reviewed(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    lease = _owned_lease(args, "curation", dependencies)
+    store = _state_store(args)
+    work_id = _work_id_for_pr(args.pr)
+    dependencies.tracker.work_id = work_id
+    dependencies.tracker.pr_number = args.pr
+    dependencies.tracker.stage = ErrorStage.VALIDATE
+    pull_request = dependencies.github.get_pull_request(args.pr)
+    existing_continuation = store.load_continuation(work_id)
+    work = store.load_work(work_id)
+    if work is None or work.worker != "curation" or work.pr_number != args.pr:
+        raise StateStoreError("reviewed curation work is missing")
+    if args.adopt_existing:
+        if existing_continuation is not None:
+            raise StateStoreError("reviewed continuation already exists")
+        if (
+            work.phase is not WorkPhase.REVIEWED
+            or work.reviewed_head != args.reviewed_head
+        ):
+            raise StateStoreError("legacy reviewed work does not match request")
+    else:
+        if work.run_id != lease.run_id:
+            raise LeaseOwnershipError("work state belongs to another run")
+        if work.phase not in {WorkPhase.PREPARED, WorkPhase.REVIEWED}:
+            raise StateStoreError("curation work is not ready for review checkpoint")
+        if (
+            work.phase is WorkPhase.REVIEWED
+            and work.reviewed_head != args.reviewed_head
+        ):
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
+    if work.sync is None:
+        raise StateStoreError("reviewed curation sync facts are missing")
+    if (
+        not args.adopt_existing
+        and work.phase is WorkPhase.REVIEWED
+        and existing_continuation is not None
+        and existing_continuation.recovery_run_id == lease.run_id
+        and existing_continuation.selected_head == work.selected_head
+        and existing_continuation.reviewed_head == args.reviewed_head
+        and existing_continuation.report_path == args.report
+        and existing_continuation.sync == work.sync
+        and existing_continuation.status
+        not in {ContinuationStatus.CONSUMED, ContinuationStatus.INVALIDATED}
+    ):
+        dependencies.repository.revalidate_reviewed_checkpoint(
+            pull_request,
+            work.sync,
+            args.reviewed_head,
+            _checkpoint_refs(existing_continuation),
+        )
+        dependencies.tracker.last_phase = WorkPhase.REVIEWED
+        dependencies.tracker.terminal_reason = "already-checkpointed"
+        return {
+            "work_id": work_id,
+            "continuation": {
+                "result": "already-checkpointed",
+                "reviewed_head": args.reviewed_head,
+                "report_path": args.report,
+            },
+        }
+    snapshot = dependencies.repository.revalidate_prepared_result(
+        pull_request,
+        work.sync,
+        args.reviewed_head,
+    )
+    try:
+        require_single_curation_report_path(snapshot, args.report)
+    except ValueError:
+        raise MaintainerError(
+            ErrorReason.INVALID_COMMAND,
+            ErrorStage.VALIDATE,
+            detail="Review checkpoint requires the single changed report",
+        ) from None
+    refs = dependencies.repository.checkpoint_reviewed_continuation(
+        pull_request,
+        work.sync,
+        args.reviewed_head,
+    )
+    if work.phase is WorkPhase.PREPARED:
+        work = _advance_work(
+            store,
+            lease,
+            work,
+            dependencies,
+            WorkPhase.REVIEWED,
+            reviewed_head=args.reviewed_head,
+        )
+    continuation = _new_reviewed_continuation(
+        work=work,
+        lease=lease,
+        report_path=args.report,
+        refs=refs,
+        dependencies=dependencies,
+        origin_run_id=(
+            work.run_id
+            if args.adopt_existing
+            else existing_continuation.origin_run_id
+            if existing_continuation is not None
+            and existing_continuation.status is ContinuationStatus.RESOLVING
+            else None
+        ),
+        previous=existing_continuation,
+    )
+    if args.adopt_existing:
+        store.save_adopted_continuation(continuation, lease)
+    elif (
+        existing_continuation is not None
+        and existing_continuation.status is ContinuationStatus.RESOLVING
+    ):
+        store.replace_resolved_continuation(continuation, lease)
+    elif existing_continuation is None:
+        store.save_continuation(continuation, lease)
+    elif existing_continuation.status in {
+        ContinuationStatus.CONSUMED,
+        ContinuationStatus.INVALIDATED,
+    }:
+        store.save_continuation(continuation, lease)
+    elif existing_continuation != continuation:
+        raise StateStoreError("active continuation does not match reviewed checkpoint")
+    dependencies.tracker.mutation_occurred = True
+    dependencies.tracker.last_phase = WorkPhase.REVIEWED
+    dependencies.tracker.terminal_reason = "reviewed-checkpointed"
+    return {
+        "work_id": work_id,
+        "continuation": {
+            "result": "checkpointed",
+            "reviewed_head": args.reviewed_head,
+            "report_path": args.report,
+        },
+    }
+
+
+def _begin_continuation_work(
+    *,
+    store: StateStore,
+    lease: RunLease,
+    continuation: ReviewedContinuation,
+    pull_request: PullRequest,
+    replay: ContinuationReplayResult,
+    dependencies: Dependencies,
+    reviewed: bool,
+) -> WorkState:
+    existing_work = store.load_work(continuation.work_id)
+    selected = WorkState(
+        work_id=continuation.work_id,
+        worker="curation",
+        run_id=lease.run_id,
+        phase=WorkPhase.SELECTED,
+        updated_at=_current_time(dependencies, existing_work),
+        pr_number=continuation.pr_number,
+        selected_head=pull_request.head_sha,
+    )
+    store.begin_work(selected, lease)
+    if replay.sync is None or replay.head is None:
+        raise StateStoreError("continuation replay omitted prepared facts")
+    prepared = _advance_work(
+        store,
+        lease,
+        selected,
+        dependencies,
+        WorkPhase.PREPARED,
+        prepared_head=replay.head,
+        backup_ref=replay.sync.backup_ref,
+        sync=replay.sync,
+    )
+    if not reviewed:
+        return prepared
+    return _advance_work(
+        store,
+        lease,
+        prepared,
+        dependencies,
+        WorkPhase.REVIEWED,
+        reviewed_head=replay.head,
+    )
+
+
+def handle_prepare_continuation(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    lease = _owned_lease(args, "curation", dependencies)
+    store = _state_store(args)
+    work_id = _work_id_for_pr(args.pr)
+    dependencies.tracker.work_id = work_id
+    dependencies.tracker.pr_number = args.pr
+    dependencies.tracker.stage = ErrorStage.PREPARE
+    continuation = store.load_continuation(work_id)
+    if continuation is None or continuation.status in {
+        ContinuationStatus.CONSUMED,
+        ContinuationStatus.INVALIDATED,
+    }:
+        raise StateStoreError("resumable reviewed continuation is missing")
+    pull_request = dependencies.github.get_pull_request(args.pr)
+    _require_exact_curation_candidate(pull_request, dependencies, store)
+    if pull_request.head_sha != continuation.selected_head:
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PREPARE)
+    if continuation.recovery_run_id != lease.run_id:
+        if args.continue_conflict:
+            raise LeaseOwnershipError("interrupted conflict must be recreated")
+        continuation = store.adopt_continuation(work_id, lease)
+    refs = _checkpoint_refs(continuation)
+    if args.continue_conflict:
+        if continuation.status is not ContinuationStatus.RESOLVING:
+            raise StateStoreError("continuation conflict is not active")
+        replay = dependencies.repository.continue_reviewed_conflict(
+            pull_request,
+            continuation.sync,
+            continuation.reviewed_head,
+            refs,
+        )
+    else:
+        replay = dependencies.repository.prepare_reviewed_continuation(
+            pull_request,
+            continuation.sync,
+            continuation.reviewed_head,
+            refs,
+        )
+    if replay.result == "unchanged":
+        work = _begin_continuation_work(
+            store=store,
+            lease=lease,
+            continuation=continuation,
+            pull_request=pull_request,
+            replay=replay,
+            dependencies=dependencies,
+            reviewed=True,
+        )
+        dependencies.tracker.last_phase = work.phase
+        dependencies.tracker.terminal_reason = "continuation-validation-only"
+        return {
+            "work_id": work_id,
+            "continuation": {
+                "result": "validation-only",
+                "reviewed_head": continuation.reviewed_head,
+                "report_path": continuation.report_path,
+            },
+        }
+    resolving = continuation.model_copy(
+        update={
+            "status": ContinuationStatus.RESOLVING,
+            "validation_status": ContinuationValidationStatus.NOT_RUN,
+            "updated_at": _current_time(dependencies, continuation),
+        }
+    )
+    store.save_continuation(resolving, lease)
+    dependencies.tracker.mutation_occurred = True
+    if replay.result == "conflict":
+        dependencies.tracker.terminal_reason = "continuation-conflict"
+        return {
+            "work_id": work_id,
+            "continuation": {
+                "result": "conflict-resolution-required",
+                "base_head": replay.base_head,
+                "conflict_paths": list(replay.conflict_paths),
+            },
+        }
+    work = _begin_continuation_work(
+        store=store,
+        lease=lease,
+        continuation=resolving,
+        pull_request=pull_request,
+        replay=replay,
+        dependencies=dependencies,
+        reviewed=False,
+    )
+    dependencies.tracker.last_phase = work.phase
+    dependencies.tracker.terminal_reason = "continuation-review-required"
+    return {
+        "work_id": work_id,
+        "continuation": {
+            "result": "review-required",
+            "prepared_head": replay.head,
+            "report_path": continuation.report_path,
+        },
+    }
 
 
 def _load_work_for_run(
@@ -362,6 +704,26 @@ def handle_validate_curation(
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request.head_sha != work.selected_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
+    continuation = store.load_continuation(work_id)
+    if (
+        continuation is None
+        or continuation.recovery_run_id != lease.run_id
+        or continuation.pr_number != args.pr
+        or continuation.selected_head != work.selected_head
+        or continuation.reviewed_head != args.reviewed_head
+        or continuation.report_path != args.report
+        or continuation.sync != work.sync
+        or continuation.status
+        in {ContinuationStatus.CONSUMED, ContinuationStatus.INVALIDATED}
+    ):
+        raise StateStoreError("exact reviewed continuation is required")
+    assert work.sync is not None
+    dependencies.repository.revalidate_reviewed_checkpoint(
+        pull_request,
+        work.sync,
+        args.reviewed_head,
+        _checkpoint_refs(continuation),
+    )
     base_repository = dependencies.base_repository or GitRepository(
         args.base_dir.resolve()
     )
@@ -381,6 +743,16 @@ def handle_validate_curation(
             repository=dependencies.repository,
             base_repository=base_repository,
         )
+        if continuation.status is not ContinuationStatus.VALIDATED:
+            continuation = continuation.model_copy(
+                update={
+                    "status": ContinuationStatus.VALIDATED,
+                    "validation_status": ContinuationValidationStatus.PASSED,
+                    "updated_at": _current_time(dependencies, continuation),
+                }
+            )
+            store.save_continuation(continuation, lease)
+            dependencies.tracker.mutation_occurred = True
         dependencies.tracker.last_phase = WorkPhase.VALIDATED
         dependencies.tracker.terminal_reason = "already_validated"
         return {
@@ -390,27 +762,30 @@ def handle_validate_curation(
                 "validated_head": work.validated_head,
             },
         }
-    if work.phase not in {WorkPhase.PREPARED, WorkPhase.REVIEWED} or work.sync is None:
-        raise StateStoreError("curation work is not prepared for validation")
-    if work.phase is WorkPhase.PREPARED:
-        work = _advance_work(
-            store,
-            lease,
-            work,
-            dependencies,
-            WorkPhase.REVIEWED,
-            reviewed_head=args.reviewed_head,
-        )
-    elif work.reviewed_head != args.reviewed_head:
+    if work.phase is not WorkPhase.REVIEWED or work.sync is None:
+        raise StateStoreError("curation work is not checkpointed for validation")
+    if work.reviewed_head != args.reviewed_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
-    result = dependencies.curation_validator(
-        pull_request=pull_request,
-        sync=work.sync,
-        reviewed_head=args.reviewed_head,
-        report_path=args.report,
-        repository=dependencies.repository,
-        base_repository=base_repository,
-    )
+    try:
+        result = dependencies.curation_validator(
+            pull_request=pull_request,
+            sync=work.sync,
+            reviewed_head=args.reviewed_head,
+            report_path=args.report,
+            repository=dependencies.repository,
+            base_repository=base_repository,
+        )
+    except Exception:
+        failed = continuation.model_copy(
+            update={
+                "status": ContinuationStatus.AVAILABLE,
+                "validation_status": ContinuationValidationStatus.FAILED,
+                "updated_at": _current_time(dependencies, continuation),
+            }
+        )
+        store.save_continuation(failed, lease)
+        dependencies.tracker.mutation_occurred = True
+        raise
     work = _advance_work(
         store,
         lease,
@@ -421,6 +796,14 @@ def handle_validate_curation(
         report_path=args.report,
         resulting_graph_markdown=result.resulting_graph_markdown,
     )
+    validated = continuation.model_copy(
+        update={
+            "status": ContinuationStatus.VALIDATED,
+            "validation_status": ContinuationValidationStatus.PASSED,
+            "updated_at": _current_time(dependencies, continuation),
+        }
+    )
+    store.save_continuation(validated, lease)
     dependencies.tracker.terminal_reason = "validated"
     return {
         "work_id": work_id,
@@ -580,6 +963,40 @@ def _advance_curation_push(
     return journal
 
 
+def _consume_continuation_for_journal(
+    *,
+    store: StateStore,
+    lease: RunLease,
+    work: WorkState,
+    expected_head: str,
+    dependencies: Dependencies,
+    require_validated: bool,
+) -> None:
+    continuation = store.load_continuation(work.work_id)
+    allowed_statuses = (
+        {ContinuationStatus.VALIDATED}
+        if require_validated
+        else {ContinuationStatus.AVAILABLE}
+    )
+    if (
+        continuation is None
+        or continuation.recovery_run_id != lease.run_id
+        or continuation.status not in allowed_statuses
+        or continuation.selected_head != work.selected_head
+        or continuation.reviewed_head != expected_head
+        or continuation.sync != work.sync
+    ):
+        raise StateStoreError("matching reviewed continuation is required")
+    consumed = continuation.model_copy(
+        update={
+            "status": ContinuationStatus.CONSUMED,
+            "updated_at": _current_time(dependencies, continuation),
+        }
+    )
+    store.save_continuation(consumed, lease)
+    dependencies.tracker.mutation_occurred = True
+
+
 def handle_publish_push(
     args: argparse.Namespace,
     dependencies: Dependencies,
@@ -602,6 +1019,14 @@ def handle_publish_push(
         journal = _matching_curation_journal(work, lease, work.validated_head)
         store.save_push(journal, lease)
         dependencies.tracker.mutation_occurred = True
+        _consume_continuation_for_journal(
+            store=store,
+            lease=lease,
+            work=work,
+            expected_head=work.validated_head,
+            dependencies=dependencies,
+            require_validated=True,
+        )
     elif journal.recovery_run_id != lease.run_id:
         raise LeaseOwnershipError("push journal belongs to another run")
     journal = _advance_curation_push(store, lease, journal, work, dependencies)
@@ -673,19 +1098,37 @@ def handle_publish_manual_check(
     if not journal_matches_request:
         work = _load_work_for_run(store, work_id, lease)
         if (
-            work.phase not in {WorkPhase.PREPARED, WorkPhase.REVIEWED}
+            work.phase is not WorkPhase.REVIEWED
             or work.sync is None
             or work.validated_head is not None
+            or work.reviewed_head != args.reviewed_head
         ):
             raise StateStoreError("manual-check publication requires reviewed work")
+        continuation = store.load_continuation(work_id)
+        if (
+            continuation is None
+            or continuation.recovery_run_id != lease.run_id
+            or continuation.status is not ContinuationStatus.AVAILABLE
+            or continuation.selected_head != work.selected_head
+            or continuation.reviewed_head != args.reviewed_head
+            or continuation.sync != work.sync
+        ):
+            raise StateStoreError(
+                "manual-check publication requires exact reviewed continuation"
+            )
+        if continuation.report_path != args.report:
+            raise PublicationInputError(
+                "manual-check report must match the reviewed checkpoint"
+            )
         pull_request = dependencies.github.get_pull_request(args.pr)
         if pull_request.head_sha != work.selected_head:
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
-        if (
-            work.phase is WorkPhase.REVIEWED
-            and args.reviewed_head != work.reviewed_head
-        ):
-            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
+        dependencies.repository.revalidate_reviewed_checkpoint(
+            pull_request,
+            work.sync,
+            args.reviewed_head,
+            _checkpoint_refs(continuation),
+        )
         snapshot = dependencies.repository.revalidate_prepared_result(
             pull_request,
             work.sync,
@@ -697,15 +1140,6 @@ def handle_publish_manual_check(
             raise PublicationInputError(
                 "manual-check report must be the single changed curation report"
             ) from None
-        if work.phase is WorkPhase.PREPARED:
-            work = _advance_work(
-                store,
-                lease,
-                work,
-                dependencies,
-                WorkPhase.REVIEWED,
-                reviewed_head=args.reviewed_head,
-            )
         journal = _matching_curation_journal(
             work,
             lease,
@@ -715,6 +1149,14 @@ def handle_publish_manual_check(
         )
         store.save_push(journal, lease)
         dependencies.tracker.mutation_occurred = True
+        _consume_continuation_for_journal(
+            store=store,
+            lease=lease,
+            work=work,
+            expected_head=args.reviewed_head,
+            dependencies=dependencies,
+            require_validated=False,
+        )
     elif journal is None:
         raise StateStoreError("matching push journal is missing")
 
@@ -1218,7 +1660,9 @@ HANDLERS: dict[tuple[str, str], Handler] = {
     ("inspect", "curation"): handle_inspect_curation,
     ("inspect", "discovery"): handle_inspect_discovery,
     ("prepare", "curation"): handle_prepare_curation,
+    ("prepare", "continuation"): handle_prepare_continuation,
     ("validate", "curation"): handle_validate_curation,
+    ("validate", "reviewed"): handle_validate_reviewed,
     ("validate", "proposal"): handle_validate_proposal,
     ("publish", "push"): handle_publish_push,
     ("publish", "manual-check"): handle_publish_manual_check,

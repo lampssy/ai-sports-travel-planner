@@ -10,8 +10,11 @@ from pydantic import ValidationError
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.runtime import LeaseOwnershipError, RunLease
 from ops.maintainer.state import (
+    ContinuationStatus,
+    ContinuationValidationStatus,
     PushJournal,
     PushPhase,
+    ReviewedContinuation,
     RunOutcome,
     StateStore,
     StateStoreError,
@@ -112,10 +115,157 @@ def _journal(
     )
 
 
-def _write_model(path: Path, model: WorkState | PushJournal) -> None:
+def _continuation(
+    lease: RunLease,
+    *,
+    status: ContinuationStatus = ContinuationStatus.AVAILABLE,
+    validation_status: ContinuationValidationStatus = (
+        ContinuationValidationStatus.NOT_RUN
+    ),
+    updated_at: datetime = NOW,
+) -> ReviewedContinuation:
+    reviewed = _work_state(lease, WorkPhase.REVIEWED, updated_at=updated_at)
+    assert reviewed.sync is not None
+    return ReviewedContinuation(
+        work_id=reviewed.work_id,
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        updated_at=updated_at,
+        pr_number=42,
+        selected_head=SHA_1,
+        reviewed_head=SHA_3,
+        report_path="docs/catalog-curation/fr-les-arcs.json",
+        sync=reviewed.sync,
+        reviewed_ref=(
+            f"refs/snowcast-maintainer/reviewed/pr-42/{SHA_1[:12]}-{SHA_3[:12]}"
+        ),
+        squash_ref=(
+            f"refs/snowcast-maintainer/continuations/pr-42/{SHA_4[:12]}-{SHA_3[:12]}"
+        ),
+        status=status,
+        validation_status=validation_status,
+    )
+
+
+def _write_model(
+    path: Path,
+    model: WorkState | PushJournal | ReviewedContinuation,
+) -> None:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     path.write_text(model.model_dump_json(indent=2) + "\n", encoding="utf-8")
     path.chmod(0o600)
+
+
+def test_reviewed_continuation_is_strict_and_requires_exact_facts() -> None:
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
+    continuation = _continuation(lease)
+
+    with pytest.raises(ValidationError, match="frozen"):
+        continuation.status = ContinuationStatus.CONSUMED
+    with pytest.raises(ValidationError):
+        ReviewedContinuation.model_validate(
+            {**continuation.model_dump(), "unexpected": True}
+        )
+    with pytest.raises(ValidationError):
+        ReviewedContinuation.model_validate(
+            {**continuation.model_dump(), "reviewed_head": "ABC"}
+        )
+    with pytest.raises(ValidationError):
+        ReviewedContinuation.model_validate(
+            {**continuation.model_dump(), "pr_number": 43}
+        )
+
+
+def test_successor_adopts_available_continuation_and_fences_origin(
+    tmp_path: Path,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    continuation = _continuation(origin)
+    store.save_continuation(continuation, origin)
+    successor = RunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(hours=7),
+    )
+
+    adopted = store.adopt_continuation("curation-pr-42", successor)
+
+    assert adopted.origin_run_id == origin.run_id
+    assert adopted.recovery_run_id == successor.run_id
+    assert adopted.updated_at > continuation.updated_at
+    assert store.load_continuation("curation-pr-42") == adopted
+    with pytest.raises(LeaseOwnershipError):
+        store.save_continuation(continuation, origin)
+
+
+def test_continuation_persistence_is_private_and_lists_only_active_records(
+    tmp_path: Path,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    active = _continuation(lease)
+    store.save_continuation(active, lease)
+    terminal = _continuation(
+        lease,
+        status=ContinuationStatus.CONSUMED,
+        validation_status=ContinuationValidationStatus.PASSED,
+        updated_at=NOW + timedelta(minutes=1),
+    )
+    _write_model(
+        tmp_path / "continuations" / "curation-pr-99.json",
+        terminal.model_copy(
+            update={
+                "work_id": "curation-pr-99",
+                "pr_number": 99,
+                "reviewed_ref": terminal.reviewed_ref.replace("pr-42", "pr-99"),
+                "squash_ref": terminal.squash_ref.replace("pr-42", "pr-99"),
+            }
+        ),
+    )
+
+    assert store.list_continuations_for_inspection() == (active,)
+    path = tmp_path / "continuations" / "curation-pr-42.json"
+    assert path.stat().st_mode & 0o777 == 0o600
+    assert path.parent.stat().st_mode & 0o777 == 0o700
+
+
+def test_continuation_rejects_immutable_drift_and_illegal_transitions(
+    tmp_path: Path,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    continuation = _continuation(lease)
+    store.save_continuation(continuation, lease)
+
+    with pytest.raises(StateStoreError, match="immutable"):
+        store.save_continuation(
+            continuation.model_copy(
+                update={
+                    "reviewed_head": SHA_4,
+                    "updated_at": NOW + timedelta(minutes=1),
+                }
+            ),
+            lease,
+        )
+    store.save_continuation(
+        continuation.model_copy(
+            update={
+                "status": ContinuationStatus.INVALIDATED,
+                "updated_at": NOW + timedelta(minutes=1),
+            }
+        ),
+        lease,
+    )
+    with pytest.raises(StateStoreError, match="transition"):
+        store.save_continuation(
+            continuation.model_copy(
+                update={
+                    "updated_at": NOW + timedelta(minutes=2),
+                }
+            ),
+            lease,
+        )
 
 
 def _advance_work_to_validated(
