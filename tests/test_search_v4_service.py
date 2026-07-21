@@ -148,6 +148,7 @@ def _two_area_pass_catalog(
     pass_windows: tuple[CatalogSeasonWindow, ...],
     area_windows: Mapping[str, tuple[CatalogSeasonWindow, ...]],
     pass_trust_status: str = "verified",
+    pass_terrain_trust_status: str | None = None,
     area_trust_statuses: Mapping[str, str] | None = None,
 ) -> tuple[CatalogSnapshot, CatalogTrustManifest]:
     snapshot, manifest = _catalog_and_trust()
@@ -188,6 +189,11 @@ def _two_area_pass_catalog(
             "field_statuses": {
                 **dict(pass_entry.field_statuses),
                 "identity_scope_availability": pass_trust_status,
+                **(
+                    {"pass_accessible_terrain": pass_terrain_trust_status}
+                    if pass_terrain_trust_status is not None
+                    else {}
+                ),
             }
         }
     )
@@ -3278,6 +3284,42 @@ def test_candidate_generation_projects_full_and_partial_pass_coverage() -> None:
     assert summary.published_full_network_piste_km == (
         partial_records[0].selected_pass.pass_accessible_terrain.total_piste_km
     )
+
+
+@pytest.mark.parametrize("trust_status", ("estimated", "needs_source"))
+def test_pass_summary_does_not_publish_untrusted_full_network_terrain(
+    trust_status: str,
+) -> None:
+    pass_windows = (_season_window(date(2026, 12, 1), date(2027, 4, 30)),)
+    snapshot, manifest = _two_area_pass_catalog(
+        pass_windows=pass_windows,
+        area_windows={
+            "alta-badia-ski-area": pass_windows,
+            "lagazuoi-ski-area": (
+                _season_window(date(2026, 12, 1), date(2026, 12, 31)),
+            ),
+        },
+        pass_terrain_trust_status=trust_status,
+    )
+    records = _records_for_alta_badia_pass(
+        snapshot=snapshot,
+        manifest=manifest,
+        travel_window=TravelWindow(
+            start_date=date(2027, 1, 10),
+            end_date=date(2027, 1, 12),
+        ),
+    )
+
+    summary = search_v4_service._pass_summary(
+        records[0],
+        duration_days=3,
+        audience="adult",
+        season_label=None,
+        manifest=manifest,
+    )
+
+    assert summary.coverage_status == "partial"
+    assert summary.published_full_network_piste_km is None
 
 
 def test_candidate_generation_excludes_pass_when_all_areas_are_closed() -> None:

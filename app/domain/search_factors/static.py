@@ -971,8 +971,12 @@ def select_accessible_terrain_source(
         tuple[_NumericSource, Literal["pass", "terrain_domain", "ski_area"]]
     ] = []
     projection_warnings = pass_coverage.warnings if pass_coverage is not None else ()
-    limited_coverage = (
-        pass_coverage is not None and pass_coverage.coverage_status != "full"
+    pass_validity_unverified = (
+        pass_coverage is not None
+        and pass_coverage.validity_status not in {"confirmed", "not_constrained"}
+    )
+    limited_coverage = pass_coverage is not None and (
+        pass_coverage.coverage_status != "full" or pass_validity_unverified
     )
     aggregate = product.pass_accessible_terrain
     if (
@@ -1004,6 +1008,7 @@ def select_accessible_terrain_source(
         for domain in terrain_domains
         if domain.terrain_domain_id in product.terrain_domain_ids
         and domain.total_piste_km is not None
+        and not pass_validity_unverified
         and (
             not limited_coverage
             or set(domain.ski_area_ids).issubset(operating_area_ids)

@@ -2046,11 +2046,12 @@ def _pass_summary(
         or projection.validity_status == "inapplicable"
     ):
         raise ValueError("inapplicable pass coverage cannot be serialized")
+    trust_resolver = ManifestCatalogEvidenceResolver(manifest)
     terrain = select_accessible_terrain_source(
         product=product,
         ski_area=record.ski_area,
         terrain_domains=record.terrain_domains,
-        trust_resolver=ManifestCatalogEvidenceResolver(manifest),
+        trust_resolver=trust_resolver,
         pass_coverage=projection,
     )
     terrain_evidence = (
@@ -2103,7 +2104,15 @@ def _pass_summary(
         coverage_warning=" ".join(projection.warnings) or None,
         published_full_network_piste_km=(
             product.pass_accessible_terrain.total_piste_km
-            if product.pass_accessible_terrain is not None
+            if (
+                product.pass_accessible_terrain is not None
+                and trust_resolver.resolve(
+                    "lift_pass_products",
+                    product.lift_pass_product_id,
+                    "pass_accessible_terrain",
+                ).status
+                in {"verified", "verified_with_adjustment"}
+            )
             else None
         ),
     )

@@ -19,7 +19,11 @@ from app.domain.catalog import (
     StayDestination,
     TerrainDomain,
 )
-from app.domain.catalog_applicability import PassCoverageProjection, PassCoverageStatus
+from app.domain.catalog_applicability import (
+    PassCoverageProjection,
+    PassCoverageStatus,
+    PassValidityStatus,
+)
 from app.domain.search_factors.static import (
     NumericBounds,
     ResolvedCatalogEvidence,
@@ -193,6 +197,7 @@ def _context(intent: SearchIntent) -> StaticEvaluationContext:
 
 def _terrain_candidate(
     *,
+    validity_status: PassValidityStatus = "confirmed",
     coverage_status: PassCoverageStatus = "full",
     operating_ids: tuple[str, ...] = ("area", "other-area"),
     unavailable_ids: tuple[str, ...] = (),
@@ -224,7 +229,7 @@ def _terrain_candidate(
         else ()
     )
     projection = PassCoverageProjection(
-        validity_status="confirmed",
+        validity_status=validity_status,
         coverage_status=coverage_status,
         contract_covered_ski_area_ids=("area", "other-area", "closed-area"),
         operating_covered_ski_area_ids=operating_ids,
@@ -254,6 +259,52 @@ def test_accessible_terrain_preserves_pass_aggregate_for_full_coverage() -> None
     assert selection.value == 500
     assert selection.summary_scope == "pass"
     assert selection.warnings == ("coverage warning",)
+
+
+def test_accessible_terrain_does_not_use_full_network_for_unverified_pass_dates() -> (
+    None
+):
+    candidate = _terrain_candidate(
+        validity_status="unverified_for_requested_season",
+        include_domain=True,
+    )
+
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=VerifiedTrustResolver(),
+        pass_coverage=candidate.pass_coverage,
+    )
+
+    assert selection.value == 100
+    assert selection.summary_scope == "ski_area"
+    assert selection.warnings == (
+        "pass aggregate unavailable; selected ski-area terrain used",
+        "coverage warning",
+    )
+
+    registry = build_static_factor_registry()
+    context = _context(
+        SearchIntent(objectives=(SearchObjective(factor_id="pass_terrain_value"),))
+    )
+    terrain = registry.get("accessible_terrain_scale").evaluate(context, candidate)
+    value = registry.get("pass_terrain_value").evaluate(context, candidate)
+    bounds = derive_numeric_bounds(
+        candidates=(candidate,),
+        pass_duration_days=6,
+        pass_audience="adult",
+        pass_season_label="2026-2027",
+        trust_resolver=VerifiedTrustResolver(),
+    )
+
+    assert terrain.raw_value == 100
+    assert value.raw_value == pytest.approx(1 / 3)
+    assert bounds["accessible_terrain_scale"] == NumericBounds(100, 100)
+    assert bounds["pass_terrain_value"] == NumericBounds(
+        pytest.approx(1 / 3),
+        pytest.approx(1 / 3),
+    )
 
 
 def test_accessible_terrain_uses_wholly_operating_domain_when_partial() -> None:

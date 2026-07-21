@@ -1308,8 +1308,26 @@ def test_resulting_graph_renders_explicit_pass_validity_windows() -> None:
 
     assert (
         "Lift pass<br/>Example Local Pass"
-        "<br/>valid 2026-12-05 to 2027-04-11"
-        "<br/>valid 2027-10-02 to 2027-12-03"
+        "<br/>valid 2026-12-05 to 2027-04-11 (planned)"
+        "<br/>valid 2027-10-02 to 2027-12-03 (estimated)"
+    ) in graph
+
+
+def test_resulting_graph_marks_changed_to_empty_pass_validity_windows() -> None:
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+    payload = _pass_validity_report_payload()
+    payload["summary"] = "Removes the separately modeled pass window."
+    payload["changes"][0]["before"] = payload["changes"][0]["after"]
+    payload["changes"][0]["after"] = []
+    payload["evidence"][1]["normalization_note"] = (
+        "The reviewed report records removal of the prior modeled window."
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    graph = render_catalog_resulting_graph_markdown(report, catalog)
+
+    assert (
+        "Lift pass<br/>Example Local Pass<br/>no separate pass window modeled"
     ) in graph
 
 

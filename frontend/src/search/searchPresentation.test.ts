@@ -323,6 +323,22 @@ describe("trip essentials", () => {
     expect(passCoveragePresentation(configuration("full-coverage").selected_pass)).toBeNull();
   });
 
+  test("does not invent published terrain context when the backend omits it", () => {
+    const selectedPass = {
+      ...configuration("untrusted-published-terrain").selected_pass,
+      coverage_status: "partial" as const,
+      coverage_warning:
+        "Some areas covered by this pass are outside their operating season for your dates.",
+      published_full_network_piste_km: null,
+    };
+
+    expect(passCoveragePresentation(selectedPass)).toEqual({
+      warning:
+        "Some areas covered by this pass are outside their operating season for your dates.",
+      publishedTerrainContext: null,
+    });
+  });
+
   test("does not expose an unknown access-mode identifier", () => {
     const unknownAccess = configuration("unknown-access", {
       access: {

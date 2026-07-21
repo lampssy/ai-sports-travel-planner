@@ -1714,7 +1714,11 @@ def _mermaid_edge_label(value: str) -> str:
     return escape(value, quote=True)
 
 
-def _mermaid_pass_label(product: LiftPassProduct) -> str:
+def _mermaid_pass_label(
+    product: LiftPassProduct,
+    *,
+    no_separate_window_modeled: bool,
+) -> str:
     label = _mermaid_label("Lift pass", product.name)
     for window in sorted(
         product.validity_windows,
@@ -1722,8 +1726,10 @@ def _mermaid_pass_label(product: LiftPassProduct) -> str:
     ):
         label += (
             f"<br/>valid {window.start_date.isoformat()} to "
-            f"{window.end_date.isoformat()}"
+            f"{window.end_date.isoformat()} ({window.status})"
         )
+    if no_separate_window_modeled:
+        label += "<br/>no separate pass window modeled"
     return label
 
 
@@ -1746,6 +1752,13 @@ def render_catalog_resulting_graph_markdown(
     }
     passes_by_id = {
         product.lift_pass_product_id: product for product in catalog.lift_pass_products
+    }
+    cleared_pass_window_ids = {
+        change.target_id
+        for change in report.changes
+        if change.target_type == "lift_pass_product"
+        and change.field_path == "validity_windows"
+        and json_values_equal(change.after, [])
     }
 
     destination_ids = set(report.resulting_graph.focus_stay_destination_ids)
@@ -1857,7 +1870,11 @@ def render_catalog_resulting_graph_markdown(
     for index, pass_id in enumerate(sorted(pass_ids), start=1):
         node_id = f"pass_{index}"
         node_ids[("pass", pass_id)] = node_id
-        lines.append(f'  {node_id}["{_mermaid_pass_label(passes_by_id[pass_id])}"]')
+        pass_label = _mermaid_pass_label(
+            passes_by_id[pass_id],
+            no_separate_window_modeled=pass_id in cleared_pass_window_ids,
+        )
+        lines.append(f'  {node_id}["{pass_label}"]')
 
     def add_edge(
         source_kind: str,
