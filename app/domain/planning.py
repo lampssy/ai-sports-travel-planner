@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 
 from app.domain.catalog import SkiArea
+from app.domain.catalog_applicability import evaluate_ski_area_operation
 from app.domain.models import (
     PlanningEvidenceProfile,
     RawWeatherObservation,
@@ -1193,27 +1194,10 @@ def _is_planning_window_in_season(
     trip_start_date: date | None,
     trip_end_date: date | None,
 ) -> bool:
-    if trip_start_date is not None and trip_end_date is not None:
-        if any(
-            trip_start_date >= window.start_date and trip_end_date <= window.end_date
-            for window in resort.season_windows
-        ):
-            return True
-        trip_season_year = _season_year_for_date(
-            trip_start_date,
-            resort.season_start_month,
-        )
-        if any(
-            window.start_date.year == trip_season_year
-            for window in resort.season_windows
-        ):
-            return False
-    return _is_month_in_season(
-        travel_month, resort.season_start_month, resort.season_end_month
+    status = evaluate_ski_area_operation(
+        ski_area=resort,
+        travel_month=travel_month,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
     )
-
-
-def _season_year_for_date(value: date, season_start_month: int) -> int:
-    if value.month >= season_start_month:
-        return value.year
-    return value.year - 1
+    return status != "unavailable"
