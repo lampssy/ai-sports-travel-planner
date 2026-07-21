@@ -7,12 +7,22 @@ Keeps Alta Badia as the trip-market ski region, represents six independently own
 ```mermaid
 flowchart LR
   region_1["Trip market<br/>Alta Badia"]
-  destination_1["Stay destination<br/>Badia"]
-  destination_2["Stay destination<br/>Colfosco"]
-  destination_3["Stay destination<br/>Corvara"]
-  destination_4["Stay destination<br/>La Val"]
-  destination_5["Stay destination<br/>La Villa"]
-  destination_6["Stay destination<br/>San Cassiano"]
+  region_2["Trip market<br/>Auronzo di Cadore"]
+  region_3["Trip market<br/>Cortina d&#x27;Ampezzo"]
+  region_4["Trip market<br/>Misurina"]
+  region_5["Trip market<br/>San Vito di Cadore"]
+  region_6["Trip market<br/>Val Gardena"]
+  destination_1["Stay destination<br/>Auronzo di Cadore"]
+  destination_2["Stay destination<br/>Badia"]
+  destination_3["Stay destination<br/>Colfosco"]
+  destination_4["Stay destination<br/>Cortina d&#x27;Ampezzo"]
+  destination_5["Stay destination<br/>Corvara"]
+  destination_6["Stay destination<br/>La Val"]
+  destination_7["Stay destination<br/>La Villa"]
+  destination_8["Stay destination<br/>Misurina"]
+  destination_9["Stay destination<br/>San Cassiano"]
+  destination_10["Stay destination<br/>San Vito di Cadore"]
+  destination_11["Stay destination<br/>Val Gardena"]
   base_1["Stay base<br/>Armentarola"]
   base_2["Stay base<br/>Badia"]
   base_3["Stay base<br/>Colfosco"]
@@ -21,46 +31,98 @@ flowchart LR
   base_6["Stay base<br/>La Villa"]
   base_7["Stay base<br/>San Cassiano"]
   base_8["Stay base<br/>Sass Dlacia"]
+  base_9["Stay base<br/>Auronzo di Cadore"]
+  base_10["Stay base<br/>Taiarezze"]
+  base_11["Stay base<br/>Cortina d&#x27;Ampezzo"]
+  base_12["Stay base<br/>Misurina"]
+  base_13["Stay base<br/>San Vito di Cadore"]
+  base_14["Stay base<br/>Ortisei"]
   area_1["Ski area<br/>Alta Badia"]
-  area_2["Ski area<br/>Lagazuoi"]
+  area_2["Ski area<br/>Auronzo di Cadore - Monte Agudo"]
+  area_3["Ski area<br/>Cortina d&#x27;Ampezzo"]
+  area_4["Ski area<br/>Lagazuoi"]
+  area_5["Ski area<br/>Misurina - Passo Tre Croci"]
+  area_6["Ski area<br/>San Vito di Cadore"]
+  area_7["Ski area<br/>Val Gardena"]
   pass_1["Lift pass<br/>Alta Badia Ski Pass"]
-  region_1 -->|"trip market"| destination_1
+  pass_2["Lift pass<br/>Valle Skipass Cortina"]
+  pass_3["Lift pass<br/>Auronzo di Cadore - Monte Agudo Skipass"]
+  pass_4["Lift pass<br/>Valle Skipass Cortina"]
+  pass_5["Lift pass<br/>Valle Skipass Cortina"]
+  pass_6["Lift pass<br/>Misurina - Passo Tre Croci Skipass"]
+  pass_7["Lift pass<br/>Valle Skipass Cortina"]
+  pass_8["Lift pass<br/>San Vito Ski Area Skipass"]
+  pass_9["Lift pass<br/>Val Gardena/Seiser Alm Ski Pass"]
+  region_2 -->|"trip market"| destination_1
   region_1 -->|"trip market"| destination_2
   region_1 -->|"trip market"| destination_3
-  region_1 -->|"trip market"| destination_4
+  region_3 -->|"trip market"| destination_4
   region_1 -->|"trip market"| destination_5
   region_1 -->|"trip market"| destination_6
-  destination_6 -->|"stay base"| base_1
-  destination_1 -->|"stay base"| base_2
-  destination_2 -->|"stay base"| base_3
-  destination_3 -->|"stay base"| base_4
-  destination_4 -->|"stay base"| base_5
-  destination_5 -->|"stay base"| base_6
-  destination_6 -->|"stay base"| base_7
-  destination_6 -->|"stay base"| base_8
+  region_1 -->|"trip market"| destination_7
+  region_4 -->|"trip market"| destination_8
+  region_1 -->|"trip market"| destination_9
+  region_5 -->|"trip market"| destination_10
+  region_6 -->|"trip market"| destination_11
+  destination_9 -->|"stay base"| base_1
+  destination_2 -->|"stay base"| base_2
+  destination_3 -->|"stay base"| base_3
+  destination_5 -->|"stay base"| base_4
+  destination_6 -->|"stay base"| base_5
+  destination_7 -->|"stay base"| base_6
+  destination_9 -->|"stay base"| base_7
+  destination_9 -->|"stay base"| base_8
+  destination_1 -->|"stay base"| base_9
+  destination_1 -->|"stay base"| base_10
+  destination_4 -->|"stay base"| base_11
+  destination_8 -->|"stay base"| base_12
+  destination_10 -->|"stay base"| base_13
+  destination_11 -->|"stay base"| base_14
   base_1 -->|"access: ski_in_ski_out"| area_1
-  base_1 -->|"access: ski_bus via Lagazuoi cable car, 10000 m"| area_2
+  base_1 -->|"access: ski_bus via Lagazuoi cable car, 10000 m"| area_4
   base_2 -->|"access: walk via La Crusc, 255 m"| area_1
-  base_2 -->|"access: mixed via Lagazuoi cable car"| area_2
+  base_2 -->|"access: mixed via Lagazuoi cable car"| area_4
   base_3 -->|"access: walk via Colfosco gondola, 479 m"| area_1
-  base_3 -->|"access: ski_bus via Lagazuoi cable car"| area_2
+  base_3 -->|"access: ski_bus via Lagazuoi cable car"| area_4
   base_4 -->|"access: walk via Boè, 214 m"| area_1
-  base_4 -->|"access: ski_bus via Lagazuoi cable car"| area_2
+  base_4 -->|"access: ski_bus via Lagazuoi cable car"| area_4
   base_5 -->|"access: ski_bus via Alta Badia ski lifts"| area_1
-  base_5 -->|"access: mixed via Lagazuoi cable car"| area_2
+  base_5 -->|"access: mixed via Lagazuoi cable car"| area_4
   base_6 -->|"access: walk via Piz La Ila, 322 m"| area_1
-  base_6 -->|"access: ski_bus via Lagazuoi cable car"| area_2
+  base_6 -->|"access: ski_bus via Lagazuoi cable car"| area_4
   base_7 -->|"access: walk via Piz Sorega, 589 m"| area_1
-  base_7 -->|"access: ski_bus via Lagazuoi cable car"| area_2
+  base_7 -->|"access: ski_bus via Lagazuoi cable car"| area_4
   base_8 -->|"access: ski_bus via Armentarola ski lift"| area_1
-  destination_1 -->|"default pass"| pass_1
+  base_9 -->|"access: ski_bus via Taiarezze-Malon Chairlift, 2100 m"| area_2
+  base_10 -->|"access: walk via Taiarezze-Malon Chairlift"| area_2
+  base_11 -->|"access: walk via Funivia Faloria, 472 m"| area_3
+  base_12 -->|"access: walk via Col de Varda Chairlift, 900 m"| area_5
+  base_13 -->|"access: ski_bus via Tambres Chairlift, 800 m"| area_6
+  base_14 -->|"access: walk via Ortisei - Furnes, 269 m"| area_7
   destination_2 -->|"default pass"| pass_1
   destination_3 -->|"default pass"| pass_1
-  destination_4 -->|"default pass"| pass_1
   destination_5 -->|"default pass"| pass_1
   destination_6 -->|"default pass"| pass_1
+  destination_7 -->|"default pass"| pass_1
+  destination_9 -->|"default pass"| pass_1
   pass_1 -->|"covers area"| area_1
-  pass_1 -->|"covers area"| area_2
+  pass_1 -->|"covers area"| area_4
+  destination_1 -->|"pass available"| pass_2
+  pass_2 -->|"covers area"| area_2
+  destination_1 -->|"default pass"| pass_3
+  pass_3 -->|"covers area"| area_2
+  destination_4 -->|"default pass"| pass_4
+  pass_4 -->|"covers area"| area_3
+  destination_8 -->|"pass available"| pass_5
+  pass_5 -->|"covers area"| area_5
+  destination_8 -->|"default pass"| pass_6
+  pass_6 -->|"covers area"| area_5
+  destination_10 -->|"pass available"| pass_7
+  pass_7 -->|"covers area"| area_6
+  destination_10 -->|"default pass"| pass_8
+  pass_8 -->|"covers area"| area_6
+  destination_11 -->|"default pass"| pass_9
+  pass_9 -->|"covers area"| area_7
 ```
 
 ## Reviewed Targets
@@ -136,6 +198,23 @@ flowchart LR
 | `trust_manifest:stay_destinations:la-val` | `full` | all canonical fields |
 | `trust_manifest:stay_destinations:la-villa` | `full` | all canonical fields |
 | `trust_manifest:stay_destinations:san-cassiano` | `full` | all canonical fields |
+| `ski_area:arabba-marmolada-ski-area` | `narrow` | `name` |
+| `ski_area:val-di-fassa-canazei-ski-area` | `narrow` | `name` |
+| `ski_area:kronplatz-plan-de-corones-ski-area` | `narrow` | `name` |
+| `ski_area:cortina-dampezzo-ski-area` | `narrow` | `name` |
+| `ski_area:gardena-pass-sector` | `narrow` | `name` |
+| `ski_area:civetta` | `narrow` | `name` |
+| `ski_area:val-gardena-ski-area` | `narrow` | `name` |
+| `ski_area:sella-pass` | `narrow` | `name` |
+| `ski_area:pordoi-pass` | `narrow` | `name` |
+| `ski_area:five-torri-averau` | `narrow` | `name` |
+| `ski_area:falzarego-col-gallina` | `narrow` | `name` |
+| `ski_area:tofana-socrepes-pocol` | `narrow` | `name` |
+| `ski_area:passo-giau-croda-negra` | `narrow` | `name` |
+| `ski_area:faloria-cristallo` | `narrow` | `name` |
+| `ski_area:auronzo-monte-agudo` | `narrow` | `name` |
+| `ski_area:misurina-passo-tre-croci` | `narrow` | `name` |
+| `ski_area:san-vito-di-cadore-ski-area` | `narrow` | `name` |
 
 ## Entity Scope Assessments
 
@@ -172,12 +251,12 @@ flowchart LR
 | `sector-gardenaccia` (Gardenaccia) | `ski_area` | `not_separate` | `official_map_sector`, `ski_connected_terrain` | `ski_area:alta-badia-ski-area` | `scope-map`, `scope-skiing` |  | Ledger candidate sector:gardenaccia remains inside the parent; no child weather/pass owner is created. |
 | `sector-boe-vallon-campolongo` (Boe Vallon Campolongo) | `ski_area` | `not_separate` | `official_map_sector`, `ski_connected_terrain` | `ski_area:alta-badia-ski-area` | `scope-map`, `scope-skiing` |  | Ledger candidate sector:boe-vallon-campolongo remains inside the parent; no child weather/pass owner is created. |
 | `falzarego-lagazuoi` (Falzarego/Lagazuoi sector) | `ski_area` | `not_separate` | `official_map_sector`, `ski_connected_terrain` | `ski_area:lagazuoi-ski-area` | `scope-lagazuoi`, `scope-route` |  | Sector reconciled inside the new Lagazuoi owner. |
-| `arabba-marmolada-ski-area` (Arabba–Marmolada) | `ski_area` | `deferred` | `official_independent_identity`, `distinct_access` |  | `scope-dss-network` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Regional candidate retained only as an inventoried dependency; its owner, complete boundary, connectivity, weather, and pass scope are not asserted as children of Alta Badia. PR #39 owns Val Gardena/Gardena Pass internals where applicable. |
-| `val-di-fassa-canazei-ski-area` (Val di Fassa–Canazei) | `ski_area` | `deferred` | `official_independent_identity`, `distinct_access` |  | `scope-dss-network` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Regional candidate retained only as an inventoried dependency; its owner, complete boundary, connectivity, weather, and pass scope are not asserted as children of Alta Badia. PR #39 owns Val Gardena/Gardena Pass internals where applicable. |
+| `arabba-marmolada-ski-area` (Arabba–Marmolada) | `ski_area` | `deferred` | `official_independent_identity`, `distinct_access` |  | `scope-arabba-marmolada` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Regional candidate retained only as an inventoried dependency; its owner, complete boundary, connectivity, weather, and pass scope are not asserted as children of Alta Badia. PR #39 owns Val Gardena/Gardena Pass internals where applicable. |
+| `val-di-fassa-canazei-ski-area` (Val di Fassa–Canazei) | `ski_area` | `deferred` | `official_independent_identity`, `distinct_access` |  | `scope-val-di-fassa-canazei` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Regional candidate retained only as an inventoried dependency; its owner, complete boundary, connectivity, weather, and pass scope are not asserted as children of Alta Badia. PR #39 owns Val Gardena/Gardena Pass internals where applicable. |
 | `kronplatz-plan-de-corones-ski-area` (Kronplatz/Plan de Corones) | `ski_area` | `deferred` | `official_independent_identity`, `distinct_access` |  | `scope-kronplatz` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Regional candidate retained only as an inventoried dependency; its owner, complete boundary, connectivity, weather, and pass scope are not asserted as children of Alta Badia. PR #39 owns Val Gardena/Gardena Pass internals where applicable. |
-| `cortina-dampezzo-ski-area` (Cortina relationship) | `ski_area` | `deferred` | `official_independent_identity`, `distinct_access` |  | `scope-lag-connection` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Regional candidate retained only as an inventoried dependency; its owner, complete boundary, connectivity, weather, and pass scope are not asserted as children of Alta Badia. PR #39 owns Val Gardena/Gardena Pass internals where applicable. |
-| `gardena-pass-sector` (Gardena Pass sector) | `ski_area` | `deferred` | `official_independent_identity`, `distinct_access` |  | `scope-sellaronda` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Gardena Pass is a sector candidate under the linked Val Gardena owner; PR #39 remains the prerequisite and this PR does not mutate that graph. |
-| `civetta` (Civetta) | `ski_area` | `deferred` | `official_independent_identity` |  | `scope-dss-network` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | The official network identifies Civetta as a concrete ski area, but its complete destination, access, operating, weather, and pass graph is outside the Alta Badia mutation boundary. |
+| `cortina-dampezzo-ski-area` (Cortina relationship) | `ski_area` | `deferred` | `official_independent_identity`, `distinct_access` |  | `scope-cortina-dampezzo` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Regional candidate retained only as an inventoried dependency; its owner, complete boundary, connectivity, weather, and pass scope are not asserted as children of Alta Badia. PR #39 owns Val Gardena/Gardena Pass internals where applicable. |
+| `gardena-pass-sector` (Gardena Pass sector) | `ski_area` | `deferred` | `official_independent_identity`, `distinct_access` |  | `scope-gardena-pass` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Gardena Pass is a sector candidate under the linked Val Gardena owner; PR #39 remains the prerequisite and this PR does not mutate that graph. |
+| `civetta` (Civetta) | `ski_area` | `deferred` | `official_independent_identity` |  | `scope-civetta` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | The official network identifies Civetta as a concrete ski area, but its complete destination, access, operating, weather, and pass graph is outside the Alta Badia mutation boundary. |
 | `alta-badia-corvara--alta-badia-ski-area` (alta-badia-corvara--alta-badia-ski-area) | `ski_area_access` | `represented` | `direct_access_relationship`, `distinct_access` | `ski_area_access:alta-badia-corvara--alta-badia-ski-area` | `scope-boe` |  | Exact endpoint relation without Cartesian expansion; Lagazuoi edges are non-direct transfers. |
 | `alta-badia-colfosco--alta-badia-ski-area` (alta-badia-colfosco--alta-badia-ski-area) | `ski_area_access` | `add_entity` | `direct_access_relationship`, `distinct_access` | `ski_area_access:alta-badia-colfosco--alta-badia-ski-area` | `scope-colfosco` |  | Exact endpoint relation without Cartesian expansion; Lagazuoi edges are non-direct transfers. |
 | `alta-badia-la-villa--alta-badia-ski-area` (alta-badia-la-villa--alta-badia-ski-area) | `ski_area_access` | `add_entity` | `direct_access_relationship`, `distinct_access` | `ski_area_access:alta-badia-la-villa--alta-badia-ski-area` | `scope-la-villa` |  | Exact endpoint relation without Cartesian expansion; Lagazuoi edges are non-direct transfers. |
@@ -202,7 +281,7 @@ flowchart LR
 | `dolomiti-superpremiere` (Dolomiti SuperPremière) | `lift_pass_product` | `external_pass_context` | `official_product_identity` |  | `scope-dss-pass` |  | Promotion, not a product. |
 | `spring-days` (Spring Days) | `lift_pass_product` | `external_pass_context` | `official_product_identity` |  | `scope-dss-pass` |  | Promotion, not a product. |
 | `alta-badia-summer-card` (Alta Badia Summer Card) | `lift_pass_product` | `external_pass_context` | `official_product_identity` |  | `scope-local-pass` |  | Outside winter scope. |
-| `val-gardena-ski-area` (Val Gardena) | `ski_area` | `deferred` | `official_independent_identity`, `ski_connected_terrain` |  | `scope-sellaronda` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Regional candidate retained only as an inventoried dependency; its owner, complete boundary, connectivity, weather, and pass scope are not asserted as children of Alta Badia. PR #39 owns Val Gardena/Gardena Pass internals where applicable. |
+| `val-gardena-ski-area` (Val Gardena) | `ski_area` | `deferred` | `official_independent_identity`, `ski_connected_terrain` |  | `scope-val-gardena` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Regional candidate retained only as an inventoried dependency; its owner, complete boundary, connectivity, weather, and pass scope are not asserted as children of Alta Badia. PR #39 owns Val Gardena/Gardena Pass internals where applicable. |
 | `alta-badia-armentarola--alta-badia-ski-area` (Armentarola to Alta Badia core) | `ski_area_access` | `add_entity` | `direct_access_relationship`, `distinct_access` | `ski_area_access:alta-badia-armentarola--alta-badia-ski-area` | `scope-armentarola`, `cycle5-armentarola-access-1` |  | The official Hotel Armentarola listing independently establishes slope-side access at this base; the edge is distinct from Sass Dlacia and stores no invented lift endpoint, distance, or duration. |
 | `alta-badia-sass-dlacia` (Sas Dlacia) | `stay_base` | `add_entity` | `official_independent_identity`, `distinct_access` | `stay_base:alta-badia-sass-dlacia` | `scope-sass-dlacia` |  | The independently bookable Sass Dlacia basecamp at the route endpoint is represented as a concrete base within stay_destination:san-cassiano. |
 | `alta-badia-sass-dlacia--alta-badia-ski-area` (Sas Dlacia to Alta Badia core) | `ski_area_access` | `add_entity` | `direct_access_relationship`, `distinct_access` | `ski_area_access:alta-badia-sass-dlacia--alta-badia-ski-area` | `scope-sass-dlacia-core-access` |  | The lodging operator directly publishes its ski bus to the Armentarola lift and Alta Badia core. |
@@ -211,13 +290,16 @@ flowchart LR
 | `alta-badia-la-villa--lagazuoi-ski-area` (La Villa to Lagazuoi) | `ski_area_access` | `add_entity` | `direct_access_relationship`, `distinct_access` | `ski_area_access:alta-badia-la-villa--lagazuoi-ski-area` | `scope-route` |  | The official route directly names this village as a bus origin to Passo Falzarego and the Lagazuoi cable car; the non-direct edge stores no invented distance or duration. |
 | `alta-badia-badia--lagazuoi-ski-area` (Badia to Lagazuoi) | `ski_area_access` | `add_entity` | `direct_access_relationship`, `distinct_access` | `ski_area_access:alta-badia-badia--lagazuoi-ski-area` | `scope-route` |  | The official route explicitly names Badia as reaching Armentarola/San Cassiano on skis or public transport before the Falzarego shuttle; mixed and non-direct preserve that two-stage semantics. |
 | `alta-badia-la-val--lagazuoi-ski-area` (La Val to Lagazuoi) | `ski_area_access` | `add_entity` | `direct_access_relationship`, `distinct_access` | `ski_area_access:alta-badia-la-val--lagazuoi-ski-area` | `scope-route` |  | The official route explicitly names La Val as reaching Armentarola/San Cassiano on skis or public transport before the Falzarego shuttle; mixed and non-direct preserve that two-stage semantics. |
-| `sella-pass` (Sella Pass) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-sellaronda` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Sella Pass is a sector candidate nearest the linked Val Gardena owner; PR #39 remains the prerequisite and this PR does not mutate that graph. |
-| `pordoi-pass` (Pordoi Pass) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-sellaronda` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Pordoi Pass is a sector candidate nearest the deferred Arabba–Marmolada owner; its complete regional graph remains outside PR #30. |
-| `five-torri-averau` (Cinque Torri/Five Torri–Averau) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-route`, `scope-lagazuoi-sales-conditions` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | This stable candidate merges the Cinque Torri English/Italian naming alias with the Five Torri/Averau lift-sector inventory; its complete Cortina owner graph remains outside PR #30. |
-| `falzarego-col-gallina` (Falzarego/Col Gallina) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-lagazuoi-season-info` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Falzarego/Col Gallina is a sector candidate under the existing Cortina owner; the complete Cortina graph remains outside PR #30. |
-| `tofana-socrepes-pocol` (Tofana/Socrepes/Pocol) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-lag-connection` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Tofana/Socrepes/Pocol is a sector candidate under the existing Cortina owner; the complete Cortina graph remains outside PR #30. |
-| `passo-giau-croda-negra` (Passo Giau/Croda Negra) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-lag-connection` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Passo Giau/Croda Negra is a sector candidate under the existing Cortina owner; the complete Cortina graph remains outside PR #30. |
+| `sella-pass` (Sella Pass) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-sella-pass` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Sella Pass is a sector candidate nearest the linked Val Gardena owner; PR #39 remains the prerequisite and this PR does not mutate that graph. |
+| `pordoi-pass` (Pordoi Pass) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-pordoi-pass` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Pordoi Pass is a sector candidate nearest the deferred Arabba–Marmolada owner; its complete regional graph remains outside PR #30. |
+| `five-torri-averau` (Cinque Torri/Five Torri–Averau) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-five-torri-averau` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | This stable candidate merges the Cinque Torri English/Italian naming alias with the Five Torri/Averau lift-sector inventory; its complete Cortina owner graph remains outside PR #30. |
+| `falzarego-col-gallina` (Falzarego/Col Gallina) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-falzarego-col-gallina` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Falzarego/Col Gallina is a sector candidate under the existing Cortina owner; the complete Cortina graph remains outside PR #30. |
+| `tofana-socrepes-pocol` (Tofana/Socrepes/Pocol) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-tofana-socrepes-pocol` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Tofana/Socrepes/Pocol is a sector candidate under the existing Cortina owner; the complete Cortina graph remains outside PR #30. |
+| `passo-giau-croda-negra` (Passo Giau/Croda Negra) | `ski_area` | `deferred` | `official_map_sector` |  | `scope-passo-giau-croda-negra` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | Passo Giau/Croda Negra is a sector candidate under the existing Cortina owner; the complete Cortina graph remains outside PR #30. |
 | `faloria-cristallo` (Faloria/Cristallo) | `ski_area` | `deferred` | `official_independent_identity`, `official_map_sector` |  | `scope-faloria-cristallo` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | The official Cortina slope inventory exposes Faloria and Cristallo as a concrete combined boundary candidate; completing its operations, weather, connectivity, pass, and destination graph belongs to the Cortina owner work. |
+| `auronzo-monte-agudo` (Auronzo–Monte Agudo) | `ski_area` | `deferred` | `official_independent_identity`, `official_map_sector` |  | `scope-auronzo-monte-agudo` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | The accepted Cortina map exposes Auronzo–Monte Agudo as a concrete linked ski-area candidate. Its existing/dedicated destination, access, operating, weather, and pass graph is owned outside PR #30, so this report inventories but does not mutate or re-adjudicate it. |
+| `misurina-passo-tre-croci` (Misurina–Passo Tre Croci) | `ski_area` | `deferred` | `official_independent_identity`, `official_map_sector` |  | `scope-misurina-passo-tre-croci` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | The accepted Cortina map exposes Misurina–Passo Tre Croci as a concrete linked ski-area candidate. Its existing/dedicated destination, access, operating, weather, and pass graph is owned outside PR #30, so this report inventories but does not mutate or re-adjudicate it. |
+| `san-vito-di-cadore-ski-area` (San Vito di Cadore) | `ski_area` | `deferred` | `official_independent_identity`, `official_map_sector` |  | `scope-san-vito-di-cadore-ski-area` | `docs/product-backlog.md#alta-badia-and-regional-catalog-refinements` | The accepted Cortina map exposes San Vito di Cadore as a concrete linked ski-area candidate. Its existing/dedicated destination, access, operating, weather, and pass graph is owned outside PR #30, so this report inventories but does not mutate or re-adjudicate it. |
 
 ## Ski-Area Boundary Assessments
 
@@ -237,20 +319,23 @@ flowchart LR
 | `sector-gardenaccia` | `alta-badia-ski-area` | `sector` | `connected` | `parent_owned` | `parent_owned` | `shared_only` | `aggregated` | `redundant` | `scope-map`, `scope-skiing` |
 | `sector-boe-vallon-campolongo` | `alta-badia-ski-area` | `sector` | `connected` | `parent_owned` | `parent_owned` | `shared_only` | `aggregated` | `redundant` | `scope-map`, `scope-skiing` |
 | `falzarego-lagazuoi` | `lagazuoi-ski-area` | `sector` | `connected` | `parent_owned` | `parent_owned` | `shared_only` | `aggregated` | `redundant` | `scope-lagazuoi`, `scope-route` |
-| `arabba-marmolada-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-dss-network` |
-| `val-di-fassa-canazei-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-dss-network` |
+| `arabba-marmolada-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-arabba-marmolada` |
+| `val-di-fassa-canazei-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-val-di-fassa-canazei` |
 | `kronplatz-plan-de-corones-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-kronplatz` |
-| `cortina-dampezzo-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-lag-connection` |
-| `gardena-pass-sector` | `val-gardena-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-sellaronda` |
-| `civetta` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-dss-network` |
-| `val-gardena-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-sellaronda` |
-| `sella-pass` | `val-gardena-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-sellaronda` |
-| `pordoi-pass` | `arabba-marmolada-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-sellaronda` |
-| `five-torri-averau` | `cortina-dampezzo-ski-area` | `unresolved` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-route`, `scope-lagazuoi-sales-conditions` |
-| `falzarego-col-gallina` | `cortina-dampezzo-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-lagazuoi-season-info` |
-| `tofana-socrepes-pocol` | `cortina-dampezzo-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-lag-connection` |
-| `passo-giau-croda-negra` | `cortina-dampezzo-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-lag-connection` |
+| `cortina-dampezzo-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-cortina-dampezzo` |
+| `gardena-pass-sector` | `val-gardena-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-gardena-pass` |
+| `civetta` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-civetta` |
+| `val-gardena-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `unknown` | `unknown` | `unresolved` | `scope-val-gardena` |
+| `sella-pass` | `val-gardena-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-sella-pass` |
+| `pordoi-pass` | `arabba-marmolada-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-pordoi-pass` |
+| `five-torri-averau` | `cortina-dampezzo-ski-area` | `unresolved` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-five-torri-averau` |
+| `falzarego-col-gallina` | `cortina-dampezzo-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-falzarego-col-gallina` |
+| `tofana-socrepes-pocol` | `cortina-dampezzo-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-tofana-socrepes-pocol` |
+| `passo-giau-croda-negra` | `cortina-dampezzo-ski-area` | `sector` | `connected` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-passo-giau-croda-negra` |
 | `faloria-cristallo` | `cortina-dampezzo-ski-area` | `unresolved` | `transfer_required` | `unknown` | `unknown` | `shared_only` | `mixed` | `unresolved` | `scope-faloria-cristallo` |
+| `auronzo-monte-agudo` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-auronzo-monte-agudo` |
+| `misurina-passo-tre-croci` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-misurina-passo-tre-croci` |
+| `san-vito-di-cadore-ski-area` |  | `unresolved` | `not_applicable` | `unknown` | `unknown` | `shared_only` | `unknown` | `unresolved` | `scope-san-vito-di-cadore-ski-area` |
 
 ## Changed Fields
 
@@ -1322,6 +1407,23 @@ flowchart LR
 | `trust_manifest:stay_destinations:san-cassiano` | `field_source_refs` | `changed` |  |
 | `trust_manifest:stay_destinations:san-cassiano` | `field_statuses` | `changed` |  |
 | `trust_manifest:stay_destinations:san-cassiano` | `notes` | `changed` |  |
+| `ski_area:arabba-marmolada-ski-area` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:val-di-fassa-canazei-ski-area` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:kronplatz-plan-de-corones-ski-area` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:cortina-dampezzo-ski-area` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:gardena-pass-sector` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:civetta` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:val-gardena-ski-area` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:sella-pass` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:pordoi-pass` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:five-torri-averau` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:falzarego-col-gallina` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:tofana-socrepes-pocol` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:passo-giau-croda-negra` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:faloria-cristallo` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:auronzo-monte-agudo` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:misurina-passo-tre-croci` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
+| `ski_area:san-vito-di-cadore-ski-area` | `name` | `reviewed-no-change` | The source inventory identifies this linked candidate, but PR #30 leaves its catalog ownership and full graph to the dedicated follow-up. |
 
 ## Evidence
 
@@ -1724,10 +1826,10 @@ flowchart LR
 | `ski_area_access:alta-badia-corvara--alta-badia-ski-area` | `distance_m` | [Boè OSM station](https://www.openstreetmap.org/node/224065479) | `214` | Retained access geometry. |  |
 | `stay_base:alta-badia-colfosco` | `name` | [colfosco accommodations](https://www.altabadia.org/en/villages/colfosco-alta-badia/accommodations) | `"Colfosco"` | Official lodging/base inventory. |  |
 | `stay_base:alta-badia-corvara` | `name` | [corvara accommodations](https://www.altabadia.org/en/villages/corvara-alta-badia/accommodations) | `"Corvara"` | Official lodging/base inventory. |  |
-| `ski_area:alta-badia-ski-area` | `name` | [Dolomiti Superski network](https://www.dolomitisuperski.com/en/) | `"Civetta"` | The official Dolomiti Superski network presents Civetta as a named ski area, so it is a concrete future area rather than generic pass context. | Civetta remains deferred because its complete owner, destination, access, weather, and pass graph is outside this batch. |
+| `lift_pass_product:alta-badia-skipass` | `external_validity_summary` | [Dolomiti Superski network](https://www.dolomitisuperski.com/en/) | `"The local Alta Badia pass covers the modeled Alta Badia core and Lagazuoi for the six Alta Badia stay destinations. Broader Dolomiti Superski and Sellaronda validity remains regional-network context and is not inferred into this local product."` | The official network page establishes the broader Dolomiti Superski context without assigning another ski-area identity to Alta Badia. | The regional network presentation is normalized to the bounded external-validity summary; no Civetta or other linked-area value is attributed to the Alta Badia product. |
 | `lift_pass_product:alta-badia-skipass` | `external_validity_summary` | [Dolomiti Superski pricing](https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices/alta-badia) | `"The local Alta Badia pass covers the modeled Alta Badia core and Lagazuoi. Broader Dolomiti Superski and Sellaronda validity remains regional-network context and is not inferred into this local product."` | Regional product context. | The source is used for the stated scope decision; the checked-in value is the normalized catalog representation. |
-| `ski_area:lagazuoi-ski-area` | `name` | [Official Cortina ski map](https://www.dolomitisuperski.com/dam/jcr%3Ab588ab66-e995-4fc6-8c8f-541aad80eb23/01_Cortina_Skikarte_web.pdf) | `"CRISTALLO - FALORIA"` | The official Cortina ski map labels the Cristallo-Faloria sector, establishing Faloria/Cristallo as a concrete owner-boundary candidate. | The combined candidate remains deferred pending a complete Cortina owner, connectivity, weather, and pass assessment. |
-| `ski_area:alta-badia-ski-area` | `name` | [Connecting Skiers](https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/Flyer_Connectingskiers-2-4.pdf) | `"Alta Badia"` | Kronplatz transfer context. |  |
+| `ski_area:faloria-cristallo` | `name` | [Official Cortina ski map](https://www.dolomitisuperski.com/dam/jcr%3Ab588ab66-e995-4fc6-8c8f-541aad80eb23/01_Cortina_Skikarte_web.pdf) | `"CRISTALLO - FALORIA"` | The official Cortina ski map labels the Cristallo-Faloria sector, establishing Faloria/Cristallo as a concrete owner-boundary candidate. | The combined candidate remains deferred pending a complete Cortina owner, connectivity, weather, and pass assessment. |
+| `ski_area:kronplatz-plan-de-corones-ski-area` | `name` | [Connecting Skiers](https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/Flyer_Connectingskiers-2-4.pdf) | `"Kronplatz/Plan de Corones"` | The official transfer flyer identifies Kronplatz/Plan de Corones as a concrete linked regional candidate. | The candidate identity is recorded against Kronplatz only; its complete owner graph remains outside PR #30. |
 | `ski_area:alta-badia-ski-area` | `name` | [La Crusc/Santa Croce](https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area) | `"Alta Badia"` | Connected child terrain without separate owner. |  |
 | `ski_area:alta-badia-ski-area` | `name` | [La Crusc lifts](https://lacrusc.org/en/destination/ski-lifts) | `"Alta Badia"` | Child signals remain parent-owned. |  |
 | `stay_destination:la-val` | `name` | [La Val accommodations](https://www.altabadia.org/en/info-service/villages/la-val-alta-badia/accommodations) | `"La Val"` | The official village-scoped accommodation inventory supports La Val as an independently represented stay market. |  |
@@ -1751,6 +1853,27 @@ flowchart LR
 | `lift_pass_product:alta-badia-skipass` | `prices` | [Skiresort Alta Badia](https://www.skiresort.info/ski-resort/alta-badia/) | `[{"amount": 80.0, "amount_max": null, "amount_min": null, "audience": "adult", "currency": "EUR", "duration_days": 1, "price_kind": "fixed", "season_label": "published main-season example reviewed 2026-07-21", "source_url": "https://www.skiresort.info/ski-resort/alta-badia/"}]` | EUR 80 editorial example and 53-lift corroboration. | The reviewed editorial price is retained as an explicitly dated representative example, not as an official current-season tariff. |
 | `stay_destination:alta-badia` | `name` | [Alta Badia villages](https://www.altabadia.org/en/alta-badia/villages) | `"Alta Badia"` | Six-village umbrella inventory. | The source is used for the stated scope decision; the checked-in value is the normalized catalog representation. |
 | `ski_area:alta-badia-ski-area` | `name` | [Alta Badia weather](https://www.altabadia.org/en/weather-alta-badia) | `"Alta Badia"` | Parent weather ownership. |  |
+| `ski_area:arabba-marmolada-ski-area` | `name` | [Dolomiti Superski network](https://www.dolomitisuperski.com/en/) | `"Arabba/Marmolada"` | The official regional network identifies Arabba/Marmolada as a concrete linked ski-area candidate. | The candidate identity is recorded against Arabba/Marmolada only; its complete owner graph remains outside PR #30. |
+| `ski_area:val-di-fassa-canazei-ski-area` | `name` | [Dolomiti Superski network](https://www.dolomitisuperski.com/en/) | `"Val di Fassa/Carezza"` | The official regional network identifies Val di Fassa/Carezza as a concrete linked ski-area candidate. | The candidate identity is recorded against Val di Fassa/Canazei only; its complete owner graph remains outside PR #30. |
+| `ski_area:civetta` | `name` | [Dolomiti Superski network](https://www.dolomitisuperski.com/en/) | `"Civetta"` | The official regional network identifies Civetta as a concrete linked ski-area candidate. | The candidate identity is recorded against Civetta only; its complete owner graph remains outside PR #30. |
+| `ski_area:cortina-dampezzo-ski-area` | `name` | [Lagazuoi connections with the Badia Valley](https://lagazuoi.it/EN/pTer38-Connections-of-the-Lagazuoi-ski-area-with-the-Badia-Valley) | `"Cortina d'Ampezzo"` | The official connection page establishes the Cortina-side regional dependency without assigning Cortina facts to Lagazuoi. | Only the linked Cortina context is recorded here; Cortina's full owner graph remains outside PR #30. |
+| `ski_area:gardena-pass-sector` | `name` | [Official Sellaronda route](https://www.altabadia.org/en/sellaronda-skiing-alta-badia/ski-touring-dolomites) | `"Gardena Pass"` | The official Sellaronda route identifies Gardena Pass in the linked Val Gardena topology. | The route label is attached to the Gardena Pass candidate only; PR #39 owns the complete Val Gardena graph. |
+| `ski_area:val-gardena-ski-area` | `name` | [Official Sellaronda route](https://www.altabadia.org/en/sellaronda-skiing-alta-badia/ski-touring-dolomites) | `"Val Gardena"` | The official Sellaronda route identifies Val Gardena as a linked regional owner candidate. | The route context is attached to Val Gardena only; PR #39 owns its complete graph. |
+| `ski_area:sella-pass` | `name` | [Official Sellaronda route](https://www.altabadia.org/en/sellaronda-skiing-alta-badia/ski-touring-dolomites) | `"Sella Pass"` | The official Sellaronda route identifies Sella Pass in the linked Val Gardena topology. | The route label is attached to the Sella Pass candidate only; PR #39 owns the complete Val Gardena graph. |
+| `ski_area:pordoi-pass` | `name` | [Official Sellaronda route](https://www.altabadia.org/en/sellaronda-skiing-alta-badia/ski-touring-dolomites) | `"Pordoi Pass"` | The official Sellaronda route identifies Pordoi Pass in the linked Arabba–Marmolada topology. | The route label is attached to the Pordoi Pass candidate only; its complete owner graph remains outside PR #30. |
+| `ski_area:five-torri-averau` | `name` | [Official Cortina ski map](https://www.dolomitisuperski.com/dam/jcr%3Ab588ab66-e995-4fc6-8c8f-541aad80eb23/01_Cortina_Skikarte_web.pdf) | `"5 TORRI - AVERAU"` | The official Cortina map labels the Five Torri–Averau sector candidate. | The official map label is recorded against this candidate only; complete terrain, operations, weather, pass, destination, and access ownership remain with the linked follow-up. |
+| `ski_area:falzarego-col-gallina` | `name` | [Official Cortina ski map](https://www.dolomitisuperski.com/dam/jcr%3Ab588ab66-e995-4fc6-8c8f-541aad80eb23/01_Cortina_Skikarte_web.pdf) | `"FALZAREGO - COL GALLINA"` | The official Cortina map labels the Falzarego–Col Gallina sector candidate. | The official map label is recorded against this candidate only; complete terrain, operations, weather, pass, destination, and access ownership remain with the linked follow-up. |
+| `ski_area:tofana-socrepes-pocol` | `name` | [Official Cortina ski map](https://www.dolomitisuperski.com/dam/jcr%3Ab588ab66-e995-4fc6-8c8f-541aad80eb23/01_Cortina_Skikarte_web.pdf) | `"TOFANA - SOCREPES - POCOL"` | The official Cortina map labels the Tofana/Socrepes/Pocol sector candidate. | The official map label is recorded against this candidate only; complete terrain, operations, weather, pass, destination, and access ownership remain with the linked follow-up. |
+| `ski_area:passo-giau-croda-negra` | `name` | [Official Cortina ski map](https://www.dolomitisuperski.com/dam/jcr%3Ab588ab66-e995-4fc6-8c8f-541aad80eb23/01_Cortina_Skikarte_web.pdf) | `"PASSO GIAU - CRODA NEGRA"` | The official Cortina map labels the Passo Giau/Croda Negra sector candidate. | The official map label is recorded against this candidate only; complete terrain, operations, weather, pass, destination, and access ownership remain with the linked follow-up. |
+| `ski_area:auronzo-monte-agudo` | `name` | [Official Cortina ski map](https://www.dolomitisuperski.com/dam/jcr%3Ab588ab66-e995-4fc6-8c8f-541aad80eb23/01_Cortina_Skikarte_web.pdf) | `"AURONZO - MONTE AGUDO"` | The official Cortina map labels Auronzo–Monte Agudo as a distinct linked ski-area candidate. | The official map label is recorded against this candidate only; complete terrain, operations, weather, pass, destination, and access ownership remain with the linked follow-up. |
+| `ski_area:misurina-passo-tre-croci` | `name` | [Official Cortina ski map](https://www.dolomitisuperski.com/dam/jcr%3Ab588ab66-e995-4fc6-8c8f-541aad80eb23/01_Cortina_Skikarte_web.pdf) | `"MISURINA - PASSO TRE CROCI"` | The official Cortina map labels Misurina–Passo Tre Croci as a distinct linked ski-area candidate. | The official map label is recorded against this candidate only; complete terrain, operations, weather, pass, destination, and access ownership remain with the linked follow-up. |
+| `ski_area:san-vito-di-cadore-ski-area` | `name` | [Official Cortina ski map](https://www.dolomitisuperski.com/dam/jcr%3Ab588ab66-e995-4fc6-8c8f-541aad80eb23/01_Cortina_Skikarte_web.pdf) | `"SAN VITO DI CADORE"` | The official Cortina map labels San Vito di Cadore as a distinct linked ski-area candidate. | The official map label is recorded against this candidate only; complete terrain, operations, weather, pass, destination, and access ownership remain with the linked follow-up. |
+| `ski_area_access:alta-badia-sass-dlacia--alta-badia-ski-area` | `source_urls` | [Camping Sass Dlacia services](https://campingsassdlacia.it/en/services) | `"Ski bus service links Sass Dlacia with the Alta Badia ski area."` | The operator services page directly supports the second source URL stored on the Sass Dlacia core access edge. | The page statement is normalized into the complete two-URL source_urls list for the edge. |
+| `trust_manifest:stay_bases:alta-badia-la-val` | `field_source_refs` | [La Val hiking village](https://www.altabadia.org/en/dolomites/hiking-village-la-val-dolomites) | `"La Val is presented as a traditional mountain village with a distinct village character."` | The village page supports the La Val base identity, structural type, and character source groups. | The page is normalized into the trust manifest's grouped field_source_refs rather than copied as a catalog value. |
+| `trust_manifest:stay_bases:alta-badia-sass-dlacia` | `field_source_refs` | [Alta Badia cross-country skiing centre](https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/cross-country-skiing-centre-alta-badia) | `"The Alta Badia cross-country centre is located by Sass Dlacia."` | The official POI page independently corroborates Sass Dlacia as the concrete locality owning the base identity. | The locality evidence is normalized into the identity_ownership source group. |
+| `trust_manifest:rental_display_facts:alta-badia-marcello-varallo-sport` | `field_source_refs` | [Varallo Sport POI](https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/varallo-sport) | `"Varallo Sport is located in La Villa."` | The official destination POI page supports the rental display fact's La Villa ownership scope. | The location statement is normalized into the identity_ownership source group; no price claim is inferred. |
+| `ski_area_access:alta-badia-armentarola--lagazuoi-ski-area` | `regional_data_ids` | [OpenStreetMap Armentarola bus stop node](https://www.openstreetmap.org/node/916336242) | `{"origin_bus_stop_osm_node_id": "916336242"}` | OSM node 916336242 identifies the reviewed Armentarola-side bus-stop geometry used by the transfer edge. | The one-node source value is normalized into the edge's complete regional_data_ids object. |
+| `ski_area_access:alta-badia-colfosco--alta-badia-ski-area` | `regional_data_ids` | [OpenStreetMap Colfosco lift way](https://www.openstreetmap.org/way/30067734) | `{"nearest_lift_osm_way_id": "30067734"}` | OSM way 30067734 identifies the reviewed Colfosco lift geometry used by the core access edge. | The one-way source value is normalized into the edge's complete regional_data_ids object. |
 
 ## Boundary Decisions
 
@@ -1777,12 +1900,12 @@ Six separately ranked Alta Badia village markets now own their bases, local acce
 
 ## Caveats
 
-- The initial 85-row candidate checklist reconciles to 77 unique concrete candidates through nine explicit alias merges: sector-corvara-sector -> sector-alta-badia-corvara; sector-campolongo-pass-sector -> sector-alta-badia-campolongo-pass; sector-colfosco-sector -> sector-alta-badia-colfosco; sector-la-villa-sector -> sector-alta-badia-la-villa; sector-san-cassiano-sector -> sector-alta-badia-san-cassiano; sector-badia-sector -> sector-alta-badia-badia; sector-alta-badia-high-plateau-pralongia -> sector-pralongia; alta-badia-gardena-pass-sector -> gardena-pass-sector; and cinque-torri -> five-torri-averau. The private maintainer ledger retains every raw checklist entry and this report records one canonical assessment per concrete candidate, including the sole newly discovered Faloria/Cristallo candidate.
-- Gardena Pass and Sella Pass are parented to the linked Val Gardena candidate, Pordoi Pass to Arabba–Marmolada, and the Cinque Torri/Five Torri–Averau, Falzarego/Col Gallina, Tofana, Giau and Faloria/Cristallo candidates to Cortina. These dependency assessments do not mutate PR #39 internals or the Cortina owner graph.
+- The initial 85-row candidate checklist reconciles to 77 unique concrete candidates through the recorded alias merges. The accepted Cortina map then exposed four post-inventory scope expansions—Faloria/Cristallo plus Auronzo–Monte Agudo, Misurina–Passo Tre Croci, and San Vito di Cadore—bringing the stable report inventory to 80 candidates; no other scope expansion is introduced.
+- Gardena Pass and Sella Pass are parented to the linked Val Gardena candidate, Pordoi Pass to Arabba–Marmolada, and the Cinque Torri/Five Torri–Averau, Falzarego/Col Gallina, Tofana, Giau and Faloria/Cristallo candidates to Cortina. Auronzo–Monte Agudo, Misurina–Passo Tre Croci, and San Vito di Cadore remain independent linked-owner candidates. These dependency assessments do not mutate PR #39 internals or any Cortina, Auronzo, Misurina, or San Vito owner graph.
 - The retired Alta Badia points/value-card PDF returned 404 and is not evidence. The current parent tariff page preserves product identity only; exact current product scope and season remain deferred.
-- The complete initial 52-source checklist was dispositioned: 49 URLs were reachable, two were manual-review 403 responses, and the retired points/value-card PDF was a stale 404. The stale URL is recorded only in this caveat, never as proof. Follow-up source-trust evidence for the six-market split and Sass Dlacia is enumerated separately in the evidence table.
+- The complete current source checklist contains 63 unique URLs used by the report or changed state. Sixty returned HTTP 200 and were reviewed for the recorded scope; three Dolomiti Superski pages returned 403 and remain explicit manual-render limitations. The retired points/value-card PDF returned 404 and is recorded only as a retired source, outside the 63 current URLs.
 - No Alta Badia-Lagazuoi terrain domain is inferred; Lagazuoi remains transfer-required and separately operated while the local pass covers both modeled areas.
 - Official map/pass scope supports 53 lifts while live inventory can enumerate 54; 53 remains normalized only to pass_accessible_terrain and narrower core-only terrain metrics remain unresolved.
 - Retained alta-badia-ski-area upper geometry changes from 2778 m to 2550 m. After merge, force-refetch 1991-01-01 through 2025-12-31 and rebuild climatology through baseline year 2025; new lagazuoi-ski-area uses scheduled completion.
 - Rollback must restore catalog and trust together, restore Alta Badia geometry with forced refetch/climatology rebuild, and remove Lagazuoi only after checking persisted dependents.
-- Faloria/Cristallo is the sole scope expansion after the complete initial inventory; it is source-backed, deferred to the existing regional backlog item, and does not authorize mutation of the Cortina graph.
+- Faloria/Cristallo, Auronzo–Monte Agudo, Misurina–Passo Tre Croci, and San Vito di Cadore are the four post-inventory scope expansions. Each is source-backed, deferred to the existing regional backlog item, and does not authorize mutation of its owning graph.

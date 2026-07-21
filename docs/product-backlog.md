@@ -134,6 +134,11 @@ Candidate inventory:
   `ski_area:passo-giau-croda-negra`, and `ski_area:faloria-cristallo` remain
   linked-sector candidates whose complete Val Gardena, Arabba, or Cortina owner
   graphs are outside PR #30.
+- `ski_area:auronzo-monte-agudo`,
+  `ski_area:misurina-passo-tre-croci`, and
+  `ski_area:san-vito-di-cadore-ski-area` are explicit linked-owner candidates
+  exposed by the reviewed Cortina map. Their dedicated destination, access,
+  operations, weather, and pass graphs remain outside PR #30.
 - `ski_area:civetta` is a concrete future regional ski-area candidate whose
   complete destination, access, operating, weather, and pass graph is outside
   this Alta Badia batch.
