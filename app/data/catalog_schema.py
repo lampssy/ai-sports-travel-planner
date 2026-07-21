@@ -59,6 +59,7 @@ def _create_normalized_catalog_owner_tables(
             lift_pass_product_id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             validity_scope TEXT NOT NULL,
+            validity_windows_json TEXT NOT NULL DEFAULT '[]',
             external_validity_summary TEXT,
             pass_accessible_terrain_json TEXT,
             prices_json TEXT NOT NULL DEFAULT '[]',
@@ -117,6 +118,9 @@ def _expand_legacy_catalog_tables(
         ALTER TABLE terrain_domains
         ADD COLUMN IF NOT EXISTS official_trail_map_json TEXT,
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+
+        ALTER TABLE lift_pass_products
+        ADD COLUMN IF NOT EXISTS validity_windows_json TEXT NOT NULL DEFAULT '[]';
 
         ALTER TABLE stay_destinations
         DROP COLUMN IF EXISTS atmosphere_tags_json;

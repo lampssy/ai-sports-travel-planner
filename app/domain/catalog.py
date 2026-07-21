@@ -435,6 +435,7 @@ class LiftPassProduct(_CatalogModel):
     default_for_stay_destination_ids: tuple[CatalogId, ...] = ()
     valid_ski_area_ids: tuple[CatalogId, ...] = ()
     terrain_domain_ids: tuple[CatalogId, ...] = ()
+    validity_windows: tuple[CatalogSeasonWindow, ...] = ()
     external_validity_summary: str | None = None
     pass_accessible_terrain: AggregateTerrainMetrics | None = None
     prices: tuple[CatalogLiftPassPrice, ...] = ()

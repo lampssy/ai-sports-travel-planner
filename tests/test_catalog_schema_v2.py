@@ -45,6 +45,7 @@ NORMALIZED_TABLE_COLUMNS = {
         "lift_pass_product_id",
         "name",
         "validity_scope",
+        "validity_windows_json",
         "external_validity_summary",
         "pass_accessible_terrain_json",
         "prices_json",
@@ -158,6 +159,46 @@ def test_normalized_catalog_schema_has_expected_tables_and_keys() -> None:
         row["attname"] == "ski_area_id" and row["indisunique"] for row in ski_area_keys
     )
     assert stay_base_key is not None
+
+
+def test_schema_upgrade_adds_lift_pass_validity_windows_without_recreation() -> None:
+    with connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO lift_pass_products (
+                lift_pass_product_id, name, validity_scope
+            ) VALUES ('existing-pass', 'Existing Pass', 'single_ski_area')
+            """
+        )
+        connection.execute(
+            "ALTER TABLE lift_pass_products DROP COLUMN validity_windows_json"
+        )
+
+    ensure_normalized_catalog_schema()
+
+    with connect() as connection:
+        row = connection.execute(
+            """
+            SELECT lift_pass_product_id, validity_windows_json
+            FROM lift_pass_products
+            WHERE lift_pass_product_id = 'existing-pass'
+            """
+        ).fetchone()
+        column = connection.execute(
+            """
+            SELECT is_nullable
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'lift_pass_products'
+              AND column_name = 'validity_windows_json'
+            """
+        ).fetchone()
+
+    assert row == {
+        "lift_pass_product_id": "existing-pass",
+        "validity_windows_json": "[]",
+    }
+    assert column == {"is_nullable": "NO"}
 
 
 def test_normalized_schema_has_catalog_fact_projection_columns() -> None:

@@ -55,6 +55,50 @@ def test_catalog_repository_returns_active_normalized_snapshot() -> None:
     assert repository.get_ski_area("missing") is None
 
 
+@pytest.mark.parametrize(
+    "validity_windows",
+    [
+        [],
+        [
+            {
+                "season_label": "2026-2027",
+                "start_date": "2026-12-05",
+                "end_date": "2027-04-11",
+                "status": "planned",
+            }
+        ],
+        [
+            {
+                "season_label": "2026-2027",
+                "start_date": "2026-12-05",
+                "end_date": "2027-04-11",
+                "status": "planned",
+            },
+            {
+                "season_label": "2027 autumn",
+                "start_date": "2027-10-02",
+                "end_date": "2027-12-03",
+                "status": "estimated",
+            },
+        ],
+    ],
+    ids=("none", "one", "two"),
+)
+def test_catalog_repository_round_trips_lift_pass_validity_windows(
+    validity_windows: list[dict[str, str]],
+) -> None:
+    payload = minimal_catalog_payload()
+    payload["lift_pass_products"][0]["validity_windows"] = validity_windows
+    snapshot = CatalogSnapshot.model_validate(payload)
+    sync_catalog_snapshot(snapshot)
+
+    loaded = CatalogRepository().get_snapshot()
+
+    assert loaded.lift_pass_products[0].validity_windows == (
+        snapshot.lift_pass_products[0].validity_windows
+    )
+
+
 def test_catalog_repository_uses_one_query_per_entity_or_join_table(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

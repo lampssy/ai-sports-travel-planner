@@ -388,12 +388,14 @@ def _upsert_passes(
             """
             INSERT INTO lift_pass_products (
                 lift_pass_product_id, name, validity_scope,
+                validity_windows_json,
                 external_validity_summary, pass_accessible_terrain_json,
                 prices_json, is_active
-            ) VALUES (%s, %s, %s, %s, %s, %s, TRUE)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE)
             ON CONFLICT (lift_pass_product_id) DO UPDATE SET
                 name = excluded.name,
                 validity_scope = excluded.validity_scope,
+                validity_windows_json = excluded.validity_windows_json,
                 external_validity_summary = excluded.external_validity_summary,
                 pass_accessible_terrain_json =
                     excluded.pass_accessible_terrain_json,
@@ -404,6 +406,7 @@ def _upsert_passes(
                 product.lift_pass_product_id,
                 product.name,
                 product.validity_scope,
+                _model_list_json(product.validity_windows),
                 product.external_validity_summary,
                 _model_json(product.pass_accessible_terrain),
                 _model_list_json(product.prices),

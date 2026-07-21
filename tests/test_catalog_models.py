@@ -86,6 +86,55 @@ def minimal_catalog_payload() -> dict[str, Any]:
     }
 
 
+def test_lift_pass_validity_windows_default_to_no_separate_constraint() -> None:
+    snapshot = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    assert snapshot.lift_pass_products[0].validity_windows == ()
+
+
+def test_lift_pass_validity_windows_use_typed_complete_date_ranges() -> None:
+    payload = minimal_catalog_payload()
+    payload["lift_pass_products"][0]["validity_windows"] = [
+        {
+            "season_label": "2026-2027",
+            "start_date": "2026-12-05",
+            "end_date": "2027-04-11",
+            "status": "planned",
+        },
+        {
+            "season_label": "2027 autumn",
+            "start_date": "2027-10-02",
+            "end_date": "2027-12-03",
+            "status": "estimated",
+        },
+    ]
+
+    product = CatalogSnapshot.model_validate(payload).lift_pass_products[0]
+
+    assert tuple(window.start_date for window in product.validity_windows) == (
+        date(2026, 12, 5),
+        date(2027, 10, 2),
+    )
+
+
+def test_lift_pass_validity_windows_reject_reversed_date_ranges() -> None:
+    payload = minimal_catalog_payload()
+    payload["lift_pass_products"][0]["validity_windows"] = [
+        {
+            "season_label": "2026-2027",
+            "start_date": "2027-04-11",
+            "end_date": "2026-12-05",
+            "status": "planned",
+        }
+    ]
+
+    with pytest.raises(
+        ValidationError,
+        match="season window end_date must be on or after start_date",
+    ):
+        CatalogSnapshot.model_validate(payload)
+
+
 def add_second_destination(payload: dict[str, Any]) -> None:
     destination = deepcopy(payload["stay_destinations"][0])
     destination["stay_destination_id"] = "other-destination"

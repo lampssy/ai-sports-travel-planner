@@ -228,6 +228,7 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
         lift_pass_product_rows = connection.execute(
             """
             SELECT lift_pass_product_id, name, validity_scope,
+                   validity_windows_json,
                    external_validity_summary,
                    pass_accessible_terrain_json, prices_json
             FROM lift_pass_products
@@ -587,6 +588,12 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                         ),
                         "terrain_domain_ids": pass_terrain_domains.get(
                             row["lift_pass_product_id"], []
+                        ),
+                        "validity_windows": _decode_json(
+                            row,
+                            "validity_windows_json",
+                            table_name="lift_pass_products",
+                            default=[],
                         ),
                         "external_validity_summary": row["external_validity_summary"],
                         "pass_accessible_terrain": _decode_json(
