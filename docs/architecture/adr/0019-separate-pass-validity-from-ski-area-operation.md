@@ -59,13 +59,23 @@ ski-area season still applies and no independent pass-date guarantee is made.
 When a product has explicit windows but none for the requested future season,
 retain the otherwise season-applicable candidate with pass validity marked
 unverified for that season. Do not reuse or shift the previous season's dates.
-When an explicit window exists for the requested season, require the complete
-trip to fit inside it.
+When an authoritative explicit window exists for the requested season, require
+the complete trip to fit inside it.
 
 Use the selected ski area's existing season-year calculation to associate an
-exact trip and pass window. Do not parse free-text season labels. A month-only
-request with no concrete year keeps the existing cautious month-level ski-area
-gate and does not claim exact pass-window applicability.
+exact trip and pass window. Apply the same calculation to both the trip start
+and each pass window start; comparing a pass window's raw start year would
+misclassify post-main-winter windows in a cross-calendar season. Do not parse
+free-text season labels. A month-only request with no concrete year keeps the
+existing cautious month-level ski-area gate and does not claim exact pass-window
+applicability.
+
+Preserve the existing trust boundary when deriving applicability. Ski-area
+operation can be confirmed or declared unavailable only from source-backed
+season evidence. Pass windows can confirm or exclude only when the pass's
+`identity_scope_availability` evidence is source-backed and the window status is
+`planned`. Estimated or non-source-backed evidence remains eligible only as
+unverified and must not become a confirmed public claim.
 
 Keep pass coverage static within each modeled product. If the publisher-facing
 ticket has materially different coverage in different date regimes, model
@@ -95,6 +105,9 @@ operating state.
   area season data.
 - Seasonal regional products can be excluded accurately for known dates.
 - Future-season planning remains useful while uncertainty stays visible.
+- Existing catalog trust statuses continue to control whether exact season and
+  pass dates are authoritative; deterministic containment alone does not upgrade
+  estimated or source-needed evidence.
 - Catalog, persistence, trust, curation, Search V4, and API-summary paths must
   carry and enforce the new optional windows.
 - The additive, defaulted field does not by itself require a catalog version or

@@ -92,6 +92,11 @@ An empty value means **no additional modeled pass-date restriction**. It does
 not copy ski-area dates into the pass and does not claim that the product is
 valid indefinitely.
 
+Window dates become authoritative for exclusion or confirmation only when the
+owning pass trust group is source-backed and the window status is `planned`.
+An `estimated` window may preserve reviewed context, but it cannot confirm exact
+ticket entitlement or exclude a candidate; runtime treats it as unverified.
+
 A pass product keeps static `valid_ski_area_ids` and `terrain_domain_ids`.
 When the same publisher-facing ticket has materially different coverage in
 different date regimes, Snowcast models separate product variants whose static
@@ -118,9 +123,10 @@ coverage_status = full | partial | unverified
 ```
 
 The contract set remains the catalog truth. The operating and unavailable sets
-are date-specific projections of that truth through ski-area season evidence.
-The unverified set preserves covered areas whose operation cannot be confirmed
-for the requested season.
+are date-specific projections of that truth through source-backed ski-area
+season evidence. The unverified set preserves covered areas whose operation
+cannot be confirmed for the requested season, including areas whose season
+trust is `estimated` or `needs_source`.
 
 ## Applicability Rules
 
@@ -136,12 +142,13 @@ Where:
 
 ```text
 ski_area_applicable =
-  the complete trip is inside a known ski-area operating window,
+  the complete trip is inside a source-backed ski-area operating window,
   or the existing cautious unknown-season fallback applies
 
 pass_applicable =
   the pass has no validity windows,
-  or the complete trip is inside a validity window for the requested season,
+  or the complete trip is inside a source-backed planned validity window for
+  the requested season,
   or the future-season fallback applies
 ```
 
@@ -154,8 +161,9 @@ behavior; they must not manufacture exact pass dates.
 One closed covered ski area does not invalidate the pass for every other
 covered area. Generate and retain candidates only for covered ski areas that
 are season-applicable to the requested trip. Exclude a candidate focused on a
-known closed area. If no covered area is operating, no candidate for that pass
-remains.
+known closed area. If every covered area is known unavailable, no candidate for
+that pass remains. Areas with insufficient season evidence remain eligible only
+through the explicit unverified fallback; they are never counted as operating.
 
 When only part of the pass network is operating:
 
@@ -187,12 +195,14 @@ say that exact pass dates are not yet confirmed.
 
 Derive the requested season year with the existing ski-area season-year rule:
 use the selected ski area's `season_start_month` and the trip date, never a
-free-text pass or price `season_label`. A pass window belongs to that season by
-its `start_date` year. This keeps cross-calendar winter seasons deterministic.
+free-text pass or price `season_label`. Classify each pass window by applying
+that same rule to its `start_date`; do not compare the raw start year. This keeps
+cross-calendar winter seasons deterministic and correctly associates a
+post-main-winter window such as April-May 2027 with Hintertux's 2026/27 season.
 
-If the requested season has an explicit pass window and the trip falls outside
-it, the pass is inapplicable. Snowcast must not fall back merely because the
-exact window is inconvenient.
+If the requested season has an authoritative explicit pass window and the trip
+falls outside it, the pass is inapplicable. Snowcast must not fall back merely
+because the exact window is inconvenient.
 
 Snowcast never projects the previous season's calendar dates into the future.
 
@@ -208,7 +218,9 @@ without claiming confirmed applicability for an unspecified year.
 - A pass with no additional validity restriction remains usable only while its
   selected ski area is season-applicable.
 - A future-season fallback may remain eligible but must expose an uncertainty
-  marker in the pass summary and explanation inputs.
+  marker in the pass summary and explanation inputs. The public warning is
+  required when pass validity is unverified even if all covered ski areas have
+  confirmed operation.
 - A partially operating pass must expose its contract, operating, and
   unavailable area sets plus a coverage warning; season-unknown covered areas
   must remain explicitly unverified.
@@ -239,6 +251,9 @@ without claiming confirmed applicability for an unspecified year.
   the field through their normal typed change and reconciliation paths.
 - Conflicting official dates remain visible as a trust caveat; deterministic
   code must not average or invent a window.
+- `estimated` pass windows and non-source-backed pass or ski-area trust states
+  remain unverified at runtime; they cannot create a confirmed applicability
+  claim or an authoritative exclusion.
 
 ## Persistence And Migration
 
@@ -274,7 +289,8 @@ without claiming confirmed applicability for an unspecified year.
   - unresolved: none.
 - ADR status: ADR 0019 accepted with this design
 - Advisory design-review: `backend-api` and
-  `data-trust-source-integrity`, pending after owner review of this written spec
+  `data-trust-source-integrity`, completed after documentation corrections; no
+  unresolved Blocker, High, or material Medium findings
 - Advisory feature-review: `backend-api` and
   `data-trust-source-integrity`, required before implementation handoff
 
@@ -306,6 +322,11 @@ Before implementation, tests should cover:
 - complete-trip containment is required for both windows;
 - a future season with no matching pass window remains eligible and reports
   unverified pass dates;
+- a post-main-winter pass window is associated with the selected ski area's
+  cross-calendar season by applying the season-year rule to both trip and window;
+- estimated or non-source-backed pass windows never confirm or exclude;
+- non-source-backed ski-area season evidence remains eligible and explicitly
+  unverified rather than being treated as operating or unavailable;
 - a previous season's exact dates are never presented as future dates;
 - one closed covered area produces partial coverage without excluding candidates
   for other operating covered areas;
@@ -320,7 +341,7 @@ Before implementation, tests should cover:
 - catalog round-trip persistence preserves zero, one, and multiple validity
   windows;
 - trust and schema-v3 curation validation bind changed windows to direct source
-  evidence;
+  evidence at the reconciled root `validity_windows` field path;
 - Search V4 candidate, constraint, pass-summary, and explanation outputs remain
   deterministic and backward-compatible.
 

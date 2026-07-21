@@ -13,10 +13,16 @@
 - Classification: `review-gated`; this changes catalog correctness, planning eligibility, source trust, persistence, shared API behavior, and ranking inputs.
 - Developer Decision Checkpoints: resolved. Pass validity and ski-area operation remain separate; missing pass windows add no restriction; an unpublished future-season tariff remains eligible but unverified; partial coverage keeps operating-area candidates but does not recalculate or rank on the full-network aggregate.
 - ADR status: `docs/architecture/adr/0019-separate-pass-validity-from-ski-area-operation.md` is accepted; no additional ADR is required unless execution changes the ownership or fallback rules.
-- Advisory design review: complete Task 1 before Task 2 code. Run `snowcast-advisory-review` in `design-review` mode with `backend-api` and `data-trust-source-integrity` against the accepted spec, ADR, and this plan. Resolve every Blocker, High, and material Medium finding before implementation.
+- Advisory design review: completed with `backend-api` and
+  `data-trust-source-integrity` against the accepted spec, ADR, and this plan;
+  documentation corrections resolved all Blocker, High, and material Medium
+  findings before implementation.
 - Advisory feature review: run the same two reviewers against the final diff before handoff. Reviewers do not modify code.
 - No request-path LLM call, new dependency, catalog schema-version bump, or curation report schema-version bump.
 - `LiftPassProduct.validity_windows=()` means “no separate pass-date restriction modeled”; it never means year-round validity and never copies `SkiArea.season_windows`.
+- Exact windows are authoritative only with source-backed owning trust. A pass
+  window with `status="estimated"`, or pass/area evidence with trust
+  `estimated`/`needs_source`, remains unverified and cannot confirm or exclude.
 - Exact-date applicability requires complete-trip containment. A matching-season explicit window outside the trip is authoritative and must exclude the pass; an absent future-season window is uncertainty, not evidence of invalidity.
 - Month-only and absent-window searches retain candidates conservatively and must not manufacture exact dates.
 - Pass coverage remains static per product. Different date-dependent coverage requires separate product variants; do not add pass-to-area edge dates.
@@ -39,7 +45,7 @@
 - Produces: an advisory `design-review` disposition from `backend-api` and `data-trust-source-integrity` with no unresolved Blocker, High, or material Medium finding.
 - Consumes: the accepted ownership, fallback, partial-coverage, trust, and compatibility decisions.
 
-- [ ] **Step 1: Run the two focused advisory design reviews**
+- [x] **Step 1: Run the two focused advisory design reviews**
 
 Invoke `snowcast-advisory-review` in `design-review` mode with these exact reviewer lanes and artifacts:
 
@@ -51,11 +57,11 @@ artifacts:
   docs/superpowers/plans/2026-07-21-lift-pass-validity-windows.md
 ```
 
-- [ ] **Step 2: Resolve findings without silently changing owner decisions**
+- [x] **Step 2: Resolve findings without silently changing owner decisions**
 
 Mechanical clarifications may update the spec/plan directly. Stop for a new Developer Decision Checkpoint if a reviewer proposes per-edge validity, dynamic terrain calculation, a different future-season policy, or a breaking API shape.
 
-- [ ] **Step 3: Record the completed design-review disposition**
+- [x] **Step 3: Record the completed design-review disposition**
 
 Update the spec’s Decision and Review Gate from `pending` to the actual reviewer disposition. If this changes documentation, commit only the reviewed docs:
 
@@ -208,7 +214,8 @@ git commit -m "feat: persist lift pass validity windows"
 
 **Interfaces:**
 - Produces: `AreaOperationStatus`, `PassValidityStatus`, `PassCoverageStatus`, `PassCoverageProjection`, `season_year_for_date()`, `evaluate_ski_area_operation()`, `evaluate_pass_validity()`, `project_pass_coverage()`, and `candidate_is_applicable()`.
-- Consumes: `SkiArea`, `LiftPassProduct`, raw month/exact-date inputs, and existing season-year/month semantics.
+- Consumes: `SkiArea`, `LiftPassProduct`, their owning catalog trust statuses,
+  raw month/exact-date inputs, and existing season-year/month semantics.
 
 - [ ] **Step 1: Write the full failing applicability matrix**
 
@@ -221,6 +228,9 @@ dated pass + complete trip inside matching-season window -> confirmed
 dated pass + partial overlap -> inapplicable
 dated pass + matching-season window outside trip -> inapplicable, no fallback
 dated pass + no requested-season window -> retained, unverified_for_requested_season
+post-main-winter window -> matched by applying the area season-year rule to the window start
+estimated or non-source-backed pass window -> retained but unverified, never authoritative
+non-source-backed area season -> retained but unverified, never called operating or unavailable
 old pass dates -> never emitted as future dates
 month outside recurring area months -> unavailable
 month inside recurring area months -> retained but operation unverified
@@ -276,13 +286,28 @@ def season_year_for_date(value: date, season_start_month: int) -> int:
     return value.year if value.month >= season_start_month else value.year - 1
 ```
 
-- Exact ski-area dates: return `operating` when one matching-season window contains the complete trip; return `unavailable` when matching-season windows exist but none contains it; otherwise use recurring months as the cautious fallback and return `unverified` only when every trip date is within them.
+- Exact ski-area dates: the raw evaluator returns `operating` when one
+  matching-season window contains the complete trip; returns `unavailable` when
+  matching-season windows exist but none contains it; otherwise uses recurring
+  months as the cautious fallback and returns `unverified` only when every trip
+  date is within them. `project_pass_coverage()` must downgrade that raw result
+  to `unverified` whenever `elevation_season` trust is not source-backed. Keeping
+  trust at the projection boundary lets the legacy planning helper reuse the
+  date calculation without pretending it owns the separate trust manifest.
 - Month-only: return `unavailable` outside recurring months and `unverified` inside them.
 - No travel window: return `unverified` so candidates remain compatible without an operating claim.
 - Empty pass windows: return `not_constrained`.
-- Exact pass dates: derive requested season year from the selected ski area; matching window containment returns `confirmed`, a same-season miss returns `inapplicable`, and no same-season window returns `unverified_for_requested_season`.
+- Exact pass dates: the raw evaluator derives requested season year from the
+  trip with the selected ski area, and classifies every pass window by calling
+  `season_year_for_date(window.start_date, ski_area.season_start_month)` rather
+  than comparing the raw start year. At the projection boundary, require
+  source-backed `identity_scope_availability` trust and `status="planned"`
+  before a window is authoritative. Matching authoritative containment returns
+  `confirmed`, an authoritative same-season miss returns `inapplicable`, and
+  absent or non-authoritative same-season evidence returns
+  `unverified_for_requested_season`.
 - Month-only or no dates with explicit pass windows: return `unverified_for_requested_season`; never parse or project `season_label`.
-- Coverage precedence: any unverified covered area makes status `unverified`; otherwise some unavailable plus some operating makes `partial`; all operating makes `full`.
+- Coverage precedence: any unverified covered area makes status `unverified`; otherwise some unavailable plus some operating makes `partial`; all operating makes `full`. Pass-validity uncertainty does not rename area coverage, but it does add the public unverified warning.
 - `candidate_is_applicable()` returns false only when pass validity is `inapplicable` or the focus area is in the unavailable set.
 
 Define centralized B2 warnings so backend and frontend do not invent divergent policy copy:
@@ -298,6 +323,14 @@ UNVERIFIED_COVERAGE_WARNING = (
 ```
 
 For a request with no travel window, retain `coverage_status="unverified"` but leave warnings empty because no date-specific claim was requested.
+
+`project_pass_coverage()` receives the pass
+`identity_scope_availability` trust status and an area-ID-to-`elevation_season`
+trust mapping. Treat only `verified` and `verified_with_adjustment` as
+source-backed, matching the existing Search constraint policy. Add
+`UNVERIFIED_COVERAGE_WARNING` whenever exact/month context is
+present and either pass validity or any covered area's operation is unverified;
+add the partial warning when known unavailable and operating subsets coexist.
 
 - [ ] **Step 4: Replace planning’s private duplicate season logic**
 
@@ -333,8 +366,10 @@ git commit -m "feat: evaluate pass and area date applicability"
 
 **Files:**
 - Modify: `app/domain/search_v4_service.py`
+- Modify: `app/domain/search_constraints.py`
 - Modify: `app/domain/search_factors/static.py`
 - Test: `tests/test_search_v4_service.py`
+- Test: `tests/test_search_constraints.py`
 - Test: `tests/test_api.py`
 
 **Interfaces:**
@@ -350,6 +385,8 @@ Build a two-area pass fixture in `tests/test_search_v4_service.py` and test exac
 - all areas closed: no candidate remains for the pass;
 - pass matching-season window outside trip: no candidate remains;
 - pass with no future matching window: candidate remains and validity is unverified;
+- estimated/non-source-backed pass and area windows: candidates remain with
+  explicit uncertainty instead of being confirmed or excluded;
 - month-only and no-window requests: candidate generation remains deterministic and conservative.
 
 Keep the current assertion that `covered_ski_area_ids` equals the full static contract set.
@@ -397,11 +434,21 @@ Expected: failures because records and summaries do not carry a projection.
 Replace `V4CandidateRecord.pass_covered_ski_area_ids` with a required `pass_coverage: PassCoverageProjection`. In `generate_v4_candidate_records()`:
 
 1. derive static contract coverage with the existing `_pass_covered_ski_area_ids()`;
-2. project it against `graph.areas_by_id` and the request window;
+2. project it against `graph.areas_by_id`, the request window, and the owning
+   pass/area trust statuses from `trust_manifest`;
 3. skip the product/access candidate when `candidate_is_applicable()` is false;
 4. retain the projection on the record.
 
 Do not mutate `CatalogGraph` or make pass coverage date-dependent in storage.
+
+Keep Search's season constraint path aligned with the centralized result.
+Extend `CandidateSeasonEvidence` with a default-safe optional
+`operation_status`, populate it from the focus area's projection, and make
+`_evaluate_season()` use that status when present: `unavailable` is a failure,
+`unverified` is the existing warning, and `operating` passes. Preserve the
+legacy raw-window fallback only for direct callers that omit the new field.
+This prevents the old exact-window constraint logic from rejecting the
+central evaluator's cautious unknown-season fallback.
 
 - [ ] **Step 5: Emit default-safe API fields**
 
@@ -416,8 +463,8 @@ Add `pass_coverage: PassCoverageProjection | None = None` as the final defaulted
 Run:
 
 ```bash
-uv run --no-config pytest -q tests/test_search_v4_service.py tests/test_api.py
-uv run --no-config ruff check app/domain/search_v4_service.py app/domain/search_factors/static.py tests/test_search_v4_service.py tests/test_api.py
+uv run --no-config pytest -q tests/test_search_v4_service.py tests/test_search_constraints.py tests/test_api.py
+uv run --no-config ruff check app/domain/search_v4_service.py app/domain/search_constraints.py app/domain/search_factors/static.py tests/test_search_v4_service.py tests/test_search_constraints.py tests/test_api.py
 ```
 
 Expected: all selected tests pass and Ruff exits 0.
@@ -425,7 +472,7 @@ Expected: all selected tests pass and Ruff exits 0.
 Commit:
 
 ```bash
-git add app/domain/search_v4_service.py app/domain/search_factors/static.py tests/test_search_v4_service.py tests/test_api.py
+git add app/domain/search_v4_service.py app/domain/search_constraints.py app/domain/search_factors/static.py tests/test_search_v4_service.py tests/test_search_constraints.py tests/test_api.py
 git commit -m "feat: apply pass coverage to search candidates"
 ```
 
@@ -534,7 +581,14 @@ assert "validity_windows" in CANONICAL_FIELD_PATHS["lift_pass_product"]
 assert "validity_windows" in NESTED_FIELD_PATH_ROOTS["lift_pass_product"]
 ```
 
-Add a report validation test with `field_path="validity_windows"` and a nested evidence item such as `validity_windows[0].start_date` using `source_type="official"` and an operator URL.
+Add a report validation test whose change, field coverage, and evidence all use
+the reconciled root `field_path="validity_windows"`, with
+`source_type="official"` and an operator URL. The evidence `source_value` must
+describe the complete resulting window list, or carry a normalization note when
+the official page expresses the same dates in another shape. Do not use a
+nested evidence path such as `validity_windows[0].start_date`: current schema-v3
+validation intentionally matches evidence to catalog deltas by exact field path,
+and reconciliation emits one root `validity_windows` delta.
 
 - [ ] **Step 2: Write failing exact reconciliation and trust tests**
 
@@ -625,6 +679,8 @@ Test that:
 - `terrainPresentation()` describes `accessible_piste_km` only at its safe selected area/domain scope;
 - a new `passCoveragePresentation()` returns the backend warning and labels `548 km` as published full-network, not date-adjusted context;
 - future-season validity says exact dates are unconfirmed;
+- future-season validity receives the backend unverified warning even when all
+  covered ski areas have confirmed operation;
 - full coverage with no warning adds no warning block.
 
 - [ ] **Step 2: Run focused frontend tests and verify RED**
@@ -739,6 +795,7 @@ uv run --no-config pytest -q \
   tests/test_catalog_repository.py \
   tests/test_catalog_applicability.py \
   tests/test_planning.py \
+  tests/test_search_constraints.py \
   tests/test_search_static_factors.py \
   tests/test_search_v4_service.py \
   tests/test_api.py \
@@ -882,6 +939,10 @@ Confirm the exact pushed head is labeled `maintainer:ready`, `maintainer:owner-d
 - [ ] Every acceptance criterion in the accepted spec maps to a test step above.
 - [ ] `validity_windows` is additive in catalog schema v2 and curation report schema v3.
 - [ ] The requested season is derived from dates and `season_start_month`, never free-text labels.
+- [ ] The same season-year function classifies both trip and pass-window starts,
+      including post-main-winter windows in cross-calendar seasons.
+- [ ] Only source-backed planned windows confirm or exclude; estimated and
+      source-needed evidence stays unverified.
 - [ ] Known invalidity excludes; missing future evidence retains with uncertainty.
 - [ ] Closed focus areas are excluded while operating alternatives survive.
 - [ ] Unverified areas are never called open.
