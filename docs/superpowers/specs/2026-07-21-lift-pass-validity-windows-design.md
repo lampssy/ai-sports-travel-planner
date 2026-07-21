@@ -160,10 +160,17 @@ ski_area_applicable =
 
 pass_applicable =
   the pass has no validity windows,
-  or the complete trip is inside a source-backed planned validity window for
-  the requested season,
-  or the future-season fallback applies
+  or a source-backed planned validity window for the requested season contains
+  the complete trip,
+  or same-season evidence includes any estimated or untrusted window and the
+  result remains unverified,
+  or no same-season window exists and the future-season fallback applies
 ```
+
+The pass is inapplicable only when same-season evidence is present, every
+relevant same-season window is authoritative, and all of those windows miss the
+complete trip. An authoritative containing window confirms applicability even
+when other same-season evidence is estimated or untrusted.
 
 Partial overlap is not enough: a pass window must cover the complete requested
 trip. Month-only searches continue using the existing cautious seasonal

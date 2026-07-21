@@ -59,8 +59,11 @@ ski-area season still applies and no independent pass-date guarantee is made.
 When a product has explicit windows but none for the requested future season,
 retain the otherwise season-applicable candidate with pass validity marked
 unverified for that season. Do not reuse or shift the previous season's dates.
-When an authoritative explicit window exists for the requested season, require
-the complete trip to fit inside it.
+When same-season evidence exists, exclude only if every relevant same-season
+window is authoritative and all of those windows miss the complete trip. Any
+estimated or untrusted same-season window prevents exclusion and leaves the
+result unverified unless an authoritative window contains the complete trip,
+which confirms it.
 
 Use the selected ski area's existing season-year calculation to associate an
 exact trip and pass window. Apply the same calculation to both the trip start

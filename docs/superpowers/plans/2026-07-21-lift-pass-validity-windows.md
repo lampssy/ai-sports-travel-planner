@@ -23,7 +23,13 @@
 - Exact windows are authoritative only with source-backed owning trust. A pass
   window with `status="estimated"`, or pass/area evidence with trust
   `estimated`/`needs_source`, remains unverified and cannot confirm or exclude.
-- Exact-date applicability requires complete-trip containment. A matching-season explicit window outside the trip is authoritative and must exclude the pass; an absent future-season window is uncertainty, not evidence of invalidity.
+- Exact-date applicability requires complete-trip containment. Exclude only when
+  same-season evidence is present, every relevant same-season window is
+  authoritative, and all of those windows miss the complete trip. Any
+  estimated or untrusted same-season window prevents exclusion and yields
+  unverified applicability unless an authoritative containing window confirms
+  the trip. An absent future-season window is uncertainty, not evidence of
+  invalidity.
 - Month-only and absent-window searches retain candidates conservatively and must not manufacture exact dates.
 - Pass coverage remains static per product. Different date-dependent coverage requires separate product variants; do not add pass-to-area edge dates.
 - Do not dynamically sum ski-area terrain. Under partial or unverified coverage, rank only on a source-backed selected ski area or a wholly operating terrain domain; otherwise use neutral missing-data behavior.
