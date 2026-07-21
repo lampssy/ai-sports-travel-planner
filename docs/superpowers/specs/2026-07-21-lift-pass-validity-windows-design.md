@@ -1,0 +1,270 @@
+# Feature Spec: Lift-Pass Validity Windows
+
+## Status
+
+- Status: accepted design; implementation not started
+- Owner: solo-builder
+- Related docs:
+  - `docs/domain-language.md`
+  - `docs/data-trust-model.md`
+  - `docs/planning-model.md`
+  - `docs/search-ranking-model.md`
+- Related plan: pending owner review of this spec
+- Related ADRs:
+  - `docs/architecture/adr/0005-catalog-scope-model.md`
+  - `docs/architecture/adr/0019-separate-pass-validity-from-ski-area-operation.md`
+
+## User Outcome
+
+Snowcast must recommend a lift-pass product only when the product is applicable
+to the requested trip dates and the selected ski area is expected to operate.
+It must keep a useful future-season recommendation when the next tariff has not
+yet been published, while clearly avoiding a false claim that exact pass dates
+are confirmed.
+
+## Problem
+
+`SkiArea` already owns machine-readable operating-season windows, but
+`LiftPassProduct` has no machine-readable validity window. Pass coverage is
+therefore unconditional in the catalog graph and Search V4 candidate expansion.
+Dates embedded in a price `season_label` or `external_validity_summary` are
+display text and cannot safely control eligibility.
+
+The Zillertaler products expose the distinction:
+
+- Mayrhofen's published operating window and the Zillertaler Superskipass
+  window happen to align for winter 2026/27.
+- Hintertux operates for a longer period, while valley-wide Superskipass
+  coverage applies only during the main winter window.
+
+Ski-area operation and ticket entitlement therefore need separate owners even
+when their dates coincide.
+
+Reviewed primary examples:
+
+- Mayrhofen winter operation and Zillertaler Superskipass tariff:
+  <https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter>
+- Hintertux local and wider Zillertal validity periods:
+  <https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/>
+
+## Scope
+
+In scope:
+
+- optional machine-readable validity windows on lift-pass products;
+- deterministic date applicability during candidate generation and selection;
+- intersection with ski-area operating-season evidence;
+- cautious future-season fallback when a previously dated pass has no window
+  for the requested season yet;
+- catalog, persistence, trust, curation-report, validation, API-summary, and
+  focused-test updates required by the new field;
+- migration of source-backed seasonal products such as the Zillertaler
+  Superskipass into products whose static coverage is true throughout each
+  product's modeled validity windows.
+
+Out of scope:
+
+- live lift-status or temporary closure handling;
+- per-lift operating calendars;
+- arbitrary date windows on individual pass-to-ski-area edges;
+- inferring a future tariff by repeating the previous year's dates;
+- acquisition of exact pass windows for every existing catalog product;
+- ranking-weight changes.
+
+## Domain Model
+
+`SkiArea.season_windows` remains the canonical owner of planned or estimated
+terrain operation. `LiftPassProduct.validity_windows` becomes the canonical
+owner of a separately published ticket-entitlement window.
+
+The product field reuses the existing typed catalog season-window shape:
+
+```text
+LiftPassProduct
+  validity_windows: zero or more {season_label, start_date, end_date, status}
+```
+
+The field is optional and defaults to an empty tuple for backward compatibility.
+An empty value means **no additional modeled pass-date restriction**. It does
+not copy ski-area dates into the pass and does not claim that the product is
+valid indefinitely.
+
+A pass product keeps static `valid_ski_area_ids` and `terrain_domain_ids`.
+When the same publisher-facing ticket has materially different coverage in
+different date regimes, Snowcast models separate product variants whose static
+coverage is accurate throughout their respective validity windows. The initial
+implementation does not add date windows to individual coverage edges.
+
+Examples:
+
+- `zillertaler-superskipass`: one main-winter validity window; modeled
+  Mayrhofen and Hintertux coverage.
+- local Hintertux multi-day variant: local Hintertux coverage; one window before
+  and one window after the regional main-winter window.
+- ordinary local pass without separately published dates: no pass validity
+  window; applicability is limited by the selected ski area's operation.
+
+## Applicability Rules
+
+For an exact-date trip, a pass/area configuration is applicable only when:
+
+```text
+ski_area_applicable
+AND
+pass_applicable
+```
+
+Where:
+
+```text
+ski_area_applicable =
+  the complete trip is inside a known ski-area operating window,
+  or the existing cautious unknown-season fallback applies
+
+pass_applicable =
+  the pass has no validity windows,
+  or the complete trip is inside a validity window for the requested season,
+  or the future-season fallback applies
+```
+
+Partial overlap is not enough: a pass window must cover the complete requested
+trip. Month-only searches continue using the existing cautious seasonal
+behavior; they must not manufacture exact pass dates.
+
+### Future-Season Fallback
+
+If a pass has explicit windows but none belongs to the requested future season,
+Snowcast retains the candidate when the ski area remains season-applicable. The
+pass validity outcome is `unverified_for_requested_season`, and public copy must
+say that exact pass dates are not yet confirmed.
+
+Derive the requested season year with the existing ski-area season-year rule:
+use the selected ski area's `season_start_month` and the trip date, never a
+free-text pass or price `season_label`. A pass window belongs to that season by
+its `start_date` year. This keeps cross-calendar winter seasons deterministic.
+
+If the requested season has an explicit pass window and the trip falls outside
+it, the pass is inapplicable. Snowcast must not fall back merely because the
+exact window is inconvenient.
+
+Snowcast never projects the previous season's calendar dates into the future.
+
+For a month-only search without a concrete year, pass windows do not create an
+exact-date exclusion. The existing month-level ski-area season behavior remains
+the practical gate, and the pass summary may present a known seasonal context
+without claiming confirmed applicability for an unspecified year.
+
+## Product And API Behavior
+
+- Date-aware candidate generation must not create a configuration for a pass
+  known to be invalid for the requested trip.
+- A pass with no additional validity restriction remains usable only while its
+  selected ski area is season-applicable.
+- A future-season fallback may remain eligible but must expose an uncertainty
+  marker in the pass summary and explanation inputs.
+- A known out-of-window pass is excluded rather than merely down-ranked.
+- Existing clients remain compatible: the catalog field is additive and API
+  uncertainty fields must use optional/default-safe additions.
+- Product applicability and price validity stay distinct. A pass window does
+  not prove that a stored price applies to the requested season; price matching
+  continues to use its own reviewed slice and uncertainty behavior.
+
+## Data Trust And Curation
+
+- Exact pass dates require direct operator, tariff, or official regional-pass
+  evidence.
+- Pass validity evidence belongs to the existing lift-pass
+  `identity_scope_availability` trust group; coverage evidence remains in the
+  `coverage` group.
+- Empty validity windows are not a verified assertion of year-round validity.
+  Curation reports must distinguish `no separate window modeled` from
+  `explicit window verified`.
+- Schema-v3 curation reports and their resulting graph must include new or
+  changed pass validity windows when they are material to the proposal.
+- This additive field does not require a catalog schema-version bump or a new
+  curation report schema. Existing catalog schema v2 and report schema v3 gain
+  the field through their normal typed change and reconciliation paths.
+- Conflicting official dates remain visible as a trust caveat; deterministic
+  code must not average or invent a window.
+
+## Persistence And Migration
+
+- Add pass validity-window storage through the existing catalog snapshot and
+  normalized repository/sync paths.
+- Existing products migrate with an empty tuple and preserve current behavior
+  except that ski-area operation becomes an explicit applicability gate.
+- Curated products with source-backed dates receive explicit windows.
+- Product splitting is required only when one static coverage set cannot remain
+  true throughout the modeled window. IDs must remain stable once accepted.
+
+## AI / LLM Use
+
+- Applicability, window containment, season matching, and fallback selection
+  are deterministic.
+- Catalog discovery or curation may use Codex to interpret official tariff
+  language and propose product boundaries, subject to the existing source,
+  report, review, and owner gates.
+- No request-path LLM call is introduced.
+
+## Decision And Review Gate
+
+- Classification: review-gated
+- High-risk domains: catalog correctness, planning eligibility, source trust,
+  persistence, and shared Search V4 behavior
+- Developer Decision Checkpoints:
+  - resolved: keep pass validity separate from ski-area operation;
+  - resolved: absent pass windows impose no additional date constraint;
+  - resolved: future seasons without a newly published pass window remain
+    eligible with explicit unverified-date wording;
+  - unresolved: none.
+- ADR status: ADR 0019 accepted with this design
+- Advisory design-review: `backend-api` and
+  `data-trust-source-integrity`, pending after owner review of this written spec
+- Advisory feature-review: `backend-api` and
+  `data-trust-source-integrity`, required before implementation handoff
+
+## Alternatives Considered
+
+1. **Inherit pass dates from ski-area operation.** Smaller, but conflates lift
+   operation with ticket entitlement and fails when a long-season area accepts
+   a regional product only during a shorter window.
+2. **Separate pass validity and intersect it with operation.** Selected. It
+   preserves ownership, supports ordinary undated passes, and keeps the runtime
+   rule deterministic.
+3. **Date every pass-to-area coverage edge.** Most expressive, but adds schema,
+   persistence, curation, and explanation complexity that current product use
+   does not justify.
+4. **Exclude a previously dated pass until next season's tariff is published.**
+   Source-conservative but too destructive for forward planning.
+5. **Repeat last year's dates.** Convenient but presents inference as tariff
+   truth and is rejected.
+
+## Verification And Acceptance Criteria
+
+Before implementation, tests should cover:
+
+- undated pass plus in-season area is applicable;
+- undated pass plus out-of-season area is not applicable;
+- dated pass plus in-window area is applicable;
+- dated pass outside its known requested-season window is not applicable;
+- pass in-window plus area out-of-season is not applicable;
+- complete-trip containment is required for both windows;
+- a future season with no matching pass window remains eligible and reports
+  unverified pass dates;
+- a previous season's exact dates are never presented as future dates;
+- catalog round-trip persistence preserves zero, one, and multiple validity
+  windows;
+- trust and schema-v3 curation validation bind changed windows to direct source
+  evidence;
+- Search V4 candidate, constraint, pass-summary, and explanation outputs remain
+  deterministic and backward-compatible.
+
+Focused implementation verification must include catalog model/repository/sync
+tests, planning and Search V4 tests, schema-v3 curation validation, diff checks,
+and advisory feature review.
+
+## Revisit Criteria
+
+Revisit relationship-level coverage windows only when a materially used ticket
+cannot be represented as stable product variants without confusing identity,
+pricing, or user-facing selection.

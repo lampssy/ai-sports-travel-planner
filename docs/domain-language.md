@@ -377,6 +377,14 @@ explicit ski areas and/or terrain domains. Default selection is scoped per stay
 destination. Reviewed prices and pass-accessible aggregate terrain remain on
 the product rather than being copied to child ski areas.
 
+An optional **pass validity window** records a separately published period of
+ticket entitlement. It does not own or replace ski-area operating dates. When
+no separate pass window is modeled, the pass adds no date restriction and the
+covered ski area's season still governs practical applicability. When a dated
+pass has no published window for a requested future season, Snowcast may retain
+the configuration only with exact pass validity marked unverified; it never
+projects an older tariff's dates into the future.
+
 **Rental display fact**
 
 A reviewed equipment-rental example scoped to a stay destination and optionally
