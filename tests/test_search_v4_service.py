@@ -19,7 +19,11 @@ from app.api.routes import router
 from app.data.audit_search_factor_readiness import DEFAULT_TRUST_MANIFEST_PATH
 from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
 from app.domain import search_v4_service
-from app.domain.catalog import AggregateTerrainMetrics, CatalogSnapshot
+from app.domain.catalog import (
+    AggregateTerrainMetrics,
+    CatalogSeasonWindow,
+    CatalogSnapshot,
+)
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.models import SnowClimatologyDaily
@@ -137,6 +141,106 @@ def _catalog_and_trust():
         DEFAULT_TRUST_MANIFEST_PATH.read_text(encoding="utf-8")
     )
     return snapshot, manifest
+
+
+def _two_area_pass_catalog(
+    *,
+    pass_windows: tuple[CatalogSeasonWindow, ...],
+    area_windows: Mapping[str, tuple[CatalogSeasonWindow, ...]],
+    pass_trust_status: str = "verified",
+    area_trust_statuses: Mapping[str, str] | None = None,
+) -> tuple[CatalogSnapshot, CatalogTrustManifest]:
+    snapshot, manifest = _catalog_and_trust()
+    pass_id = "alta-badia-skipass"
+    area_ids = ("alta-badia-ski-area", "lagazuoi-ski-area")
+    product = next(
+        item
+        for item in snapshot.lift_pass_products
+        if item.lift_pass_product_id == pass_id
+    )
+    updated_product = product.model_copy(update={"validity_windows": pass_windows})
+    updated_areas = {
+        item.ski_area_id: item.model_copy(
+            update={"season_windows": area_windows[item.ski_area_id]}
+        )
+        if item.ski_area_id in area_ids
+        else item
+        for item in snapshot.ski_areas
+    }
+    snapshot = snapshot.model_copy(
+        update={
+            "ski_areas": tuple(
+                updated_areas[item.ski_area_id] for item in snapshot.ski_areas
+            ),
+            "lift_pass_products": tuple(
+                updated_product if item.lift_pass_product_id == pass_id else item
+                for item in snapshot.lift_pass_products
+            ),
+        }
+    )
+
+    entities = {
+        entity_type: dict(entries) for entity_type, entries in manifest.entities.items()
+    }
+    pass_entry = entities["lift_pass_products"][pass_id]
+    entities["lift_pass_products"][pass_id] = pass_entry.model_copy(
+        update={
+            "field_statuses": {
+                **dict(pass_entry.field_statuses),
+                "identity_scope_availability": pass_trust_status,
+            }
+        }
+    )
+    for area_id in area_ids:
+        entry = entities["ski_areas"][area_id]
+        entities["ski_areas"][area_id] = entry.model_copy(
+            update={
+                "field_statuses": {
+                    **dict(entry.field_statuses),
+                    "elevation_season": (area_trust_statuses or {}).get(
+                        area_id, "verified"
+                    ),
+                }
+            }
+        )
+    manifest = manifest.model_copy(update={"entities": entities})
+    return snapshot, manifest
+
+
+def _season_window(
+    start: date,
+    end: date,
+    *,
+    status: str = "planned",
+) -> CatalogSeasonWindow:
+    return CatalogSeasonWindow(
+        season_label="Winter 2026/27",
+        start_date=start,
+        end_date=end,
+        status=status,
+    )
+
+
+def _records_for_alta_badia_pass(
+    *,
+    snapshot: CatalogSnapshot,
+    manifest: CatalogTrustManifest,
+    travel_window: TravelWindow | None,
+):
+    intent = SearchIntent(
+        constraints=SearchConstraints(travel_window=travel_window)
+        if travel_window is not None
+        else SearchConstraints()
+    )
+    return tuple(
+        record
+        for record in generate_v4_candidate_records(
+            graph=CatalogGraph.from_snapshot(snapshot),
+            intent=intent,
+            trust_manifest=manifest,
+        )
+        if record.selected_pass.lift_pass_product_id == "alta-badia-skipass"
+    )
 
 
 def _intent(**constraint_updates: object) -> SearchIntent:
@@ -3096,7 +3200,9 @@ def test_candidate_generation_expands_each_applicable_pass_without_default_bias(
         expected = set(record.selected_pass.valid_ski_area_ids)
         for domain_id in record.selected_pass.terrain_domain_ids:
             expected.update(graph.domains_by_id[domain_id].ski_area_ids)
-        assert record.pass_covered_ski_area_ids == tuple(sorted(expected))
+        assert record.pass_coverage.contract_covered_ski_area_ids == tuple(
+            sorted(expected)
+        )
         expected_domain_ids = set(record.selected_pass.terrain_domain_ids)
         expected_domain_ids.update(
             domain.terrain_domain_id
@@ -3106,6 +3212,314 @@ def test_candidate_generation_expands_each_applicable_pass_without_default_bias(
         assert {domain.terrain_domain_id for domain in record.terrain_domains} == (
             expected_domain_ids
         )
+
+
+def test_candidate_generation_projects_full_and_partial_pass_coverage() -> None:
+    trip = TravelWindow(
+        start_date=date(2027, 1, 10),
+        end_date=date(2027, 1, 12),
+    )
+    operating = (_season_window(date(2026, 12, 1), date(2027, 4, 30)),)
+    closed = (_season_window(date(2026, 12, 1), date(2026, 12, 31)),)
+    pass_windows = (_season_window(date(2026, 12, 1), date(2027, 4, 30)),)
+
+    full_snapshot, full_manifest = _two_area_pass_catalog(
+        pass_windows=pass_windows,
+        area_windows={
+            "alta-badia-ski-area": operating,
+            "lagazuoi-ski-area": operating,
+        },
+    )
+    full_records = _records_for_alta_badia_pass(
+        snapshot=full_snapshot,
+        manifest=full_manifest,
+        travel_window=trip,
+    )
+    assert {record.ski_area.ski_area_id for record in full_records} == {
+        "alta-badia-ski-area",
+        "lagazuoi-ski-area",
+    }
+    assert {record.pass_coverage.coverage_status for record in full_records} == {"full"}
+
+    partial_snapshot, partial_manifest = _two_area_pass_catalog(
+        pass_windows=pass_windows,
+        area_windows={
+            "alta-badia-ski-area": operating,
+            "lagazuoi-ski-area": closed,
+        },
+    )
+    partial_records = _records_for_alta_badia_pass(
+        snapshot=partial_snapshot,
+        manifest=partial_manifest,
+        travel_window=trip,
+    )
+    assert {record.ski_area.ski_area_id for record in partial_records} == {
+        "alta-badia-ski-area"
+    }
+    projection = partial_records[0].pass_coverage
+    assert projection.coverage_status == "partial"
+    assert projection.operating_covered_ski_area_ids == ("alta-badia-ski-area",)
+    assert projection.unavailable_covered_ski_area_ids == ("lagazuoi-ski-area",)
+    summary = search_v4_service._pass_summary(
+        partial_records[0],
+        duration_days=3,
+        audience="adult",
+        season_label=None,
+        manifest=partial_manifest,
+    )
+    assert summary.coverage_status == "partial"
+    assert summary.operating_covered_ski_area_ids == ("alta-badia-ski-area",)
+    assert summary.unavailable_covered_ski_area_ids == ("lagazuoi-ski-area",)
+    assert summary.published_full_network_piste_km == (
+        partial_records[0].selected_pass.pass_accessible_terrain.total_piste_km
+    )
+
+
+def test_candidate_generation_excludes_pass_when_all_areas_are_closed() -> None:
+    closed = (_season_window(date(2026, 12, 1), date(2026, 12, 31)),)
+    snapshot, manifest = _two_area_pass_catalog(
+        pass_windows=(_season_window(date(2026, 12, 1), date(2027, 4, 30)),),
+        area_windows={
+            "alta-badia-ski-area": closed,
+            "lagazuoi-ski-area": closed,
+        },
+    )
+
+    assert not _records_for_alta_badia_pass(
+        snapshot=snapshot,
+        manifest=manifest,
+        travel_window=TravelWindow(
+            start_date=date(2027, 1, 10),
+            end_date=date(2027, 1, 12),
+        ),
+    )
+
+
+def test_candidate_generation_excludes_authoritative_same_season_pass_miss() -> None:
+    operating = (_season_window(date(2026, 12, 1), date(2027, 4, 30)),)
+    snapshot, manifest = _two_area_pass_catalog(
+        pass_windows=(_season_window(date(2027, 2, 1), date(2027, 4, 30)),),
+        area_windows={
+            "alta-badia-ski-area": operating,
+            "lagazuoi-ski-area": operating,
+        },
+    )
+
+    assert not _records_for_alta_badia_pass(
+        snapshot=snapshot,
+        manifest=manifest,
+        travel_window=TravelWindow(
+            start_date=date(2027, 1, 10),
+            end_date=date(2027, 1, 12),
+        ),
+    )
+
+
+def test_candidate_generation_keeps_future_pass_without_matching_window() -> None:
+    future_operation = (_season_window(date(2027, 12, 1), date(2028, 4, 30)),)
+    snapshot, manifest = _two_area_pass_catalog(
+        pass_windows=(_season_window(date(2026, 12, 1), date(2027, 4, 30)),),
+        area_windows={
+            "alta-badia-ski-area": future_operation,
+            "lagazuoi-ski-area": future_operation,
+        },
+    )
+
+    records = _records_for_alta_badia_pass(
+        snapshot=snapshot,
+        manifest=manifest,
+        travel_window=TravelWindow(
+            start_date=date(2028, 1, 10),
+            end_date=date(2028, 1, 12),
+        ),
+    )
+    assert records
+    assert {record.pass_coverage.validity_status for record in records} == {
+        "unverified_for_requested_season"
+    }
+    assert records[0].pass_coverage.warnings == (
+        "Exact pass dates are not yet confirmed for this season.",
+    )
+
+
+def test_candidate_generation_keeps_untrusted_window_evidence_uncertain() -> None:
+    closed = (_season_window(date(2026, 12, 1), date(2026, 12, 31)),)
+    snapshot, manifest = _two_area_pass_catalog(
+        pass_windows=(_season_window(date(2026, 12, 1), date(2026, 12, 31)),),
+        area_windows={
+            "alta-badia-ski-area": closed,
+            "lagazuoi-ski-area": closed,
+        },
+        pass_trust_status="estimated",
+        area_trust_statuses={
+            "alta-badia-ski-area": "needs_source",
+            "lagazuoi-ski-area": "estimated",
+        },
+    )
+
+    records = _records_for_alta_badia_pass(
+        snapshot=snapshot,
+        manifest=manifest,
+        travel_window=TravelWindow(
+            start_date=date(2027, 1, 10),
+            end_date=date(2027, 1, 12),
+        ),
+    )
+    assert records
+    projection = records[0].pass_coverage
+    assert projection.validity_status == "unverified_for_requested_season"
+    assert projection.coverage_status == "unverified"
+    assert projection.unverified_covered_ski_area_ids == (
+        "alta-badia-ski-area",
+        "lagazuoi-ski-area",
+    )
+
+
+@pytest.mark.parametrize(
+    ("pass_windows", "expected_validity", "expected_records"),
+    (
+        (
+            (
+                _season_window(date(2026, 12, 1), date(2027, 4, 30)),
+                _season_window(
+                    date(2026, 12, 1), date(2026, 12, 31), status="estimated"
+                ),
+            ),
+            "confirmed",
+            True,
+        ),
+        (
+            (
+                _season_window(date(2026, 12, 1), date(2026, 12, 31)),
+                _season_window(date(2027, 1, 1), date(2027, 4, 30), status="estimated"),
+            ),
+            "unverified_for_requested_season",
+            True,
+        ),
+        (
+            (
+                _season_window(date(2026, 12, 1), date(2026, 12, 31)),
+                _season_window(date(2027, 2, 1), date(2027, 4, 30)),
+            ),
+            None,
+            False,
+        ),
+    ),
+)
+def test_candidate_generation_uses_cautious_mixed_window_precedence(
+    pass_windows: tuple[CatalogSeasonWindow, ...],
+    expected_validity: str | None,
+    expected_records: bool,
+) -> None:
+    operating = (_season_window(date(2026, 12, 1), date(2027, 4, 30)),)
+    snapshot, manifest = _two_area_pass_catalog(
+        pass_windows=pass_windows,
+        area_windows={
+            "alta-badia-ski-area": operating,
+            "lagazuoi-ski-area": operating,
+        },
+    )
+
+    records = _records_for_alta_badia_pass(
+        snapshot=snapshot,
+        manifest=manifest,
+        travel_window=TravelWindow(
+            start_date=date(2027, 1, 10),
+            end_date=date(2027, 1, 12),
+        ),
+    )
+    assert bool(records) is expected_records
+    if records:
+        assert records[0].pass_coverage.validity_status == expected_validity
+
+
+@pytest.mark.parametrize("travel_window", (None, TravelWindow(month=1)))
+def test_candidate_generation_keeps_non_exact_requests_conservative(
+    travel_window: TravelWindow | None,
+) -> None:
+    operating = (_season_window(date(2026, 12, 1), date(2027, 4, 30)),)
+    snapshot, manifest = _two_area_pass_catalog(
+        pass_windows=operating,
+        area_windows={
+            "alta-badia-ski-area": operating,
+            "lagazuoi-ski-area": operating,
+        },
+    )
+
+    records = _records_for_alta_badia_pass(
+        snapshot=snapshot,
+        manifest=manifest,
+        travel_window=travel_window,
+    )
+    assert records
+    assert {record.pass_coverage.coverage_status for record in records} == {
+        "unverified"
+    }
+
+
+@pytest.mark.parametrize(
+    ("pass_unverified", "area_unverified", "expected_warning"),
+    (
+        (
+            True,
+            False,
+            "Exact pass dates are not yet confirmed for this season.",
+        ),
+        (
+            False,
+            True,
+            "Operation dates are not confirmed for every area covered by this pass.",
+        ),
+        (
+            True,
+            True,
+            "Exact pass dates are not yet confirmed for this season. Operation "
+            "dates are not confirmed for every area covered by this pass.",
+        ),
+    ),
+)
+def test_pass_summary_exposes_condition_specific_coverage_warning(
+    pass_unverified: bool,
+    area_unverified: bool,
+    expected_warning: str,
+) -> None:
+    trip = TravelWindow(
+        start_date=date(2028, 1, 10) if pass_unverified else date(2027, 1, 10),
+        end_date=date(2028, 1, 12) if pass_unverified else date(2027, 1, 12),
+    )
+    operation_year = 2027 if pass_unverified else 2026
+    operating = (
+        _season_window(date(operation_year, 12, 1), date(operation_year + 1, 4, 30)),
+    )
+    pass_windows = (_season_window(date(2026, 12, 1), date(2027, 4, 30)),)
+    snapshot, manifest = _two_area_pass_catalog(
+        pass_windows=pass_windows,
+        area_windows={
+            "alta-badia-ski-area": operating,
+            "lagazuoi-ski-area": operating,
+        },
+        area_trust_statuses=(
+            {"lagazuoi-ski-area": "estimated"} if area_unverified else None
+        ),
+    )
+    records = _records_for_alta_badia_pass(
+        snapshot=snapshot,
+        manifest=manifest,
+        travel_window=trip,
+    )
+    summary = search_v4_service._pass_summary(
+        records[0],
+        duration_days=3,
+        audience="adult",
+        season_label=None,
+        manifest=manifest,
+    )
+
+    assert summary.coverage_warning == expected_warning
+    assert summary.covered_ski_area_ids == (
+        "alta-badia-ski-area",
+        "lagazuoi-ski-area",
+    )
 
 
 def test_estimate_aware_lodging_and_hard_travel_limits_filter_before_scoring() -> None:

@@ -106,6 +106,47 @@ def test_missing_or_untrusted_season_evidence_warns_without_false_exclusion() ->
     ]
 
 
+@pytest.mark.parametrize(
+    ("operation_status", "eligible", "failure_codes", "warning_codes"),
+    (
+        ("operating", True, set(), []),
+        ("unavailable", False, {"outside_season_window"}, []),
+        ("unverified", True, set(), ["season_evidence_uncertain"]),
+    ),
+)
+def test_central_operation_status_overrides_raw_window_fallback(
+    operation_status: str,
+    eligible: bool,
+    failure_codes: set[str],
+    warning_codes: list[str],
+) -> None:
+    candidate = _candidate(
+        season=CandidateSeasonEvidence(
+            exact_windows=((date(2026, 12, 1), date(2026, 12, 31)),),
+            recurring_start_month=12,
+            recurring_end_month=4,
+            trust_status="verified",
+            operation_status=operation_status,
+        )
+    )
+
+    decision = evaluate_search_constraints(
+        candidate=candidate,
+        intent=SearchIntent(
+            constraints=SearchConstraints(
+                travel_window=TravelWindow(
+                    start_date=date(2027, 1, 10),
+                    end_date=date(2027, 1, 12),
+                )
+            )
+        ),
+    )
+
+    assert decision.eligible is eligible
+    assert {issue.code for issue in decision.failures} == failure_codes
+    assert [issue.code for issue in decision.warnings] == warning_codes
+
+
 def test_lodging_budget_excludes_only_clear_non_overlap_and_never_missing_data() -> (
     None
 ):

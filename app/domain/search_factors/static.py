@@ -16,6 +16,7 @@ from app.domain.catalog import (
     StayDestination,
     TerrainDomain,
 )
+from app.domain.catalog_applicability import PassCoverageProjection
 from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.search_factors.models import FactorEvaluation
 from app.domain.search_factors.registry import FactorRegistry
@@ -161,6 +162,7 @@ class StaticFactorCandidate:
     travel_duration_minutes: int | None = None
     travel_evidence_cap: float = 0
     travel_provenance: str = "No comparable route evidence."
+    pass_coverage: PassCoverageProjection | None = None
 
     def __post_init__(self) -> None:
         if not 0 <= self.travel_evidence_cap <= 1:

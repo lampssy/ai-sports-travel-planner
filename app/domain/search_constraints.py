@@ -11,6 +11,7 @@ from pydantic import (
     model_validator,
 )
 
+from app.domain.catalog_applicability import AreaOperationStatus
 from app.domain.search_factors.models import FrozenMapping
 from app.domain.search_v4_models import FactorRequirement, SearchIntent
 
@@ -51,6 +52,7 @@ class CandidateSeasonEvidence(_ConstraintModel):
     recurring_start_month: int | None = Field(default=None, ge=1, le=12)
     recurring_end_month: int | None = Field(default=None, ge=1, le=12)
     trust_status: TrustStatus
+    operation_status: AreaOperationStatus | None = None
 
     @model_validator(mode="after")
     def validate_season(self) -> Self:
@@ -269,6 +271,25 @@ def _evaluate_season(
     window = intent.constraints.travel_window
     assert window is not None
     evidence = candidate.season
+    if evidence is not None and evidence.operation_status is not None:
+        if evidence.operation_status == "unavailable":
+            failures.append(
+                _issue(
+                    "season_viability",
+                    "outside_season_window",
+                    "Requested travel window is outside the source-backed ski season.",
+                )
+            )
+        elif evidence.operation_status == "unverified":
+            warnings.append(
+                _issue(
+                    "season_viability",
+                    "season_evidence_uncertain",
+                    "Season evidence is missing or not source-backed; "
+                    "candidate remains eligible.",
+                )
+            )
+        return
     if evidence is None or evidence.trust_status not in _SOURCE_BACKED:
         warnings.append(
             _issue(

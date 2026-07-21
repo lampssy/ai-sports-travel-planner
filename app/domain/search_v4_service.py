@@ -38,6 +38,13 @@ from app.domain.catalog import (
     StayDestination,
     TerrainDomain,
 )
+from app.domain.catalog_applicability import (
+    AreaOperationStatus,
+    PassCoverageProjection,
+    PassCoverageStatus,
+    candidate_is_applicable,
+    project_pass_coverage,
+)
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.catalog_trust import CatalogTrustManifest, Status
 from app.domain.models import (
@@ -220,6 +227,13 @@ class SearchV4TerrainEvidence(_SearchV4Model):
     ]
 
 
+PublicPassValidityStatus = Literal[
+    "not_constrained",
+    "confirmed",
+    "unverified_for_requested_season",
+]
+
+
 class SearchV4PassSummary(_SearchV4Model):
     lift_pass_product_id: str
     name: str
@@ -228,6 +242,13 @@ class SearchV4PassSummary(_SearchV4Model):
     accessible_piste_km: float | None
     accessible_piste_km_evidence: SearchV4TerrainEvidence | None
     price: SearchV4PassPriceSummary | None
+    operating_covered_ski_area_ids: tuple[str, ...] = ()
+    unavailable_covered_ski_area_ids: tuple[str, ...] = ()
+    unverified_covered_ski_area_ids: tuple[str, ...] = ()
+    coverage_status: PassCoverageStatus = "unverified"
+    validity_status: PublicPassValidityStatus = "not_constrained"
+    coverage_warning: str | None = None
+    published_full_network_piste_km: float | None = None
 
 
 class SearchV4SnowAssessment(_SearchV4Model):
@@ -431,7 +452,7 @@ class V4CandidateRecord:
     access: SkiAreaAccess
     selected_pass: LiftPassProduct
     terrain_domains: tuple[TerrainDomain, ...]
-    pass_covered_ski_area_ids: tuple[str, ...]
+    pass_coverage: PassCoverageProjection
     constraint_facts: ConstraintCandidateFacts
     travel_effort: TravelEffort | None
 
@@ -626,6 +647,11 @@ def generate_v4_candidate_records(
         for ski_area_id in domain.ski_area_ids:
             domains_by_area[ski_area_id].append(domain)
 
+    travel_window = intent.constraints.travel_window
+    travel_month = travel_window.month if travel_window is not None else None
+    trip_start_date = travel_window.start_date if travel_window is not None else None
+    trip_end_date = travel_window.end_date if travel_window is not None else None
+
     for base in sorted(graph.snapshot.stay_bases, key=lambda item: item.stay_base_id):
         destination = graph.destinations_by_id[base.stay_destination_id]
         region = graph.regions_by_id[destination.trip_market_region_id]
@@ -636,6 +662,39 @@ def generate_v4_candidate_records(
                 (),
             )
             for product in passes:
+                covered_ski_area_ids = _pass_covered_ski_area_ids(
+                    product,
+                    graph.domains_by_id,
+                )
+                pass_coverage = project_pass_coverage(
+                    lift_pass_product=product,
+                    focus_ski_area_id=area.ski_area_id,
+                    contract_covered_ski_area_ids=covered_ski_area_ids,
+                    ski_areas_by_id=graph.areas_by_id,
+                    identity_scope_availability_trust_status=_status(
+                        trust_manifest,
+                        "lift_pass_products",
+                        product.lift_pass_product_id,
+                        "identity_scope_availability",
+                    ),
+                    elevation_season_trust_by_ski_area_id={
+                        ski_area_id: _status(
+                            trust_manifest,
+                            "ski_areas",
+                            ski_area_id,
+                            "elevation_season",
+                        )
+                        for ski_area_id in covered_ski_area_ids
+                    },
+                    travel_month=travel_month,
+                    trip_start_date=trip_start_date,
+                    trip_end_date=trip_end_date,
+                )
+                if not candidate_is_applicable(
+                    projection=pass_coverage,
+                    focus_ski_area_id=area.ski_area_id,
+                ):
+                    continue
                 candidate_id = (
                     f"{access.ski_area_access_id}--{product.lift_pass_product_id}"
                 )
@@ -655,10 +714,7 @@ def generate_v4_candidate_records(
                             domains_by_area=domains_by_area,
                             domains_by_id=graph.domains_by_id,
                         ),
-                        pass_covered_ski_area_ids=_pass_covered_ski_area_ids(
-                            product,
-                            graph.domains_by_id,
-                        ),
+                        pass_coverage=pass_coverage,
                         constraint_facts=_constraint_facts(
                             candidate_id=candidate_id,
                             graph=graph,
@@ -668,6 +724,10 @@ def generate_v4_candidate_records(
                             product=product,
                             travel_effort=travel_effort,
                             manifest=trust_manifest,
+                            operation_status=_focus_operation_status(
+                                projection=pass_coverage,
+                                focus_ski_area_id=area.ski_area_id,
+                            ),
                         ),
                         travel_effort=travel_effort,
                     )
@@ -683,6 +743,18 @@ def _pass_covered_ski_area_ids(
     for domain_id in product.terrain_domain_ids:
         covered.update(domains_by_id[domain_id].ski_area_ids)
     return tuple(sorted(covered))
+
+
+def _focus_operation_status(
+    *,
+    projection: PassCoverageProjection,
+    focus_ski_area_id: str,
+) -> AreaOperationStatus:
+    if focus_ski_area_id in projection.operating_covered_ski_area_ids:
+        return "operating"
+    if focus_ski_area_id in projection.unverified_covered_ski_area_ids:
+        return "unverified"
+    return "unavailable"
 
 
 def _candidate_terrain_domains(
@@ -1398,6 +1470,7 @@ def _constraint_facts(
     product: LiftPassProduct,
     travel_effort: TravelEffort | None,
     manifest: CatalogTrustManifest,
+    operation_status: AreaOperationStatus,
 ) -> ConstraintCandidateFacts:
     season_status = _status(manifest, "ski_areas", area.ski_area_id, "elevation_season")
     lodging_status = _status(
@@ -1437,6 +1510,7 @@ def _constraint_facts(
             recurring_start_month=area.season_start_month,
             recurring_end_month=area.season_end_month,
             trust_status=season_status,
+            operation_status=operation_status,
         ),
         lodging=lodging,
         travel=(
@@ -1671,6 +1745,7 @@ def _static_candidate(record: V4CandidateRecord) -> StaticFactorCandidate:
         travel_provenance=(
             travel.provenance if travel is not None else "No comparable route evidence."
         ),
+        pass_coverage=record.pass_coverage,
     )
 
 
@@ -1965,6 +2040,12 @@ def _pass_summary(
     manifest: CatalogTrustManifest,
 ) -> SearchV4PassSummary:
     product = record.selected_pass
+    projection = record.pass_coverage
+    if (
+        projection.coverage_status is None
+        or projection.validity_status == "inapplicable"
+    ):
+        raise ValueError("inapplicable pass coverage cannot be serialized")
     terrain = select_accessible_terrain_source(
         product=product,
         ski_area=record.ski_area,
@@ -1996,7 +2077,7 @@ def _pass_summary(
         lift_pass_product_id=product.lift_pass_product_id,
         name=product.name,
         validity_scope=product.validity_scope,
-        covered_ski_area_ids=record.pass_covered_ski_area_ids,
+        covered_ski_area_ids=projection.contract_covered_ski_area_ids,
         accessible_piste_km=terrain.value,
         accessible_piste_km_evidence=terrain_evidence,
         price=(
@@ -2011,6 +2092,17 @@ def _pass_summary(
                 season_label=price.season_label,
             )
             if price is not None
+            else None
+        ),
+        operating_covered_ski_area_ids=(projection.operating_covered_ski_area_ids),
+        unavailable_covered_ski_area_ids=(projection.unavailable_covered_ski_area_ids),
+        unverified_covered_ski_area_ids=(projection.unverified_covered_ski_area_ids),
+        coverage_status=projection.coverage_status,
+        validity_status=projection.validity_status,
+        coverage_warning=" ".join(projection.warnings) or None,
+        published_full_network_piste_km=(
+            product.pass_accessible_terrain.total_piste_km
+            if product.pass_accessible_terrain is not None
             else None
         ),
     )

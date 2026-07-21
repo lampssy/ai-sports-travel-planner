@@ -334,6 +334,19 @@ def _weather_api_configuration(
     )
 
 
+@pytest.mark.db_free
+def test_pass_summary_additive_coverage_fields_have_compatible_defaults() -> None:
+    summary = _weather_api_configuration(candidate_id="candidate").selected_pass
+
+    assert summary.operating_covered_ski_area_ids == ()
+    assert summary.unavailable_covered_ski_area_ids == ()
+    assert summary.unverified_covered_ski_area_ids == ()
+    assert summary.coverage_status == "unverified"
+    assert summary.validity_status == "not_constrained"
+    assert summary.coverage_warning is None
+    assert summary.published_full_network_piste_km is None
+
+
 def test_search_weather_evidence_endpoint_serializes_typed_available_response(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
