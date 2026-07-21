@@ -934,9 +934,16 @@ def test_canonical_manifest_keeps_access_sources_on_access_owner() -> None:
     for access in catalog.ski_area_access:
         entry = access_entries[access.ski_area_access_id]
         assert all(
-            source_refs == tuple(sorted(access.source_urls))
-            for source_refs in entry.field_source_refs.values()
+            source_refs
+            for group, source_refs in entry.field_source_refs.items()
+            if entry.field_statuses[group] in {"verified", "verified_with_adjustment"}
         )
+        grouped_sources = {
+            source
+            for source_refs in entry.field_source_refs.values()
+            for source in source_refs
+        }
+        assert grouped_sources == set(access.source_urls)
 
 
 def test_canonical_manifest_uses_domain_owned_sources() -> None:
