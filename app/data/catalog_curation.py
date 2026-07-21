@@ -10,7 +10,7 @@ from urllib.parse import quote, urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.domain.catalog import CatalogSnapshot, SkiArea
+from app.domain.catalog import CatalogSnapshot, LiftPassProduct, SkiArea
 from app.integrations.open_meteo import weather_elevation_points
 
 CatalogTargetType = Literal[
@@ -365,6 +365,7 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
                 "default_for_stay_destination_ids",
                 "valid_ski_area_ids",
                 "terrain_domain_ids",
+                "validity_windows",
                 "external_validity_summary",
                 "pass_accessible_terrain",
                 "prices",
@@ -419,6 +420,7 @@ NESTED_FIELD_PATH_ROOTS: Mapping[CatalogTargetType, frozenset[str]] = MappingPro
                 "default_for_stay_destination_ids",
                 "valid_ski_area_ids",
                 "terrain_domain_ids",
+                "validity_windows",
                 "pass_accessible_terrain",
                 "prices",
             }
@@ -1698,6 +1700,19 @@ def _mermaid_edge_label(value: str) -> str:
     return escape(value, quote=True)
 
 
+def _mermaid_pass_label(product: LiftPassProduct) -> str:
+    label = _mermaid_label("Lift pass", product.name)
+    for window in sorted(
+        product.validity_windows,
+        key=lambda item: (item.start_date, item.end_date, item.season_label),
+    ):
+        label += (
+            f"<br/>valid {window.start_date.isoformat()} to "
+            f"{window.end_date.isoformat()}"
+        )
+    return label
+
+
 def render_catalog_resulting_graph_markdown(
     report: CatalogCurationReport,
     catalog: CatalogSnapshot,
@@ -1825,12 +1840,10 @@ def render_catalog_resulting_graph_markdown(
         domain_ids,
         {entity_id: domains_by_id[entity_id].name for entity_id in domain_ids},
     )
-    add_nodes(
-        "pass",
-        "Lift pass",
-        pass_ids,
-        {entity_id: passes_by_id[entity_id].name for entity_id in pass_ids},
-    )
+    for index, pass_id in enumerate(sorted(pass_ids), start=1):
+        node_id = f"pass_{index}"
+        node_ids[("pass", pass_id)] = node_id
+        lines.append(f'  {node_id}["{_mermaid_pass_label(passes_by_id[pass_id])}"]')
 
     def add_edge(
         source_kind: str,

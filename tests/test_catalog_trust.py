@@ -80,6 +80,17 @@ EXPECTED_STATUSES = (
     "estimated",
     "needs_source",
 )
+
+
+def test_lift_pass_field_group_inventory_remains_stable() -> None:
+    assert set(FIELD_GROUPS["lift_pass_products"]) == {
+        "identity_scope_availability",
+        "coverage",
+        "prices",
+        "pass_accessible_terrain",
+    }
+
+
 REPO_ROOT = Path(__file__).parents[1]
 CATALOG_PATH = REPO_ROOT / "app" / "data" / "catalog.json"
 TRUST_MANIFEST_PATH = REPO_ROOT / "app" / "data" / "resort_trust_manifest.json"

@@ -6,6 +6,7 @@ from pydantic import ValidationError
 
 from app.data.catalog_curation import (
     CANONICAL_FIELD_PATHS,
+    NESTED_FIELD_PATH_ROOTS,
     CatalogBoundaryGateAssessment,
     CatalogChangeSummary,
     CatalogCurationReport,
@@ -301,6 +302,8 @@ def test_canonical_paths_cover_only_normalized_catalog_entities() -> None:
         "available_from_stay_destination_ids"
         in CANONICAL_FIELD_PATHS["lift_pass_product"]
     )
+    assert "validity_windows" in CANONICAL_FIELD_PATHS["lift_pass_product"]
+    assert "validity_windows" in NESTED_FIELD_PATH_ROOTS["lift_pass_product"]
     assert {
         "elevation_m",
         "base_type",
@@ -338,6 +341,89 @@ def test_canonical_paths_cover_only_normalized_catalog_entities() -> None:
     assert "atmosphere_tags" not in CANONICAL_FIELD_PATHS["stay_base"]
     assert "field_source_refs" in CANONICAL_FIELD_PATHS["trust_manifest"]
     assert "source_refs" not in CANONICAL_FIELD_PATHS["trust_manifest"]
+
+
+def test_report_accepts_operator_evidence_for_complete_pass_validity_windows() -> None:
+    windows = [
+        {
+            "season_label": "2026-2027",
+            "start_date": "2026-12-05",
+            "end_date": "2027-04-11",
+            "status": "planned",
+        }
+    ]
+    report = CatalogCurationReport.model_validate(
+        {
+            "report_schema_version": 3,
+            "title": "Example pass validity review",
+            "summary": "Adds the operator-published pass validity window.",
+            "resulting_graph": {"focus_stay_destination_ids": ["example"]},
+            "reviewed_targets": [
+                {
+                    "target_type": "lift_pass_product",
+                    "target_id": "example-local-pass",
+                    "scope": "narrow",
+                    "required_field_paths": ["validity_windows"],
+                }
+            ],
+            "changes": [
+                {
+                    "target_type": "lift_pass_product",
+                    "target_id": "example-local-pass",
+                    "field_path": "validity_windows",
+                    "before": [],
+                    "after": windows,
+                    "trust_status": "verified",
+                }
+            ],
+            "field_coverage": [
+                {
+                    "target_type": "lift_pass_product",
+                    "target_id": "example-local-pass",
+                    "field_path": "validity_windows",
+                    "status": "changed",
+                    "notes": (
+                        "An empty list means no separate pass window was modeled; "
+                        "it did not assert year-round validity."
+                    ),
+                }
+            ],
+            "evidence": [
+                {
+                    "evidence_id": "example-pass-tariff",
+                    "target_type": "lift_pass_product",
+                    "target_id": "example-local-pass",
+                    "field_path": "validity_windows",
+                    "source_type": "official",
+                    "source_url": "https://operator.example.com/winter/tariff",
+                    "source_title": "Official operator winter tariff",
+                    "source_value": windows,
+                    "evidence_summary": (
+                        "The operator tariff publishes the complete modeled window."
+                    ),
+                }
+            ],
+            "entity_scope_assessments": [
+                {
+                    "candidate_id": "example-local-pass",
+                    "candidate_name": "Example Local Pass",
+                    "candidate_kind": "lift_pass_product",
+                    "disposition": "represented",
+                    "signals": ["official_product_identity"],
+                    "evidence_refs": ["example-pass-tariff"],
+                    "target_refs": [
+                        {
+                            "target_type": "lift_pass_product",
+                            "target_id": "example-local-pass",
+                        }
+                    ],
+                    "rationale": "The operator tariff identifies the pass product.",
+                }
+            ],
+        }
+    )
+
+    validate_catalog_curation_report(report, require_resulting_graph=True)
 
 
 def test_report_requires_coverage_for_every_declared_field() -> None:
@@ -1112,9 +1198,45 @@ def test_resulting_graph_is_derived_from_the_current_catalog() -> None:
     assert "Ski area<br/>Other Area" in graph
     assert "Terrain domain<br/>Example Domain" in graph
     assert "Lift pass<br/>Example Local Pass" in graph
+    assert "valid " not in graph
     assert '|"access: walk via Example Gondola, 300 m"|' in graph
     assert '|"default pass"|' in graph
     assert graph in rendered_report
+
+
+def test_resulting_graph_renders_explicit_pass_validity_windows() -> None:
+    catalog_payload = minimal_catalog_payload()
+    catalog_payload["lift_pass_products"][0]["validity_windows"] = [
+        {
+            "season_label": "2027 autumn",
+            "start_date": "2027-10-02",
+            "end_date": "2027-12-03",
+            "status": "estimated",
+        },
+        {
+            "season_label": "2026-2027",
+            "start_date": "2026-12-05",
+            "end_date": "2027-04-11",
+            "status": "planned",
+        },
+    ]
+    catalog = CatalogSnapshot.model_validate(catalog_payload)
+    payload = _scope_report_payload()
+    payload.update(
+        {
+            "report_schema_version": 3,
+            "resulting_graph": {"focus_stay_destination_ids": ["example"]},
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    graph = render_catalog_resulting_graph_markdown(report, catalog)
+
+    assert (
+        "Lift pass<br/>Example Local Pass"
+        "<br/>valid 2026-12-05 to 2027-04-11"
+        "<br/>valid 2027-10-02 to 2027-12-03"
+    ) in graph
 
 
 def test_resulting_graph_rejects_unknown_focus_destination() -> None:

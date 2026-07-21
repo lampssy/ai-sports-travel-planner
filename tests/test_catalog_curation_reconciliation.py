@@ -11,6 +11,7 @@ from app.data.catalog_curation import (
     CatalogFieldCoverage,
     CatalogReviewedTarget,
     CatalogValidationError,
+    render_catalog_resulting_graph_markdown,
 )
 from app.data.catalog_curation_reconciliation import (
     reconcile_catalog_curation_report,
@@ -337,6 +338,151 @@ def _relationship_snapshots(
     )
 
 
+def _pass_validity_snapshots(
+    tmp_path: Path,
+) -> tuple[tuple[Path, Path], tuple[Path, Path], list[dict], dict, dict]:
+    operator_url = "https://operator.example.com/winter/tariff"
+    windows = [
+        {
+            "season_label": "2026-2027",
+            "start_date": "2026-12-05",
+            "end_date": "2027-04-11",
+            "status": "planned",
+        }
+    ]
+    base = minimal_catalog_payload()
+    current = json.loads(json.dumps(base))
+    current["lift_pass_products"][0]["validity_windows"] = windows
+    base_paths = _write_snapshot(tmp_path, "pass-validity-base", base)
+    current_paths = _write_snapshot(tmp_path, "pass-validity-current", current)
+
+    current_trust = json.loads(current_paths[1].read_text(encoding="utf-8"))
+    pass_trust = current_trust["entities"]["lift_pass_products"]["example-local-pass"]
+    pass_trust["field_statuses"]["identity_scope_availability"] = "verified"
+    pass_trust["field_source_refs"]["identity_scope_availability"] = [operator_url]
+    current_paths[1].write_text(json.dumps(current_trust), encoding="utf-8")
+
+    return (
+        base_paths,
+        current_paths,
+        windows,
+        pass_trust["field_statuses"],
+        pass_trust["field_source_refs"],
+    )
+
+
+def _pass_validity_report(
+    *,
+    windows: list[dict],
+    field_statuses_after: dict,
+    field_source_refs_after: dict,
+) -> CatalogCurationReport:
+    operator_url = "https://operator.example.com/winter/tariff"
+    base_trust = _trust_payload(minimal_catalog_payload())["entities"][
+        "lift_pass_products"
+    ]["example-local-pass"]
+    changes = [
+        {
+            "target_type": "lift_pass_product",
+            "target_id": "example-local-pass",
+            "field_path": "validity_windows",
+            "before": [],
+            "after": windows,
+            "trust_status": "verified",
+        },
+        {
+            "target_type": "trust_manifest",
+            "target_id": "lift_pass_products:example-local-pass",
+            "field_path": "field_statuses",
+            "before": base_trust["field_statuses"],
+            "after": field_statuses_after,
+            "trust_status": "verified",
+        },
+        {
+            "target_type": "trust_manifest",
+            "target_id": "lift_pass_products:example-local-pass",
+            "field_path": "field_source_refs",
+            "before": base_trust["field_source_refs"],
+            "after": field_source_refs_after,
+            "trust_status": "verified",
+        },
+    ]
+    return CatalogCurationReport.model_validate(
+        {
+            "report_schema_version": 3,
+            "title": "Example pass validity reconciliation",
+            "summary": "Adds one operator-published pass validity window.",
+            "resulting_graph": {"focus_stay_destination_ids": ["example"]},
+            "reviewed_targets": [
+                {
+                    "target_type": "lift_pass_product",
+                    "target_id": "example-local-pass",
+                    "scope": "narrow",
+                    "required_field_paths": ["validity_windows"],
+                },
+                {
+                    "target_type": "trust_manifest",
+                    "target_id": "lift_pass_products:example-local-pass",
+                    "scope": "narrow",
+                    "required_field_paths": [
+                        "field_statuses",
+                        "field_source_refs",
+                    ],
+                },
+            ],
+            "changes": changes,
+            "field_coverage": [
+                {
+                    "target_type": change["target_type"],
+                    "target_id": change["target_id"],
+                    "field_path": change["field_path"],
+                    "status": "changed",
+                    "notes": (
+                        "The prior empty validity_windows list meant no separate "
+                        "pass window was modeled, not verified year-round validity."
+                        if change["field_path"] == "validity_windows"
+                        else None
+                    ),
+                }
+                for change in changes
+            ],
+            "evidence": [
+                {
+                    "evidence_id": f"pass-validity-{change['field_path']}",
+                    "target_type": change["target_type"],
+                    "target_id": change["target_id"],
+                    "field_path": change["field_path"],
+                    "source_type": "official",
+                    "source_url": operator_url,
+                    "source_title": "Official operator winter tariff",
+                    "source_value": change["after"],
+                    "evidence_summary": (
+                        "The operator tariff supports the complete resulting value."
+                    ),
+                }
+                for change in changes
+            ],
+            "entity_scope_assessments": [
+                {
+                    "candidate_id": "example-local-pass",
+                    "candidate_name": "Example Local Pass",
+                    "candidate_kind": "lift_pass_product",
+                    "disposition": "represented",
+                    "signals": ["official_product_identity"],
+                    "evidence_refs": ["pass-validity-validity_windows"],
+                    "target_refs": [
+                        {
+                            "target_type": "lift_pass_product",
+                            "target_id": "example-local-pass",
+                        }
+                    ],
+                    "rationale": "The operator tariff identifies the pass product.",
+                }
+            ],
+        }
+    )
+
+
 def test_reconcile_requires_both_access_link_endpoints(tmp_path: Path) -> None:
     base_paths, current_paths = _relationship_snapshots(tmp_path)
 
@@ -371,6 +517,55 @@ def test_reconcile_accepts_exact_entity_and_relationship_deltas(tmp_path: Path) 
             "distance_m",
         )
     }
+
+
+def test_reconcile_accepts_exact_pass_validity_windows_and_owning_trust_deltas(
+    tmp_path: Path,
+) -> None:
+    (
+        base_paths,
+        current_paths,
+        windows,
+        field_statuses_after,
+        field_source_refs_after,
+    ) = _pass_validity_snapshots(tmp_path)
+    report = _pass_validity_report(
+        windows=windows,
+        field_statuses_after=field_statuses_after,
+        field_source_refs_after=field_source_refs_after,
+    )
+
+    result = reconcile_catalog_curation_report(
+        report,
+        base_catalog_path=base_paths[0],
+        current_catalog_path=current_paths[0],
+        base_trust_manifest_path=base_paths[1],
+        current_trust_manifest_path=current_paths[1],
+    )
+
+    assert {
+        (delta.target_type, delta.target_id, delta.field_path)
+        for delta in result.deltas
+    } == {
+        ("lift_pass_product", "example-local-pass", "validity_windows"),
+        (
+            "trust_manifest",
+            "lift_pass_products:example-local-pass",
+            "field_statuses",
+        ),
+        (
+            "trust_manifest",
+            "lift_pass_products:example-local-pass",
+            "field_source_refs",
+        ),
+    }
+    graph = render_catalog_resulting_graph_markdown(
+        report,
+        CatalogSnapshot.model_validate_json(
+            current_paths[0].read_text(encoding="utf-8")
+        ),
+    )
+    assert "valid 2026-12-05 to 2027-04-11" in graph
 
 
 def test_reconcile_cli_uses_normalized_catalog_paths(tmp_path: Path, capsys) -> None:
