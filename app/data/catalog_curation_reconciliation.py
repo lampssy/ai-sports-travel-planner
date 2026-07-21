@@ -365,7 +365,7 @@ def _validate_pass_validity_window_trust(
                 "identity_scope_availability "
                 f"status={owning_status}"
             )
-        if not isinstance(change.after, list) or not change.after:
+        if not isinstance(change.after, list):
             continue
         missing_source_urls = sorted(
             evidence_urls_by_pass.get(change.target_id, set())

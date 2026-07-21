@@ -522,6 +522,50 @@ def _with_supplemental_pass_validity_evidence(
     return CatalogCurationReport.model_validate(payload)
 
 
+def _pass_validity_removal_case(
+    tmp_path: Path,
+    *,
+    include_evidence: bool,
+    trust_source_refs: list[str],
+) -> tuple[CatalogCurationReport, tuple[Path, Path], tuple[Path, Path]]:
+    (
+        empty_paths,
+        window_paths,
+        windows,
+        field_statuses_after,
+        field_source_refs_after,
+    ) = _pass_validity_snapshots(
+        tmp_path,
+        trust_status="estimated",
+        trust_source_refs=trust_source_refs,
+    )
+    payload = _pass_validity_report(
+        windows=windows,
+        field_statuses_after=field_statuses_after,
+        field_source_refs_after=field_source_refs_after,
+        validity_trust_status="estimated",
+        include_trust_changes=False,
+    ).model_dump(mode="json")
+    payload["changes"][0]["before"] = windows
+    payload["changes"][0]["after"] = []
+    validity_evidence = payload["evidence"][0]
+    if include_evidence:
+        validity_evidence["source_value"] = []
+    identity_evidence = {
+        **validity_evidence,
+        "evidence_id": "pass-identity",
+        "field_path": "lift_pass_product_id",
+        "source_value": "example-local-pass",
+        "evidence_summary": "The operator identifies the pass product.",
+    }
+    payload["evidence"] = [identity_evidence]
+    if include_evidence:
+        payload["evidence"].append(validity_evidence)
+    payload["entity_scope_assessments"][0]["evidence_refs"] = ["pass-identity"]
+    report = CatalogCurationReport.model_validate(payload)
+    return report, window_paths, (empty_paths[0], window_paths[1])
+
+
 def test_reconcile_requires_both_access_link_endpoints(tmp_path: Path) -> None:
     base_paths, current_paths = _relationship_snapshots(tmp_path)
 
@@ -738,6 +782,68 @@ def test_reconcile_accepts_all_direct_validity_evidence_in_trust_refs(
         (delta.target_type, delta.target_id, delta.field_path)
         for delta in result.deltas
     }
+
+
+def test_reconcile_accepts_empty_pass_validity_without_direct_evidence(
+    tmp_path: Path,
+) -> None:
+    report, base_paths, current_paths = _pass_validity_removal_case(
+        tmp_path,
+        include_evidence=False,
+        trust_source_refs=[],
+    )
+
+    result = reconcile_catalog_curation_report(
+        report,
+        base_catalog_path=base_paths[0],
+        current_catalog_path=current_paths[0],
+        base_trust_manifest_path=base_paths[1],
+        current_trust_manifest_path=current_paths[1],
+    )
+
+    assert result.delta_count == 1
+
+
+def test_reconcile_rejects_empty_pass_validity_with_unowned_evidence(
+    tmp_path: Path,
+) -> None:
+    report, base_paths, current_paths = _pass_validity_removal_case(
+        tmp_path,
+        include_evidence=True,
+        trust_source_refs=[],
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="identity_scope_availability source refs omit validity evidence",
+    ):
+        reconcile_catalog_curation_report(
+            report,
+            base_catalog_path=base_paths[0],
+            current_catalog_path=current_paths[0],
+            base_trust_manifest_path=base_paths[1],
+            current_trust_manifest_path=current_paths[1],
+        )
+
+
+def test_reconcile_accepts_empty_pass_validity_with_owned_evidence(
+    tmp_path: Path,
+) -> None:
+    report, base_paths, current_paths = _pass_validity_removal_case(
+        tmp_path,
+        include_evidence=True,
+        trust_source_refs=["https://operator.example.com/winter/tariff"],
+    )
+
+    result = reconcile_catalog_curation_report(
+        report,
+        base_catalog_path=base_paths[0],
+        current_catalog_path=current_paths[0],
+        base_trust_manifest_path=base_paths[1],
+        current_trust_manifest_path=current_paths[1],
+    )
+
+    assert result.delta_count == 1
 
 
 def test_reconcile_rejects_unchanged_unowned_pass_validity_trust(
