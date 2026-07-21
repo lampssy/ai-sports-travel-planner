@@ -5,6 +5,7 @@ from dataclasses import replace
 import pytest
 
 from app.domain.catalog import (
+    AggregateTerrainMetrics,
     ApresProfileFact,
     BaseCharacterFact,
     CatalogLiftPassPrice,
@@ -16,7 +17,9 @@ from app.domain.catalog import (
     SnowParkFact,
     StayBase,
     StayDestination,
+    TerrainDomain,
 )
+from app.domain.catalog_applicability import PassCoverageProjection, PassCoverageStatus
 from app.domain.search_factors.static import (
     NumericBounds,
     ResolvedCatalogEvidence,
@@ -24,6 +27,7 @@ from app.domain.search_factors.static import (
     StaticFactorCandidate,
     build_static_factor_registry,
     derive_numeric_bounds,
+    select_accessible_terrain_source,
 )
 from app.domain.search_policy import load_search_policy
 from app.domain.search_v4_models import (
@@ -53,6 +57,19 @@ class UntrustedNamedEntitiesResolver(VerifiedTrustResolver):
         self, entity_type: str, entity_id: str, field_group: str
     ) -> ResolvedCatalogEvidence:
         if entity_id.startswith("untrusted-"):
+            return ResolvedCatalogEvidence(status="needs_source", source_refs=())
+        return super().resolve(entity_type, entity_id, field_group)
+
+
+class UntrustedTerrainResolver(VerifiedTrustResolver):
+    def resolve(
+        self, entity_type: str, entity_id: str, field_group: str
+    ) -> ResolvedCatalogEvidence:
+        if field_group in {
+            "pass_accessible_terrain",
+            "aggregate_terrain",
+            "terrain_metrics",
+        }:
             return ResolvedCatalogEvidence(status="needs_source", source_refs=())
         return super().resolve(entity_type, entity_id, field_group)
 
@@ -174,6 +191,172 @@ def _context(intent: SearchIntent) -> StaticEvaluationContext:
     )
 
 
+def _terrain_candidate(
+    *,
+    coverage_status: PassCoverageStatus = "full",
+    operating_ids: tuple[str, ...] = ("area", "other-area"),
+    unavailable_ids: tuple[str, ...] = (),
+    unverified_ids: tuple[str, ...] = (),
+    include_domain: bool = False,
+) -> StaticFactorCandidate:
+    candidate = _candidate()
+    product = candidate.selected_pass.model_copy(
+        update={
+            "valid_ski_area_ids": ("area", "other-area", "closed-area"),
+            "terrain_domain_ids": ("operating-domain",) if include_domain else (),
+            "pass_accessible_terrain": AggregateTerrainMetrics(
+                total_piste_km=500,
+                source_urls=("https://example.com/pass-terrain",),
+            ),
+        }
+    )
+    domains = (
+        (
+            TerrainDomain(
+                terrain_domain_id="operating-domain",
+                name="Operating Domain",
+                ski_area_ids=("area", "other-area"),
+                total_piste_km=180,
+                source_urls=("https://example.com/domain-terrain",),
+            ),
+        )
+        if include_domain
+        else ()
+    )
+    projection = PassCoverageProjection(
+        validity_status="confirmed",
+        coverage_status=coverage_status,
+        contract_covered_ski_area_ids=("area", "other-area", "closed-area"),
+        operating_covered_ski_area_ids=operating_ids,
+        unavailable_covered_ski_area_ids=unavailable_ids,
+        unverified_covered_ski_area_ids=unverified_ids,
+        warnings=("coverage warning",),
+    )
+    return replace(
+        candidate,
+        selected_pass=product,
+        terrain_domains=domains,
+        pass_coverage=projection,
+    )
+
+
+def test_accessible_terrain_preserves_pass_aggregate_for_full_coverage() -> None:
+    candidate = _terrain_candidate()
+
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=VerifiedTrustResolver(),
+        pass_coverage=candidate.pass_coverage,
+    )
+
+    assert selection.value == 500
+    assert selection.summary_scope == "pass"
+    assert selection.warnings == ("coverage warning",)
+
+
+def test_accessible_terrain_uses_wholly_operating_domain_when_partial() -> None:
+    candidate = _terrain_candidate(
+        coverage_status="partial",
+        unavailable_ids=("closed-area",),
+        include_domain=True,
+    )
+
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=VerifiedTrustResolver(),
+        pass_coverage=candidate.pass_coverage,
+    )
+
+    assert selection.value == 180
+    assert selection.summary_scope == "terrain_domain"
+    assert selection.warnings == ("coverage warning",)
+
+
+def test_accessible_terrain_uses_area_when_domain_is_partly_unavailable() -> None:
+    candidate = _terrain_candidate(
+        coverage_status="partial",
+        operating_ids=("area",),
+        unavailable_ids=("other-area", "closed-area"),
+        include_domain=True,
+    )
+
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=VerifiedTrustResolver(),
+        pass_coverage=candidate.pass_coverage,
+    )
+
+    assert selection.value == 100
+    assert selection.summary_scope == "ski_area"
+    assert selection.warnings == (
+        "pass aggregate unavailable; selected ski-area terrain used",
+        "coverage warning",
+    )
+
+
+def test_accessible_terrain_allows_source_backed_unverified_area() -> None:
+    candidate = _terrain_candidate(
+        coverage_status="unverified",
+        operating_ids=(),
+        unverified_ids=("area", "other-area", "closed-area"),
+    )
+
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=VerifiedTrustResolver(),
+        pass_coverage=candidate.pass_coverage,
+    )
+
+    assert selection.value == 100
+    assert selection.summary_scope == "ski_area"
+    assert "coverage warning" in selection.warnings
+
+
+def test_accessible_terrain_needs_source_when_no_safe_metric_exists() -> None:
+    candidate = _terrain_candidate(
+        coverage_status="partial",
+        operating_ids=("area",),
+        unavailable_ids=("other-area", "closed-area"),
+        include_domain=True,
+    )
+
+    selection = select_accessible_terrain_source(
+        product=candidate.selected_pass,
+        ski_area=candidate.ski_area,
+        terrain_domains=candidate.terrain_domains,
+        trust_resolver=UntrustedTerrainResolver(),
+        pass_coverage=candidate.pass_coverage,
+    )
+
+    assert selection.value is None
+    assert selection.evidence.status == "needs_source"
+    assert selection.warnings == (
+        "pass-accessible terrain unresolved",
+        "coverage warning",
+    )
+    context = replace(
+        _context(
+            SearchIntent(objectives=(SearchObjective(factor_id="pass_terrain_value"),))
+        ),
+        trust_resolver=UntrustedTerrainResolver(),
+    )
+    registry = build_static_factor_registry()
+    terrain = registry.get("accessible_terrain_scale").evaluate(context, candidate)
+    value = registry.get("pass_terrain_value").evaluate(context, candidate)
+    assert terrain.raw_utility == 0.5
+    assert terrain.effective_evidence_cap == 0
+    assert value.raw_utility == 0.5
+    assert value.effective_evidence_cap == 0
+
+
 def test_party_skill_uses_balanced_share_and_amount_then_party_minimum() -> None:
     registry = build_static_factor_registry()
     evaluation = registry.get("party_skill_coverage").evaluate(
@@ -202,6 +385,48 @@ def test_numeric_and_access_evaluators_preserve_scope_and_trust() -> None:
     assert terrain.entity_ids == ("pass", "area")
     assert terrain.effective_evidence_cap == 1
     assert access.raw_utility == pytest.approx(0.7)
+
+
+@pytest.mark.parametrize("coverage_status", ["partial", "unverified"])
+def test_partial_coverage_terrain_factors_do_not_score_full_network_aggregate(
+    coverage_status: PassCoverageStatus,
+) -> None:
+    candidate = _terrain_candidate(
+        coverage_status=coverage_status,
+        operating_ids=("area",) if coverage_status == "partial" else (),
+        unavailable_ids=("other-area", "closed-area")
+        if coverage_status == "partial"
+        else (),
+        unverified_ids=("area", "other-area", "closed-area")
+        if coverage_status == "unverified"
+        else (),
+    )
+    registry = build_static_factor_registry()
+    context = _context(
+        SearchIntent(objectives=(SearchObjective(factor_id="pass_terrain_value"),))
+    )
+
+    terrain = registry.get("accessible_terrain_scale").evaluate(context, candidate)
+    value = registry.get("pass_terrain_value").evaluate(context, candidate)
+    bounds = derive_numeric_bounds(
+        candidates=(candidate,),
+        pass_duration_days=6,
+        pass_audience="adult",
+        pass_season_label="2026-2027",
+        trust_resolver=VerifiedTrustResolver(),
+    )
+
+    assert terrain.raw_value == 100
+    assert value.raw_value == pytest.approx(1 / 3)
+    assert terrain.warnings[-1] == "coverage warning"
+    assert value.warnings[-1] == "coverage warning"
+    assert terrain.explanation_inputs["coverage_status"] == coverage_status
+    assert value.explanation_inputs["coverage_status"] == coverage_status
+    assert bounds["accessible_terrain_scale"] == NumericBounds(100, 100)
+    assert bounds["pass_terrain_value"] == NumericBounds(
+        pytest.approx(1 / 3),
+        pytest.approx(1 / 3),
+    )
 
 
 def test_positive_presence_distinguishes_verified_presence_and_unknown() -> None:

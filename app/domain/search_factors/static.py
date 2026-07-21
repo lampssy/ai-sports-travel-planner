@@ -420,6 +420,13 @@ def _accessible_terrain_scale(
         candidate=candidate,
         factor_id="accessible_terrain_scale",
         source=_accessible_terrain_source(candidate, context.trust_resolver),
+        extra_inputs={
+            "coverage_status": (
+                candidate.pass_coverage.coverage_status
+                if candidate.pass_coverage is not None
+                else None
+            )
+        },
     )
 
 
@@ -697,12 +704,18 @@ def _pass_terrain_value(
         evidence_cap=cap,
         evidence=combined_evidence,
         warnings=(
-            ("comparable price or terrain unavailable",) if value is None else ()
+            *terrain.warnings,
+            *(("comparable price or terrain unavailable",) if value is None else ()),
         ),
         explanation_inputs={
             "pass_duration_days": context.pass_duration_days,
             "price": price.amount if price is not None else None,
             "accessible_piste_km": terrain.value,
+            "coverage_status": (
+                candidate.pass_coverage.coverage_status
+                if candidate.pass_coverage is not None
+                else None
+            ),
             "comparison_bounds": (
                 {"minimum": bounds.minimum, "maximum": bounds.maximum}
                 if bounds is not None
@@ -933,6 +946,7 @@ def _accessible_terrain_source(
         ski_area=candidate.ski_area,
         terrain_domains=candidate.terrain_domains,
         trust_resolver=trust_resolver,
+        pass_coverage=candidate.pass_coverage,
     )
     return _NumericSource(
         value=selection.value,
@@ -951,12 +965,21 @@ def select_accessible_terrain_source(
     ski_area: SkiArea,
     terrain_domains: tuple[TerrainDomain, ...],
     trust_resolver: CatalogEvidenceResolver,
+    pass_coverage: PassCoverageProjection | None = None,
 ) -> AccessibleTerrainSelection:
     candidates: list[
         tuple[_NumericSource, Literal["pass", "terrain_domain", "ski_area"]]
     ] = []
+    projection_warnings = pass_coverage.warnings if pass_coverage is not None else ()
+    limited_coverage = (
+        pass_coverage is not None and pass_coverage.coverage_status != "full"
+    )
     aggregate = product.pass_accessible_terrain
-    if aggregate is not None and aggregate.total_piste_km is not None:
+    if (
+        not limited_coverage
+        and aggregate is not None
+        and aggregate.total_piste_km is not None
+    ):
         candidates.append(
             (
                 _NumericSource(
@@ -966,18 +989,28 @@ def select_accessible_terrain_source(
                     entity_type="lift_pass_products",
                     entity_id=product.lift_pass_product_id,
                     field_group="pass_accessible_terrain",
+                    warnings=projection_warnings,
                 ),
                 "pass",
             )
         )
+    operating_area_ids = (
+        frozenset(pass_coverage.operating_covered_ski_area_ids)
+        if pass_coverage is not None
+        else frozenset()
+    )
     domains = [
         domain
         for domain in terrain_domains
         if domain.terrain_domain_id in product.terrain_domain_ids
         and domain.total_piste_km is not None
+        and (
+            not limited_coverage
+            or set(domain.ski_area_ids).issubset(operating_area_ids)
+        )
     ]
-    if len(domains) == 1:
-        domain = domains[0]
+    selectable_domains = domains if limited_coverage or len(domains) == 1 else []
+    for domain in selectable_domains:
         candidates.append(
             (
                 _NumericSource(
@@ -990,13 +1023,24 @@ def select_accessible_terrain_source(
                     entity_type="terrain_domains",
                     entity_id=domain.terrain_domain_id,
                     field_group="aggregate_terrain",
+                    warnings=projection_warnings,
                 ),
                 "terrain_domain",
             )
         )
+    selected_area_is_covered = (
+        ski_area.ski_area_id in pass_coverage.contract_covered_ski_area_ids
+        if pass_coverage is not None
+        else ski_area.ski_area_id in product.valid_ski_area_ids
+    )
+    selected_area_is_available = (
+        pass_coverage is None
+        or ski_area.ski_area_id not in pass_coverage.unavailable_covered_ski_area_ids
+    )
     if (
-        not product.terrain_domain_ids
-        and ski_area.ski_area_id in product.valid_ski_area_ids
+        (not product.terrain_domain_ids or limited_coverage)
+        and selected_area_is_covered
+        and selected_area_is_available
         and ski_area.total_piste_km is not None
     ):
         candidates.append(
@@ -1010,6 +1054,7 @@ def select_accessible_terrain_source(
                     field_group="terrain_metrics",
                     warnings=(
                         "pass aggregate unavailable; selected ski-area terrain used",
+                        *projection_warnings,
                     ),
                 ),
                 "ski_area",
@@ -1038,7 +1083,7 @@ def select_accessible_terrain_source(
         field_group=None,
         summary_scope=None,
         evidence=ResolvedCatalogEvidence(status="needs_source", source_refs=()),
-        warnings=("pass-accessible terrain unresolved",),
+        warnings=("pass-accessible terrain unresolved", *projection_warnings),
     )
 
 

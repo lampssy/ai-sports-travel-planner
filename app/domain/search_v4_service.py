@@ -2051,6 +2051,7 @@ def _pass_summary(
         ski_area=record.ski_area,
         terrain_domains=record.terrain_domains,
         trust_resolver=ManifestCatalogEvidenceResolver(manifest),
+        pass_coverage=projection,
     )
     terrain_evidence = (
         SearchV4TerrainEvidence(

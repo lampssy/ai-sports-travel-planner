@@ -2644,7 +2644,7 @@ def test_service_qualifies_ski_area_terrain_fallback_with_owning_trust() -> None
     }
 
 
-def test_service_uses_verified_domain_when_pass_aggregate_is_unusable() -> None:
+def test_service_uses_selected_area_when_domain_operation_is_unverified() -> None:
     snapshot, manifest = _catalog_and_trust()
     synthetic_aggregate = AggregateTerrainMetrics.model_validate(
         {
@@ -2668,7 +2668,10 @@ def test_service_uses_verified_domain_when_pass_aggregate_is_unusable() -> None:
 
     result = search_trip_configurations(
         intent=SearchIntent(
-            constraints=SearchConstraints(location=LocationScope(country="France")),
+            constraints=SearchConstraints(
+                location=LocationScope(country="France"),
+                travel_window=TravelWindow(month=1),
+            ),
         ),
         catalog_snapshot=snapshot,
         trust_manifest=manifest,
@@ -2689,14 +2692,14 @@ def test_service_uses_verified_domain_when_pass_aggregate_is_unusable() -> None:
         item for item in tignes.factors if item.factor_id == "accessible_terrain_scale"
     )
 
-    assert factor.raw_value == 300
+    assert factor.raw_value == 150
     assert factor.effective_evidence_cap == 1
     assert tignes.selected_pass.accessible_piste_km == factor.raw_value
     assert tignes.selected_pass.accessible_piste_km_evidence.model_dump() == {
         "trust_status": "verified_with_adjustment",
-        "scope": "terrain_domain",
-        "source_entity_id": "tignes-val-disere",
-        "field_group": "aggregate_terrain",
+        "scope": "ski_area",
+        "source_entity_id": tignes.ski_area_id,
+        "field_group": "terrain_metrics",
     }
 
 
@@ -3270,6 +3273,8 @@ def test_candidate_generation_projects_full_and_partial_pass_coverage() -> None:
     assert summary.coverage_status == "partial"
     assert summary.operating_covered_ski_area_ids == ("alta-badia-ski-area",)
     assert summary.unavailable_covered_ski_area_ids == ("lagazuoi-ski-area",)
+    assert summary.accessible_piste_km is None
+    assert summary.accessible_piste_km_evidence is None
     assert summary.published_full_network_piste_km == (
         partial_records[0].selected_pass.pass_accessible_terrain.total_piste_km
     )
