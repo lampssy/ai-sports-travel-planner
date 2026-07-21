@@ -716,7 +716,7 @@ def test_refinement_deadline_releases_endpoint_capacity_before_worker_finishes(
     assert releases == 1
 
 
-def test_post_search_preserves_pinzolo_terrain_trust_provenance(
+def test_post_search_omits_estimated_pinzolo_terrain_without_travel_window(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
@@ -755,13 +755,15 @@ def test_post_search_preserves_pinzolo_terrain_trust_provenance(
         if configuration["selected_pass"]["lift_pass_product_id"]
         == "pinzolo-local-pass"
     )
-    assert pinzolo["selected_pass"]["accessible_piste_km"] == 31
-    assert pinzolo["selected_pass"]["accessible_piste_km_evidence"] == {
-        "trust_status": "estimated",
-        "scope": "ski_area",
-        "source_entity_id": "pinzolo-ski-area",
-        "field_group": "terrain_metrics",
-    }
+    selected_pass = pinzolo["selected_pass"]
+    assert selected_pass["validity_status"] == "not_constrained"
+    assert selected_pass["coverage_status"] == "unverified"
+    assert selected_pass["operating_covered_ski_area_ids"] == []
+    assert selected_pass["unavailable_covered_ski_area_ids"] == []
+    assert selected_pass["unverified_covered_ski_area_ids"] == ["pinzolo-ski-area"]
+    assert selected_pass["coverage_warning"] is None
+    assert selected_pass["accessible_piste_km"] is None
+    assert selected_pass["accessible_piste_km_evidence"] is None
 
 
 def test_search_get_contract_is_removed() -> None:
