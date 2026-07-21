@@ -10412,6 +10412,25 @@
           "OSM node 12425251140 is the La Crusc 1 lower station; 255 m is the rounded Haversine distance from the catalog stay-base coordinate. No duration is asserted."
         ]
       },
+      "alta-badia-armentarola--alta-badia-ski-area": {
+        "display_name": "Armentarola -> Alta Badia",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/hotel-armentarola"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/hotel-armentarola"
+          ]
+        },
+        "notes": [
+          "The official Hotel Armentarola listing explicitly describes the accommodation as directly at the slope.",
+          "The edge therefore uses ski_in_ski_out, lift_distance=near, and is_direct=true without inventing a lift endpoint, distance, or duration."
+        ]
+      },
       "alta-badia-san-cassiano--lagazuoi-ski-area": {
         "display_name": "San Cassiano -> Lagazuoi",
         "field_statuses": {
@@ -10471,6 +10490,44 @@
         "notes": [
           "Official La Val accommodation material explicitly states that the ski bus reaches the Alta Badia ski lifts.",
           "The non-direct ski-bus edge stores no unsupported lift endpoint, distance, or duration."
+        ]
+      },
+      "alta-badia-badia--lagazuoi-ski-area": {
+        "display_name": "Badia -> Lagazuoi",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ]
+        },
+        "notes": [
+          "The official Lagazuoi route explicitly names Badia as an origin that reaches Armentarola/San Cassiano on skis or by public transport before the paid Falzarego shuttle.",
+          "The conservative mixed, non-direct edge stores no unsupported endpoint, distance, or duration."
+        ]
+      },
+      "alta-badia-la-val--lagazuoi-ski-area": {
+        "display_name": "La Val -> Lagazuoi",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ]
+        },
+        "notes": [
+          "The official Lagazuoi route explicitly names La Val as an origin that reaches Armentarola/San Cassiano on skis or by public transport before the paid Falzarego shuttle.",
+          "The conservative mixed, non-direct edge stores no unsupported endpoint, distance, or duration."
         ]
       },
       "alta-badia-sass-dlacia--alta-badia-ski-area": {

@@ -6180,6 +6180,21 @@
       ]
     },
     {
+      "ski_area_access_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-armentarola",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "ski_in_ski_out",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/hotel-armentarola"
+      ]
+    },
+    {
       "ski_area_access_id": "alta-badia-san-cassiano--lagazuoi-ski-area",
       "stay_base_id": "alta-badia-san-cassiano",
       "ski_area_id": "lagazuoi-ski-area",
@@ -6227,6 +6242,36 @@
       "regional_data_ids": {},
       "source_urls": [
         "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/la-flueta"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-badia--lagazuoi-ski-area",
+      "stay_base_id": "alta-badia-badia",
+      "ski_area_id": "lagazuoi-ski-area",
+      "access_mode": "mixed",
+      "lift_distance": "far",
+      "nearest_lift_name": "Lagazuoi cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-la-val--lagazuoi-ski-area",
+      "stay_base_id": "alta-badia-la-val",
+      "ski_area_id": "lagazuoi-ski-area",
+      "access_mode": "mixed",
+      "lift_distance": "far",
+      "nearest_lift_name": "Lagazuoi cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
       ]
     },
     {
