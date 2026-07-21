@@ -344,7 +344,6 @@ def _validate_pass_validity_window_trust(
         if (
             evidence.target_type == "lift_pass_product"
             and evidence.field_path == "validity_windows"
-            and evidence.source_type == "official"
         ):
             evidence_urls_by_pass.setdefault(evidence.target_id, set()).add(
                 evidence.source_url

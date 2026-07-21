@@ -342,7 +342,7 @@ def _pass_validity_snapshots(
     tmp_path: Path,
     *,
     trust_status: str = "verified",
-    trust_source_url: str | None = "https://operator.example.com/winter/tariff",
+    trust_source_refs: list[str] | None = None,
     update_trust: bool = True,
 ) -> tuple[tuple[Path, Path], tuple[Path, Path], list[dict], dict, dict]:
     windows = [
@@ -363,8 +363,10 @@ def _pass_validity_snapshots(
     pass_trust = current_trust["entities"]["lift_pass_products"]["example-local-pass"]
     if update_trust:
         pass_trust["field_statuses"]["identity_scope_availability"] = trust_status
-        pass_trust["field_source_refs"]["identity_scope_availability"] = (
-            [trust_source_url] if trust_source_url is not None else []
+        pass_trust["field_source_refs"]["identity_scope_availability"] = sorted(
+            trust_source_refs
+            if trust_source_refs is not None
+            else ["https://operator.example.com/winter/tariff"]
         )
     current_paths[1].write_text(json.dumps(current_trust), encoding="utf-8")
 
@@ -500,6 +502,26 @@ def _pass_validity_report(
     )
 
 
+def _with_supplemental_pass_validity_evidence(
+    report: CatalogCurationReport,
+) -> CatalogCurationReport:
+    payload = report.model_dump(mode="json")
+    payload["evidence"].append(
+        {
+            "evidence_id": "pass-validity-supplemental",
+            "target_type": "lift_pass_product",
+            "target_id": "example-local-pass",
+            "field_path": "validity_windows",
+            "source_type": "reviewed_editorial",
+            "source_url": "https://guide.example.com/pass-validity",
+            "source_title": "Reviewed pass validity guide",
+            "source_value": payload["changes"][0]["after"],
+            "evidence_summary": "Corroborates the complete official pass window.",
+        }
+    )
+    return CatalogCurationReport.model_validate(payload)
+
+
 def test_reconcile_requires_both_access_link_endpoints(tmp_path: Path) -> None:
     base_paths, current_paths = _relationship_snapshots(tmp_path)
 
@@ -624,7 +646,7 @@ def test_reconcile_rejects_stale_pass_validity_source_refs(tmp_path: Path) -> No
         field_source_refs_after,
     ) = _pass_validity_snapshots(
         tmp_path,
-        trust_source_url="https://operator.example.com/old-tariff",
+        trust_source_refs=["https://operator.example.com/old-tariff"],
     )
     report = _pass_validity_report(
         windows=windows,
@@ -643,6 +665,79 @@ def test_reconcile_rejects_stale_pass_validity_source_refs(tmp_path: Path) -> No
             base_trust_manifest_path=base_paths[1],
             current_trust_manifest_path=current_paths[1],
         )
+
+
+def test_reconcile_requires_supplemental_direct_validity_evidence_in_trust_refs(
+    tmp_path: Path,
+) -> None:
+    (
+        base_paths,
+        current_paths,
+        windows,
+        field_statuses_after,
+        field_source_refs_after,
+    ) = _pass_validity_snapshots(tmp_path)
+    report = _with_supplemental_pass_validity_evidence(
+        _pass_validity_report(
+            windows=windows,
+            field_statuses_after=field_statuses_after,
+            field_source_refs_after=field_source_refs_after,
+        )
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="identity_scope_availability source refs omit validity evidence",
+    ):
+        reconcile_catalog_curation_report(
+            report,
+            base_catalog_path=base_paths[0],
+            current_catalog_path=current_paths[0],
+            base_trust_manifest_path=base_paths[1],
+            current_trust_manifest_path=current_paths[1],
+        )
+
+
+def test_reconcile_accepts_all_direct_validity_evidence_in_trust_refs(
+    tmp_path: Path,
+) -> None:
+    (
+        base_paths,
+        current_paths,
+        windows,
+        field_statuses_after,
+        field_source_refs_after,
+    ) = _pass_validity_snapshots(
+        tmp_path,
+        trust_source_refs=[
+            "https://operator.example.com/winter/tariff",
+            "https://guide.example.com/pass-validity",
+        ],
+    )
+    report = _with_supplemental_pass_validity_evidence(
+        _pass_validity_report(
+            windows=windows,
+            field_statuses_after=field_statuses_after,
+            field_source_refs_after=field_source_refs_after,
+        )
+    )
+
+    result = reconcile_catalog_curation_report(
+        report,
+        base_catalog_path=base_paths[0],
+        current_catalog_path=current_paths[0],
+        base_trust_manifest_path=base_paths[1],
+        current_trust_manifest_path=current_paths[1],
+    )
+
+    assert (
+        "lift_pass_product",
+        "example-local-pass",
+        "validity_windows",
+    ) in {
+        (delta.target_type, delta.target_id, delta.field_path)
+        for delta in result.deltas
+    }
 
 
 def test_reconcile_rejects_unchanged_unowned_pass_validity_trust(
