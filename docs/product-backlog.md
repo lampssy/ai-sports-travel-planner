@@ -98,6 +98,71 @@ historical data, migration/backfill handoff, merge order, and rollback. Actual
 database migrations, catalog-schema changes, and production-code changes remain
 separate work and block readiness rather than proposal creation.
 
+### Alta Badia and Regional Catalog Refinements
+
+Status: parked
+Area: Data Trust
+Source: Alta Badia graph and source-trust review; PR #30
+
+Next bounded slice:
+
+- Complete the adjacent regional destination/base/access graphs before
+  proposing Sellaronda, wider Dolomiti Superski, or cross-destination products.
+
+Candidate inventory:
+
+- `stay_base:alta-badia-campolongo-pass`, `stay_base:alta-badia-sompunt`, and
+  the Pedraces locality remain deferred until their accommodation-market role
+  and direct core-area access are established as distinct from the reviewed
+  village bases.
+- `ski_area:arabba-marmolada-ski-area`,
+  `ski_area:val-di-fassa-canazei-ski-area`,
+  `ski_area:kronplatz-plan-de-corones-ski-area`, and
+  `ski_area:cortina-dampezzo-ski-area` require complete destination,
+  stay-market, and direct-access inventories rather than isolated ski-area
+  nodes. Existing Cortina catalog internals remain outside PR #30.
+- `ski_area:five-torri-averau` and
+  `terrain_domain:lagazuoi-cinque-torri-cortina` remain regional follow-ups;
+  Lagazuoi is modeled here only as an independently operated, transfer-required
+  area reachable from source-backed Alta Badia village origins.
+- `ski_area:gardena-pass-sector`,
+  `ski_area:alta-badia-gardena-pass-sector`, and
+  `ski_area:val-gardena-ski-area` remain owned by the linked Val Gardena work.
+  PR #30 does not reuse or mutate that linked PR's internals.
+- `ski_area:sella-pass`, `ski_area:pordoi-pass`,
+  `ski_area:falzarego-col-gallina`, `ski_area:tofana-socrepes-pocol`,
+  `ski_area:passo-giau-croda-negra`, and `ski_area:faloria-cristallo` remain
+  linked-sector candidates whose complete Val Gardena, Arabba, or Cortina owner
+  graphs are outside PR #30.
+- `ski_area:auronzo-monte-agudo`,
+  `ski_area:misurina-passo-tre-croci`, and
+  `ski_area:san-vito-di-cadore-ski-area` are explicit linked-owner candidates
+  exposed by the reviewed Cortina map. Their dedicated destination, access,
+  operations, weather, and pass graphs remain outside PR #30.
+- `ski_area:civetta` is a concrete future regional ski-area candidate whose
+  complete destination, access, operating, weather, and pass graph is outside
+  this Alta Badia batch.
+- `terrain_domain:sellaronda` depends on all four connected member areas and
+  their access graph. No Alta Badia–Lagazuoi terrain domain is created because
+  the relationship is transfer-dependent rather than ski-connected.
+- `lift_pass_product:dolomiti-superski` and
+  `lift_pass_product:alta-badia-points-value-card` require the wider area graph
+  or explicit partial-area/value-product semantics before catalog creation.
+
+Not now:
+
+- Do not turn Grande Guerra or Super8 transfer routes, shared pass validity, or
+  named Alta Badia sectors into terrain domains or independent ski areas.
+- Keep Lagazuoi access conservative: Badia and La Val use mixed, non-direct
+  edges because the official route first sends them to Armentarola/San Cassiano
+  on skis or public transport before the paid Falzarego shuttle.
+
+Weather handoff:
+
+- New active ski-area IDs use scheduled historical-weather completion. Any
+  retained ski-area geometry correction needs a targeted force-refetch and
+  climatology rebuild before its weather evidence is treated as current.
+
 ### Matterhorn and Cervino Catalog Follow-ups
 
 Status: candidate

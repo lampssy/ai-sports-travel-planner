@@ -210,15 +210,82 @@
   ],
   "stay_destinations": [
     {
-      "stay_destination_id": "alta-badia",
-      "name": "Alta Badia",
+      "stay_destination_id": "corvara",
+      "name": "Corvara",
+      "latitude": 46.5495743,
+      "longitude": 11.8740339,
+      "regional_data_ids": {
+        "osm_node_id": "525843348"
+      },
       "country": "Italy",
       "region": "Dolomites",
       "price_level": "medium",
-      "latitude": 46.5536,
-      "longitude": 11.8997,
-      "trip_market_region_id": "alta-badia",
-      "regional_data_ids": {}
+      "trip_market_region_id": "alta-badia"
+    },
+    {
+      "stay_destination_id": "colfosco",
+      "name": "Colfosco",
+      "latitude": 46.5543844,
+      "longitude": 11.8548454,
+      "regional_data_ids": {
+        "osm_node_id": "287629655"
+      },
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "medium",
+      "trip_market_region_id": "alta-badia"
+    },
+    {
+      "stay_destination_id": "la-villa",
+      "name": "La Villa",
+      "latitude": 46.5817533,
+      "longitude": 11.8970259,
+      "regional_data_ids": {
+        "osm_node_id": "223601802"
+      },
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "medium",
+      "trip_market_region_id": "alta-badia"
+    },
+    {
+      "stay_destination_id": "san-cassiano",
+      "name": "San Cassiano",
+      "latitude": 46.5711429,
+      "longitude": 11.9320941,
+      "regional_data_ids": {
+        "osm_node_id": "223597157"
+      },
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "medium",
+      "trip_market_region_id": "alta-badia"
+    },
+    {
+      "stay_destination_id": "badia",
+      "name": "Badia",
+      "latitude": 46.610124,
+      "longitude": 11.893487,
+      "regional_data_ids": {
+        "osm_node_id": "64777015"
+      },
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "medium",
+      "trip_market_region_id": "alta-badia"
+    },
+    {
+      "stay_destination_id": "la-val",
+      "name": "La Val",
+      "latitude": 46.6577188,
+      "longitude": 11.9243258,
+      "regional_data_ids": {
+        "osm_node_id": "2639098612"
+      },
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "medium",
+      "trip_market_region_id": "alta-badia"
     },
     {
       "stay_destination_id": "auronzo-di-cadore",
@@ -703,22 +770,23 @@
   "stay_bases": [
     {
       "stay_base_id": "alta-badia-corvara",
-      "stay_destination_id": "alta-badia",
+      "stay_destination_id": "corvara",
       "name": "Corvara",
       "price_range": "EUR 180-255",
       "price_min": 180.0,
       "price_max": 255.0,
       "quality": "standard",
-      "latitude": 46.5496,
-      "longitude": 11.874,
+      "latitude": 46.5495743,
+      "longitude": 11.8740339,
       "base_type": "village",
       "regional_data_ids": {
+        "osm_node_id": "525843348",
         "osm_relation_id": "47252"
       },
-      "elevation_m": null,
+      "elevation_m": 1568,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2264,6 +2332,180 @@
         "intensity": "lively",
         "season_label": null
       }
+    },
+    {
+      "stay_base_id": "alta-badia-colfosco",
+      "stay_destination_id": "colfosco",
+      "name": "Colfosco",
+      "price_range": "EUR 180-255",
+      "price_min": 180.0,
+      "price_max": 255.0,
+      "quality": "standard",
+      "latitude": 46.5543844,
+      "longitude": 11.8548454,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "287629655"
+      },
+      "elevation_m": 1645,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "alta-badia-la-villa",
+      "stay_destination_id": "la-villa",
+      "name": "La Villa",
+      "price_range": "EUR 180-255",
+      "price_min": 180.0,
+      "price_max": 255.0,
+      "quality": "standard",
+      "latitude": 46.5817533,
+      "longitude": 11.8970259,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "223601802"
+      },
+      "elevation_m": 1433,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "alta-badia-san-cassiano",
+      "stay_destination_id": "san-cassiano",
+      "name": "San Cassiano",
+      "price_range": "EUR 180-255",
+      "price_min": 180.0,
+      "price_max": 255.0,
+      "quality": "standard",
+      "latitude": 46.5711429,
+      "longitude": 11.9320941,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "223597157"
+      },
+      "elevation_m": 1537,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "alta-badia-armentarola",
+      "stay_destination_id": "san-cassiano",
+      "name": "Armentarola",
+      "price_range": "EUR 180-255",
+      "price_min": 180.0,
+      "price_max": 255.0,
+      "quality": "standard",
+      "latitude": 46.5611909,
+      "longitude": 11.9541253,
+      "base_type": "hamlet",
+      "regional_data_ids": {
+        "osm_node_id": "5951064513"
+      },
+      "elevation_m": 1600,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "alta-badia-badia",
+      "stay_destination_id": "badia",
+      "name": "Badia",
+      "price_range": "EUR 180-255",
+      "price_min": 180.0,
+      "price_max": 255.0,
+      "quality": "standard",
+      "latitude": 46.610124,
+      "longitude": 11.893487,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "64777015",
+        "osm_relation_id": "47255"
+      },
+      "elevation_m": 1324,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "alta-badia-la-val",
+      "stay_destination_id": "la-val",
+      "name": "La Val",
+      "price_range": "EUR 180-255",
+      "price_min": 180.0,
+      "price_max": 255.0,
+      "quality": "standard",
+      "latitude": 46.6577188,
+      "longitude": 11.9243258,
+      "elevation_m": 1348,
+      "base_type": "village",
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      },
+      "regional_data_ids": {
+        "osm_node_id": "2639098612"
+      }
+    },
+    {
+      "stay_base_id": "alta-badia-sass-dlacia",
+      "stay_destination_id": "san-cassiano",
+      "name": "Sass Dlacia",
+      "price_range": "EUR 180-255",
+      "price_min": 180.0,
+      "price_max": 255.0,
+      "quality": "standard",
+      "latitude": 46.5541,
+      "longitude": 11.96999,
+      "elevation_m": 1680,
+      "base_type": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      },
+      "regional_data_ids": {}
     }
   ],
   "ski_areas": [
@@ -2273,7 +2515,7 @@
       "latitude": 46.5536,
       "longitude": 11.8997,
       "base_elevation_m": 1324,
-      "summit_elevation_m": 2778,
+      "summit_elevation_m": 2550,
       "season_start_month": 12,
       "season_end_month": 4,
       "season_windows": [
@@ -2284,20 +2526,16 @@
           "status": "planned"
         }
       ],
-      "total_piste_km": 130.0,
-      "total_lift_count": 53,
-      "piste_km_by_difficulty": {
-        "beginner": 74.0,
-        "intermediate": 47.0,
-        "advanced": 9.0
-      },
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
         "intermediate",
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -2306,12 +2544,12 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
-        "availability": "unknown",
+        "availability": "available",
         "season_label": null
       },
       "marked_freeride_routes": {
@@ -4626,6 +4864,50 @@
         "intensity": null,
         "season_label": null
       }
+    },
+    {
+      "ski_area_id": "lagazuoi-ski-area",
+      "name": "Lagazuoi",
+      "latitude": 46.5191116,
+      "longitude": 12.008447,
+      "base_elevation_m": 2105,
+      "summit_elevation_m": 2732,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [],
+      "snowmaking": {
+        "availability": "available",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     }
   ],
   "ski_area_access": [
@@ -5818,6 +6100,240 @@
         "https://www.openstreetmap.org/node/342786424",
         "https://www.openstreetmap.org/way/30833737"
       ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-colfosco--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-colfosco",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Colfosco gondola",
+      "distance_m": 479,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "331180135",
+        "nearest_lift_osm_way_id": "30067734"
+      },
+      "source_urls": [
+        "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+        "https://www.altabadia.org/en/villages/colfosco-alta-badia",
+        "https://www.openstreetmap.org/node/331180135",
+        "https://www.openstreetmap.org/way/30067734"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-la-villa--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-la-villa",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Piz La Ila",
+      "distance_m": 322,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "224779030"
+      },
+      "source_urls": [
+        "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+        "https://www.altabadia.org/en/villages/la-villa-alta-badia",
+        "https://www.openstreetmap.org/node/224779030"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-san-cassiano--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-san-cassiano",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Piz Sorega",
+      "distance_m": 589,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "223530229"
+      },
+      "source_urls": [
+        "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+        "https://www.altabadia.org/en/villages/san-cassiano-alta-badia",
+        "https://www.openstreetmap.org/node/223530229"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-badia--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-badia",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "La Crusc",
+      "distance_m": 255,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "12425251140"
+      },
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/skiing-in-the-la-crusc-santa-croce-area",
+        "https://www.altabadia.org/en/villages/badia-alta-badia",
+        "https://www.openstreetmap.org/node/12425251140"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-armentarola--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-armentarola",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "ski_in_ski_out",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/hotel-armentarola"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-san-cassiano--lagazuoi-ski-area",
+      "stay_base_id": "alta-badia-san-cassiano",
+      "ski_area_id": "lagazuoi-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Lagazuoi cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-armentarola--lagazuoi-ski-area",
+      "stay_base_id": "alta-badia-armentarola",
+      "ski_area_id": "lagazuoi-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Lagazuoi cable car",
+      "distance_m": 10000,
+      "duration_minutes": 20,
+      "is_direct": false,
+      "regional_data_ids": {
+        "origin_bus_stop_osm_node_id": "916336242",
+        "destination_lift_osm_node_id": "360633380"
+      },
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour",
+        "https://www.openstreetmap.org/node/916336242",
+        "https://www.openstreetmap.org/node/360633380"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-la-val--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-la-val",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Alta Badia ski lifts",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/la-flueta"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-badia--lagazuoi-ski-area",
+      "stay_base_id": "alta-badia-badia",
+      "ski_area_id": "lagazuoi-ski-area",
+      "access_mode": "mixed",
+      "lift_distance": "far",
+      "nearest_lift_name": "Lagazuoi cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-la-val--lagazuoi-ski-area",
+      "stay_base_id": "alta-badia-la-val",
+      "ski_area_id": "lagazuoi-ski-area",
+      "access_mode": "mixed",
+      "lift_distance": "far",
+      "nearest_lift_name": "Lagazuoi cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-sass-dlacia--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-sass-dlacia",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Armentarola ski lift",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://campingsassdlacia.it/en/activities/skiing-and-snowboarding",
+        "https://campingsassdlacia.it/en/services"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-corvara--lagazuoi-ski-area",
+      "stay_base_id": "alta-badia-corvara",
+      "ski_area_id": "lagazuoi-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Lagazuoi cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-colfosco--lagazuoi-ski-area",
+      "stay_base_id": "alta-badia-colfosco",
+      "ski_area_id": "lagazuoi-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Lagazuoi cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ]
+    },
+    {
+      "ski_area_access_id": "alta-badia-la-villa--lagazuoi-ski-area",
+      "stay_base_id": "alta-badia-la-villa",
+      "ski_area_id": "lagazuoi-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Lagazuoi cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ]
     }
   ],
   "terrain_domains": [
@@ -5990,19 +6506,43 @@
     {
       "lift_pass_product_id": "alta-badia-skipass",
       "name": "Alta Badia Ski Pass",
-      "validity_scope": "single_ski_area",
+      "validity_scope": "local_multi_area",
       "available_from_stay_destination_ids": [
-        "alta-badia"
+        "corvara",
+        "colfosco",
+        "la-villa",
+        "san-cassiano",
+        "badia",
+        "la-val"
       ],
       "default_for_stay_destination_ids": [
-        "alta-badia"
+        "corvara",
+        "colfosco",
+        "la-villa",
+        "san-cassiano",
+        "badia",
+        "la-val"
       ],
       "valid_ski_area_ids": [
-        "alta-badia-ski-area"
+        "alta-badia-ski-area",
+        "lagazuoi-ski-area"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": "Local Alta Badia pass covers the modeled 130 km Alta Badia ski area; broader Dolomiti Superski and Sellaronda access is available through separate regional products and is not copied into this local ski-area record.",
-      "pass_accessible_terrain": null,
+      "external_validity_summary": "The local Alta Badia pass covers the modeled Alta Badia core and Lagazuoi for the six Alta Badia stay destinations. Broader Dolomiti Superski and Sellaronda validity remains regional-network context and is not inferred into this local product.",
+      "pass_accessible_terrain": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 130.0,
+        "total_lift_count": 53,
+        "piste_km_by_difficulty": {
+          "beginner": 74.0,
+          "intermediate": 47.0,
+          "advanced": 9.0
+        },
+        "source_urls": [
+          "https://www.altabadia.org/en/ski-area-alta-badia-dolomites",
+          "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
+        ]
+      },
       "prices": [
         {
           "duration_days": 1,
@@ -6012,7 +6552,7 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "main season",
+          "season_label": "published main-season example reviewed 2026-07-21",
           "source_url": "https://www.skiresort.info/ski-resort/alta-badia/"
         }
       ]
@@ -7882,8 +8422,8 @@
   "rental_display_facts": [
     {
       "rental_display_fact_id": "alta-badia-marcello-varallo-sport",
-      "stay_destination_id": "alta-badia",
-      "stay_base_id": null,
+      "stay_destination_id": "la-villa",
+      "stay_base_id": "alta-badia-la-villa",
       "name": "Marcello Varallo Sport",
       "price_range": "EUR 30-45",
       "price_min": 30.0,
