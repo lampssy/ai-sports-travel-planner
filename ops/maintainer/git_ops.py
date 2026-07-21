@@ -605,6 +605,12 @@ class GitRepository:
                 sync=sync,
             )
 
+        self._assert_ancestor(
+            sync.base_head,
+            base_head,
+            "current main must descend from the reviewed continuation base",
+        )
+
         switch = self._git("switch", "--detach", base_head)
         if switch.returncode != 0:
             raise RepositorySafetyError("cannot detach at continuation replay base")

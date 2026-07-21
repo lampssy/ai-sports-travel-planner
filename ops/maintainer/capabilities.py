@@ -474,6 +474,11 @@ def handle_validate_reviewed(
         store.replace_resolved_continuation(continuation, lease)
     elif existing_continuation is None:
         store.save_continuation(continuation, lease)
+    elif existing_continuation.status in {
+        ContinuationStatus.CONSUMED,
+        ContinuationStatus.INVALIDATED,
+    }:
+        store.save_continuation(continuation, lease)
     elif existing_continuation != continuation:
         raise StateStoreError("active continuation does not match reviewed checkpoint")
     dependencies.tracker.mutation_occurred = True

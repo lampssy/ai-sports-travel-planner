@@ -1586,6 +1586,30 @@ def test_continuation_replay_squashes_onto_advanced_main(
     )
 
 
+def test_continuation_replay_rejects_rewritten_main_history(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    refs = repository.checkpoint_reviewed_continuation(
+        local.pull_request, prepared, prepared.rebased_head
+    )
+    _git(
+        local.remote,
+        "update-ref",
+        "refs/heads/main",
+        local.target_sha,
+        local.main_sha,
+    )
+
+    with pytest.raises(RepositorySafetyError, match="main must descend"):
+        repository.prepare_reviewed_continuation(
+            local.pull_request,
+            prepared,
+            prepared.rebased_head,
+            refs,
+        )
+
+
 def test_continuation_replay_returns_one_allowed_conflict_and_completes_it(
     tmp_path: Path,
 ) -> None:
