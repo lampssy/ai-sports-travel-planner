@@ -106,11 +106,9 @@ Source: Alta Badia graph and source-trust review; PR #30
 
 Next bounded slice:
 
-- Resolve the exact winter relationship for `stay_base:alta-badia-la-val`
-  before creating `ski_area_access:alta-badia-la-val--alta-badia-ski-area`.
-  The reviewed official material establishes La Val as an Alta Badia village,
-  but does not establish a direct winter lift or shuttle edge to the modeled
-  core area.
+- Resolve only the still-unverified Lagazuoi transfers from Badia and La Val;
+  the direct La Val accommodation source now establishes its non-direct ski-bus
+  edge to the modeled Alta Badia core.
 - Complete the adjacent regional destination/base/access graphs before
   proposing Sellaronda, wider Dolomiti Superski, or cross-destination products.
 
@@ -129,11 +127,19 @@ Candidate inventory:
 - `ski_area:cinque-torri` and
   `terrain_domain:lagazuoi-cinque-torri-cortina` remain regional follow-ups;
   Lagazuoi is modeled here only as an independently operated, transfer-required
-  child of the Alta Badia destination.
+  area reachable from source-backed Alta Badia village origins.
 - `ski_area:gardena-pass-sector`,
   `ski_area:alta-badia-gardena-pass-sector`, and
   `ski_area:val-gardena-ski-area` remain owned by the linked Val Gardena work.
   PR #30 does not reuse or mutate that linked PR's internals.
+- `ski_area_access:alta-badia-badia--lagazuoi-ski-area` and
+  `ski_area_access:alta-badia-la-val--lagazuoi-ski-area` need a direct,
+  village-specific transfer source before either edge can be modeled.
+- `ski_area:sella-pass`, `ski_area:pordoi-pass`,
+  `ski_area:five-torri-averau`, `ski_area:falzarego-col-gallina`,
+  `ski_area:tofana-socrepes-pocol`, and
+  `ski_area:passo-giau-croda-negra` remain linked-sector candidates whose
+  complete Val Gardena or Cortina owner graphs are outside PR #30.
 - `terrain_domain:sellaronda` depends on all four connected member areas and
   their access graph. No Alta Badia–Lagazuoi terrain domain is created because
   the relationship is transfer-dependent rather than ski-connected.
@@ -145,10 +151,10 @@ Not now:
 
 - Do not turn Grande Guerra or Super8 transfer routes, shared pass validity, or
   named Alta Badia sectors into terrain domains or independent ski areas.
-- Do not infer access edges for La Val from valley-level transport language.
-  The two non-direct Lagazuoi access edges reviewed in PR #30 are limited to
-  `ski_area_access:alta-badia-san-cassiano--lagazuoi-ski-area` and
-  `ski_area_access:alta-badia-armentarola--lagazuoi-ski-area`.
+- Do not infer Lagazuoi access from valley-level transport language. The
+  reviewed direct route evidence supports only Corvara, Colfosco, La Villa,
+  San Cassiano, and Armentarola as modeled Lagazuoi origins; Badia and La Val
+  remain unresolved for that separate transfer.
 
 Weather handoff:
 

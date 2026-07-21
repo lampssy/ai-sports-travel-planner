@@ -73,12 +73,13 @@
             "https://www.altabadia.org/en/alta-badia/villages"
           ],
           "membership_context": [
-            "https://www.altabadia.org/en/alta-badia/villages"
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/all-accommodations"
           ]
         },
         "notes": [
-          "Official Alta Badia material identifies one umbrella destination and its six named villages.",
-          "The trip-market region is Snowcast grouping normalization over that official umbrella; it does not turn every village into a ranked stay destination."
+          "Alta Badia remains the trip-market umbrella for six independently represented village stay destinations.",
+          "The ski-region grouping avoids a seventh overlapping ranked stay destination and does not change ski-area weather ownership."
         ]
       },
       "auronzo-di-cadore": {
@@ -914,26 +915,6 @@
       }
     },
     "stay_destinations": {
-      "alta-badia": {
-        "display_name": "Alta Badia",
-        "field_statuses": {
-          "identity_location": "verified",
-          "coordinates": "estimated",
-          "price_level": "estimated"
-        },
-        "field_source_refs": {
-          "identity_location": [
-            "https://www.altabadia.org/en/alta-badia/villages",
-            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/all-accommodations"
-          ],
-          "coordinates": [],
-          "price_level": []
-        },
-        "notes": [
-          "Official village and accommodation inventories support one complete Alta Badia stay market.",
-          "The catalog centre coordinate and medium price level remain product estimates rather than source-verified destination facts."
-        ]
-      },
       "auronzo-di-cadore": {
         "display_name": "Auronzo di Cadore",
         "field_statuses": {
@@ -2284,6 +2265,150 @@
           "The destination shares the existing Cervinia trip-market region but owns its base, ski-area weather identity, access edge, and local default pass.",
           "The medium price level remains an explicit catalog estimate."
         ]
+      },
+      "corvara": {
+        "display_name": "Corvara",
+        "field_statuses": {
+          "identity_location": "verified_with_adjustment",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/corvara-alta-badia",
+            "https://www.altabadia.org/en/villages/corvara-alta-badia/accommodations"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/525843348"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official village-specific accommodation treatment supports an independently represented stay market under the Alta Badia trip-market umbrella.",
+          "The point coordinate is the exact OSM village node; administrative boundaries are not used as point geometry.",
+          "The medium price level is inherited compatibility data and remains estimated."
+        ]
+      },
+      "colfosco": {
+        "display_name": "Colfosco",
+        "field_statuses": {
+          "identity_location": "verified_with_adjustment",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/colfosco-alta-badia",
+            "https://www.altabadia.org/en/villages/colfosco-alta-badia/accommodations"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/287629655"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official village-specific accommodation treatment supports an independently represented stay market under the Alta Badia trip-market umbrella.",
+          "The point coordinate is the exact OSM village node; administrative boundaries are not used as point geometry.",
+          "The medium price level is inherited compatibility data and remains estimated."
+        ]
+      },
+      "la-villa": {
+        "display_name": "La Villa",
+        "field_statuses": {
+          "identity_location": "verified_with_adjustment",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/la-villa-alta-badia",
+            "https://www.altabadia.org/en/villages/la-villa-alta-badia/accommodations"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/223601802"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official village-specific accommodation treatment supports an independently represented stay market under the Alta Badia trip-market umbrella.",
+          "The point coordinate is the exact OSM village node; administrative boundaries are not used as point geometry.",
+          "The medium price level is inherited compatibility data and remains estimated."
+        ]
+      },
+      "san-cassiano": {
+        "display_name": "San Cassiano",
+        "field_statuses": {
+          "identity_location": "verified_with_adjustment",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia",
+            "https://www.altabadia.org/en/villages/san-cassiano-alta-badia/accommodations"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/223597157"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official village-specific accommodation treatment supports an independently represented stay market under the Alta Badia trip-market umbrella.",
+          "The point coordinate is the exact OSM village node; administrative boundaries are not used as point geometry.",
+          "The medium price level is inherited compatibility data and remains estimated."
+        ]
+      },
+      "badia": {
+        "display_name": "Badia",
+        "field_statuses": {
+          "identity_location": "verified_with_adjustment",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/villages/badia-alta-badia",
+            "https://www.altabadia.org/en/villages/badia-alta-badia/accommodations"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/64777015"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official village-specific accommodation treatment supports an independently represented stay market under the Alta Badia trip-market umbrella.",
+          "The point coordinate is the exact OSM village node; administrative boundaries are not used as point geometry.",
+          "The medium price level is inherited compatibility data and remains estimated."
+        ]
+      },
+      "la-val": {
+        "display_name": "La Val",
+        "field_statuses": {
+          "identity_location": "verified_with_adjustment",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/dolomites/hiking-village-la-val-dolomites",
+            "https://www.altabadia.org/en/info-service/villages/la-val-alta-badia/accommodations"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/2639098612"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official village-specific accommodation treatment supports an independently represented stay market under the Alta Badia trip-market umbrella.",
+          "The point coordinate is the exact OSM village node; administrative boundaries are not used as point geometry.",
+          "The medium price level is inherited compatibility data and remains estimated."
+        ]
       }
     },
     "stay_bases": {
@@ -2305,7 +2430,7 @@
             "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/all-accommodations"
           ],
           "coordinates": [
-            "https://www.openstreetmap.org/relation/47252"
+            "https://www.openstreetmap.org/node/525843348"
           ],
           "elevation": [
             "https://www.altabadia.org/en/villages/corvara-alta-badia"
@@ -2314,7 +2439,7 @@
           "base_type": [
             "https://www.altabadia.org/en/alta-badia/villages",
             "https://www.altabadia.org/en/villages/corvara-alta-badia",
-            "https://www.openstreetmap.org/relation/47252"
+            "https://www.openstreetmap.org/node/525843348"
           ],
           "base_character": [
             "https://www.altabadia.org/en/villages/corvara-alta-badia"
@@ -2322,7 +2447,8 @@
           "local_apres": []
         },
         "notes": [
-          "Corvara is a village base within the umbrella Alta Badia stay market.",
+          "Corvara is a village base within stay_destination:corvara.",
+          "OSM node 525843348 supplies the exact village point; relation 47252 is retained only as administrative identity metadata.",
           "Mixed development and lively local pace normalize the official village presentation; they do not assert an apres scene.",
           "Local apres is reset to unknown because the retired L’Murin URL no longer reproduces the claim."
         ]
@@ -5507,7 +5633,7 @@
           "local_apres": []
         },
         "notes": [
-          "This village is a stay base inside the single Alta Badia accommodation market.",
+          "This village is a stay base inside stay_destination:colfosco.",
           "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a village-specific sourced range.",
           "Local apres remains unknown without base-scoped evidence."
         ]
@@ -5545,7 +5671,7 @@
           "local_apres": []
         },
         "notes": [
-          "This village is a stay base inside the single Alta Badia accommodation market.",
+          "This village is a stay base inside stay_destination:la-villa.",
           "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a village-specific sourced range.",
           "Local apres remains unknown without base-scoped evidence."
         ]
@@ -5583,7 +5709,7 @@
           "local_apres": []
         },
         "notes": [
-          "This village is a stay base inside the single Alta Badia accommodation market.",
+          "This village is a stay base inside stay_destination:san-cassiano.",
           "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a village-specific sourced range.",
           "Local apres remains unknown without base-scoped evidence."
         ]
@@ -5606,7 +5732,7 @@
             "https://www.altabadia.org/en/villages/badia-alta-badia"
           ],
           "coordinates": [
-            "https://www.openstreetmap.org/relation/47255"
+            "https://www.openstreetmap.org/node/64777015"
           ],
           "elevation": [
             "https://www.altabadia.org/en/villages/badia-alta-badia"
@@ -5615,7 +5741,7 @@
           "base_type": [
             "https://www.altabadia.org/en/alta-badia/villages",
             "https://www.altabadia.org/en/villages/badia-alta-badia",
-            "https://www.openstreetmap.org/relation/47255"
+            "https://www.openstreetmap.org/node/64777015"
           ],
           "base_character": [
             "https://www.altabadia.org/en/villages/badia-alta-badia"
@@ -5623,7 +5749,8 @@
           "local_apres": []
         },
         "notes": [
-          "This village is a stay base inside the single Alta Badia accommodation market.",
+          "This village is a stay base inside stay_destination:badia.",
+          "OSM node 64777015 supplies the exact village point; relation 47255 is retained only as administrative identity metadata.",
           "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a village-specific sourced range.",
           "Local apres remains unknown without base-scoped evidence."
         ]
@@ -5659,9 +5786,82 @@
           "local_apres": []
         },
         "notes": [
-          "Official lodging and transfer material support Armentarola as a concrete hamlet/transfer stay base inside the San Cassiano-owned market.",
+          "Official lodging and transfer material support Armentarola as a concrete hamlet/transfer stay base inside stay_destination:san-cassiano.",
           "The destination-level EUR 180-255 standard tuple is inherited compatibility data, not a sourced Armentarola price sample.",
           "Character and local apres remain unknown."
+        ]
+      },
+      "alta-badia-la-val": {
+        "display_name": "La Val",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified_with_adjustment",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.altabadia.org/en/alta-badia/villages",
+            "https://www.altabadia.org/en/dolomites/hiking-village-la-val-dolomites",
+            "https://www.altabadia.org/en/info-service/villages/la-val-alta-badia/accommodations"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/2639098612"
+          ],
+          "elevation": [
+            "https://www.altabadia.org/en/info-service/villages/la-val-alta-badia/accommodations"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.altabadia.org/en/dolomites/hiking-village-la-val-dolomites",
+            "https://www.openstreetmap.org/node/2639098612"
+          ],
+          "base_character": [
+            "https://www.altabadia.org/en/dolomites/hiking-village-la-val-dolomites"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "La Val is the concrete village base of stay_destination:la-val.",
+          "The exact OSM village point owns coordinates; 1,348 m normalizes the official village accommodation presentation.",
+          "Traditional and quiet normalize the official historic village presentation; local apres remains unknown.",
+          "The EUR 180-255 standard tuple is inherited compatibility data rather than a village-specific sourced range."
+        ]
+      },
+      "alta-badia-sass-dlacia": {
+        "display_name": "Sass Dlacia",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "needs_source",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://campingsassdlacia.it/en",
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/cross-country-skiing-centre-alta-badia"
+          ],
+          "coordinates": [
+            "https://campingsassdlacia.it/en"
+          ],
+          "elevation": [
+            "https://campingsassdlacia.it/en"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "The year-round bookable camping/basecamp and official Sciaré cross-country locality support a concrete stay base within stay_destination:san-cassiano.",
+          "The operator publishes the stored 46.5541, 11.96999 coordinate and 1,680 m elevation.",
+          "Settlement type, character, local apres, and the inherited lodging tuple remain unverified or estimated."
         ]
       }
     },
@@ -10254,8 +10454,48 @@
           "The approximate 10 km / 20 minute segment is explicitly published for Armentarola to Passo Falzarego."
         ]
       },
-      "alta-badia-armentarola--alta-badia-ski-area": {
-        "display_name": "Armentarola -> Alta Badia",
+      "alta-badia-la-val--alta-badia-ski-area": {
+        "display_name": "La Val -> Alta Badia",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/la-flueta"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/accommodations-alta-badia/hotels-bed-and-breakfast-apartments/details/accommodation/la-flueta"
+          ]
+        },
+        "notes": [
+          "Official La Val accommodation material explicitly states that the ski bus reaches the Alta Badia ski lifts.",
+          "The non-direct ski-bus edge stores no unsupported lift endpoint, distance, or duration."
+        ]
+      },
+      "alta-badia-sass-dlacia--alta-badia-ski-area": {
+        "display_name": "Sass Dlacia -> Alta Badia",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://campingsassdlacia.it/en/activities/skiing-and-snowboarding",
+            "https://campingsassdlacia.it/en/services"
+          ],
+          "access_mode_distance": [
+            "https://campingsassdlacia.it/en/activities/skiing-and-snowboarding",
+            "https://campingsassdlacia.it/en/services"
+          ]
+        },
+        "notes": [
+          "The lodging operator explicitly runs a ski bus from Camping Sass Dlacia to the Armentarola ski lift and Alta Badia core.",
+          "The non-direct ski-bus edge stores no unsupported numeric distance or duration."
+        ]
+      },
+      "alta-badia-corvara--lagazuoi-ski-area": {
+        "display_name": "Corvara -> Lagazuoi",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
           "access_mode_distance": "verified_with_adjustment"
@@ -10269,8 +10509,46 @@
           ]
         },
         "notes": [
-          "The official Lagazuoi route ends at Sas Dlacia and explicitly uses the horse tow to the Armentarola lift, which returns skiers to the Alta Badia core.",
-          "The multi-leg relationship is normalized to access_mode=mixed, lift_distance=far, and is_direct=false; no unsupported distance or duration is asserted."
+          "Official route material explicitly names direct bus access from Corvara to Passo Falzarego and the Lagazuoi cable car.",
+          "The transfer remains is_direct=false and stores no unsupported distance or duration."
+        ]
+      },
+      "alta-badia-colfosco--lagazuoi-ski-area": {
+        "display_name": "Colfosco -> Lagazuoi",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ]
+        },
+        "notes": [
+          "Official route material explicitly names direct bus access from Colfosco to Passo Falzarego and the Lagazuoi cable car.",
+          "The transfer remains is_direct=false and stores no unsupported distance or duration."
+        ]
+      },
+      "alta-badia-la-villa--lagazuoi-ski-area": {
+        "display_name": "La Villa -> Lagazuoi",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ],
+          "access_mode_distance": [
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+          ]
+        },
+        "notes": [
+          "Official route material explicitly names direct bus access from La Villa to Passo Falzarego and the Lagazuoi cable car.",
+          "The transfer remains is_direct=false and stores no unsupported distance or duration."
         ]
       }
     },
@@ -10517,8 +10795,7 @@
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
-            "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
+            "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
           ],
           "coverage": [
             "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
@@ -10533,9 +10810,10 @@
           ]
         },
         "notes": [
-          "The official 2025/26 piste map numbers Lagazuoi within the Alta Badia local-pass map, so the local multi-area product covers both modeled Alta Badia core and Lagazuoi ski areas.",
-          "The official Alta Badia ski-area page publishes the 130 km, 53-lift, and 74/47/9 km aggregate inventory; the official piste map establishes that the mapped local-pass scope includes Lagazuoi. The metrics are therefore normalized to pass_accessible_terrain and are not duplicated onto the narrower core weather owner.",
-          "EUR 80 is a reviewed editorial main-season adult one-day example observed on 2026-07-21; it is not represented as an official 2026/27 tariff.",
+          "The official pass page supports the Alta Badia local product from the six village stay destinations; it is the reviewed default for each destination.",
+          "The official 2025/26 piste map numbers Lagazuoi within the local-pass map, so coverage remains the Alta Badia core plus Lagazuoi without a terrain domain.",
+          "The 130 km, 53-lift, and 74/47/9 km inventory remains normalized once to pass_accessible_terrain.",
+          "EUR 80 remains a reviewed editorial example, not an official current-season tariff.",
           "Broader Dolomiti Superski and Sellaronda validity remains external context."
         ]
       },
@@ -12519,14 +12797,14 @@
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+            "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/varallo-sport",
             "https://www.varallosport.com/en/"
           ],
           "price_quality_access": []
         },
         "notes": [
-          "Official destination and provider pages support the rental identity.",
-          "The EUR 30-45 standard/medium display tuple remains a Snowcast estimate and is not attributed to the booking page."
+          "Official destination and provider pages place Varallo Sport in La Villa, so the display fact is scoped to stay_destination:la-villa and stay_base:alta-badia-la-villa.",
+          "The EUR 30-45 standard/medium display tuple remains a Snowcast estimate."
         ]
       },
       "auronzo-di-cadore-monte-agudo-ski-rental": {
