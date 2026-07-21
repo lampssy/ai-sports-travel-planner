@@ -97,6 +97,19 @@ owning pass trust group is source-backed and the window status is `planned`.
 An `estimated` window may preserve reviewed context, but it cannot confirm exact
 ticket entitlement or exclude a candidate; runtime treats it as unverified.
 
+When one requested season contains mixed window evidence, use cautious
+precedence:
+
+1. A source-backed `planned` window containing the complete trip confirms it.
+2. Otherwise, if any same-season window is estimated or its owning trust is not
+   source-backed, keep the result unverified; that evidence may cover dates the
+   authoritative windows do not.
+3. Exclude only when at least one same-season window is authoritative and every
+   same-season window is authoritative enough to rule out complete-trip
+   containment.
+4. With no same-season window, use the existing future-season unverified
+   fallback.
+
 A pass product keeps static `valid_ski_area_ids` and `terrain_domain_ids`.
 When the same publisher-facing ticket has materially different coverage in
 different date regimes, Snowcast models separate product variants whose static
@@ -200,9 +213,11 @@ that same rule to its `start_date`; do not compare the raw start year. This keep
 cross-calendar winter seasons deterministic and correctly associates a
 post-main-winter window such as April-May 2027 with Hintertux's 2026/27 season.
 
-If the requested season has an authoritative explicit pass window and the trip
-falls outside it, the pass is inapplicable. Snowcast must not fall back merely
-because the exact window is inconvenient.
+If every requested-season window is authoritative and the trip falls outside
+all of them, the pass is inapplicable. Snowcast must not fall back merely because
+the exact window is inconvenient. A same-season estimated or untrusted window
+keeps the result unverified unless another authoritative window contains the
+complete trip.
 
 Snowcast never projects the previous season's calendar dates into the future.
 
@@ -221,6 +236,10 @@ without claiming confirmed applicability for an unspecified year.
   marker in the pass summary and explanation inputs. The public warning is
   required when pass validity is unverified even if all covered ski areas have
   confirmed operation.
+- Pass-date and ski-area-operation uncertainty use separate public warnings. An
+  unverified pass alone says only that exact pass dates are unconfirmed; it must
+  not cast doubt on confirmed area operation. Unverified area operation uses its
+  own warning. Emit both in deterministic order only when both conditions apply.
 - A partially operating pass must expose its contract, operating, and
   unavailable area sets plus a coverage warning; season-unknown covered areas
   must remain explicitly unverified.
@@ -325,6 +344,8 @@ Before implementation, tests should cover:
 - a post-main-winter pass window is associated with the selected ski area's
   cross-calendar season by applying the season-year rule to both trip and window;
 - estimated or non-source-backed pass windows never confirm or exclude;
+- a trusted planned same-season miss plus an estimated or untrusted same-season
+  window remains unverified, while a trusted planned containing window confirms;
 - non-source-backed ski-area season evidence remains eligible and explicitly
   unverified rather than being treated as operating or unavailable;
 - a previous season's exact dates are never presented as future dates;
@@ -338,6 +359,8 @@ Before implementation, tests should cover:
   terrain-scale and pass-terrain-value scoring;
 - selected-area terrain may be used when source-backed and not known closed;
   an unverified operating season must remain visible in the explanation;
+- pass-date-only uncertainty and area-operation-only uncertainty produce their
+  respective warning, while combined uncertainty produces both in stable order;
 - catalog round-trip persistence preserves zero, one, and multiple validity
   windows;
 - trust and schema-v3 curation validation bind changed windows to direct source

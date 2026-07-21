@@ -230,6 +230,9 @@ dated pass + matching-season window outside trip -> inapplicable, no fallback
 dated pass + no requested-season window -> retained, unverified_for_requested_season
 post-main-winter window -> matched by applying the area season-year rule to the window start
 estimated or non-source-backed pass window -> retained but unverified, never authoritative
+trusted planned containing window + estimated same-season miss -> confirmed
+trusted planned miss + estimated/untrusted same-season window -> retained unverified
+multiple trusted planned same-season misses and no non-authoritative window -> inapplicable
 non-source-backed area season -> retained but unverified, never called operating or unavailable
 old pass dates -> never emitted as future dates
 month outside recurring area months -> unavailable
@@ -302,10 +305,13 @@ def season_year_for_date(value: date, season_start_month: int) -> int:
   `season_year_for_date(window.start_date, ski_area.season_start_month)` rather
   than comparing the raw start year. At the projection boundary, require
   source-backed `identity_scope_availability` trust and `status="planned"`
-  before a window is authoritative. Matching authoritative containment returns
-  `confirmed`, an authoritative same-season miss returns `inapplicable`, and
-  absent or non-authoritative same-season evidence returns
-  `unverified_for_requested_season`.
+  before a window is authoritative. Evaluate same-season windows in this order:
+  any authoritative containing window returns `confirmed`; otherwise any
+  estimated or untrusted same-season window returns
+  `unverified_for_requested_season`; otherwise one or more authoritative
+  same-season windows that all miss return `inapplicable`; no same-season window
+  returns `unverified_for_requested_season`. An authoritative miss must never
+  override a non-authoritative window that could cover the trip.
 - Month-only or no dates with explicit pass windows: return `unverified_for_requested_season`; never parse or project `season_label`.
 - Coverage precedence: any unverified covered area makes status `unverified`; otherwise some unavailable plus some operating makes `partial`; all operating makes `full`. Pass-validity uncertainty does not rename area coverage, but it does add the public unverified warning.
 - `candidate_is_applicable()` returns false only when pass validity is `inapplicable` or the focus area is in the unavailable set.
@@ -317,8 +323,11 @@ PARTIAL_COVERAGE_WARNING = (
     "Some areas covered by this pass are outside their operating season for "
     "your dates. The published full-network terrain is not date-adjusted."
 )
-UNVERIFIED_COVERAGE_WARNING = (
-    "Exact pass and area coverage is not yet confirmed for this season."
+UNVERIFIED_PASS_DATES_WARNING = (
+    "Exact pass dates are not yet confirmed for this season."
+)
+UNVERIFIED_AREA_OPERATION_WARNING = (
+    "Operation dates are not confirmed for every area covered by this pass."
 )
 ```
 
@@ -327,10 +336,14 @@ For a request with no travel window, retain `coverage_status="unverified"` but l
 `project_pass_coverage()` receives the pass
 `identity_scope_availability` trust status and an area-ID-to-`elevation_season`
 trust mapping. Treat only `verified` and `verified_with_adjustment` as
-source-backed, matching the existing Search constraint policy. Add
-`UNVERIFIED_COVERAGE_WARNING` whenever exact/month context is
-present and either pass validity or any covered area's operation is unverified;
-add the partial warning when known unavailable and operating subsets coexist.
+source-backed, matching the existing Search constraint policy. Build warnings
+by filtering this fixed order:
+`PARTIAL_COVERAGE_WARNING`, `UNVERIFIED_PASS_DATES_WARNING`,
+`UNVERIFIED_AREA_OPERATION_WARNING`. Add the pass warning only when pass
+validity is unverified. Add the area warning only when at least one covered
+area's operation is unverified. Add both only when both conditions apply; pass
+uncertainty alone must not imply that confirmed area operation is uncertain.
+Add the partial warning when known unavailable and operating subsets coexist.
 
 - [ ] **Step 4: Replace planning’s private duplicate season logic**
 
@@ -387,6 +400,9 @@ Build a two-area pass fixture in `tests/test_search_v4_service.py` and test exac
 - pass with no future matching window: candidate remains and validity is unverified;
 - estimated/non-source-backed pass and area windows: candidates remain with
   explicit uncertainty instead of being confirmed or excluded;
+- mixed same-season windows follow cautious precedence: an authoritative
+  containing window confirms, an authoritative miss plus any estimated/untrusted
+  window stays unverified, and only wholly authoritative misses exclude;
 - month-only and no-window requests: candidate generation remains deterministic and conservative.
 
 Keep the current assertion that `covered_ski_area_ids` equals the full static contract set.
@@ -408,6 +424,17 @@ class SearchV4PassSummary(_SearchV4Model):
 ```
 
 `PublicPassValidityStatus` excludes internal `inapplicable` because inapplicable candidates never reach the response. Verify the existing constructor in `tests/test_api.py` still succeeds without passing any new field.
+
+Add API summary assertions for condition-specific warning copy:
+
+```text
+pass dates unverified, all areas operating -> "Exact pass dates are not yet confirmed for this season."
+pass confirmed, one area unverified -> "Operation dates are not confirmed for every area covered by this pass."
+both unverified -> "Exact pass dates are not yet confirmed for this season. Operation dates are not confirmed for every area covered by this pass."
+```
+
+The combined string follows the projector's deterministic warning order and
+must not cast doubt on area operation in the pass-only case.
 
 Define it explicitly as:
 
@@ -678,9 +705,12 @@ Test that:
 
 - `terrainPresentation()` describes `accessible_piste_km` only at its safe selected area/domain scope;
 - a new `passCoveragePresentation()` returns the backend warning and labels `548 km` as published full-network, not date-adjusted context;
-- future-season validity says exact dates are unconfirmed;
-- future-season validity receives the backend unverified warning even when all
-  covered ski areas have confirmed operation;
+- pass-date-only uncertainty renders “Exact pass dates are not yet confirmed for
+  this season.” without questioning confirmed area operation;
+- area-operation-only uncertainty renders “Operation dates are not confirmed for
+  every area covered by this pass.” without questioning confirmed pass dates;
+- combined pass-date and area-operation uncertainty renders both warnings in the
+  backend-defined deterministic order;
 - full coverage with no warning adds no warning block.
 
 - [ ] **Step 2: Run focused frontend tests and verify RED**
@@ -943,11 +973,16 @@ Confirm the exact pushed head is labeled `maintainer:ready`, `maintainer:owner-d
       including post-main-winter windows in cross-calendar seasons.
 - [ ] Only source-backed planned windows confirm or exclude; estimated and
       source-needed evidence stays unverified.
+- [ ] Mixed same-season window evidence uses cautious precedence: authoritative
+      containment confirms, any remaining non-authoritative window prevents
+      exclusion, and only wholly authoritative misses exclude.
 - [ ] Known invalidity excludes; missing future evidence retains with uncertainty.
 - [ ] Closed focus areas are excluded while operating alternatives survive.
 - [ ] Unverified areas are never called open.
 - [ ] Published full-network terrain is context only under partial/unverified coverage.
 - [ ] No component-terrain summation, ranking-weight change, or request-path LLM was introduced.
 - [ ] API additions are default-safe and frontend copy comes from the backend warning.
+- [ ] Pass-date and area-operation warnings remain condition-specific and combine
+      only in deterministic backend order.
 - [ ] PR #35 recovery remains helper-controlled and independently reviewed.
 - [ ] No placeholder text, unresolved type mismatch, or unspecified verification command remains.

@@ -77,6 +77,18 @@ season evidence. Pass windows can confirm or exclude only when the pass's
 `planned`. Estimated or non-source-backed evidence remains eligible only as
 unverified and must not become a confirmed public claim.
 
+For mixed evidence in one season, a trusted planned window containing the trip
+may confirm it. If none contains the trip and any same-season window is
+estimated or untrusted, keep the result unverified. Exclude only when the
+same-season evidence is wholly authoritative and rules out complete-trip
+containment. This precedence prevents one authoritative miss from overriding a
+second window that is not authoritative enough to confirm or deny entitlement.
+
+Keep pass-date uncertainty separate from area-operation uncertainty in public
+copy. Emit a pass-date warning when only ticket dates are unverified, an area
+operation warning when only operating evidence is unverified, and both in a
+stable order when both conditions apply.
+
 Keep pass coverage static within each modeled product. If the publisher-facing
 ticket has materially different coverage in different date regimes, model
 separate product variants with stable coverage and appropriate validity
