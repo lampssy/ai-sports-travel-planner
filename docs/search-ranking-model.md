@@ -888,12 +888,13 @@ always describe the same evidence owner.
 
 That normal source order applies only when date-specific pass coverage is
 `full` and pass validity is confirmed or has no separate modeled restriction.
-For `partial` or `unverified` coverage, or unverified pass validity, full-
-network pass and terrain-domain aggregates are contextual display facts, not
-date-adjusted scoring inputs. Search uses only a source-backed terrain scope
-known not to include an unavailable covered area, normally the selected ski
-area. If no such safe scope exists, accessible-terrain and pass-terrain-value
-scoring stay neutral. A source-backed published full-network figure may remain
+Under partial or unverified area coverage, the pass-wide aggregate and any
+terrain domain containing unavailable or unverified areas are excluded. A
+source-backed terrain domain whose complete membership is known operating
+remains a safe scoring scope; otherwise Search falls back to source-backed
+selected-area terrain or neutral evidence. When pass validity itself is
+unverified, neither the pass-wide aggregate nor a terrain-domain aggregate may
+influence scoring. A source-backed published full-network figure may remain
 visible with an explicit warning that it is not date-adjusted; Snowcast does
 not recompute it from child areas.
 

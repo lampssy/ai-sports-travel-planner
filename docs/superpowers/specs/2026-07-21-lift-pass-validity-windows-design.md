@@ -2,7 +2,8 @@
 
 ## Status
 
-- Status: implemented; final verification complete
+- Status: generic implementation and verification complete; canonical adoption
+  pending Task 9
 - Owner: solo-builder
 - Related docs:
   - `docs/domain-language.md`
