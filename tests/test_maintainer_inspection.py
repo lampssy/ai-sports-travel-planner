@@ -278,6 +278,7 @@ def test_curation_inventory_summarizes_remediation_after_reviewed() -> None:
         "resumable": True,
         "availability_reason": "available",
     }
+    assert inventory.eligible == ()
     assert paused.remediation_continuations[0].resumable is False
     assert paused.remediation_continuations[0].availability_reason == "hold-label"
     assert preferred.remediation_continuations == ()
@@ -357,6 +358,38 @@ def test_remediation_availability_reports_head_drift_closed_and_recovery_state()
         resolving.remediation_continuations[0].availability_reason
         == "recovery-authority"
     )
+    assert resolving.remediation_continuations[0].resumable is True
+    assert resolving.eligible == ()
+
+
+def test_resolving_remediation_still_respects_hold_and_candidate_safety() -> None:
+    resolving = _remediation().model_copy(
+        update={"status": RemediationContinuationStatus.RESOLVING}
+    )
+
+    held = inspect_curation(
+        (
+            _pull_request(
+                labels=frozenset({"lane:catalog-curation", "maintainer:blocked"})
+            ),
+        ),
+        {},
+        (),
+        (),
+        (resolving,),
+    )
+    unsafe = inspect_curation(
+        (_pull_request(is_cross_repository=True),),
+        {},
+        (),
+        (),
+        (resolving,),
+    )
+
+    assert held.remediation_continuations[0].availability_reason == "hold-label"
+    assert held.remediation_continuations[0].resumable is False
+    assert unsafe.remediation_continuations[0].availability_reason == "invalid-state"
+    assert unsafe.remediation_continuations[0].resumable is False
 
 
 def test_curation_inventory_filters_objective_scope_and_orders_by_number() -> None:

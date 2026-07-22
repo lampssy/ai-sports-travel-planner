@@ -227,7 +227,6 @@ def inspect_curation(
             (pull_request := pull_requests_by_number.get(continuation.pr_number))
             is not None
             and pull_request.head_sha == continuation.selected_head
-            and not pull_request.labels.isdisjoint(_SELECTION_HOLD_LABELS)
         )
     }
     eligible = tuple(
@@ -266,25 +265,10 @@ def inspect_curation(
     )
     reviewed_pr_numbers = {summary.pr_number for summary in summaries}
     remediation_summaries = tuple(
-        RemediationContinuationSummary(
-            pr_number=continuation.pr_number,
-            selected_head=continuation.selected_head,
-            remediation_head=continuation.remediation_head,
-            base_head=continuation.sync.base_head,
-            report_path=continuation.report_path,
-            resumable=(
-                _remediation_availability(
-                    continuation,
-                    pull_requests_by_number.get(continuation.pr_number),
-                    comments_by_pr.get(continuation.pr_number, ()),
-                )
-                == "available"
-            ),
-            availability_reason=_remediation_availability(
-                continuation,
-                pull_requests_by_number.get(continuation.pr_number),
-                comments_by_pr.get(continuation.pr_number, ()),
-            ),
+        _remediation_summary(
+            continuation,
+            pull_requests_by_number.get(continuation.pr_number),
+            comments_by_pr.get(continuation.pr_number, ()),
         )
         for continuation in sorted(active_remediations, key=lambda item: item.pr_number)
         if continuation.pr_number not in reviewed_pr_numbers
@@ -501,11 +485,28 @@ def _remediation_availability(
         return "head-drift"
     if not pull_request.labels.isdisjoint(_SELECTION_HOLD_LABELS):
         return "hold-label"
-    if continuation.status is not RemediationContinuationStatus.AVAILABLE:
-        return "recovery-authority"
     if not _is_safe_curation_candidate(pull_request, comments):
         return "invalid-state"
-    return "available"
+    if continuation.status is RemediationContinuationStatus.AVAILABLE:
+        return "available"
+    return "recovery-authority"
+
+
+def _remediation_summary(
+    continuation: RemediationContinuation,
+    pull_request: PullRequest | None,
+    comments: Sequence[GitHubComment],
+) -> RemediationContinuationSummary:
+    availability = _remediation_availability(continuation, pull_request, comments)
+    return RemediationContinuationSummary(
+        pr_number=continuation.pr_number,
+        selected_head=continuation.selected_head,
+        remediation_head=continuation.remediation_head,
+        base_head=continuation.sync.base_head,
+        report_path=continuation.report_path,
+        resumable=availability in {"available", "recovery-authority"},
+        availability_reason=availability,
+    )
 
 
 def _proposal_summary(

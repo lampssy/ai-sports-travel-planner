@@ -2148,6 +2148,25 @@ def test_successor_recreates_abandoned_remediation_conflict_from_checkpoint(
     assert resolving.status is RemediationContinuationStatus.RESOLVING
     RunLease.load_owner(state_dir, "curation", interrupted_run).release()
 
+    inspect_code, inspect_payload = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+    assert inspect_code == 0, inspect_payload
+    assert inspect_payload["eligible"] == []
+    assert inspect_payload["remediation_continuations"] == [
+        {
+            "pr_number": 42,
+            "selected_head": SHA_A,
+            "remediation_head": SHA_C,
+            "base_head": SHA_D,
+            "report_path": "docs/catalog-curation/nendaz.json",
+            "resumable": True,
+            "availability_reason": "recovery-authority",
+        }
+    ]
+
     successor = _acquire(capsys, state_dir, "curation")
     repository.continuation_result = "prepared"
     code, payload = _prepare_remediation_for_cli_test(
