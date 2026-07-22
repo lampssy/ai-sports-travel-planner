@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import subprocess
 import sys
@@ -92,8 +93,9 @@ def test_lift_pass_field_group_inventory_remains_stable() -> None:
 
 
 REPO_ROOT = Path(__file__).parents[1]
-CATALOG_PATH = REPO_ROOT / "app" / "data" / "catalog.json"
-TRUST_MANIFEST_PATH = REPO_ROOT / "app" / "data" / "resort_trust_manifest.json"
+CATALOG_DATA_ROOT = Path(os.environ.get("SNOWCAST_CATALOG_DATA_ROOT", REPO_ROOT))
+CATALOG_PATH = CATALOG_DATA_ROOT / "app" / "data" / "catalog.json"
+TRUST_MANIFEST_PATH = CATALOG_DATA_ROOT / "app" / "data" / "resort_trust_manifest.json"
 CATALOG_COLLECTION_BY_ENTITY_TYPE = {
     "ski_regions": "ski_regions",
     "stay_destinations": "stay_destinations",

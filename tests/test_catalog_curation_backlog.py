@@ -136,6 +136,25 @@ def test_backlog_validation_accepts_shared_regional_item(tmp_path: Path) -> None
     validate_catalog_curation_backlog_refs(report, path)
 
 
+def test_regional_followup_points_to_a_supplied_product_backlog_heading() -> None:
+    payload = _deferred_report().model_dump(mode="json")
+    assessment = payload["entity_scope_assessments"][0]
+    assessment.update(
+        {
+            "candidate_id": "kitzbuheler-horn",
+            "candidate_name": "Kitzbüheler Horn",
+            "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+            "graph_impact": "regional_followup",
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_curation_backlog_refs(
+        report,
+        Path(__file__).parents[1] / "docs/product-backlog.md",
+    )
+
+
 def test_markdown_heading_anchor_normalizes_unicode() -> None:
     assert (
         markdown_heading_anchor("Kitzbühel Catalog Extension")

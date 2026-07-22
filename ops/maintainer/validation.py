@@ -14,12 +14,15 @@ from typing import Literal, Protocol, Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.data.catalog_curation import (
+    CATALOG_BACKLOG_REF_PREFIX,
     CatalogCurationReport,
+    catalog_resulting_graph_scope,
     load_catalog_curation_report,
     render_catalog_resulting_graph_markdown,
     validate_catalog_curation_report,
     validate_catalog_resulting_graph,
 )
+from app.data.catalog_curation_backlog import markdown_heading_anchor
 from app.data.catalog_curation_reconciliation import (
     reconcile_catalog_curation_report,
 )
@@ -60,7 +63,7 @@ _RETIRED_DISCOVERY_REGISTRY_PATH = (
 )
 _PROCESS_GROUP_GRACE_SECONDS = 0.25
 _PROCESS_GROUP_CLEANUP_ERROR = "validation process-group cleanup failed"
-_VALIDATION_ENVIRONMENT_KEYS = ("HOME", "LANG", "LC_ALL", "PATH", "TMPDIR")
+_VALIDATION_ENVIRONMENT_KEYS = ("LANG", "LC_ALL", "PATH", "TMPDIR")
 
 
 class _ValidationModel(BaseModel):
@@ -83,6 +86,18 @@ class ValidationResult(_ValidationModel):
         min_length=1,
         max_length=32768,
     )
+
+    @model_validator(mode="after")
+    def validate_observations(self) -> Self:
+        if len(self.observations) != self.commands_completed:
+            raise ValueError("command observations must cover every command")
+        return self
+
+
+class DeltaValidationResult(_ValidationModel):
+    remediation_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    commands_completed: Literal[2]
+    observations: tuple[ValidationCommandObservation, ...]
 
     @model_validator(mode="after")
     def validate_observations(self) -> Self:
@@ -127,24 +142,27 @@ class _SubprocessValidationRunner:
     ) -> subprocess.CompletedProcess[str]:
         if os.name != "posix":
             raise OSError("validation subprocess isolation requires POSIX")
-        process = subprocess.Popen(
-            list(argv),
-            cwd=cwd,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            text=False,
-            shell=False,
-            start_new_session=True,
-            env=_validation_environment(),
-        )
-        process_group = process.pid
-        try:
-            returncode = process.wait(timeout=timeout)
-        except subprocess.TimeoutExpired:
+        with TemporaryDirectory(prefix="snowcast-maintainer-home-") as directory:
+            private_home = Path(directory)
+            os.chmod(private_home, 0o700)
+            process = subprocess.Popen(
+                list(argv),
+                cwd=cwd,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                text=False,
+                shell=False,
+                start_new_session=True,
+                env=_validation_environment(private_home),
+            )
+            process_group = process.pid
+            try:
+                returncode = process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                _terminate_process_group(process, process_group)
+                raise subprocess.TimeoutExpired(list(argv), timeout) from None
             _terminate_process_group(process, process_group)
-            raise subprocess.TimeoutExpired(list(argv), timeout) from None
-        _terminate_process_group(process, process_group)
         return subprocess.CompletedProcess(
             list(argv),
             returncode,
@@ -153,13 +171,14 @@ class _SubprocessValidationRunner:
         )
 
 
-def _validation_environment() -> dict[str, str]:
+def _validation_environment(private_home: Path) -> dict[str, str]:
     environment = {
         key: value
         for key in _VALIDATION_ENVIRONMENT_KEYS
         if (value := os.environ.get(key)) is not None
     }
     environment.setdefault("PATH", os.defpath)
+    environment["HOME"] = str(private_home)
     environment["PYTHONIOENCODING"] = "utf-8"
     environment["PYTHONNOUSERSITE"] = "1"
     environment["UV_NO_CONFIG"] = "1"
@@ -229,6 +248,7 @@ def _wait_for_process_group_exit(process_group: int, timeout: float) -> bool:
 class _CurationPlan(_ValidationModel):
     report_path: str = Field(pattern=_REPORT_PATH.pattern)
     base_dir: Path
+    reviewed_dir: Path
     base_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
     reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
 
@@ -253,57 +273,22 @@ def validate_curation(
         check=ErrorCheck.PREFLIGHT,
     )
     commands = _curation_commands(initial)
-    command_runner = runner or _SubprocessValidationRunner()
-    checks = (
-        ErrorCheck.CATALOG_VALIDATION,
-        ErrorCheck.CURATION_RECONCILIATION,
-        ErrorCheck.CATALOG_TESTS,
+    observations = _run_curation_commands(
+        initial,
+        commands=commands,
+        checks=(
+            ErrorCheck.CATALOG_VALIDATION,
+            ErrorCheck.CURATION_RECONCILIATION,
+            ErrorCheck.CATALOG_TESTS,
+        ),
+        pull_request=pull_request,
+        sync=sync,
+        reviewed_head=reviewed_head,
+        report_path=report_path,
+        repository=repository,
+        base_repository=base_repository,
+        runner=runner,
     )
-    observations: list[ValidationCommandObservation] = []
-    for index, (command, check) in enumerate(
-        zip(commands, checks, strict=True),
-        start=1,
-    ):
-        current = _curation_plan(
-            pull_request,
-            sync,
-            reviewed_head,
-            report_path,
-            repository,
-            base_repository,
-            check=check,
-        )
-        if current != initial or _curation_commands(current) != commands:
-            raise _validation_error(
-                check,
-                ErrorKind.MISMATCH,
-                "Reviewed validation plan changed",
-            )
-        try:
-            result = command_runner.run(
-                command,
-                cwd=Path(repository.root),
-                timeout=VALIDATION_COMMAND_TIMEOUT_SECONDS,
-            )
-        except subprocess.TimeoutExpired:
-            raise _validation_error(
-                check,
-                ErrorKind.TIMEOUT,
-                "Validation command timed out",
-            ) from None
-        except OSError:
-            raise _validation_error(
-                check,
-                ErrorKind.COMMAND_FAILED,
-                "Validation command could not start",
-            ) from None
-        if result.returncode != 0:
-            raise _validation_error(
-                check,
-                ErrorKind.COMMAND_FAILED,
-                "Validation command failed",
-            )
-        observations.append(_observe_command(index, result))
 
     final = _curation_plan(
         pull_request,
@@ -337,9 +322,113 @@ def validate_curation(
     return ValidationResult(
         validated_head=reviewed_head,
         commands_completed=3,
-        observations=tuple(observations),
+        observations=observations,
         resulting_graph_markdown=resulting_graph_markdown,
     )
+
+
+def validate_curation_delta(
+    *,
+    pull_request: PullRequest,
+    sync: GuardedSyncResult,
+    remediation_head: str,
+    report_path: str,
+    repository: GitRepository,
+    base_repository: GitRepository,
+    runner: ValidationCommandRunner | None = None,
+) -> DeltaValidationResult:
+    plan = _curation_plan(
+        pull_request,
+        sync,
+        remediation_head,
+        report_path,
+        repository,
+        base_repository,
+        check=ErrorCheck.PREFLIGHT,
+    )
+    observations = _run_curation_commands(
+        plan,
+        commands=_curation_commands(plan)[:2],
+        checks=(
+            ErrorCheck.CATALOG_VALIDATION,
+            ErrorCheck.CURATION_RECONCILIATION,
+        ),
+        pull_request=pull_request,
+        sync=sync,
+        reviewed_head=remediation_head,
+        report_path=report_path,
+        repository=repository,
+        base_repository=base_repository,
+        runner=runner,
+    )
+    return DeltaValidationResult(
+        remediation_head=remediation_head,
+        commands_completed=2,
+        observations=observations,
+    )
+
+
+def _run_curation_commands(
+    initial: _CurationPlan,
+    *,
+    commands: Sequence[tuple[str, ...]],
+    checks: Sequence[ErrorCheck],
+    pull_request: PullRequest,
+    sync: GuardedSyncResult,
+    reviewed_head: str,
+    report_path: str,
+    repository: GitRepository,
+    base_repository: GitRepository,
+    runner: ValidationCommandRunner | None,
+) -> tuple[ValidationCommandObservation, ...]:
+    command_runner = runner or _SubprocessValidationRunner()
+    expected_commands = _curation_commands(initial)
+    observations: list[ValidationCommandObservation] = []
+    for index, (command, check) in enumerate(
+        zip(commands, checks, strict=True),
+        start=1,
+    ):
+        current = _curation_plan(
+            pull_request,
+            sync,
+            reviewed_head,
+            report_path,
+            repository,
+            base_repository,
+            check=check,
+        )
+        if current != initial or _curation_commands(current) != expected_commands:
+            raise _validation_error(
+                check,
+                ErrorKind.MISMATCH,
+                "Reviewed validation plan changed",
+            )
+        try:
+            result = command_runner.run(
+                command,
+                cwd=Path(repository.root),
+                timeout=VALIDATION_COMMAND_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            raise _validation_error(
+                check,
+                ErrorKind.TIMEOUT,
+                "Validation command timed out",
+            ) from None
+        except OSError:
+            raise _validation_error(
+                check,
+                ErrorKind.COMMAND_FAILED,
+                "Validation command could not start",
+            ) from None
+        if result.returncode != 0:
+            raise _validation_error(
+                check,
+                ErrorKind.COMMAND_FAILED,
+                "Validation command failed",
+            )
+        observations.append(_observe_command(index, result))
+    return tuple(observations)
 
 
 def immutable_resulting_graph_markdown(
@@ -363,8 +452,54 @@ def immutable_resulting_graph_markdown(
     )
     catalog = CatalogSnapshot.model_validate(catalog_payload)
     report = CatalogCurationReport.model_validate(report_payload)
+    _validate_finalized_report(repository, revision, report)
     validate_catalog_resulting_graph(report, catalog, require=True)
     return render_catalog_resulting_graph_markdown(report, catalog)
+
+
+def _validate_finalized_report(
+    repository: GitRepository,
+    revision: str,
+    report: CatalogCurationReport,
+) -> None:
+    if report.report_schema_version != 3:
+        raise ValueError("finalized curation report must use schema version 3")
+    validate_catalog_curation_report(
+        report,
+        require_resulting_graph=True,
+        require_current_destination_policy=True,
+        require_bounded_review_inventory=True,
+    )
+    _require_regional_followup_backlog_anchors(repository, revision, report)
+
+
+def _require_regional_followup_backlog_anchors(
+    repository: GitRepository,
+    revision: str,
+    report: CatalogCurationReport,
+) -> None:
+    anchors = tuple(
+        assessment.backlog_ref.removeprefix(CATALOG_BACKLOG_REF_PREFIX)
+        for assessment in report.entity_scope_assessments
+        if assessment.graph_impact == "regional_followup"
+        and assessment.backlog_ref is not None
+    )
+    if not anchors:
+        return
+    markdown = repository.read_bounded_immutable_text(
+        revision,
+        BACKLOG_PATH,
+        max_bytes=_PRIVATE_OBJECT_LIMIT,
+    )
+    heading_anchor_counts: dict[str, int] = {}
+    for line in markdown.splitlines():
+        match = re.fullmatch(r"#{1,6}[ \t]+(.+?)", line)
+        if match is None:
+            continue
+        anchor = markdown_heading_anchor(match.group(1).strip().rstrip("#").strip())
+        heading_anchor_counts[anchor] = heading_anchor_counts.get(anchor, 0) + 1
+    if not all(heading_anchor_counts.get(anchor) == 1 for anchor in anchors):
+        raise ValueError("regional follow-up backlog anchor is missing")
 
 
 def revalidate_curation_request(
@@ -446,7 +581,9 @@ def validate_proposal(
                 report,
                 require_resulting_graph=True,
                 require_current_destination_policy=True,
+                require_bounded_review_inventory=True,
             )
+            _require_regional_followup_backlog_anchors(repository, head, report)
             validate_catalog_resulting_graph(
                 report,
                 head_catalog,
@@ -461,6 +598,13 @@ def validate_proposal(
             )
             _validate_catalog_delta(
                 candidate_key,
+                base_catalog,
+                head_catalog,
+                report,
+            )
+            _validate_backlog_destination_proposal_scope(
+                candidate_key,
+                candidate_origin,
                 base_catalog,
                 head_catalog,
                 report,
@@ -512,6 +656,7 @@ def _curation_plan(
         return _CurationPlan(
             report_path=report_path,
             base_dir=Path(base_repository.root),
+            reviewed_dir=Path(repository.root),
             base_sha=sync.base_head,
             reviewed_head=reviewed_head,
         )
@@ -580,15 +725,24 @@ def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:
             "--skip-product-backlog-validation",
         ),
         (
+            "/usr/bin/env",
+            f"SNOWCAST_CATALOG_DATA_ROOT={plan.reviewed_dir}",
             "uv",
             "run",
+            "--project",
+            str(plan.base_dir),
             "--no-config",
+            "--no-env-file",
             "--no-sync",
             "pytest",
-            "tests/test_catalog_curation.py",
-            "tests/test_catalog_curation_reconciliation.py",
-            "tests/test_catalog_models.py",
-            "tests/test_catalog_trust.py",
+            "-c",
+            str(plan.base_dir / "pyproject.toml"),
+            "--rootdir",
+            str(plan.base_dir),
+            str(plan.base_dir / "tests/test_catalog_curation.py"),
+            str(plan.base_dir / "tests/test_catalog_curation_reconciliation.py"),
+            str(plan.base_dir / "tests/test_catalog_models.py"),
+            str(plan.base_dir / "tests/test_catalog_trust.py"),
             "-q",
         ),
     )
@@ -724,6 +878,57 @@ def _validate_catalog_delta(
         report,
     ):
         raise ValueError("catalog candidate delta is invalid")
+
+
+def _validate_backlog_destination_proposal_scope(
+    candidate_key: str,
+    candidate_origin: str,
+    base_catalog: CatalogSnapshot,
+    head_catalog: CatalogSnapshot,
+    report: CatalogCurationReport,
+) -> None:
+    candidate_kind, candidate_id = candidate_key.split(":", maxsplit=1)
+    if candidate_origin != "backlog" or candidate_kind != "stay_destination":
+        return
+
+    graph = report.resulting_graph
+    if graph is None or graph.focus_stay_destination_ids != [candidate_id]:
+        raise ValueError("backlog destination proposal focus is invalid")
+
+    destination = next(
+        (
+            item
+            for item in head_catalog.stay_destinations
+            if item.stay_destination_id == candidate_id
+        ),
+        None,
+    )
+    if destination is None:
+        raise ValueError("backlog destination proposal focus is invalid")
+
+    scope = catalog_resulting_graph_scope(
+        head_catalog,
+        {candidate_id},
+    )
+
+    allowed_keys = {
+        candidate_key,
+        f"ski_region:{destination.trip_market_region_id}",
+        *(f"stay_base:{base_id}" for base_id in scope.base_ids),
+        *(f"ski_area_access:{access_id}" for access_id in scope.access_ids),
+        *(f"ski_area:{area_id}" for area_id in scope.area_ids),
+        *(f"terrain_domain:{domain_id}" for domain_id in scope.domain_ids),
+        *(f"lift_pass_product:{pass_id}" for pass_id in scope.pass_ids),
+        *(
+            f"rental_display_fact:{item.rental_display_fact_id}"
+            for item in head_catalog.rental_display_facts
+            if item.stay_destination_id == candidate_id
+        ),
+    }
+    if not (_catalog_keys(head_catalog) - _catalog_keys(base_catalog)).issubset(
+        allowed_keys
+    ):
+        raise ValueError("backlog destination proposal contains unrelated additions")
 
 
 def _is_explicit_decision_bearing_rekey(

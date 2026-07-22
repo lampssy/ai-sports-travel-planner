@@ -29,6 +29,8 @@ from ops.maintainer.git_ops import (
     GitTransportError,
     IntentDriftError,
     RebaseConflictError,
+    RemediationCheckpointIntegrityError,
+    RemediationCheckpointRefs,
     RepositorySafetyError,
     ReviewedCheckpointRefs,
     StaleRemoteHeadError,
@@ -72,6 +74,8 @@ from ops.maintainer.state import (
     ContinuationValidationStatus,
     PushJournal,
     PushPhase,
+    RemediationContinuation,
+    RemediationContinuationStatus,
     ReviewedContinuation,
     RunOutcome,
     StateStore,
@@ -80,6 +84,7 @@ from ops.maintainer.state import (
     WorkState,
 )
 from ops.maintainer.validation import (
+    DeltaValidationResult,
     ProposalValidationResult,
     ValidationResult,
     immutable_resulting_graph_markdown,
@@ -130,6 +135,7 @@ class Dependencies:
     repository: object
     base_repository: object | None
     curation_validator: Callable[..., ValidationResult]
+    curation_delta_validator: Callable[..., DeltaValidationResult]
     proposal_validator: Callable[..., ProposalValidationResult]
     catalog_keys_provider: Callable[[], frozenset[str]]
     repository_root: Path
@@ -147,7 +153,7 @@ def _work_id_for_candidate(candidate_key: str) -> str:
 
 def _current_time(
     dependencies: Dependencies,
-    existing: WorkState | ReviewedContinuation | None = None,
+    existing: WorkState | ReviewedContinuation | RemediationContinuation | None = None,
 ) -> datetime:
     observed = dependencies.now()
     if observed.tzinfo is None or observed.utcoffset() is None:
@@ -218,6 +224,7 @@ def handle_inspect_curation(
         _comments_by_pr(dependencies.github, pull_requests),
         StateStore.list_unresolved_for_inspection(args.state_dir),
         StateStore.list_continuations_for_inspection_path(args.state_dir),
+        StateStore.list_remediation_continuations_for_inspection_path(args.state_dir),
     )
     dependencies.tracker.terminal_reason = (
         "recovery-required" if inventory.unresolved_pushes else "inspected"
@@ -298,6 +305,36 @@ def handle_prepare_curation(
             }
         )
         store.save_continuation(invalidated, lease)
+    remediation = store.load_remediation_continuation(work_id)
+    if remediation is not None:
+        remediation_is_terminal = remediation.status in {
+            RemediationContinuationStatus.CONSUMED,
+            RemediationContinuationStatus.INVALIDATED,
+        }
+        if not remediation_is_terminal and (
+            remediation.selected_head == pull_request.head_sha
+        ):
+            raise MaintainerError(
+                ErrorReason.CONTINUATION_REQUIRED,
+                ErrorStage.PREPARE,
+            )
+        if not remediation_is_terminal:
+            _invalidate_remediation_continuation(
+                store=store,
+                lease=lease,
+                continuation=remediation,
+            )
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PREPARE)
+        if (
+            remediation.status is RemediationContinuationStatus.INVALIDATED
+            and remediation.recovery_run_id == lease.run_id
+        ):
+            reason = (
+                ErrorReason.STALE_HEAD
+                if remediation.selected_head != pull_request.head_sha
+                else ErrorReason.CONTINUATION_REQUIRED
+            )
+            raise MaintainerError(reason, ErrorStage.PREPARE)
     selected = WorkState(
         work_id=work_id,
         worker="curation",
@@ -331,6 +368,180 @@ def _checkpoint_refs(continuation: ReviewedContinuation) -> ReviewedCheckpointRe
         reviewed_ref=continuation.reviewed_ref,
         squash_ref=continuation.squash_ref,
     )
+
+
+def _remediation_checkpoint_refs(
+    continuation: RemediationContinuation,
+) -> RemediationCheckpointRefs:
+    return RemediationCheckpointRefs(
+        remediation_ref=continuation.remediation_ref,
+        squash_ref=continuation.squash_ref,
+    )
+
+
+def _new_remediation_continuation(
+    *,
+    work: WorkState,
+    lease: RunLease,
+    report_path: str,
+    remediation_head: str,
+    allowed_paths: frozenset[str],
+    refs: RemediationCheckpointRefs,
+    dependencies: Dependencies,
+    previous: RemediationContinuation | None = None,
+) -> RemediationContinuation:
+    if work.pr_number is None or work.sync is None:
+        raise StateStoreError("prepared curation facts are incomplete")
+    return RemediationContinuation(
+        work_id=work.work_id,
+        origin_run_id=(
+            previous.origin_run_id
+            if previous is not None
+            and previous.status
+            not in {
+                RemediationContinuationStatus.CONSUMED,
+                RemediationContinuationStatus.INVALIDATED,
+            }
+            else lease.run_id
+        ),
+        recovery_run_id=lease.run_id,
+        updated_at=_current_time(dependencies, previous),
+        pr_number=work.pr_number,
+        selected_head=work.selected_head,
+        remediation_head=remediation_head,
+        report_path=report_path,
+        sync=work.sync,
+        allowed_paths=allowed_paths,
+        remediation_ref=refs.remediation_ref,
+        squash_ref=refs.squash_ref,
+        completed_stage="delta-validated",
+        status=RemediationContinuationStatus.AVAILABLE,
+    )
+
+
+def handle_checkpoint_remediation(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    lease = _owned_lease(args, "curation", dependencies)
+    store = _state_store(args)
+    work_id = _work_id_for_pr(args.pr)
+    dependencies.tracker.work_id = work_id
+    dependencies.tracker.pr_number = args.pr
+    dependencies.tracker.stage = ErrorStage.VALIDATE
+    if store.list_unresolved_pushes():
+        raise StateStoreError("unresolved push journal blocks remediation checkpoint")
+    work = _load_work_for_run(store, work_id, lease)
+    if work.phase is not WorkPhase.PREPARED or work.sync is None:
+        raise StateStoreError("remediation checkpoint requires prepared curation work")
+    pull_request = dependencies.github.get_pull_request(args.pr)
+    if pull_request.head_sha != work.selected_head:
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
+    _require_exact_curation_candidate(pull_request, dependencies, store)
+    if dependencies.repository.current_head() != args.head:
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
+
+    existing = store.load_remediation_continuation(work_id)
+    existing_is_terminal = existing is not None and existing.status in {
+        RemediationContinuationStatus.CONSUMED,
+        RemediationContinuationStatus.INVALIDATED,
+    }
+    if (
+        existing is not None
+        and existing.recovery_run_id == lease.run_id
+        and existing.status is RemediationContinuationStatus.AVAILABLE
+        and existing.selected_head == work.selected_head
+        and existing.remediation_head == args.head
+        and existing.report_path == args.report
+        and existing.sync == work.sync
+    ):
+        dependencies.repository.checkpoint_remediation_continuation(
+            pull_request,
+            work.sync,
+            args.head,
+        )
+        dependencies.tracker.last_phase = WorkPhase.PREPARED
+        dependencies.tracker.terminal_reason = "already-checkpointed"
+        return {
+            "continuation": {
+                "kind": "remediation",
+                "result": "already-checkpointed",
+                "head": args.head,
+                "report_path": args.report,
+            }
+        }
+    if (
+        existing is not None
+        and not existing_is_terminal
+        and existing.recovery_run_id != lease.run_id
+    ):
+        raise LeaseOwnershipError("remediation continuation belongs to another run")
+    if (
+        existing is not None
+        and not existing_is_terminal
+        and existing.selected_head != work.selected_head
+    ):
+        raise StateStoreError("active remediation continuation has different authority")
+
+    snapshot = dependencies.repository.revalidate_prepared_result(
+        pull_request,
+        work.sync,
+        args.head,
+    )
+    try:
+        require_single_curation_report_path(snapshot, args.report)
+    except ValueError:
+        raise MaintainerError(
+            ErrorReason.INVALID_COMMAND,
+            ErrorStage.VALIDATE,
+            detail="Remediation checkpoint requires the single changed report",
+        ) from None
+    base_repository = dependencies.base_repository or GitRepository(
+        args.base_dir.resolve()
+    )
+    result = dependencies.curation_delta_validator(
+        pull_request=pull_request,
+        sync=work.sync,
+        remediation_head=args.head,
+        report_path=args.report,
+        repository=dependencies.repository,
+        base_repository=base_repository,
+    )
+    if result.remediation_head != args.head:
+        raise StateStoreError("delta validation returned a different remediation head")
+    refs = dependencies.repository.checkpoint_remediation_continuation(
+        pull_request,
+        work.sync,
+        args.head,
+    )
+    remediation = _new_remediation_continuation(
+        work=work,
+        lease=lease,
+        report_path=args.report,
+        remediation_head=args.head,
+        allowed_paths=snapshot.changed_paths,
+        refs=refs,
+        dependencies=dependencies,
+        previous=existing,
+    )
+    if existing is None or existing.status in {
+        RemediationContinuationStatus.CONSUMED,
+        RemediationContinuationStatus.INVALIDATED,
+    }:
+        store.save_remediation_continuation(remediation, lease)
+    else:
+        store.replace_remediation_continuation(remediation, lease)
+    dependencies.tracker.mutation_occurred = True
+    dependencies.tracker.last_phase = WorkPhase.PREPARED
+    dependencies.tracker.terminal_reason = "remediation-checkpointed"
+    return {
+        "continuation": {
+            "kind": "remediation",
+            "result": "checkpointed",
+            "head": args.head,
+            "report_path": args.report,
+        }
+    }
 
 
 def _new_reviewed_continuation(
@@ -409,12 +620,23 @@ def handle_validate_reviewed(
         and existing_continuation.status
         not in {ContinuationStatus.CONSUMED, ContinuationStatus.INVALIDATED}
     ):
+        remediation = store.load_remediation_continuation(work_id)
         dependencies.repository.revalidate_reviewed_checkpoint(
             pull_request,
             work.sync,
             args.reviewed_head,
             _checkpoint_refs(existing_continuation),
         )
+        if remediation is not None and remediation.status not in {
+            RemediationContinuationStatus.CONSUMED,
+            RemediationContinuationStatus.INVALIDATED,
+        }:
+            store.promote_remediation_to_reviewed(
+                remediation,
+                existing_continuation,
+                lease,
+            )
+            dependencies.tracker.mutation_occurred = True
         dependencies.tracker.last_phase = WorkPhase.REVIEWED
         dependencies.tracker.terminal_reason = "already-checkpointed"
         return {
@@ -452,6 +674,11 @@ def handle_validate_reviewed(
             WorkPhase.REVIEWED,
             reviewed_head=args.reviewed_head,
         )
+    remediation = store.load_remediation_continuation(work_id)
+    active_remediation = remediation is not None and remediation.status not in {
+        RemediationContinuationStatus.CONSUMED,
+        RemediationContinuationStatus.INVALIDATED,
+    }
     continuation = _new_reviewed_continuation(
         work=work,
         lease=lease,
@@ -461,6 +688,8 @@ def handle_validate_reviewed(
         origin_run_id=(
             work.run_id
             if args.adopt_existing
+            else remediation.origin_run_id
+            if active_remediation and remediation is not None
             else existing_continuation.origin_run_id
             if existing_continuation is not None
             and existing_continuation.status is ContinuationStatus.RESOLVING
@@ -468,7 +697,10 @@ def handle_validate_reviewed(
         ),
         previous=existing_continuation,
     )
-    if args.adopt_existing:
+    if active_remediation:
+        assert remediation is not None
+        store.promote_remediation_to_reviewed(remediation, continuation, lease)
+    elif args.adopt_existing:
         store.save_adopted_continuation(continuation, lease)
     elif (
         existing_continuation is not None
@@ -501,7 +733,7 @@ def _begin_continuation_work(
     *,
     store: StateStore,
     lease: RunLease,
-    continuation: ReviewedContinuation,
+    continuation: ReviewedContinuation | RemediationContinuation,
     pull_request: PullRequest,
     replay: ContinuationReplayResult,
     dependencies: Dependencies,
@@ -526,7 +758,7 @@ def _begin_continuation_work(
         selected,
         dependencies,
         WorkPhase.PREPARED,
-        prepared_head=replay.head,
+        prepared_head=replay.sync.rebased_head,
         backup_ref=replay.sync.backup_ref,
         sync=replay.sync,
     )
@@ -542,22 +774,15 @@ def _begin_continuation_work(
     )
 
 
-def handle_prepare_continuation(
+def _prepare_reviewed_continuation(
     args: argparse.Namespace,
     dependencies: Dependencies,
+    *,
+    lease: RunLease,
+    store: StateStore,
+    continuation: ReviewedContinuation,
 ) -> dict[str, object]:
-    lease = _owned_lease(args, "curation", dependencies)
-    store = _state_store(args)
-    work_id = _work_id_for_pr(args.pr)
-    dependencies.tracker.work_id = work_id
-    dependencies.tracker.pr_number = args.pr
-    dependencies.tracker.stage = ErrorStage.PREPARE
-    continuation = store.load_continuation(work_id)
-    if continuation is None or continuation.status in {
-        ContinuationStatus.CONSUMED,
-        ContinuationStatus.INVALIDATED,
-    }:
-        raise StateStoreError("resumable reviewed continuation is missing")
+    work_id = continuation.work_id
     pull_request = dependencies.github.get_pull_request(args.pr)
     _require_exact_curation_candidate(pull_request, dependencies, store)
     if pull_request.head_sha != continuation.selected_head:
@@ -566,6 +791,24 @@ def handle_prepare_continuation(
         if args.continue_conflict:
             raise LeaseOwnershipError("interrupted conflict must be recreated")
         continuation = store.adopt_continuation(work_id, lease)
+    remediation = store.load_remediation_continuation(work_id)
+    if (
+        remediation is not None
+        and remediation.status
+        not in {
+            RemediationContinuationStatus.CONSUMED,
+            RemediationContinuationStatus.INVALIDATED,
+        }
+        and remediation.origin_run_id == continuation.origin_run_id
+        and remediation.selected_head == continuation.selected_head
+        and remediation.sync == continuation.sync
+        and remediation.remediation_head == continuation.reviewed_head
+        and remediation.report_path == continuation.report_path
+    ):
+        if remediation.recovery_run_id != lease.run_id:
+            remediation = store.adopt_remediation_continuation(work_id, lease)
+        store.promote_remediation_to_reviewed(remediation, continuation, lease)
+        dependencies.tracker.mutation_occurred = True
     refs = _checkpoint_refs(continuation)
     if args.continue_conflict:
         if continuation.status is not ContinuationStatus.RESOLVING:
@@ -641,6 +884,210 @@ def handle_prepare_continuation(
             "report_path": continuation.report_path,
         },
     }
+
+
+def _begin_remediation_resolution(
+    *,
+    store: StateStore,
+    lease: RunLease,
+    continuation: RemediationContinuation,
+    dependencies: Dependencies,
+) -> RemediationContinuation:
+    if continuation.recovery_run_id != lease.run_id:
+        continuation = store.adopt_remediation_continuation(
+            continuation.work_id,
+            lease,
+        )
+    if continuation.status is RemediationContinuationStatus.AVAILABLE:
+        resolving = continuation.model_copy(
+            update={
+                "status": RemediationContinuationStatus.RESOLVING,
+                "updated_at": _current_time(dependencies, continuation),
+            }
+        )
+        store.replace_remediation_continuation(resolving, lease)
+        return resolving
+    if continuation.status is not RemediationContinuationStatus.RESOLVING:
+        raise StateStoreError("remediation continuation is not resumable")
+    return continuation
+
+
+def _invalidate_remediation_continuation(
+    *,
+    store: StateStore,
+    lease: RunLease,
+    continuation: RemediationContinuation,
+) -> None:
+    if continuation.recovery_run_id != lease.run_id:
+        continuation = store.adopt_remediation_continuation(continuation.work_id, lease)
+    store.invalidate_remediation_continuation(continuation.work_id, lease)
+
+
+def _checkpoint_replayed_remediation(
+    *,
+    store: StateStore,
+    lease: RunLease,
+    continuation: RemediationContinuation,
+    pull_request: PullRequest,
+    replay: ContinuationReplayResult,
+    dependencies: Dependencies,
+) -> RemediationContinuation:
+    if replay.head is None or replay.sync is None:
+        raise StateStoreError("remediation replay omitted prepared facts")
+    refs = dependencies.repository.checkpoint_remediation_continuation(
+        pull_request,
+        replay.sync,
+        replay.head,
+    )
+    replayed = continuation.model_copy(
+        update={
+            "updated_at": _current_time(dependencies, continuation),
+            "remediation_head": replay.head,
+            "sync": replay.sync,
+            "remediation_ref": refs.remediation_ref,
+            "squash_ref": refs.squash_ref,
+            "status": RemediationContinuationStatus.AVAILABLE,
+        }
+    )
+    store.replace_remediation_continuation(replayed, lease)
+    return replayed
+
+
+def _prepare_remediation_continuation(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+    *,
+    lease: RunLease,
+    store: StateStore,
+    continuation: RemediationContinuation,
+) -> dict[str, object]:
+    work_id = continuation.work_id
+    pull_request = dependencies.github.get_pull_request(args.pr)
+    if (
+        pull_request.lifecycle_state != "OPEN"
+        or pull_request.head_sha != continuation.selected_head
+    ):
+        _invalidate_remediation_continuation(
+            store=store,
+            lease=lease,
+            continuation=continuation,
+        )
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PREPARE)
+    _require_exact_curation_candidate(pull_request, dependencies, store)
+    if args.continue_conflict and continuation.recovery_run_id != lease.run_id:
+        raise LeaseOwnershipError("interrupted conflict must be recreated")
+    restart_interrupted = (
+        not args.continue_conflict
+        and continuation.recovery_run_id != lease.run_id
+        and continuation.status is RemediationContinuationStatus.RESOLVING
+    )
+    continuation = _begin_remediation_resolution(
+        store=store,
+        lease=lease,
+        continuation=continuation,
+        dependencies=dependencies,
+    )
+    refs = _remediation_checkpoint_refs(continuation)
+    try:
+        if args.continue_conflict:
+            replay = dependencies.repository.continue_remediation_conflict(
+                pull_request,
+                continuation.sync,
+                continuation.remediation_head,
+                refs,
+            )
+        else:
+            replay = dependencies.repository.prepare_remediation_continuation(
+                pull_request,
+                continuation.sync,
+                continuation.remediation_head,
+                refs,
+                restart_interrupted=restart_interrupted,
+            )
+    except (RemediationCheckpointIntegrityError, StaleRemoteHeadError):
+        _invalidate_remediation_continuation(
+            store=store,
+            lease=lease,
+            continuation=continuation,
+        )
+        raise
+    dependencies.tracker.mutation_occurred = True
+    if replay.result == "conflict":
+        dependencies.tracker.terminal_reason = "remediation-conflict"
+        return {
+            "work_id": work_id,
+            "continuation": {
+                "kind": "remediation",
+                "result": "conflict-resolution-required",
+                "base_head": replay.base_head,
+                "conflict_paths": list(replay.conflict_paths),
+            },
+        }
+    continuation = _checkpoint_replayed_remediation(
+        store=store,
+        lease=lease,
+        continuation=continuation,
+        pull_request=pull_request,
+        replay=replay,
+        dependencies=dependencies,
+    )
+    work = _begin_continuation_work(
+        store=store,
+        lease=lease,
+        continuation=continuation,
+        pull_request=pull_request,
+        replay=replay,
+        dependencies=dependencies,
+        reviewed=False,
+    )
+    dependencies.tracker.last_phase = work.phase
+    dependencies.tracker.terminal_reason = "remediation-review-required"
+    return {
+        "work_id": work_id,
+        "continuation": {
+            "kind": "remediation",
+            "result": "review-required",
+            "prepared_head": replay.head,
+            "report_path": continuation.report_path,
+        },
+    }
+
+
+def handle_prepare_continuation(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    lease = _owned_lease(args, "curation", dependencies)
+    store = _state_store(args)
+    work_id = _work_id_for_pr(args.pr)
+    dependencies.tracker.work_id = work_id
+    dependencies.tracker.pr_number = args.pr
+    dependencies.tracker.stage = ErrorStage.PREPARE
+    continuation = store.load_continuation(work_id)
+    if continuation is not None and continuation.status not in {
+        ContinuationStatus.CONSUMED,
+        ContinuationStatus.INVALIDATED,
+    }:
+        return _prepare_reviewed_continuation(
+            args,
+            dependencies,
+            lease=lease,
+            store=store,
+            continuation=continuation,
+        )
+    remediation = store.load_remediation_continuation(work_id)
+    if remediation is None or remediation.status in {
+        RemediationContinuationStatus.CONSUMED,
+        RemediationContinuationStatus.INVALIDATED,
+    }:
+        raise StateStoreError("resumable curation continuation is missing")
+    return _prepare_remediation_continuation(
+        args,
+        dependencies,
+        lease=lease,
+        store=store,
+        continuation=remediation,
+    )
 
 
 def _load_work_for_run(
@@ -1696,6 +2143,7 @@ HANDLERS: dict[tuple[str, str], Handler] = {
     ("inspect", "discovery"): handle_inspect_discovery,
     ("prepare", "curation"): handle_prepare_curation,
     ("prepare", "continuation"): handle_prepare_continuation,
+    ("checkpoint", "remediation"): handle_checkpoint_remediation,
     ("validate", "curation"): handle_validate_curation,
     ("validate", "reviewed"): handle_validate_reviewed,
     ("validate", "proposal"): handle_validate_proposal,

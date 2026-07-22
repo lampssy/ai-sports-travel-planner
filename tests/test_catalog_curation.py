@@ -145,6 +145,26 @@ def _current_destination_scope_report() -> CatalogCurationReport:
     return CatalogCurationReport.model_validate(payload)
 
 
+def _legacy_schema_v3_payload() -> dict:
+    return _current_destination_scope_report().model_dump(mode="json")
+
+
+def _bounded_review_report(*, missing: str | None = None) -> CatalogCurationReport:
+    payload = _legacy_schema_v3_payload()
+    if missing != "envelope":
+        payload["review_evidence_envelope"] = [
+            {
+                "family_id": "official-booking-directory",
+                "source_kind": "destination_booking",
+                "source_urls": [payload["evidence"][0]["source_url"]],
+                "candidate_kinds": ["stay_destination", "stay_base"],
+            }
+        ]
+    if missing != "graph_impact":
+        payload["entity_scope_assessments"][0]["graph_impact"] = "graph_blocking"
+    return CatalogCurationReport.model_validate(payload)
+
+
 def _access_distance_report(*, status: str = "estimated") -> CatalogCurationReport:
     return CatalogCurationReport(
         title="Example access review",
@@ -1243,6 +1263,168 @@ def test_schema_three_graph_is_required_only_when_requested() -> None:
         match="schema version 3 requires resulting_graph",
     ):
         validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_schema_v3_accepts_bounded_review_envelope_and_graph_impact() -> None:
+    payload = _current_destination_scope_report().model_dump(mode="json")
+    payload["review_evidence_envelope"] = [
+        {
+            "family_id": "official-booking-directory",
+            "source_kind": "destination_booking",
+            "source_urls": [payload["evidence"][0]["source_url"]],
+            "candidate_kinds": ["stay_destination", "stay_base"],
+        }
+    ]
+    payload["entity_scope_assessments"][0]["graph_impact"] = "graph_blocking"
+
+    report = CatalogCurationReport.model_validate(payload)
+    validate_catalog_curation_report(report, require_resulting_graph=True)
+
+    assert report.review_evidence_envelope[0].family_id == (
+        "official-booking-directory"
+    )
+    assert report.entity_scope_assessments[0].graph_impact == "graph_blocking"
+
+
+def test_regional_followup_requires_deferred_or_unresolved_backlog_item() -> None:
+    payload = _current_destination_scope_report().model_dump(mode="json")
+    assessment = payload["entity_scope_assessments"][0]
+    assessment["graph_impact"] = "regional_followup"
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="regional_followup requires deferred or unresolved backlog scope",
+    ):
+        validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+
+def test_review_envelope_rejects_unsafe_url() -> None:
+    payload = _current_destination_scope_report().model_dump(mode="json")
+    payload["review_evidence_envelope"] = [
+        {
+            "family_id": "official-booking-directory",
+            "source_kind": "destination_booking",
+            "source_urls": ["file:///tmp/source"],
+            "candidate_kinds": ["stay_base"],
+        }
+    ]
+
+    with pytest.raises(ValidationError):
+        CatalogCurationReport.model_validate(payload)
+
+
+def test_review_envelope_rejects_duplicate_family() -> None:
+    payload = _current_destination_scope_report().model_dump(mode="json")
+    family = {
+        "family_id": "official-booking-directory",
+        "source_kind": "destination_booking",
+        "source_urls": [payload["evidence"][0]["source_url"]],
+        "candidate_kinds": ["stay_base"],
+    }
+    payload["review_evidence_envelope"] = [family, family]
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="review_evidence_envelope contains a duplicate family",
+    ):
+        validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+
+def test_review_envelope_source_url_must_be_referenced_by_evidence() -> None:
+    payload = _current_destination_scope_report().model_dump(mode="json")
+    payload["review_evidence_envelope"] = [
+        {
+            "family_id": "official-booking-directory",
+            "source_kind": "destination_booking",
+            "source_urls": ["https://example.com/other-directory"],
+            "candidate_kinds": ["stay_base"],
+        }
+    ]
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="review source URL is not referenced by evidence",
+    ):
+        validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+
+def test_legacy_schema_v3_remains_readable_without_review_inventory() -> None:
+    report = CatalogCurationReport.model_validate(_legacy_schema_v3_payload())
+
+    validate_catalog_curation_report(report)
+    rendered = render_catalog_curation_report_markdown(
+        report.model_copy(update={"resulting_graph": None})
+    )
+
+    expected = (
+        "# Example destination boundary\n"
+        "\n"
+        "Reviews one stay-market boundary.\n"
+        "\n"
+        "## Reviewed Targets\n"
+        "\n"
+        "| Target | Scope | Graph Role | Required Fields |\n"
+        "| --- | --- | --- | --- |\n"
+        "| `stay_destination:example` | `narrow` | `focus` | `name` |\n"
+        "\n"
+        "## Entity Scope Assessments\n"
+        "\n"
+        "| Candidate | Kind | Disposition | Signals | Catalog Targets | Evidence | "
+        "Backlog | Rationale |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+        "| `example` (Example) | `stay_destination` | `represented` | "
+        "`independent_stay_market` | `stay_destination:example` | "
+        "`example-stay-market` |  | The official source defines this stay market. |\n"
+        "\n"
+        "## Changed Fields\n"
+        "\n"
+        "| Target | Field | Before | After | Trust | Ranking Relevant |\n"
+        "| --- | --- | --- | --- | --- | --- |\n"
+        "\n"
+        "## Field Coverage\n"
+        "\n"
+        "| Target | Field | Status | Notes |\n"
+        "| --- | --- | --- | --- |\n"
+        "| `stay_destination:example` | `name` | `reviewed-no-change` |  |\n"
+        "\n"
+        "## Evidence\n"
+        "\n"
+        "| Target | Field | Source | Source Value | Evidence | Normalization |\n"
+        "| --- | --- | --- | --- | --- | --- |\n"
+        "| `stay_destination:example` | `name` | "
+        '[Official accommodation market](https://example.com/stays) | `"Example"` | '
+        "Defines the complete independently managed stay market. |  |\n"
+        "\n"
+        "## Boundary Decisions\n"
+        "\n"
+        "- `example`: `pass`\n"
+    )
+
+    assert rendered == expected
+
+
+@pytest.mark.parametrize("missing", ["envelope", "graph_impact"])
+def test_finalized_maintainer_profile_requires_complete_review_inventory(
+    missing: str,
+) -> None:
+    report = _bounded_review_report(missing=missing)
+
+    with pytest.raises(CatalogValidationError, match="bounded review inventory"):
+        validate_catalog_curation_report(
+            report,
+            require_bounded_review_inventory=True,
+        )
+
+
+def test_bounded_review_inventory_markdown_is_rendered() -> None:
+    report = _bounded_review_report().model_copy(update={"resulting_graph": None})
+
+    rendered = render_catalog_curation_report_markdown(report)
+
+    assert "## Review Evidence Envelope" in rendered
+    assert "| Graph Impact |" in rendered
+    assert "`official-booking-directory`" in rendered
+    assert "`graph_blocking`" in rendered
 
 
 def test_resulting_graph_is_derived_from_the_current_catalog() -> None:

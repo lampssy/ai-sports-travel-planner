@@ -130,6 +130,10 @@ Primary concepts:
 - reviewed target
 - field coverage
 - evidence item
+- evidence envelope
+- graph blocker
+- regional follow-up
+- coherent destination graph slice
 - normalization note
 
 Boundaries:
@@ -584,6 +588,34 @@ own source-reference list.
 A typed review packet that covers every applicable field for reviewed entities,
 links evidence, records changes and unresolved gaps, states ranking impact, and
 renders the resulting destination graph from normalized catalog relationships.
+
+**Evidence envelope**
+
+The bounded source and candidate universe frozen before semantic remediation.
+It names the official source families, catalog relationships, concrete
+candidates, and linked dependencies that the curation review must account for;
+it does not make source meaning or candidate existence a deterministic claim.
+
+**Graph blocker**
+
+A source-backed omission or contradiction that can make the selected resulting
+graph materially wrong or misleading, such as incorrect destination, ski-area,
+pass, weather-owner, terrain-owner, or access ownership. It remains blocking
+until fixed or routed through an explicit evidence or owner-decision gate.
+
+**Regional follow-up**
+
+An additive adjacent catalog opportunity whose omission does not make the
+selected graph incorrect. It is recorded in the schema-v3 report and merged
+product backlog for discovery; it does not by itself make curation
+non-converging.
+
+**Coherent destination graph slice**
+
+One primary stay destination plus the bases, access edges, ski areas, terrain
+domains, pass products, trust evidence, and weather or migration handoffs needed
+to review that destination as an internally meaningful proposal. It is neither
+one entity per proposal nor an entire region by default.
 
 **Suggested stay**
 

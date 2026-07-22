@@ -21,9 +21,13 @@ Statuses:
 
 - `idea`: captured but not evaluated
 - `candidate`: likely relevant, needs shaping
+- `active`: a bounded backlog item is ready for the owning workflow to advance
+- `proposed`: one owner-gated proposal PR is open for the named bounded slice
 - `next`: likely near-term
 - `spec-ready`: enough context exists to write a feature spec
 - `parked`: intentionally deferred
+- `completed`: the named bounded slice merged; retain only when the completion
+  record or remaining regional context is useful
 - `closed`: rejected, superseded, or implemented elsewhere
 
 Areas:
@@ -68,9 +72,12 @@ mix a separate model concern, depend on uncurated graph nodes, require a weather
 identity migration, or remain genuinely unresolved. Time pressure or
 convenience alone do not justify deferral.
 
-Schema-version-2 `deferred` and `unresolved` scope assessments reference one
-consolidated regional item through `backlog_ref`. Each item must include the
-exact markers used by its reports, for example:
+Schema-v3 `regional_followup` assessments use a non-represented disposition and
+reference one consolidated regional item through `backlog_ref`. The reference
+is the item's exact Markdown heading anchor so the helper can confirm that it
+exists on the report's exact head; Codex, not Python, interprets its meaning,
+priority, and status. Item prose should retain stable candidate keys when they
+help owner review, for example:
 
 - `ski_area:kitzbuheler-horn`
 - `stay_destination:kirchberg`
@@ -78,18 +85,33 @@ exact markers used by its reports, for example:
 Update an existing regional item rather than creating one item per sector.
 `not_separate` decisions do not belong here.
 
-Discovery treats this section as a semantic backlog-clearing queue:
+A regional item should state, in ordinary Markdown rather than machine-marker
+syntax:
+
+- the region or parent area;
+- known destination, base, ski-area, pass, access, and weather gaps;
+- why they matter to graph correctness or desired coverage;
+- completed and remaining prerequisites or owner decisions;
+- relevant source, report, and PR references;
+- the next coherent destination graph slice; and
+- whether the item is active, proposed, parked, or completed.
+
+Discovery treats this section as an ordered semantic selection source:
 
 1. First retry a previously sourceable candidate interrupted only by
    `lock-busy`, after fresh inventory and source checks.
-2. Then prefer `Status: candidate` items and their explicit
-   `Next bounded slice`, prioritizing completion of partially modeled regions.
+2. Then prefer merged regional follow-ups whose next coherent slice is active,
+   followed by other `Status: active` or `Status: candidate` items,
+   prioritizing completion of partially modeled regions.
 3. Keep `Status: parked` authoritative for genuine dependencies; automation
    must not silently override it.
 4. Use external discovery only when no bounded backlog slice is actionable.
-5. When an accepted proposal merges, remove or mark its slice complete and
-   promote the next remaining slice. Close the regional item only when no
-   useful modeled gap remains.
+5. The proposal PR changes the item to `proposed` and links its report/PR.
+6. After the owner accepts by removing the proposal label, normal curation on
+   that same PR must, before readiness, mark the slice `completed` when no
+   useful modeled gap remains, or narrow the item to the remaining regional
+   gaps and mark the next slice `active`. The owner merges only after this
+   backlog handoff is complete.
 
 A bounded slice may be an explicit decision-bearing proposal for a boundary,
 stable-ID, or weather-owner change when the existing catalog model can express

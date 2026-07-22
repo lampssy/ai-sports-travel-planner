@@ -27,9 +27,11 @@ from ops.maintainer.inspection import (
 )
 from ops.maintainer.intent import CATALOG_PATH
 from ops.maintainer.validation import (
+    DeltaValidationResult,
     ProposalValidationResult,
     ValidationResult,
     validate_curation,
+    validate_curation_delta,
     validate_proposal,
 )
 
@@ -134,6 +136,16 @@ def _parser() -> argparse.ArgumentParser:
     validate_curation_parser.add_argument("--report", required=True)
     validate_curation_parser.add_argument("--base-dir", type=Path, required=True)
     _add_run_id(validate_curation_parser)
+
+    checkpoint = families.add_parser("checkpoint")
+    checkpoint_commands = checkpoint.add_subparsers(dest="command", required=True)
+    remediation = checkpoint_commands.add_parser("remediation")
+    remediation.add_argument("--pr", type=int, required=True)
+    remediation.add_argument("--head", type=_sha, required=True)
+    remediation.add_argument("--report", required=True)
+    remediation.add_argument("--base-dir", type=Path, required=True)
+    _add_run_id(remediation)
+
     validate_reviewed_parser = validate_commands.add_parser("reviewed")
     validate_reviewed_parser.add_argument("--pr", type=int, required=True)
     validate_reviewed_parser.add_argument("--reviewed-head", type=_sha, required=True)
@@ -235,6 +247,7 @@ def _compose_dependencies(
     repository: object | None,
     base_repository: object | None,
     curation_validator: Callable[..., ValidationResult],
+    curation_delta_validator: Callable[..., DeltaValidationResult],
     proposal_validator: Callable[..., ProposalValidationResult],
     catalog_keys_provider: Callable[[], frozenset[str]] | None,
     repository_root: Path | None,
@@ -244,6 +257,7 @@ def _compose_dependencies(
     needs_repository = (args.family, args.command) in {
         ("prepare", "curation"),
         ("prepare", "continuation"),
+        ("checkpoint", "remediation"),
         ("validate", "curation"),
         ("validate", "reviewed"),
         ("validate", "proposal"),
@@ -277,6 +291,7 @@ def _compose_dependencies(
         repository=selected_repository or object(),
         base_repository=base_repository,
         curation_validator=curation_validator,
+        curation_delta_validator=curation_delta_validator,
         proposal_validator=proposal_validator,
         catalog_keys_provider=selected_catalog_keys_provider,
         repository_root=root,
@@ -296,6 +311,9 @@ def main(
     repository: object | None = None,
     base_repository: object | None = None,
     curation_validator: Callable[..., ValidationResult] = validate_curation,
+    curation_delta_validator: (
+        Callable[..., DeltaValidationResult]
+    ) = validate_curation_delta,
     proposal_validator: Callable[..., ProposalValidationResult] = validate_proposal,
     catalog_keys_provider: Callable[[], frozenset[str]] | None = None,
     repository_root: Path | None = None,
@@ -314,6 +332,7 @@ def main(
                 repository=repository,
                 base_repository=base_repository,
                 curation_validator=curation_validator,
+                curation_delta_validator=curation_delta_validator,
                 proposal_validator=proposal_validator,
                 catalog_keys_provider=catalog_keys_provider,
                 repository_root=repository_root,

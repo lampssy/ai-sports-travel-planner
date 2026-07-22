@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.git_refs import is_safe_codex_branch
+from ops.maintainer.intent import is_allowed_curation_path
 from ops.maintainer.runtime import (
     LeaseMetadataError,
     LeaseOwnershipError,
@@ -66,6 +67,13 @@ class ContinuationValidationStatus(StrEnum):
     NOT_RUN = "not-run"
     FAILED = "failed"
     PASSED = "passed"
+
+
+class RemediationContinuationStatus(StrEnum):
+    AVAILABLE = "available"
+    RESOLVING = "resolving"
+    CONSUMED = "consumed"
+    INVALIDATED = "invalidated"
 
 
 _WORK_PHASES = tuple(WorkPhase)
@@ -216,6 +224,52 @@ class ReviewedContinuation(BaseModel):
         return self
 
 
+class RemediationContinuation(BaseModel):
+    """Durable authority for one exact remediation checkpoint."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    work_id: str = Field(min_length=1, max_length=128, pattern=_ID_PATTERN.pattern)
+    origin_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
+    recovery_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
+    updated_at: datetime
+    pr_number: int = Field(ge=1)
+    selected_head: str = Field(pattern=_SHA_PATTERN)
+    remediation_head: str = Field(pattern=_SHA_PATTERN)
+    report_path: str = Field(
+        pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$",
+    )
+    sync: GuardedSyncResult
+    allowed_paths: frozenset[str] = Field(min_length=1)
+    remediation_ref: str = Field(pattern=_REF_PATTERN)
+    squash_ref: str = Field(pattern=_REF_PATTERN)
+    completed_stage: Literal["delta-validated"]
+    status: RemediationContinuationStatus
+
+    @model_validator(mode="after")
+    def validate_remediation_continuation(self) -> RemediationContinuation:
+        if self.updated_at.tzinfo is None or self.updated_at.utcoffset() is None:
+            raise ValueError("updated_at must include a timezone")
+        object.__setattr__(self, "updated_at", self.updated_at.astimezone(UTC))
+        if self.work_id != f"curation-pr-{self.pr_number}":
+            raise ValueError("remediation identity does not match its PR")
+        if self.sync.original_head != self.selected_head:
+            raise ValueError("remediation sync does not match selected head")
+        if not all(is_allowed_curation_path(path) for path in self.allowed_paths):
+            raise ValueError("remediation paths are outside curation scope")
+        remediation_prefix = (
+            f"refs/snowcast-maintainer/remediation/pr-{self.pr_number}/"
+        )
+        squash_prefix = (
+            f"refs/snowcast-maintainer/remediation-continuations/pr-{self.pr_number}/"
+        )
+        if not self.remediation_ref.startswith(remediation_prefix):
+            raise ValueError("remediation ref does not match continuation identity")
+        if not self.squash_ref.startswith(squash_prefix):
+            raise ValueError("squash ref does not match continuation identity")
+        return self
+
+
 class PushJournal(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -320,6 +374,7 @@ _StateModel = TypeVar(
     WorkState,
     PushJournal,
     ReviewedContinuation,
+    RemediationContinuation,
 )
 
 
@@ -364,6 +419,23 @@ class StateStore:
             raise StateStoreError("maintainer state directory is unsafe") from exc
         return cls(state_path, _read_only=True).list_continuations_for_inspection()
 
+    @classmethod
+    def list_remediation_continuations_for_inspection_path(
+        cls,
+        state_dir: str | Path,
+    ) -> tuple[RemediationContinuation, ...]:
+        state_path = Path(state_dir)
+        try:
+            state_path.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("maintainer state directory is unsafe") from exc
+        return cls(
+            state_path,
+            _read_only=True,
+        ).list_remediation_continuations_for_inspection()
+
     @property
     def work_dir(self) -> Path:
         return self.state_dir / "work"
@@ -375,6 +447,10 @@ class StateStore:
     @property
     def continuation_dir(self) -> Path:
         return self.state_dir / "continuations"
+
+    @property
+    def remediation_continuation_dir(self) -> Path:
+        return self.state_dir / "remediation-continuations"
 
     def load_work(self, work_id: str) -> WorkState | None:
         _validate_identifier(work_id, "work_id")
@@ -442,6 +518,240 @@ class StateStore:
         if loaded is not None and loaded.work_id != work_id:
             raise StateStoreError("continuation identity does not match its path")
         return loaded
+
+    def load_remediation_continuation(
+        self,
+        work_id: str,
+    ) -> RemediationContinuation | None:
+        _validate_identifier(work_id, "work_id")
+        loaded = self._load_model(
+            self.remediation_continuation_dir,
+            work_id,
+            RemediationContinuation,
+        )
+        if loaded is not None and loaded.work_id != work_id:
+            raise StateStoreError("remediation identity does not match its path")
+        return loaded
+
+    def save_remediation_continuation(
+        self,
+        remediation: RemediationContinuation,
+        lease: RunLease,
+    ) -> None:
+        remediation = _revalidate_model(remediation, RemediationContinuation)
+        with _transition_mutex(self.state_dir):
+            self._assert_remediation_lease(remediation, lease)
+            existing = self.load_remediation_continuation(remediation.work_id)
+            if existing is None:
+                if remediation.status is not RemediationContinuationStatus.AVAILABLE:
+                    raise StateStoreError("new remediation must start available")
+                if remediation.origin_run_id != remediation.recovery_run_id:
+                    raise StateStoreError("new remediation must originate in this run")
+            elif (
+                existing.status
+                in {
+                    RemediationContinuationStatus.CONSUMED,
+                    RemediationContinuationStatus.INVALIDATED,
+                }
+                and remediation.status is RemediationContinuationStatus.AVAILABLE
+                and remediation.origin_run_id == remediation.recovery_run_id
+                and remediation.origin_run_id == lease.run_id
+                and existing.recovery_run_id != lease.run_id
+                and remediation.selected_head != existing.selected_head
+                and remediation.updated_at > existing.updated_at
+            ):
+                pass
+            elif existing.selected_head == remediation.selected_head:
+                raise StateStoreError("same-head remediation cannot reopen")
+            else:
+                raise StateStoreError("remediation continuation already exists")
+            self._save_model(
+                self.remediation_continuation_dir,
+                remediation.work_id,
+                remediation,
+            )
+
+    def list_remediation_continuations_for_inspection(
+        self,
+    ) -> tuple[RemediationContinuation, ...]:
+        try:
+            self.remediation_continuation_dir.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("remediation directory is unsafe") from exc
+        try:
+            self._validate_existing_directory(self.state_dir)
+            self._validate_existing_directory(self.remediation_continuation_dir)
+        except RunLeaseError as exc:
+            raise StateStoreError("remediation directory is unsafe") from exc
+        active = []
+        for path in sorted(
+            self.remediation_continuation_dir.glob("*.json"),
+            key=lambda item: item.name,
+        ):
+            remediation = self.load_remediation_continuation(
+                path.name.removesuffix(".json")
+            )
+            if remediation is None:
+                raise StateStoreError("remediation disappeared during inventory")
+            if remediation.status not in {
+                RemediationContinuationStatus.CONSUMED,
+                RemediationContinuationStatus.INVALIDATED,
+            }:
+                active.append(remediation)
+        return tuple(sorted(active, key=lambda item: item.work_id))
+
+    def adopt_remediation_continuation(
+        self,
+        work_id: str,
+        lease: RunLease,
+    ) -> RemediationContinuation:
+        _validate_identifier(work_id, "work_id")
+        self._assert_lease_location(lease)
+        with _transition_mutex(self.state_dir):
+            RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+            if lease.worker != "curation":
+                raise StateStoreError("only curation can adopt remediation")
+            if self._list_unresolved_pushes():
+                raise StateStoreError("unresolved push journal blocks remediation")
+            remediation = self.load_remediation_continuation(work_id)
+            if remediation is None:
+                raise StateStoreError("remediation continuation is missing")
+            if remediation.status not in {
+                RemediationContinuationStatus.AVAILABLE,
+                RemediationContinuationStatus.RESOLVING,
+            }:
+                raise StateStoreError("remediation continuation is not available")
+            if remediation.recovery_run_id == lease.run_id:
+                raise StateStoreError("remediation adoption requires a successor run")
+            updated_at = _later_than(remediation.updated_at)
+            adopted = remediation.model_copy(
+                update={
+                    "recovery_run_id": lease.run_id,
+                    "updated_at": updated_at,
+                    "status": RemediationContinuationStatus.AVAILABLE,
+                }
+            )
+            self._save_model(self.remediation_continuation_dir, work_id, adopted)
+            return adopted
+
+    def replace_remediation_continuation(
+        self,
+        remediation: RemediationContinuation,
+        lease: RunLease,
+    ) -> None:
+        remediation = _revalidate_model(remediation, RemediationContinuation)
+        with _transition_mutex(self.state_dir):
+            self._assert_remediation_lease(remediation, lease)
+            existing = self.load_remediation_continuation(remediation.work_id)
+            if existing is None:
+                raise StateStoreError("remediation continuation is missing")
+            if (
+                existing.status
+                not in {
+                    RemediationContinuationStatus.AVAILABLE,
+                    RemediationContinuationStatus.RESOLVING,
+                }
+                or existing.recovery_run_id != lease.run_id
+            ):
+                raise StateStoreError("only the active owner can replace remediation")
+            if (
+                remediation.work_id != existing.work_id
+                or remediation.pr_number != existing.pr_number
+                or remediation.selected_head != existing.selected_head
+                or remediation.origin_run_id != existing.origin_run_id
+                or remediation.recovery_run_id != existing.recovery_run_id
+                or remediation.updated_at <= existing.updated_at
+            ):
+                raise StateStoreError("replacement remediation facts are invalid")
+            if existing.status is RemediationContinuationStatus.AVAILABLE:
+                if remediation.status not in {
+                    RemediationContinuationStatus.AVAILABLE,
+                    RemediationContinuationStatus.RESOLVING,
+                }:
+                    raise StateStoreError(
+                        "available remediation has invalid replacement"
+                    )
+            elif remediation.status is not RemediationContinuationStatus.AVAILABLE:
+                raise StateStoreError("resolving remediation must return available")
+            self._save_model(
+                self.remediation_continuation_dir,
+                remediation.work_id,
+                remediation,
+            )
+
+    def invalidate_remediation_continuation(
+        self,
+        work_id: str,
+        lease: RunLease,
+    ) -> RemediationContinuation:
+        _validate_identifier(work_id, "work_id")
+        self._assert_lease_location(lease)
+        with _transition_mutex(self.state_dir):
+            RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+            remediation = self.load_remediation_continuation(work_id)
+            if remediation is None:
+                raise StateStoreError("remediation continuation is missing")
+            self._assert_remediation_lease(remediation, lease)
+            if remediation.status in {
+                RemediationContinuationStatus.CONSUMED,
+                RemediationContinuationStatus.INVALIDATED,
+            }:
+                raise StateStoreError("remediation continuation is terminal")
+            invalidated = remediation.model_copy(
+                update={
+                    "updated_at": _later_than(remediation.updated_at),
+                    "status": RemediationContinuationStatus.INVALIDATED,
+                }
+            )
+            self._save_model(self.remediation_continuation_dir, work_id, invalidated)
+            return invalidated
+
+    def promote_remediation_to_reviewed(
+        self,
+        remediation: RemediationContinuation,
+        reviewed: ReviewedContinuation,
+        lease: RunLease,
+    ) -> None:
+        remediation = _revalidate_model(remediation, RemediationContinuation)
+        reviewed = _revalidate_model(reviewed, ReviewedContinuation)
+        with _transition_mutex(self.state_dir):
+            self._assert_remediation_lease(remediation, lease)
+            self._assert_continuation_lease(reviewed, lease)
+            current = self.load_remediation_continuation(remediation.work_id)
+            if current is None:
+                raise StateStoreError("remediation continuation is missing")
+            if current != remediation:
+                raise LeaseOwnershipError("remediation continuation ownership changed")
+            if current.status in {
+                RemediationContinuationStatus.CONSUMED,
+                RemediationContinuationStatus.INVALIDATED,
+            }:
+                raise StateStoreError("remediation continuation is terminal")
+            if not _reviewed_matches_remediation_authority(reviewed, remediation):
+                raise StateStoreError("reviewed continuation authority does not match")
+            existing_reviewed = self.load_continuation(reviewed.work_id)
+            if existing_reviewed is None:
+                self._save_model(self.continuation_dir, reviewed.work_id, reviewed)
+            elif not _reviewed_continuations_are_equivalent(
+                existing_reviewed,
+                reviewed,
+            ):
+                raise StateStoreError(
+                    "reviewed continuation conflicts with remediation"
+                )
+            consumed = remediation.model_copy(
+                update={
+                    "updated_at": _later_than(remediation.updated_at),
+                    "status": RemediationContinuationStatus.CONSUMED,
+                }
+            )
+            self._save_model(
+                self.remediation_continuation_dir,
+                remediation.work_id,
+                consumed,
+            )
 
     def save_continuation(
         self,
@@ -721,6 +1031,16 @@ class StateStore:
             raise LeaseOwnershipError("continuation is not owned by this lease")
         RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
 
+    def _assert_remediation_lease(
+        self,
+        remediation: RemediationContinuation,
+        lease: RunLease,
+    ) -> None:
+        self._assert_lease_location(lease)
+        if lease.worker != "curation" or remediation.recovery_run_id != lease.run_id:
+            raise LeaseOwnershipError("remediation is not owned by this lease")
+        RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+
     def _assert_lease_location(self, lease: RunLease) -> None:
         if lease.state_dir.absolute() != self.state_dir.absolute():
             raise LeaseOwnershipError("lease belongs to another state directory")
@@ -956,7 +1276,7 @@ class StateStore:
         self,
         directory: Path,
         work_id: str,
-        model: WorkState | PushJournal | ReviewedContinuation,
+        model: WorkState | PushJournal | ReviewedContinuation | RemediationContinuation,
     ) -> None:
         _ensure_private_directory(directory, parents=False)
         _write_json_atomic(
@@ -1007,3 +1327,47 @@ def _revalidate_model(
     if type(model) is not model_type:
         raise TypeError(f"state must be a {model_type.__name__} instance")
     return model_type.model_validate(model.model_dump())
+
+
+def _later_than(timestamp: datetime) -> datetime:
+    observed_at = datetime.now(UTC)
+    if observed_at <= timestamp:
+        return timestamp + timedelta(microseconds=1)
+    return observed_at
+
+
+def _reviewed_matches_remediation_authority(
+    reviewed: ReviewedContinuation,
+    remediation: RemediationContinuation,
+) -> bool:
+    return (
+        reviewed.work_id == remediation.work_id
+        and reviewed.pr_number == remediation.pr_number
+        and reviewed.origin_run_id == remediation.origin_run_id
+        and reviewed.selected_head == remediation.selected_head
+        and reviewed.sync == remediation.sync
+        and reviewed.report_path == remediation.report_path
+        and reviewed.reviewed_head == remediation.remediation_head
+    )
+
+
+def _reviewed_continuations_are_equivalent(
+    existing: ReviewedContinuation,
+    requested: ReviewedContinuation,
+) -> bool:
+    return all(
+        getattr(existing, field_name) == getattr(requested, field_name)
+        for field_name in (
+            "work_id",
+            "pr_number",
+            "origin_run_id",
+            "selected_head",
+            "reviewed_head",
+            "report_path",
+            "sync",
+            "reviewed_ref",
+            "squash_ref",
+            "status",
+            "validation_status",
+        )
+    )

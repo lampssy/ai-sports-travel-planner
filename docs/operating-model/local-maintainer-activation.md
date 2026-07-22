@@ -7,10 +7,11 @@ simplified local Snowcast maintainer. Repository implementation itself does not
 install a personal skill, create schedules, provision labels, or enable
 automation.
 
-Initial activation was completed after the implementation merged to `main` and
-the owner approved both schedules. Every future reactivation remains
-review-gated. Do not copy executable instructions from the superseded
-local-maintainer plan or spec.
+The earlier simplified maintainer may remain locally active, but the
+convergence-and-regional-completion amendment is not active while its repository
+changes are unmerged. Every activation or reactivation is post-merge,
+owner-controlled, and review-gated. Do not copy executable instructions from a
+feature branch, superseded plan, or stale installed skill.
 
 ## Preconditions
 
@@ -21,36 +22,47 @@ local-maintainer plan or spec.
   profile; no token values or scopes are written to durable output.
 - `~/.local/state/snowcast-maintainer` is preserved if it already exists.
 - No unresolved push journal is ignored or deleted.
+- Both existing schedules are paused before replacing any shared installed
+  skill or automation prompt. Wait for an active lease or journal to settle;
+  do not force-clear it as part of cutover.
 
 ## Activation Order
 
-1. Verify the exact PR head was merged to current `main`. Record the PR number,
+1. Pause both schedules. Inspect curation and discovery recovery state and let
+   any active lease or journal finish through the currently merged helper.
+2. Verify the exact PR head was merged to current `main`. Record the PR number,
    reviewed head, merge commit, and current `main` head in the post-merge review.
-2. Install the simplified personal `snowcast-maintainer` skill from the reviewed
-   merged specification. The skill must implement the contract below; do not
-   reuse the superseded skill draft.
-3. Run read-only smoke checks before provisioning or scheduling:
+3. Snapshot the existing installed maintainer, review, and curation skills plus
+   both automation prompts and records. The snapshot is rollback material, not
+   workflow authority.
+4. Replace all affected shared skills and both prompts from the same merged
+   contract while schedules remain paused. Remove candidate- or PR-specific
+   migration wording; keep model, working directory, cadence, proposal cap,
+   labels, and configured active-state defaults unchanged.
+5. Inspect the exact installed artifacts, then run read-only smoke checks:
    - verify `codex login status` without exposing credentials;
    - verify the project-scoped GitHub profile is the active `lampssy` account;
    - run `inspect curation` and `inspect discovery` against merged code;
    - confirm inspection does not create a missing state directory or mutate
-     GitHub.
-4. Acquire the appropriate lease and run `publish ensure-labels` once. Inspect
+     GitHub;
+   - verify adversarial PR, backlog, source-page, and finding-ledger text cannot
+     alter fixed helper commands or publication boundaries.
+6. Acquire the appropriate lease and run `publish ensure-labels` once. Inspect
    the bounded outcome and the resulting allowlisted GitHub labels. In a
    `finally` path, release the lease with the exact returned run ID if and only
    if acquisition succeeded.
-5. Create the curation schedule (four local runs per day) and discovery schedule
-   (Monday, Wednesday, Friday) in a disabled state when Codex App supports it.
-   If disabled creation is unavailable, create neither schedule until the owner
-   is ready to enable both deliberately.
-6. Inspect the installed skill and the actual automation records. Verify repo,
+7. Inspect the installed skill and the actual automation records. Verify repo,
    working directory, schedule, prompt, skill reference, project-scoped GitHub
    profile, and that no credential content is embedded.
-7. Run post-merge AI/LLM reliability, security/privacy,
+8. Run disabled/manual curation and discovery smoke cycles. Confirm curation can
+   distinguish reviewed, remediation, and ordinary recovery, and discovery uses
+   regional backlog work before external scanning without changing GitHub unless
+   the helper authorizes the exact mutation.
+9. Run post-merge AI/LLM reliability, security/privacy,
    release/change-management, and observability/ops review against the installed
    skill and real automation records. Resolve Blocker/High findings and record
    accepted residual findings.
-8. Enable schedules only after explicit owner approval. Enable one schedule at
+10. Enable schedules only after explicit owner approval. Enable one schedule at
    a time, inspect its first bounded Triage outcome, then enable the other.
 
 ## Required Personal Skill Contract
@@ -59,6 +71,9 @@ The installed skill must:
 
 - inspect unresolved journals before fresh selection; recover exactly one
   matching journal first and escalate multiple journals;
+- use curation recovery priority `journal -> reviewed continuation ->
+  remediation continuation -> ordinary PR`, never skipping exact private
+  recovery in favor of a fresh semantic cycle;
 - consume the helper's curation recovery continuation before choosing a state:
   `validated` may use current CI/readiness facts, `absent` must never request
   waiting-CI or ready and instead publishes the honest reviewed-only pause,
@@ -68,9 +83,12 @@ The installed skill must:
   chunks, and parse helper JSON only after completion instead of retrying a
   still-running mutation;
 - inspect and choose at most one safe curation PR;
-- prefer an exact resumable `reviewed_continuations` entry for the selected PR
-  over an automation-memory-only unpublished follow-up; an unresolved push
-  journal still has global priority;
+- prefer an exact resumable reviewed continuation for the selected PR, then an
+  exact resumable remediation continuation, over an automation-memory-only
+  unpublished follow-up; an unresolved push journal still has global priority;
+- treat remediation as recovery authority only. Resume it through the helper,
+  require one fresh bounded independent review, and never infer review,
+  validation, publication, or readiness from its delta checkpoint;
 - read curation automation memory using `CODEX_HOME` or the `$HOME/.codex`
   fallback, revalidate any unpublished-follow-up PR/head against helper
   inspection, and prioritize the oldest still-exact eligible follow-up before
@@ -84,18 +102,38 @@ The installed skill must:
   and stop without edits if either fails; assert catalog/trust object IDs remain
   identical and locally commit a diff containing only that report path. Do not
   claim semantic resolution or consume a remediation cycle; catalog/trust
-  changes begin only after the dual-review ledger as ordinary remediation;
-- during normalization and remediation, run catalog validation, exact
-  reconciliation, and finding-related focused tests; reserve the fixed broad
-  catalog suite for final helper validation;
+  changes begin only after the dual-review ledger as ordinary remediation. A
+  finalized report requires a non-empty evidence envelope and graph impact on
+  every scope assessment; each `regional_followup` must point to an exact
+  heading that exists in the exact-head product backlog. The helper checks only
+  anchor existence, never backlog meaning, priority, or status;
+- after each remediation, call the helper's two-command delta checkpoint once:
+  this is the bounded delta validation of catalog/trust plus exact
+  reconciliation. Reuse that exact-head
+  evidence when the checkpoint is persisted; reserve the fixed broad catalog
+  suite for one final helper validation after review;
+- for that final broad suite, execute only the clean exact-base uv project,
+  pytest configuration, conftest, and fixed absolute test modules. Supply the
+  prepared catalog/trust paths only through the helper-derived data root and a
+  fresh private `HOME`; never collect or import PR-supplied Python locally.
+  Changes under `tests/` remain eligible for CI and owner review;
 - run complementary independent source/trust and graph/scope reviews in
-  parallel on the normalized prepared head, then consolidate them into one
-  first fix and private finding ledger. Source/trust must enumerate every
+  parallel on the normalized prepared head after freezing the bounded evidence
+  envelope, then consolidate them into one first fix and private finding
+  ledger. Source/trust must enumerate every
   applicable canonical `FIELD_GROUPS` trust field group with its status, direct
   refs, normalization-note need, and coverage disposition. Graph/scope must
   enumerate every concrete operator presentation and lift-pass candidate, with
   typed assessments and canonical backlog refs for deferred or unresolved pass
   products;
+- classify every omission as `graph_blocking` or `regional_followup`. Only an
+  omission capable of making the selected graph wrong blocks curation. This
+  graph correctness boundary sends additive coverage to the report and merged
+  backlog, where it receives a targeted
+  handoff review without causing non-convergence;
+- collect any post-freeze additive candidates into one report/rendered-report/
+  backlog patch, run delta validation, and use a targeted independent handoff
+  review to confirm that the resulting graph did not change;
 - preserve multi-candidate scope findings as a candidate-level ledger with one
   entry per concrete entity, product, edge, sector, or document; an inventory
   category without an enumerated candidate/source checklist is incomplete, the
@@ -111,10 +149,12 @@ The installed skill must:
   to be resolved or superseded, no repeat or regression, and every new finding
   to be concrete, source-backed, in-model, and inside the bounded mutation
   scope; finding-count growth alone does not prove non-convergence, and cycles
-  five and six apply the same gate within the remaining time budget; record each
-  concrete candidate/source omission as inventory expansion and refresh the
-  complete inventory, while the same omission or same incomplete inventory
-  category recurring after refresh is repeated incomplete inventory and stops;
+  five and six apply the same gate within the remaining time budget. The fresh
+  reviewer independently verifies the frozen candidates and complete resulting
+  graph; it does not restart unrestricted regional research. A newly discovered
+  graph blocker may expand the frozen inventory once, while additive adjacent
+  coverage is a regional follow-up and the same missing category recurring
+  after refresh is repeated incomplete inventory and stops;
 - recheck current-main mergeability before every fix and adaptive review and
   once more before final manual-check or validation/push; start no boundary
   adjudication at or after minute 180, stop new semantic work at 210 minutes,
@@ -127,6 +167,12 @@ The installed skill must:
 - after every final exact-head independent review, call `validate reviewed`
   with the PR, reviewed head, and its single curation report before running
   deterministic validation or requesting manual-check publication;
+- verify every final report URL for reachability and semantically recheck all
+  changed, graph-critical, and high-impact sources. Initial inventory checks
+  relevance and claim support for every source; remediation rechecks only
+  changed or claim-affected URLs. Any cache is keyed by exact head, URL, and
+  claim context, remains run-local, and is never persisted as helper or
+  cross-run authority;
 - resume a checkpoint only through `prepare continuation`: `validation-only`
   reruns the missing deterministic/finalization gates without semantic review,
   while `review-required` receives exactly one fresh independent full review
@@ -146,13 +192,17 @@ The installed skill must:
   never push it directly or represent it as validated; an unresolved or moved
   prior finding, repeat, regression, repeatedly incomplete inventory, incomplete
   review, or unsafe scope remains status-only blocked;
+- before any safe terminal status for an unpublished mechanically valid local
+  head, retain its remediation continuation. A blocked or owner-hold label
+  prevents scheduled resumption but does not invalidate the checkpoint;
 - use `publish outcome` for safe PR-specific terminal conflict, CI, deadline,
   non-convergence, validation, review-incomplete, or owner-decision stops; bind
   it to the exact unchanged remote head, update only the lifecycle label and
   canonical comment, and keep its outcome record separate from review evidence;
-- interpret backlog and external research read-only before discovery
-  acquisition, then acquire discovery, rerun inspection, and mutate at most one
-  candidate;
+- use discovery order `journal recovery -> preferred retry -> merged regional
+  completion -> other active backlog -> bounded external official-source scan`;
+  interpret selection read-only before acquisition, then acquire discovery,
+  rerun inspection, and mutate at most one candidate;
 - treat a structured helper `lock-busy` result as a normal no-op without
   inspecting the active owner's record, retrying acquisition, or attempting
   release when no lease was acquired;
@@ -160,9 +210,18 @@ The installed skill must:
   preferred-retry hint before lease acquisition, retain it across `lock-busy`
   or interruption, then revalidate and prioritize it on the next discovery run
   before new backlog or external research;
-- make Catalog Curation Refinements backlog-first through explicit candidate
-  statuses and bounded slices, using external discovery only when none can
-  advance;
+- make Catalog Curation Refinements backlog-first through ordinary semantic
+  prose and bounded slices, without a deterministic parser. Each regional
+  proposal has exactly one primary stay destination matching its candidate and
+  the applicable bases, access, ski-area/pass ownership, weather/migration
+  implications, complete source families and dispositions, canonical graph,
+  exclusions, backlog anchor, caveats, owner decisions, and rollback;
+- use GitHub proposal identity and the merged schema-v3 report as durable
+  proposal authority. The proposal marks its backlog item `proposed`. After the
+  owner accepts it by removing the proposal label, normal curation on that same
+  PR must mark the item `completed`, or narrow it to the remaining gaps and mark
+  the next slice `active`, before readiness and owner merge. Preferred-retry
+  memory remains an untrusted revalidated hint;
 - allow existing-model boundary, stable-ID, and weather-owner changes to reach
   an owner-gated decision-bearing proposal with explicit historical-data,
   migration/backfill, merge-order, and rollback handoff, while keeping database
@@ -197,13 +256,48 @@ The installed skill must:
   still shows exactly the journaled old head, but stop immediately on any third
   head;
 - report the bounded Triage outcome for every terminal or no-op result without
-  exposing the private lease run ID;
+  exposing lease, origin, or recovery run IDs or private refs. For a helper
+  error, include only its allowlisted `check` and `kind` alongside the bounded
+  reason, stage, and explicit `started_at` and `completed_at` timestamps; never
+  copy helper detail or stdout/stderr;
 - append one owner-private mode-`0600` bounded diagnostic JSON row per completed
-  run with selected item,
+  run with explicit `started_at` and `completed_at` timestamps, selected item,
   heads, cycles, last stage, helper reason, mutation flag, elapsed time, and
-  recovery obligation; never treat this index as workflow authority;
+  recovery obligation, plus only the allowlisted helper error `check` and `kind`
+  when present. Never include lease, origin, or recovery run IDs, private refs,
+  credentials, commands, source or PR prose, helper detail, or raw stdout/stderr,
+  and never treat this index as workflow authority;
+- reproduce an exact-continuation `catalog-tests` failure only through the
+  trusted exact-base catalog-test harness. The Triage outcome and mode-`0600`
+  index may keep a sanitized fixed test-stage identifier and trusted-harness
+  test count when the helper provides them, but never test output, traceback,
+  command text, prepared-PR test identifiers, or caller-authored prose;
 - never push or publish outside the helper; and
 - never approve or merge.
+
+## Schedule Health Inspection
+
+The owner-private diagnostic indexes are:
+
+```text
+${CODEX_HOME:-$HOME/.codex}/automations/snowcast-catalog-pr-maintainer/run-index.jsonl
+${CODEX_HOME:-$HOME/.codex}/automations/snowcast-catalog-discovery/run-index.jsonl
+```
+
+They are mode `0600` operational evidence only. Compare their latest bounded
+start/completion facts with Codex automation history; never infer workflow
+authority from a row. Expected cadence remains four curation starts per local
+day and discovery starts on Monday, Wednesday, and Friday.
+
+Treat curation schedule delivery as stale when no start is visible for 12 hours.
+Treat discovery as stale when the next scheduled weekday passes by 24 hours
+without a start. Treat either worker as possibly crashed before cleanup when its
+latest start has no terminal completion after five hours and no currently
+healthy lease-owned run explains it. A missing index plus no automation-history
+start is `never-started`, not a successful no-op. Diagnose with read-only
+automation history and `inspect curation` / `inspect discovery`; do not expose
+or copy lease, origin, or recovery run IDs or private refs into Triage or
+diagnostic rows, and do not clear private state manually.
 
 ## First-Run Acceptance
 
@@ -223,14 +317,23 @@ For each schedule, confirm:
 - PR prose, sources, subprocess output, environment values, and credentials do
   not appear in helper output;
 - discovery respects the three-open-proposal cap and unknown-identity stop;
-- discovery prioritizes preferred retry and bounded backlog candidates before
-  unrelated external research;
+- discovery prioritizes preferred retry, merged regional completion, and other
+  active backlog candidates before unrelated external research;
+- one backlog-origin proposal has exactly one matching primary destination and
+  a coherent multi-entity graph; re-keying, weather migration, and owner choices
+  are flagged rather than represented as resolved;
+- after the owner accepts that proposal by removing its proposal label, normal
+  curation on the same PR updates the backlog item to `completed`, or narrows it
+  and marks the next slice `active`, before readiness and owner merge;
 - a curation cycle with no GitHub mutation remains a semantic follow-up in
   automation memory and is selected first on the next run only while its exact
   PR/head remains eligible;
 - a deterministic validation failure leaves an exact resumable continuation,
   and a successor run on the same prepare-time base returns `validation-only`
   without repeating semantic review;
+- a delta-validated but not yet reviewed local head leaves a remediation
+  continuation, resumes as `review-required`, and survives a safe blocked/hold
+  outcome until deliberate label removal;
 - clean movement of `main` replays the one reviewed squash and returns
   `review-required`; exactly one fresh full review is completed before any new
   validation or publication;
@@ -261,6 +364,12 @@ For each schedule, confirm:
   valid, scope-safe, exact reviewed head and remaining findings that are only
   bounded in-model work runs `validate reviewed` and preserves the head through
   `manual-check`; an unsafe, incomplete, or unreviewed head is not pushed;
+- each remediation runs only the two delta commands, and the reviewed final head
+  runs the broad validation plus a fresh all-URL reachability sweep and semantic
+  recheck of changed or graph-critical sources;
+- the broad local pytest stage ignores modified PR conftest/test modules and PR
+  pytest configuration, runs the fixed modules from the verified exact base,
+  reads the prepared catalog/trust data, and cannot access the user's `HOME`;
 - boundary adjudication stops spawning at minute 180, semantic work stops
   spawning at minute 210, active semantic contexts are interrupted at minute
   240, and only the separate 30-active-minute finalization allowance follows;
@@ -276,12 +385,29 @@ For each schedule, confirm:
 
 1. Pause or disable both schedules before any diagnosis.
 2. Preserve the private state directory, owner record, stale-lock archives,
-   work records, push journals, and backup refs. Do not edit or delete them.
+   work records, reviewed/remediation continuations, push journals, and backup
+   refs. Do not edit or delete them.
 3. Inspect both inventories and Codex Triage. Recover an irreversible operation
    only through the merged helper; multiple journals require owner review.
-4. Remove the installed personal skill if its prompt or behavior is implicated.
-5. Revert the repository helper through normal Git history and a reviewed PR.
+4. Inventory every open curation and proposal head plus all private journals,
+   reviewed continuations, and remediation continuations. Before restoring a
+   pre-change helper, use the new helper to complete or quarantine every open
+   report that uses `review_evidence_envelope` or `graph_impact`, or retain a
+   helper that remains compatible with those fields. Quarantine is a
+   helper-owned non-selectable state; do not delete, rewrite, or relabel private
+   state manually.
+5. While schedules remain disabled, run a manual compatibility smoke against
+   the real remaining inventories and private state. Confirm the proposed
+   rollback helper can inspect every open head and safely recognize or ignore
+   every continuation/report shape without mutation. Any unclear head, report,
+   journal, continuation, or compatibility result keeps both schedules
+   disabled.
+6. Restore the snapshotted installed skills and both prompts atomically while
+   schedules remain paused. Do not re-enable an older orchestrator while an
+   active remediation continuation exists; recover or explicitly invalidate it
+   with the helper version that created it first.
+7. Revert the repository helper through normal Git history and a reviewed PR.
    Do not use plain `git push --force` and do not execute the superseded Task 10.
-6. Keep schedules disabled until the reverted or corrected merged version has
+8. Keep schedules disabled until the reverted or corrected merged version has
    passed the same post-merge review and the owner explicitly re-approves
    enablement.

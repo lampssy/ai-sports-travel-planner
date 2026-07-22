@@ -214,6 +214,8 @@ def test_intent_rejects_executable_paths_or_unsafe_modes(
         ("docs/catalog-curation/report.json", True),
         ("docs/superpowers/specs/catalog-review.md", True),
         ("tests/test_catalog_alpha.py", True),
+        ("tests/conftest.py", True),
+        ("pyproject.toml", False),
         ("docs/operating-model/local-maintainer-activation.md", False),
         (
             "docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md",
