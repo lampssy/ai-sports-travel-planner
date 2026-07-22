@@ -546,7 +546,14 @@ class StateStore:
                 if remediation.status is not RemediationContinuationStatus.AVAILABLE:
                     raise StateStoreError("new remediation must start available")
                 if remediation.origin_run_id != remediation.recovery_run_id:
-                    raise StateStoreError("new remediation must originate in this run")
+                    reviewed = self.load_continuation(remediation.work_id)
+                    if reviewed is None or not remediation_supersedes_reviewed(
+                        reviewed,
+                        remediation,
+                    ):
+                        raise StateStoreError(
+                            "new remediation must originate in this run"
+                        )
             elif (
                 existing.status
                 in {
@@ -606,9 +613,16 @@ class StateStore:
         self,
         work_id: str,
         lease: RunLease,
+        *,
+        superseded_reviewed: ReviewedContinuation | None = None,
     ) -> RemediationContinuation:
         _validate_identifier(work_id, "work_id")
         self._assert_lease_location(lease)
+        if superseded_reviewed is not None:
+            superseded_reviewed = _revalidate_model(
+                superseded_reviewed,
+                ReviewedContinuation,
+            )
         with _transition_mutex(self.state_dir):
             RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
             if lease.worker != "curation":
@@ -625,9 +639,23 @@ class StateStore:
                 raise StateStoreError("remediation continuation is not available")
             if remediation.recovery_run_id == lease.run_id:
                 raise StateStoreError("remediation adoption requires a successor run")
+            origin_run_id = remediation.origin_run_id
+            if superseded_reviewed is not None:
+                current_reviewed = self.load_continuation(work_id)
+                if current_reviewed != superseded_reviewed:
+                    raise LeaseOwnershipError("reviewed continuation ownership changed")
+                if not remediation_supersedes_reviewed(
+                    superseded_reviewed,
+                    remediation,
+                ):
+                    raise StateStoreError(
+                        "reviewed continuation does not authorize remediation"
+                    )
+                origin_run_id = superseded_reviewed.origin_run_id
             updated_at = _later_than(remediation.updated_at)
             adopted = remediation.model_copy(
                 update={
+                    "origin_run_id": origin_run_id,
                     "recovery_run_id": lease.run_id,
                     "updated_at": updated_at,
                     "status": RemediationContinuationStatus.AVAILABLE,
@@ -733,6 +761,11 @@ class StateStore:
                 raise StateStoreError("reviewed continuation authority does not match")
             existing_reviewed = self.load_continuation(reviewed.work_id)
             if existing_reviewed is None:
+                self._save_model(self.continuation_dir, reviewed.work_id, reviewed)
+            elif remediation_supersedes_reviewed(
+                existing_reviewed,
+                remediation,
+            ):
                 self._save_model(self.continuation_dir, reviewed.work_id, reviewed)
             elif not _reviewed_continuations_are_equivalent(
                 existing_reviewed,
@@ -1348,6 +1381,34 @@ def _reviewed_matches_remediation_authority(
         and reviewed.sync == remediation.sync
         and reviewed.report_path == remediation.report_path
         and reviewed.reviewed_head == remediation.remediation_head
+    )
+
+
+def remediation_supersedes_reviewed(
+    reviewed: ReviewedContinuation,
+    remediation: RemediationContinuation,
+) -> bool:
+    origin_matches = reviewed.origin_run_id == remediation.origin_run_id
+    legacy_replay_origin = (
+        remediation.origin_run_id == remediation.recovery_run_id
+        and remediation.recovery_run_id == reviewed.recovery_run_id
+    )
+    return (
+        reviewed.status is ContinuationStatus.RESOLVING
+        and remediation.status
+        in {
+            RemediationContinuationStatus.AVAILABLE,
+            RemediationContinuationStatus.RESOLVING,
+        }
+        and remediation.updated_at > reviewed.updated_at
+        and reviewed.work_id == remediation.work_id
+        and reviewed.pr_number == remediation.pr_number
+        and (origin_matches or legacy_replay_origin)
+        and reviewed.selected_head == remediation.selected_head
+        and reviewed.sync.target_branch == remediation.sync.target_branch
+        and reviewed.sync.original_head == remediation.sync.original_head
+        and reviewed.report_path == remediation.report_path
+        and reviewed.reviewed_head != remediation.remediation_head
     )
 
 

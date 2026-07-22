@@ -1211,6 +1211,13 @@ Example:
   ordinary PR. Restore or safely replay the exact checkpoint and require one
   fresh bounded full review; never infer review or publication authority from
   successful delta validation.
+- **Remediation descended from reviewed replay:** retain the reviewed
+  continuation's origin authority. While both records exist, the newer exact
+  remediation suppresses only its matching resolving predecessor. Promotion
+  replaces that predecessor and consumes the remediation atomically. For
+  records created before this invariant, successor adoption may repair the
+  origin only when the old reviewed and newer remediation records share the
+  same recovery run and exact PR, branch, report, and replay lineage.
 - **Remediation interrupted by sleep, deadline, validation, or status
   publication:** preserve the exact continuation. A truthful blocked or
   owner-decision outcome may coexist with it; deliberate hold-label removal

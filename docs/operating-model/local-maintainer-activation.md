@@ -177,6 +177,12 @@ The installed skill must:
   reruns the missing deterministic/finalization gates without semantic review,
   while `review-required` receives exactly one fresh independent full review
   before a new `validate reviewed` checkpoint;
+- when a replayed reviewed continuation produces a newer remediation checkpoint,
+  preserve the reviewed origin authority, expose the newer remediation instead
+  of its resolving predecessor, and replace that predecessor only after an
+  exact-head fresh review. A legacy pair created before this rule may be adopted
+  only when its recovery run, selected PR head, branch, report, and replay
+  lineage match exactly;
 - when continuation preparation returns `conflict-resolution-required`, edit
   only the helper-returned catalog/report/backlog/focused-test paths through
   `snowcast-catalog-curation` in `maintainer-managed` mode, call

@@ -29,6 +29,7 @@ from ops.maintainer.state import (
     RemediationContinuation,
     RemediationContinuationStatus,
     ReviewedContinuation,
+    remediation_supersedes_reviewed,
 )
 
 _SELECTION_HOLD_LABELS = frozenset(
@@ -220,6 +221,17 @@ def inspect_curation(
             RemediationContinuationStatus.INVALIDATED,
         }
     )
+    superseded_reviewed_work_ids = {
+        reviewed.work_id
+        for reviewed in active_reviewed
+        for remediation in active_remediations
+        if remediation_supersedes_reviewed(reviewed, remediation)
+    }
+    preferred_reviewed = tuple(
+        continuation
+        for continuation in active_reviewed
+        if continuation.work_id not in superseded_reviewed_work_ids
+    )
     suppressed_remediation_prs = {
         continuation.pr_number
         for continuation in active_remediations
@@ -258,7 +270,7 @@ def inspect_curation(
             ),
         )
         for continuation in sorted(
-            active_reviewed,
+            preferred_reviewed,
             key=lambda item: item.pr_number,
         )
         if continuation.pr_number in pull_requests_by_number

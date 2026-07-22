@@ -82,6 +82,7 @@ from ops.maintainer.state import (
     StateStoreError,
     WorkPhase,
     WorkState,
+    remediation_supersedes_reviewed,
 )
 from ops.maintainer.validation import (
     DeltaValidationResult,
@@ -389,6 +390,7 @@ def _new_remediation_continuation(
     refs: RemediationCheckpointRefs,
     dependencies: Dependencies,
     previous: RemediationContinuation | None = None,
+    reviewed: ReviewedContinuation | None = None,
 ) -> RemediationContinuation:
     if work.pr_number is None or work.sync is None:
         raise StateStoreError("prepared curation facts are incomplete")
@@ -402,10 +404,20 @@ def _new_remediation_continuation(
                 RemediationContinuationStatus.CONSUMED,
                 RemediationContinuationStatus.INVALIDATED,
             }
+            else reviewed.origin_run_id
+            if reviewed is not None
+            and reviewed.status is ContinuationStatus.RESOLVING
+            and reviewed.recovery_run_id == lease.run_id
+            and reviewed.work_id == work.work_id
+            and reviewed.pr_number == work.pr_number
+            and reviewed.selected_head == work.selected_head
+            and reviewed.report_path == report_path
+            and reviewed.sync.target_branch == work.sync.target_branch
+            and reviewed.sync.original_head == work.sync.original_head
             else lease.run_id
         ),
         recovery_run_id=lease.run_id,
-        updated_at=_current_time(dependencies, previous),
+        updated_at=_current_time(dependencies, previous or reviewed),
         pr_number=work.pr_number,
         selected_head=work.selected_head,
         remediation_head=remediation_head,
@@ -442,6 +454,7 @@ def handle_checkpoint_remediation(
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
 
     existing = store.load_remediation_continuation(work_id)
+    reviewed = store.load_continuation(work_id)
     existing_is_terminal = existing is not None and existing.status in {
         RemediationContinuationStatus.CONSUMED,
         RemediationContinuationStatus.INVALIDATED,
@@ -523,6 +536,7 @@ def handle_checkpoint_remediation(
         refs=refs,
         dependencies=dependencies,
         previous=existing,
+        reviewed=reviewed,
     )
     if existing is None or existing.status in {
         RemediationContinuationStatus.CONSUMED,
@@ -892,11 +906,13 @@ def _begin_remediation_resolution(
     lease: RunLease,
     continuation: RemediationContinuation,
     dependencies: Dependencies,
+    superseded_reviewed: ReviewedContinuation | None = None,
 ) -> RemediationContinuation:
     if continuation.recovery_run_id != lease.run_id:
         continuation = store.adopt_remediation_continuation(
             continuation.work_id,
             lease,
+            superseded_reviewed=superseded_reviewed,
         )
     if continuation.status is RemediationContinuationStatus.AVAILABLE:
         resolving = continuation.model_copy(
@@ -960,6 +976,7 @@ def _prepare_remediation_continuation(
     lease: RunLease,
     store: StateStore,
     continuation: RemediationContinuation,
+    superseded_reviewed: ReviewedContinuation | None = None,
 ) -> dict[str, object]:
     work_id = continuation.work_id
     pull_request = dependencies.github.get_pull_request(args.pr)
@@ -986,6 +1003,7 @@ def _prepare_remediation_continuation(
         lease=lease,
         continuation=continuation,
         dependencies=dependencies,
+        superseded_reviewed=superseded_reviewed,
     )
     refs = _remediation_checkpoint_refs(continuation)
     try:
@@ -1064,6 +1082,20 @@ def handle_prepare_continuation(
     dependencies.tracker.pr_number = args.pr
     dependencies.tracker.stage = ErrorStage.PREPARE
     continuation = store.load_continuation(work_id)
+    remediation = store.load_remediation_continuation(work_id)
+    if (
+        continuation is not None
+        and remediation is not None
+        and remediation_supersedes_reviewed(continuation, remediation)
+    ):
+        return _prepare_remediation_continuation(
+            args,
+            dependencies,
+            lease=lease,
+            store=store,
+            continuation=remediation,
+            superseded_reviewed=continuation,
+        )
     if continuation is not None and continuation.status not in {
         ContinuationStatus.CONSUMED,
         ContinuationStatus.INVALIDATED,
@@ -1075,7 +1107,6 @@ def handle_prepare_continuation(
             store=store,
             continuation=continuation,
         )
-    remediation = store.load_remediation_continuation(work_id)
     if remediation is None or remediation.status in {
         RemediationContinuationStatus.CONSUMED,
         RemediationContinuationStatus.INVALIDATED,

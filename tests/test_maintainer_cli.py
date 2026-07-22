@@ -1578,6 +1578,102 @@ def test_advanced_remediation_replay_promotes_replay_derived_authority(
     assert remediation.status is RemediationContinuationStatus.CONSUMED
 
 
+def test_newer_remediation_replay_precedes_older_resolving_reviewed_continuation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    origin_run = _prepare_curation(capsys, state_dir, github, repository)
+    reviewed_code, reviewed_payload = _checkpoint_reviewed(
+        capsys,
+        state_dir,
+        origin_run,
+        github,
+        repository,
+    )
+    assert reviewed_code == 0, reviewed_payload
+    RunLease.load_owner(state_dir, "curation", origin_run).release()
+
+    remediation_run = _acquire(capsys, state_dir, "curation")
+    repository.continuation_result = "prepared"
+    replay_code, replay_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "continuation",
+            "--pr",
+            "42",
+            "--run-id",
+            remediation_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert replay_code == 0, replay_payload
+    assert replay_payload["continuation"]["result"] == "review-required"
+    repository.head = SHA_C
+    checkpoint_code, checkpoint_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "remediation",
+            "--pr",
+            "42",
+            "--head",
+            SHA_C,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            remediation_run,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(head=repository.prepared.base_head),
+        delta_validator=lambda **_kwargs: _delta_validation_result(),
+    )
+    assert checkpoint_code == 0, checkpoint_payload
+    old_reviewed = StateStore(state_dir).load_continuation("curation-pr-42")
+    remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
+    assert old_reviewed is not None
+    assert remediation is not None
+    assert remediation.origin_run_id == old_reviewed.origin_run_id
+    RunLease.load_owner(state_dir, "curation", remediation_run).release()
+
+    successor = _acquire(capsys, state_dir, "curation")
+    repository.continuation_result = "unchanged"
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "continuation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0, payload
+    assert payload["continuation"] == {
+        "kind": "remediation",
+        "result": "review-required",
+        "prepared_head": SHA_C,
+        "report_path": "docs/catalog-curation/nendaz.json",
+    }
+
+
 def test_successful_remediation_replay_can_be_recreated_by_a_later_successor(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -25,6 +25,7 @@ from ops.maintainer.state import (
     RemediationContinuation,
     RemediationContinuationStatus,
     ReviewedContinuation,
+    remediation_supersedes_reviewed,
 )
 
 pytestmark = pytest.mark.db_free
@@ -282,6 +283,103 @@ def test_curation_inventory_summarizes_remediation_after_reviewed() -> None:
     assert paused.remediation_continuations[0].resumable is False
     assert paused.remediation_continuations[0].availability_reason == "hold-label"
     assert preferred.remediation_continuations == ()
+
+
+def test_newer_matching_remediation_supersedes_older_reviewed_summary() -> None:
+    reviewed = _continuation(reviewed_head=SHA_B).model_copy(
+        update={
+            "recovery_run_id": "3" * 32,
+            "status": ContinuationStatus.RESOLVING,
+        }
+    )
+    remediation = _remediation(remediation_head=SHA_C).model_copy(
+        update={
+            "origin_run_id": "3" * 32,
+            "recovery_run_id": "3" * 32,
+            "updated_at": reviewed.updated_at + timedelta(minutes=1),
+            "sync": reviewed.sync.model_copy(
+                update={"base_head": SHA_B, "merge_base": SHA_B}
+            ),
+            "squash_ref": (
+                "refs/snowcast-maintainer/remediation-continuations/pr-42/"
+                f"{SHA_B[:12]}-{SHA_C[:12]}"
+            ),
+        }
+    )
+
+    inventory = inspect_curation(
+        (_pull_request(),),
+        {},
+        (),
+        (reviewed,),
+        (remediation,),
+    )
+
+    assert inventory.reviewed_continuations == ()
+    assert [item.remediation_head for item in inventory.remediation_continuations] == [
+        SHA_C
+    ]
+    assert inventory.remediation_continuations[0].resumable is True
+
+
+def test_remediation_does_not_supersede_without_exact_replay_lineage() -> None:
+    reviewed = _continuation(reviewed_head=SHA_B).model_copy(
+        update={
+            "recovery_run_id": "3" * 32,
+            "status": ContinuationStatus.RESOLVING,
+        }
+    )
+    remediation = _remediation(remediation_head=SHA_C).model_copy(
+        update={
+            "origin_run_id": "3" * 32,
+            "recovery_run_id": "3" * 32,
+            "updated_at": reviewed.updated_at + timedelta(minutes=1),
+        }
+    )
+    mismatches = (
+        (
+            reviewed.model_copy(update={"status": ContinuationStatus.AVAILABLE}),
+            remediation,
+        ),
+        (
+            reviewed,
+            remediation.model_copy(update={"updated_at": reviewed.updated_at}),
+        ),
+        (
+            reviewed,
+            remediation.model_copy(
+                update={"report_path": "docs/catalog-curation/other.json"}
+            ),
+        ),
+        (
+            reviewed,
+            remediation.model_copy(
+                update={
+                    "sync": remediation.sync.model_copy(
+                        update={"target_branch": "codex/catalog-other"}
+                    )
+                }
+            ),
+        ),
+        (
+            reviewed,
+            remediation.model_copy(update={"remediation_head": reviewed.reviewed_head}),
+        ),
+        (
+            reviewed,
+            remediation.model_copy(
+                update={
+                    "origin_run_id": "4" * 32,
+                    "recovery_run_id": "4" * 32,
+                }
+            ),
+        ),
+    )
+
+    assert all(
+        not remediation_supersedes_reviewed(old_reviewed, newer_remediation)
+        for old_reviewed, newer_remediation in mismatches
+    )
 
 
 def test_unresolved_curation_journal_exposes_only_safe_summary() -> None:

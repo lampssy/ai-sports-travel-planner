@@ -381,6 +381,119 @@ def test_remediation_promotion_writes_reviewed_before_consuming_remediation(
     )
 
 
+def test_remediation_promotion_supersedes_matching_older_reviewed_head(
+    tmp_path: Path,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    remediation = _remediation(
+        lease,
+        remediation_head=SHA_3,
+        updated_at=NOW + timedelta(minutes=2),
+    ).model_copy(
+        update={
+            "sync": _remediation(lease).sync.model_copy(
+                update={
+                    "rebased_head": SHA_3,
+                    "base_head": SHA_2,
+                    "merge_base": SHA_2,
+                }
+            ),
+            "squash_ref": (
+                "refs/snowcast-maintainer/remediation-continuations/pr-42/"
+                f"{SHA_2[:12]}-{SHA_3[:12]}"
+            ),
+        }
+    )
+    available_reviewed = _continuation(lease).model_copy(
+        update={
+            "reviewed_head": SHA_2,
+            "report_path": remediation.report_path,
+            "reviewed_ref": (
+                f"refs/snowcast-maintainer/reviewed/pr-42/{SHA_1[:12]}-{SHA_2[:12]}"
+            ),
+            "squash_ref": (
+                f"refs/snowcast-maintainer/continuations/pr-42/"
+                f"{SHA_4[:12]}-{SHA_2[:12]}"
+            ),
+        }
+    )
+    older_reviewed = available_reviewed.model_copy(
+        update={
+            "updated_at": NOW + timedelta(minutes=1),
+            "status": ContinuationStatus.RESOLVING,
+        }
+    )
+    promoted = _continuation(
+        lease,
+        updated_at=NOW + timedelta(minutes=3),
+    ).model_copy(
+        update={
+            "report_path": remediation.report_path,
+            "sync": remediation.sync,
+        }
+    )
+    store.save_continuation(available_reviewed, lease)
+    store.save_continuation(older_reviewed, lease)
+    store.save_remediation_continuation(remediation, lease)
+
+    store.promote_remediation_to_reviewed(remediation, promoted, lease)
+
+    assert store.load_continuation(remediation.work_id) == promoted
+    consumed = store.load_remediation_continuation(remediation.work_id)
+    assert consumed is not None
+    assert consumed.status is RemediationContinuationStatus.CONSUMED
+
+
+def test_successor_adoption_repairs_legacy_replayed_remediation_origin(
+    tmp_path: Path,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    available_reviewed = _continuation(origin).model_copy(
+        update={"report_path": "docs/catalog-curation/pr-42.json"}
+    )
+    store.save_continuation(available_reviewed, origin)
+    origin.release()
+    remediation_run = RunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(minutes=1),
+    )
+    adopted_reviewed = store.adopt_continuation(
+        available_reviewed.work_id,
+        remediation_run,
+    )
+    resolving_reviewed = adopted_reviewed.model_copy(
+        update={
+            "updated_at": adopted_reviewed.updated_at + timedelta(microseconds=1),
+            "status": ContinuationStatus.RESOLVING,
+        }
+    )
+    legacy_remediation = _remediation(
+        remediation_run,
+        remediation_head=SHA_2,
+        updated_at=resolving_reviewed.updated_at + timedelta(microseconds=1),
+    )
+    store.save_continuation(resolving_reviewed, remediation_run)
+    store.save_remediation_continuation(legacy_remediation, remediation_run)
+    remediation_run.release()
+    successor = RunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(minutes=4),
+    )
+
+    adopted = store.adopt_remediation_continuation(
+        legacy_remediation.work_id,
+        successor,
+        superseded_reviewed=resolving_reviewed,
+    )
+
+    assert adopted.origin_run_id == resolving_reviewed.origin_run_id
+    assert adopted.recovery_run_id == successor.run_id
+
+
 def test_remediation_promotion_leaves_both_records_unchanged_when_reviewed_write_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
