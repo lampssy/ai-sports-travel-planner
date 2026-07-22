@@ -978,11 +978,13 @@ eligible again only after a new commit. An unchanged `waiting-ci` head remains
 visible for a lightweight readiness transition that never rebases or repeats
 semantic review.
 
-All publication text comes from owner-private direct-child files under the
-maintainer state directory. Errors and Triage outcomes are bounded and do not
-echo untrusted prose, sources, command output, paths, environment values, or
-credentials. `mutation_occurred` describes the current invocation, including
-false for idempotent retries.
+All publication text is created by the lease-bound `publication-input create`
+capability: it consumes bounded UTF-8 from stdin, makes a random mode-`0600`
+direct child through the already-validated state-directory descriptor, fsyncs,
+rechecks lease ownership, and returns only the basename. Errors and Triage
+outcomes do not echo untrusted prose, sources, command output, paths,
+environment values, or credentials. `mutation_occurred` describes the current
+invocation, including false for idempotent retries.
 
 The maintainer never approves or merges. The repository implementation does not
 install the personal skill or schedules. Post-merge installation, review,

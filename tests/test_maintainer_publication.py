@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -22,6 +23,7 @@ from ops.maintainer.models import (
 from ops.maintainer.publication import (
     PublicationInputError,
     PublicationPlan,
+    create_publication_text,
     outcome_plan,
     parse_machine_state,
     parse_outcome_state,
@@ -946,6 +948,21 @@ def test_read_publication_text_accepts_private_direct_child(
     _write_private(state_dir / basename, payload)
 
     assert read_publication_text(state_dir, basename, kind=kind) == payload.decode()
+
+
+def test_create_publication_text_writes_private_direct_child_for_round_trip(
+    tmp_path: Path,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(state_dir, "curation")
+
+    basename = create_publication_text(lease, kind="body", payload=b"Review body\n")
+
+    path = state_dir / basename
+    assert path.parent == state_dir
+    assert path.read_bytes() == b"Review body\n"
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert read_publication_text(state_dir, basename, kind="body") == "Review body\n"
 
 
 @pytest.mark.parametrize(

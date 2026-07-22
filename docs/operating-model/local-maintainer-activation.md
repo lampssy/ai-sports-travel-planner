@@ -157,8 +157,10 @@ The installed skill must:
 - allow bounded multi-line Markdown in canonical summaries while retaining
   private-file containment, byte/UTF-8 limits, and rejection of unsafe controls
   or reserved maintainer markers;
-- create trusted title, body, and summary files as owner-private direct children
-  of the maintainer state directory and pass only their basenames to the helper;
+- create every trusted title, body, and summary through lease-bound
+  `publication-input create`, supplying bounded UTF-8 on stdin and retaining
+  only its random mode-`0600` direct-child basename; never supply a source path
+  or print the publication text;
 - write a concise current PR-body synopsis for every waiting-CI or ready
   request, including recovery and lightweight readiness runs, and explicitly
   adopt an unmarked legacy body only through the helper's `--adopt-body`

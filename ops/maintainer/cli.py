@@ -98,6 +98,24 @@ def _parser() -> argparse.ArgumentParser:
     inspect_commands.add_parser("curation")
     inspect_commands.add_parser("discovery")
 
+    publication_input = families.add_parser("publication-input")
+    publication_input_commands = publication_input.add_subparsers(
+        dest="command",
+        required=True,
+    )
+    publication_input_create = publication_input_commands.add_parser("create")
+    publication_input_create.add_argument(
+        "--worker",
+        choices=("curation", "discovery"),
+        required=True,
+    )
+    publication_input_create.add_argument(
+        "--kind",
+        choices=("title", "body", "summary"),
+        required=True,
+    )
+    _add_run_id(publication_input_create)
+
     prepare = families.add_parser("prepare")
     prepare_commands = prepare.add_subparsers(dest="command", required=True)
     prepare_curation = prepare_commands.add_parser("curation")

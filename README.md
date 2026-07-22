@@ -210,6 +210,7 @@ The final command families are:
 ```text
 lock acquire|heartbeat|release
 inspect curation|discovery
+publication-input create
 prepare curation
 validate curation|proposal
 publish push|manual-check|recover|proposal|outcome|state|ensure-labels
@@ -238,13 +239,16 @@ catalog and "already proposed" comes from GitHub. The modified proposal
 worktree is never treated as the accepted catalog, so a proposal cannot reject
 itself merely because it contains the candidate it is adding.
 
-Publication prose is passed only through owner-private, direct-child
-`title-file`, `body-file`, and `summary-file` basenames inside
-`STATE_DIR`. The helper rejects symlinks, unsafe ownership or permissions,
-invalid UTF-8, and oversized content. Caller-selected paths are never passed to
-`gh`. `waiting-ci` and `ready` publication require a concise current synopsis
-through `--body-file`. For newly validated schema-v3 work, that synopsis must
-contain the exact canonical resulting-graph Mermaid section persisted from the
+Publication prose is created only through lease-bound `publication-input
+create`: raw bounded UTF-8 arrives on stdin, and the helper returns a random
+owner-private direct-child basename in `STATE_DIR`. It uses descriptor-relative
+exclusive no-follow creation, exact mode `0600`, and never echoes the text or a
+caller path. Workflows pass only those returned basenames to publication
+commands; the reader rejects unsafe text/files and never passes caller paths to
+`gh`.
+`waiting-ci` and `ready` publication require a concise current synopsis through
+`--body-file`. For newly validated schema-v3 work, that synopsis must contain
+the exact canonical resulting-graph Mermaid section persisted from the
 validated head; the helper rejects missing or independently edited diagrams
 before GitHub mutation. On an automation-owned curation PR whose legacy body
 has no managed markers, `--adopt-body` explicitly replaces that legacy

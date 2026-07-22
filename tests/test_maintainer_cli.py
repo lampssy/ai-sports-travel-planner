@@ -31,6 +31,7 @@ from ops.maintainer.github import GitHubComment, GitHubError
 from ops.maintainer.intent import IntentDiffEntry, IntentSnapshot
 from ops.maintainer.models import MachineState, MaintainerState, PullRequest
 from ops.maintainer.publication import (
+    create_publication_text,
     render_machine_state,
     trusted_machine_state,
     trusted_outcome_state,
@@ -599,6 +600,7 @@ EXPECTED_HANDLERS = {
     ("publish", "outcome"),
     ("publish", "state"),
     ("publish", "ensure-labels"),
+    ("publication-input", "create"),
 }
 
 
@@ -2014,6 +2016,55 @@ def test_publish_manual_check_pushes_reviewed_unvalidated_head(
     assert journal is not None and journal.phase is PushPhase.PUBLISHED
     assert work is not None and work.phase is WorkPhase.REVIEWED
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
+
+
+def test_publish_manual_check_accepts_writer_created_graph_inputs(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    summary = create_publication_text(
+        lease,
+        kind="summary",
+        payload=b"Owner review required.",
+    )
+    body = create_publication_text(
+        lease,
+        kind="body",
+        payload=f"Reviewed unresolved work.\n\n{CANONICAL_GRAPH}".encode(),
+    )
+
+    code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "manual-check",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--summary-file",
+            summary,
+            "--body-file",
+            body,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0
+    assert CANONICAL_GRAPH in github.pull_requests[42].body
 
 
 def test_publish_manual_check_reuses_head_recorded_before_validation_failure(

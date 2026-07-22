@@ -8,6 +8,7 @@ from collections.abc import Callable, Sequence, Set
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Protocol
+from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -75,6 +76,8 @@ _PUBLICATION_TEXT_LIMITS = {
     "summary": 16_384,
 }
 
+_PUBLICATION_INPUT_CREATE_ATTEMPTS = 8
+
 
 class PublicationInputError(RuntimeError):
     """A caller-selected publication input failed the private-file contract."""
@@ -87,6 +90,106 @@ class PublicationInputError(RuntimeError):
     ) -> None:
         self.kind = kind
         super().__init__(message)
+
+
+def create_publication_text(
+    lease: RunLease,
+    *,
+    kind: Literal["title", "body", "summary"],
+    payload: bytes,
+) -> str:
+    """Create one private, lease-bound publication input and return its basename."""
+    if (
+        type(kind) is not str
+        or kind not in _PUBLICATION_TEXT_LIMITS
+        or type(payload) is not bytes
+        or not hasattr(os, "O_NOFOLLOW")
+    ):
+        raise PublicationInputError("publication input is unsafe")
+    limit = _PUBLICATION_TEXT_LIMITS[kind]
+    if len(payload) > limit:
+        raise PublicationInputError("publication input is unsafe")
+    try:
+        value = payload.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        raise PublicationInputError("publication input is unsafe") from None
+    if kind == "title" and (not value.strip() or "\n" in value or "\r" in value):
+        raise PublicationInputError("publication input is unsafe")
+
+    lease.assert_owner()
+    directory_descriptor: int | None = None
+    file_descriptor: int | None = None
+    basename: str | None = None
+    created = False
+    completed = False
+    try:
+        directory_descriptor = _open_private_state_directory(lease.state_dir)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        for _attempt in range(_PUBLICATION_INPUT_CREATE_ATTEMPTS):
+            candidate = f"publication-input-{uuid4().hex}"
+            try:
+                file_descriptor = os.open(
+                    candidate,
+                    flags,
+                    0o600,
+                    dir_fd=directory_descriptor,
+                )
+            except FileExistsError:
+                continue
+            basename = candidate
+            created = True
+            break
+        if file_descriptor is None or basename is None:
+            raise PublicationInputError("publication input is unsafe")
+        os.fchmod(file_descriptor, 0o600)
+        _write_all(file_descriptor, payload)
+        os.fsync(file_descriptor)
+        lease.assert_owner()
+        _fsync_publication_directory(directory_descriptor)
+        lease.assert_owner()
+        completed = True
+        return basename
+    except PublicationInputError:
+        raise
+    except OSError:
+        raise PublicationInputError("publication input is unsafe") from None
+    finally:
+        if file_descriptor is not None:
+            os.close(file_descriptor)
+        if (
+            created
+            and not completed
+            and basename is not None
+            and directory_descriptor is not None
+        ):
+            try:
+                os.unlink(basename, dir_fd=directory_descriptor)
+                _fsync_publication_directory(directory_descriptor)
+            except OSError:
+                pass
+        if directory_descriptor is not None:
+            os.close(directory_descriptor)
+
+
+def validate_publication_state_directory(state_dir: str | Path) -> None:
+    """Require the exact private directory contract before accepting stdin."""
+    descriptor = _open_private_state_directory(Path(state_dir))
+    os.close(descriptor)
+
+
+def _write_all(descriptor: int, payload: bytes) -> None:
+    offset = 0
+    while offset < len(payload):
+        written = os.write(descriptor, payload[offset:])
+        if written <= 0:
+            raise OSError("publication input write failed")
+        offset += written
+
+
+def _fsync_publication_directory(descriptor: int) -> None:
+    os.fsync(descriptor)
 
 
 class PublicationPlan(BaseModel):

@@ -1038,17 +1038,14 @@ Example:
   timeouts.
 - Git commands use validated argv, approved remotes, strict noninteractive
   transport, and exact heads.
-- Caller-selected title, body, and summary files must be direct-child,
-  owner-private regular files in the maintainer state directory. The helper
-  opens the already-validated private directory once and opens a validated
-  basename relative to that descriptor with no symlink following; nested paths
-  and symlinked ancestors are impossible. Inputs have strict byte limits and
-  valid UTF-8. The helper passes only validated strings to the GitHub adapter,
-  which writes its own mode-0600 temporary files; caller paths are never passed
-  to `gh`.
-- Callers pass only direct-child basenames to `--title-file`, `--body-file`, and
-  `--summary-file`; path-shaped input returns safe
-  `publication-input/not-basename` diagnostics without echoing the path.
+- Lease-bound `publication-input create` receives title, body, or summary bytes
+  only on stdin. It validates bounded UTF-8, creates one random direct-child
+  basename descriptor-relatively with `O_CREAT|O_EXCL|O_NOFOLLOW` and exact
+  mode `0600`, fsyncs it, rechecks the lease, and returns only that basename.
+  It accepts no filename/source path and never echoes publication text.
+- Workflows pass only helper-created direct-child basenames to publication
+  commands. The reader remains fail-closed for unsafe directories, symlinks,
+  ownership, modes, UTF-8, and size; caller paths are never passed to `gh`.
 - Summary text may use bounded multi-line Markdown. The helper normalizes line
   endings and rejects NUL/unsafe controls, maintainer markers, and raw HTML
   comment delimiters so prose cannot corrupt the canonical machine record.

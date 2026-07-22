@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
@@ -49,6 +50,7 @@ from ops.maintainer.models import (
 )
 from ops.maintainer.publication import (
     PublicationInputError,
+    create_publication_text,
     outcome_plan,
     publication_plan,
     publish_discovery_proposal,
@@ -57,6 +59,7 @@ from ops.maintainer.publication import (
     read_publication_text,
     trusted_hold_head,
     trusted_machine_state,
+    validate_publication_state_directory,
 )
 from ops.maintainer.runtime import (
     LeaseOwnershipError,
@@ -1656,6 +1659,38 @@ def handle_ensure_labels(
     return {"worker": args.worker}
 
 
+def _read_publication_stdin() -> bytes:
+    try:
+        payload = sys.stdin.buffer.read(65_537)
+    except (AttributeError, OSError):
+        raise PublicationInputError("publication input is unsafe") from None
+    if type(payload) is not bytes:
+        raise PublicationInputError("publication input is unsafe")
+    return payload
+
+
+def handle_publication_input_create(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    validate_publication_state_directory(args.state_dir)
+    try:
+        lease = _owned_lease(args, args.worker, dependencies)
+    except RunLeaseError as exc:
+        raise LeaseOwnershipError(
+            "maintainer run does not own the active lock"
+        ) from exc
+    dependencies.tracker.stage = ErrorStage.PUBLISH
+    basename = create_publication_text(
+        lease,
+        kind=args.kind,
+        payload=_read_publication_stdin(),
+    )
+    dependencies.tracker.mutation_occurred = True
+    dependencies.tracker.terminal_reason = "publication-input-created"
+    return {"basename": basename}
+
+
 HANDLERS: dict[tuple[str, str], Handler] = {
     ("inspect", "curation"): handle_inspect_curation,
     ("inspect", "discovery"): handle_inspect_discovery,
@@ -1671,6 +1706,7 @@ HANDLERS: dict[tuple[str, str], Handler] = {
     ("publish", "outcome"): handle_publish_outcome,
     ("publish", "state"): handle_publish_state,
     ("publish", "ensure-labels"): handle_ensure_labels,
+    ("publication-input", "create"): handle_publication_input_create,
 }
 
 
