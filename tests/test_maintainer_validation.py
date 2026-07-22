@@ -32,6 +32,7 @@ from ops.maintainer.state import PushJournal, PushPhase
 from ops.maintainer.validation import (
     _PROCESS_GROUP_GRACE_SECONDS,
     VALIDATION_COMMAND_TIMEOUT_SECONDS,
+    DeltaValidationResult,
     ProposalValidationResult,
     ValidationResult,
     _SubprocessValidationRunner,
@@ -39,6 +40,7 @@ from ops.maintainer.validation import (
     _validate_catalog_delta,
     _write_private_object,
     validate_curation,
+    validate_curation_delta,
     validate_proposal,
 )
 from tests.test_catalog_models import minimal_catalog_payload
@@ -182,6 +184,15 @@ def _current_graph_report_payload() -> dict[str, object]:
                     }
                 ],
                 "rationale": "The access relationship is represented explicitly.",
+                "graph_impact": "graph_blocking",
+            }
+        ],
+        "review_evidence_envelope": [
+            {
+                "family_id": "example-access",
+                "source_kind": "access_transport",
+                "source_urls": ["https://example.com/access"],
+                "candidate_kinds": ["ski_area_access"],
             }
         ],
     }
@@ -194,6 +205,12 @@ class FakeLiveRepository:
         self.fail = False
         self.revalidate_calls = 0
         self.base_calls = 0
+        self.immutable_texts = {
+            CATALOG_PATH: json.dumps(minimal_catalog_payload()),
+            REPORT_PATH: json.dumps(_current_graph_report_payload()),
+        }
+        self.immutable_sizes: dict[str, int] = {}
+        self.immutable_calls: list[tuple[str, str, int]] = []
 
     def revalidate_prepared_result(
         self,
@@ -220,14 +237,14 @@ class FakeLiveRepository:
         *,
         max_bytes: int,
     ) -> str:
+        self.immutable_calls.append((revision, path, max_bytes))
         assert revision == SHA_B
-        if path == CATALOG_PATH:
-            value = json.dumps(minimal_catalog_payload())
-        elif path == REPORT_PATH:
-            value = json.dumps(_current_graph_report_payload())
-        else:
+        value = self.immutable_texts.get(path)
+        if value is None:
             raise RepositorySafetyError("unexpected immutable object")
-        assert len(value.encode("utf-8")) <= max_bytes
+        size = self.immutable_sizes.get(path, len(value.encode("utf-8")))
+        if not 1 <= size <= max_bytes:
+            raise RepositorySafetyError("raw immutable object failed bounds")
         return value
 
 
@@ -429,6 +446,260 @@ def test_validate_curation_runs_fixed_commands_for_one_exact_head(
     assert "tests/test_catalog_curation_backlog.py" not in commands[2]
     assert reviewed.revalidate_calls == 5
     assert base.base_calls == 5
+
+
+def test_validate_curation_delta_runs_only_the_two_non_pytest_commands(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    runner = RecordingRunner()
+
+    result = validate_curation_delta(
+        pull_request=_pull_request(),
+        sync=_sync(),
+        remediation_head=SHA_B,
+        report_path=REPORT_PATH,
+        repository=reviewed,  # type: ignore[arg-type]
+        base_repository=base,  # type: ignore[arg-type]
+        runner=runner,
+    )
+
+    assert isinstance(result, DeltaValidationResult)
+    assert result.remediation_head == SHA_B
+    assert result.commands_completed == 2
+    assert len(result.observations) == 2
+    commands = [call[0] for call in runner.calls]
+    assert len(commands) == 2
+    assert all("pytest" not in command for command in commands)
+
+
+@pytest.mark.parametrize(
+    ("failure", "check", "kind"),
+    [
+        ("command", ErrorCheck.CATALOG_VALIDATION, ErrorKind.COMMAND_FAILED),
+        ("timeout", ErrorCheck.CURATION_RECONCILIATION, ErrorKind.TIMEOUT),
+    ],
+)
+def test_validate_curation_delta_preserves_structured_command_failures(
+    tmp_path: Path,
+    failure: Literal["command", "timeout"],
+    check: ErrorCheck,
+    kind: ErrorKind,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    runner = (
+        RecordingRunner(returncodes=(1,))
+        if failure == "command"
+        else RecordingRunner(timeout_at=2)
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation_delta(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            remediation_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=runner,
+        )
+
+    assert exc_info.value.check is check
+    assert exc_info.value.kind is kind
+
+
+def test_validate_curation_delta_rejects_plan_drift(tmp_path: Path) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation_delta(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            remediation_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=RecordingRunner(mutate_after=1, repository=reviewed),
+        )
+
+    assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+
+
+@pytest.mark.parametrize("missing", ["review_evidence_envelope", "graph_impact"])
+def test_validate_curation_rejects_incomplete_bounded_review_inventory(
+    tmp_path: Path,
+    missing: Literal["review_evidence_envelope", "graph_impact"],
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    payload = _current_graph_report_payload()
+    if missing == "review_evidence_envelope":
+        payload.pop(missing)
+    else:
+        payload["entity_scope_assessments"][0].pop(missing)  # type: ignore[index]
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(payload)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            reviewed_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=RecordingRunner(),
+        )
+
+    assert exc_info.value.check is ErrorCheck.POST_VALIDATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+
+
+def _regional_followup_report_payload() -> dict[str, object]:
+    payload = _current_graph_report_payload()
+    payload["entity_scope_assessments"].append(  # type: ignore[index]
+        {
+            "candidate_id": "regional-followup",
+            "candidate_name": "Regional followup",
+            "candidate_kind": "stay_destination",
+            "disposition": "deferred",
+            "signals": ["independent_stay_market"],
+            "evidence_refs": ["example-access-scope"],
+            "target_refs": [],
+            "backlog_ref": "docs/product-backlog.md#regional-followup",
+            "rationale": "A bounded regional followup remains necessary.",
+            "graph_impact": "regional_followup",
+        }
+    )
+    return payload
+
+
+def test_validate_curation_accepts_exact_head_regional_followup_anchor(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(
+        _regional_followup_report_payload()
+    )
+    reviewed.immutable_texts[BACKLOG_PATH] = (
+        "# Product Backlog\n\n## Regional Followup\n"
+    )
+
+    result = validate_curation(
+        pull_request=_pull_request(),
+        sync=_sync(),
+        reviewed_head=SHA_B,
+        report_path=REPORT_PATH,
+        repository=reviewed,  # type: ignore[arg-type]
+        base_repository=base,  # type: ignore[arg-type]
+        runner=RecordingRunner(),
+    )
+
+    assert result.validated_head == SHA_B
+    assert (SHA_B, BACKLOG_PATH, 1_000_000) in reviewed.immutable_calls
+
+
+@pytest.mark.parametrize(
+    "backlog",
+    [
+        "# Product Backlog\n\n## Different Heading\n",
+        "{not markdown",
+        None,
+    ],
+)
+def test_validate_curation_rejects_missing_or_invalid_regional_followup_backlog(
+    tmp_path: Path,
+    backlog: str | None,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(
+        _regional_followup_report_payload()
+    )
+    if backlog is not None:
+        reviewed.immutable_texts[BACKLOG_PATH] = backlog
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            reviewed_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=RecordingRunner(),
+        )
+
+    assert exc_info.value.check is ErrorCheck.POST_VALIDATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+    assert "markdown" not in json.dumps(exc_info.value.payload())
+
+
+def test_validate_curation_rejects_oversized_regional_followup_backlog(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(
+        _regional_followup_report_payload()
+    )
+    reviewed.immutable_texts[BACKLOG_PATH] = "# Product Backlog\n"
+    reviewed.immutable_sizes[BACKLOG_PATH] = 1_000_001
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            reviewed_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=RecordingRunner(),
+        )
+
+    assert exc_info.value.check is ErrorCheck.POST_VALIDATION
+    assert "oversized" not in json.dumps(exc_info.value.payload())
+
+
+def test_validate_curation_rejects_ambiguous_regional_followup_anchor(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(
+        _regional_followup_report_payload()
+    )
+    reviewed.immutable_texts[BACKLOG_PATH] = (
+        "# Product Backlog\n\n## Regional Followup\n\n### Regional Followup\n"
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            reviewed_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=RecordingRunner(),
+        )
+
+    assert exc_info.value.check is ErrorCheck.POST_VALIDATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+
+
+def test_validate_curation_does_not_read_backlog_without_regional_followup(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+
+    validate_curation(
+        pull_request=_pull_request(),
+        sync=_sync(),
+        reviewed_head=SHA_B,
+        report_path=REPORT_PATH,
+        repository=reviewed,  # type: ignore[arg-type]
+        base_repository=base,  # type: ignore[arg-type]
+        runner=RecordingRunner(),
+    )
+
+    assert all(path != BACKLOG_PATH for _, path, _ in reviewed.immutable_calls)
 
 
 @pytest.mark.parametrize(
@@ -674,6 +945,15 @@ def _report_payload(
                 "rationale": (
                     "The source supports a separately represented destination."
                 ),
+                "graph_impact": "graph_blocking",
+            }
+        ],
+        "review_evidence_envelope": [
+            {
+                "family_id": "nendaz-identity",
+                "source_kind": "destination_booking",
+                "source_urls": ["https://example.com/nendaz"],
+                "candidate_kinds": ["stay_destination"],
             }
         ],
         "destination_boundary_assessments": [
@@ -810,6 +1090,103 @@ def test_validate_proposal_requires_resulting_graph_for_schema_three() -> None:
     payload = json.loads(repository.texts[(SHA_B, REPORT_PATH)])
     payload.pop("resulting_graph")
     repository.texts[(SHA_B, REPORT_PATH)] = json.dumps(payload)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_proposal(
+            candidate_key=CANDIDATE_KEY,
+            candidate_origin="external",
+            base=SHA_A,
+            head=SHA_B,
+            snapshot=snapshot,
+            discovery_inventory=inventory,
+            repository=repository,  # type: ignore[arg-type]
+        )
+
+    assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
+
+
+@pytest.mark.parametrize("missing", ["review_evidence_envelope", "graph_impact"])
+def test_validate_proposal_rejects_incomplete_bounded_review_inventory(
+    missing: Literal["review_evidence_envelope", "graph_impact"],
+) -> None:
+    repository, snapshot, inventory = _proposal_dependencies()
+    payload = json.loads(repository.texts[(SHA_B, REPORT_PATH)])
+    if missing == "review_evidence_envelope":
+        payload.pop(missing)
+    else:
+        payload["entity_scope_assessments"][0].pop(missing)
+    repository.texts[(SHA_B, REPORT_PATH)] = json.dumps(payload)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_proposal(
+            candidate_key=CANDIDATE_KEY,
+            candidate_origin="external",
+            base=SHA_A,
+            head=SHA_B,
+            snapshot=snapshot,
+            discovery_inventory=inventory,
+            repository=repository,  # type: ignore[arg-type]
+        )
+
+    assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+
+
+def test_validate_proposal_accepts_exact_head_regional_followup_anchor() -> None:
+    repository, snapshot, inventory = _proposal_dependencies()
+    payload = json.loads(repository.texts[(SHA_B, REPORT_PATH)])
+    payload["entity_scope_assessments"].append(
+        {
+            "candidate_id": "regional-followup",
+            "candidate_name": "Regional followup",
+            "candidate_kind": "stay_destination",
+            "disposition": "deferred",
+            "signals": ["independent_stay_market"],
+            "evidence_refs": ["nendaz-identity"],
+            "target_refs": [],
+            "backlog_ref": "docs/product-backlog.md#regional-followup",
+            "rationale": "A bounded regional followup remains necessary.",
+            "graph_impact": "regional_followup",
+        }
+    )
+    repository.texts[(SHA_B, REPORT_PATH)] = json.dumps(payload)
+    repository.texts[(SHA_B, BACKLOG_PATH)] = (
+        "# Product Backlog\n\n## Regional Followup\n"
+    )
+
+    result = validate_proposal(
+        candidate_key=CANDIDATE_KEY,
+        candidate_origin="external",
+        base=SHA_A,
+        head=SHA_B,
+        snapshot=snapshot,
+        discovery_inventory=inventory,
+        repository=repository,  # type: ignore[arg-type]
+    )
+
+    assert result.validated_head == SHA_B
+    assert (SHA_B, BACKLOG_PATH) in repository.show_calls
+
+
+def test_validate_proposal_rejects_missing_regional_followup_anchor() -> None:
+    repository, snapshot, inventory = _proposal_dependencies()
+    payload = json.loads(repository.texts[(SHA_B, REPORT_PATH)])
+    payload["entity_scope_assessments"].append(
+        {
+            "candidate_id": "regional-followup",
+            "candidate_name": "Regional followup",
+            "candidate_kind": "stay_destination",
+            "disposition": "deferred",
+            "signals": ["independent_stay_market"],
+            "evidence_refs": ["nendaz-identity"],
+            "target_refs": [],
+            "backlog_ref": "docs/product-backlog.md#regional-followup",
+            "rationale": "A bounded regional followup remains necessary.",
+            "graph_impact": "regional_followup",
+        }
+    )
+    repository.texts[(SHA_B, REPORT_PATH)] = json.dumps(payload)
+    repository.texts[(SHA_B, BACKLOG_PATH)] = "# Product Backlog\n\n## Another Region\n"
 
     with pytest.raises(MaintainerError) as exc_info:
         validate_proposal(
