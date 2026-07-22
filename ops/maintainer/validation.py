@@ -596,6 +596,13 @@ def validate_proposal(
                 head_catalog,
                 report,
             )
+            _validate_backlog_destination_proposal_scope(
+                candidate_key,
+                candidate_origin,
+                base_catalog,
+                head_catalog,
+                report,
+            )
             if any(
                 issue.severity == "error"
                 for issue in catalog_policy_issues(head_catalog)
@@ -855,6 +862,88 @@ def _validate_catalog_delta(
         report,
     ):
         raise ValueError("catalog candidate delta is invalid")
+
+
+def _validate_backlog_destination_proposal_scope(
+    candidate_key: str,
+    candidate_origin: str,
+    base_catalog: CatalogSnapshot,
+    head_catalog: CatalogSnapshot,
+    report: CatalogCurationReport,
+) -> None:
+    candidate_kind, candidate_id = candidate_key.split(":", maxsplit=1)
+    if candidate_origin != "backlog" or candidate_kind != "stay_destination":
+        return
+
+    graph = report.resulting_graph
+    if graph is None or graph.focus_stay_destination_ids != [candidate_id]:
+        raise ValueError("backlog destination proposal focus is invalid")
+
+    destination = next(
+        (
+            item
+            for item in head_catalog.stay_destinations
+            if item.stay_destination_id == candidate_id
+        ),
+        None,
+    )
+    if destination is None:
+        raise ValueError("backlog destination proposal focus is invalid")
+
+    base_ids = {
+        item.stay_base_id
+        for item in head_catalog.stay_bases
+        if item.stay_destination_id == candidate_id
+    }
+    access = tuple(
+        item for item in head_catalog.ski_area_access if item.stay_base_id in base_ids
+    )
+    passes = tuple(
+        item
+        for item in head_catalog.lift_pass_products
+        if candidate_id in item.available_from_stay_destination_ids
+        or candidate_id in item.default_for_stay_destination_ids
+    )
+    domain_ids = {
+        domain_id for product in passes for domain_id in product.terrain_domain_ids
+    }
+    areas_by_domain = {
+        item.terrain_domain_id: set(item.ski_area_ids)
+        for item in head_catalog.terrain_domains
+    }
+    area_ids = (
+        {item.ski_area_id for item in access}
+        | {area_id for product in passes for area_id in product.valid_ski_area_ids}
+        | {
+            area_id
+            for domain_id in domain_ids
+            for area_id in areas_by_domain.get(domain_id, set())
+        }
+    )
+    domain_ids.update(
+        item.terrain_domain_id
+        for item in head_catalog.terrain_domains
+        if item.ski_area_ids and set(item.ski_area_ids).issubset(area_ids)
+    )
+
+    allowed_keys = {
+        candidate_key,
+        f"ski_region:{destination.trip_market_region_id}",
+        *(f"stay_base:{base_id}" for base_id in base_ids),
+        *(f"ski_area_access:{item.ski_area_access_id}" for item in access),
+        *(f"ski_area:{area_id}" for area_id in area_ids),
+        *(f"terrain_domain:{domain_id}" for domain_id in domain_ids),
+        *(f"lift_pass_product:{item.lift_pass_product_id}" for item in passes),
+        *(
+            f"rental_display_fact:{item.rental_display_fact_id}"
+            for item in head_catalog.rental_display_facts
+            if item.stay_destination_id == candidate_id
+        ),
+    }
+    if not (_catalog_keys(head_catalog) - _catalog_keys(base_catalog)).issubset(
+        allowed_keys
+    ):
+        raise ValueError("backlog destination proposal contains unrelated additions")
 
 
 def _is_explicit_decision_bearing_rekey(
