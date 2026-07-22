@@ -331,7 +331,10 @@ def test_remediation_promotion_writes_reviewed_before_consuming_remediation(
     store = StateStore(tmp_path)
     remediation = _remediation(lease)
     store.save_remediation_continuation(remediation, lease)
-    reviewed = _continuation(lease, updated_at=NOW + timedelta(minutes=1))
+    reviewed = _continuation(
+        lease,
+        updated_at=NOW + timedelta(minutes=1),
+    ).model_copy(update={"report_path": remediation.report_path})
     original_save = StateStore._save_model
     writes = 0
 
@@ -368,7 +371,10 @@ def test_remediation_promotion_leaves_both_records_unchanged_when_reviewed_write
     lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     remediation = _remediation(lease)
-    reviewed = _continuation(lease, updated_at=NOW + timedelta(minutes=1))
+    reviewed = _continuation(
+        lease,
+        updated_at=NOW + timedelta(minutes=1),
+    ).model_copy(update={"report_path": remediation.report_path})
     store.save_remediation_continuation(remediation, lease)
 
     def fail_first_write(
@@ -385,6 +391,125 @@ def test_remediation_promotion_leaves_both_records_unchanged_when_reviewed_write
 
     assert store.load_continuation(remediation.work_id) is None
     assert store.load_remediation_continuation(remediation.work_id) == remediation
+
+
+@pytest.mark.parametrize("mismatch", ["selected_head", "sync", "report_path", "head"])
+def test_remediation_promotion_requires_exact_reviewed_authority(
+    tmp_path: Path,
+    mismatch: str,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    remediation = _remediation(lease)
+    store.save_remediation_continuation(remediation, lease)
+    reviewed = _continuation(lease).model_copy(
+        update={"report_path": remediation.report_path}
+    )
+    if mismatch == "selected_head":
+        reviewed = reviewed.model_copy(
+            update={
+                "selected_head": SHA_2,
+                "sync": reviewed.sync.model_copy(update={"original_head": SHA_2}),
+            }
+        )
+    elif mismatch == "sync":
+        reviewed = reviewed.model_copy(
+            update={"sync": reviewed.sync.model_copy(update={"base_head": SHA_3})}
+        )
+    elif mismatch == "report_path":
+        reviewed = reviewed.model_copy(
+            update={"report_path": "docs/catalog-curation/other.json"}
+        )
+    else:
+        reviewed = reviewed.model_copy(update={"reviewed_head": SHA_4})
+
+    with pytest.raises(StateStoreError, match="authority"):
+        store.promote_remediation_to_reviewed(remediation, reviewed, lease)
+
+    assert store.load_continuation(remediation.work_id) is None
+    assert store.load_remediation_continuation(remediation.work_id) == remediation
+
+
+def test_terminal_remediation_allows_only_new_head_from_successor_run(
+    tmp_path: Path,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    terminal = _remediation(
+        origin,
+        status=RemediationContinuationStatus.CONSUMED,
+    )
+    _write_model(
+        tmp_path / "remediation-continuations" / "curation-pr-42.json",
+        terminal,
+    )
+    successor = RunLease.acquire(tmp_path, "curation", now=NOW + timedelta(hours=7))
+
+    with pytest.raises(StateStoreError, match="same-head"):
+        store.save_remediation_continuation(
+            _remediation(
+                successor,
+                updated_at=terminal.updated_at + timedelta(microseconds=1),
+            ),
+            successor,
+        )
+
+    replacement = _remediation(
+        successor,
+        selected_head=SHA_2,
+        updated_at=terminal.updated_at + timedelta(microseconds=2),
+    )
+    store.save_remediation_continuation(replacement, successor)
+
+    assert store.load_remediation_continuation(replacement.work_id) == replacement
+
+
+def test_successor_finishes_crash_safe_remediation_promotion(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    remediation = _remediation(origin)
+    reviewed = _continuation(origin).model_copy(
+        update={"report_path": remediation.report_path}
+    )
+    store.save_remediation_continuation(remediation, origin)
+    original_save = StateStore._save_model
+    writes = 0
+
+    def fail_after_reviewed_write(
+        self: StateStore,
+        directory: Path,
+        work_id: str,
+        model: object,
+    ) -> None:
+        nonlocal writes
+        writes += 1
+        if writes == 2:
+            raise OSError("simulated crash")
+        original_save(self, directory, work_id, model)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(StateStore, "_save_model", fail_after_reviewed_write)
+    with pytest.raises(OSError, match="simulated crash"):
+        store.promote_remediation_to_reviewed(remediation, reviewed, origin)
+    monkeypatch.setattr(StateStore, "_save_model", original_save)
+
+    successor = RunLease.acquire(tmp_path, "curation", now=NOW + timedelta(hours=7))
+    adopted = store.adopt_remediation_continuation(remediation.work_id, successor)
+    successor_reviewed = reviewed.model_copy(
+        update={
+            "recovery_run_id": successor.run_id,
+            "updated_at": adopted.updated_at + timedelta(microseconds=1),
+        }
+    )
+    store.promote_remediation_to_reviewed(adopted, successor_reviewed, successor)
+
+    assert (
+        store.load_remediation_continuation(remediation.work_id).status
+        is RemediationContinuationStatus.CONSUMED
+    )
+    assert store.load_continuation(remediation.work_id) == reviewed
 
 
 def test_successor_adopts_available_continuation_and_fences_origin(

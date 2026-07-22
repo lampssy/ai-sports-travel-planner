@@ -763,6 +763,41 @@ def test_unresolved_push_journal_blocks_discovery_creation_without_selection() -
     assert not hasattr(inventory, "selected_push")
 
 
+def test_discovery_journal_summary_redacts_private_recovery_state() -> None:
+    journal = PushJournal.model_validate(
+        {
+            **_journal().model_dump(),
+            "work_id": "discovery-tignes",
+            "worker": "discovery",
+            "pr_number": None,
+            "branch": "codex/discovery-tignes",
+            "expected_remote_head": None,
+            "candidate_key": "ski_area:tignes",
+            "candidate_origin": "external",
+        }
+    )
+
+    inventory = inspect_discovery(set(), (), (), {}, (journal,))
+    serialized = json.dumps(inventory.model_dump(mode="json"))
+
+    assert inventory.unresolved_pushes[0].model_dump(mode="json") == {
+        "worker": "discovery",
+        "work_id": "discovery-tignes",
+        "pr_number": None,
+        "candidate_key": "ski_area:tignes",
+        "candidate_origin": "external",
+        "phase": "authorized",
+        "expected_remote_head": None,
+        "new_head": SHA_B,
+    }
+    for private_value in (
+        journal.origin_run_id,
+        journal.recovery_run_id,
+        journal.branch,
+    ):
+        assert private_value not in serialized
+
+
 @pytest.mark.parametrize("workflow", ["curation", "discovery"])
 @pytest.mark.parametrize("invalid_kind", ["identical", "conflicting", "terminal"])
 def test_inspection_rejects_ambiguous_or_terminal_unresolved_journals(

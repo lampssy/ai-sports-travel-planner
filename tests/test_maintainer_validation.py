@@ -25,7 +25,7 @@ from ops.maintainer.errors import (
     MaintainerError,
 )
 from ops.maintainer.git_ops import GuardedSyncResult, RepositorySafetyError
-from ops.maintainer.inspection import DiscoveryInventory
+from ops.maintainer.inspection import DiscoveryInventory, inspect_discovery
 from ops.maintainer.intent import BACKLOG_PATH, IntentDiffEntry, IntentSnapshot
 from ops.maintainer.models import PullRequest
 from ops.maintainer.state import PushJournal, PushPhase
@@ -1070,13 +1070,7 @@ def _journal() -> PushJournal:
 
 def test_validate_proposal_rejects_unresolved_push_journal() -> None:
     repository, snapshot, inventory = _proposal_dependencies()
-    blocked = DiscoveryInventory.model_validate(
-        {
-            **inventory.model_dump(),
-            "can_create_proposal": False,
-            "unresolved_pushes": (_journal(),),
-        }
-    )
+    blocked = inspect_discovery(set(), (), (), {}, (_journal(),))
 
     with pytest.raises(MaintainerError):
         validate_proposal(

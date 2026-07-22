@@ -524,12 +524,30 @@ class StateStore:
         remediation = _revalidate_model(remediation, RemediationContinuation)
         with _transition_mutex(self.state_dir):
             self._assert_remediation_lease(remediation, lease)
-            if self.load_remediation_continuation(remediation.work_id) is not None:
+            existing = self.load_remediation_continuation(remediation.work_id)
+            if existing is None:
+                if remediation.status is not RemediationContinuationStatus.AVAILABLE:
+                    raise StateStoreError("new remediation must start available")
+                if remediation.origin_run_id != remediation.recovery_run_id:
+                    raise StateStoreError("new remediation must originate in this run")
+            elif (
+                existing.status
+                in {
+                    RemediationContinuationStatus.CONSUMED,
+                    RemediationContinuationStatus.INVALIDATED,
+                }
+                and remediation.status is RemediationContinuationStatus.AVAILABLE
+                and remediation.origin_run_id == remediation.recovery_run_id
+                and remediation.origin_run_id == lease.run_id
+                and existing.recovery_run_id != lease.run_id
+                and remediation.selected_head != existing.selected_head
+                and remediation.updated_at > existing.updated_at
+            ):
+                pass
+            elif existing.selected_head == remediation.selected_head:
+                raise StateStoreError("same-head remediation cannot reopen")
+            else:
                 raise StateStoreError("remediation continuation already exists")
-            if remediation.status is not RemediationContinuationStatus.AVAILABLE:
-                raise StateStoreError("new remediation must start available")
-            if remediation.origin_run_id != remediation.recovery_run_id:
-                raise StateStoreError("new remediation must originate in this run")
             self._save_model(
                 self.remediation_continuation_dir,
                 remediation.work_id,
@@ -680,17 +698,15 @@ class StateStore:
                 RemediationContinuationStatus.INVALIDATED,
             }:
                 raise StateStoreError("remediation continuation is terminal")
-            if (
-                reviewed.work_id != remediation.work_id
-                or reviewed.pr_number != remediation.pr_number
-            ):
-                raise StateStoreError(
-                    "reviewed continuation does not match remediation"
-                )
+            if not _reviewed_matches_remediation_authority(reviewed, remediation):
+                raise StateStoreError("reviewed continuation authority does not match")
             existing_reviewed = self.load_continuation(reviewed.work_id)
             if existing_reviewed is None:
                 self._save_model(self.continuation_dir, reviewed.work_id, reviewed)
-            elif existing_reviewed != reviewed:
+            elif not _reviewed_continuations_are_equivalent(
+                existing_reviewed,
+                reviewed,
+            ):
                 raise StateStoreError(
                     "reviewed continuation conflicts with remediation"
                 )
@@ -1287,3 +1303,38 @@ def _later_than(timestamp: datetime) -> datetime:
     if observed_at <= timestamp:
         return timestamp + timedelta(microseconds=1)
     return observed_at
+
+
+def _reviewed_matches_remediation_authority(
+    reviewed: ReviewedContinuation,
+    remediation: RemediationContinuation,
+) -> bool:
+    return (
+        reviewed.work_id == remediation.work_id
+        and reviewed.pr_number == remediation.pr_number
+        and reviewed.selected_head == remediation.selected_head
+        and reviewed.sync == remediation.sync
+        and reviewed.report_path == remediation.report_path
+        and reviewed.reviewed_head == remediation.remediation_head
+    )
+
+
+def _reviewed_continuations_are_equivalent(
+    existing: ReviewedContinuation,
+    requested: ReviewedContinuation,
+) -> bool:
+    return all(
+        getattr(existing, field_name) == getattr(requested, field_name)
+        for field_name in (
+            "work_id",
+            "pr_number",
+            "selected_head",
+            "reviewed_head",
+            "report_path",
+            "sync",
+            "reviewed_ref",
+            "squash_ref",
+            "status",
+            "validation_status",
+        )
+    )
