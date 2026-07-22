@@ -16,6 +16,9 @@
   directory, proposal cap of three, labels, and GitHub publication surface.
 - Keep `report_schema_version=3`; use the existing `resulting_graph`, entity
   scope assessments, backlog references, and review evidence envelope.
+- Final proposal validation requires the non-empty evidence envelope,
+  `graph_impact` on every assessment, exact-head backlog anchors, and exactly
+  one primary focus destination matching the selected backlog candidate.
 - Codex interprets backlog prose and source meaning. The helper validates
   typed/objective facts only.
 - One proposal covers one coherent destination graph slice: the destination,
@@ -193,6 +196,11 @@ A proposal is reviewable even when it flags re-keying, historical weather
 migration, or an owner choice. It must not pretend those issues are already
 resolved.
 
+The helper enforces only the objective slice boundary: exactly one focus stay
+destination matching `stay_destination:<id>`, exact-head backlog anchors, and
+no unrelated graph additions. Codex decides whether bases, ski areas, passes,
+access, and weather implications form a coherent product graph.
+
 - [ ] **Step 4: Define durable state transitions**
 
 Document that GitHub proposal identity and the merged schema-v3 report are the
@@ -238,7 +246,8 @@ If the backlog and ADR were unchanged, omit them from `git add`.
 - Consumes: existing `validate proposal`, schema-v3 canonical graph validation,
   proposal identity/cap checks, and publication contracts.
 - Produces: regression evidence that a proposal may contain a bounded
-  multi-entity destination graph without weakening negative safety gates.
+  multi-entity destination graph without weakening strict inventory, backlog,
+  or one-primary-destination gates.
 
 - [ ] **Step 1: Add a realistic regional-slice proposal fixture**
 
@@ -299,6 +308,12 @@ Keep focused tests proving rejection of:
 - stale base or remote head;
 - dirty worktree or disallowed file scope;
 - report/catalog/trust reconciliation mismatch.
+- an empty review evidence envelope or any missing graph impact;
+- a `regional_followup` whose exact-head backlog anchor does not exist;
+- zero or multiple focus stay destinations;
+- a focus stay destination that does not match the selected candidate; and
+- an unrelated added destination/entity outside the selected graph and its
+  declared linked dependencies.
 ```
 
 Add only missing regressions. Do not duplicate equivalent existing tests.
@@ -309,17 +324,26 @@ Add only missing regressions. Do not duplicate equivalent existing tests.
 uv run pytest tests/test_maintainer_validation.py -k "proposal or resulting_graph" -q
 ```
 
-Expected: all tests pass with no production change. If the positive regional
-fixture fails, first confirm the fixture obeys current schema-v3 and exact-base
-contracts. Change production code only for a generic false rejection, with a
-new failing test that isolates that defect.
+Expected: the positive fixture may expose the missing proposal-only strict
+profile; the negative tests must fail before that implementation exists. First
+confirm every fixture obeys generic schema-v3 and exact-base contracts, then
+make the narrow generic/proposal-profile correction described below.
 
 - [ ] **Step 5: If needed, make the narrow generic helper fix**
 
-The acceptable implementation boundary is limited to removing an accidental
-single-entity assumption while retaining canonical focus derivation and every
-negative gate above. Do not add a region identifier, semantic priority input,
-backlog parser, or broad file-scope bypass to the helper.
+The acceptable implementation boundary is limited to:
+
+```text
+- require_bounded_review_inventory=True for proposal validation;
+- exact-head existence checks for every regional_followup backlog anchor;
+- exactly one focus stay destination matching stay_destination:<id> for a
+  backlog-origin regional proposal; and
+- rejecting unrelated additions while allowing declared graph dependencies.
+```
+
+Retain canonical focus derivation and every negative gate above. Do not add a
+region identifier, semantic priority input, backlog parser, or broad file-scope
+bypass to the helper.
 
 Run:
 
@@ -371,12 +395,17 @@ When a viable candidate was interrupted only by lock contention, store it as
 the preferred retry hint. The next cycle must re-run normal inventory, cap,
 duplicate, catalog, and source checks before using it.
 
-- [ ] **Step 3: Update only the existing automation prompt**
+- [ ] **Step 3: Perform only an owner-controlled post-merge cutover**
 
-Do not change schedule, model, active state, worktree mode, proposal cap, or
-lease behavior. Remove any candidate-specific or PR-specific wording. The
-prompt should defer exact process details to the installed skill and merged
-repository contracts.
+Do not change live automation state during repository implementation. After
+merge, the owner temporarily pauses both schedules because installed skills are
+shared, allows active lease/journal state to settle, snapshots old artifacts,
+updates all affected skills and both prompts, and inspects them together.
+Disabled/manual smoke and prompt-injection checks run before the owner
+re-enables one schedule at a time. Keep schedule, model, worktree mode,
+proposal cap, lease behavior, and configured active-state defaults unchanged.
+Remove candidate-specific/PR-specific wording; prompts defer exact process to
+the installed skill and merged repository contracts.
 
 - [ ] **Step 4: Inspect activation consistency**
 

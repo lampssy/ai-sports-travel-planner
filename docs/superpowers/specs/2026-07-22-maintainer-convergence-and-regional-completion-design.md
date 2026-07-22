@@ -10,7 +10,9 @@
 - Related ADR: ADR 0011; amend it during implementation rather than creating a
   separate control-plane ADR
 - Developer Decision Checkpoints: resolved in the design conversation
-- Advisory review: required during implementation planning; not yet run
+- Advisory design review: completed before implementation; the strict
+  finalized-report, safe-inspection, crash-safe-promotion, source-ownership,
+  and owner-controlled-cutover findings are incorporated below
 
 Until this design is implemented, merged, and locally activated, the existing
 local-maintainer specification and installed skills remain authoritative.
@@ -177,6 +179,19 @@ Legacy schema-v3 reports remain readable. A selected report without the new
 fields is enriched by the existing pre-review normalization stage; this remains
 structural normalization and consumes no semantic remediation cycle.
 
+Generic schema-v3 parsing therefore keeps both additions optional, but the
+maintainer's finalized curation and discovery-proposal validation profiles are
+strict: they require a non-empty evidence envelope and `graph_impact` on every
+scope assessment. This prevents a newly created or normalized report from
+silently bypassing the inventory contract while retaining backward-readable
+legacy artifacts.
+
+`candidate_kinds` declares which entity categories a source family was used to
+examine. It is not deterministic proof that a candidate exists. Candidate-level
+claims remain auditable through each scope assessment's `evidence_refs`; the
+validator requires every envelope URL to be present in report evidence but does
+not invent candidate findings from source-family metadata.
+
 ## Graph-Correctness Boundary
 
 A newly found omission blocks the current PR only when it can make the proposed
@@ -244,6 +259,18 @@ decline.
 A dedicated destination coverage registry remains a possible future
 improvement. It is not introduced by this design.
 
+Finalized maintainer validation checks every `regional_followup` backlog anchor
+against the exact-head `docs/product-backlog.md`. A missing or stale anchor is a
+mechanical validation failure. Codex still owns the meaning, priority, wording,
+and status of the backlog item; the helper does not parse backlog semantics.
+
+For a backlog-origin regional proposal, the proposal-only mechanical boundary
+requires exactly one `resulting_graph.focus_stay_destination_id`, matching the
+selected `stay_destination:<id>` candidate. Added bases, ski areas, passes,
+access edges, and weather implications must belong to that destination graph or
+be declared linked dependencies. This rejects unrelated catalog expansion
+without turning coherent-slice selection into deterministic product logic.
+
 ## Remediation Continuation
 
 The helper gains one private continuation kind alongside the existing reviewed
@@ -257,7 +284,9 @@ continuation.
   head whose semantic review is incomplete or still has open findings.
 
 A remediation continuation grants recovery authority only. It never grants
-review, validation, publication, or semantic authority.
+review, validation, publication, or semantic authority. Its status domain is
+separate from reviewed continuations and cannot represent `validated` or any
+publication-ready state.
 
 ### Creation
 
@@ -272,8 +301,10 @@ atomically replace one remediation continuation only when:
 - no push journal already owns the work item.
 
 The record stores the PR, remote head, prepare-time base, exact local squash
-commit/ref, allowed paths, report path, and completed stage. Finding ledgers and
-review prose may be retained only as untrusted context.
+commit/ref, allowed paths, report path, and completed stage. Persisted allowed
+paths are routing facts only: replay and promotion re-derive the changed paths
+and file modes from the immutable exact commit and enforce the prepared scope.
+Finding ledgers and review prose may be retained only as untrusted context.
 
 ### Selection and resumption
 
@@ -288,6 +319,12 @@ The helper replays a remediation continuation onto current `main` using the
 same exact-head, ancestry, allowed-path, and bounded-conflict protections as a
 reviewed continuation. The resulting head always receives one fresh bounded
 full review before another fix or promotion to reviewed state.
+
+Promotion is crash-safe. The helper persists the reviewed continuation first,
+while inspection already prefers reviewed recovery for that PR, and only then
+marks the remediation record consumed. A crash between those writes leaves the
+reviewed continuation authoritative and the older remediation record harmless;
+the next exact replay completes cleanup idempotently.
 
 A GitHub pause label prevents automatic resumption. If the owner deliberately
 removes the hold while the remote head remains exact, the helper exposes the
@@ -305,6 +342,14 @@ A remediation continuation is invalidated when:
 
 It has no time-based expiry. Exact repository and GitHub state determine its
 validity.
+
+Read-only inspection exposes only allowlisted summaries. Push journals never
+expose origin/recovery run IDs or other lease-authority fields. Remediation
+summaries expose an allowlisted availability reason as well as `resumable`, so
+operators can distinguish pause labels, head drift, lifecycle invalidation,
+missing/tampered refs, and a competing recovery authority without receiving a
+lease token. Close/merge reconciliation is a lease-owned invalidation step;
+reopening the PR never revives a previously invalidated continuation.
 
 Sleep, deadlines, helper-response capture loss, deterministic validation
 interruption, or publication failure do not erase an otherwise valid
@@ -330,6 +375,12 @@ exist only for genuine graph blockers.
 
 ## Source URL Verification
 
+Source verification belongs to Codex orchestration, not to the deterministic
+helper. The helper validates URL syntax, report references, exact heads, and
+typed evidence; it does not decide page relevance or make network access a
+mutation capability. The curation/review skills own the bounded web checks and
+record their result in the review ledger and final triage.
+
 Scoped validation must not weaken source integrity.
 
 ### Initial inventory
@@ -348,6 +399,12 @@ The workflow performs a parallel reachability check for every URL in the final
 report and semantically revalidates all changed, graph-critical, and high-impact
 sources. A later scheduled run or resumed continuation performs a fresh final
 reachability pass; source cache entries do not survive the run as authority.
+
+The run-local cache is an in-memory orchestration optimization keyed by exact
+head, URL, and claim context. It is never persisted as authority. Repository
+tests cover typed URL/reference gates; installed-skill acceptance and bounded
+prompt-injection dry runs cover orchestration, cache invalidation, and final
+fresh-source behavior.
 
 Source failure is classified as follows:
 
@@ -429,9 +486,13 @@ Implementation uses test-first coverage for:
 - tampered/missing refs, changed remote heads, unsafe paths/modes, dirty state,
   replay conflicts, and competing journals;
 - exact-head reuse of delta validation without duplicate command execution;
-- source-check caching limited to one run and invalidated by changed URLs,
-  claims, or heads;
-- final all-URL reachability and graph-critical semantic source checks;
+- strict finalized-report/proposal inventory profiles while legacy reports
+  remain readable;
+- exact-head backlog-anchor validation and one-focus-destination proposal
+  boundaries;
+- safe push-journal summaries with no run IDs or private journal fields;
+- crash-safe reviewed promotion and remediation-specific status transitions;
+- allowlisted continuation availability reasons and close/reopen invalidation;
 - backlog-first regional-completion selection and the existing proposal cap;
   and
 - end-to-end ordinary, reviewed-continuation, remediation-continuation,
@@ -439,8 +500,9 @@ Implementation uses test-first coverage for:
   owner-decision, and recovery paths.
 
 Repository tests should assert capability outcomes and state transitions rather
-than exact Codex prose or LLM conclusions. Installed-skill and automation-prompt
-review occurs separately after merge.
+than exact Codex prose, live web behavior, or LLM conclusions. Installed-skill
+and automation-prompt review, final all-URL behavior, run-local source-cache
+invalidation, and adversarial-content dry runs occur separately after merge.
 
 ## Rollout
 
@@ -455,13 +517,22 @@ Implementation should be divided into two safe activation slices:
 Repository code, tests, authoritative specs, and ADR 0011 are merged before any
 personal skill or automation prompt changes. Installed skills are then updated
 and inspected together. Schedules, model choice, working directory, proposal
-cap, labels, and active-state defaults remain unchanged.
+cap, labels, and configured active-state defaults remain unchanged.
+
+The live cutover is owner-controlled: both schedules are temporarily paused,
+any active lease and journal are allowed to settle, prior installed artifacts
+are snapshotted, all shared skills and both prompts are replaced and inspected,
+and disabled/manual smoke cycles run before the owner re-enables one schedule
+at a time. This temporary pause is an operational cutover, not a change to the
+configured schedule defaults. The same boundary applies to rollback.
 
 Rollback restores the prior installed skills and automation prompts. Existing
 reviewed continuations and push journals retain their current meaning.
 Remediation continuations created by the new helper are ignored by the old
 orchestrator but remain private until the new helper invalidates or cleans them;
-rollback must not delete refs or state records manually.
+rollback must not delete refs or state records manually. The old schedules must
+not be re-enabled while an active remediation continuation remains: recover or
+explicitly invalidate it with the new helper first.
 
 ## Success Measures
 
