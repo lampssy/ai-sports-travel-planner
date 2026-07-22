@@ -62,6 +62,15 @@ CatalogScopeDisposition = Literal[
     "deferred",
     "unresolved",
 ]
+CatalogGraphImpact = Literal["graph_blocking", "regional_followup"]
+CatalogReviewSourceKind = Literal[
+    "destination_booking",
+    "ski_area_operator",
+    "pass_tariff",
+    "access_transport",
+    "linked_pr_dependency",
+    "other_official",
+]
 CatalogScopeSignalType = Literal[
     "official_independent_identity",
     "separate_operator",
@@ -530,6 +539,35 @@ class CatalogCurationContractModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class CatalogReviewSourceFamily(CatalogCurationContractModel):
+    family_id: str = Field(min_length=1)
+    source_kind: CatalogReviewSourceKind
+    source_urls: list[str] = Field(min_length=1)
+    candidate_kinds: list[CatalogScopeCandidateKind] = Field(min_length=1)
+
+    @field_validator("family_id")
+    @classmethod
+    def validate_family_id(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "review source family_id")
+
+    @field_validator("source_urls")
+    @classmethod
+    def validate_source_urls(cls, values: list[str]) -> list[str]:
+        urls = [_safe_source_url(value) for value in values]
+        if len(urls) != len(set(urls)):
+            raise ValueError("review source URLs must be unique")
+        return urls
+
+    @field_validator("candidate_kinds")
+    @classmethod
+    def validate_candidate_kinds(
+        cls, values: list[CatalogScopeCandidateKind]
+    ) -> list[CatalogScopeCandidateKind]:
+        if len(values) != len(set(values)):
+            raise ValueError("review candidate kinds must be unique")
+        return values
+
+
 class CatalogValidationIssue(CatalogCurationContractModel):
     severity: CatalogIssueSeverity
     message: str = Field(min_length=1)
@@ -815,6 +853,7 @@ class CatalogEntityScopeAssessment(CatalogCurationContractModel):
     backlog_ref: str | None = None
     rationale: str = Field(min_length=1)
     ski_area_boundary: CatalogSkiAreaBoundaryAssessment | None = None
+    graph_impact: CatalogGraphImpact | None = None
 
     @field_validator("candidate_id", "candidate_name", "rationale")
     @classmethod
@@ -920,6 +959,9 @@ class CatalogCurationReport(CatalogCurationContractModel):
     entity_scope_assessments: list[CatalogEntityScopeAssessment] = Field(
         default_factory=list
     )
+    review_evidence_envelope: list[CatalogReviewSourceFamily] = Field(
+        default_factory=list
+    )
     boundary_decision_targets: list[str] = Field(default_factory=list)
     weather_request_geometry_targets: list[str] = Field(default_factory=list)
     weather_request_geometry_assessments: list[
@@ -975,8 +1017,11 @@ def validate_catalog_curation_report(
     *,
     require_resulting_graph: bool = False,
     require_current_destination_policy: bool = False,
+    require_bounded_review_inventory: bool = False,
 ) -> None:
     issues: list[str] = []
+    if require_bounded_review_inventory and not report.review_evidence_envelope:
+        issues.append("bounded review inventory requires review_evidence_envelope")
     if report.resulting_graph is not None and report.report_schema_version < 3:
         issues.append("resulting_graph requires report schema version 3")
     if report.report_schema_version < 3 and any(
@@ -1072,6 +1117,34 @@ def validate_catalog_curation_report(
             issues.append(
                 f"{evidence.target_type}:{evidence.target_id}: evidence target is "
                 "not declared in reviewed_targets"
+            )
+
+    family_ids = [item.family_id for item in report.review_evidence_envelope]
+    if len(family_ids) != len(set(family_ids)):
+        issues.append("review_evidence_envelope contains a duplicate family")
+
+    evidence_urls = {item.source_url for item in report.evidence}
+    for family in report.review_evidence_envelope:
+        for source_url in family.source_urls:
+            if source_url not in evidence_urls:
+                issues.append(
+                    f"{family.family_id}: review source URL is not referenced "
+                    "by evidence"
+                )
+
+    for assessment in report.entity_scope_assessments:
+        if assessment.graph_impact == "regional_followup" and (
+            assessment.disposition not in BACKLOG_REQUIRED_SCOPE_DISPOSITIONS
+            or assessment.backlog_ref is None
+        ):
+            issues.append(
+                f"{assessment.candidate_id}: regional_followup requires "
+                "deferred or unresolved backlog scope"
+            )
+        if require_bounded_review_inventory and assessment.graph_impact is None:
+            issues.append(
+                f"{assessment.candidate_id}: bounded review inventory requires "
+                "graph_impact"
             )
 
     _validate_boundary_assessments(
@@ -1996,15 +2069,51 @@ def render_catalog_curation_report_markdown(
             f"{_code_cell(target.scope)} | "
             f"{_code_cell(target.resulting_graph_role)} | {required} |"
         )
+    if report.review_evidence_envelope:
+        lines.extend(
+            [
+                "",
+                "## Review Evidence Envelope",
+                "",
+                "| Family | Source Kind | Source URLs | Candidate Kinds |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+        for family in report.review_evidence_envelope:
+            source_urls = ", ".join(
+                _markdown_link(source_url, source_url)
+                for source_url in family.source_urls
+            )
+            candidate_kinds = ", ".join(
+                _code_cell(candidate_kind) for candidate_kind in family.candidate_kinds
+            )
+            lines.append(
+                f"| {_code_cell(family.family_id)} | "
+                f"{_code_cell(family.source_kind)} | {source_urls} | "
+                f"{candidate_kinds} |"
+            )
     if report.entity_scope_assessments:
+        includes_graph_impact = any(
+            assessment.graph_impact is not None
+            for assessment in report.entity_scope_assessments
+        )
+        scope_header = (
+            "| Candidate | Kind | Disposition | Signals | Catalog Targets | "
+            "Evidence | Backlog"
+        )
+        scope_divider = "| --- | --- | --- | --- | --- | --- | ---"
+        if includes_graph_impact:
+            scope_header += " | Graph Impact"
+            scope_divider += " | ---"
+        scope_header += " | Rationale |"
+        scope_divider += " | --- |"
         lines.extend(
             [
                 "",
                 "## Entity Scope Assessments",
                 "",
-                "| Candidate | Kind | Disposition | Signals | Catalog Targets | "
-                "Evidence | Backlog | Rationale |",
-                "| --- | --- | --- | --- | --- | --- | --- | --- |",
+                scope_header,
+                scope_divider,
             ]
         )
         for assessment in report.entity_scope_assessments:
@@ -2021,12 +2130,19 @@ def render_catalog_curation_report_markdown(
                 if assessment.backlog_ref is not None
                 else ""
             )
+            graph_impact = (
+                _code_cell(assessment.graph_impact)
+                if assessment.graph_impact is not None
+                else ""
+            )
+            graph_impact_cell = f" | {graph_impact}" if includes_graph_impact else ""
             lines.append(
                 f"| {_code_cell(assessment.candidate_id)} "
                 f"({_markdown_cell(assessment.candidate_name)}) | "
                 f"{_code_cell(assessment.candidate_kind)} | "
                 f"{_code_cell(assessment.disposition)} | {signals} | {targets} | "
-                f"{evidence} | {backlog} | {_markdown_cell(assessment.rationale)} |"
+                f"{evidence} | {backlog}{graph_impact_cell} | "
+                f"{_markdown_cell(assessment.rationale)} |"
             )
         ski_area_assessments = [
             assessment
