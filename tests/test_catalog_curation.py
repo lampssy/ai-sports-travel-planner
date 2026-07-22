@@ -1356,12 +1356,51 @@ def test_legacy_schema_v3_remains_readable_without_review_inventory() -> None:
         report.model_copy(update={"resulting_graph": None})
     )
 
-    assert "## Review Evidence Envelope" not in rendered
-    assert "| Graph Impact |" not in rendered
-    assert (
+    expected = (
+        "# Example destination boundary\n"
+        "\n"
+        "Reviews one stay-market boundary.\n"
+        "\n"
+        "## Reviewed Targets\n"
+        "\n"
+        "| Target | Scope | Graph Role | Required Fields |\n"
+        "| --- | --- | --- | --- |\n"
+        "| `stay_destination:example` | `narrow` | `focus` | `name` |\n"
+        "\n"
+        "## Entity Scope Assessments\n"
+        "\n"
         "| Candidate | Kind | Disposition | Signals | Catalog Targets | Evidence | "
-        "Backlog | Rationale |"
-    ) in rendered
+        "Backlog | Rationale |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+        "| `example` (Example) | `stay_destination` | `represented` | "
+        "`independent_stay_market` | `stay_destination:example` | "
+        "`example-stay-market` |  | The official source defines this stay market. |\n"
+        "\n"
+        "## Changed Fields\n"
+        "\n"
+        "| Target | Field | Before | After | Trust | Ranking Relevant |\n"
+        "| --- | --- | --- | --- | --- | --- |\n"
+        "\n"
+        "## Field Coverage\n"
+        "\n"
+        "| Target | Field | Status | Notes |\n"
+        "| --- | --- | --- | --- |\n"
+        "| `stay_destination:example` | `name` | `reviewed-no-change` |  |\n"
+        "\n"
+        "## Evidence\n"
+        "\n"
+        "| Target | Field | Source | Source Value | Evidence | Normalization |\n"
+        "| --- | --- | --- | --- | --- | --- |\n"
+        "| `stay_destination:example` | `name` | "
+        '[Official accommodation market](https://example.com/stays) | `"Example"` | '
+        "Defines the complete independently managed stay market. |  |\n"
+        "\n"
+        "## Boundary Decisions\n"
+        "\n"
+        "- `example`: `pass`\n"
+    )
+
+    assert rendered == expected
 
 
 @pytest.mark.parametrize("missing", ["envelope", "graph_impact"])
