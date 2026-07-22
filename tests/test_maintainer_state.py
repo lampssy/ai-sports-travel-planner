@@ -14,6 +14,8 @@ from ops.maintainer.state import (
     ContinuationValidationStatus,
     PushJournal,
     PushPhase,
+    RemediationContinuation,
+    RemediationContinuationStatus,
     ReviewedContinuation,
     RunOutcome,
     StateStore,
@@ -147,9 +149,54 @@ def _continuation(
     )
 
 
+def _remediation(
+    lease: RunLease,
+    *,
+    status: RemediationContinuationStatus = RemediationContinuationStatus.AVAILABLE,
+    updated_at: datetime = NOW,
+    selected_head: str = SHA_1,
+    remediation_head: str = SHA_3,
+) -> RemediationContinuation:
+    return RemediationContinuation(
+        work_id="curation-pr-42",
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        updated_at=updated_at,
+        pr_number=42,
+        selected_head=selected_head,
+        remediation_head=remediation_head,
+        report_path="docs/catalog-curation/pr-42.json",
+        sync=GuardedSyncResult(
+            target_branch="codex/catalog-curation-42",
+            original_head=selected_head,
+            rebased_head=SHA_2,
+            backup_ref="refs/maintainer-backups/pr-42",
+            prepared_ref="refs/maintainer-prepared/pr-42",
+            base_head=SHA_4,
+            merge_base=SHA_4,
+        ),
+        allowed_paths=frozenset(
+            {
+                "app/data/catalog.json",
+                "docs/catalog-curation/pr-42.json",
+            }
+        ),
+        remediation_ref=(
+            f"refs/snowcast-maintainer/remediation/pr-42/"
+            f"{selected_head[:12]}-{remediation_head[:12]}"
+        ),
+        squash_ref=(
+            "refs/snowcast-maintainer/remediation-continuations/pr-42/"
+            f"{SHA_4[:12]}-{remediation_head[:12]}"
+        ),
+        completed_stage="delta-validated",
+        status=status,
+    )
+
+
 def _write_model(
     path: Path,
-    model: WorkState | PushJournal | ReviewedContinuation,
+    model: WorkState | PushJournal | ReviewedContinuation | RemediationContinuation,
 ) -> None:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     path.write_text(model.model_dump_json(indent=2) + "\n", encoding="utf-8")
@@ -174,6 +221,170 @@ def test_reviewed_continuation_is_strict_and_requires_exact_facts() -> None:
         ReviewedContinuation.model_validate(
             {**continuation.model_dump(), "pr_number": 43}
         )
+
+
+def test_remediation_continuation_is_strict_and_requires_exact_facts() -> None:
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
+    remediation = _remediation(lease)
+
+    with pytest.raises(ValidationError, match="frozen"):
+        remediation.status = RemediationContinuationStatus.CONSUMED
+    for update in (
+        {"unexpected": True},
+        {"status": "validated"},
+        {"work_id": "curation-pr-43"},
+        {"selected_head": SHA_2},
+        {"remediation_ref": remediation.remediation_ref.replace("pr-42", "pr-43")},
+        {"squash_ref": remediation.squash_ref.replace("pr-42", "pr-43")},
+        {"allowed_paths": frozenset({"app/data/catalog.json", "README.md"})},
+    ):
+        with pytest.raises(ValidationError):
+            RemediationContinuation.model_validate(
+                {**remediation.model_dump(), **update}
+            )
+
+
+def test_remediation_persistence_adoption_replacement_and_invalidation(
+    tmp_path: Path,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    remediation = _remediation(origin)
+    store.save_remediation_continuation(remediation, origin)
+    path = tmp_path / "remediation-continuations" / "curation-pr-42.json"
+    assert path.stat().st_mode & 0o777 == 0o600
+    assert path.parent.stat().st_mode & 0o777 == 0o700
+
+    successor = RunLease.acquire(tmp_path, "curation", now=NOW + timedelta(hours=7))
+    adopted = store.adopt_remediation_continuation("curation-pr-42", successor)
+    assert adopted.origin_run_id == origin.run_id
+    assert adopted.recovery_run_id == successor.run_id
+    replacement = adopted.model_copy(
+        update={
+            "remediation_head": SHA_4,
+            "status": RemediationContinuationStatus.AVAILABLE,
+            "updated_at": adopted.updated_at + timedelta(microseconds=1),
+            "remediation_ref": (
+                f"refs/snowcast-maintainer/remediation/pr-42/{SHA_1[:12]}-{SHA_4[:12]}"
+            ),
+            "squash_ref": (
+                "refs/snowcast-maintainer/remediation-continuations/pr-42/"
+                f"{SHA_4[:12]}-{SHA_4[:12]}"
+            ),
+        }
+    )
+    store.replace_remediation_continuation(replacement, successor)
+    invalidated = store.invalidate_remediation_continuation("curation-pr-42", successor)
+    assert invalidated.status is RemediationContinuationStatus.INVALIDATED
+    assert store.list_remediation_continuations_for_inspection() == ()
+    with pytest.raises(LeaseOwnershipError):
+        store.save_remediation_continuation(remediation, origin)
+
+
+def test_remediation_replacement_rejects_different_pr_or_selected_head(
+    tmp_path: Path,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    store.save_remediation_continuation(_remediation(origin), origin)
+    successor = RunLease.acquire(tmp_path, "curation", now=NOW + timedelta(hours=7))
+    adopted = store.adopt_remediation_continuation("curation-pr-42", successor)
+
+    with pytest.raises(ValidationError):
+        RemediationContinuation.model_validate(
+            {**adopted.model_dump(), "work_id": "curation-pr-43"}
+        )
+    with pytest.raises(StateStoreError, match="replacement"):
+        store.replace_remediation_continuation(
+            adopted.model_copy(
+                update={
+                    "selected_head": SHA_2,
+                    "sync": adopted.sync.model_copy(update={"original_head": SHA_2}),
+                    "status": RemediationContinuationStatus.AVAILABLE,
+                    "updated_at": adopted.updated_at + timedelta(microseconds=1),
+                }
+            ),
+            successor,
+        )
+
+
+def test_remediation_inventory_excludes_terminal_records(tmp_path: Path) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    terminal = _remediation(
+        lease,
+        status=RemediationContinuationStatus.CONSUMED,
+    )
+    _write_model(
+        tmp_path / "remediation-continuations" / "curation-pr-42.json",
+        terminal,
+    )
+
+    assert store.list_remediation_continuations_for_inspection() == ()
+
+
+def test_remediation_promotion_writes_reviewed_before_consuming_remediation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    remediation = _remediation(lease)
+    store.save_remediation_continuation(remediation, lease)
+    reviewed = _continuation(lease, updated_at=NOW + timedelta(minutes=1))
+    original_save = StateStore._save_model
+    writes = 0
+
+    def fail_second_write(
+        self: StateStore,
+        directory: Path,
+        work_id: str,
+        model: object,
+    ) -> None:
+        nonlocal writes
+        writes += 1
+        if writes == 2:
+            raise OSError("simulated crash")
+        original_save(self, directory, work_id, model)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(StateStore, "_save_model", fail_second_write)
+    with pytest.raises(OSError, match="simulated crash"):
+        store.promote_remediation_to_reviewed(remediation, reviewed, lease)
+    assert store.load_continuation(remediation.work_id) == reviewed
+    assert store.load_remediation_continuation(remediation.work_id) == remediation
+
+    monkeypatch.setattr(StateStore, "_save_model", original_save)
+    store.promote_remediation_to_reviewed(remediation, reviewed, lease)
+    assert (
+        store.load_remediation_continuation(remediation.work_id).status
+        is RemediationContinuationStatus.CONSUMED
+    )
+
+
+def test_remediation_promotion_leaves_both_records_unchanged_when_reviewed_write_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    remediation = _remediation(lease)
+    reviewed = _continuation(lease, updated_at=NOW + timedelta(minutes=1))
+    store.save_remediation_continuation(remediation, lease)
+
+    def fail_first_write(
+        self: StateStore,
+        directory: Path,
+        work_id: str,
+        model: object,
+    ) -> None:
+        raise OSError("simulated reviewed write failure")
+
+    monkeypatch.setattr(StateStore, "_save_model", fail_first_write)
+    with pytest.raises(OSError, match="reviewed write failure"):
+        store.promote_remediation_to_reviewed(remediation, reviewed, lease)
+
+    assert store.load_continuation(remediation.work_id) is None
+    assert store.load_remediation_continuation(remediation.work_id) == remediation
 
 
 def test_successor_adopts_available_continuation_and_fences_origin(

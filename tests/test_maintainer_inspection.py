@@ -22,6 +22,8 @@ from ops.maintainer.state import (
     ContinuationValidationStatus,
     PushJournal,
     PushPhase,
+    RemediationContinuation,
+    RemediationContinuationStatus,
     ReviewedContinuation,
 )
 
@@ -153,6 +155,44 @@ def _continuation(
     )
 
 
+def _remediation(
+    *,
+    pr_number: int = 42,
+    selected_head: str = SHA_A,
+    remediation_head: str = SHA_B,
+) -> RemediationContinuation:
+    return RemediationContinuation(
+        work_id=f"curation-pr-{pr_number}",
+        origin_run_id="1" * 32,
+        recovery_run_id="2" * 32,
+        updated_at=datetime(2026, 7, 8, 10, tzinfo=UTC),
+        pr_number=pr_number,
+        selected_head=selected_head,
+        remediation_head=remediation_head,
+        report_path=f"docs/catalog-curation/pr-{pr_number}.json",
+        sync=GuardedSyncResult(
+            target_branch=f"codex/catalog-{pr_number}",
+            original_head=selected_head,
+            rebased_head=SHA_C,
+            backup_ref=f"refs/maintainer-backups/pr-{pr_number}",
+            prepared_ref=f"refs/maintainer-prepared/pr-{pr_number}",
+            base_head=SHA_C,
+            merge_base=SHA_C,
+        ),
+        allowed_paths=frozenset({"app/data/catalog.json"}),
+        remediation_ref=(
+            f"refs/snowcast-maintainer/remediation/pr-{pr_number}/"
+            f"{selected_head[:12]}-{remediation_head[:12]}"
+        ),
+        squash_ref=(
+            f"refs/snowcast-maintainer/remediation-continuations/pr-{pr_number}/"
+            f"{SHA_C[:12]}-{remediation_head[:12]}"
+        ),
+        completed_stage="delta-validated",
+        status=RemediationContinuationStatus.AVAILABLE,
+    )
+
+
 def test_curation_inventory_exposes_only_safe_continuation_summary() -> None:
     continuation = _continuation()
     pull_request = _pull_request()
@@ -197,6 +237,126 @@ def test_curation_continuation_stays_visible_but_paused_and_yields_to_journal() 
     assert paused.reviewed_continuations[0].resumable is False
     assert recovery.reviewed_continuations == ()
     assert len(recovery.unresolved_pushes) == 1
+
+
+def test_curation_inventory_summarizes_remediation_after_reviewed() -> None:
+    remediation = _remediation()
+    pull_request = _pull_request()
+
+    inventory = inspect_curation(
+        (pull_request,),
+        {},
+        (),
+        (),
+        (remediation,),
+    )
+    paused = inspect_curation(
+        (
+            _pull_request(
+                labels=frozenset({"lane:catalog-curation", "maintainer:blocked"})
+            ),
+        ),
+        {},
+        (),
+        (),
+        (remediation,),
+    )
+    preferred = inspect_curation(
+        (pull_request,),
+        {},
+        (),
+        (_continuation(),),
+        (remediation,),
+    )
+
+    assert inventory.remediation_continuations[0].model_dump(mode="json") == {
+        "pr_number": 42,
+        "selected_head": SHA_A,
+        "remediation_head": SHA_B,
+        "base_head": SHA_C,
+        "report_path": "docs/catalog-curation/pr-42.json",
+        "resumable": True,
+        "availability_reason": "available",
+    }
+    assert paused.remediation_continuations[0].resumable is False
+    assert paused.remediation_continuations[0].availability_reason == "hold-label"
+    assert preferred.remediation_continuations == ()
+
+
+def test_unresolved_curation_journal_exposes_only_safe_summary() -> None:
+    remediation = _remediation()
+    continuation = _continuation()
+    journal = PushJournal.model_validate(
+        {
+            **_journal().model_dump(),
+            "report_path": "docs/catalog-curation/private-report.json",
+            "resulting_graph_markdown": "private canonical graph",
+        }
+    )
+
+    inventory = inspect_curation(
+        (_pull_request(),),
+        {},
+        (journal,),
+        (continuation,),
+        (remediation,),
+    )
+
+    assert inventory.reviewed_continuations == ()
+    assert inventory.remediation_continuations == ()
+    serialized = json.dumps(inventory.model_dump(mode="json"))
+    assert inventory.unresolved_pushes[0].model_dump(mode="json") == {
+        "worker": "curation",
+        "work_id": "curation-pr-42",
+        "pr_number": 42,
+        "candidate_key": None,
+        "candidate_origin": None,
+        "phase": "authorized",
+        "expected_remote_head": SHA_A,
+        "new_head": SHA_B,
+    }
+    for private_value in (
+        journal.origin_run_id,
+        journal.recovery_run_id,
+        journal.branch,
+        journal.report_path,
+        journal.resulting_graph_markdown,
+        continuation.reviewed_ref,
+        remediation.remediation_ref,
+    ):
+        assert private_value not in serialized
+
+
+def test_remediation_availability_reports_head_drift_closed_and_recovery_state() -> (
+    None
+):
+    remediation = _remediation()
+
+    drifted = inspect_curation(
+        (_pull_request(head_sha=SHA_C),), {}, (), (), (remediation,)
+    )
+    closed = inspect_curation(
+        (_pull_request(lifecycle_state="CLOSED"),), {}, (), (), (remediation,)
+    )
+    resolving = inspect_curation(
+        (_pull_request(),),
+        {},
+        (),
+        (),
+        (
+            remediation.model_copy(
+                update={"status": RemediationContinuationStatus.RESOLVING}
+            ),
+        ),
+    )
+
+    assert drifted.remediation_continuations[0].availability_reason == "head-drift"
+    assert [candidate.number for candidate in drifted.eligible] == [42]
+    assert closed.remediation_continuations[0].availability_reason == "closed-or-merged"
+    assert (
+        resolving.remediation_continuations[0].availability_reason
+        == "recovery-authority"
+    )
 
 
 def test_curation_inventory_filters_objective_scope_and_orders_by_number() -> None:
@@ -590,7 +750,16 @@ def test_unresolved_push_journal_blocks_discovery_creation_without_selection() -
     assert inventory.has_unknown_proposal_identity is False
     assert inventory.closed_proposals == ()
     assert inventory.can_create_proposal is False
-    assert inventory.unresolved_pushes == (journal,)
+    assert inventory.unresolved_pushes[0].model_dump(mode="json") == {
+        "worker": "curation",
+        "work_id": "curation-pr-42",
+        "pr_number": 42,
+        "candidate_key": None,
+        "candidate_origin": None,
+        "phase": "authorized",
+        "expected_remote_head": SHA_A,
+        "new_head": SHA_B,
+    }
     assert not hasattr(inventory, "selected_push")
 
 
