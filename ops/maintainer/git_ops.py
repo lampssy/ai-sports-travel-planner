@@ -780,13 +780,17 @@ class GitRepository:
         sync: GuardedSyncResult,
         remediated_head: str,
         refs: RemediationCheckpointRefs,
+        *,
+        restart_interrupted: bool = False,
     ) -> ContinuationReplayResult:
         """Restore or replay one helper-checkpointed remediation tree."""
         _validate_pull_request(pull_request)
+        self.verify_repository()
+        if restart_interrupted:
+            self._abort_cherry_pick_if_active()
         if self._cherry_pick_in_progress():
             raise RepositorySafetyError("pre-existing Git operation blocks prepare")
         self._ensure_clean_preflight()
-        self.verify_repository()
         self.fetch_for_pr(pull_request.head_ref_name)
         fetched_head = self._rev_parse(
             f"refs/remotes/origin/{pull_request.head_ref_name}"

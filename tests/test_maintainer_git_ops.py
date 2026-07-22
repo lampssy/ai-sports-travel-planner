@@ -1923,6 +1923,46 @@ def test_remediation_replay_returns_one_allowed_conflict_and_completes_it(
     assert _git(local.checkout, "status", "--porcelain") == ""
 
 
+def test_remediation_replay_recreates_abandoned_helper_conflict_from_refs(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    refs = repository.checkpoint_remediation_continuation(
+        local.pull_request, prepared, prepared.rebased_head
+    )
+    seed = tmp_path / "seed"
+    _git(seed, "switch", "main")
+    (seed / "app/data/catalog.json").write_text(
+        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
+    )
+    _git(seed, "add", "app/data/catalog.json")
+    _git(seed, "commit", "-m", "change alpha on main")
+    _git(seed, "push", "origin", "main")
+    first = repository.prepare_remediation_continuation(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+        refs,
+    )
+    assert first.result == "conflict"
+    assert (local.checkout / ".git" / "CHERRY_PICK_HEAD").exists()
+
+    recreated = repository.prepare_remediation_continuation(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+        refs,
+        restart_interrupted=True,
+    )
+
+    assert recreated.result == "conflict"
+    assert recreated.base_head == first.base_head
+    assert recreated.conflict_paths == first.conflict_paths
+    assert (local.checkout / ".git" / "CHERRY_PICK_HEAD").exists()
+
+
 def test_remediation_conflict_rederives_scope_and_cleans_up_unsafe_resolution(
     tmp_path: Path,
 ) -> None:

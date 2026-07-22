@@ -858,7 +858,10 @@ def _begin_remediation_resolution(
     dependencies: Dependencies,
 ) -> RemediationContinuation:
     if continuation.recovery_run_id != lease.run_id:
-        return store.adopt_remediation_continuation(continuation.work_id, lease)
+        continuation = store.adopt_remediation_continuation(
+            continuation.work_id,
+            lease,
+        )
     if continuation.status is RemediationContinuationStatus.AVAILABLE:
         resolving = continuation.model_copy(
             update={
@@ -937,6 +940,11 @@ def _prepare_remediation_continuation(
     _require_exact_curation_candidate(pull_request, dependencies, store)
     if args.continue_conflict and continuation.recovery_run_id != lease.run_id:
         raise LeaseOwnershipError("interrupted conflict must be recreated")
+    restart_interrupted = (
+        not args.continue_conflict
+        and continuation.recovery_run_id != lease.run_id
+        and continuation.status is RemediationContinuationStatus.RESOLVING
+    )
     continuation = _begin_remediation_resolution(
         store=store,
         lease=lease,
@@ -958,6 +966,7 @@ def _prepare_remediation_continuation(
                 continuation.sync,
                 continuation.remediation_head,
                 refs,
+                restart_interrupted=restart_interrupted,
             )
     except (RepositorySafetyError, StaleRemoteHeadError):
         _invalidate_remediation_continuation(
