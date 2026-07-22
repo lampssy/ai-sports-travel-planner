@@ -1427,6 +1427,14 @@ replaced. It is history, not current operational instruction:
   finding remains. The residual limitation is explicit: deadlines are
   enforced by the local Codex parent and automation prompt, not an external
   operating-system watchdog.
+- Advisory progress-and-deadline amendment review: complete for AI/LLM
+  reliability and observability/ops. No Blocker, High, or Medium finding
+  remains. Review pressure-testing distinguishes legitimate bounded finding
+  growth from repeated or regressed work, keeps unsafe heads out of
+  `manual-check`, and verifies the 180/210/240-minute boundaries plus separate
+  finalization. Both live automations remained paused during the repository and
+  installed-skill cutover. The residual risk is unchanged: convergence and
+  deadline enforcement remain parent/prompt-owned semantic policy.
 - Advisory terminal-outcome amendment review: complete for security/privacy,
   observability/ops, and AI/LLM reliability. No Blocker, High, or Medium finding
   remains. Exact-head and lease gates, allowlisted state/reason pairs, private
