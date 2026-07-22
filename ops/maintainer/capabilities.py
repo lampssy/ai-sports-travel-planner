@@ -306,20 +306,35 @@ def handle_prepare_curation(
         )
         store.save_continuation(invalidated, lease)
     remediation = store.load_remediation_continuation(work_id)
-    if remediation is not None and remediation.status not in {
-        RemediationContinuationStatus.CONSUMED,
-        RemediationContinuationStatus.INVALIDATED,
-    }:
-        if remediation.selected_head == pull_request.head_sha:
+    if remediation is not None:
+        remediation_is_terminal = remediation.status in {
+            RemediationContinuationStatus.CONSUMED,
+            RemediationContinuationStatus.INVALIDATED,
+        }
+        if not remediation_is_terminal and (
+            remediation.selected_head == pull_request.head_sha
+        ):
             raise MaintainerError(
                 ErrorReason.CONTINUATION_REQUIRED,
                 ErrorStage.PREPARE,
             )
-        _invalidate_remediation_continuation(
-            store=store,
-            lease=lease,
-            continuation=remediation,
-        )
+        if not remediation_is_terminal:
+            _invalidate_remediation_continuation(
+                store=store,
+                lease=lease,
+                continuation=remediation,
+            )
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PREPARE)
+        if (
+            remediation.status is RemediationContinuationStatus.INVALIDATED
+            and remediation.recovery_run_id == lease.run_id
+        ):
+            reason = (
+                ErrorReason.STALE_HEAD
+                if remediation.selected_head != pull_request.head_sha
+                else ErrorReason.CONTINUATION_REQUIRED
+            )
+            raise MaintainerError(reason, ErrorStage.PREPARE)
     selected = WorkState(
         work_id=work_id,
         worker="curation",
@@ -380,7 +395,14 @@ def _new_remediation_continuation(
     return RemediationContinuation(
         work_id=work.work_id,
         origin_run_id=(
-            previous.origin_run_id if previous is not None else lease.run_id
+            previous.origin_run_id
+            if previous is not None
+            and previous.status
+            not in {
+                RemediationContinuationStatus.CONSUMED,
+                RemediationContinuationStatus.INVALIDATED,
+            }
+            else lease.run_id
         ),
         recovery_run_id=lease.run_id,
         updated_at=_current_time(dependencies, previous),
@@ -420,6 +442,10 @@ def handle_checkpoint_remediation(
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
 
     existing = store.load_remediation_continuation(work_id)
+    existing_is_terminal = existing is not None and existing.status in {
+        RemediationContinuationStatus.CONSUMED,
+        RemediationContinuationStatus.INVALIDATED,
+    }
     if (
         existing is not None
         and existing.recovery_run_id == lease.run_id
@@ -444,9 +470,17 @@ def handle_checkpoint_remediation(
                 "report_path": args.report,
             }
         }
-    if existing is not None and existing.recovery_run_id != lease.run_id:
+    if (
+        existing is not None
+        and not existing_is_terminal
+        and existing.recovery_run_id != lease.run_id
+    ):
         raise LeaseOwnershipError("remediation continuation belongs to another run")
-    if existing is not None and existing.selected_head != work.selected_head:
+    if (
+        existing is not None
+        and not existing_is_terminal
+        and existing.selected_head != work.selected_head
+    ):
         raise StateStoreError("active remediation continuation has different authority")
 
     snapshot = dependencies.repository.revalidate_prepared_result(

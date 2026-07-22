@@ -1827,6 +1827,136 @@ def test_remediation_remote_drift_invalidates_before_a_fresh_prepare(
     assert remediation.status is RemediationContinuationStatus.INVALIDATED
 
 
+def test_stale_remediation_fences_same_run_then_successor_checkpoints_new_head(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    origin_run = _checkpoint_remediation_for_cli_test(
+        capsys,
+        tmp_path,
+        state_dir,
+        github,
+        repository,
+    )
+    store = StateStore(state_dir)
+    old_checkpoint = store.load_remediation_continuation("curation-pr-42")
+    assert old_checkpoint is not None
+    RunLease.load_owner(state_dir, "curation", origin_run).release()
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"head_sha": SHA_D}
+    )
+    new_sync = repository.prepared.model_copy(
+        update={
+            "original_head": SHA_D,
+            "rebased_head": SHA_B,
+            "backup_ref": "refs/snowcast-maintainer/backups/pr-42/new-head",
+            "prepared_ref": "refs/snowcast-maintainer/prepared/pr-42/new-head",
+        }
+    )
+    repository.prepared = new_sync
+    invalidating_run = _acquire(capsys, state_dir, "curation")
+
+    first_code, first_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            invalidating_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+    second_code, second_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            invalidating_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert first_code == second_code == 2
+    assert first_payload["reason"] == second_payload["reason"] == "stale-head"
+    assert repository.prepare_calls == 1
+    invalidated = store.load_remediation_continuation("curation-pr-42")
+    assert invalidated is not None
+    assert invalidated.status is RemediationContinuationStatus.INVALIDATED
+    assert invalidated.recovery_run_id == invalidating_run
+    RunLease.load_owner(state_dir, "curation", invalidating_run).release()
+
+    successor = _acquire(capsys, state_dir, "curation")
+    prepare_code, prepare_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert prepare_code == 0, prepare_payload
+    assert repository.prepare_calls == 2
+    repository.head = SHA_B
+    checkpoint_code, checkpoint_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "remediation",
+            "--pr",
+            "42",
+            "--head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        delta_validator=lambda **_kwargs: _delta_validation_result().model_copy(
+            update={"remediation_head": SHA_B}
+        ),
+    )
+
+    assert checkpoint_code == 0, checkpoint_payload
+    replacement = store.load_remediation_continuation("curation-pr-42")
+    assert replacement is not None
+    assert replacement.status is RemediationContinuationStatus.AVAILABLE
+    assert replacement.selected_head == SHA_D
+    assert replacement.remediation_head == SHA_B
+    assert replacement.origin_run_id == successor
+    assert replacement.recovery_run_id == successor
+    assert replacement.updated_at > invalidated.updated_at
+    assert replacement.remediation_ref != old_checkpoint.remediation_ref
+    assert replacement.squash_ref != old_checkpoint.squash_ref
+
+
 def _checkpoint_remediation_for_cli_test(
     capsys: pytest.CaptureFixture[str],
     tmp_path: Path,
