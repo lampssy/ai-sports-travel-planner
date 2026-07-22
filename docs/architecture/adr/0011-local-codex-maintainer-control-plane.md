@@ -2,7 +2,7 @@
 
 Status: accepted
 Date: 2026-07-08
-Amended: 2026-07-09
+Amended: 2026-07-22
 
 Supersedes: N/A
 Superseded by: N/A
@@ -11,6 +11,7 @@ Related specs:
 - `docs/superpowers/specs/2026-07-08-local-maintainer-automation-design.md`
 - `docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md`
 - `docs/superpowers/specs/2026-07-09-maintainer-manual-check-handoff-design.md`
+- `docs/superpowers/specs/2026-07-22-maintainer-convergence-and-regional-completion-design.md`
 
 Related docs:
 - `docs/operating-model/review-playbook.md`
@@ -57,6 +58,27 @@ capabilities: inspect safe candidates, prepare a selected branch, validate an
 exact reviewed head, and publish or push under exact authority. Codex owns
 semantic interpretation, prioritization, review, remediation, backlog reading,
 discovery selection, CI interpretation, and non-objective lifecycle decisions.
+
+Retain exactly these two workers while separating their semantic purposes more
+clearly. Curation proves one bounded destination graph correct against a frozen
+evidence envelope. It treats omissions that can invalidate that graph as
+blockers and hands additive adjacent coverage to the merged product backlog as
+regional follow-ups. The existing discovery worker prioritizes those merged
+regional items and prepares one coherent, one-primary-destination graph proposal
+before it considers unrelated external research. Do not add a regional worker,
+semantic queue, runtime registry, schema version, or deterministic backlog
+parser.
+
+Add private remediation continuations beside reviewed continuations. The helper
+may preserve one exact mechanically valid local head after the two-command delta
+checkpoint, but that record grants recovery authority only. A successor must
+perform a fresh bounded independent review before the helper can promote it to
+reviewed recovery; final validation and publication retain their existing
+exact-head gates. Codex still owns evidence meaning, graph impact, backlog
+wording, coherent-slice selection, URL reachability/relevance checks, and any
+run-local URL cache. The helper owns only typed shape, exact identity,
+path/mode/ref safety, exact backlog-anchor existence, one-focus proposal
+identity, and mutation/publication boundaries.
 
 Rewrite stale catalog branches only through the helper, which creates a local
 backup ref, rebases onto selected `origin/main`, verifies that the resulting
@@ -112,6 +134,14 @@ Automation instructions prohibit unrelated filesystem access, credential
 inspection, downloaded-script execution, dependency changes, deployment, and
 production operations.
 
+Repository implementation and documentation merge before any installed skill
+or automation prompt changes. Cutover is owner-controlled and atomic across the
+shared skills and both prompts: pause both schedules, let active lease/journal
+state settle, snapshot the previous installed artifacts, replace and inspect
+them together, run disabled/manual smoke checks, and then re-enable one schedule
+at a time. Rollback uses the same paused boundary and never deletes private
+continuation refs or state manually.
+
 The automation never merges or approves PRs. Discovery proposals require the
 owner to remove `maintainer:proposal` before the curation maintainer can act on
 them.
@@ -152,6 +182,14 @@ That variability is acceptable because proposal volume, branch authority,
 exact heads, catalog validity, readiness, approval, and merge remain bounded by
 deterministic checks or the owner. Moving semantic prose interpretation out of
 Python reduces brittle coupling to document format.
+
+Mechanically safe curation progress now survives sleep, deadlines, validation
+failure, and truthful blocked or owner-decision publication without being
+mistaken for reviewed work. This adds private state and refs, but prevents
+repeating completed remediation. Additive regional findings no longer expand an
+otherwise correct curation indefinitely; they become visible owner-gated
+backlog/proposal work. GitHub proposal identity and the merged schema-v3 report,
+not private memory, remain the durable proposal record.
 
 ## Alternatives Considered
 

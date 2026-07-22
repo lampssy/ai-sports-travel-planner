@@ -2,7 +2,9 @@
 
 ## Status
 
-- Status: implemented, merged to `main`, and locally activated
+- Status: convergence and regional-completion amendment implemented in this
+  branch; repository activation pending merge, feature review, and the
+  owner-controlled local cutover
 - Owner: solo-builder
 - Classification: review-gated / full design flow
 - Supersedes before activation:
@@ -10,9 +12,10 @@
 - Related ADR: ADR 0011
 - Replacement implementation plan:
   `docs/superpowers/plans/2026-07-08-local-maintainer-simplification.md`
-- Activation status: the personal skills and both owner-approved Codex
-  automations are installed; the post-merge checklist remains the authoritative
-  reactivation and rollback procedure
+- Activation status: the previously installed maintainer remains unchanged
+  until this amendment is merged. The post-merge checklist is the authority for
+  replacing all shared skills and both automation prompts atomically while the
+  owner keeps the schedules paused.
 
 ## User Outcome
 
@@ -73,25 +76,27 @@ In scope:
 - deterministic catalog, trust, report, resulting-diff path/mode,
   proposal-cap, open-duplicate, exact-head, CI, mergeability, and readiness
   checks;
-- one simple global run lease, one per-work-item phase record, and one separate
-  push-recovery journal, plus one successor-adoptable reviewed continuation
-  before push authorization;
+- one simple global run lease, one per-work-item phase record, one separate
+  push-recovery journal, and successor-adoptable reviewed and remediation
+  continuations before push authorization;
 - labels, a human-readable PR body, and one canonical maintainer comment;
 - owner-gated discovery proposals with at most one proposal per run and three
   open proposals;
 - backlog-first discovery with bounded preferred retry after any viable
-  source-validated selection and explicit next slices for known regional
-  catalog gaps;
+  source-validated selection, followed by merged regional-completion items,
+  other active backlog candidates, and only then bounded external research;
 - decision-bearing owner-gated proposals for boundary, stable-ID, and
   weather-owner changes expressible by the existing catalog model;
 - safe structured errors that Codex can interpret without exposing secrets or
   untrusted raw output;
-- replacement of the unactivated first implementation and its stale plan.
+- replacement of the unactivated first implementation and its stale plan;
+- schema-v3 evidence envelopes, graph-impact classification, proportional
+  curation validation, and coherent one-primary-destination regional proposals.
 
 Out of scope:
 
 - automatic approval or merge;
-- unbounded automatic git conflict resolution. The reviewed-continuation path
+- unbounded automatic git conflict resolution. A private-continuation path
   may expose one helper-prepared conflict set limited to existing-model catalog,
   trust, curation-report, backlog, or focused test files. Codex resolves only
   that set locally, and the helper completes and revalidates the replay before
@@ -104,6 +109,7 @@ Out of scope:
   with an explicit unresolved migration handoff;
 - deterministic interpretation of backlog prose;
 - a runtime destination coverage registry;
+- a third worker, helper-owned semantic queue, or deterministic backlog parser;
 - claims of complete Alpine or global coverage;
 - production deployment, dependencies, secrets, database migrations, or
   production-data mutation;
@@ -124,14 +130,19 @@ Out of scope:
 
 - Inspects unresolved journals before choosing fresh work; exactly one matching
   journal is recovered first and multiple journals are escalated.
+- Uses the curation recovery order `journal -> reviewed continuation ->
+  remediation continuation -> ordinary PR`. A safe exact-head remediation may
+  remain resumable behind a blocked or owner-hold label; deliberate label
+  removal re-enables it without granting review or publication authority.
 - Reads a bounded unpublished-curation follow-up list from automation memory,
   revalidates every entry against the safe live inventory, and selects a still
   exact eligible follow-up before an unrelated fresh PR.
 - Chooses at most one PR from a safe helper-produced inventory.
 - Holds the curation lease from prepare through publication.
 - Reads and interprets backlog prose.
-- Prioritizes a freshly revalidated preferred retry, then bounded candidate
-  slices from Catalog Curation Refinements, before unrelated external research.
+- Uses the discovery order `journal -> preferred retry -> merged regional
+  completion -> other active backlog -> bounded external scan`. Backlog meaning
+  and coherent-slice selection remain semantic Codex decisions.
 - Chooses at most one discovery candidate.
 - Researches official and open sources.
 - Performs read-only backlog/research work before discovery acquisition, then
@@ -155,11 +166,12 @@ Out of scope:
   ordinary remediation. The pass does not claim semantic resolution or consume
   a remediation cycle.
 - Starts curation with parallel independent `source-trust` and `graph-scope`
-  reviews of that normalized prepared head, then consolidates both dispositions
-  into one first fix. Source-trust inventories every applicable canonical trust
-  field group; graph-scope inventories every concrete operator presentation and
-  lift-pass candidate, retaining typed/backlogged deferred or unresolved pass
-  products.
+  reviews of that normalized prepared head after freezing a typed evidence
+  envelope, then consolidates both complete candidate inventories into one
+  compatible first fix. Source-trust inventories every applicable canonical
+  trust field group; graph-scope inventories every concrete operator
+  presentation and lift-pass candidate, retaining typed/backlogged deferred or
+  unresolved pass products.
 - Before treating a destination or ski-area boundary finding as an owner
   choice, runs one fresh focused boundary adjudication against the accepted
   model rules. A policy-determined graph returns to the normal fixer/re-review
@@ -173,6 +185,18 @@ Out of scope:
   are enumerated; the first fix batches all compatible candidate entries, and a
   known-but-unfixed candidate remains repeated rather than being rediscovered
   as new scope.
+- Distinguishes a `graph_blocking` omission that can make the selected graph
+  wrong from a `regional_followup` that only expands correct coverage. A
+  follow-up is recorded in the report and merged product backlog, receives a
+  targeted handoff review, and cannot by itself make curation non-converging.
+- Runs catalog validation and exact reconciliation as the two-command delta
+  validation checkpoint after each mechanically valid remediation, then performs one
+  fresh bounded semantic review. It reserves the broad catalog suite and full
+  source verification for one final reviewed-head validation.
+- Checks every final report URL for reachability, and semantically rechecks
+  changed, graph-critical, and high-impact claims. URL meaning and the
+  run-local cache keyed by exact head, URL, and claim context remain Codex
+  evidence; they are never persisted as helper authority or reused across runs.
 - Performs at most six remediation cycles. Before every further fixer, the
   ledger must show that prior findings are resolved or superseded without
   repeats or regressions and that any new findings are concrete, source-backed,
@@ -218,8 +242,9 @@ The helper provides four capability groups only:
 1. **Inspect**: safe inventory and current objective state.
 2. **Prepare**: run lease, backup, fetch, guarded rebase, conflict stop, and
    resulting-diff path/mode checks.
-3. **Validate**: checkpoint an exact reviewed head and run
-   catalog/trust/report/policy/scope validation for that head.
+3. **Validate**: checkpoint exact remediation or reviewed heads, persist
+   private continuation refs, and run the appropriate delta or final
+   catalog/trust/report/policy/scope checks for that head.
 4. **Publish**: exact-lease push, constrained labels/comment/body publication,
    and objective proposal/waiting-CI/readiness enforcement.
 
@@ -250,11 +275,13 @@ Read-only inspection returns:
 - current open-proposal count;
 - authenticated GitHub identity and repository identity.
 
-Curation inspection also returns safe reviewed-continuation summaries without
-run IDs or local paths: PR number, selected remote head, exact reviewed head,
-prepare-time base, report path, validation status, and whether the current PR
-labels permit owner-requested resumption. These records are distinct from
-unresolved push journals and do not block discovery or unrelated curation.
+Curation inspection also returns safe reviewed- and remediation-continuation
+summaries without run IDs, private refs, or local paths. Reviewed summaries
+identify exact reviewed recovery; remediation summaries expose only PR/head,
+prepare-time base, report path, `resumable`, and an allowlisted availability
+reason. These records are distinct from unresolved push journals and do not
+block discovery or unrelated curation. A reviewed continuation suppresses the
+same PR's older remediation summary.
 
 The helper filters out forks, non-`main` bases, non-`codex/*` branches,
 unapproved proposals, production or operational code scope, maintainer
@@ -290,28 +317,41 @@ or freeze the original catalog-target set across rebase and remediation. Codex
 reviews the exact resulting head, and report structure becomes authoritative
 only after Codex has normalized the reviewed output to the canonical schema.
 
-Continuation preparation is a guarded variant of preparation. It requires one
-exact available reviewed continuation, the unchanged selected remote PR head,
-and a successor curation lease. It restores an unchanged reviewed head for
-deterministic retry, or replays the helper-owned squash commit onto current
-`main`. A clean replay returns a new prepared head requiring one full review.
-An allowed-path conflict returns one bounded resolution state; only the helper
-may complete the replay after Codex stages exactly those resolutions. Any other
-conflict or drift aborts without changing the remote branch.
+Continuation preparation is a guarded variant of preparation. It prefers one
+exact available reviewed continuation, then one exact available remediation
+continuation, under the unchanged selected remote PR head and a successor
+curation lease. It restores an unchanged reviewed head for deterministic retry;
+an unchanged remediation head always returns `review-required`. A replay of
+either helper-owned squash onto advanced `main`, including one bounded
+allowed-path conflict completed by the helper, also requires one fresh full
+review. Any other conflict or drift invalidates or stops the continuation
+without changing the remote branch and without falling through to fresh work in
+the same run.
 
 ### Validate
 
-Before running deterministic validation, Codex calls the validation group's
-reviewed-checkpoint capability. The helper cannot decide whether the review is
-semantically correct; it only binds Codex's declaration to the exact immutable
-head, prepared lineage, report, resulting diff, persistent refs, and active
-lease. Validation requires that checkpoint and updates its objective status.
+After each remediation, Codex calls `checkpoint remediation`. The helper runs
+only catalog/trust validation and exact report reconciliation, verifies the
+clean exact head and scope, and atomically saves or replaces one private
+remediation continuation. It does not rerun those two commands when persisting
+the successful exact-head checkpoint.
+
+After the required fresh review, Codex calls the reviewed-checkpoint capability.
+The helper cannot decide whether the review is semantically correct; it binds
+Codex's declaration to the exact immutable head, prepared lineage, report,
+resulting diff, persistent refs, and active lease. A matching remediation is
+promoted crash-safely by persisting reviewed recovery first and then consuming
+the remediation record. Final validation requires that reviewed checkpoint and
+updates its objective status.
 
 Validation is bound to one exact Codex-reviewed commit and checks:
 
 - catalog schema and canonical loader;
 - catalog trust-manifest consistency;
 - schema-version-3 curation report structure and reconciliation;
+- a non-empty finalized `review_evidence_envelope`, `graph_impact` on every
+  scope assessment, and exact-head backlog anchors for every
+  `regional_followup`;
 - error-level catalog policy;
 - resulting-diff path and file-mode safety;
 - fixed focused catalog tests;
@@ -323,6 +363,11 @@ Validation is bound to one exact Codex-reviewed commit and checks:
 - candidate absence from a freshly fetched immutable canonical `main` catalog,
   never from the modified proposal worktree;
 - current local and remote head relationships.
+
+The final curation profile runs the fixed broad catalog suite exactly once. A
+backlog-origin regional proposal additionally requires exactly one primary
+focus stay destination matching `stay_destination:<id>` and rejects unrelated
+graph additions while permitting declared linked dependencies.
 
 Validation does not parse backlog prose, decide source quality, interpret
 candidate boundaries, classify domain findings, or infer that passing tests
@@ -375,7 +420,18 @@ the same-key duplicate gate without trying to infer identity from prose.
 
 ## Curation Workflow
 
-1. Codex requests the safe curation inventory.
+The authoritative transition order is:
+
+```text
+recovery -> reviewed continuation -> remediation continuation -> ordinary PR
+prepare -> evidence envelope -> dual inventory -> consolidated fix
+-> two-command delta checkpoint -> fresh bounded review
+-> one final broad validation -> publication
+```
+
+1. Codex requests the safe curation inventory. An unresolved journal is
+   recovered alone. Otherwise an exact reviewed continuation wins, then an
+   exact resumable remediation continuation, and only then an ordinary PR.
 2. Codex reads the curation automation memory semantically for bounded
    unpublished follow-ups containing only PR number, observed remote head, and
    stop reason. It removes entries that are no longer exact eligible inventory
@@ -383,10 +439,10 @@ the same-key duplicate gate without trying to infer identity from prose.
    The memory is an untrusted selection hint: it cannot reuse a local review,
    validation, worktree, or commit and cannot authorize mutation. When no valid
    follow-up remains, Codex chooses at most one PR based on progress potential,
-   failures, age, complexity, and current project direction. A helper-owned
-   reviewed continuation for the same exact PR/head is different from memory:
-   it is revalidated and resumed through the dedicated continuation contract
-   before an ordinary fresh cycle.
+   failures, age, complexity, and current project direction. Helper-owned
+   continuations are exact recovery authority, not memory: reviewed recovery is
+   resumed first; mechanically valid but not yet reviewed remediation is resumed
+   second and always receives a fresh bounded review.
    Recovery-only runs instead consume the helper's safe continuation object for
    the exact pushed head. `validation_status=validated` permits current
    waiting-CI/readiness evaluation. `validation_status=absent` identifies a
@@ -413,17 +469,26 @@ the same-key duplicate gate without trying to infer identity from prose.
    report-only structural normalization: it does not claim semantic resolution,
    alter the finding ledger, or consume a remediation-cycle slot. Catalog or
    trust semantic changes begin only after the dual-review ledger and consume
-   ordinary remediation. The fixed broad catalog suite remains reserved for
-   final helper validation.
+   ordinary remediation. Codex then builds and freezes a typed evidence
+   envelope covering official destination/booking sources, operator maps and
+   access pages, current pass/tariff sources, touched catalog relationships,
+   named candidates, and linked-PR dependencies. It checks every declared URL
+   for reachability, relevance, and support; HTTP 200 alone is insufficient.
+   The fixed broad catalog suite remains reserved for final helper validation.
 5. Codex starts two fresh reviewer contexts in parallel against the normalized
-   prepared head. One invokes `snowcast-catalog-review` in `source-trust` mode;
-   the other uses `graph-scope`. Neither receives the other's result. Together
+   prepared head and frozen envelope. One invokes `snowcast-catalog-review` in
+   `source-trust` mode; the other uses `graph-scope`. Neither receives the
+   other's result. Together
    they count as one initial review stage. `source-trust` enumerates every
    applicable trust field group from the canonical `FIELD_GROUPS` registry with
    its status, direct refs, normalization-note need, and coverage disposition.
    `graph-scope` enumerates every concrete operator presentation and lift-pass
    candidate, with typed assessments and canonical backlog refs for each
-   deferred or unresolved pass product.
+   deferred or unresolved pass product. Each candidate is classified as
+   `graph_blocking` or `regional_followup`. A follow-up is non-blocking only
+   when its omission cannot misstate the selected graph; uncertainty that could
+   invalidate ownership or an edge follows manual-check, owner-decision, or
+   review-incomplete instead of being silently downgraded.
 6. Codex consolidates the two complete dispositions into one private finding
    ledger and first fix. It deduplicates overlapping findings but preserves
    conflicts. For scope inventory,
@@ -445,19 +510,23 @@ the same-key duplicate gate without trying to infer identity from prose.
    verifies the exact local head and clean worktree, and uses read-only `git merge-tree
    --write-tree origin/main HEAD`. A conflict stops the run before more review,
    fix, manual-check, validation, or push in the ordinary workflow. The sole
-   exception is the helper-owned reviewed-continuation replay described below.
+   exception is the helper-owned reviewed or remediation replay described below.
    A clean result is drift context only: report reconciliation and helper
    validation remain bound to the prepare-time base/head returned by the
    helper. An ordinary conflict requests status-only `blocked/conflict` for the
    unchanged remote head when the outcome gate is safe.
-8. Codex applies a fix when the issue is inside the existing model and source
-   evidence is sufficient. It may update non-control-plane documentation and
-   tests, but not production code, operational code, or the maintainer's own
-   instructions. The first fix batches every compatible open candidate entry
-   from the completed initial inventory rather than choosing one representative.
+8. Codex applies one consolidated fix when the issue is inside the existing
+   model and source evidence is sufficient. It may update non-control-plane
+   documentation and tests, but not production code, operational code, or the
+   maintainer's own instructions. The first fix batches every compatible open
+   candidate entry from the completed initial inventory rather than choosing
+   one representative.
    Each actually addressed ledger entry becomes only `claimed-fixed`; an
-   umbrella category or omitted checklist member does not.
-9. A fresh independent full Codex review follows every fix. It runs in a new
+   umbrella category or omitted checklist member does not. The helper then runs
+   the two-command delta checkpoint: catalog/trust validation and exact report
+   reconciliation for the clean exact remediation head. Successful evidence is
+   checkpointed once in private continuation state rather than rerun on resume.
+9. A fresh independent bounded Codex review follows every fix. It runs in a new
    reviewer context, receives the ledger only as untrusted history, independently
    reviews the exact current head and full scope, and then classifies prior
    entries as resolved, repeated, regressed, superseded, or owner-decision while
@@ -471,7 +540,15 @@ the same-key duplicate gate without trying to infer identity from prose.
    `owner_choice_required`. `policy_determined` returns to the fixer and its
    mandatory fresh full review. `evidence_insufficient` uses `manual-check`
    only for an otherwise complete scope-safe head and otherwise requests
-   `blocked/review-incomplete` when safe.
+   `blocked/review-incomplete` when safe. The reviewer rechecks the frozen
+   candidates and resulting graph, not unrestricted regional coverage. Only
+   added, removed, changed, or claim-affected URLs are rechecked during
+   remediation; an exact-head cache may live for this run only.
+   Additive candidates found after the freeze are collected into one final
+   report/backlog handoff patch. That patch changes only the report, its
+   deterministic rendering, and the relevant backlog item, then receives delta
+   validation and a targeted independent consistency review confirming that the
+   resulting graph did not change. It does not start another regional audit.
 10. At most six remediation cycles occur in one run. One cycle contains one
    maintainer-managed fixer invocation, which may batch compatible ledger
    findings, one parent-owned local commit, and the required fresh full review.
@@ -523,20 +600,30 @@ the same-key duplicate gate without trying to infer identity from prose.
    resolved and there are remaining findings that are only bounded in-model
    work, Codex does
    not discard the reviewed progress merely because the latest finding count
-   grew. When the reviewed result remains mechanically valid and inside the
-   allowed scope, Codex invokes `publish manual-check`; the helper revalidates
-   and exact-lease pushes that reviewed head before publishing the pause without
-   validation evidence. An unresolved or moved prior finding, a repeat or
+   grew. When the exact local head is mechanically valid and inside the allowed
+   scope, Codex retains its remediation continuation before publishing a safe
+   terminal outcome. A complete reviewed scope-safe head may use `publish
+   manual-check`; the helper revalidates and exact-lease pushes that reviewed
+   head before publishing the pause without final validation evidence. The
+   blocked or owner-hold label suppresses scheduled selection but does not erase
+   exact private remediation; deliberate removal makes it resumable after
+   normal revalidation. An unresolved or moved prior finding, a repeat or
    regression, repeatedly incomplete inventory, unsafe scope expansion,
    incomplete review, or an unreviewed post-fix head remains status-only blocked
    because that head is not a safe handoff.
 13. A PR carrying `manual-check` is excluded until a new commit or deliberate
     label removal makes it eligible again.
-14. When Codex declares semantic review complete, Codex materializes a detached
-    clean checkout at the exact prepare-time base returned by the helper and
+14. When Codex declares semantic review complete, it first calls `validate
+    reviewed`, promoting any matching remediation recovery crash-safely. Codex
+    then materializes a detached clean checkout at the exact prepare-time base
+    returned by the helper and
     supplies it as the validation base. It never substitutes a later
-    `origin/main`. The helper validates the exact reviewed head, after which
-    Codex removes only the base checkout it created.
+    `origin/main`. The helper runs one broad final validation for the exact
+    reviewed head. In parallel Codex checks reachability for every final report
+    URL and semantically rechecks every changed, graph-critical, and high-impact
+    claim. The cache is discarded after the run; a resumed later run performs a
+    fresh reachability pass. Codex then removes only the base checkout it
+    created.
 15. The helper performs the guarded push if needed.
 16. Codex writes a concise synopsis of the final reviewed scope, evidence,
     verification, and owner caveats and includes the helper-reproduced canonical
@@ -573,7 +660,9 @@ remediation run catalog validation, exact reconciliation, and finding-related
 focused tests; the fixed broad catalog suite is reserved for final helper
 validation. The final validation and readiness gates continue to require that
 single schema-version-3 report reconciled to the reviewed catalog and trust
-changes.
+changes, a non-empty `review_evidence_envelope`, and `graph_impact` on every
+scope assessment. Generic schema-v3 reading remains backward compatible; the
+strict requirements apply to finalized maintainer and proposal output.
 Historical schema-v3 reports remain readable without `resulting_graph`; any
 report newly validated or refreshed by the maintainer must declare one or more
 focus stay destinations so the helper can derive the canonical graph. The
@@ -585,7 +674,28 @@ report path and the exact derived graph in its body; the helper verifies the
 graph against the immutable reviewed commit and verifies that the supplied path
 is the PR diff's single curation report before authorizing a push.
 
-### Reviewed-But-Unpushed Continuation
+### Private Continuation Authority
+
+A remediation continuation preserves a clean, scope-safe exact local head after
+the two-command delta checkpoint while semantic review is incomplete or has
+open findings. It stores exact PR/head/base/report and immutable helper refs but
+grants recovery authority only: it cannot satisfy reviewed, validated,
+waiting-CI, ready, approval, or merge state. Replay always re-derives changed
+paths and file modes from immutable commits; saved routing metadata cannot widen
+scope. Finding ledgers or review prose may be retained only as untrusted
+context, never authority. Missing/tampered refs, unsafe replay, remote-head
+drift, PR close/merge,
+or a competing push journal invalidate it under the active lease. It has no
+time-based expiry.
+
+Promotion is crash-safe: the helper writes the matching reviewed continuation
+first and only then consumes remediation. Inspection already prefers reviewed
+recovery, so interruption between those writes cannot expose two competing
+resume paths. A safe exact remediation may survive a truthful blocked or
+owner-decision GitHub outcome; the hold prevents automatic selection until the
+owner removes it.
+
+#### Reviewed continuation
 
 The helper preserves a durable continuation after Codex has completed the
 required independent review for an exact local head but before any push journal
@@ -616,9 +726,10 @@ follow-up after the owner removes a pause label. The helper invalidates it when
 the remote PR head changed, the PR closed or became unsafe, its persistent refs
 or immutable facts no longer match, or a push journal already owns the head.
 Automation memory remains only a fallback selection hint and does not duplicate
-the continuation's authority. There is at most one active continuation per PR;
-ordinary preparation for that exact PR is rejected until the continuation is
-resumed, terminalized, or objectively invalidated.
+the continuation's authority. Inspection exposes at most one authoritative
+continuation per PR, preferring reviewed over remediation during crash-safe
+promotion. Ordinary preparation for that exact PR is rejected until private
+recovery is resumed, terminalized, or objectively invalidated.
 
 Under a successor curation lease, continuation preparation behaves as follows:
 
@@ -664,8 +775,9 @@ For compatibility with reviewed work created before this amendment, the helper
 may adopt an existing ordinary `reviewed` work record only when its exact commit
 still exists, its selected remote head is unchanged, its guarded-sync lineage
 and current tree revalidate, and the supplied report is the single changed
-curation report. It cannot adopt an arbitrary caller-provided commit. This
-bounded compatibility path is sufficient for PR #35's preserved reviewed head.
+curation report. It cannot adopt an arbitrary caller-provided commit. This is a
+manual compatibility operation, never recurring candidate-specific prompt
+logic.
 
 ## Readiness Contract
 
@@ -700,45 +812,54 @@ approved or merged.
 
 ## Discovery Workflow
 
-1. Codex asks the helper for catalog keys, open proposal keys, proposal count,
-   and closed proposal summaries.
-2. The helper stops proposal creation at three open proposals.
-3. Codex first revalidates any bounded preferred-retry hint saved after a prior
+1. Codex inspects unresolved journals. It recovers exactly one matching journal
+   and stops; multiple or wrong-worker journals require owner attention.
+2. Codex asks the helper for catalog keys, open proposal keys, proposal count,
+   and closed proposal summaries. The helper stops proposal creation at three
+   open proposals.
+3. Codex revalidates any bounded preferred-retry hint saved after a prior
    viable selection. A still-absent, coherent, sourceable retry is selected
    before new research; stale, represented, duplicated, or declined hints are
    cleared.
-4. Otherwise Codex reads `Catalog Curation Refinements` semantically and
-   prioritizes `Status: candidate` items plus their explicit next bounded slice,
-   favoring completion of partially modeled regions. `parked` remains an
-   owner-authored dependency stop.
-5. Only when no bounded backlog slice is actionable does Codex perform external
-   research without claiming completeness.
-6. A well-supported, coherent external candidate may go directly to a complete
+4. Otherwise Codex interprets merged `regional_followup` handoffs and selects
+   one coherent destination graph slice that advances a named regional item.
+5. If no regional handoff is viable, Codex interprets other active backlog
+   candidates. `parked` remains an owner-authored dependency stop.
+6. Only when neither backlog source offers a viable bounded candidate does
+   Codex perform one external official-source scan without claiming
+   completeness.
+7. A well-supported, coherent external candidate may go directly to a complete
    owner-gated proposal.
-7. A promising but unready candidate remains in Triage with enough context for
+8. A promising but unready candidate remains in Triage with enough context for
    the owner to decide whether it is worth preserving in the backlog later; the
    automated lane does not create backlog-only proposal PRs.
-8. A weak observation remains only in Triage.
-9. Codex checks closed proposal history and decides whether materially new
+9. A weak observation remains only in Triage.
+10. Codex checks closed proposal history and decides whether materially new
    evidence justifies reconsidering a declined candidate.
-10. Codex researches identity, domain boundaries, sourceability, and coherent
-   graph scope.
-11. Read-only retry validation, backlog interpretation, and external research
+11. Codex researches identity, domain boundaries, sourceability, and one
+    coherent graph scope. A regional proposal has exactly one primary stay
+    destination matching its `stay_destination:<id>` candidate and includes the
+    applicable bases, access edges, ski-area/pass ownership, weather and
+    migration implications, source families, candidate dispositions,
+    canonical graph, examined exclusions, regional deferrals, backlog anchor,
+    caveats, owner decisions, and rollback boundary. Re-keying, migration, or
+    an owner choice may be proposed but is never represented as resolved.
+12. Read-only retry validation, backlog interpretation, and external research
     do not hold the global mutation lease.
-12. Once Codex chooses and source-validates a viable candidate, it records the
+13. Once Codex chooses and source-validates a viable candidate, it records the
     bounded candidate identity, origin, source list, and selected stop reason as
     an untrusted preferred-retry hint. It then acquires the discovery lease.
-13. Structured `lock-busy` is a normal terminal no-op. The existing preferred
+14. Structured `lock-busy` is a normal terminal no-op. The existing preferred
     retry is retained with a lock-busy stop reason without reading the active
     owner, retrying, or releasing a lease this run never acquired.
-14. Under an acquired lease, the helper rechecks catalog membership, open candidate
+15. Under an acquired lease, the helper rechecks catalog membership, open candidate
     keys, proposal count, repository identity, and current GitHub state before
     any branch or PR mutation.
-15. Codex invokes `snowcast-catalog-curation` in `maintainer-managed` mode to
+16. Codex invokes `snowcast-catalog-curation` in `maintainer-managed` mode to
     prepare the catalog, trust, report, backlog, and owned-doc changes in the
     isolated worktree while retaining and heartbeating the lease. The sub-skill
     returns before the parent-owned commit, validation, or publication.
-16. An existing-model boundary, stable-ID, or weather-owner change may proceed
+17. An existing-model boundary, stable-ID, or weather-owner change may proceed
     as a decision-bearing proposal. Its report and body expose old/new identity,
     affected historical data, preserve/migrate/backfill decision, manual
     commands, merge order, rollback, and unresolved owner decision. Database or
@@ -747,23 +868,27 @@ approved or merged.
     target is fully reviewed, has an exact identity deletion, is referenced by
     an unresolved scoped assessment and backlog item, and carries a caveat.
     Unrelated removals remain invalid.
-17. The helper fetches canonical `main`, then validates the exact proposal diff
+18. The helper fetches canonical `main`, then validates the exact proposal diff
     and head before a PR exists. Candidate presence in the proposal head is the
     intended delta, not a duplicate; presence in canonical `main` is a
     duplicate.
-18. Codex requests draft-proposal publication with the validated branch, head,
+19. Codex requests draft-proposal publication with the validated branch, head,
     candidate key, human-readable body, and summary.
-19. The helper freshly fetches and rechecks canonical `main`, the cap, open
+20. The helper freshly fetches and rechecks canonical `main`, the cap, open
     proposal keys, and the remote branch before each irreversible publication
     step; it creates the new branch atomically with an empty expected-value
     lease, creates the draft PR, and publishes
     `lane:catalog-discovery` plus `maintainer:proposal`.
-20. The owner accepts by removing the proposal label or declines by closing the
+21. The owner accepts by removing the proposal label or declines by closing the
     PR.
-21. An accepted proposal later enters normal curation. Unresolved decision or
+22. An accepted proposal later enters normal curation. Unresolved decision or
     migration handoffs route to `owner-decision`, never readiness.
-22. A merged proposal consumes its bounded backlog slice and promotes the next
-    remaining slice; the regional item closes only when no useful gap remains.
+23. GitHub proposal identity plus the merged schema-v3 report are the durable
+    proposal record; no private semantic queue or registry is added. The same
+    proposal changes its backlog item to `proposed` and links the proposal and
+    report. After owner acceptance and merge, the item becomes `completed` or is
+    narrowed to the remaining regional gaps. Automation memory remains only a
+    revalidated preferred-retry hint.
 
 The deterministic backlog parser, candidate fingerprints, exact marker cleanup,
 declined-fingerprint suppression, Alpine subregion rotation, and runtime
@@ -898,6 +1023,16 @@ active curation lease and atomic state transitions. It carries no GitHub
 mutation authority; a push still requires the ordinary validated work state
 and creates the separate push journal first.
 
+A separate remediation-continuation record binds one delta-validated but not
+yet semantically reviewed local head to its PR, selected remote head,
+prepare-time base, report, allowed prepared scope, and immutable recovery refs.
+It remains in the remediation-specific `available`, `resolving`, `consumed`, or
+`invalidated` lifecycle and can never carry `validated` or publication-ready
+status. The helper may atomically replace it with newer same-PR remediation,
+resume it under a successor lease, or promote it to reviewed recovery. A
+blocked/hold label changes only scheduled resumability; it does not delete or
+invalidate exact saved work.
+
 Every completed, stopped, or failed run emits one bounded Triage outcome with
 worker, optional work ID plus PR or candidate identity, last phase when work
 began, whether a mutation occurred, and a terminal/no-op reason. Lease run IDs
@@ -912,6 +1047,15 @@ flag, elapsed minutes, and recovery obligation. Missing values are explicit
 `null`; lease IDs, credentials, commands, source prose, and raw errors are never
 recorded. The index is for operational audits only and cannot authorize
 selection, recovery, review reuse, or mutation.
+
+Schedule health uses the private curation and discovery `run-index.jsonl` files
+under `${CODEX_HOME:-$HOME/.codex}/automations/<automation-id>/` together with
+Codex automation history. The configured cadence remains four curation starts
+per local day and discovery on Monday, Wednesday, and Friday. No curation start
+for 12 hours, no discovery start by 24 hours after its next scheduled weekday,
+or a start without terminal completion after five hours is stale and requires
+read-only inspection. A missing index with no history is `never-started`.
+Neither the index nor Triage contains lease IDs.
 
 ### Push journal
 
@@ -1045,6 +1189,14 @@ Example:
   exact continuation instead of restarting semantic work. Without one, the
   memory entry remains only a selection hint and all semantic review and helper
   gates start fresh.
+- **Remediation continuation:** prefer it after reviewed recovery and before an
+  ordinary PR. Restore or safely replay the exact checkpoint and require one
+  fresh bounded full review; never infer review or publication authority from
+  successful delta validation.
+- **Remediation interrupted by sleep, deadline, validation, or status
+  publication:** preserve the exact continuation. A truthful blocked or
+  owner-decision outcome may coexist with it; deliberate hold-label removal
+  permits a later revalidated resume.
 - **Reviewed continuation with unchanged base/head:** restore the exact reviewed
   ref and rerun only the failed or incomplete deterministic/finalization gate.
 - **Reviewed continuation after main drift:** replay the helper-owned squash
@@ -1058,7 +1210,7 @@ Example:
 - **Stale selected PR:** reject before preparation.
 - **Ordinary rebase/current-main conflict:** abort, retain backup, and request
   the status-only `blocked/conflict` outcome when the selected remote head
-  remains exact; otherwise Triage only. The reviewed-continuation replay has
+  remains exact; otherwise Triage only. A helper-owned private continuation has
   the single allowed-path remediation exception specified above.
 - **Destination/ski-area boundary ambiguity:** run focused boundary adjudication
   before minute 180. Return a policy-determined result to the fixer, route an
@@ -1097,6 +1249,9 @@ Example:
 - **CI failure:** a later bounded run requests status-only
   `blocked/ci-failure` for the exact unchanged head.
 - **New head:** invalidate review, validation, CI, and readiness evidence.
+- **Regional follow-up only:** update the schema-v3 report and merged backlog,
+  run delta validation plus one targeted handoff consistency review, and do not
+  classify curation as non-converging solely for additive coverage.
 
 ## Security And Trust Boundary
 
@@ -1156,6 +1311,15 @@ Keep focused deterministic tests for:
 - reviewed-continuation checkpoint/ref creation, successor adoption, exact-head
   deterministic retry, clean main-drift replay, one bounded allowed-path
   conflict remediation, and fail-closed remote-head/ref/scope drift;
+- remediation-continuation checkpoint/ref creation, atomic replacement,
+  reviewed-first selection, pause-label hold, successor replay, crash-safe
+  promotion, and fail-closed remote-head/ref/path/mode drift;
+- strict finalized evidence-envelope and graph-impact validation, exact-head
+  regional backlog anchors, and legacy schema-v3 readability;
+- exactly two deterministic delta commands per remediation and one final broad
+  validation for the reviewed head;
+- backlog-origin proposal focus matching for one coherent primary destination
+  plus declared linked graph dependencies;
 - transition from reviewed continuation to the existing push journal without
   competing recovery authority;
 - 210-minute new-semantic-work cutoff, 240-minute semantic stop, and separate
@@ -1216,14 +1380,23 @@ replaced. It is history, not current operational instruction:
 - Codex chooses at most one PR from a deterministically safe inventory.
 - A still-exact eligible PR from an unpublished curation cycle is selected
   before unrelated fresh work. A helper-owned reviewed continuation may restore
-  its exact reviewed work; otherwise its memory entry supplies no review or
-  mutation authority.
+  exact reviewed work; a remediation continuation may restore only
+  delta-validated work requiring fresh review. Otherwise its memory entry
+  supplies no review or mutation authority.
 - Codex semantically interprets backlog and external discovery sources.
 - No runtime destination coverage registry or deterministic backlog parser
   remains.
 - One run creates at most one proposal and never exceeds three open proposals.
-- Discovery prioritizes a revalidated preferred retry, then actionable bounded
-  Catalog Curation Refinements slices, before unrelated external research.
+- Discovery prioritizes unresolved journal recovery, a revalidated preferred
+  retry, merged regional-completion follow-ups, and other active backlog
+  candidates, in that order, before unrelated external research.
+- A regional proposal has exactly one primary stay destination matching its
+  candidate and a coherent graph of applicable bases, access, ski-area/pass
+  ownership, weather/migration implications, exclusions, owner decisions, and
+  rollback.
+- GitHub proposal identity and the merged schema-v3 report are durable proposal
+  authority; the same PR marks its backlog item proposed, then completed or
+  narrowed after owner acceptance and merge.
 - Discovery research is read-only before lease acquisition; catalog and
   proposal state are revalidated under the lease before mutation.
 - Candidates already in freshly fetched canonical `main` or already open on
@@ -1293,7 +1466,7 @@ replaced. It is history, not current operational instruction:
 - Every post-fix full reviewer independently reconstructs current scope before
   reconciling the parent-owned finding ledger as untrusted history.
 - Current-main conflicts stop before every ordinary fix, adaptive review, and
-  final manual-check or validation/push sequence. Only a helper-owned reviewed
+  final manual-check or validation/push sequence. Only a helper-owned private
   continuation may expose one allowed-path squash-replay conflict for bounded
   maintainer-managed resolution, and the resulting exact head receives one
   fresh independent full review before validation or publication.
@@ -1302,6 +1475,14 @@ replaced. It is history, not current operational instruction:
   process interruptions through owner-private state and persistent refs. It is
   invalidated on remote-head drift and yields to the push journal before any
   irreversible branch mutation.
+- An exact delta-validated remediation head survives interruption and truthful
+  blocked/owner-decision publication without claiming review. Reviewed recovery
+  is preferred, and every remediation resume receives a fresh bounded review.
+- Finalized curation/proposal reports include a non-empty evidence envelope and
+  graph impact for every assessed candidate. Additive regional follow-ups use
+  exact merged-backlog anchors and do not block a graph-correct PR.
+- Each remediation uses only the two-command delta checkpoint; one final broad
+  validation and complete final URL reachability pass occur after fresh review.
 - Safe selected-PR terminal outcomes update one canonical comment and lifecycle
   label without pushing, changing the body, or claiming review/validation; the
   hold applies only to the exact observed remote head.
@@ -1474,6 +1655,14 @@ replaced. It is history, not current operational instruction:
   immutable local checkpoint refs are retained for diagnosis until deliberate
   maintenance is introduced; they contain commits only, no credentials or
   authority-bearing lease data.
+- Advisory convergence-and-regional-completion design review: complete for data
+  trust, AI/LLM reliability, security/privacy, release/change management, and
+  observability/ops. The owner resolved the evidence-envelope,
+  graph-correctness, proportional-validation, private remediation, coherent
+  regional-slice, merged-backlog handoff, and atomic cutover decisions. No new
+  ADR is required because the accepted two-worker control plane and
+  helper/objective boundary are unchanged. Feature review of the exact
+  implementation remains required before merge.
 - Implementation and activation: the base design is complete. Its feature work
   passed the recorded maintainer, focused catalog, lint/format, full-suite,
   prospective-merge, and CI checks before merge. The owner then approved and
@@ -1484,3 +1673,6 @@ replaced. It is history, not current operational instruction:
   personal skill. Scheduled runs use only the generic helper-owned continuation
   inventory and lifecycle; migration of any pre-existing legacy reviewed record
   remains an explicit owner-run operation outside the recurring schedule.
+  The convergence-and-regional-completion amendment is implemented only in this
+  branch. It is not repository authority on `main` or installed automation
+  behavior until merge, feature review, and the owner-paused post-merge cutover.
