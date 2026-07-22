@@ -1926,7 +1926,7 @@ def test_remediation_replay_returns_one_allowed_conflict_and_completes_it(
 def test_remediation_conflict_rederives_scope_and_cleans_up_unsafe_resolution(
     tmp_path: Path,
 ) -> None:
-    local = _local_repository(tmp_path)
+    local = _local_repository(tmp_path, base_trust_manifest="{}\n")
     repository = _integration_repository(local)
     prepared = repository.prepare_guarded_sync(local.pull_request)
     refs = repository.checkpoint_remediation_continuation(
@@ -1947,14 +1947,68 @@ def test_remediation_conflict_rederives_scope_and_cleans_up_unsafe_resolution(
     (local.checkout / "app/data/catalog.json").write_text(
         _catalog(alpha_name="Target Alpha"), encoding="utf-8"
     )
-    (local.checkout / "README.md").write_text("unauthorized\n", encoding="utf-8")
-    _git(local.checkout, "add", "app/data/catalog.json", "README.md")
+    persisted_allowed_paths = frozenset(
+        {
+            "app/data/catalog.json",
+            "app/data/resort_trust_manifest.json",
+        }
+    )
+    assert "app/data/resort_trust_manifest.json" in persisted_allowed_paths
+    # This models a tampered persisted allowlist. It is deliberately not passed
+    # to GitRepository: replay authorization must come from immutable refs.
+    (local.checkout / "app/data/resort_trust_manifest.json").write_text(
+        '{"widened": true}\n',
+        encoding="utf-8",
+    )
+    _git(
+        local.checkout,
+        "add",
+        "app/data/catalog.json",
+        "app/data/resort_trust_manifest.json",
+    )
 
     with pytest.raises(RepositorySafetyError, match="outside remediation scope"):
         repository.continue_remediation_conflict(
             local.pull_request, prepared, prepared.rebased_head, refs
         )
 
+    assert _git(local.checkout, "status", "--porcelain") == ""
+
+
+@pytest.mark.parametrize("tamper", ["missing", "rewritten"])
+def test_remediation_conflict_aborts_when_checkpoint_refs_are_tampered(
+    tmp_path: Path,
+    tamper: str,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    refs = repository.checkpoint_remediation_continuation(
+        local.pull_request, prepared, prepared.rebased_head
+    )
+    seed = tmp_path / "seed"
+    _git(seed, "switch", "main")
+    (seed / "app/data/catalog.json").write_text(
+        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
+    )
+    _git(seed, "add", "app/data/catalog.json")
+    _git(seed, "commit", "-m", "change alpha on main")
+    _git(seed, "push", "origin", "main")
+    replay = repository.prepare_remediation_continuation(
+        local.pull_request, prepared, prepared.rebased_head, refs
+    )
+    assert replay.result == "conflict"
+    if tamper == "missing":
+        _git(local.checkout, "update-ref", "-d", refs.remediation_ref)
+    else:
+        _git(local.checkout, "update-ref", refs.squash_ref, local.target_sha)
+
+    with pytest.raises(RepositorySafetyError):
+        repository.continue_remediation_conflict(
+            local.pull_request, prepared, prepared.rebased_head, refs
+        )
+
+    assert not (local.checkout / ".git" / "CHERRY_PICK_HEAD").exists()
     assert _git(local.checkout, "status", "--porcelain") == ""
 
 

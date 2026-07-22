@@ -881,12 +881,16 @@ class GitRepository:
             raise StaleRemoteHeadError(
                 "remote PR head changed during remediation replay"
             )
-        squash_head = self._validate_remediation_checkpoint_refs(
-            pull_request.number,
-            sync,
-            remediated_head,
-            refs,
-        )
+        try:
+            squash_head = self._validate_remediation_checkpoint_refs(
+                pull_request.number,
+                sync,
+                remediated_head,
+                refs,
+            )
+        except Exception:
+            self._abort_cherry_pick_if_active()
+            raise
         base_head = self.current_head()
         if self._rev_parse("refs/remotes/origin/main") != base_head:
             self._abort_cherry_pick_if_active()
