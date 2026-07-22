@@ -777,10 +777,16 @@ Preparation validates the resulting diff rather than freezing the incoming
 blob IDs, path set, or catalog targets. Catalog data, non-control-plane
 documentation, and tests may change during remediation; production code,
 operational code, the maintainer's own instructions, unsafe file modes, and
-empty diffs fail closed. Codex may therefore review and repair legacy reports
-or add supporting non-production artifacts. Validation-backed push and
-readiness still require one canonical schema-version-3 report reconciled to
-the exact reviewed catalog and trust changes.
+empty diffs fail closed. Before the initial dual review, a legacy, malformed,
+graph-less refreshed, incomplete, or non-reconciling report receives one
+`maintainer-managed` structural normalization pass. It reads the exact prepared
+base/current catalog and trust snapshots, rebuilds and locally commits the
+single schema-v3 report, then yields to review without claiming semantic
+resolution or consuming a remediation cycle. Normalization and remediation run
+catalog validation, exact reconciliation, and finding-related focused tests;
+the fixed broad catalog suite remains final helper-validation work.
+Validation-backed push and readiness still require one canonical schema-v3
+report reconciled to the exact reviewed catalog and trust changes.
 
 Ski-area-access catalog `source_urls` are the entity-level union of the trust
 manifest's independent `relationship` and `access_mode_distance` source refs.
@@ -874,11 +880,17 @@ head and the API still has the journaled old head. A third head remains an
 immediate stale-head stop.
 
 Review/fix convergence begins with two complementary independent reviews of the
-same prepared head: source/trust and graph/scope. Their findings are consolidated
-into one private structured ledger and one first fix. Each later fresh full
-review independently rechecks the complete scope, then reconciles that untrusted
-ledger so claimed fixes, repeated or regressed issues, and genuinely new
-findings remain visible without asking a reviewer to trust prior conclusions.
+same normalized prepared head: source/trust and graph/scope. Source/trust
+enumerates every applicable group from the canonical `FIELD_GROUPS` code
+registry, recording each group's status, direct refs, normalization-note need,
+and coverage disposition. Graph/scope enumerates every concrete operator
+presentation and lift-pass candidate; deferred or unresolved pass products
+carry typed assessments and canonical backlog refs. Their findings are
+consolidated into one private structured ledger and one first fix. Each later
+fresh full review independently rechecks the complete scope, then reconciles
+that untrusted ledger so claimed fixes, repeated or regressed issues, and
+genuinely new findings remain visible without asking a reviewer to trust prior
+conclusions.
 
 A possible destination or ski-area owner choice receives one additional focused
 boundary adjudication before escalation. This is not another full review: it

@@ -76,9 +76,23 @@ The installed skill must:
   inspection, and prioritize the oldest still-exact eligible follow-up before
   unrelated fresh work without reusing old review or mutation authority;
 - acquire curation before prepare and hold the lease through publication;
+- keep preparation schema-independent, but before initial review run one
+  maintainer-managed structural normalization pass when the single report is
+  legacy, malformed, graph-less after refresh, incomplete, or non-reconciling;
+  use the exact prepared base/current catalog and trust snapshots to rebuild
+  and locally commit exactly one canonical schema-v3 report without claiming
+  semantic resolution or consuming a remediation cycle;
+- during normalization and remediation, run catalog validation, exact
+  reconciliation, and finding-related focused tests; reserve the fixed broad
+  catalog suite for final helper validation;
 - run complementary independent source/trust and graph/scope reviews in
-  parallel on the initial prepared head, then consolidate them into one first
-  fix and private finding ledger;
+  parallel on the normalized prepared head, then consolidate them into one
+  first fix and private finding ledger. Source/trust must enumerate every
+  applicable canonical `FIELD_GROUPS` trust field group with its status, direct
+  refs, normalization-note need, and coverage disposition. Graph/scope must
+  enumerate every concrete operator presentation and lift-pass candidate, with
+  typed assessments and canonical backlog refs for deferred or unresolved pass
+  products;
 - preserve multi-candidate scope findings as a candidate-level ledger with one
   entry per concrete entity, product, edge, sector, or document; an inventory
   category without an enumerated candidate/source checklist is incomplete, the
@@ -224,6 +238,9 @@ For each schedule, confirm:
   `main` or an open GitHub proposal already contains the same candidate key;
 - curation readiness is tied to the unchanged reviewed, validated, pushed,
   CI-green, mergeable head; and
+- a legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
+  report is normalized before initial dual review, without consuming a
+  remediation slot, while canonical intent still rejects it until that commit;
 - no action approves or merges a PR.
 
 ## Rollback

@@ -25,7 +25,11 @@ from ops.maintainer.git_ops import (
     StaleRemoteHeadError,
     _SubprocessRunner,
 )
-from ops.maintainer.intent import IntentDriftError, IntentSnapshot
+from ops.maintainer.intent import (
+    IntentDriftError,
+    IntentSnapshot,
+    build_intent_snapshot,
+)
 from ops.maintainer.models import PullRequest
 
 pytestmark = pytest.mark.db_free
@@ -1750,9 +1754,67 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
     repository = _integration_repository(local)
 
     prepared = repository.prepare_guarded_sync(local.pull_request)
-    normalized_report = json.loads(legacy_report)
-    normalized_report["report_schema_version"] = 2
-    normalized_report["entity_scope_assessments"] = []
+    normalized_report = {
+        "report_schema_version": 3,
+        "title": "Normalized Alpha report",
+        "summary": "Rebuilds the legacy input before independent review.",
+        "resulting_graph": {"focus_stay_destination_ids": ["alpha"]},
+        "reviewed_targets": [
+            {
+                "target_type": "ski_area",
+                "target_id": "alpha",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            }
+        ],
+        "entity_scope_assessments": [
+            {
+                "candidate_id": "alpha",
+                "candidate_name": "Alpha",
+                "candidate_kind": "ski_area",
+                "disposition": "represented",
+                "signals": [
+                    "official_independent_identity",
+                    "independent_weather_presentation",
+                ],
+                "evidence_refs": ["alpha-scope"],
+                "target_refs": [{"target_type": "ski_area", "target_id": "alpha"}],
+                "rationale": "Official evidence confirms the represented area.",
+                "ski_area_boundary": {
+                    "parent_ski_area_id": None,
+                    "terrain_scope": "complete",
+                    "connectivity_to_parent": "not_applicable",
+                    "operational_scope": "unknown",
+                    "weather_scope": "independent",
+                    "pass_scope": "none",
+                    "provider_consensus": "separate",
+                    "separation_value": "material",
+                    "evidence_refs": ["alpha-scope"],
+                },
+            }
+        ],
+        "evidence": [
+            {
+                "evidence_id": "alpha-scope",
+                "target_type": "ski_area",
+                "target_id": "alpha",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/alpha",
+                "source_title": "Official Alpha",
+                "source_value": "Alpha",
+                "evidence_summary": "Confirms Alpha's independent identity.",
+            }
+        ],
+        "field_coverage": [
+            {
+                "target_type": "ski_area",
+                "target_id": "alpha",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            }
+        ],
+    }
     (local.checkout / REPORT_PATH).write_text(
         json.dumps(normalized_report, indent=2),
         encoding="utf-8",
@@ -1765,10 +1827,16 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
         prepared,
         reviewed_head,
     )
+    canonical = build_intent_snapshot(
+        repository,
+        prepared.base_head,
+        reviewed_head,
+    )
 
     assert REPORT_PATH in reviewed.changed_paths
     assert reviewed.catalog_targets == frozenset({"ski_area:alpha"})
     assert reviewed.report_targets == frozenset()
+    assert canonical.report_targets == frozenset({"ski_area:alpha"})
 
 
 def test_create_only_push_creates_absent_discovery_branch(tmp_path: Path) -> None:

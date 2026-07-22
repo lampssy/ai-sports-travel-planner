@@ -144,9 +144,18 @@ Out of scope:
   mode inside the provided isolated worktree. The sub-skill supplies semantic
   research, edits, reporting, and reconciliation, then yields branch, commit,
   validation, and publication ownership to this orchestration layer.
+- Keeps preparation schema-independent, then structurally normalizes a legacy,
+  malformed, graph-less refreshed, incomplete, or non-reconciling report before
+  initial review. The maintainer-managed pass rebuilds one schema-v3 report
+  from the exact prepared base/current catalog and trust snapshots, validates,
+  reconciles, runs finding-related focused tests, and commits without claiming
+  semantic resolution or consuming a remediation cycle.
 - Starts curation with parallel independent `source-trust` and `graph-scope`
-  reviews of the same prepared head, then consolidates both dispositions into
-  one first fix.
+  reviews of that normalized prepared head, then consolidates both dispositions
+  into one first fix. Source-trust inventories every applicable canonical trust
+  field group; graph-scope inventories every concrete operator presentation and
+  lift-pass candidate, retaining typed/backlogged deferred or unresolved pass
+  products.
 - Before treating a destination or ski-area boundary finding as an owner
   choice, runs one fresh focused boundary adjudication against the accepted
   model rules. A policy-determined graph returns to the normal fixer/re-review
@@ -381,11 +390,27 @@ the same-key duplicate gate without trying to infer identity from prose.
    If guarded preparation reports a rebase conflict while the selected remote
    head remains exact, Codex requests the status-only `blocked/conflict`
    outcome before release. It does not push or claim a review.
-4. Codex starts two fresh reviewer contexts in parallel against the exact
+4. Before initial review, Codex checks whether the single curation report is
+   canonical schema v3, complete, has a current resulting graph, and exactly
+   reconciles to the prepared base/current catalog and trust snapshots. A
+   legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
+   report triggers one `snowcast-catalog-curation` pass in
+   `maintainer-managed` mode. The pass uses those exact snapshots to rebuild
+   the single schema-v3 report, runs catalog validation, exact reconciliation,
+   and finding-related focused tests, then commits locally. It is structural
+   normalization only: it does not claim semantic resolution, alter the
+   finding ledger, or consume a remediation-cycle slot. The fixed broad catalog
+   suite remains reserved for final helper validation.
+5. Codex starts two fresh reviewer contexts in parallel against the normalized
    prepared head. One invokes `snowcast-catalog-review` in `source-trust` mode;
    the other uses `graph-scope`. Neither receives the other's result. Together
-   they count as one initial review stage.
-5. Codex consolidates the two complete dispositions into one private finding
+   they count as one initial review stage. `source-trust` enumerates every
+   applicable trust field group from the canonical `FIELD_GROUPS` registry with
+   its status, direct refs, normalization-note need, and coverage disposition.
+   `graph-scope` enumerates every concrete operator presentation and lift-pass
+   candidate, with typed assessments and canonical backlog refs for each
+   deferred or unresolved pass product.
+6. Codex consolidates the two complete dispositions into one private finding
    ledger and first fix. It deduplicates overlapping findings but preserves
    conflicts. For scope inventory,
    the ledger has one stable candidate entry per concrete entity, product,
@@ -401,7 +426,7 @@ the same-key duplicate gate without trying to infer identity from prose.
    preferred graph. It returns `policy_determined`, `owner_choice_required`,
    or `evidence_insufficient`, with a recommended graph, alternatives,
    decisive evidence, and identity/weather consequences.
-6. Before every fix, before adaptive reviews, and once more before any final
+7. Before every fix, before adaptive reviews, and once more before any final
    manual-check or validation/push sequence, Codex fetches current `origin/main`,
    verifies the exact local head and clean worktree, and uses read-only `git merge-tree
    --write-tree origin/main HEAD`. A conflict stops the run before more review,
@@ -411,14 +436,14 @@ the same-key duplicate gate without trying to infer identity from prose.
    validation remain bound to the prepare-time base/head returned by the
    helper. An ordinary conflict requests status-only `blocked/conflict` for the
    unchanged remote head when the outcome gate is safe.
-7. Codex applies a fix when the issue is inside the existing model and source
+8. Codex applies a fix when the issue is inside the existing model and source
    evidence is sufficient. It may update non-control-plane documentation and
    tests, but not production code, operational code, or the maintainer's own
    instructions. The first fix batches every compatible open candidate entry
    from the completed initial inventory rather than choosing one representative.
    Each actually addressed ledger entry becomes only `claimed-fixed`; an
    umbrella category or omitted checklist member does not.
-8. A fresh independent full Codex review follows every fix. It runs in a new
+9. A fresh independent full Codex review follows every fix. It runs in a new
    reviewer context, receives the ledger only as untrusted history, independently
    reviews the exact current head and full scope, and then classifies prior
    entries as resolved, repeated, regressed, superseded, or owner-decision while
@@ -433,7 +458,7 @@ the same-key duplicate gate without trying to infer identity from prose.
    mandatory fresh full review. `evidence_insufficient` uses `manual-check`
    only for an otherwise complete scope-safe head and otherwise requests
    `blocked/review-incomplete` when safe.
-9. At most six remediation cycles occur in one run. One cycle contains one
+10. At most six remediation cycles occur in one run. One cycle contains one
    maintainer-managed fixer invocation, which may batch compatible ledger
    findings, one parent-owned local commit, and the required fresh full review.
    Boundary adjudication is read-only and does not consume a remediation-cycle
@@ -447,7 +472,7 @@ the same-key duplicate gate without trying to infer identity from prose.
    when safe. A real owner/model choice confirmed by focused adjudication
    requests status-only `owner-decision/owner-decision`; its observed remote
    head remains separate from any unpublished local review/fix head.
-10. The curation lease acquisition starts a private wall-clock semantic budget.
+11. The curation lease acquisition starts a private wall-clock semantic budget.
     Boundary adjudication uses this same budget and never extends the cycle.
     Codex starts it when the possible owner choice first appears and never at or
     after minute 120, preserving time for a policy-determined fix and fresh full
@@ -465,43 +490,50 @@ the same-key duplicate gate without trying to infer identity from prose.
     running and every helper command retains its own timeout. Sleep does not
     spend this active finalization allowance; interruption leaves recovery to
     the helper journal rather than reopening semantic work.
-11. If still not clean but the reviewed result remains inside the existing
+12. If still not clean but the reviewed result remains inside the existing
    model and allowed scope, Codex invokes `publish manual-check`; the helper
    revalidates and exact-lease pushes that reviewed head before publishing the
    pause without validation evidence.
-12. A PR carrying `manual-check` is excluded until a new commit or deliberate
+13. A PR carrying `manual-check` is excluded until a new commit or deliberate
     label removal makes it eligible again.
-13. When Codex declares semantic review complete, Codex materializes a detached
+14. When Codex declares semantic review complete, Codex materializes a detached
     clean checkout at the exact prepare-time base returned by the helper and
     supplies it as the validation base. It never substitutes a later
     `origin/main`. The helper validates the exact reviewed head, after which
     Codex removes only the base checkout it created.
-14. The helper performs the guarded push if needed.
-15. Codex writes a concise synopsis of the final reviewed scope, evidence,
+15. The helper performs the guarded push if needed.
+16. Codex writes a concise synopsis of the final reviewed scope, evidence,
     verification, and owner caveats and includes the helper-reproduced canonical
     resulting-graph Mermaid section. It then requests `waiting-ci` with that
     body input while GitHub checks are pending. The helper rejects a missing or
     altered canonical graph before publication. The full schema-v3 report
     remains in the repository.
-16. A later lightweight run handles the unchanged `waiting-ci` head without
+17. A later lightweight run handles the unchanged `waiting-ci` head without
     preparation or semantic review: it requests readiness when checks are green
     and mergeability is clean, supplying the current synopsis again; it remains
     a bounded no-op while checks are pending. Failed checks request the
     status-only `blocked/ci-failure` outcome for the exact unchanged head;
     stale-head and unsafe capability errors remain Triage-only.
-17. A `ready` PR stays out of fresh selection while its head remains unchanged;
+18. A `ready` PR stays out of fresh selection while its head remains unchanged;
     a new commit invalidates the hold and makes it eligible again.
-18. An unchanged status-only `blocked` or `owner-decision` head is also held out
+19. An unchanged status-only `blocked` or `owner-decision` head is also held out
     of selection. A new commit or deliberate label removal makes it eligible.
-19. The owner performs the final review and merge.
+20. The owner performs the final review and merge.
 
 Waiting for CI is not a review/fix attempt. Persistent lineage IDs and
 three-attempt counters are removed.
 
-Incoming curation reports may use a legacy schema or be incomplete. Codex
-treats them as context and upgrades the existing report during remediation.
-The final validation and readiness gates continue to require exactly one
-schema-version-3 report reconciled to the reviewed catalog and trust changes.
+Incoming curation reports are schema-independent preparation input. Before the
+initial dual review, Codex normalizes any legacy, malformed, graph-less
+refreshed, incomplete, or non-reconciling report against the exact prepared
+base/current catalog and trust snapshots. This pre-review structural pass
+rebuilds and commits exactly one canonical schema-v3 report without claiming a
+semantic fix or consuming a remediation cycle. Normalization and every later
+remediation run catalog validation, exact reconciliation, and finding-related
+focused tests; the fixed broad catalog suite is reserved for final helper
+validation. The final validation and readiness gates continue to require that
+single schema-version-3 report reconciled to the reviewed catalog and trust
+changes.
 Historical schema-v3 reports remain readable without `resulting_graph`; any
 report newly validated or refreshed by the maintainer must declare one or more
 focus stay destinations so the helper can derive the canonical graph. The
@@ -1199,9 +1231,18 @@ replaced. It is history, not current operational instruction:
   instructions, workflows, dependencies, migrations, deployment configuration,
   and executable scripts remain excluded.
 - Curation preparation accepts schema-independent incoming report content, but
-  final validation requires one canonical schema-version-3 reconciled report.
+  a legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
+  report is structurally normalized before initial review. The pass uses exact
+  prepared catalog/trust snapshots, commits one canonical schema-version-3
+  report, runs focused validation/reconciliation, and consumes no remediation
+  slot; final helper validation alone runs the fixed broad catalog suite.
 - Initial curation review uses complete independent source/trust and graph/scope
-  lanes on the same exact prepared head; neither lane sees the other's output.
+  lanes on the same exact normalized prepared head; neither lane sees the
+  other's output. Source/trust enumerates every applicable `FIELD_GROUPS`
+  entry with status, direct refs, normalization-note need, and coverage
+  disposition. Graph/scope enumerates every concrete operator presentation and
+  lift-pass candidate; deferred or unresolved pass products require typed
+  assessments and canonical backlog refs.
 - Initial multi-candidate scope output becomes a candidate-level ledger with an
   enumerated candidate/source checklist; an inventory category alone is
   incomplete, and a known-but-unfixed candidate cannot later be classified as
@@ -1259,7 +1300,11 @@ replaced. It is history, not current operational instruction:
   chose complementary parallel initial reviews, an untrusted cross-review
   finding ledger, current-main conflict probes before fixes/adaptive reviews
   and final publication, 150/180-minute semantic deadlines, and a separate
-  30-active-minute finalization allowance while retaining the current model. The
+  30-active-minute finalization allowance while retaining the current model.
+  The owner then chose a pre-review structural normalizer: it preserves
+  schema-independent preparation, rebuilds the report from exact prepared
+  catalog/trust snapshots, and yields a locally committed canonical v3 report
+  to the two initial reviewers without counting as semantic remediation. The
   owner then chose one idempotent status-only GitHub outcome for safe
   PR-specific terminal stops, using existing `blocked`/`owner-decision` labels,
   the canonical comment, exact observed-head holds, and no PR-body updates. For

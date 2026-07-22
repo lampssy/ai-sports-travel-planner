@@ -13,6 +13,7 @@ from ops.maintainer.intent import (
     IntentDiffEntry,
     IntentValidationError,
     build_intent_snapshot,
+    build_preparation_intent_snapshot,
     is_allowed_curation_path,
 )
 
@@ -374,6 +375,43 @@ def test_incomplete_schema_v3_report_is_rejected_with_path_context() -> None:
 
     assert "title" in str(exc.value)
     assert "summary" in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    ("content", "canonical_error"),
+    [
+        ("not-json", "invalid JSON"),
+        (json.dumps({"report_schema_version": 1}), "report_schema_version must be 3"),
+        (json.dumps({"report_schema_version": 2}), "report_schema_version must be 3"),
+        (
+            json.dumps(
+                {
+                    "report_schema_version": 3,
+                    "title": "Incomplete current report",
+                    "summary": "Requires pre-review normalization.",
+                }
+            ),
+            "invalid CatalogCurationReport",
+        ),
+    ],
+)
+def test_preparation_treats_noncanonical_report_content_as_review_input(
+    content: str,
+    canonical_error: str,
+) -> None:
+    path = "docs/catalog-curation/alpha.json"
+    repository = FakeIntentRepository([path], {("head", path): content})
+
+    snapshot = build_preparation_intent_snapshot(repository, "base", "head")
+
+    assert snapshot.changed_paths == frozenset({path})
+    assert snapshot.report_targets == frozenset()
+    assert repository.show_calls == []
+
+    with pytest.raises(IntentValidationError, match=canonical_error):
+        build_intent_snapshot(repository, "base", "head")
+
+    assert repository.show_calls == [("head", path)]
 
 
 @pytest.mark.parametrize(
