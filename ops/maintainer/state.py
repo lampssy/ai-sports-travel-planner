@@ -601,7 +601,10 @@ class StateStore:
             remediation = self.load_remediation_continuation(work_id)
             if remediation is None:
                 raise StateStoreError("remediation continuation is missing")
-            if remediation.status is not RemediationContinuationStatus.AVAILABLE:
+            if remediation.status not in {
+                RemediationContinuationStatus.AVAILABLE,
+                RemediationContinuationStatus.RESOLVING,
+            }:
                 raise StateStoreError("remediation continuation is not available")
             if remediation.recovery_run_id == lease.run_id:
                 raise StateStoreError("remediation adoption requires a successor run")
@@ -610,7 +613,7 @@ class StateStore:
                 update={
                     "recovery_run_id": lease.run_id,
                     "updated_at": updated_at,
-                    "status": RemediationContinuationStatus.RESOLVING,
+                    "status": RemediationContinuationStatus.AVAILABLE,
                 }
             )
             self._save_model(self.remediation_continuation_dir, work_id, adopted)
