@@ -1312,6 +1312,7 @@ def _reviewed_matches_remediation_authority(
     return (
         reviewed.work_id == remediation.work_id
         and reviewed.pr_number == remediation.pr_number
+        and reviewed.origin_run_id == remediation.origin_run_id
         and reviewed.selected_head == remediation.selected_head
         and reviewed.sync == remediation.sync
         and reviewed.report_path == remediation.report_path
@@ -1328,6 +1329,7 @@ def _reviewed_continuations_are_equivalent(
         for field_name in (
             "work_id",
             "pr_number",
+            "origin_run_id",
             "selected_head",
             "reviewed_head",
             "report_path",

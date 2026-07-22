@@ -393,7 +393,10 @@ def test_remediation_promotion_leaves_both_records_unchanged_when_reviewed_write
     assert store.load_remediation_continuation(remediation.work_id) == remediation
 
 
-@pytest.mark.parametrize("mismatch", ["selected_head", "sync", "report_path", "head"])
+@pytest.mark.parametrize(
+    "mismatch",
+    ["selected_head", "sync", "report_path", "head", "origin_run_id"],
+)
 def test_remediation_promotion_requires_exact_reviewed_authority(
     tmp_path: Path,
     mismatch: str,
@@ -420,6 +423,8 @@ def test_remediation_promotion_requires_exact_reviewed_authority(
         reviewed = reviewed.model_copy(
             update={"report_path": "docs/catalog-curation/other.json"}
         )
+    elif mismatch == "origin_run_id":
+        reviewed = reviewed.model_copy(update={"origin_run_id": "f" * 32})
     else:
         reviewed = reviewed.model_copy(update={"reviewed_head": SHA_4})
 
