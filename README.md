@@ -163,7 +163,9 @@ and one canonical maintainer comment. The helper never approves or merges.
 Curation starts with parallel source/trust and graph/scope reviews of the exact
 prepared head. Later fresh reviewers independently recheck the full scope and
 then reconcile a private finding ledger, while current-main conflict probes and
-150/180-minute soft/hard deadlines keep long remediation loops bounded.
+210/240-minute soft/hard deadlines keep long remediation loops bounded. A
+larger fresh finding set may continue when all earlier findings are resolved and
+the new work is source-backed, in-model, and inside the bounded PR scope.
 
 Discovery is backlog-first: it retries a previously sourceable candidate that
 lost only to `lock-busy`, then advances the next bounded `candidate` slice under

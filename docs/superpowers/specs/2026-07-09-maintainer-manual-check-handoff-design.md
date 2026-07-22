@@ -8,6 +8,9 @@
   `maintainer:manual-check`
 - Related design: `2026-07-08-local-maintainer-simplification-design.md`
 - Related ADR: ADR 0011 amended by this implementation
+- Current authority: this document records the original manual-check capability;
+  the related design and local-maintainer activation contract own current
+  convergence and timing policy.
 
 ## Outcome
 
@@ -49,14 +52,12 @@ No schema, persistence, or API migration is required.
 
 ## Adaptive Six-Cycle Bound
 
-The initial four-cycle limit is extended to an adaptive maximum of six in the
-active repository contract, activation checklist, installed
-`snowcast-maintainer` skill, and persisted curation automation prompt. Cycles
-five and six run only while fresh independent reviews show concrete convergence
-on in-model findings, and the run stops at two hours. Every fix still requires
-a fresh `snowcast-catalog-review` context. Owner decisions, schema/domain
-expansion, conflicts, repeated unchanged findings, loss of progress, and
-capability errors still stop immediately.
+The initial four-cycle limit was extended to an adaptive maximum of six by this
+implementation. The current related design defines progress-and-safety
+convergence and the current 180/210/240-minute semantic boundaries plus bounded
+finalization. Every fix still requires a fresh `snowcast-catalog-review`
+context. Owner decisions, unsafe schema/domain expansion, conflicts, repeated
+or regressed findings, loss of progress, and capability errors still stop.
 
 ## Reviewed-Head Manual Check
 

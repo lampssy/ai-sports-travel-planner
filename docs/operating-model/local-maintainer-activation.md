@@ -107,11 +107,18 @@ The installed skill must:
   `owner-decision` for `owner_choice_required` results;
 - perform at most six remediation cycles, using a fresh independent full
   `snowcast-catalog-review` context after every fix and passing the ledger only
-  as untrusted history; cycles five and six require demonstrable convergence;
+  as untrusted history; before every further fixer, require every prior finding
+  to be resolved or superseded, no repeat or regression, and every new finding
+  to be concrete, source-backed, in-model, and inside the bounded mutation
+  scope; finding-count growth alone does not prove non-convergence, and cycles
+  five and six apply the same gate within the remaining time budget; record each
+  concrete candidate/source omission as inventory expansion and refresh the
+  complete inventory, while the same omission or same incomplete inventory
+  category recurring after refresh is repeated incomplete inventory and stops;
 - recheck current-main mergeability before every fix and adaptive review and
   once more before final manual-check or validation/push; start no boundary
-  adjudication at or after minute 120, stop new semantic work at 150 minutes,
-  and at 180 interrupt semantic work while allowing at most 30 active minutes
+  adjudication at or after minute 180, stop new semantic work at 210 minutes,
+  and at 240 interrupt semantic work while allowing at most 30 active minutes
   of exact-state validation, publication, recovery, and cleanup;
 - bind a complete review disposition to the exact reviewed head; use
   `manual-check` only for a complete scope-safe reviewed handoff, route an
@@ -134,8 +141,11 @@ The installed skill must:
   authorizes it; never attempt to resume or recreate the consumed local
   continuation once a journal exists;
 - use the helper's explicit `publish manual-check` capability to preserve a
-  scope-safe unresolved reviewed head; never push it directly or represent it
-  as validated;
+  mechanically valid, scope-safe reviewed head when the cycle or semantic-time
+  bound is reached with remaining findings that are only bounded in-model work;
+  never push it directly or represent it as validated; an unresolved or moved
+  prior finding, repeat, regression, repeatedly incomplete inventory, incomplete
+  review, or unsafe scope remains status-only blocked;
 - use `publish outcome` for safe PR-specific terminal conflict, CI, deadline,
   non-convergence, validation, review-incomplete, or owner-decision stops; bind
   it to the exact unchanged remote head, update only the lifecycle label and
@@ -241,6 +251,22 @@ For each schedule, confirm:
   `main` or an open GitHub proposal already contains the same candidate key;
 - curation readiness is tied to the unchanged reviewed, validated, pushed,
   CI-green, mergeable head; and
+- a pressure scenario where two prior findings are verified resolved and three
+  concrete, source-backed, in-model, bounded findings are newly discovered
+  continues when cycle and time remain; raw count growth alone does not stop it;
+- a repeated, regressed, unresolved, or moved prior finding and repeatedly
+  incomplete inventory stop as non-converging instead of authorizing another
+  fix;
+- reaching six cycles or the 210-minute new-work cutoff with a mechanically
+  valid, scope-safe, exact reviewed head and remaining findings that are only
+  bounded in-model work runs `validate reviewed` and preserves the head through
+  `manual-check`; an unsafe, incomplete, or unreviewed head is not pushed;
+- boundary adjudication stops spawning at minute 180, semantic work stops
+  spawning at minute 210, active semantic contexts are interrupted at minute
+  240, and only the separate 30-active-minute finalization allowance follows;
+- the installed skill and automation prompts contain no obsolete minute-120
+  boundary cutoff, 150-minute semantic cutoff, 180-minute hard deadline, or old
+  fewer/lower/narrower and non-narrowing-count convergence rule;
 - a legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
   report is normalized before initial dual review, without consuming a
   remediation slot, while canonical intent still rejects it until that commit;

@@ -173,11 +173,16 @@ Out of scope:
   are enumerated; the first fix batches all compatible candidate entries, and a
   known-but-unfixed candidate remains repeated rather than being rediscovered
   as new scope.
-- Performs at most six remediation cycles. Cycles five and six run only while
-  remaining findings are in-model and the ledger shows concrete convergence.
+- Performs at most six remediation cycles. Before every further fixer, the
+  ledger must show that prior findings are resolved or superseded without
+  repeats or regressions and that any new findings are concrete, source-backed,
+  in-model, and inside the bounded mutation scope. Finding-count growth alone
+  does not end the cycle; cycles five and six use the same gate within the
+  remaining time budget.
   It rechecks current-main mergeability before every fix and adaptive review
   and once more before final manual-check or validation/push, stops spawning
-  semantic work at 150 minutes, and stops absolutely at 180.
+  semantic work at 210 minutes, and interrupts semantic work at 240 before the
+  separate bounded finalization phase.
 - Binds a complete review disposition to the exact reviewed head. An
   incomplete review requests `blocked/review-incomplete` when the exact-head
   outcome gate is safe; only a complete reviewed scope-safe handoff may use
@@ -472,23 +477,38 @@ the same-key duplicate gate without trying to infer identity from prose.
    findings, one parent-owned local commit, and the required fresh full review.
    Boundary adjudication is read-only and does not consume a remediation-cycle
    slot, but it consumes the same wall-clock budget; its resulting fix and fresh
-   review consume one normal cycle.
-   Cycles five and six are adaptive: before spawning their reviews Codex repeats
-   the current-main mergeability check, then continues only when ledger evidence
-   shows fewer, lower-severity, or materially narrower in-model findings. A
-   repeated unchanged finding, regression, non-narrowing new set, or loss of
-   progress stops the loop and requests status-only `blocked/non-converging`
-   when safe. A real owner/model choice confirmed by focused adjudication
-   requests status-only `owner-decision/owner-decision`; its observed remote
-   head remains separate from any unpublished local review/fix head.
+   review consume one normal cycle. A concrete candidate or required source
+   absent from the completed initial inventory is recorded explicitly as an
+   inventory-expansion finding rather than being silently relabeled. It may
+   continue only when it is concrete, source-backed, in-model, and bounded; the
+   parent adds it to the refreshed complete inventory. The same omission, or the
+   same demonstrably incomplete inventory category after refresh, is repeated
+   incomplete inventory and stops the loop. A different genuinely new bounded
+   finding still receives the normal progress-and-safety assessment.
+   After each fresh review and before another fixer, Codex repeats the
+   current-main mergeability check and continues only when ledger evidence shows
+   that every prior finding is verified resolved or explicitly superseded,
+   no finding has repeated or regressed, and every genuinely new finding is
+   concrete, source-backed, fixable inside the existing model, and inside the
+   selected-PR or bounded-linked mutation scope. The raw number of findings may
+   increase when a fresh review legitimately discovers additional bounded work;
+   count growth alone is not non-convergence. An unresolved or moved prior
+   finding, regression, repeated incomplete inventory, unsafe scope expansion,
+   or other loss of progress stops the loop and requests status-only
+   `blocked/non-converging` when safe. A real owner/model choice confirmed by
+   focused adjudication requests status-only `owner-decision/owner-decision`;
+   its observed remote head remains separate from any unpublished local
+   review/fix head. Cycles five and six apply the same progress-and-safety gate
+   within the remaining semantic-time budget; they do not introduce a separate
+   finding-count rule.
 11. The curation lease acquisition starts a private wall-clock semantic budget.
     Boundary adjudication uses this same budget and never extends the cycle.
     Codex starts it when the possible owner choice first appears and never at or
-    after minute 120, preserving time for a policy-determined fix and fresh full
+    after minute 180, preserving time for a policy-determined fix and fresh full
     review. A boundary question first found after that cutoff remains an exact
     unpublished follow-up for the next cycle and is not prematurely published
-    as `owner-decision`. At 150 minutes Codex starts no new reviewer or fixer.
-    At 180 minutes it
+    as `owner-decision`. At 210 minutes Codex starts no new reviewer or fixer.
+    At 240 minutes it
     interrupts active semantic contexts and enters finalization-only mode: no
     research, review, fix, commit, or new test run may begin. After exact local
     head, worktree, remote head, current-main mergeability, and review-evidence
@@ -499,10 +519,17 @@ the same-key duplicate gate without trying to infer identity from prose.
     running and every helper command retains its own timeout. Sleep does not
     spend this active finalization allowance; interruption leaves recovery to
     the helper journal rather than reopening semantic work.
-12. If still not clean but the reviewed result remains inside the existing
-   model and allowed scope, Codex invokes `publish manual-check`; the helper
-   revalidates and exact-lease pushes that reviewed head before publishing the
-   pause without validation evidence.
+12. If the six-cycle or semantic-time bound is reached after prior findings were
+   resolved and there are remaining findings that are only bounded in-model
+   work, Codex does
+   not discard the reviewed progress merely because the latest finding count
+   grew. When the reviewed result remains mechanically valid and inside the
+   allowed scope, Codex invokes `publish manual-check`; the helper revalidates
+   and exact-lease pushes that reviewed head before publishing the pause without
+   validation evidence. An unresolved or moved prior finding, a repeat or
+   regression, repeatedly incomplete inventory, unsafe scope expansion,
+   incomplete review, or an unreviewed post-fix head remains status-only blocked
+   because that head is not a safe handoff.
 13. A PR carrying `manual-check` is excluded until a new commit or deliberate
     label removal makes it eligible again.
 14. When Codex declares semantic review complete, Codex materializes a detached
@@ -815,7 +842,7 @@ curation while ensuring only one worker can enter mutation.
 
 The curation parent records a private wall-clock start at successful lease
 acquisition. It checks the fixed local clock before each reviewer or fixer
-spawn. The 150-minute soft deadline prevents new semantic work. The 180-minute
+spawn. The 210-minute soft deadline prevents new semantic work. The 240-minute
 hard semantic deadline interrupts active semantic work, but exact-state
 validation, publication, recovery, lease cleanup, and final Triage retain a
 separate 30-minute active-execution allowance. Before finalization the parent
@@ -1034,7 +1061,7 @@ Example:
   remains exact; otherwise Triage only. The reviewed-continuation replay has
   the single allowed-path remediation exception specified above.
 - **Destination/ski-area boundary ambiguity:** run focused boundary adjudication
-  before minute 120. Return a policy-determined result to the fixer, route an
+  before minute 180. Return a policy-determined result to the fixer, route an
   evidence gap through the safe manual-check/review-incomplete rules, and
   request status-only `owner-decision/owner-decision` only when multiple
   defensible product graphs remain and exact-head publication is safe.
@@ -1131,7 +1158,7 @@ Keep focused deterministic tests for:
   conflict remediation, and fail-closed remote-head/ref/scope drift;
 - transition from reviewed continuation to the existing push journal without
   competing recovery authority;
-- 150-minute new-semantic-work cutoff, 180-minute semantic stop, and separate
+- 210-minute new-semantic-work cutoff, 240-minute semantic stop, and separate
   30-active-minute exact-state finalization allowance;
 - status-only outcome exact-head, no-body/no-push, review-evidence-preservation,
   idempotent comment/label, and new-head re-eligibility behavior;
@@ -1278,12 +1305,12 @@ replaced. It is history, not current operational instruction:
 - Safe selected-PR terminal outcomes update one canonical comment and lifecycle
   label without pushing, changing the body, or claiming review/validation; the
   hold applies only to the exact observed remote head.
-- Curation starts no semantic work after 150 minutes, interrupts active
-  semantic contexts at 180 minutes, and then permits only the separate bounded
+- Curation starts no semantic work after 210 minutes, interrupts active
+  semantic contexts at 240 minutes, and then permits only the separate bounded
   exact-state finalization phase.
 - A destination or ski-area boundary reaches `owner-decision` only after one
   exact-head focused adjudication confirms multiple defensible graphs; the pass
-  starts before minute 120, shares the same 180-minute budget, and returns a
+  starts before minute 180, shares the same 240-minute budget, and returns a
   policy-determined graph to the fixer plus fresh full review.
 - A PR becomes ready only for the unchanged Codex-reviewed,
   helper-validated, CI-green, mergeable head.
@@ -1315,8 +1342,14 @@ replaced. It is history, not current operational instruction:
   readiness rather than proposal creation. For curation convergence, the owner
   chose complementary parallel initial reviews, an untrusted cross-review
   finding ledger, current-main conflict probes before fixes/adaptive reviews
-  and final publication, 150/180-minute semantic deadlines, and a separate
+  and final publication. The owner originally chose 150/180-minute semantic
+  deadlines and later extended them to 210/240 minutes, with a separate
   30-active-minute finalization allowance while retaining the current model.
+  The owner also chose progress-and-safety convergence over raw finding-count
+  convergence: a larger genuinely new bounded finding set may continue after
+  prior findings are resolved, while repeated, regressed, incomplete, or unsafe
+  scope still stops. A safe reviewed head at a cycle or time bound is preserved
+  through `manual-check` rather than discarded through status-only blocking.
   The owner then chose a pre-review structural normalizer: it preserves
   schema-independent preparation, rebuilds the report from exact prepared
   catalog/trust snapshots, and yields a locally committed canonical v3 report

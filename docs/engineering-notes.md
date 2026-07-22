@@ -903,23 +903,35 @@ applies the accepted boundary gates to the concrete candidates and returns
 `policy_determined`, `owner_choice_required`, or `evidence_insufficient`. A
 policy-determined graph goes back through the normal fixer and fresh-review
 loop; only multiple defensible product graphs reach the owner. The adjudication
-shares the existing cycle clock, starts before minute 120, and never extends the
-150-minute semantic or 180-minute hard deadlines. A late boundary question is
+shares the existing cycle clock, starts before minute 180, and never extends the
+210-minute semantic or 240-minute hard deadlines. A late boundary question is
 preserved as an exact-head follow-up rather than being prematurely labeled an
 owner decision.
 
 The adaptive maximum remains six remediation cycles. Before every fix and each
 adaptive review, the parent fetches current main and runs a read-only merge-tree
 probe; a conflict stops the cycle before more work is accumulated. The first
-four cycles remain the normal bound, while cycles five and six require concrete
-ledger convergence. New semantic work stops at 150 minutes. At 180 minutes the
-parent interrupts semantic contexts and enters finalization-only mode. After
+four cycles remain the normal bound. Before every further fixer, convergence
+means that prior findings are resolved or superseded without repeats or
+regressions, and any new findings are concrete, source-backed, in-model, and
+inside the bounded mutation scope. The raw count may grow when a fresh review
+legitimately finds additional fixable work; cycles five and six use the same
+gate within the remaining time budget. New semantic work stops at 210 minutes.
+At 240 minutes the parent interrupts semantic contexts and enters
+finalization-only mode. After
 revalidating the exact head, worktree, remote, current-main mergeability, and
 review evidence, it may use up to 30 active minutes for helper validation,
 publication, recovery, cleanup, and final reporting. Report reconciliation and
 validation remain pinned to the prepare-time base even when the merge-tree
 probe uses a newer current main. This accommodates sleep and large reports
 without allowing an unbounded or stale-base review loop.
+
+When the cycle or semantic-time bound is reached after such legitimate progress,
+a mechanically valid and scope-safe reviewed head is preserved through the
+helper's `manual-check` publication path. An unresolved or moved prior finding,
+a repeat or regression, repeatedly incomplete inventory, incomplete review, or
+unsafe scope expansion still uses status-only blocked publication because the
+local head is not a safe owner handoff.
 
 Long-running helper commands use a completion protocol rather than treating the
 first tool response as the result. Codex first resumes any yielded orchestration
