@@ -29,6 +29,7 @@ from ops.maintainer.git_ops import (
     GitTransportError,
     IntentDriftError,
     RebaseConflictError,
+    RemediationCheckpointIntegrityError,
     RemediationCheckpointRefs,
     RepositorySafetyError,
     ReviewedCheckpointRefs,
@@ -223,6 +224,7 @@ def handle_inspect_curation(
         _comments_by_pr(dependencies.github, pull_requests),
         StateStore.list_unresolved_for_inspection(args.state_dir),
         StateStore.list_continuations_for_inspection_path(args.state_dir),
+        StateStore.list_remediation_continuations_for_inspection_path(args.state_dir),
     )
     dependencies.tracker.terminal_reason = (
         "recovery-required" if inventory.unresolved_pushes else "inspected"
@@ -968,7 +970,7 @@ def _prepare_remediation_continuation(
                 refs,
                 restart_interrupted=restart_interrupted,
             )
-    except (RepositorySafetyError, StaleRemoteHeadError):
+    except (RemediationCheckpointIntegrityError, StaleRemoteHeadError):
         _invalidate_remediation_continuation(
             store=store,
             lease=lease,

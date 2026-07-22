@@ -323,6 +323,23 @@ def test_remediation_inventory_excludes_terminal_records(tmp_path: Path) -> None
     assert store.list_remediation_continuations_for_inspection() == ()
 
 
+def test_remediation_inventory_read_only_path_loads_without_creating_state(
+    tmp_path: Path,
+) -> None:
+    missing = tmp_path / "missing"
+    assert StateStore.list_remediation_continuations_for_inspection_path(missing) == ()
+    assert not missing.exists()
+
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    remediation = _remediation(lease)
+    StateStore(tmp_path).save_remediation_continuation(remediation, lease)
+    lease.release()
+
+    assert StateStore.list_remediation_continuations_for_inspection_path(tmp_path) == (
+        remediation,
+    )
+
+
 def test_remediation_promotion_writes_reviewed_before_consuming_remediation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

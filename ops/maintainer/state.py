@@ -419,6 +419,23 @@ class StateStore:
             raise StateStoreError("maintainer state directory is unsafe") from exc
         return cls(state_path, _read_only=True).list_continuations_for_inspection()
 
+    @classmethod
+    def list_remediation_continuations_for_inspection_path(
+        cls,
+        state_dir: str | Path,
+    ) -> tuple[RemediationContinuation, ...]:
+        state_path = Path(state_dir)
+        try:
+            state_path.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("maintainer state directory is unsafe") from exc
+        return cls(
+            state_path,
+            _read_only=True,
+        ).list_remediation_continuations_for_inspection()
+
     @property
     def work_dir(self) -> Path:
         return self.state_dir / "work"

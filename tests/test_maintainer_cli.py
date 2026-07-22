@@ -23,6 +23,7 @@ from ops.maintainer.git_ops import (
     GitTransportError,
     GuardedSyncResult,
     RebaseConflictError,
+    RemediationCheckpointIntegrityError,
     RemediationCheckpointRefs,
     RepositorySafetyError,
     ReviewedCheckpointRefs,
@@ -1042,6 +1043,53 @@ def test_inspect_curation_is_read_only_and_returns_all_safe_candidates(
     assert not (state_dir / "run.lock").exists()
 
 
+def test_inspect_curation_surfaces_safe_remediation_recovery_before_fresh_work(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    origin_run = _checkpoint_remediation_for_cli_test(
+        capsys,
+        tmp_path,
+        state_dir,
+        github,
+        repository,
+    )
+    remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
+    assert remediation is not None
+    RunLease.load_owner(state_dir, "curation", origin_run).release()
+
+    code, payload = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+
+    assert code == 0, payload
+    assert payload["reviewed_continuations"] == []
+    assert payload["remediation_continuations"] == [
+        {
+            "pr_number": 42,
+            "selected_head": SHA_A,
+            "remediation_head": SHA_C,
+            "base_head": SHA_D,
+            "report_path": "docs/catalog-curation/nendaz.json",
+            "resumable": True,
+            "availability_reason": "available",
+        }
+    ]
+    serialized = json.dumps(payload)
+    for private_value in (
+        remediation.origin_run_id,
+        remediation.recovery_run_id,
+        remediation.remediation_ref,
+        remediation.squash_ref,
+    ):
+        assert private_value not in serialized
+
+
 def test_inspect_does_not_create_missing_state_directory(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -1642,7 +1690,9 @@ def test_remediation_replay_invalidates_tampered_checkpoint_refs(
     assert checkpoint_code == 0, checkpoint_payload
     RunLease.load_owner(state_dir, "curation", origin_run).release()
     successor = _acquire(capsys, state_dir, "curation")
-    repository.remediation_replay_error = RepositorySafetyError("tampered ref")
+    repository.remediation_replay_error = RemediationCheckpointIntegrityError(
+        "tampered ref"
+    )
 
     code, payload = _invoke(
         capsys,
@@ -1665,6 +1715,54 @@ def test_remediation_replay_invalidates_tampered_checkpoint_refs(
     remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
     assert remediation is not None
     assert remediation.status is RemediationContinuationStatus.INVALIDATED
+
+
+def test_transient_remediation_repository_failure_preserves_same_run_retry(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    origin_run = _checkpoint_remediation_for_cli_test(
+        capsys,
+        tmp_path,
+        state_dir,
+        github,
+        repository,
+    )
+    RunLease.load_owner(state_dir, "curation", origin_run).release()
+    successor = _acquire(capsys, state_dir, "curation")
+    repository.remediation_replay_error = RepositorySafetyError(
+        "transient local worktree failure"
+    )
+
+    failed_code, failed_payload = _prepare_remediation_for_cli_test(
+        capsys,
+        state_dir,
+        successor,
+        github,
+        repository,
+    )
+
+    assert failed_code == 2
+    assert failed_payload["reason"] == "invalid-command"
+    checkpoint = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
+    assert checkpoint is not None
+    assert checkpoint.status is RemediationContinuationStatus.RESOLVING
+    assert checkpoint.recovery_run_id == successor
+
+    repository.remediation_replay_error = None
+    retry_code, retry_payload = _prepare_remediation_for_cli_test(
+        capsys,
+        state_dir,
+        successor,
+        github,
+        repository,
+    )
+
+    assert retry_code == 0, retry_payload
+    assert retry_payload["continuation"]["result"] == "review-required"
 
 
 def test_remediation_remote_drift_invalidates_before_a_fresh_prepare(

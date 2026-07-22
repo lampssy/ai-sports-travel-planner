@@ -26,6 +26,7 @@ from ops.maintainer.git_ops import (
     GitTransportError,
     GuardedSyncResult,
     RebaseConflictError,
+    RemediationCheckpointIntegrityError,
     RemediationCheckpointRefs,
     RemotePolicy,
     RepositorySafetyError,
@@ -2066,7 +2067,7 @@ def test_remediation_replay_rejects_missing_or_tampered_refs(
     _git(local.checkout, "update-ref", "-d", getattr(refs, reference))
 
     with pytest.raises(
-        RepositorySafetyError,
+        RemediationCheckpointIntegrityError,
         match="continuation ref cannot be resolved",
     ):
         repository.prepare_remediation_continuation(
@@ -2077,7 +2078,10 @@ def test_remediation_replay_rejects_missing_or_tampered_refs(
         local.pull_request, prepared, prepared.rebased_head
     )
     _git(local.checkout, "update-ref", refs.squash_ref, local.target_sha)
-    with pytest.raises(RepositorySafetyError, match="tree no longer matches"):
+    with pytest.raises(
+        RemediationCheckpointIntegrityError,
+        match="tree no longer matches",
+    ):
         repository.prepare_remediation_continuation(
             local.pull_request, prepared, prepared.rebased_head, refs
         )

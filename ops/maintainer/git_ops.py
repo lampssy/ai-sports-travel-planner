@@ -112,6 +112,10 @@ class GitRemotePolicyError(RepositorySafetyError):
     """A remote denied or could not locate the configured repository."""
 
 
+class RemediationCheckpointIntegrityError(RepositorySafetyError):
+    """Immutable remediation checkpoint refs are missing or no longer exact."""
+
+
 class RebaseConflictError(RuntimeError):
     """A guarded rebase failed and was aborted without conflict resolution."""
 
@@ -1383,29 +1387,47 @@ class GitRepository:
         remediated_head: str,
         refs: RemediationCheckpointRefs,
     ) -> str:
-        _validate_remediation_ref(
-            refs.remediation_ref,
-            pr_number,
-            sync.original_head,
-            remediated_head,
-        )
-        _validate_remediation_continuation_ref(
-            refs.squash_ref,
-            pr_number,
-            sync.base_head,
-            remediated_head,
-        )
-        if self._resolve_ref(refs.remediation_ref) != remediated_head:
-            raise RepositorySafetyError("remediation ref no longer matches checkpoint")
-        squash_head = self._resolve_ref(refs.squash_ref)
+        try:
+            _validate_remediation_ref(
+                refs.remediation_ref,
+                pr_number,
+                sync.original_head,
+                remediated_head,
+            )
+            _validate_remediation_continuation_ref(
+                refs.squash_ref,
+                pr_number,
+                sync.base_head,
+                remediated_head,
+            )
+        except RepositorySafetyError as exc:
+            raise RemediationCheckpointIntegrityError(str(exc)) from None
+        remediation_ref_head = self._optional_ref_head(refs.remediation_ref)
+        if remediation_ref_head is None:
+            raise RemediationCheckpointIntegrityError(
+                "continuation ref cannot be resolved"
+            )
+        if remediation_ref_head != remediated_head:
+            raise RemediationCheckpointIntegrityError(
+                "remediation ref no longer matches checkpoint"
+            )
+        squash_head = self._optional_ref_head(refs.squash_ref)
+        if squash_head is None:
+            raise RemediationCheckpointIntegrityError(
+                "continuation ref cannot be resolved"
+            )
         self._verify_commit(squash_head)
         if self._commit_tree(squash_head) != self._commit_tree(remediated_head):
-            raise RepositorySafetyError(
+            raise RemediationCheckpointIntegrityError(
                 "remediation continuation tree no longer matches checkpoint"
             )
         parents = self._git("show", "-s", "--format=%P", squash_head)
-        if parents.returncode != 0 or parents.stdout.strip() != sync.base_head:
+        if parents.returncode != 0:
             raise RepositorySafetyError(
+                "cannot inspect remediation continuation parent"
+            )
+        if parents.stdout.strip() != sync.base_head:
+            raise RemediationCheckpointIntegrityError(
                 "remediation continuation parent no longer matches base"
             )
         try:
@@ -1419,12 +1441,12 @@ class GitRepository:
                 sync.base_head,
                 squash_head,
             )
-        except (IntentDriftError, IntentValidationError, RepositorySafetyError):
-            raise RepositorySafetyError(
+        except (IntentDriftError, IntentValidationError):
+            raise RemediationCheckpointIntegrityError(
                 "remediation checkpoint has unsafe immutable intent"
             ) from None
         if remediated_intent.diff_entries != squash_intent.diff_entries:
-            raise RepositorySafetyError(
+            raise RemediationCheckpointIntegrityError(
                 "remediation continuation diff no longer matches checkpoint"
             )
         return squash_head
