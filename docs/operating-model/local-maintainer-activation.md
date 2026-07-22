@@ -80,8 +80,11 @@ The installed skill must:
   maintainer-managed structural normalization pass when the single report is
   legacy, malformed, graph-less after refresh, incomplete, or non-reconciling;
   use the exact prepared base/current catalog and trust snapshots to rebuild
-  and locally commit exactly one canonical schema-v3 report without claiming
-  semantic resolution or consuming a remediation cycle;
+  exactly one canonical schema-v3 report. Validate those snapshots before edit
+  and stop without edits if either fails; assert catalog/trust object IDs remain
+  identical and locally commit a diff containing only that report path. Do not
+  claim semantic resolution or consume a remediation cycle; catalog/trust
+  changes begin only after the dual-review ledger as ordinary remediation;
 - during normalization and remediation, run catalog validation, exact
   reconciliation, and finding-related focused tests; reserve the fixed broad
   catalog suite for final helper validation;

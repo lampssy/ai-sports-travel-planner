@@ -147,9 +147,13 @@ Out of scope:
 - Keeps preparation schema-independent, then structurally normalizes a legacy,
   malformed, graph-less refreshed, incomplete, or non-reconciling report before
   initial review. The maintainer-managed pass rebuilds one schema-v3 report
-  from the exact prepared base/current catalog and trust snapshots, validates,
-  reconciles, runs finding-related focused tests, and commits without claiming
-  semantic resolution or consuming a remediation cycle.
+  from the exact prepared base/current catalog and trust snapshots. It validates
+  those snapshots before edit, then reconciles and runs finding-related focused
+  tests. Its commit changes exactly that report path and asserts the prepared
+  catalog/trust object IDs remain unchanged. A snapshot validation failure stops
+  before edits; catalog/trust changes begin only from the dual-review ledger as
+  ordinary remediation. The pass does not claim semantic resolution or consume
+  a remediation cycle.
 - Starts curation with parallel independent `source-trust` and `graph-scope`
   reviews of that normalized prepared head, then consolidates both dispositions
   into one first fix. Source-trust inventories every applicable canonical trust
@@ -396,11 +400,16 @@ the same-key duplicate gate without trying to infer identity from prose.
    legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
    report triggers one `snowcast-catalog-curation` pass in
    `maintainer-managed` mode. The pass uses those exact snapshots to rebuild
-   the single schema-v3 report, runs catalog validation, exact reconciliation,
-   and finding-related focused tests, then commits locally. It is structural
-   normalization only: it does not claim semantic resolution, alter the
-   finding ledger, or consume a remediation-cycle slot. The fixed broad catalog
-   suite remains reserved for final helper validation.
+   the single schema-v3 report. It validates the prepared catalog and trust
+   snapshots before edit; a validation failure stops normalization without
+   permitting edits. It then runs catalog validation, exact reconciliation,
+   and finding-related focused tests, asserts unchanged catalog/trust object
+   IDs, and commits a diff containing exactly the canonical report path. It is
+   report-only structural normalization: it does not claim semantic resolution,
+   alter the finding ledger, or consume a remediation-cycle slot. Catalog or
+   trust semantic changes begin only after the dual-review ledger and consume
+   ordinary remediation. The fixed broad catalog suite remains reserved for
+   final helper validation.
 5. Codex starts two fresh reviewer contexts in parallel against the normalized
    prepared head. One invokes `snowcast-catalog-review` in `source-trust` mode;
    the other uses `graph-scope`. Neither receives the other's result. Together
@@ -528,7 +537,11 @@ initial dual review, Codex normalizes any legacy, malformed, graph-less
 refreshed, incomplete, or non-reconciling report against the exact prepared
 base/current catalog and trust snapshots. This pre-review structural pass
 rebuilds and commits exactly one canonical schema-v3 report without claiming a
-semantic fix or consuming a remediation cycle. Normalization and every later
+semantic fix or consuming a remediation cycle. It validates catalog/trust
+snapshots before edit, stops without edits if either validation fails, asserts
+their object IDs are unchanged, and permits only that report path in its commit.
+Catalog or trust semantic changes are permitted only after the dual-review
+ledger and consume a normal remediation cycle. Normalization and every later
 remediation run catalog validation, exact reconciliation, and finding-related
 focused tests; the fixed broad catalog suite is reserved for final helper
 validation. The final validation and readiness gates continue to require that
@@ -1233,9 +1246,12 @@ replaced. It is history, not current operational instruction:
 - Curation preparation accepts schema-independent incoming report content, but
   a legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
   report is structurally normalized before initial review. The pass uses exact
-  prepared catalog/trust snapshots, commits one canonical schema-version-3
-  report, runs focused validation/reconciliation, and consumes no remediation
-  slot; final helper validation alone runs the fixed broad catalog suite.
+  prepared catalog/trust snapshots, validates them before edit, commits only
+  one canonical schema-version-3 report path while asserting unchanged object
+  IDs, and runs focused validation/reconciliation. A failed snapshot validation
+  permits no normalization edit; later catalog/trust changes begin from the
+  dual-review ledger as remediation. The pass consumes no remediation slot;
+  final helper validation alone runs the fixed broad catalog suite.
 - Initial curation review uses complete independent source/trust and graph/scope
   lanes on the same exact normalized prepared head; neither lane sees the
   other's output. Source/trust enumerates every applicable `FIELD_GROUPS`

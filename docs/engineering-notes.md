@@ -782,9 +782,14 @@ graph-less refreshed, incomplete, or non-reconciling report receives one
 `maintainer-managed` structural normalization pass. It reads the exact prepared
 base/current catalog and trust snapshots, rebuilds and locally commits the
 single schema-v3 report, then yields to review without claiming semantic
-resolution or consuming a remediation cycle. Normalization and remediation run
-catalog validation, exact reconciliation, and finding-related focused tests;
-the fixed broad catalog suite remains final helper-validation work.
+resolution or consuming a remediation cycle. It validates those snapshots
+before edits, stops without edits when catalog/trust validation fails, asserts
+the catalog/trust object IDs remain identical, and permits only the report path
+in its local commit. Catalog/trust semantic changes begin only after the
+dual-review ledger and consume a normal remediation cycle. Normalization and
+remediation run catalog validation, exact reconciliation, and finding-related
+focused tests; the fixed broad catalog suite remains final helper-validation
+work.
 Validation-backed push and readiness still require one canonical schema-v3
 report reconciled to the exact reviewed catalog and trust changes.
 

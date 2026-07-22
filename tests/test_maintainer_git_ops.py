@@ -9,6 +9,13 @@ from pathlib import Path
 
 import pytest
 
+from app.data.catalog_curation import (
+    CatalogCurationReport,
+    validate_catalog_curation_report,
+    validate_catalog_resulting_graph,
+)
+from app.data.catalog_curation_reconciliation import reconcile_catalog_curation_report
+from app.data.catalog_loader import load_catalog_from_path
 from ops.maintainer.git_ops import (
     ContinuationReplayResult,
     GitAuthenticationError,
@@ -40,6 +47,8 @@ SHA_B = "b" * 40
 ZERO_SHA = "0" * 40
 CANONICAL_REMOTE = "git@github.com:lampssy/ai-sports-travel-planner.git"
 REPORT_PATH = "docs/catalog-curation/alpha.json"
+CATALOG_PATH = "app/data/catalog.json"
+TRUST_MANIFEST_PATH = "app/data/resort_trust_manifest.json"
 
 
 @dataclass
@@ -1351,6 +1360,8 @@ def _local_repository(
     *,
     base_catalog: str = _catalog(),
     target_catalog: str = _catalog(alpha_name="Target Alpha"),
+    base_trust_manifest: str | None = None,
+    target_trust_manifest: str | None = None,
     main_catalog: str | None = None,
     target_report: str | None = None,
 ) -> LocalRepository:
@@ -1365,10 +1376,15 @@ def _local_repository(
     _git(seed, "config", "user.email", "snowcast@example.test")
     _git(seed, "config", "commit.gpgsign", "false")
     (seed / "app" / "data").mkdir(parents=True)
-    (seed / "app" / "data" / "catalog.json").write_text(
+    (seed / CATALOG_PATH).write_text(
         base_catalog,
         encoding="utf-8",
     )
+    if base_trust_manifest is not None:
+        (seed / TRUST_MANIFEST_PATH).write_text(
+            base_trust_manifest,
+            encoding="utf-8",
+        )
     (seed / "README.md").write_text("base\n", encoding="utf-8")
     _git(seed, "add", ".")
     _git(seed, "commit", "-m", "base")
@@ -1376,10 +1392,17 @@ def _local_repository(
     _git(seed, "push", "origin", "main")
 
     _git(seed, "switch", "-c", "codex/catalog-curation-alpha")
-    (seed / "app" / "data" / "catalog.json").write_text(
-        target_catalog, encoding="utf-8"
-    )
-    target_paths = ["app/data/catalog.json"]
+    target_paths: list[str] = []
+    if target_catalog != base_catalog:
+        (seed / CATALOG_PATH).write_text(target_catalog, encoding="utf-8")
+        target_paths.append(CATALOG_PATH)
+    if target_trust_manifest is not None:
+        (seed / TRUST_MANIFEST_PATH).write_text(
+            target_trust_manifest,
+            encoding="utf-8",
+        )
+        if target_trust_manifest != base_trust_manifest:
+            target_paths.append(TRUST_MANIFEST_PATH)
     if target_report is not None:
         (seed / "docs" / "catalog-curation").mkdir(parents=True)
         (seed / REPORT_PATH).write_text(target_report, encoding="utf-8")
@@ -1741,6 +1764,12 @@ def test_revalidate_allows_safe_non_production_scope_expansion(
 
 
 def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    prepared_catalog = (project_root / CATALOG_PATH).read_text(encoding="utf-8")
+    prepared_trust = (project_root / TRUST_MANIFEST_PATH).read_text(encoding="utf-8")
+    destination = json.loads(prepared_catalog)["stay_destinations"][0]
+    destination_id = destination["stay_destination_id"]
+    destination_name = destination["name"]
     legacy_report = json.dumps(
         {
             "report_schema_version": 1,
@@ -1750,70 +1779,96 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
         },
         indent=2,
     )
-    local = _local_repository(tmp_path, target_report=legacy_report)
+    local = _local_repository(
+        tmp_path,
+        base_catalog=prepared_catalog,
+        target_catalog=prepared_catalog,
+        base_trust_manifest=prepared_trust,
+        target_trust_manifest=prepared_trust,
+        target_report=legacy_report,
+    )
     repository = _integration_repository(local)
 
     prepared = repository.prepare_guarded_sync(local.pull_request)
     normalized_report = {
         "report_schema_version": 3,
-        "title": "Normalized Alpha report",
+        "title": "Normalized destination report",
         "summary": "Rebuilds the legacy input before independent review.",
-        "resulting_graph": {"focus_stay_destination_ids": ["alpha"]},
+        "resulting_graph": {"focus_stay_destination_ids": [destination_id]},
         "reviewed_targets": [
             {
-                "target_type": "ski_area",
-                "target_id": "alpha",
+                "target_type": "stay_destination",
+                "target_id": destination_id,
                 "scope": "narrow",
                 "required_field_paths": ["name"],
             }
         ],
         "entity_scope_assessments": [
             {
-                "candidate_id": "alpha",
-                "candidate_name": "Alpha",
-                "candidate_kind": "ski_area",
+                "candidate_id": destination_id,
+                "candidate_name": destination_name,
+                "candidate_kind": "stay_destination",
                 "disposition": "represented",
-                "signals": [
-                    "official_independent_identity",
-                    "independent_weather_presentation",
+                "signals": ["independent_stay_market"],
+                "evidence_refs": ["destination-scope"],
+                "target_refs": [
+                    {
+                        "target_type": "stay_destination",
+                        "target_id": destination_id,
+                    }
                 ],
-                "evidence_refs": ["alpha-scope"],
-                "target_refs": [{"target_type": "ski_area", "target_id": "alpha"}],
-                "rationale": "Official evidence confirms the represented area.",
-                "ski_area_boundary": {
-                    "parent_ski_area_id": None,
-                    "terrain_scope": "complete",
-                    "connectivity_to_parent": "not_applicable",
-                    "operational_scope": "unknown",
-                    "weather_scope": "independent",
-                    "pass_scope": "none",
-                    "provider_consensus": "separate",
-                    "separation_value": "material",
-                    "evidence_refs": ["alpha-scope"],
-                },
+                "rationale": "Official evidence confirms the represented stay market.",
             }
         ],
         "evidence": [
             {
-                "evidence_id": "alpha-scope",
-                "target_type": "ski_area",
-                "target_id": "alpha",
+                "evidence_id": "destination-scope",
+                "boundary_target_ids": [destination_id],
+                "target_type": "stay_destination",
+                "target_id": destination_id,
                 "field_path": "name",
                 "source_type": "official",
-                "source_url": "https://example.com/alpha",
-                "source_title": "Official Alpha",
-                "source_value": "Alpha",
-                "evidence_summary": "Confirms Alpha's independent identity.",
+                "source_url": "https://example.com/destination",
+                "source_title": "Official destination market",
+                "source_value": destination_name,
+                "evidence_summary": "Confirms the independent stay market.",
             }
         ],
         "field_coverage": [
             {
-                "target_type": "ski_area",
-                "target_id": "alpha",
+                "target_type": "stay_destination",
+                "target_id": destination_id,
                 "field_path": "name",
                 "status": "reviewed-no-change",
             }
         ],
+        "destination_boundary_assessments": [
+            {
+                "candidate_id": destination_id,
+                "gates": [
+                    {
+                        "gate_name": gate_name,
+                        "status": "pass",
+                        "notes": "The official source supports this stay-market gate.",
+                        "evidence_refs": ["destination-scope"],
+                    }
+                    for gate_name in (
+                        "complete_stay_market_scope",
+                        "independent_stay_market_ownership",
+                        "material_destination_level_separation_value",
+                    )
+                ],
+                "identity_signals": [
+                    {
+                        "signal_type": "official_stay_market_treatment",
+                        "status": "pass",
+                        "notes": "The official source owns the stay market.",
+                        "evidence_refs": ["destination-scope"],
+                    }
+                ],
+            }
+        ],
+        "boundary_decision_targets": [destination_id],
     }
     (local.checkout / REPORT_PATH).write_text(
         json.dumps(normalized_report, indent=2),
@@ -1822,6 +1877,23 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
     _git(local.checkout, "add", REPORT_PATH)
     _git(local.checkout, "commit", "-m", "normalize curation report")
     reviewed_head = _git(local.checkout, "rev-parse", "HEAD")
+    assert _git(
+        local.checkout,
+        "diff",
+        "--name-only",
+        prepared.rebased_head,
+        reviewed_head,
+    ).splitlines() == [REPORT_PATH]
+    for snapshot_path in (CATALOG_PATH, TRUST_MANIFEST_PATH):
+        assert _git(
+            local.checkout,
+            "rev-parse",
+            f"{prepared.rebased_head}:{snapshot_path}",
+        ) == _git(
+            local.checkout,
+            "rev-parse",
+            f"{reviewed_head}:{snapshot_path}",
+        )
     reviewed = repository.revalidate_prepared_result(
         local.pull_request,
         prepared,
@@ -1832,11 +1904,44 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
         prepared.base_head,
         reviewed_head,
     )
+    report = CatalogCurationReport.model_validate(normalized_report)
+    validate_catalog_curation_report(
+        report,
+        require_resulting_graph=True,
+        require_current_destination_policy=True,
+    )
+    base_catalog_path = tmp_path / "prepared-base-catalog.json"
+    current_catalog_path = tmp_path / "prepared-current-catalog.json"
+    base_trust_path = tmp_path / "prepared-base-trust.json"
+    current_trust_path = tmp_path / "prepared-current-trust.json"
+    for snapshot_path, revision, source_path in (
+        (base_catalog_path, prepared.base_head, CATALOG_PATH),
+        (current_catalog_path, prepared.rebased_head, CATALOG_PATH),
+        (base_trust_path, prepared.base_head, TRUST_MANIFEST_PATH),
+        (current_trust_path, prepared.rebased_head, TRUST_MANIFEST_PATH),
+    ):
+        snapshot_path.write_text(
+            _git(local.checkout, "show", f"{revision}:{source_path}") + "\n",
+            encoding="utf-8",
+        )
+    validate_catalog_resulting_graph(
+        report,
+        load_catalog_from_path(current_catalog_path),
+        require=True,
+    )
+    reconciliation = reconcile_catalog_curation_report(
+        report,
+        base_catalog_path=base_catalog_path,
+        current_catalog_path=current_catalog_path,
+        base_trust_manifest_path=base_trust_path,
+        current_trust_manifest_path=current_trust_path,
+    )
 
     assert REPORT_PATH in reviewed.changed_paths
-    assert reviewed.catalog_targets == frozenset({"ski_area:alpha"})
+    assert reviewed.catalog_targets == frozenset()
     assert reviewed.report_targets == frozenset()
-    assert canonical.report_targets == frozenset({"ski_area:alpha"})
+    assert canonical.report_targets == frozenset({f"stay_destination:{destination_id}"})
+    assert reconciliation.delta_count == 0
 
 
 def test_create_only_push_creates_absent_discovery_branch(tmp_path: Path) -> None:
