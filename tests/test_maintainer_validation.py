@@ -42,6 +42,7 @@ from ops.maintainer.validation import (
     ValidationResult,
     _SubprocessValidationRunner,
     _terminate_process_group,
+    _validate_backlog_destination_proposal_scope,
     _validate_catalog_delta,
     _write_private_object,
     validate_curation,
@@ -1140,6 +1141,7 @@ def _trust_payload_for_catalog(payload: dict[str, object]) -> dict[str, object]:
 def _regional_catalog_pair(
     *,
     include_unrelated_entity: bool = False,
+    include_cross_owner_domain: bool = False,
 ) -> tuple[dict[str, object], dict[str, object]]:
     base = minimal_catalog_payload()
     head = deepcopy(base)
@@ -1216,6 +1218,15 @@ def _regional_catalog_pair(
             },
         ]
     )
+    if include_cross_owner_domain:
+        head["terrain_domains"].append(  # type: ignore[union-attr]
+            {
+                "terrain_domain_id": "sample-connected-domain",
+                "name": "Sample Connected Domain",
+                "ski_area_ids": ["sample-local-area", "example-area"],
+                "source_urls": [REGIONAL_SOURCE_URLS["ski_area"]],
+            }
+        )
     if include_unrelated_entity:
         head["ski_regions"].append(  # type: ignore[union-attr]
             {
@@ -1413,6 +1424,23 @@ def _regional_report_payload(
             "evidence_summary": "Records one examined adjacent stay market.",
         },
     ]
+    if "terrain_domain:sample-connected-domain" in added_keys:
+        evidence.append(
+            {
+                "evidence_id": "sample-domain",
+                "target_type": "terrain_domain",
+                "target_id": "sample-connected-domain",
+                "field_path": "ski_area_ids",
+                "source_type": "official",
+                "source_url": REGIONAL_SOURCE_URLS["ski_area"],
+                "source_title": "Official Sample Valley connected-terrain map",
+                "source_value": ["sample-local-area", "example-area"],
+                "evidence_summary": (
+                    "Shows the focus area and linked pre-existing area as one "
+                    "ski-connected terrain domain."
+                ),
+            }
+        )
 
     scope_assessments: list[dict[str, object]] = []
     for kind, entity_id, display_name in scope_entities:
@@ -1436,6 +1464,9 @@ def _regional_report_payload(
         elif kind == "lift_pass_product":
             signals = ["official_product_identity"]
             evidence_refs = ["sample-passes"]
+        elif kind == "terrain_domain":
+            signals = ["ski_connected_terrain"]
+            evidence_refs = ["sample-domain"]
         else:
             raise AssertionError(f"unexpected regional test entity kind: {kind}")
         assessment: dict[str, object] = {
@@ -1525,6 +1556,18 @@ def _regional_report_payload(
                 "source_urls": [REGIONAL_SOURCE_URLS["followup"]],
                 "candidate_kinds": ["stay_destination"],
             },
+            *(
+                [
+                    {
+                        "family_id": "sample-domain",
+                        "source_kind": "ski_area_operator",
+                        "source_urls": [REGIONAL_SOURCE_URLS["ski_area"]],
+                        "candidate_kinds": ["terrain_domain"],
+                    }
+                ]
+                if "terrain_domain:sample-connected-domain" in added_keys
+                else []
+            ),
         ],
         "destination_boundary_assessments": [
             {
@@ -1568,10 +1611,12 @@ def _regional_report_payload(
 def _make_regional_proposal_context(
     *,
     include_unrelated_entity: bool = False,
+    include_cross_owner_domain: bool = False,
     focus_destination_ids: list[str] | None = None,
 ) -> RegionalProposalContext:
     base_catalog, head_catalog = _regional_catalog_pair(
         include_unrelated_entity=include_unrelated_entity,
+        include_cross_owner_domain=include_cross_owner_domain,
     )
     base_trust = _trust_payload_for_catalog(base_catalog)
     head_trust = _trust_payload_for_catalog(head_catalog)
@@ -1705,6 +1750,111 @@ def test_validate_backlog_destination_proposal_rejects_unrelated_addition() -> N
 
     assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
     assert exc_info.value.kind is ErrorKind.MISMATCH
+
+
+def test_proposal_accepts_domain_linked_preexisting_area() -> None:
+    context = _make_regional_proposal_context(include_cross_owner_domain=True)
+
+    result = validate_proposal(
+        candidate_key=REGIONAL_CANDIDATE_KEY,
+        candidate_origin="backlog",
+        base=context.base,
+        head=context.head,
+        snapshot=context.snapshot,
+        discovery_inventory=context.discovery_inventory,
+        repository=context.repository,  # type: ignore[arg-type]
+    )
+
+    assert result.resulting_graph_markdown is not None
+    assert (
+        "Terrain domain<br/>Sample Connected Domain" in result.resulting_graph_markdown
+    )
+    assert "Ski area<br/>Example Area" in result.resulting_graph_markdown
+
+
+@pytest.mark.parametrize(
+    "unrelated_kind",
+    ["ski_area_access", "terrain_domain", "lift_pass_product"],
+)
+def test_backlog_destination_scope_rejects_entities_outside_graph_closure(
+    unrelated_kind: Literal[
+        "ski_area_access",
+        "terrain_domain",
+        "lift_pass_product",
+    ],
+) -> None:
+    context = _make_regional_proposal_context()
+    base_payload = json.loads(context.repository.texts[(context.base, CATALOG_PATH)])
+    head_payload = json.loads(context.repository.texts[(context.head, CATALOG_PATH)])
+    report = CatalogCurationReport.model_validate_json(
+        context.repository.texts[(context.head, REGIONAL_REPORT_PATH)]
+    )
+
+    if unrelated_kind == "ski_area_access":
+        head_payload["ski_area_access"].append(
+            {
+                "ski_area_access_id": "example-village--sample-linked-area",
+                "stay_base_id": "example-village",
+                "ski_area_id": "sample-linked-area",
+                "access_mode": "ski_bus",
+                "lift_distance": "medium",
+                "nearest_lift_name": "Linked Area Gondola",
+                "duration_minutes": 10,
+                "is_direct": False,
+                "source_urls": [REGIONAL_SOURCE_URLS["access"]],
+            }
+        )
+    elif unrelated_kind == "lift_pass_product":
+        head_payload["lift_pass_products"].append(
+            {
+                "lift_pass_product_id": "example-sample-pass",
+                "name": "Example Sample Pass",
+                "validity_scope": "single_ski_area",
+                "available_from_stay_destination_ids": ["example"],
+                "default_for_stay_destination_ids": [],
+                "valid_ski_area_ids": ["sample-local-area"],
+                "terrain_domain_ids": [],
+                "prices": [],
+            }
+        )
+    else:
+        other_area = deepcopy(base_payload["ski_areas"][0])
+        other_area.update(
+            {
+                "ski_area_id": "other-existing-area",
+                "name": "Other Existing Area",
+            }
+        )
+        other_access = deepcopy(base_payload["ski_area_access"][0])
+        other_access.update(
+            {
+                "ski_area_access_id": "example-village--other-existing-area",
+                "ski_area_id": "other-existing-area",
+            }
+        )
+        for payload in (base_payload, head_payload):
+            payload["ski_areas"].append(deepcopy(other_area))
+            payload["ski_area_access"].append(deepcopy(other_access))
+        head_payload["terrain_domains"].append(
+            {
+                "terrain_domain_id": "unrelated-domain",
+                "name": "Unrelated Domain",
+                "ski_area_ids": ["example-area", "other-existing-area"],
+                "source_urls": [REGIONAL_SOURCE_URLS["ski_area"]],
+            }
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="backlog destination proposal contains unrelated additions",
+    ):
+        _validate_backlog_destination_proposal_scope(
+            REGIONAL_CANDIDATE_KEY,
+            "backlog",
+            CatalogSnapshot.model_validate(base_payload),
+            CatalogSnapshot.model_validate(head_payload),
+            report,
+        )
 
 
 def test_validate_proposal_accepts_one_coherent_new_catalog_graph() -> None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 from types import MappingProxyType
@@ -1685,6 +1686,8 @@ def validate_catalog_resulting_graph(
         for destination_id in graph.focus_stay_destination_ids
         if destination_id not in known_destination_ids
     ]
+    if issues:
+        raise CatalogValidationError(issues)
     required_destination_ids = _required_resulting_graph_destination_ids(
         report,
         catalog,
@@ -1697,6 +1700,100 @@ def validate_catalog_resulting_graph(
     )
     if issues:
         raise CatalogValidationError(issues)
+
+
+@dataclass(frozen=True)
+class CatalogResultingGraphScope:
+    destination_ids: frozenset[str]
+    region_ids: frozenset[str]
+    base_ids: frozenset[str]
+    access_ids: frozenset[str]
+    area_ids: frozenset[str]
+    domain_ids: frozenset[str]
+    pass_ids: frozenset[str]
+
+
+def catalog_resulting_graph_scope(
+    catalog: CatalogSnapshot,
+    focus_destination_ids: set[str] | frozenset[str],
+) -> CatalogResultingGraphScope:
+    """Return the deterministic entity closure rendered for focused destinations."""
+    destinations_by_id = {
+        destination.stay_destination_id: destination
+        for destination in catalog.stay_destinations
+    }
+    passes_by_id = {
+        product.lift_pass_product_id: product for product in catalog.lift_pass_products
+    }
+    domains_by_id = {
+        domain.terrain_domain_id: domain for domain in catalog.terrain_domains
+    }
+
+    destination_ids = frozenset(focus_destination_ids)
+    region_ids = frozenset(
+        destinations_by_id[destination_id].trip_market_region_id
+        for destination_id in destination_ids
+    )
+    base_ids = frozenset(
+        base.stay_base_id
+        for base in catalog.stay_bases
+        if base.stay_destination_id in destination_ids
+    )
+    access_ids = frozenset(
+        access.ski_area_access_id
+        for access in catalog.ski_area_access
+        if access.stay_base_id in base_ids
+    )
+    area_ids = {
+        access.ski_area_id
+        for access in catalog.ski_area_access
+        if access.ski_area_access_id in access_ids
+    }
+    pass_ids = frozenset(
+        product.lift_pass_product_id
+        for product in catalog.lift_pass_products
+        if destination_ids
+        & (
+            set(product.available_from_stay_destination_ids)
+            | set(product.default_for_stay_destination_ids)
+        )
+    )
+    domain_ids = {
+        domain_id
+        for pass_id in pass_ids
+        for domain_id in passes_by_id[pass_id].terrain_domain_ids
+    }
+    area_ids.update(
+        area_id
+        for pass_id in pass_ids
+        for area_id in passes_by_id[pass_id].valid_ski_area_ids
+    )
+
+    while True:
+        expanded_domain_ids = domain_ids | {
+            domain.terrain_domain_id
+            for domain in catalog.terrain_domains
+            if area_ids & set(domain.ski_area_ids)
+        }
+        expanded_area_ids = area_ids | {
+            area_id
+            for domain_id in expanded_domain_ids
+            for area_id in domains_by_id[domain_id].ski_area_ids
+        }
+        if expanded_domain_ids == domain_ids and expanded_area_ids == area_ids:
+            break
+        domain_ids = expanded_domain_ids
+        area_ids = expanded_area_ids
+
+    return CatalogResultingGraphScope(
+        destination_ids=destination_ids,
+        region_ids=region_ids,
+        base_ids=base_ids,
+        access_ids=access_ids,
+        area_ids=frozenset(area_ids),
+        domain_ids=frozenset(domain_ids),
+        pass_ids=pass_ids,
+    )
 
 
 def _required_resulting_graph_destination_ids(
@@ -1766,6 +1863,11 @@ def _required_resulting_graph_destination_ids(
         },
     }
 
+    assert report.resulting_graph is not None
+    declared_scope = catalog_resulting_graph_scope(
+        catalog,
+        set(report.resulting_graph.focus_stay_destination_ids),
+    )
     required: set[str] = set()
     for target in report.reviewed_targets:
         if target.resulting_graph_role == "linked_dependency":
@@ -1775,6 +1877,8 @@ def _required_resulting_graph_destination_ids(
         if target_type == "trust_manifest":
             namespace, _, target_id = target_id.partition(":")
             target_type = TRUST_MANIFEST_TARGET_TYPES[namespace]
+        if target_type == "terrain_domain" and target_id in declared_scope.domain_ids:
+            continue
         required.update(target_destinations[target_type].get(target_id, set()))
     return required
 
@@ -1834,62 +1938,26 @@ def render_catalog_resulting_graph_markdown(
         and json_values_equal(change.after, [])
     }
 
-    destination_ids = set(report.resulting_graph.focus_stay_destination_ids)
-    region_ids = {
-        destinations_by_id[destination_id].trip_market_region_id
-        for destination_id in destination_ids
-    }
-    base_ids = {
-        base.stay_base_id
-        for base in catalog.stay_bases
-        if base.stay_destination_id in destination_ids
-    }
+    scope = catalog_resulting_graph_scope(
+        catalog,
+        set(report.resulting_graph.focus_stay_destination_ids),
+    )
+    destination_ids = set(scope.destination_ids)
+    region_ids = set(scope.region_ids)
+    base_ids = set(scope.base_ids)
     access_links = tuple(
         sorted(
             (
                 access
                 for access in catalog.ski_area_access
-                if access.stay_base_id in base_ids
+                if access.ski_area_access_id in scope.access_ids
             ),
             key=lambda access: access.ski_area_access_id,
         )
     )
-    area_ids = {access.ski_area_id for access in access_links}
-    pass_ids = {
-        product.lift_pass_product_id
-        for product in catalog.lift_pass_products
-        if destination_ids
-        & (
-            set(product.available_from_stay_destination_ids)
-            | set(product.default_for_stay_destination_ids)
-        )
-    }
-    domain_ids = {
-        domain_id
-        for pass_id in pass_ids
-        for domain_id in passes_by_id[pass_id].terrain_domain_ids
-    }
-    area_ids.update(
-        area_id
-        for pass_id in pass_ids
-        for area_id in passes_by_id[pass_id].valid_ski_area_ids
-    )
-
-    while True:
-        expanded_domain_ids = domain_ids | {
-            domain.terrain_domain_id
-            for domain in catalog.terrain_domains
-            if area_ids & set(domain.ski_area_ids)
-        }
-        expanded_area_ids = area_ids | {
-            area_id
-            for domain_id in expanded_domain_ids
-            for area_id in domains_by_id[domain_id].ski_area_ids
-        }
-        if expanded_domain_ids == domain_ids and expanded_area_ids == area_ids:
-            break
-        domain_ids = expanded_domain_ids
-        area_ids = expanded_area_ids
+    area_ids = set(scope.area_ids)
+    pass_ids = set(scope.pass_ids)
+    domain_ids = set(scope.domain_ids)
 
     node_ids: dict[tuple[str, str], str] = {}
     lines = ["## Resulting Graph", "", "```mermaid", "flowchart LR"]

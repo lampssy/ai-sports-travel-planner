@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.data.catalog_curation import (
     CATALOG_BACKLOG_REF_PREFIX,
     CatalogCurationReport,
+    catalog_resulting_graph_scope,
     load_catalog_curation_report,
     render_catalog_resulting_graph_markdown,
     validate_catalog_curation_report,
@@ -890,50 +891,19 @@ def _validate_backlog_destination_proposal_scope(
     if destination is None:
         raise ValueError("backlog destination proposal focus is invalid")
 
-    base_ids = {
-        item.stay_base_id
-        for item in head_catalog.stay_bases
-        if item.stay_destination_id == candidate_id
-    }
-    access = tuple(
-        item for item in head_catalog.ski_area_access if item.stay_base_id in base_ids
-    )
-    passes = tuple(
-        item
-        for item in head_catalog.lift_pass_products
-        if candidate_id in item.available_from_stay_destination_ids
-        or candidate_id in item.default_for_stay_destination_ids
-    )
-    domain_ids = {
-        domain_id for product in passes for domain_id in product.terrain_domain_ids
-    }
-    areas_by_domain = {
-        item.terrain_domain_id: set(item.ski_area_ids)
-        for item in head_catalog.terrain_domains
-    }
-    area_ids = (
-        {item.ski_area_id for item in access}
-        | {area_id for product in passes for area_id in product.valid_ski_area_ids}
-        | {
-            area_id
-            for domain_id in domain_ids
-            for area_id in areas_by_domain.get(domain_id, set())
-        }
-    )
-    domain_ids.update(
-        item.terrain_domain_id
-        for item in head_catalog.terrain_domains
-        if item.ski_area_ids and set(item.ski_area_ids).issubset(area_ids)
+    scope = catalog_resulting_graph_scope(
+        head_catalog,
+        {candidate_id},
     )
 
     allowed_keys = {
         candidate_key,
         f"ski_region:{destination.trip_market_region_id}",
-        *(f"stay_base:{base_id}" for base_id in base_ids),
-        *(f"ski_area_access:{item.ski_area_access_id}" for item in access),
-        *(f"ski_area:{area_id}" for area_id in area_ids),
-        *(f"terrain_domain:{domain_id}" for domain_id in domain_ids),
-        *(f"lift_pass_product:{item.lift_pass_product_id}" for item in passes),
+        *(f"stay_base:{base_id}" for base_id in scope.base_ids),
+        *(f"ski_area_access:{access_id}" for access_id in scope.access_ids),
+        *(f"ski_area:{area_id}" for area_id in scope.area_ids),
+        *(f"terrain_domain:{domain_id}" for domain_id in scope.domain_ids),
+        *(f"lift_pass_product:{pass_id}" for pass_id in scope.pass_ids),
         *(
             f"rental_display_fact:{item.rental_display_fact_id}"
             for item in head_catalog.rental_display_facts
