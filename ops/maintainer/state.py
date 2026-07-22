@@ -628,22 +628,33 @@ class StateStore:
             if existing is None:
                 raise StateStoreError("remediation continuation is missing")
             if (
-                existing.status is not RemediationContinuationStatus.RESOLVING
+                existing.status
+                not in {
+                    RemediationContinuationStatus.AVAILABLE,
+                    RemediationContinuationStatus.RESOLVING,
+                }
                 or existing.recovery_run_id != lease.run_id
             ):
-                raise StateStoreError(
-                    "only the resolving owner can replace remediation"
-                )
+                raise StateStoreError("only the active owner can replace remediation")
             if (
                 remediation.work_id != existing.work_id
                 or remediation.pr_number != existing.pr_number
                 or remediation.selected_head != existing.selected_head
                 or remediation.origin_run_id != existing.origin_run_id
                 or remediation.recovery_run_id != existing.recovery_run_id
-                or remediation.status is not RemediationContinuationStatus.AVAILABLE
                 or remediation.updated_at <= existing.updated_at
             ):
                 raise StateStoreError("replacement remediation facts are invalid")
+            if existing.status is RemediationContinuationStatus.AVAILABLE:
+                if remediation.status not in {
+                    RemediationContinuationStatus.AVAILABLE,
+                    RemediationContinuationStatus.RESOLVING,
+                }:
+                    raise StateStoreError(
+                        "available remediation has invalid replacement"
+                    )
+            elif remediation.status is not RemediationContinuationStatus.AVAILABLE:
+                raise StateStoreError("resolving remediation must return available")
             self._save_model(
                 self.remediation_continuation_dir,
                 remediation.work_id,
