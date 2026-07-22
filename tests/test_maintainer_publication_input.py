@@ -133,6 +133,31 @@ def test_writer_removes_a_partially_written_input(
     assert not list(state_dir.glob("publication-input-*"))
 
 
+def test_writer_removes_input_when_ownership_is_lost_after_write(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = _lease(state_dir)
+    original_assert_owner = RunLease.assert_owner
+    calls = 0
+
+    def lose_ownership_after_write(current: RunLease) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise LeaseOwnershipError("injected ownership loss")
+        original_assert_owner(current)
+
+    monkeypatch.setattr(RunLease, "assert_owner", lose_ownership_after_write)
+
+    with pytest.raises(LeaseOwnershipError):
+        create_publication_text(lease, kind="body", payload=b"body")
+
+    assert calls == 2
+    assert not list(state_dir.glob("publication-input-*"))
+
+
 def test_cli_creates_a_writer_owned_input_without_disclosing_stdin(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -168,6 +193,51 @@ def test_cli_creates_a_writer_owned_input_without_disclosing_stdin(
     assert isinstance(basename, str)
     assert stat.S_IMODE((state_dir / basename).stat().st_mode) == 0o600
     assert read_publication_text(state_dir, basename, kind="body") == secret
+
+
+@pytest.mark.parametrize(
+    ("kind", "payload", "undisclosed"),
+    [
+        ("body", b"oversized-bound-marker" + b"x" * 65_515, "oversized-bound-marker"),
+        ("body", b"\xffinvalid-utf8-marker", "invalid-utf8-marker"),
+        ("title", b" \t ", " \t "),
+        ("title", b"multiline-title-marker\nsecond-line", "multiline-title-marker"),
+    ],
+)
+def test_cli_rejects_invalid_stdin_without_creating_or_disclosing(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    kind: str,
+    payload: bytes,
+    undisclosed: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = _lease(state_dir)
+    monkeypatch.setattr(sys, "stdin", SimpleNamespace(buffer=io.BytesIO(payload)))
+
+    code = main(
+        [
+            "--state-dir",
+            str(state_dir),
+            "publication-input",
+            "create",
+            "--worker",
+            "curation",
+            "--kind",
+            kind,
+            "--run-id",
+            lease.run_id,
+        ]
+    )
+    output = capsys.readouterr().out
+    result = json.loads(output)
+
+    assert len(payload) == 65_537 or kind == "title" or payload.startswith(b"\xff")
+    assert code == 2
+    assert result["reason"] == "publication-input-invalid"
+    assert undisclosed not in output
+    assert not list(state_dir.glob("publication-input-*"))
 
 
 @pytest.mark.parametrize(
