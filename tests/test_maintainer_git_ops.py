@@ -2087,6 +2087,26 @@ def test_remediation_replay_rejects_missing_or_tampered_refs(
         )
 
 
+@pytest.mark.parametrize("reference", ["remediation_ref", "squash_ref"])
+def test_remediation_replay_classifies_non_commit_ref_as_checkpoint_corruption(
+    tmp_path: Path,
+    reference: str,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    refs = repository.checkpoint_remediation_continuation(
+        local.pull_request, prepared, prepared.rebased_head
+    )
+    blob_sha = _git(local.checkout, "hash-object", "-w", "README.md")
+    _git(local.checkout, "update-ref", getattr(refs, reference), blob_sha)
+
+    with pytest.raises(RemediationCheckpointIntegrityError):
+        repository.prepare_remediation_continuation(
+            local.pull_request, prepared, prepared.rebased_head, refs
+        )
+
+
 def test_remediation_checkpoint_rederives_immutable_paths_and_file_modes(
     tmp_path: Path,
 ) -> None:

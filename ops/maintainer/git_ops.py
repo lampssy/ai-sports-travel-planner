@@ -1407,6 +1407,7 @@ class GitRepository:
             raise RemediationCheckpointIntegrityError(
                 "continuation ref cannot be resolved"
             )
+        self._verify_remediation_checkpoint_commit(remediation_ref_head)
         if remediation_ref_head != remediated_head:
             raise RemediationCheckpointIntegrityError(
                 "remediation ref no longer matches checkpoint"
@@ -1416,7 +1417,7 @@ class GitRepository:
             raise RemediationCheckpointIntegrityError(
                 "continuation ref cannot be resolved"
             )
-        self._verify_commit(squash_head)
+        self._verify_remediation_checkpoint_commit(squash_head)
         if self._commit_tree(squash_head) != self._commit_tree(remediated_head):
             raise RemediationCheckpointIntegrityError(
                 "remediation continuation tree no longer matches checkpoint"
@@ -1501,6 +1502,16 @@ class GitRepository:
         result = self._git("cat-file", "-e", f"{sha}^{{commit}}")
         if result.returncode != 0:
             raise RepositorySafetyError("prepared revision is not an immutable commit")
+
+    def _verify_remediation_checkpoint_commit(self, sha: str) -> None:
+        _validate_sha(sha)
+        result = self._git("cat-file", "-t", sha)
+        if result.returncode != 0:
+            raise RepositorySafetyError("cannot inspect remediation checkpoint object")
+        if result.stdout.strip() != "commit":
+            raise RemediationCheckpointIntegrityError(
+                "remediation checkpoint ref does not resolve to a commit"
+            )
 
     def _merge_base(self, left: str, right: str) -> str:
         _validate_sha(left)
