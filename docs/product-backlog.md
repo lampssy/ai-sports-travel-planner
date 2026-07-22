@@ -96,7 +96,7 @@ syntax:
 - the next coherent destination graph slice; and
 - whether the item is active, proposed, parked, or completed.
 
-Discovery treats this section as a semantic backlog-clearing queue:
+Discovery treats this section as an ordered semantic selection source:
 
 1. First retry a previously sourceable candidate interrupted only by
    `lock-busy`, after fresh inventory and source checks.
@@ -107,9 +107,11 @@ Discovery treats this section as a semantic backlog-clearing queue:
    must not silently override it.
 4. Use external discovery only when no bounded backlog slice is actionable.
 5. The proposal PR changes the item to `proposed` and links its report/PR.
-   When the owner accepts and merges it, mark the slice `completed`, or narrow
-   the same item to remaining regional gaps and make that next slice active.
-   Close or remove the item only when no useful modeled gap remains.
+6. After the owner accepts by removing the proposal label, normal curation on
+   that same PR must, before readiness, mark the slice `completed` when no
+   useful modeled gap remains, or narrow the item to the remaining regional
+   gaps and mark the next slice `active`. The owner merges only after this
+   backlog handoff is complete.
 
 A bounded slice may be an explicit decision-bearing proposal for a boundary,
 stable-ID, or weather-owner change when the existing catalog model can express

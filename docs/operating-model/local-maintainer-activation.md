@@ -212,9 +212,11 @@ The installed skill must:
   implications, complete source families and dispositions, canonical graph,
   exclusions, backlog anchor, caveats, owner decisions, and rollback;
 - use GitHub proposal identity and the merged schema-v3 report as durable
-  proposal authority. The proposal marks its backlog item `proposed`; after
-  owner acceptance and merge the item becomes `completed` or is narrowed to
-  remaining gaps. Preferred-retry memory remains an untrusted revalidated hint;
+  proposal authority. The proposal marks its backlog item `proposed`. After the
+  owner accepts it by removing the proposal label, normal curation on that same
+  PR must mark the item `completed`, or narrow it to the remaining gaps and mark
+  the next slice `active`, before readiness and owner merge. Preferred-retry
+  memory remains an untrusted revalidated hint;
 - allow existing-model boundary, stable-ID, and weather-owner changes to reach
   an owner-gated decision-bearing proposal with explicit historical-data,
   migration/backfill, merge-order, and rollback handoff, while keeping database
@@ -251,9 +253,10 @@ The installed skill must:
 - report the bounded Triage outcome for every terminal or no-op result without
   exposing the private lease run ID;
 - append one owner-private mode-`0600` bounded diagnostic JSON row per completed
-  run with start and completion times, selected item, heads, cycles, last stage,
-  helper reason, mutation flag, elapsed time, and recovery obligation; never
-  include a lease ID or treat this index as workflow authority;
+  run with explicit `started_at` and `completed_at` timestamps, selected item,
+  heads, cycles, last stage, helper reason, mutation flag, elapsed time, and
+  recovery obligation; never include a lease ID or treat this index as workflow
+  authority;
 - never push or publish outside the helper; and
 - never approve or merge.
 
@@ -304,6 +307,9 @@ For each schedule, confirm:
 - one backlog-origin proposal has exactly one matching primary destination and
   a coherent multi-entity graph; re-keying, weather migration, and owner choices
   are flagged rather than represented as resolved;
+- after the owner accepts that proposal by removing its proposal label, normal
+  curation on the same PR updates the backlog item to `completed`, or narrows it
+  and marks the next slice `active`, before readiness and owner merge;
 - a curation cycle with no GitHub mutation remains a semantic follow-up in
   automation memory and is selected first on the next run only while its exact
   PR/head remains eligible;

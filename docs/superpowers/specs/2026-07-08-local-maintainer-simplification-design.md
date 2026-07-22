@@ -449,8 +449,10 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    reviewed-only handoff and forbids validation, waiting-CI, and ready; Codex
    publishes `owner-decision` for an explicit unresolved owner/model choice or
    otherwise completes `manual-check`. `validation_status=unknown` stops for
-   owner attention rather than probing helper states. No recovery path starts
-   semantic review, fixes, validation, or another push.
+   owner attention rather than probing helper states. This push-journal
+   recovery path starts no semantic review, fix, validation, or another push;
+   remediation-continuation recovery is separate and requires its fresh bounded
+   review.
 3. The helper revalidates and prepares that exact PR.
    If guarded preparation reports a rebase conflict while the selected remote
    head remains exact, Codex requests the status-only `blocked/conflict`
@@ -879,16 +881,18 @@ approved or merged.
     step; it creates the new branch atomically with an empty expected-value
     lease, creates the draft PR, and publishes
     `lane:catalog-discovery` plus `maintainer:proposal`.
-21. The owner accepts by removing the proposal label or declines by closing the
-    PR.
-22. An accepted proposal later enters normal curation. Unresolved decision or
-    migration handoffs route to `owner-decision`, never readiness.
+21. The proposal PR changes its backlog item to `proposed` and links the
+    proposal and report. The owner accepts by removing the proposal label or
+    declines by closing the PR.
+22. An accepted proposal enters normal curation. Before it can reach readiness,
+    that same PR updates the backlog item to `completed` when the bounded slice
+    has no useful remaining gap, or narrows it to the remaining regional gaps
+    and marks the next slice `active`. Unresolved decision or migration
+    handoffs route to `owner-decision`, never readiness. The owner merges only
+    after this normal curation handoff is complete.
 23. GitHub proposal identity plus the merged schema-v3 report are the durable
-    proposal record; no private semantic queue or registry is added. The same
-    proposal changes its backlog item to `proposed` and links the proposal and
-    report. After owner acceptance and merge, the item becomes `completed` or is
-    narrowed to the remaining regional gaps. Automation memory remains only a
-    revalidated preferred-retry hint.
+    proposal record; no private semantic queue or registry is added. Automation
+    memory remains only a revalidated preferred-retry hint.
 
 The deterministic backlog parser, candidate fingerprints, exact marker cleanup,
 declined-fingerprint suppression, Alpine subregion rotation, and runtime
@@ -1041,9 +1045,10 @@ authorization artifact; a crash can still leave only the lease, phase
 timestamp, and push journal.
 
 After cleanup, the worker also appends one owner-private mode-`0600` diagnostic
-JSONL row in its automation directory with finish time, selected item, observed
-remote and local heads, review-cycle count, last successful stage, helper reason, GitHub mutation
-flag, elapsed minutes, and recovery obligation. Missing values are explicit
+JSONL row in its automation directory with explicit `started_at` and
+`completed_at` timestamps, selected item, observed remote and local heads,
+review-cycle count, last successful stage, helper reason, GitHub mutation flag,
+elapsed minutes, and recovery obligation. Missing values are explicit
 `null`; lease IDs, credentials, commands, source prose, and raw errors are never
 recorded. The index is for operational audits only and cannot authorize
 selection, recovery, review reuse, or mutation.
@@ -1395,8 +1400,9 @@ replaced. It is history, not current operational instruction:
   ownership, weather/migration implications, exclusions, owner decisions, and
   rollback.
 - GitHub proposal identity and the merged schema-v3 report are durable proposal
-  authority; the same PR marks its backlog item proposed, then completed or
-  narrowed after owner acceptance and merge.
+  authority. The proposal marks its backlog item proposed; after owner
+  acceptance, normal curation on that same PR must mark it completed or narrow
+  it and activate the next slice before readiness and owner merge.
 - Discovery research is read-only before lease acquisition; catalog and
   proposal state are revalidated under the lease before mutation.
 - Candidates already in freshly fetched canonical `main` or already open on
