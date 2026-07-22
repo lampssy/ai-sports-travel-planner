@@ -256,12 +256,22 @@ The installed skill must:
   still shows exactly the journaled old head, but stop immediately on any third
   head;
 - report the bounded Triage outcome for every terminal or no-op result without
-  exposing the private lease run ID;
+  exposing lease, origin, or recovery run IDs or private refs. For a helper
+  error, include only its allowlisted `check` and `kind` alongside the bounded
+  reason, stage, and explicit `started_at` and `completed_at` timestamps; never
+  copy helper detail or stdout/stderr;
 - append one owner-private mode-`0600` bounded diagnostic JSON row per completed
   run with explicit `started_at` and `completed_at` timestamps, selected item,
   heads, cycles, last stage, helper reason, mutation flag, elapsed time, and
-  recovery obligation; never include a lease ID or treat this index as workflow
-  authority;
+  recovery obligation, plus only the allowlisted helper error `check` and `kind`
+  when present. Never include lease, origin, or recovery run IDs, private refs,
+  credentials, commands, source or PR prose, helper detail, or raw stdout/stderr,
+  and never treat this index as workflow authority;
+- reproduce an exact-continuation `catalog-tests` failure only through the
+  trusted exact-base catalog-test harness. The Triage outcome and mode-`0600`
+  index may keep a sanitized fixed test-stage identifier and trusted-harness
+  test count when the helper provides them, but never test output, traceback,
+  command text, prepared-PR test identifiers, or caller-authored prose;
 - never push or publish outside the helper; and
 - never approve or merge.
 
@@ -286,8 +296,8 @@ latest start has no terminal completion after five hours and no currently
 healthy lease-owned run explains it. A missing index plus no automation-history
 start is `never-started`, not a successful no-op. Diagnose with read-only
 automation history and `inspect curation` / `inspect discovery`; do not expose
-or copy lease IDs into Triage or diagnostic rows, and do not clear private state
-manually.
+or copy lease, origin, or recovery run IDs or private refs into Triage or
+diagnostic rows, and do not clear private state manually.
 
 ## First-Run Acceptance
 
@@ -379,12 +389,25 @@ For each schedule, confirm:
    refs. Do not edit or delete them.
 3. Inspect both inventories and Codex Triage. Recover an irreversible operation
    only through the merged helper; multiple journals require owner review.
-4. Restore the snapshotted installed skills and both prompts atomically while
+4. Inventory every open curation and proposal head plus all private journals,
+   reviewed continuations, and remediation continuations. Before restoring a
+   pre-change helper, use the new helper to complete or quarantine every open
+   report that uses `review_evidence_envelope` or `graph_impact`, or retain a
+   helper that remains compatible with those fields. Quarantine is a
+   helper-owned non-selectable state; do not delete, rewrite, or relabel private
+   state manually.
+5. While schedules remain disabled, run a manual compatibility smoke against
+   the real remaining inventories and private state. Confirm the proposed
+   rollback helper can inspect every open head and safely recognize or ignore
+   every continuation/report shape without mutation. Any unclear head, report,
+   journal, continuation, or compatibility result keeps both schedules
+   disabled.
+6. Restore the snapshotted installed skills and both prompts atomically while
    schedules remain paused. Do not re-enable an older orchestrator while an
    active remediation continuation exists; recover or explicitly invalidate it
    with the helper version that created it first.
-5. Revert the repository helper through normal Git history and a reviewed PR.
+7. Revert the repository helper through normal Git history and a reviewed PR.
    Do not use plain `git push --force` and do not execute the superseded Task 10.
-6. Keep schedules disabled until the reverted or corrected merged version has
+8. Keep schedules disabled until the reverted or corrected merged version has
    passed the same post-merge review and the owner explicitly re-approves
    enablement.

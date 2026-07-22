@@ -230,7 +230,7 @@ Out of scope:
   synopsis includes the exact deterministic resulting-graph Mermaid section
   reproduced from the validated catalog/report head.
 - Reports the bounded Triage outcome for every success, stop, failure, and
-  no-op without exposing the private lease run ID.
+  no-op without exposing lease, origin, or recovery run IDs or private refs.
 - Never constructs branch-rewrite or GitHub-publication commands outside the
   helper.
 - Never approves or merges.
@@ -1038,20 +1038,32 @@ blocked/hold label changes only scheduled resumability; it does not delete or
 invalidate exact saved work.
 
 Every completed, stopped, or failed run emits one bounded Triage outcome with
-worker, optional work ID plus PR or candidate identity, last phase when work
-began, whether a mutation occurred, and a terminal/no-op reason. Lease run IDs
-remain private and are never included. This is diagnostic output, not an
-authorization artifact; a crash can still leave only the lease, phase
-timestamp, and push journal.
+worker, explicit `started_at` and `completed_at` timestamps, optional PR or
+candidate identity, last phase when work began, whether a mutation occurred,
+and a terminal/no-op reason. When a helper error supplies them, Triage may also
+include only its allowlisted `check` and `kind`; it never copies helper
+stdout/stderr or its optional detail. Lease, origin, and recovery run IDs plus
+private ref names remain private and are never included. This is diagnostic
+output, not an authorization artifact; a crash can still leave only the lease,
+phase timestamp, and push journal.
 
 After cleanup, the worker also appends one owner-private mode-`0600` diagnostic
 JSONL row in its automation directory with explicit `started_at` and
 `completed_at` timestamps, selected item, observed remote and local heads,
 review-cycle count, last successful stage, helper reason, GitHub mutation flag,
-elapsed minutes, and recovery obligation. Missing values are explicit
-`null`; lease IDs, credentials, commands, source prose, and raw errors are never
-recorded. The index is for operational audits only and cannot authorize
-selection, recovery, review reuse, or mutation.
+elapsed minutes, recovery obligation, and only the allowlisted helper error
+`check` and `kind` when present. Missing values are explicit `null`; lease,
+origin, and recovery run IDs, private refs, credentials, commands, source or PR
+prose, helper detail, and raw stdout/stderr are never recorded. The index is for
+operational audits only and cannot authorize selection, recovery, review reuse,
+or mutation.
+
+For a `catalog-tests` failure, an exact reviewed or remediation continuation may
+reproduce the failure only through the repository's trusted exact-base test
+harness. Triage and the diagnostic row may retain a sanitized fixed test-stage
+identifier and trusted-harness test count when the helper makes them available;
+they never persist a test command, test output, traceback, prepared-PR test
+identifier, or caller-authored prose.
 
 Schedule health uses the private curation and discovery `run-index.jsonl` files
 under `${CODEX_HOME:-$HOME/.codex}/automations/<automation-id>/` together with
@@ -1060,7 +1072,8 @@ per local day and discovery on Monday, Wednesday, and Friday. No curation start
 for 12 hours, no discovery start by 24 hours after its next scheduled weekday,
 or a start without terminal completion after five hours is stale and requires
 read-only inspection. A missing index with no history is `never-started`.
-Neither the index nor Triage contains lease IDs.
+Neither the index nor Triage contains lease, origin, or recovery run IDs or
+private refs.
 
 ### Push journal
 
@@ -1226,6 +1239,12 @@ Example:
   plus safe structured facts for Codex interpretation; use manual-check only
   for a complete reviewed scope-safe head, otherwise request status-only
   `blocked/validation-failure` when safe.
+- **Catalog-tests failure:** preserve the exact continuation when available and
+  reproduce the failure only with the trusted exact-base catalog-test harness.
+  Durable diagnostics may record the allowlisted `catalog-tests` check, failure
+  kind, and a sanitized trusted-harness test count or fixed identifier when
+  available, but never raw stdout/stderr, traceback, command text, private refs,
+  or prepared-PR test names.
 - **Lost validation response:** poll the original helper process through exit.
   If capture is genuinely lost, an exact same-lease validated request returns
   `already-validated`; changed inputs or phases remain rejected.
@@ -1510,6 +1529,15 @@ replaced. It is history, not current operational instruction:
 - Personal skills and automations are updated only after the corresponding
   helper contract is merged and verified, with the post-merge checklist as the
   rollback reference.
+- Before any pre-change helper or schedule is re-enabled during rollback, the
+  owner inventories every open curation/proposal head and all private journals,
+  reviewed continuations, and remediation continuations. Every open report that
+  uses `review_evidence_envelope` or `graph_impact` is completed or quarantined
+  through the new helper, or a helper compatible with those fields is retained.
+  A disabled/manual compatibility smoke must prove that the proposed rollback
+  helper can safely inspect the remaining heads and private state. Any unclear
+  report or state keeps both schedules disabled; rollback never deletes or
+  rewrites private records manually.
 
 ## Decision And Review Gate
 

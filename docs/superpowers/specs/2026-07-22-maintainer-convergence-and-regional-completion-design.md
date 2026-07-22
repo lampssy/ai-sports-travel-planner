@@ -544,6 +544,26 @@ rollback must not delete refs or state records manually. The old schedules must
 not be re-enabled while an active remediation continuation remains: recover or
 explicitly invalidate it with the new helper first.
 
+Rollback must also inventory every open curation/proposal head and all private
+journals and continuations before a pre-change helper or either schedule is
+re-enabled. Using the new helper, complete or quarantine every open report that
+uses `review_evidence_envelope` or `graph_impact`; if that cannot be done safely,
+retain a helper compatible with those report fields. With schedules disabled,
+run a manual read-only compatibility smoke against the remaining open heads and
+private state. The proposed rollback helper must inspect every remaining shape
+without mutation. An unclear report, private record, or smoke result keeps both
+schedules disabled; rollback never deletes or rewrites private state manually.
+
+Each bounded Triage result and owner-private mode-`0600` diagnostic row records
+the reason, stage, explicit `started_at` and `completed_at` timestamps, and only
+allowlisted helper error `check` and `kind` when available. It never persists
+helper detail, raw stdout/stderr,
+tracebacks, commands, run IDs, private refs, source/PR prose, or caller-authored
+text. A `catalog-tests` failure is reproduced from an exact continuation only
+through the trusted exact-base test harness; diagnostics may retain a sanitized
+fixed test-stage identifier and trusted-harness test count only when the helper
+provides them.
+
 ## Success Measures
 
 After activation, the owner should evaluate at least the next ten semantic
