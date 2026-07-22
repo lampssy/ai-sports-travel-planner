@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: owner-approved design; not yet implemented or activated
+- Status: implemented and feature-reviewed; repository activation pending merge
 - Classification: review-gated / full design flow
 - Owner: solo-builder
 - Related specification:
@@ -14,7 +14,7 @@
   finalized-report, safe-inspection, crash-safe-promotion, source-ownership,
   and owner-controlled-cutover findings are incorporated below
 
-Until this design is implemented, merged, and locally activated, the existing
+Until this implementation is merged and locally activated, the existing
 local-maintainer specification and installed skills remain authoritative.
 
 ## User Outcome
