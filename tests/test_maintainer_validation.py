@@ -303,6 +303,23 @@ class RecordingRunner:
         )
 
 
+class ExecuteBroadStageRunner:
+    def __init__(self) -> None:
+        self.calls: list[tuple[tuple[str, ...], Path, float]] = []
+
+    def run(
+        self,
+        argv: tuple[str, ...],
+        *,
+        cwd: Path,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
+        self.calls.append((tuple(argv), cwd, timeout))
+        if len(self.calls) < 3:
+            return subprocess.CompletedProcess(argv, 0, "", "")
+        return _SubprocessValidationRunner().run(argv, cwd=cwd, timeout=timeout)
+
+
 @dataclass
 class AlwaysTimeoutProcess:
     wait_calls: list[float | None] = field(default_factory=list)
@@ -366,10 +383,16 @@ def test_default_runner_discards_output_and_secret_environment(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    credential_home = tmp_path / "credential-home"
+    credential_home.mkdir()
+    (credential_home / "credential").write_text("secret", encoding="utf-8")
+    monkeypatch.setenv("HOME", str(credential_home))
     monkeypatch.setenv("OPENAI_API_KEY", "must-not-reach-validation")
     script = (
-        "import os,sys\n"
+        "import os,pathlib,sys\n"
         "assert 'OPENAI_API_KEY' not in os.environ\n"
+        f"assert os.environ['HOME'] != {str(credential_home)!r}\n"
+        "assert not (pathlib.Path(os.environ['HOME']) / 'credential').exists()\n"
         "for _ in range(512):\n"
         " os.write(1, b'x' * 4096)\n"
         " os.write(2, b'y' * 4096)\n"
@@ -459,9 +482,142 @@ def test_validate_curation_runs_fixed_commands_for_one_exact_head(
     assert commands[1][schema_flag + 1] == "3"
     assert "--skip-product-backlog-validation" in commands[1]
     assert "--product-backlog-path" not in commands[1]
-    assert "tests/test_catalog_curation_backlog.py" not in commands[2]
+    broad_command = commands[2]
+    assert broad_command[0] == "/usr/bin/env"
+    assert broad_command[1] == f"SNOWCAST_CATALOG_DATA_ROOT={reviewed.root}"
+    project_flag = broad_command.index("--project")
+    assert broad_command[project_flag + 1] == str(base.root)
+    assert "--no-env-file" in broad_command
+    config_flag = broad_command.index("-c")
+    assert broad_command[config_flag + 1] == str(base.root / "pyproject.toml")
+    root_flag = broad_command.index("--rootdir")
+    assert broad_command[root_flag + 1] == str(base.root)
+    trusted_tests = {
+        str(base.root / "tests/test_catalog_curation.py"),
+        str(base.root / "tests/test_catalog_curation_reconciliation.py"),
+        str(base.root / "tests/test_catalog_models.py"),
+        str(base.root / "tests/test_catalog_trust.py"),
+    }
+    assert trusted_tests.issubset(broad_command)
+    assert all(
+        not argument.startswith(str(reviewed.root / "tests"))
+        for argument in broad_command
+    )
+    assert "tests/test_catalog_curation_backlog.py" not in broad_command
     assert reviewed.revalidate_calls == 5
     assert base.base_calls == 5
+
+
+def test_broad_stage_uses_only_trusted_python_with_prepared_catalog_data(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    trusted_venv = Path(".venv").resolve()
+    for root in (reviewed.root, base.root):
+        (root / ".venv").symlink_to(trusted_venv, target_is_directory=True)
+        (root / "app/data").mkdir(parents=True)
+    (reviewed.root / "app/data/catalog.json").write_text(
+        '"prepared-data"', encoding="utf-8"
+    )
+    (reviewed.root / "app/data/resort_trust_manifest.json").write_text(
+        "{}", encoding="utf-8"
+    )
+    (base.root / "pyproject.toml").write_text(
+        '[tool.pytest.ini_options]\npythonpath = ["."]\n',
+        encoding="utf-8",
+    )
+    (base.root / "app/__init__.py").write_text("", encoding="utf-8")
+    (base.root / "app/probe.py").write_text(
+        "VALUE = 'trusted-base'\n", encoding="utf-8"
+    )
+    trusted_tests = base.root / "tests"
+    trusted_tests.mkdir()
+    (trusted_tests / "conftest.py").write_text(
+        "import os\nos.environ['TRUSTED_CONFTEST_LOADED'] = '1'\n",
+        encoding="utf-8",
+    )
+    for name in (
+        "test_catalog_curation.py",
+        "test_catalog_curation_reconciliation.py",
+    ):
+        (trusted_tests / name).write_text(
+            "def test_trusted_module():\n    assert True\n",
+            encoding="utf-8",
+        )
+    (trusted_tests / "test_catalog_models.py").write_text(
+        "from app.probe import VALUE\n\n"
+        "def test_import_uses_trusted_base():\n"
+        "    assert VALUE == 'trusted-base'\n",
+        encoding="utf-8",
+    )
+    (trusted_tests / "test_catalog_trust.py").write_text(
+        "import os\n"
+        "from pathlib import Path\n\n"
+        "def test_trusted_module_reads_prepared_data():\n"
+        "    assert os.environ['TRUSTED_CONFTEST_LOADED'] == '1'\n"
+        "    root = Path(os.environ['SNOWCAST_CATALOG_DATA_ROOT'])\n"
+        "    assert (root / 'app/data/catalog.json').read_text() == "
+        "'\"prepared-data\"'\n",
+        encoding="utf-8",
+    )
+    prepared_marker = reviewed.root / "prepared-python-executed"
+    prepared_app_marker = reviewed.root / "prepared-app-executed"
+    (reviewed.root / "app/__init__.py").write_text("", encoding="utf-8")
+    (reviewed.root / "app/probe.py").write_text(
+        "from pathlib import Path\n"
+        f"Path({str(prepared_app_marker)!r}).write_text('executed')\n"
+        "VALUE = 'prepared'\n",
+        encoding="utf-8",
+    )
+    prepared_tests = reviewed.root / "tests"
+    prepared_tests.mkdir()
+    malicious_import = (
+        "from pathlib import Path\n"
+        f"Path({str(prepared_marker)!r}).write_text('executed')\n"
+    )
+    (prepared_tests / "conftest.py").write_text(
+        malicious_import,
+        encoding="utf-8",
+    )
+    for name in (
+        "test_catalog_curation.py",
+        "test_catalog_curation_reconciliation.py",
+        "test_catalog_models.py",
+        "test_catalog_trust.py",
+    ):
+        (prepared_tests / name).write_text(
+            malicious_import + "\ndef test_prepared_only():\n    assert True\n",
+            encoding="utf-8",
+        )
+    (reviewed.root / "pyproject.toml").write_text(
+        '[tool.pytest.ini_options]\naddopts = "-k prepared_only"\n',
+        encoding="utf-8",
+    )
+
+    runner = ExecuteBroadStageRunner()
+    result = validate_curation(
+        pull_request=_pull_request(
+            changed_paths=frozenset(
+                {
+                    CATALOG_PATH,
+                    TRUST_PATH,
+                    REPORT_PATH,
+                    "tests/conftest.py",
+                    "tests/test_catalog_trust.py",
+                }
+            )
+        ),
+        sync=_sync(),
+        reviewed_head=SHA_B,
+        report_path=REPORT_PATH,
+        repository=reviewed,  # type: ignore[arg-type]
+        base_repository=base,  # type: ignore[arg-type]
+        runner=runner,
+    )
+
+    assert result.commands_completed == 3
+    assert not prepared_marker.exists()
+    assert not prepared_app_marker.exists()
 
 
 def test_validate_curation_delta_runs_only_the_two_non_pytest_commands(

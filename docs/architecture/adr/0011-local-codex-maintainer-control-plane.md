@@ -89,6 +89,14 @@ resolution. Do not require whole-file blob IDs, changed paths, or catalog
 targets to remain identical across rebase and Codex remediation; the fresh
 semantic review and final validation own content correctness.
 
+Test changes remain allowed in curation PRs, but they are not executable
+authority for unattended local validation. The final pytest stage uses only
+the exact-base uv project, pytest configuration, conftest, and fixed absolute
+test-module paths. It supplies the prepared catalog/trust files as data to
+those trusted tests and runs with a fresh private `HOME`. PR-supplied Python and
+pytest configuration execute only in owner-visible CI or deliberate review,
+not in the local maintainer.
+
 Do not parse human backlog prose deterministically and do not use the initial
 69-entry Alpine registry as a runtime discovery gate. Preserve a researched
 destination-coverage registry as a future backlog idea. A well-supported
@@ -173,7 +181,8 @@ overwriting a newly changed remote head, and local backup refs provide recovery
 for the selected original SHA. Conflicts and unsafe resulting paths require
 owner intervention. Non-control-plane documentation and tests may expand
 during remediation; tests are executable in CI and may be weakened
-accidentally, but this risk is accepted for same-repository `codex/*` branches
+accidentally, but the local maintainer does not execute their PR versions. The
+remaining CI/review risk is accepted for same-repository `codex/*` branches
 because the workflow never approves or merges and the owner reviews the final
 PR.
 

@@ -373,6 +373,16 @@ The expected healthy path is one inventory stage, one consolidated fix, one
 bounded full review, and one comprehensive final validation. Additional cycles
 exist only for genuine graph blockers.
 
+The final local pytest stage treats the prepared PR as data, not executable
+authority. The helper pins the uv project, pytest configuration/root, root
+conftest, and fixed test-module paths to a clean exact-base checkout whose
+required files are regular and non-symlinked. Those trusted tests read the
+prepared head's catalog and trust manifest through one helper-derived data-root
+environment value. PR changes under `tests/` remain eligible for review and CI,
+but unattended local validation never collects or imports them. Each validation
+subprocess also receives a fresh private `HOME`; ambient credential files and
+raw subprocess output are unavailable to the test process and helper response.
+
 ## Source URL Verification
 
 Source verification belongs to Codex orchestration, not to the deterministic

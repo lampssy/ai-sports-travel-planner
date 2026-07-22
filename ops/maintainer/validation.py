@@ -63,7 +63,7 @@ _RETIRED_DISCOVERY_REGISTRY_PATH = (
 )
 _PROCESS_GROUP_GRACE_SECONDS = 0.25
 _PROCESS_GROUP_CLEANUP_ERROR = "validation process-group cleanup failed"
-_VALIDATION_ENVIRONMENT_KEYS = ("HOME", "LANG", "LC_ALL", "PATH", "TMPDIR")
+_VALIDATION_ENVIRONMENT_KEYS = ("LANG", "LC_ALL", "PATH", "TMPDIR")
 
 
 class _ValidationModel(BaseModel):
@@ -142,24 +142,27 @@ class _SubprocessValidationRunner:
     ) -> subprocess.CompletedProcess[str]:
         if os.name != "posix":
             raise OSError("validation subprocess isolation requires POSIX")
-        process = subprocess.Popen(
-            list(argv),
-            cwd=cwd,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            text=False,
-            shell=False,
-            start_new_session=True,
-            env=_validation_environment(),
-        )
-        process_group = process.pid
-        try:
-            returncode = process.wait(timeout=timeout)
-        except subprocess.TimeoutExpired:
+        with TemporaryDirectory(prefix="snowcast-maintainer-home-") as directory:
+            private_home = Path(directory)
+            os.chmod(private_home, 0o700)
+            process = subprocess.Popen(
+                list(argv),
+                cwd=cwd,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                text=False,
+                shell=False,
+                start_new_session=True,
+                env=_validation_environment(private_home),
+            )
+            process_group = process.pid
+            try:
+                returncode = process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                _terminate_process_group(process, process_group)
+                raise subprocess.TimeoutExpired(list(argv), timeout) from None
             _terminate_process_group(process, process_group)
-            raise subprocess.TimeoutExpired(list(argv), timeout) from None
-        _terminate_process_group(process, process_group)
         return subprocess.CompletedProcess(
             list(argv),
             returncode,
@@ -168,13 +171,14 @@ class _SubprocessValidationRunner:
         )
 
 
-def _validation_environment() -> dict[str, str]:
+def _validation_environment(private_home: Path) -> dict[str, str]:
     environment = {
         key: value
         for key in _VALIDATION_ENVIRONMENT_KEYS
         if (value := os.environ.get(key)) is not None
     }
     environment.setdefault("PATH", os.defpath)
+    environment["HOME"] = str(private_home)
     environment["PYTHONIOENCODING"] = "utf-8"
     environment["PYTHONNOUSERSITE"] = "1"
     environment["UV_NO_CONFIG"] = "1"
@@ -244,6 +248,7 @@ def _wait_for_process_group_exit(process_group: int, timeout: float) -> bool:
 class _CurationPlan(_ValidationModel):
     report_path: str = Field(pattern=_REPORT_PATH.pattern)
     base_dir: Path
+    reviewed_dir: Path
     base_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
     reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
 
@@ -651,6 +656,7 @@ def _curation_plan(
         return _CurationPlan(
             report_path=report_path,
             base_dir=Path(base_repository.root),
+            reviewed_dir=Path(repository.root),
             base_sha=sync.base_head,
             reviewed_head=reviewed_head,
         )
@@ -719,15 +725,24 @@ def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:
             "--skip-product-backlog-validation",
         ),
         (
+            "/usr/bin/env",
+            f"SNOWCAST_CATALOG_DATA_ROOT={plan.reviewed_dir}",
             "uv",
             "run",
+            "--project",
+            str(plan.base_dir),
             "--no-config",
+            "--no-env-file",
             "--no-sync",
             "pytest",
-            "tests/test_catalog_curation.py",
-            "tests/test_catalog_curation_reconciliation.py",
-            "tests/test_catalog_models.py",
-            "tests/test_catalog_trust.py",
+            "-c",
+            str(plan.base_dir / "pyproject.toml"),
+            "--rootdir",
+            str(plan.base_dir),
+            str(plan.base_dir / "tests/test_catalog_curation.py"),
+            str(plan.base_dir / "tests/test_catalog_curation_reconciliation.py"),
+            str(plan.base_dir / "tests/test_catalog_models.py"),
+            str(plan.base_dir / "tests/test_catalog_trust.py"),
             "-q",
         ),
     )

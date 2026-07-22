@@ -112,6 +112,11 @@ The installed skill must:
   reconciliation. Reuse that exact-head
   evidence when the checkpoint is persisted; reserve the fixed broad catalog
   suite for one final helper validation after review;
+- for that final broad suite, execute only the clean exact-base uv project,
+  pytest configuration, conftest, and fixed absolute test modules. Supply the
+  prepared catalog/trust paths only through the helper-derived data root and a
+  fresh private `HOME`; never collect or import PR-supplied Python locally.
+  Changes under `tests/` remain eligible for CI and owner review;
 - run complementary independent source/trust and graph/scope reviews in
   parallel on the normalized prepared head after freezing the bounded evidence
   envelope, then consolidate them into one first fix and private finding
@@ -352,6 +357,9 @@ For each schedule, confirm:
 - each remediation runs only the two delta commands, and the reviewed final head
   runs the broad validation plus a fresh all-URL reachability sweep and semantic
   recheck of changed or graph-critical sources;
+- the broad local pytest stage ignores modified PR conftest/test modules and PR
+  pytest configuration, runs the fixed modules from the verified exact base,
+  reads the prepared catalog/trust data, and cannot access the user's `HOME`;
 - boundary adjudication stops spawning at minute 180, semantic work stops
   spawning at minute 210, active semantic contexts are interrupted at minute
   240, and only the separate 30-active-minute finalization allowance follows;

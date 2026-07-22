@@ -209,6 +209,17 @@ def _write_validation_base_files(root: Path) -> None:
     data.mkdir(parents=True)
     (data / "catalog.json").write_text("{}", encoding="utf-8")
     (data / "resort_trust_manifest.json").write_text("{}", encoding="utf-8")
+    (root / "pyproject.toml").write_text("[tool.pytest.ini_options]\n")
+    tests = root / "tests"
+    tests.mkdir()
+    for name in (
+        "conftest.py",
+        "test_catalog_curation.py",
+        "test_catalog_curation_reconciliation.py",
+        "test_catalog_models.py",
+        "test_catalog_trust.py",
+    ):
+        (tests / name).write_text("# trusted test\n", encoding="utf-8")
 
 
 def test_read_bounded_immutable_text_sizes_before_reading(tmp_path: Path) -> None:
@@ -435,6 +446,20 @@ def test_verify_validation_base_rejects_unsafe_required_file(
     else:
         catalog.unlink()
         catalog.mkdir()
+    repository = GitRepository(root, runner=_validation_runner(root))
+
+    with pytest.raises(RepositorySafetyError, match="regular non-symlink file"):
+        repository.verify_validation_base("d" * 40)
+
+
+def test_verify_validation_base_rejects_symlinked_trusted_test(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    _write_validation_base_files(root)
+    conftest = root / "tests/conftest.py"
+    target = root / "outside-conftest.py"
+    target.write_text("raise RuntimeError('untrusted')\n", encoding="utf-8")
+    conftest.unlink()
+    conftest.symlink_to(target)
     repository = GitRepository(root, runner=_validation_runner(root))
 
     with pytest.raises(RepositorySafetyError, match="regular non-symlink file"):

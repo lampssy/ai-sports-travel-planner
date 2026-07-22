@@ -85,6 +85,12 @@ _RAW_DIFF_HEADER = re.compile(
 _VALIDATION_BASE_FILES = (
     "app/data/catalog.json",
     "app/data/resort_trust_manifest.json",
+    "pyproject.toml",
+    "tests/conftest.py",
+    "tests/test_catalog_curation.py",
+    "tests/test_catalog_curation_reconciliation.py",
+    "tests/test_catalog_models.py",
+    "tests/test_catalog_trust.py",
 )
 
 
