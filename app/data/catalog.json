@@ -63,11 +63,14 @@
       ]
     },
     {
-      "ski_region_id": "hintertux",
-      "name": "Hintertux",
+      "ski_region_id": "tux-finkenberg",
+      "name": "Tux-Finkenberg",
       "grouping_policy": "trip_market",
       "parent_ski_region_id": null,
-      "source_urls": []
+      "source_urls": [
+        "https://www.tux.at/en/tux-finkenberg/",
+        "https://www.tux.at/en/tourist-association-offices/"
+      ]
     },
     {
       "ski_region_id": "ischgl",
@@ -432,14 +435,14 @@
       }
     },
     {
-      "stay_destination_id": "hintertux",
-      "name": "Hintertux",
+      "stay_destination_id": "tux-finkenberg",
+      "name": "Tux-Finkenberg",
       "country": "Austria",
       "region": "Tyrol",
       "price_level": "high",
-      "latitude": 47.0406,
-      "longitude": 11.6697,
-      "trip_market_region_id": "hintertux",
+      "latitude": 47.156438,
+      "longitude": 11.72878,
+      "trip_market_region_id": "tux-finkenberg",
       "regional_data_ids": {}
     },
     {
@@ -1293,8 +1296,8 @@
       }
     },
     {
-      "stay_base_id": "hintertux-hintertux",
-      "stay_destination_id": "hintertux",
+      "stay_base_id": "tux-finkenberg-hintertux",
+      "stay_destination_id": "tux-finkenberg",
       "name": "Hintertux",
       "price_range": "EUR 220-320",
       "price_min": 220.0,
@@ -1305,9 +1308,9 @@
       "base_type": "village",
       "regional_data_ids": {
         "osm_node_id": "321007835",
-        "wikidata_id": "Q688964"
+        "wikidata_id": "Q2607085"
       },
-      "elevation_m": null,
+      "elevation_m": 1500,
       "base_character": {
         "development_style": "unknown",
         "local_pace": "unknown"
@@ -1317,6 +1320,123 @@
         "intensity": null,
         "season_label": null
       }
+    },
+    {
+      "stay_base_id": "tux-finkenberg-vorderlanersbach",
+      "stay_destination_id": "tux-finkenberg",
+      "name": "Tux-Vorderlanersbach",
+      "price_range": "EUR 160-320",
+      "price_min": 160.0,
+      "price_max": 320.0,
+      "quality": "standard",
+      "latitude": 47.162604,
+      "longitude": 11.7451564,
+      "elevation_m": null,
+      "base_type": "village",
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      },
+      "regional_data_ids": {
+        "osm_node_id": "252335667"
+      }
+    },
+    {
+      "stay_base_id": "tux-finkenberg-lanersbach",
+      "stay_destination_id": "tux-finkenberg",
+      "name": "Tux-Lanersbach",
+      "price_range": "EUR 160-320",
+      "price_min": 160.0,
+      "price_max": 320.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "elevation_m": null,
+      "base_type": "village",
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      },
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "tux-finkenberg-juns",
+      "stay_destination_id": "tux-finkenberg",
+      "name": "Juns",
+      "price_range": "EUR 160-320",
+      "price_min": 160.0,
+      "price_max": 320.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "elevation_m": null,
+      "base_type": "village",
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      },
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "tux-finkenberg-madseit",
+      "stay_destination_id": "tux-finkenberg",
+      "name": "Madseit",
+      "price_range": "EUR 160-320",
+      "price_min": 160.0,
+      "price_max": 320.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "elevation_m": null,
+      "base_type": "village",
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      },
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "tux-finkenberg-finkenberg",
+      "stay_destination_id": "tux-finkenberg",
+      "name": "Finkenberg",
+      "price_range": "EUR 160-320",
+      "price_min": 160.0,
+      "price_max": 320.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "elevation_m": 840,
+      "base_type": "village",
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      },
+      "regional_data_ids": {}
     },
     {
       "stay_base_id": "ischgl-ischgl",
@@ -3426,18 +3546,18 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
-        "season_label": null
+        "availability": "available",
+        "park_count": 1,
+        "season_label": "2026-04-18 to 2026-06-01"
       },
       "night_skiing": {
         "availability": "unknown",
@@ -3448,7 +3568,9 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.hintertuxergletscher.at/en/skiing/skiing-region-current-information/interactive-ski-map/?L=0"
+      },
       "ski_day_apres_profile": {
         "availability": "unknown",
         "intensity": null,
@@ -5312,12 +5434,12 @@
       ]
     },
     {
-      "ski_area_access_id": "hintertux-hintertux--hintertux-glacier",
-      "stay_base_id": "hintertux-hintertux",
+      "ski_area_access_id": "tux-finkenberg-hintertux--hintertux-glacier",
+      "stay_base_id": "tux-finkenberg-hintertux",
       "ski_area_id": "hintertux-glacier",
       "access_mode": "ski_bus",
       "lift_distance": "medium",
-      "nearest_lift_name": "Gletscherbus 1 Talstation",
+      "nearest_lift_name": "Hintertux Gletscherbahn",
       "distance_m": 1074,
       "duration_minutes": null,
       "is_direct": false,
@@ -5326,9 +5448,95 @@
         "nearest_lift_osm_way_id": "4388462"
       },
       "source_urls": [
+        "https://www.hintertuxergletscher.at/en/information/plan-your-visit/bus-schedules/?L=1",
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf",
         "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
         "https://www.openstreetmap.org/node/27337851",
         "https://www.openstreetmap.org/way/4388462"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-vorderlanersbach--mayrhofen-ski-area",
+      "stay_base_id": "tux-finkenberg-vorderlanersbach",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Rastkogelbahn",
+      "distance_m": 195,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "27337827"
+      },
+      "source_urls": [
+        "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/rastkogel-bahnen/",
+        "https://www.hintertuxergletscher.at/en/information/plan-your-visit/getting-there-parking/?L=0",
+        "https://www.openstreetmap.org/node/252335667",
+        "https://www.openstreetmap.org/node/27337827"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-lanersbach--mayrhofen-ski-area",
+      "stay_base_id": "tux-finkenberg-lanersbach",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Eggalmbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/eggalm-bahnen/",
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-finkenberg--mayrhofen-ski-area",
+      "stay_base_id": "tux-finkenberg-finkenberg",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Finkenberger Almbahnen",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.tux.at/en/finkenberg/",
+        "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/finkenberger-almbahnen/"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-juns--hintertux-glacier",
+      "stay_base_id": "tux-finkenberg-juns",
+      "ski_area_id": "hintertux-glacier",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Hintertux Gletscherbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.hintertuxergletscher.at/en/information/plan-your-visit/bus-schedules/?L=1",
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-madseit--hintertux-glacier",
+      "stay_base_id": "tux-finkenberg-madseit",
+      "ski_area_id": "hintertux-glacier",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Hintertux Gletscherbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.hintertuxergletscher.at/en/information/plan-your-visit/bus-schedules/?L=1",
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
       ]
     },
     {
@@ -6333,6 +6541,96 @@
       "regional_data_ids": {},
       "source_urls": [
         "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail/poi/lagazuoi-skitour"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-vorderlanersbach--hintertux-glacier",
+      "stay_base_id": "tux-finkenberg-vorderlanersbach",
+      "ski_area_id": "hintertux-glacier",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Hintertux Gletscherbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-lanersbach--hintertux-glacier",
+      "stay_base_id": "tux-finkenberg-lanersbach",
+      "ski_area_id": "hintertux-glacier",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Hintertux Gletscherbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-finkenberg--hintertux-glacier",
+      "stay_base_id": "tux-finkenberg-finkenberg",
+      "ski_area_id": "hintertux-glacier",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Hintertux Gletscherbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-juns--mayrhofen-ski-area",
+      "stay_base_id": "tux-finkenberg-juns",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Eggalmbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-madseit--mayrhofen-ski-area",
+      "stay_base_id": "tux-finkenberg-madseit",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Eggalmbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "tux-finkenberg-hintertux--mayrhofen-ski-area",
+      "stay_base_id": "tux-finkenberg-hintertux",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Eggalmbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
       ]
     }
   ],
@@ -7868,20 +8166,55 @@
       ]
     },
     {
-      "lift_pass_product_id": "ski-glacier-world-zillertal-3000",
-      "name": "Ski & Glacier World Zillertal 3000 / Zillertaler Superskipass",
+      "lift_pass_product_id": "hintertux-glacier-day-pass",
+      "name": "Hintertux Glacier Day Ticket",
       "validity_scope": "regional_network",
       "available_from_stay_destination_ids": [
-        "hintertux"
+        "tux-finkenberg"
       ],
-      "default_for_stay_destination_ids": [
-        "hintertux"
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "hintertux-glacier",
+        "mayrhofen-ski-area"
       ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Valid at Hintertux Glacier throughout 2026-10-03 to 2027-05-07; from 2026-12-04 to 2027-04-11 it additionally covers Eggalm, Rastkogel, Finkenberg, Penken and Ahorn. Conditional wider coverage is not asserted as year-round modeled-area coverage.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 82.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 day ticket: 2026-10-03 to 2027-05-07",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        }
+      ],
+      "validity_windows": [
+        {
+          "season_label": "Winter 2026/27 Hintertux Glacier day-ticket window",
+          "start_date": "2026-10-03",
+          "end_date": "2027-05-07",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "hintertux-glacier-multiday-skipass",
+      "name": "Multi-day Ski Pass at Hintertux Glacier",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "tux-finkenberg"
+      ],
+      "default_for_stay_destination_ids": [],
       "valid_ski_area_ids": [
         "hintertux-glacier"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": "Winter 2026/27 pass covers Hintertux Glacier locally; during the main winter network window it also covers Eggalm, Rastkogel, Finkenberg, Penken/Mayrhofen, Ahorn, and broader Zillertal Superskipass terrain depending on duration and date.",
+      "external_validity_summary": "Local Hintertux Glacier 2-21 day product outside the Zillertaler Superskipass main window; the publisher's obvious 2076 typo is normalized to 2027.",
       "pass_accessible_terrain": null,
       "prices": [
         {
@@ -7892,7 +8225,7 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+          "season_label": "Winter 2026/27 local windows: 2026-10-03 to 2026-12-03 and 2027-04-12 to 2027-05-07",
           "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
         },
         {
@@ -7903,9 +8236,43 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+          "season_label": "Winter 2026/27 local windows: 2026-10-03 to 2026-12-03 and 2027-04-12 to 2027-05-07",
           "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        }
+      ],
+      "validity_windows": [
+        {
+          "season_label": "Winter 2026/27 early local multi-day window",
+          "start_date": "2026-10-03",
+          "end_date": "2026-12-03",
+          "status": "planned"
         },
+        {
+          "season_label": "Winter 2026/27 late local multi-day window",
+          "start_date": "2027-04-12",
+          "end_date": "2027-05-07",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "skipass-mayrhofen",
+      "name": "Skipass Mayrhofen",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "mayrhofen"
+      ],
+      "default_for_stay_destination_ids": [
+        "mayrhofen"
+      ],
+      "valid_ski_area_ids": [
+        "mayrhofen-ski-area",
+        "hintertux-glacier"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "The one-day product is valid in Mayrhofen, Eggalm, Rastkogel, Finkenberg and Hintertux Glacier; conditional cross-owner coverage remains explicit rather than broadening the Mayrhofen ski-area owner.",
+      "pass_accessible_terrain": null,
+      "prices": [
         {
           "duration_days": 1,
           "audience": "adult",
@@ -7914,8 +8281,67 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27",
-          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          "season_label": "Winter 2026/27 Skipass Mayrhofen day ticket",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        }
+      ],
+      "validity_windows": [
+        {
+          "season_label": "Winter 2026/27 Mayrhofen ticket window",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-11",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "zillertaler-superskipass",
+      "name": "Zillertaler Superskipass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "tux-finkenberg",
+        "mayrhofen"
+      ],
+      "default_for_stay_destination_ids": [
+        "tux-finkenberg"
+      ],
+      "valid_ski_area_ids": [
+        "hintertux-glacier",
+        "mayrhofen-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Valid for all lifts in Zillertal from 2026-12-04 through 2027-04-11; wider unmodeled Zillertal members remain external regional-network context.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 241.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Zillertaler Superskipass window: 2026-12-04 to 2027-04-11",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 399.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Zillertaler Superskipass window: 2026-12-04 to 2027-04-11",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        }
+      ],
+      "validity_windows": [
+        {
+          "season_label": "Winter 2026/27 Zillertaler Superskipass window",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-11",
+          "status": "planned"
         }
       ]
     },
@@ -8326,58 +8752,6 @@
       ]
     },
     {
-      "lift_pass_product_id": "zillertaler-superskipass-mayrhofen",
-      "name": "Zillertaler Superskipass / Skipass Mayrhofen",
-      "validity_scope": "regional_network",
-      "available_from_stay_destination_ids": [
-        "mayrhofen"
-      ],
-      "default_for_stay_destination_ids": [
-        "mayrhofen"
-      ],
-      "valid_ski_area_ids": [
-        "mayrhofen-ski-area"
-      ],
-      "terrain_domain_ids": [],
-      "external_validity_summary": "One-day Skipass Mayrhofen covers Mayrhofen, Eggalm, Rastkogel, Finkenberg, and Hintertux Glacier. Multi-day Zillertaler Superskipass covers all lifts in the Zillertal during the published 2026/27 main winter window. Wider Zillertal terrain is summarized here rather than copied into Mayrhofen's 142 km local ski-area metrics.",
-      "pass_accessible_terrain": null,
-      "prices": [
-        {
-          "duration_days": 3,
-          "audience": "adult",
-          "amount": 241.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 Zillertaler Superskipass main window",
-          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
-        },
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 399.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 Zillertaler Superskipass main window",
-          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
-        },
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 82.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 Skipass Mayrhofen day ticket",
-          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
-        }
-      ]
-    },
-    {
       "lift_pass_product_id": "valtournenche-local-pass",
       "name": "Valtournenche Ski Pass",
       "validity_scope": "single_ski_area",
@@ -8509,9 +8883,9 @@
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "hintertux-intersport-hintertux",
-      "stay_destination_id": "hintertux",
-      "stay_base_id": null,
+      "rental_display_fact_id": "tux-finkenberg-intersport-hintertux",
+      "stay_destination_id": "tux-finkenberg",
+      "stay_base_id": "tux-finkenberg-hintertux",
       "name": "INTERSPORT Hintertux",
       "price_range": "EUR 45-70",
       "price_min": 45.0,

@@ -352,54 +352,6 @@
           "The region groups trip-planning context and shared pass validity; it does not assert ski connectivity between Grindelwald-First and the other ski areas."
         ]
       },
-      "hintertux": {
-        "display_name": "Hintertux",
-        "field_statuses": {
-          "identity": "verified",
-          "membership_context": "estimated"
-        },
-        "field_source_refs": {
-          "identity": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "membership_context": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ]
-        },
-        "notes": [
-          "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog keeps the reviewed winter 2026/27 product window for planning.",
-          "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
-          "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
-          "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates.",
-          "Trip-market membership is retained as reviewed migration context and remains estimated."
-        ]
-      },
       "ischgl": {
         "display_name": "Ischgl",
         "field_statuses": {
@@ -912,6 +864,27 @@
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence.",
           "Trip-market membership is retained as reviewed migration context and remains estimated."
         ]
+      },
+      "tux-finkenberg": {
+        "display_name": "Tux-Finkenberg",
+        "field_statuses": {
+          "identity": "verified",
+          "membership_context": "verified"
+        },
+        "field_source_refs": {
+          "identity": [
+            "https://www.tux.at/en/tourist-association-offices/",
+            "https://www.tux.at/en/tux-finkenberg/"
+          ],
+          "membership_context": [
+            "https://www.tux.at/en/tourist-association-offices/",
+            "https://www.tux.at/en/tux-finkenberg/"
+          ]
+        },
+        "notes": [
+          "Official tourism and the shared tourist association establish Tux-Finkenberg as one trip-market owner.",
+          "The disconnected Ski and Glacier World grouping remains regional/pass context and is not modeled as a terrain domain."
+        ]
       }
     },
     "stay_destinations": {
@@ -1287,70 +1260,6 @@
         "notes": [
           "Official tourism treats car-free Wengen as a named village and accommodation market with its own access and lodging inventory.",
           "The high price level remains a product-curated estimate pending a dedicated lodging sample."
-        ]
-      },
-      "hintertux": {
-        "display_name": "Hintertux",
-        "field_statuses": {
-          "identity_location": "verified_with_adjustment",
-          "coordinates": "verified_with_adjustment",
-          "price_level": "estimated"
-        },
-        "field_source_refs": {
-          "identity_location": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "coordinates": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "price_level": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ]
-        },
-        "notes": [
-          "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog keeps the reviewed winter 2026/27 product window for planning.",
-          "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
-          "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
-          "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates."
         ]
       },
       "ischgl": {
@@ -2408,6 +2317,31 @@
           "Official village-specific accommodation treatment supports an independently represented stay market under the Alta Badia trip-market umbrella.",
           "The point coordinate is the exact OSM village node; administrative boundaries are not used as point geometry.",
           "The medium price level is inherited compatibility data and remains estimated."
+        ]
+      },
+      "tux-finkenberg": {
+        "display_name": "Tux-Finkenberg",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.tux.at/en/booking/",
+            "https://www.tux.at/en/tourist-association-offices/",
+            "https://www.tux.at/en/tux-finkenberg/"
+          ],
+          "coordinates": [
+            "https://www.tux.at/en/tourist-association-offices/",
+            "https://www.google.de/maps/place/Tourismusverband%2BTux%2B-%2BFinkenberg/%4047.1374993%2C11.6855239%2C13z/data%3D%214m6%213m5%211s0x4777e09b565e4e85%3A0xde8d285290008ffe%218m2%213d47.156438%214d11.72878%2116s%2Fg%2F1tdnvqsg?entry=ttu&g_ep=EgoyMDI1MTIwNy4wIKXMDSoASAFQAw%3D%3D"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official tourism owns one Tux-Finkenberg accommodation inventory spanning all six represented villages.",
+          "The representative trip-market point uses the official Tux-Finkenberg tourism office and arrival address at Lanersbach 401; the exact map coordinates from the office page replace the former Hintertux/glacier-biased fallback anchor.",
+          "Price level remains a product estimate."
         ]
       }
     },
@@ -3508,78 +3442,6 @@
           "Official tourism establishes Wengen as a car-free village accommodation base at 1,274 metres with direct ski access.",
           "Mixed development normalizes the long-standing village identity and historic hotel fabric together with the accommodation scale of a major ski resort; lively pace and apres normalize official high-season and late-night venue evidence.",
           "Lodging price and quality remain product-curated estimates."
-        ]
-      },
-      "hintertux-hintertux": {
-        "display_name": "Hintertux",
-        "field_statuses": {
-          "identity_ownership": "verified",
-          "coordinates": "verified",
-          "elevation": "needs_source",
-          "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_ownership": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "coordinates": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "elevation": [],
-          "lodging_price_quality": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
-        },
-        "notes": [
-          "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog keeps the reviewed winter 2026/27 product window for planning.",
-          "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
-          "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
-          "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates."
         ]
       },
       "ischgl-ischgl": {
@@ -5863,6 +5725,203 @@
           "The operator publishes the stored 46.5541, 11.96999 coordinate and 1,680 m elevation.",
           "Settlement type, character, local apres, and the inherited lodging tuple remain unverified or estimated."
         ]
+      },
+      "tux-finkenberg-hintertux": {
+        "display_name": "Hintertux",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.tux.at/en/tux-finkenberg/",
+            "https://www.tux.at/en/tux/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/321007835",
+            "https://www.wikidata.org/wiki/Q2607085"
+          ],
+          "elevation": [
+            "https://www.tux.at/en/tux/"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.tux.at/en/tux-finkenberg/"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Tux-Finkenberg material identifies this village inside the shared accommodation market.",
+          "The Hintertux coordinate retains the prepare-time OSM village node; live provenance review corrects the regional Wikidata identifier from the glacier item to the Hintertux settlement item.",
+          "Price and quality are broad product estimates; unsupported character and local-apres facts remain unknown."
+        ]
+      },
+      "tux-finkenberg-vorderlanersbach": {
+        "display_name": "Tux-Vorderlanersbach",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "needs_source",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.tux.at/en/tux-finkenberg/",
+            "https://www.tux.at/en/tux/",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/252335667"
+          ],
+          "elevation": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.tux.at/en/tux-finkenberg/"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Tux-Finkenberg material identifies this village inside the shared accommodation market.",
+          "The base coordinate and OSM identity use Vorderlanersbach village node 252335667, matching the reviewed origin of the Rastkogelbahn access measurement.",
+          "Price and quality are broad product estimates; unsupported elevation, character and local-apres facts remain unknown."
+        ]
+      },
+      "tux-finkenberg-lanersbach": {
+        "display_name": "Tux-Lanersbach",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "needs_source",
+          "elevation": "needs_source",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/eggalm-bahnen/",
+            "https://www.tux.at/en/tux-finkenberg/",
+            "https://www.tux.at/en/tux/",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ],
+          "coordinates": [],
+          "elevation": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.tux.at/en/tux-finkenberg/"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Tux-Finkenberg material identifies this village inside the shared accommodation market.",
+          "Price and quality are broad product estimates; unsupported coordinates, character and local-apres facts remain unknown."
+        ]
+      },
+      "tux-finkenberg-juns": {
+        "display_name": "Juns",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "needs_source",
+          "elevation": "needs_source",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.tux.at/en/tux-finkenberg/",
+            "https://www.tux.at/en/tux/",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ],
+          "coordinates": [],
+          "elevation": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.tux.at/en/tux-finkenberg/"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Tux-Finkenberg material identifies this village inside the shared accommodation market.",
+          "Price and quality are broad product estimates; unsupported coordinates, character and local-apres facts remain unknown."
+        ]
+      },
+      "tux-finkenberg-madseit": {
+        "display_name": "Madseit",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "needs_source",
+          "elevation": "needs_source",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.tux.at/en/tux-finkenberg/",
+            "https://www.tux.at/en/tux/",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ],
+          "coordinates": [],
+          "elevation": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.tux.at/en/tux-finkenberg/"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Tux-Finkenberg material identifies this village inside the shared accommodation market.",
+          "Price and quality are broad product estimates; unsupported coordinates, character and local-apres facts remain unknown."
+        ]
+      },
+      "tux-finkenberg-finkenberg": {
+        "display_name": "Finkenberg",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "needs_source",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/finkenberger-almbahnen/",
+            "https://www.tux.at/en/finkenberg/",
+            "https://www.tux.at/en/tux-finkenberg/"
+          ],
+          "coordinates": [],
+          "elevation": [
+            "https://www.tux.at/en/finkenberg/"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.tux.at/en/tux-finkenberg/"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Tux-Finkenberg material identifies this village inside the shared accommodation market.",
+          "Price and quality are broad product estimates; unsupported coordinates, character and local-apres facts remain unknown."
+        ]
       }
     },
     "ski_areas": {
@@ -6893,13 +6952,13 @@
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snowmaking": "verified",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
           "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -6966,19 +7025,30 @@
             "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
             "https://www.wikidata.org/wiki/Q688964"
           ],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
+          "snowmaking": [
+            "https://www.hintertuxergletscher.at/en/information/about-us/interesting-facts/"
+          ],
+          "glacier_terrain": [
+            "https://www.hintertuxergletscher.at/en/information/about-us/interesting-facts/",
+            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/ski-snowboard/"
+          ],
+          "snow_park": [
+            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/ski-snowboard/"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
           "ski_day_apres": [],
-          "official_documents": []
+          "official_documents": [
+            "https://www.hintertuxergletscher.at/en/skiing/skiing-region-current-information/interactive-ski-map/?L=0"
+          ]
         },
         "notes": [
           "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog keeps the reviewed winter 2026/27 product window for planning.",
           "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
           "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
-          "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates."
+          "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates.",
+          "Source-aware v2 enrichment reviewed official Hintertux Glacier material on 2026-07-05.",
+          "Snowmaking equipment is not converted into a coverage percentage without a published denominator."
         ]
       },
       "ischgl-ski-area": {
@@ -9308,31 +9378,6 @@
           "The 92 metre distance is a straight-line open-geodata measurement from the curated Wengen base coordinate to the cableway station."
         ]
       },
-      "hintertux-hintertux--hintertux-glacier": {
-        "display_name": "Hintertux -> Hintertux Glacier",
-        "field_statuses": {
-          "relationship": "verified_with_adjustment",
-          "access_mode_distance": "verified_with_adjustment"
-        },
-        "field_source_refs": {
-          "relationship": [
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/way/4388462"
-          ],
-          "access_mode_distance": [
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/way/4388462"
-          ]
-        },
-        "notes": [
-          "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog keeps the reviewed winter 2026/27 product window for planning.",
-          "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
-          "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
-          "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates."
-        ]
-      },
       "ischgl-ischgl--ischgl-ski-area": {
         "display_name": "Ischgl -> Ischgl",
         "field_statuses": {
@@ -10606,6 +10651,253 @@
         "notes": [
           "Official route material explicitly names direct bus access from La Villa to Passo Falzarego and the Lagazuoi cable car.",
           "The transfer remains is_direct=false and stores no unsupported distance or duration."
+        ]
+      },
+      "tux-finkenberg-hintertux--hintertux-glacier": {
+        "display_name": "Hintertux -> Hintertux Glacier",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.hintertuxergletscher.at/en/information/plan-your-visit/bus-schedules/?L=1",
+            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
+            "https://www.openstreetmap.org/node/27337851",
+            "https://www.openstreetmap.org/way/4388462",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.hintertuxergletscher.at/en/information/plan-your-visit/bus-schedules/?L=1",
+            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
+            "https://www.openstreetmap.org/node/27337851",
+            "https://www.openstreetmap.org/way/4388462",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ]
+        },
+        "notes": [
+          "Official lift or timetable evidence establishes this specific base-to-area edge.",
+          "The published timetable names the base stops and Hintertux Gletscherbahn on the same route; no base-wide duration is asserted."
+        ]
+      },
+      "tux-finkenberg-vorderlanersbach--mayrhofen-ski-area": {
+        "display_name": "Tux-Vorderlanersbach -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.hintertuxergletscher.at/en/information/plan-your-visit/getting-there-parking/?L=0",
+            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/rastkogel-bahnen/"
+          ],
+          "access_mode_distance": [
+            "https://www.hintertuxergletscher.at/en/information/plan-your-visit/getting-there-parking/?L=0",
+            "https://www.openstreetmap.org/node/252335667",
+            "https://www.openstreetmap.org/node/27337827"
+          ]
+        },
+        "notes": [
+          "The official operator identifies Rastkogel Bahnen in Vorderlanersbach and presents Rastkogel as ski-connected to Finkenberg and Penken within the represented Mayrhofen-side terrain.",
+          "The 195 m access distance is a rounded Haversine measurement from OSM village node 252335667 to Rastkogelbahn valley-station node 27337827; walk, near and direct are normalized from that geometry plus the operator's directly-at-the-valley-station and within-walking-distance arrival guidance. No route distance or duration is asserted."
+        ]
+      },
+      "tux-finkenberg-lanersbach--mayrhofen-ski-area": {
+        "display_name": "Tux-Lanersbach -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/eggalm-bahnen/",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/eggalm-bahnen/",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ]
+        },
+        "notes": [
+          "Official lift or timetable evidence establishes this specific base-to-area edge.",
+          "No unsupported route distance or duration is introduced; walking/bus mode and coarse lift-distance are normalized from the named local lift or direct timetable stops."
+        ]
+      },
+      "tux-finkenberg-finkenberg--mayrhofen-ski-area": {
+        "display_name": "Finkenberg -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/finkenberger-almbahnen/",
+            "https://www.tux.at/en/finkenberg/"
+          ],
+          "access_mode_distance": [
+            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/finkenberger-almbahnen/",
+            "https://www.tux.at/en/finkenberg/"
+          ]
+        },
+        "notes": [
+          "Official lift or timetable evidence establishes this specific base-to-area edge.",
+          "No unsupported route distance or duration is introduced; walking/bus mode and coarse lift-distance are normalized from the named local lift or direct timetable stops."
+        ]
+      },
+      "tux-finkenberg-juns--hintertux-glacier": {
+        "display_name": "Juns -> Hintertux Glacier",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.hintertuxergletscher.at/en/information/plan-your-visit/bus-schedules/?L=1",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.hintertuxergletscher.at/en/information/plan-your-visit/bus-schedules/?L=1",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ]
+        },
+        "notes": [
+          "Official lift or timetable evidence establishes this specific base-to-area edge.",
+          "The published timetable names the base stops and Hintertux Gletscherbahn on the same route; no base-wide duration is asserted."
+        ]
+      },
+      "tux-finkenberg-madseit--hintertux-glacier": {
+        "display_name": "Madseit -> Hintertux Glacier",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.hintertuxergletscher.at/en/information/plan-your-visit/bus-schedules/?L=1",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.hintertuxergletscher.at/en/information/plan-your-visit/bus-schedules/?L=1",
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Fahrplan_Linie_4104_Jahresfahrplan_ab_31.05.2025.pdf"
+          ]
+        },
+        "notes": [
+          "Official lift or timetable evidence establishes this specific base-to-area edge.",
+          "The published timetable names the base stops and Hintertux Gletscherbahn on the same route; no base-wide duration is asserted."
+        ]
+      },
+      "tux-finkenberg-vorderlanersbach--hintertux-glacier": {
+        "display_name": "Tux-Vorderlanersbach -> Hintertux Glacier",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ]
+        },
+        "notes": [
+          "The current official line 4104 timetable names both the stay-base stop and the target-area lift stop on the same Mayrhofen-Finkenberg-Lanersbach-Hintertux route.",
+          "Snowcast normalizes the explicit same-route link to ski_bus/far without asserting an unsupported point distance or journey duration; is_direct=false because the base does not itself own the target lift."
+        ]
+      },
+      "tux-finkenberg-lanersbach--hintertux-glacier": {
+        "display_name": "Tux-Lanersbach -> Hintertux Glacier",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ]
+        },
+        "notes": [
+          "The current official line 4104 timetable names both the stay-base stop and the target-area lift stop on the same Mayrhofen-Finkenberg-Lanersbach-Hintertux route.",
+          "Snowcast normalizes the explicit same-route link to ski_bus/far without asserting an unsupported point distance or journey duration; is_direct=false because the base does not itself own the target lift."
+        ]
+      },
+      "tux-finkenberg-finkenberg--hintertux-glacier": {
+        "display_name": "Finkenberg -> Hintertux Glacier",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ]
+        },
+        "notes": [
+          "The current official line 4104 timetable names both the stay-base stop and the target-area lift stop on the same Mayrhofen-Finkenberg-Lanersbach-Hintertux route.",
+          "Snowcast normalizes the explicit same-route link to ski_bus/far without asserting an unsupported point distance or journey duration; is_direct=false because the base does not itself own the target lift."
+        ]
+      },
+      "tux-finkenberg-juns--mayrhofen-ski-area": {
+        "display_name": "Juns -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ]
+        },
+        "notes": [
+          "The current official line 4104 timetable names both the stay-base stop and the target-area lift stop on the same Mayrhofen-Finkenberg-Lanersbach-Hintertux route.",
+          "Snowcast normalizes the explicit same-route link to ski_bus/far without asserting an unsupported point distance or journey duration; is_direct=false because the base does not itself own the target lift."
+        ]
+      },
+      "tux-finkenberg-madseit--mayrhofen-ski-area": {
+        "display_name": "Madseit -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ]
+        },
+        "notes": [
+          "The current official line 4104 timetable names both the stay-base stop and the target-area lift stop on the same Mayrhofen-Finkenberg-Lanersbach-Hintertux route.",
+          "Snowcast normalizes the explicit same-route link to ski_bus/far without asserting an unsupported point distance or journey duration; is_direct=false because the base does not itself own the target lift."
+        ]
+      },
+      "tux-finkenberg-hintertux--mayrhofen-ski-area": {
+        "display_name": "Hintertux -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ],
+          "access_mode_distance": [
+            "https://www.tux.at/fileadmin/user_upload/Dokumente/Fahrplan_Bus/Busplan_Linie_4104_Sommer_ab_30.05.2026.pdf"
+          ]
+        },
+        "notes": [
+          "The current official line 4104 timetable names both the stay-base stop and the target-area lift stop on the same Mayrhofen-Finkenberg-Lanersbach-Hintertux route.",
+          "Snowcast normalizes the explicit same-route link to ski_bus/far without asserting an unsupported point distance or journey duration; is_direct=false because the base does not itself own the target lift."
         ]
       }
     },
@@ -12249,87 +12541,6 @@
           "PR #11 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       },
-      "ski-glacier-world-zillertal-3000": {
-        "display_name": "Ski & Glacier World Zillertal 3000 / Zillertaler Superskipass",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "coverage": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "prices": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "pass_accessible_terrain": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ]
-        },
-        "notes": [
-          "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog keeps the reviewed winter 2026/27 product window for planning.",
-          "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
-          "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
-          "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates."
-        ]
-      },
       "solden-skipass": {
         "display_name": "Sölden Skipass",
         "field_statuses": {
@@ -12784,40 +12995,6 @@
           "Nendaz, Veysonnaz, Thyon, and the connected 4 Vallées terrain domain remain explicit catalog-curation backlog work."
         ]
       },
-      "zillertaler-superskipass-mayrhofen": {
-        "display_name": "Zillertaler Superskipass / Skipass Mayrhofen",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
-            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
-            "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html"
-          ],
-          "coverage": [
-            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
-            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
-            "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html"
-          ],
-          "prices": [
-            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
-            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
-            "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html"
-          ],
-          "pass_accessible_terrain": [
-            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
-            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
-            "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html"
-          ]
-        },
-        "notes": [
-          "PR #16 legacy curation was translated onto normalized catalog ownership and relationships."
-        ]
-      },
       "valtournenche-local-pass": {
         "display_name": "Valtournenche Ski Pass",
         "field_statuses": {
@@ -12842,6 +13019,119 @@
         "notes": [
           "The official tariff publishes a separate Valtournenche daily and multi-day product for the 2026/27 season.",
           "It is the default for the Valtournenche stay destination; the broader Breuil-Cervinia/Valtournenche product remains separately available."
+        ]
+      },
+      "hintertux-glacier-day-pass": {
+        "display_name": "Hintertux Glacier Day Ticket",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          ],
+          "coverage": [
+            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          ],
+          "prices": [
+            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official product-specific tariffs separate the day, local multi-day, Mayrhofen day and valley-wide Superskipass entitlements.",
+          "Both currently modeled ski-area owners covered by the published product are enumerated; the external validity summary preserves the date window in which the wider area applies.",
+          "Representative adult prices retain explicit 2026/27 product windows; no pass-accessible aggregate is inferred.",
+          "The exact pass validity window is modeled from the published 2026/27 operator/tariff dates; it constrains ticket entitlement without replacing member ski-area operating dates."
+        ]
+      },
+      "hintertux-glacier-multiday-skipass": {
+        "display_name": "Multi-day Ski Pass at Hintertux Glacier",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          ],
+          "coverage": [
+            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          ],
+          "prices": [
+            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official product-specific tariffs separate the day, local multi-day, Mayrhofen day and valley-wide Superskipass entitlements.",
+          "Date-conditional modeled-area coverage is retained in the external validity summary rather than asserted outside its published window.",
+          "Representative adult prices retain explicit 2026/27 product windows; no pass-accessible aggregate is inferred.",
+          "The exact pass validity window is modeled from the published 2026/27 operator/tariff dates; it constrains ticket entitlement without replacing member ski-area operating dates."
+        ]
+      },
+      "skipass-mayrhofen": {
+        "display_name": "Skipass Mayrhofen",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+            "https://assets.contenthub.dev/390osprlshgj/c043e8576ce9b8e9606c8d2f8c447189/2026-27_Prices%20Winter_EN.pdf"
+          ],
+          "coverage": [
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+          ],
+          "prices": [
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official product-specific tariffs separate the day, local multi-day, Mayrhofen day and valley-wide Superskipass entitlements.",
+          "Both currently modeled ski-area owners covered by the published product are enumerated; the external validity summary preserves its conditional cross-owner coverage.",
+          "Representative adult prices retain explicit 2026/27 product windows; no pass-accessible aggregate is inferred.",
+          "The exact pass validity window is modeled from the published 2026/27 operator/tariff dates; it constrains ticket entitlement without replacing member ski-area operating dates."
+        ]
+      },
+      "zillertaler-superskipass": {
+        "display_name": "Zillertaler Superskipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+            "https://assets.contenthub.dev/390osprlshgj/c043e8576ce9b8e9606c8d2f8c447189/2026-27_Prices%20Winter_EN.pdf"
+          ],
+          "coverage": [
+            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+          ],
+          "prices": [
+            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official product-specific tariffs separate the day, local multi-day, Mayrhofen day and valley-wide Superskipass entitlements.",
+          "Date-conditional modeled-area coverage is retained in the external validity summary rather than asserted outside its published window.",
+          "Representative adult prices retain explicit 2026/27 product windows; no pass-accessible aggregate is inferred.",
+          "The exact pass validity window is modeled from the published 2026/27 operator/tariff dates; it constrains ticket entitlement without replacing member ski-area operating dates."
         ]
       }
     },
@@ -13093,53 +13383,6 @@
           "The official business site establishes Buri Sport as a Grindelwald ski and snowboard rental provider.",
           "The rental is reassigned from the removed combined destination to the Grindelwald destination and base.",
           "Price range, quality, and near-lift classification remain product-curated estimates."
-        ]
-      },
-      "hintertux-intersport-hintertux": {
-        "display_name": "INTERSPORT Hintertux",
-        "field_statuses": {
-          "identity_ownership": "verified_with_adjustment",
-          "price_quality_access": "estimated"
-        },
-        "field_source_refs": {
-          "identity_ownership": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ],
-          "price_quality_access": [
-            "https://www.hintertuxergletscher.at/en/",
-            "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
-            "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
-            "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/",
-            "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
-            "https://www.intersport-hintertux.at/",
-            "https://www.openstreetmap.org/node/27337851",
-            "https://www.openstreetmap.org/node/321007835",
-            "https://www.openstreetmap.org/way/4388462",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
-            "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
-            "https://www.wikidata.org/wiki/Q688964"
-          ]
-        },
-        "notes": [
-          "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog keeps the reviewed winter 2026/27 product window for planning.",
-          "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
-          "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
-          "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates."
         ]
       },
       "ischgl-ischgl-rent-shop-zentrum": {
@@ -13733,6 +13976,23 @@
           "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
           "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+        ]
+      },
+      "tux-finkenberg-intersport-hintertux": {
+        "display_name": "INTERSPORT Hintertux",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "price_quality_access": "estimated"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.intersport-hintertux.at/"
+          ],
+          "price_quality_access": []
+        },
+        "notes": [
+          "The official shop identity is rekeyed to the Tux-Finkenberg destination and Hintertux base.",
+          "Displayed price, quality and lift-distance remain product estimates."
         ]
       }
     }

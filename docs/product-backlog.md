@@ -605,8 +605,9 @@ Blocking dependency:
 Next bounded slice after unblock:
 
 - Complete the Zillertal 3000 regional parent/shared map plus the reviewed
-  Mayrhofen-Hippach and Tux-Finkenberg stay/access graph as one decision-bearing
-  proposal with compatibility handling for retained Hintertux identities.
+  Mayrhofen-Hippach stay/access graph. The policy-determined Tux-Finkenberg
+  destination migration is handled separately and must not be reopened by this
+  slice.
 
 Why it matters:
 
@@ -614,10 +615,10 @@ Why it matters:
   Penken, Finkenberg, Rastkogel, and Eggalm, while official sources also expose
   direct access and accommodation contexts in Hippach, Schwendau,
   Hochschwendberg, and Finkenberg.
-- The current catalog already contains a separate Hintertux destination and ski
-  area. Completing Tux-Finkenberg therefore needs a deliberate destination and
-  access-boundary migration rather than attaching the whole 202 km Ski &
-  Glacier World aggregate to Mayrhofen.
+- The retained Hintertux Glacier ski area remains an independent weather owner
+  inside the wider Tux-Finkenberg accommodation market. The shared 202 km Ski &
+  Glacier World claim still must not be attached to either child ski-area
+  owner.
 - The available official piste map covers both the Mayrhofen terrain and
   Hintertux Glacier. It needs a wider regional owner so that the catalog keeps
   the document without misrepresenting it as a Mayrhofen-only map.
@@ -627,8 +628,9 @@ Candidate inventory:
 - `ski_region:ski-glacier-world-zillertal-3000` — add the officially named Ski
   & Glacier World Zillertal 3000 umbrella with
   `grouping_policy=regional_network` and the shared official trail map.
-- `ski_region:mayrhofen` and `ski_region:hintertux` — retain both trip-market
-  regions and assign the new Zillertal 3000 region as their contextual parent.
+- `ski_region:mayrhofen` and `ski_region:tux-finkenberg` — retain both
+  trip-market regions and assign the new Zillertal 3000 region as their
+  contextual parent when the schema can own the shared document.
 - `ski_area:mayrhofen-ski-area` and `ski_area:hintertux-glacier` — retain the
   independent weather, season, terrain, and operational owners. Leave
   Mayrhofen's local `official_trail_map` null unless a genuinely child-scoped
@@ -636,25 +638,25 @@ Candidate inventory:
 - `stay_destination:mayrhofen-hippach` — decide whether Hippach remains a
   separate recommendation market or becomes the destination owner for the
   lower-valley bases.
+- `stay_base:mayrhofen-hippach` (typed report alias
+  `stay_base:mayrhofen-hippach-base`) and `stay_base:mayrhofen-ramsau` —
+  complete the lower-valley base inventory without inventing access edges that
+  lack route-specific evidence.
 - `stay_base:mayrhofen-schwendau` and
   `ski_area_access:mayrhofen-schwendau--mayrhofen-ski-area` — accommodation
   base with direct Horbergbahn access.
 - `stay_base:mayrhofen-hochschwendberg` and
   `ski_area_access:mayrhofen-hochschwendberg--mayrhofen-ski-area` — mountain
   accommodation base with direct Moeslbahn access.
-- `stay_destination:tux-finkenberg` — review the wider Tux-Finkenberg stay
-  market against the existing Hintertux destination before changing ownership.
-- `stay_base:tux-finkenberg-finkenberg` and
-  `ski_area_access:tux-finkenberg-finkenberg--mayrhofen-ski-area` — Finkenberg
-  accommodation base with direct Almbahnen access to the modeled Mayrhofen
-  terrain.
+- `official_document:ski-glacier-world-zillertal-3000-map` — keep the shared
+  official map as regional document context until its owning schema lands; do
+  not attach it to either child ski area.
 
 Why it was deferred from the source PR:
 
-- Adding one isolated base would leave the official Mayrhofen-Hippach and
-  Tux-Finkenberg accommodation graph incomplete. The full extension requires
-  two destination-boundary decisions, three sourced bases, three access edges,
-  and compatibility handling for the existing Hintertux identities.
+- Adding one isolated base would leave the official Mayrhofen-Hippach
+  accommodation graph incomplete. The remaining extension requires one
+  destination-boundary decision plus the complete sourced base/access set.
 - Regional map ownership depends on the separate Ski Region Trail Map Ownership
   schema refinement before the shared map and parent relationships can be
   represented without weakening current ski-area and terrain-domain semantics.
@@ -669,9 +671,8 @@ Not now:
 - Do not attach regional piste, lift, elevation, season, or difficulty totals
   to the new SkiRegion; retain those facts on ski areas, connected terrain
   domains, or pass-accessible aggregates according to their source scope.
-- Automation may prepare an explicit decision-bearing Hintertux re-key
-  proposal after the blocking schema dependency lands, but do not mark it ready
-  or merge it until the owner checkpoint and compatibility handoff are resolved.
+- Do not reopen the policy-determined Tux-Finkenberg re-key while completing
+  the parked Mayrhofen-Hippach and regional-document dependency.
 
 Promotion trigger:
 
