@@ -161,27 +161,37 @@ The installed skill must:
 - collect any post-freeze additive candidates into one report/rendered-report/
   backlog patch, run delta validation, and use a targeted independent handoff
   review to confirm that the resulting graph did not change;
-- preserve multi-candidate scope findings as a candidate-level ledger with one
-  entry per concrete entity, product, edge, sector, or document; an inventory
-  category without an enumerated candidate/source checklist is incomplete, the
-  first fix batches every compatible checklist entry, and a known-but-unfixed
-  candidate remains repeated rather than becoming a supposedly new finding;
+- require that candidate inventory and finding ledger are separate views. The
+  inventory has one coverage entry per concrete entity, product, edge, sector,
+  or document; the ledger has one exact defect per assertion key and acceptance
+  criterion and may link it to multiple candidate keys. Each ledger finding
+  also carries `parent_finding_id` when derived and an exact-repeat streak. An
+  inventory category without an enumerated candidate/source checklist is
+  incomplete, but a different or narrower defect on a known candidate is not
+  automatically an exact repeat;
 - before classifying a destination or ski-area boundary as an owner choice, run
   one fresh read-only `boundary-adjudication` review for the concrete candidates
   on the exact head; return `policy_determined` results to the fixer and reserve
   `owner-decision` for `owner_choice_required` results;
 - perform at most six remediation cycles, using a fresh independent full
-  `snowcast-catalog-review` context after every fix and passing the ledger only
-  as untrusted history; before every further fixer, require every prior finding
-  to be resolved or superseded, no repeat or regression, and every new finding
-  to be concrete, source-backed, in-model, and inside the bounded mutation
-  scope; finding-count growth alone does not prove non-convergence, and cycles
-  five and six apply the same gate within the remaining time budget. The fresh
-  reviewer independently verifies the frozen candidates and complete resulting
-  graph; it does not restart unrestricted regional research. A newly discovered
-  graph blocker may expand the frozen inventory once, while additive adjacent
-  coverage is a regional follow-up and the same missing category recurring
-  after refresh is repeated incomplete inventory and stops;
+  `snowcast-catalog-review` context after every fix and passing both views only
+  as untrusted history. The parent classifies a `residual` only when the
+  finding identifies a resolved subcriterion and the remaining defect is
+  demonstrably narrower. An exact repeat requires the same assertion key and
+  acceptance criterion to fail after a claimed fix; matching only a candidate
+  or topic is insufficient. Rewording or changing an ID does not reset the
+  streak when the semantic assertion is equivalent. A narrower residual may
+  continue. The first and second consecutive exact repeats may receive
+  materially different bounded fixes while time and cycles remain; the third
+  consecutive exact repeat stops. Regression or unsafe scope expansion still
+  stops immediately. No candidate-entry count or percentage decides
+  convergence. The repeat streak is run-local untrusted semantic context, not
+  helper or automation-memory authority. A terminal blocked label prevents
+  scheduled retry; deliberate owner removal starts a newly bounded attempt.
+  The fresh reviewer independently verifies the frozen candidates and complete
+  resulting graph without restarting unrestricted regional research. A newly
+  discovered graph blocker may expand the frozen inventory once, while
+  additive adjacent coverage is a regional follow-up;
 - recheck current-main mergeability before every fix and adaptive review and
   once more before final manual-check or validation/push; start no boundary
   adjudication at or after minute 180, stop new semantic work at 210 minutes,
@@ -229,8 +239,8 @@ The installed skill must:
 - use the helper's explicit `publish manual-check` capability to preserve a
   mechanically valid, scope-safe reviewed head when the cycle or semantic-time
   bound is reached with remaining findings that are only bounded in-model work;
-  never push it directly or represent it as validated; an unresolved or moved
-  prior finding, repeat, regression, repeatedly incomplete inventory, incomplete
+  never push it directly or represent it as validated; an unresolved finding,
+  active residual or repeat, regression, incomplete inventory, incomplete
   review, or unsafe scope remains status-only blocked;
 - before any safe terminal status for an unpublished mechanically valid local
   head, retain its remediation continuation. A blocked or owner-hold label
@@ -300,6 +310,11 @@ The installed skill must:
   error, include only its allowlisted `check` and `kind` alongside the bounded
   reason, stage, and explicit `started_at` and `completed_at` timestamps; never
   copy helper detail or stdout/stderr;
+- when a review/fix loop continues or stops, report finding-family counts,
+  residual count, and the maximum exact-repeat streak, plus the bounded reason
+  the next fix is allowed or forbidden. Never present candidate-entry count as
+  the issue count, and never include raw source evidence or private ledger
+  prose in Triage;
 - append one owner-private mode-`0600` bounded diagnostic JSON row per completed
   run with explicit `started_at` and `completed_at` timestamps, selected item,
   heads, cycles, last stage, helper reason, mutation flag, elapsed time, and
@@ -400,9 +415,9 @@ For each schedule, confirm:
 - a pressure scenario where two prior findings are verified resolved and three
   concrete, source-backed, in-model, bounded findings are newly discovered
   continues when cycle and time remain; raw count growth alone does not stop it;
-- a repeated, regressed, unresolved, or moved prior finding and repeatedly
-  incomplete inventory stop as non-converging instead of authorizing another
-  fix;
+- a narrower residual and the first two consecutive exact repeats can continue
+  only through bounded materially different fixes; the third consecutive exact
+  repeat, any regression, or unsafe scope expansion stops as non-converging;
 - reaching six cycles or the 210-minute new-work cutoff with a mechanically
   valid, scope-safe, exact reviewed head and remaining findings that are only
   bounded in-model work runs `validate reviewed` and preserves the head through

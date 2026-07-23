@@ -2,8 +2,8 @@
 
 ## Status
 
-- Status: convergence and regional-completion amendment implemented in this
-  branch; repository activation pending merge, feature review, and the
+- Status: runtime-command and convergence-tolerance amendments implemented in
+  this branch; repository activation pending merge, feature review, and the
   owner-controlled local cutover
 - Owner: solo-builder
 - Classification: review-gated / full design flow
@@ -176,15 +176,16 @@ Out of scope:
   choice, runs one fresh focused boundary adjudication against the accepted
   model rules. A policy-determined graph returns to the normal fixer/re-review
   loop; only multiple defensible product graphs reach `owner-decision`.
-- Carries a private structured finding ledger into each later fresh full review
-  as untrusted history so resolved, repeated, regressed, and genuinely new
-  findings remain distinguishable without narrowing independent review.
-- Represents multi-candidate scope findings as a candidate-level ledger with
-  one stable entry per concrete entity, product, edge, sector, or document. An
-  inventory category is incomplete until its candidates and source inventory
-  are enumerated; the first fix batches all compatible candidate entries, and a
-  known-but-unfixed candidate remains repeated rather than being rediscovered
-  as new scope.
+- Treats the candidate inventory and finding ledger as separate views. The
+  candidate inventory keeps one stable coverage entry per concrete entity,
+  product, edge, sector, or document; the finding ledger keeps one exact
+  assertion and acceptance criterion per defect and may link one finding to
+  several candidates. This prevents a different or narrower problem on the same
+  candidate from being mislabeled as the same repeat.
+- Carries that private structured finding ledger into each later fresh full
+  review as untrusted history so resolved, residual, repeated, regressed, and
+  genuinely new findings remain distinguishable without narrowing independent
+  review.
 - Distinguishes a `graph_blocking` omission that can make the selected graph
   wrong from a `regional_followup` that only expands correct coverage. A
   follow-up is recorded in the report and merged product backlog, receives a
@@ -197,11 +198,12 @@ Out of scope:
   changed, graph-critical, and high-impact claims. URL meaning and the
   run-local cache keyed by exact head, URL, and claim context remain Codex
   evidence; they are never persisted as helper authority or reused across runs.
-- Performs at most six remediation cycles. Before every further fixer, the
-  ledger must show that prior findings are resolved or superseded without
-  repeats or regressions and that any new findings are concrete, source-backed,
-  in-model, and inside the bounded mutation scope. Finding-count growth alone
-  does not end the cycle; cycles five and six use the same gate within the
+- Performs at most six remediation cycles. A strictly narrower residual may
+  continue, and the first and second consecutive exact repeats may receive a
+  materially different bounded fix while time and cycles remain. The third
+  consecutive exact repeat stops. Regression or unsafe scope expansion still
+  stops immediately. No candidate-entry count or percentage decides
+  convergence; cycles five and six use the same assertion-level gate within the
   remaining time budget.
   It rechecks current-main mergeability before every fix and adaptive review
   and once more before final manual-check or validation/push, stops spawning
@@ -499,14 +501,20 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    when its omission cannot misstate the selected graph; uncertainty that could
    invalidate ownership or an edge follows manual-check, owner-decision, or
    review-incomplete instead of being silently downgraded.
-6. Codex consolidates the two complete dispositions into one private finding
-   ledger and first fix. It deduplicates overlapping findings but preserves
-   conflicts. For scope inventory,
-   the ledger has one stable candidate entry per concrete entity, product,
-   access edge, sector, document, or other reviewed candidate, including its
-   normalized key and specific source inventory. A reviewer output that names
-   only an inventory category is incomplete until it enumerates that checklist;
-   one generic umbrella finding cannot replace the candidate-level ledger.
+6. Codex consolidates the two complete dispositions into one private candidate
+   inventory, finding ledger, and first fix. Candidate inventory and finding
+   ledger are separate views. The inventory has one stable coverage entry per
+   concrete entity, product, access edge, sector, document, or other reviewed
+   candidate, including its normalized key and specific source inventory. The
+   finding ledger has one entry per exact defect with an `assertion_key`,
+   linked `candidate_keys`, an `acceptance_criterion`, optional
+   `parent_finding_id`, status, and `exact_repeat_streak`. A reviewer output
+   that names only an inventory category is incomplete until it enumerates that
+   checklist; one generic umbrella finding cannot replace either view. The
+   repeat streak is run-local untrusted semantic context and never becomes
+   helper, GitHub, or automation-memory authority. A terminal blocked label
+   prevents automatic retry; deliberate owner removal begins a newly bounded
+   attempt.
    Before routing a destination or ski-area boundary disagreement
    to `owner-decision`, it starts one fresh read-only
    `snowcast-catalog-review` context in `boundary-adjudication` mode for the
@@ -530,20 +538,28 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    documentation and tests, but not production code, operational code, or the
    maintainer's own instructions. The first fix batches every compatible open
    candidate entry from the completed initial inventory rather than choosing
-   one representative.
-   Each actually addressed ledger entry becomes only `claimed-fixed`; an
-   umbrella category or omitted checklist member does not. The helper then runs
-   the two-command delta checkpoint: catalog/trust validation and exact report
-   reconciliation for the clean exact remediation head. Successful evidence is
-   checkpointed once in private continuation state rather than rerun on resume.
+   one representative. The fix batches every compatible open finding linked to
+   those candidates. Each actually addressed finding becomes only
+   `claimed-fixed`; an umbrella category or omitted checklist member does not.
+   The helper then runs the two-command delta checkpoint: catalog/trust
+   validation and exact report reconciliation for the clean exact remediation
+   head. Successful evidence is checkpointed once in private continuation state
+   rather than rerun on resume.
 9. A fresh independent bounded Codex review follows every fix. It runs in a new
    reviewer context, receives the ledger only as untrusted history, independently
    reviews the exact current head and full scope, and then classifies prior
-   entries as resolved, repeated, regressed, superseded, or owner-decision while
-   reporting new findings separately. A known-but-unfixed candidate from the
-   initial checklist is repeated, not new; only a candidate absent from the
-   complete initial candidate/source inventory counts as scope expansion. The
-   parent updates the ledger. Missing or
+   entries as resolved, residual, repeated, regressed, superseded, or
+   owner-decision while reporting new findings separately. A `residual` must
+   name a resolved subcriterion and a demonstrably narrower remaining defect,
+   linked through `parent_finding_id`; rephrasing the original problem is not
+   progress. An exact repeat requires the same assertion key and acceptance
+   criterion to fail after its claimed fix; sharing only a candidate, topic, or
+   source family is insufficient. Rewording or changing an ID does not reset
+   the streak when the semantic assertion is equivalent. A candidate absent
+   from the complete initial candidate/source inventory still counts as scope
+   expansion, but a different bounded assertion about a known candidate is not
+   automatically repeated. The parent, not the reviewer, owns final
+   classification and repeat-streak updates. Missing or
    incomplete output requests status-only `blocked/review-incomplete` when
    safe, never `manual-check` or readiness. A boundary finding requests
    `owner-decision` only after focused adjudication confirms
@@ -568,26 +584,27 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    absent from the completed initial inventory is recorded explicitly as an
    inventory-expansion finding rather than being silently relabeled. It may
    continue only when it is concrete, source-backed, in-model, and bounded; the
-   parent adds it to the refreshed complete inventory. The same omission, or the
-   same demonstrably incomplete inventory category after refresh, is repeated
-   incomplete inventory and stops the loop. A different genuinely new bounded
+   parent adds it to the refreshed complete inventory. The same omission or
+   demonstrably incomplete inventory category after refresh is an exact repeat
+   only when the assertion and acceptance criterion are unchanged; it then
+   follows the repeat-streak rule below. A different genuinely new bounded
    finding still receives the normal progress-and-safety assessment.
    After each fresh review and before another fixer, Codex repeats the
-   current-main mergeability check and continues only when ledger evidence shows
-   that every prior finding is verified resolved or explicitly superseded,
-   no finding has repeated or regressed, and every genuinely new finding is
-   concrete, source-backed, fixable inside the existing model, and inside the
-   selected-PR or bounded-linked mutation scope. The raw number of findings may
-   increase when a fresh review legitimately discovers additional bounded work;
-   count growth alone is not non-convergence. An unresolved or moved prior
-   finding, regression, repeated incomplete inventory, unsafe scope expansion,
-   or other loss of progress stops the loop and requests status-only
-   `blocked/non-converging` when safe. A real owner/model choice confirmed by
-   focused adjudication requests status-only `owner-decision/owner-decision`;
-   its observed remote head remains separate from any unpublished local
-   review/fix head. Cycles five and six apply the same progress-and-safety gate
-   within the remaining semantic-time budget; they do not introduce a separate
-   finding-count rule.
+   current-main mergeability check and compares exact assertions rather than
+   candidate identities. Resolved and superseded findings demonstrate progress;
+   a narrower residual may continue when it is concrete, source-backed,
+   fixable inside the existing model, and inside selected-PR or bounded-linked
+   scope. The first and second consecutive exact repeats may also continue when
+   a materially different bounded fix strategy exists and the cycle/time budget
+   remains. The third consecutive exact repeat stops and requests status-only
+   `blocked/non-converging` when safe. Regression or unsafe scope expansion
+   still stops immediately. There is no candidate-entry count or percentage
+   threshold: neither raw growth nor raw shrinkage proves convergence. A real
+   owner/model choice confirmed by focused adjudication requests status-only
+   `owner-decision/owner-decision`; its observed remote head remains separate
+   from any unpublished local review/fix head. Cycles five and six apply the
+   same assertion-level progress-and-safety gate within the remaining
+   semantic-time budget.
 11. The curation lease acquisition starts a private wall-clock semantic budget.
     Boundary adjudication uses this same budget and never extends the cycle.
     Codex starts it when the possible owner choice first appears and never at or
@@ -617,10 +634,10 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    head before publishing the pause without final validation evidence. The
    blocked or owner-hold label suppresses scheduled selection but does not erase
    exact private remediation; deliberate removal makes it resumable after
-   normal revalidation. An unresolved or moved prior finding, a repeat or
-   regression, repeatedly incomplete inventory, unsafe scope expansion,
-   incomplete review, or an unreviewed post-fix head remains status-only blocked
-   because that head is not a safe handoff.
+   normal revalidation. An unresolved finding, active residual or repeat,
+   regression, incomplete inventory, unsafe scope expansion, incomplete review,
+   or an unreviewed post-fix head remains status-only blocked because that head
+   is not a safe handoff.
 13. A PR carrying `manual-check` is excluded until a new commit or deliberate
     label removal makes it eligible again.
 14. When Codex declares semantic review complete, it first calls `validate
@@ -1499,10 +1516,10 @@ replaced. It is history, not current operational instruction:
   disposition. Graph/scope enumerates every concrete operator presentation and
   lift-pass candidate; deferred or unresolved pass products require typed
   assessments and canonical backlog refs.
-- Initial multi-candidate scope output becomes a candidate-level ledger with an
-  enumerated candidate/source checklist; an inventory category alone is
-  incomplete, and a known-but-unfixed candidate cannot later be classified as
-  newly discovered scope.
+- Initial multi-candidate scope output becomes a separate enumerated
+  candidate/source inventory and assertion-level finding ledger; an inventory
+  category alone is incomplete, but a different or narrower defect on a known
+  candidate is not automatically an exact repeat.
 - Every post-fix full reviewer independently reconstructs current scope before
   reconciling the parent-owned finding ledger as untrusted history.
 - Current-main conflicts stop before every ordinary fix, adaptive review, and
@@ -1575,11 +1592,13 @@ replaced. It is history, not current operational instruction:
   and final publication. The owner originally chose 150/180-minute semantic
   deadlines and later extended them to 210/240 minutes, with a separate
   30-active-minute finalization allowance while retaining the current model.
-  The owner also chose progress-and-safety convergence over raw finding-count
-  convergence: a larger genuinely new bounded finding set may continue after
-  prior findings are resolved, while repeated, regressed, incomplete, or unsafe
-  scope still stops. A safe reviewed head at a cycle or time bound is preserved
-  through `manual-check` rather than discarded through status-only blocking.
+  The owner also chose assertion-level progress-and-safety convergence over raw
+  finding-count convergence. Candidate inventory and finding ledger remain
+  separate; narrower residuals may continue, and the first two consecutive
+  exact repeats may receive materially different bounded fixes before the third
+  unchanged repeat stops. Regression and unsafe scope still stop immediately.
+  A safe reviewed head at a cycle or time bound is preserved through
+  `manual-check` rather than discarded through status-only blocking.
   The owner then chose a pre-review structural normalizer: it preserves
   schema-independent preparation, rebuilds the report from exact prepared
   catalog/trust snapshots, and yields a locally committed canonical v3 report
@@ -1712,6 +1731,18 @@ replaced. It is history, not current operational instruction:
   ADR is required because the accepted two-worker control plane and
   helper/objective boundary are unchanged. Feature review of the exact
   implementation remains required before merge.
+- Advisory runtime-command and convergence-tolerance feature review: complete
+  for AI/LLM reliability, observability/ops, and release/change management. The
+  review found and resolved one High semantic-reset ambiguity: assertion keys,
+  acceptance criteria, parent links, and semantic equivalence now prevent
+  rewording from resetting a repeat streak. It also resolved one Medium
+  diagnostic ambiguity by reporting finding-family counts and the maximum
+  repeat streak instead of presenting candidate entries as independent issues.
+  No unresolved Blocker, High, or Medium finding remains. The accepted residual
+  risk is explicit: convergence classification and its repeat streak are
+  run-local Codex judgment, while the helper stays limited to objective
+  command, state, validation, and publication gates; cycle/time bounds and the
+  terminal hold label prevent unattended infinite retry.
 - Implementation and activation: the base design is complete. Its feature work
   passed the recorded maintainer, focused catalog, lint/format, full-suite,
   prospective-merge, and CI checks before merge. The owner then approved and
@@ -1722,9 +1753,11 @@ replaced. It is history, not current operational instruction:
   personal skill. Scheduled runs use only the generic helper-owned continuation
   inventory and lifecycle; migration of any pre-existing legacy reviewed record
   remains an explicit owner-run operation outside the recurring schedule.
-  The convergence-and-regional-completion amendment is merged. After the
-  owner-controlled personal-runtime cutover, normal scheduled cycles use the
-  tested concise executable interface in
+  The convergence-and-regional-completion amendment is merged. The
+  runtime-command and convergence-tolerance amendments in this branch are not
+  repository or installed-runtime authority until merge and the
+  owner-controlled personal-runtime cutover. After that cutover, normal
+  scheduled cycles use the tested concise executable interface in
   `docs/operating-model/maintainer-runtime-command-contract.md`; this design
   remains the rationale and durable behavior reference for workflow changes,
   not a required per-cycle command source. Repository status alone never

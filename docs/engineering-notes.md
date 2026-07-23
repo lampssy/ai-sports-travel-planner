@@ -901,9 +901,13 @@ registry, recording each group's status, direct refs, normalization-note need,
 and coverage disposition. Graph/scope enumerates every concrete operator
 presentation and lift-pass candidate; deferred or unresolved pass products
 carry typed assessments and canonical backlog refs. Their findings are
-consolidated into one private structured ledger and one first fix. Each later
-fresh full review independently rechecks the complete scope, then reconciles
-that untrusted ledger so claimed fixes, repeated or regressed issues, and
+consolidated into a private candidate inventory, an assertion-level finding
+ledger, and one first fix. The inventory answers which entities, products,
+edges, sectors, and documents were inspected. The ledger answers which exact
+assertion and acceptance criterion failed; one finding can link several
+candidates, and one candidate can acquire a different finding. Each later fresh
+full review independently rechecks the complete scope, then reconciles those
+untrusted views so resolved, narrower residual, repeated, regressed, and
 genuinely new findings remain visible without asking a reviewer to trust prior
 conclusions.
 
@@ -921,12 +925,12 @@ owner decision.
 The adaptive maximum remains six remediation cycles. Before every fix and each
 adaptive review, the parent fetches current main and runs a read-only merge-tree
 probe; a conflict stops the cycle before more work is accumulated. The first
-four cycles remain the normal bound. Before every further fixer, convergence
-means that prior findings are resolved or superseded without repeats or
-regressions, and any new findings are concrete, source-backed, in-model, and
-inside the bounded mutation scope. The raw count may grow when a fresh review
-legitimately finds additional fixable work; cycles five and six use the same
-gate within the remaining time budget. New semantic work stops at 210 minutes.
+four cycles remain the normal bound. Convergence is assertion-level, not a
+candidate-count percentage. A strictly narrower residual may continue. The
+same exact assertion and acceptance criterion may receive two consecutive
+repeat retries only when each has a materially different bounded fix strategy;
+the third unchanged repeat stops. Regression or unsafe scope expansion still
+stops immediately. New semantic work stops at 210 minutes.
 At 240 minutes the parent interrupts semantic contexts and enters
 finalization-only mode. After
 revalidating the exact head, worktree, remote, current-main mergeability, and
@@ -938,10 +942,10 @@ without allowing an unbounded or stale-base review loop.
 
 When the cycle or semantic-time bound is reached after such legitimate progress,
 a mechanically valid and scope-safe reviewed head is preserved through the
-helper's `manual-check` publication path. An unresolved or moved prior finding,
-a repeat or regression, repeatedly incomplete inventory, incomplete review, or
-unsafe scope expansion still uses status-only blocked publication because the
-local head is not a safe owner handoff.
+helper's `manual-check` publication path. An unresolved finding, active residual
+or repeat, regression, incomplete inventory, incomplete review, or unsafe scope
+expansion still uses status-only blocked publication because the local head is
+not a safe owner handoff.
 
 Long-running helper commands use a completion protocol rather than treating the
 first tool response as the result. Codex first resumes any yielded orchestration

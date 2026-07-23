@@ -290,6 +290,12 @@ allowlisted `check` and `kind` may accompany them. Recipe-specific `returns`
 list the fields that authorize the next semantic branch. Missing fields stop
 the cycle; prose, automation memory, or prior conclusions cannot fill them in.
 
+This helper interface does not classify residuals or exact repeats and does not
+count candidate entries. Codex owns the assertion-level finding ledger,
+candidate inventory, repeat streak, and convergence decision; the helper only
+checks objective command, state, head, scope, validation, and publication
+preconditions for the resulting requested action.
+
 The five curation lifecycle scenarios freeze their high-risk sequence prefixes;
 waiting-CI has separate pending and successful branches:
 

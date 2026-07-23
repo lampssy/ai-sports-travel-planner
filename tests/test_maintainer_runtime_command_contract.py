@@ -204,3 +204,44 @@ def test_per_cycle_sources_use_the_short_runtime_contract() -> None:
         "does not prove that the personal runtime is activated" in normalized_activation
     )
     assert "Before merging a change to this runtime source set" in normalized_activation
+
+
+def test_convergence_contract_tolerates_residuals_and_two_exact_repeats() -> None:
+    sources = {
+        "activation": " ".join(
+            ACTIVATION_PATH.read_text(encoding="utf-8").split()
+        ).lower(),
+        "design": " ".join(DESIGN_PATH.read_text(encoding="utf-8").split()).lower(),
+    }
+
+    for source, text in sources.items():
+        assert "candidate inventory and finding ledger are separate views" in text, (
+            source
+        )
+        assert "same assertion key and acceptance criterion" in text, source
+        assert "narrower residual" in text, source
+        assert "first and second consecutive exact repeats" in text, source
+        assert "third consecutive exact repeat" in text, source
+        assert "candidate-entry count or percentage" in text, source
+        assert "regression or unsafe scope expansion still stops immediately" in text, (
+            source
+        )
+        assert "rewording or changing an id does not reset the streak" in text, source
+        assert "resolved subcriterion" in text, source
+        assert "parent_finding_id" in text, source
+        assert "repeat streak is run-local" in text, source
+
+    assert "finding-family counts" in sources["activation"]
+    assert "maximum exact-repeat streak" in sources["activation"]
+    assert (
+        "never present candidate-entry count as the issue count"
+        in sources["activation"]
+    )
+
+
+def test_runtime_helper_does_not_own_semantic_convergence() -> None:
+    contract = " ".join(CONTRACT_PATH.read_text(encoding="utf-8").split()).lower()
+
+    assert "does not classify residuals or exact repeats" in contract
+    assert "does not count candidate entries" in contract
+    assert "codex owns the assertion-level finding ledger" in contract
