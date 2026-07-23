@@ -2,16 +2,31 @@
 
 ## Status And Authority
 
-This is the authoritative reactivation and rollback procedure for the
+This is the authoritative activation, operation, and rollback procedure for the
 simplified local Snowcast maintainer. Repository implementation itself does not
 install a personal skill, create schedules, provision labels, or enable
 automation.
 
-The earlier simplified maintainer may remain locally active, but the
-convergence-and-regional-completion amendment is not active while its repository
-changes are unmerged. Every activation or reactivation is post-merge,
-owner-controlled, and review-gated. Do not copy executable instructions from a
-feature branch, superseded plan, or stale installed skill.
+Repository status does not prove that the personal runtime is activated. The
+installed skill, both actual automation records, and their schedules are the
+live cutover state. Every activation or reactivation is owner-controlled and
+review-gated. Do not copy executable instructions from a feature branch,
+superseded plan, or stale installed skill.
+
+## Runtime Source Set
+
+After activation, a normal scheduled cycle reads `AGENTS.md`, this activation
+contract, and
+`docs/operating-model/maintainer-runtime-command-contract.md` from its exact
+checked-out revision. The runtime command contract is the only source for helper
+command spelling, arguments, critical sequence prefixes, and dispatch-error
+classification.
+
+The long
+`docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md`
+records rationale, prior decisions, and the full durable design. Do not require
+it as per-cycle input. Read it only for workflow modification or a contract
+mismatch that cannot be resolved from the concise runtime source set.
 
 ## Preconditions
 
@@ -22,6 +37,11 @@ feature branch, superseded plan, or stale installed skill.
   profile; no token values or scopes are written to durable output.
 - `~/.local/state/snowcast-maintainer` is preserved if it already exists.
 - No unresolved push journal is ignored or deleted.
+- Before merging a change to this runtime source set, let any active worker
+  settle and pause both schedules. Keep them paused through merge, installed
+  skill/prompt replacement, smoke checks, and owner approval. A repository
+  contract must never become current while an old scheduled source set can
+  start another run.
 - Both existing schedules are paused before replacing any shared installed
   skill or automation prompt. Wait for an active lease or journal to settle;
   do not force-clear it as part of cutover.
@@ -69,6 +89,14 @@ feature branch, superseded plan, or stale installed skill.
 
 The installed skill must:
 
+- use only the exact prefix, argv recipes, and critical sequence prefixes in
+  `docs/operating-model/maintainer-runtime-command-contract.md`; never invent a
+  family or option, translate semantic “lease” wording into argv, inspect source
+  to discover a command, or call `--help` during a cycle;
+- classify helper `invalid-command` at `dispatch` as
+  `orchestration-command-invalid`, preserve existing recovery authority, avoid
+  retry/probing, and stop after finally-style cleanup rather than blaming the
+  selected PR or deterministic validation;
 - inspect unresolved journals before fresh selection; recover exactly one
   matching journal first and escalate multiple journals;
 - use curation recovery priority `journal -> reviewed continuation ->
@@ -315,6 +343,9 @@ diagnostic rows, and do not clear private state manually.
 
 For each schedule, confirm:
 
+- every documented runtime recipe parses against the merged helper, the five
+  critical curation scenarios match the tested sequences, and no scheduled
+  lifecycle depends on `--help`, source inspection, or inferred command names;
 - a no-work run is a bounded no-op, not an error or mutation;
 - `lock-busy` is reported directly as a bounded no-op and a viable interrupted
   discovery candidate is available for preferred retry;

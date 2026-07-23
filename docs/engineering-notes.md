@@ -753,7 +753,7 @@ empty or unreliable data is worse than leaving the factor planned.
 
 ### Local maintainer workers
 
-Snowcast's future local catalog maintainer uses Codex App for scheduling and
+Snowcast's local catalog maintainer uses Codex App for scheduling and
 semantic work, the repository helper for objective safety, and GitHub for
 durable branch and workflow visibility.
 
@@ -771,6 +771,16 @@ composition boundary; `ops/maintainer/capabilities.py` dispatches the explicit
 capabilities to the runtime, inspection, git, validation, publication, state,
 and GitHub modules. It does not select the oldest PR, interpret backlog prose,
 rank discovery candidates, or maintain a runtime coverage registry.
+
+After owner-controlled activation, normal scheduled cycles use the concise,
+parser-tested
+`docs/operating-model/maintainer-runtime-command-contract.md` for exact helper
+argv, critical sequence prefixes, and dispatch-error classification. The long
+design spec remains rationale and workflow-change authority rather than
+per-cycle command input. This keeps semantic orchestration in Codex without
+making command spelling an inference problem; a dispatch-stage
+`invalid-command` is treated as an orchestration-contract defect, not as a
+finding against the selected PR.
 
 Incoming curation reports are review input, not preparation authority.
 Preparation validates the resulting diff rather than freezing the incoming

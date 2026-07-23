@@ -1722,6 +1722,10 @@ replaced. It is history, not current operational instruction:
   personal skill. Scheduled runs use only the generic helper-owned continuation
   inventory and lifecycle; migration of any pre-existing legacy reviewed record
   remains an explicit owner-run operation outside the recurring schedule.
-  The convergence-and-regional-completion amendment is implemented only in this
-  branch. It is not repository authority on `main` or installed automation
-  behavior until merge, feature review, and the owner-paused post-merge cutover.
+  The convergence-and-regional-completion amendment is merged. After the
+  owner-controlled personal-runtime cutover, normal scheduled cycles use the
+  tested concise executable interface in
+  `docs/operating-model/maintainer-runtime-command-contract.md`; this design
+  remains the rationale and durable behavior reference for workflow changes,
+  not a required per-cycle command source. Repository status alone never
+  asserts that installed personal artifacts or schedules are active.

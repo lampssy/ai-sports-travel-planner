@@ -855,6 +855,7 @@ def _prepare_reviewed_continuation(
         return {
             "work_id": work_id,
             "continuation": {
+                "kind": "reviewed",
                 "result": "validation-only",
                 "base_head": replay.base_head,
                 "reviewed_head": continuation.reviewed_head,
@@ -875,6 +876,7 @@ def _prepare_reviewed_continuation(
         return {
             "work_id": work_id,
             "continuation": {
+                "kind": "reviewed",
                 "result": "conflict-resolution-required",
                 "base_head": replay.base_head,
                 "conflict_paths": list(replay.conflict_paths),
@@ -894,6 +896,7 @@ def _prepare_reviewed_continuation(
     return {
         "work_id": work_id,
         "continuation": {
+            "kind": "reviewed",
             "result": "review-required",
             "base_head": replay.base_head,
             "prepared_head": replay.head,

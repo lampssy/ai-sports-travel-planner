@@ -2429,6 +2429,7 @@ def test_successor_prefers_reviewed_after_interrupted_promotion_without_reappear
 
     assert code == 0, payload
     assert payload["continuation"] == {
+        "kind": "reviewed",
         "result": "validation-only",
         "base_head": SHA_D,
         "reviewed_head": SHA_C,
@@ -2550,6 +2551,7 @@ def test_advanced_continuation_requires_one_fresh_review(
     )
 
     assert code == 0
+    assert payload["continuation"]["kind"] == "reviewed"
     assert payload["continuation"]["result"] == "review-required"
     assert payload["continuation"]["base_head"] == SHA_C
     store = StateStore(state_dir)
@@ -2619,6 +2621,7 @@ def test_continuation_conflict_is_bounded_then_returns_to_fresh_review(
 
     assert first == 0
     assert first_payload["continuation"] == {
+        "kind": "reviewed",
         "result": "conflict-resolution-required",
         "base_head": SHA_D,
         "conflict_paths": ["app/data/catalog.json"],
