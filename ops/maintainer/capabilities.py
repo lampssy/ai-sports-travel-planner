@@ -856,6 +856,7 @@ def _prepare_reviewed_continuation(
             "work_id": work_id,
             "continuation": {
                 "result": "validation-only",
+                "base_head": replay.base_head,
                 "reviewed_head": continuation.reviewed_head,
                 "report_path": continuation.report_path,
             },
@@ -894,6 +895,7 @@ def _prepare_reviewed_continuation(
         "work_id": work_id,
         "continuation": {
             "result": "review-required",
+            "base_head": replay.base_head,
             "prepared_head": replay.head,
             "report_path": continuation.report_path,
         },
@@ -1065,6 +1067,7 @@ def _prepare_remediation_continuation(
         "continuation": {
             "kind": "remediation",
             "result": "review-required",
+            "base_head": replay.base_head,
             "prepared_head": replay.head,
             "report_path": continuation.report_path,
         },

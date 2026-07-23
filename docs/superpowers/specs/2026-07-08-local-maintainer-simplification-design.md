@@ -336,6 +336,14 @@ clean exact head and scope, and atomically saves or replaces one private
 remediation continuation. It does not rerun those two commands when persisting
 the successful exact-head checkpoint.
 
+Every successful preparation returns its exact prepare-time base as
+`prepared.base_head` for ordinary work or `continuation.base_head` for resumed
+work. Before either `checkpoint remediation` or final `validate curation`,
+Codex creates a separate detached clean checkout at that exact commit, verifies
+the checkout `HEAD`, supplies its path through `--base-dir`, and removes only
+that caller-created checkout during cleanup. It never supplies the current
+remediation/review worktree or substitutes the latest `origin/main`.
+
 After the required fresh review, Codex calls the reviewed-checkpoint capability.
 The helper cannot decide whether the review is semantically correct; it binds
 Codex's declaration to the exact immutable head, prepared lineage, report,

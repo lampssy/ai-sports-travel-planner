@@ -107,11 +107,10 @@ The installed skill must:
   every scope assessment; each `regional_followup` must point to an exact
   heading that exists in the exact-head product backlog. The helper checks only
   anchor existence, never backlog meaning, priority, or status;
-- after each remediation, call the helper's two-command delta checkpoint once:
-  this is the bounded delta validation of catalog/trust plus exact
-  reconciliation. Reuse that exact-head
-  evidence when the checkpoint is persisted; reserve the fixed broad catalog
-  suite for one final helper validation after review;
+- after each remediation, call the helper's `checkpoint remediation` capability
+  once. That single invocation runs bounded catalog/trust validation plus exact
+  reconciliation and persists the exact-head evidence; reserve the fixed broad
+  catalog suite for one final helper validation after review;
 - for that final broad suite, execute only the clean exact-base uv project,
   pytest configuration, conftest, and fixed absolute test modules. Supply the
   prepared catalog/trust paths only through the helper-derived data root and a
@@ -177,6 +176,13 @@ The installed skill must:
   reruns the missing deterministic/finalization gates without semantic review,
   while `review-required` receives exactly one fresh independent full review
   before a new `validate reviewed` checkpoint;
+- treat `prepared.base_head` from ordinary preparation or
+  `continuation.base_head` from continuation preparation as the sole
+  comparison-base authority for that work. Before `checkpoint remediation` or
+  `validate curation`, create a separate detached clean checkout at that exact
+  commit, verify its `HEAD`, pass its path as `--base-dir`, and remove only that
+  caller-created checkout during cleanup. The current remediation/review
+  worktree and current `origin/main` are not valid substitutes;
 - when a replayed reviewed continuation produces a newer remediation checkpoint,
   preserve the reviewed origin authority, expose the newer remediation instead
   of its resolving predecessor, and replace that predecessor only after an

@@ -173,6 +173,30 @@ def _sync() -> GuardedSyncResult:
     )
 
 
+def test_remediation_checkpoint_help_requires_exact_prepare_time_base(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        main(["checkpoint", "remediation", "--help"])
+
+    assert exc_info.value.code == 0
+    help_text = " ".join(capsys.readouterr().out.split())
+    assert "detached clean checkout at the exact prepare-time base" in help_text
+    assert "must not be the remediation worktree" in help_text
+
+
+def test_curation_validation_help_requires_exact_prepare_time_base(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        main(["validate", "curation", "--help"])
+
+    assert exc_info.value.code == 0
+    help_text = " ".join(capsys.readouterr().out.split())
+    assert "detached clean checkout at the exact prepare-time base" in help_text
+    assert "must not be the reviewed worktree" in help_text
+
+
 def _snapshot() -> IntentSnapshot:
     changed_paths = frozenset(
         {
@@ -1190,6 +1214,7 @@ def test_prepare_curation_persists_one_phase_record_for_requested_safe_pr(
     )
 
     assert code == 0
+    assert payload["prepared"]["base_head"] == repository.prepared.base_head
     work = StateStore(state_dir).load_work("curation-pr-42")
     assert work is not None
     assert work.phase is WorkPhase.PREPARED
@@ -1430,6 +1455,7 @@ def test_remediation_continuation_replays_then_requires_fresh_review(
     assert payload["continuation"] == {
         "kind": "remediation",
         "result": "review-required",
+        "base_head": SHA_D,
         "prepared_head": SHA_C,
         "report_path": "docs/catalog-curation/nendaz.json",
     }
@@ -1669,6 +1695,7 @@ def test_newer_remediation_replay_precedes_older_resolving_reviewed_continuation
     assert payload["continuation"] == {
         "kind": "remediation",
         "result": "review-required",
+        "base_head": SHA_C,
         "prepared_head": SHA_C,
         "report_path": "docs/catalog-curation/nendaz.json",
     }
@@ -2190,6 +2217,7 @@ def test_remediation_conflict_continues_in_run_then_promotes_after_review(
     assert continue_payload["continuation"] == {
         "kind": "remediation",
         "result": "review-required",
+        "base_head": SHA_C,
         "prepared_head": SHA_D,
         "report_path": "docs/catalog-curation/nendaz.json",
     }
@@ -2277,6 +2305,7 @@ def test_successor_recreates_abandoned_remediation_conflict_from_checkpoint(
     assert payload["continuation"] == {
         "kind": "remediation",
         "result": "review-required",
+        "base_head": SHA_C,
         "prepared_head": SHA_D,
         "report_path": "docs/catalog-curation/nendaz.json",
     }
@@ -2401,6 +2430,7 @@ def test_successor_prefers_reviewed_after_interrupted_promotion_without_reappear
     assert code == 0, payload
     assert payload["continuation"] == {
         "result": "validation-only",
+        "base_head": SHA_D,
         "reviewed_head": SHA_C,
         "report_path": "docs/catalog-curation/nendaz.json",
     }
@@ -2521,6 +2551,7 @@ def test_advanced_continuation_requires_one_fresh_review(
 
     assert code == 0
     assert payload["continuation"]["result"] == "review-required"
+    assert payload["continuation"]["base_head"] == SHA_C
     store = StateStore(state_dir)
     work = store.load_work("curation-pr-42")
     continuation = store.load_continuation("curation-pr-42")

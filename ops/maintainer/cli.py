@@ -134,7 +134,15 @@ def _parser() -> argparse.ArgumentParser:
     validate_curation_parser.add_argument("--pr", type=int, required=True)
     validate_curation_parser.add_argument("--reviewed-head", type=_sha, required=True)
     validate_curation_parser.add_argument("--report", required=True)
-    validate_curation_parser.add_argument("--base-dir", type=Path, required=True)
+    validate_curation_parser.add_argument(
+        "--base-dir",
+        type=Path,
+        required=True,
+        help=(
+            "detached clean checkout at the exact prepare-time base; "
+            "must not be the reviewed worktree"
+        ),
+    )
     _add_run_id(validate_curation_parser)
 
     checkpoint = families.add_parser("checkpoint")
@@ -143,7 +151,15 @@ def _parser() -> argparse.ArgumentParser:
     remediation.add_argument("--pr", type=int, required=True)
     remediation.add_argument("--head", type=_sha, required=True)
     remediation.add_argument("--report", required=True)
-    remediation.add_argument("--base-dir", type=Path, required=True)
+    remediation.add_argument(
+        "--base-dir",
+        type=Path,
+        required=True,
+        help=(
+            "detached clean checkout at the exact prepare-time base; "
+            "must not be the remediation worktree"
+        ),
+    )
     _add_run_id(remediation)
 
     validate_reviewed_parser = validate_commands.add_parser("reviewed")
