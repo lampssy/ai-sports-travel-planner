@@ -1021,6 +1021,18 @@ eligible again only after a new commit. An unchanged `waiting-ci` head remains
 visible for a lightweight readiness transition that never rebases or repeats
 semantic review.
 
+After the reviewed and validated head is pushed, the maintainer's intended
+post-push lifecycle keeps the curation lease through a 30-minute exact-head CI
+wait. A failure caused only by stale assertions in ordinary `tests/test_*.py`
+modules may receive one statically prepared and independently reviewed repair,
+with at most 60 active minutes for that repair and one final 30-minute CI wait.
+The separate 120-minute ceiling does not reopen or extend the 240-minute
+catalog-semantic budget. The helper persists exact CI-continuation authority,
+enforces an unchanged non-test tree and one attempt, and journals the repair
+push. GitHub CI remains the execution boundary for the modified test code;
+`maintainer:waiting-ci` is initially retained only as human-visible
+compatibility state.
+
 All publication text is created by the lease-bound `publication-input create`
 capability: it consumes bounded UTF-8 from stdin, makes a random mode-`0600`
 direct child through the already-validated state-directory descriptor, fsyncs,
