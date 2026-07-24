@@ -513,6 +513,19 @@ def test_checked_in_sources_freeze_the_post_push_ci_runtime_contract() -> None:
     assert "pr #" not in normalized["ci_design"]
 
 
+def test_activation_rollback_requires_ci_continuation_safe_downgrade() -> None:
+    rollback = ACTIVATION_PATH.read_text(encoding="utf-8").split("## Rollback", 1)[1]
+    normalized = " ".join(rollback.split()).lower()
+
+    assert "post-push ci continuations" in normalized
+    for phase in ("initial-wait", "repair-active", "repair-reviewed", "second-wait"):
+        assert phase in normalized
+    assert "matching unresolved push journal" in normalized
+    assert "completed or safely terminalized" in normalized
+    assert "while any active ci continuation remains" in normalized
+    assert "helper version that created or understands it" in normalized
+
+
 def test_runtime_contract_classifies_dispatch_errors_as_orchestration_errors() -> None:
     classification = _contract()["dispatch_error_classification"]
     assert classification == {

@@ -7844,6 +7844,100 @@ def test_waiting_ci_continuation_rejects_journal_report_drift(
     assert github.label_writes == 0
 
 
+@pytest.mark.parametrize(
+    ("phase", "expected_first_wait", "expected_second_wait"),
+    [
+        (CiContinuationPhase.INITIAL_WAIT, 600, 0),
+        (CiContinuationPhase.SECOND_WAIT, 60, 300),
+    ],
+)
+def test_waiting_ci_heartbeat_updates_elapsed_wait_budget(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    phase: CiContinuationPhase,
+    expected_first_wait: int,
+    expected_second_wait: int,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(
+        state_dir,
+        "curation",
+        now=NOW - timedelta(minutes=20),
+    )
+    store = StateStore(state_dir)
+    continuation = _ci_continuation_for_cli(lease).model_copy(
+        update={
+            "updated_at": NOW - timedelta(minutes=10),
+            "first_wait_started_at": NOW - timedelta(minutes=10),
+        }
+    )
+    store.save_ci_continuation(continuation, lease)
+    if phase is CiContinuationPhase.SECOND_WAIT:
+        active_at = NOW - timedelta(minutes=9)
+        continuation = store.advance_ci_continuation(
+            continuation.model_copy(
+                update={
+                    "phase": CiContinuationPhase.REPAIR_ACTIVE,
+                    "repair_attempted": True,
+                    "repair_activity_observed_at": active_at,
+                }
+            ),
+            lease,
+            now=active_at,
+        )
+        reviewed_at = NOW - timedelta(minutes=8)
+        continuation = store.advance_ci_continuation(
+            continuation.model_copy(
+                update={
+                    "phase": CiContinuationPhase.REPAIR_REVIEWED,
+                    "repair_head": SHA_C,
+                    "repair_ref": (
+                        "refs/snowcast-maintainer/ci-repair/pr-42/checkpoint"
+                    ),
+                    "repair_paths": frozenset({"tests/test_public_pages.py"}),
+                }
+            ),
+            lease,
+            now=reviewed_at,
+        )
+        second_wait_at = NOW - timedelta(minutes=5)
+        store.advance_ci_continuation(
+            continuation.model_copy(
+                update={
+                    "phase": CiContinuationPhase.SECOND_WAIT,
+                    "current_head": SHA_C,
+                    "second_wait_started_at": second_wait_at,
+                }
+            ),
+            lease,
+            now=second_wait_at,
+        )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "heartbeat",
+            "curation",
+            "--run-id",
+            lease.run_id,
+        ],
+    )
+
+    assert code == 0, payload
+    heartbeat = store.load_ci_continuation(continuation.work_id)
+    assert heartbeat is not None
+    assert heartbeat.first_wait_seconds == expected_first_wait
+    assert heartbeat.second_wait_seconds == expected_second_wait
+    assert payload["ci_budget"] == {
+        "first_wait_seconds": expected_first_wait,
+        "repair_active_seconds": 0,
+        "second_wait_seconds": expected_second_wait,
+    }
+
+
 def test_waiting_ci_heartbeat_updates_lease_and_repair_budget_together(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

@@ -505,27 +505,38 @@ For each schedule, confirm:
 
 1. Pause or disable both schedules before any diagnosis.
 2. Preserve the private state directory, owner record, stale-lock archives,
-   work records, reviewed/remediation continuations, push journals, and backup
-   refs. Do not edit or delete them.
+   work records, reviewed/remediation continuations, post-push CI
+   continuations, push journals, and backup refs. Do not edit or delete them.
 3. Inspect both inventories and Codex Triage. Recover an irreversible operation
    only through the merged helper; multiple journals require owner review.
 4. Inventory every open curation and proposal head plus all private journals,
-   reviewed continuations, and remediation continuations. Before restoring a
-   pre-change helper, use the new helper to complete or quarantine every open
-   report that uses `review_evidence_envelope` or `graph_impact`, or retain a
-   helper that remains compatible with those fields. Quarantine is a
-   helper-owned non-selectable state; do not delete, rewrite, or relabel private
-   state manually.
+   reviewed continuations, remediation continuations, and post-push CI
+   continuations. The CI inventory must identify every `initial-wait`,
+   `repair-active`, `repair-reviewed`, and `second-wait` record plus any matching
+   unresolved push journal. Before restoring a pre-change helper, use a
+   compatible helper and confirm every active CI continuation is completed or
+   safely terminalized, with its matching unresolved push journal settled. Also
+   use the new helper to complete or quarantine every open report that uses
+   `review_evidence_envelope` or `graph_impact`, or retain a helper that remains
+   compatible with those fields. Quarantine is a helper-owned non-selectable
+   state; do not delete, rewrite, relabel, or reset private state manually.
 5. While schedules remain disabled, run a manual compatibility smoke against
    the real remaining inventories and private state. Confirm the proposed
    rollback helper can inspect every open head and safely recognize or ignore
-   every continuation/report shape without mutation. Any unclear head, report,
-   journal, continuation, or compatibility result keeps both schedules
+   every continuation/report shape without mutation. On a disposable copy of
+   state, exercise downgrade compatibility for each CI phase:
+   `initial-wait`, `repair-active`, `repair-reviewed`, and `second-wait`, with
+   the matching unresolved push journal where that phase permits one. The
+   rollback helper must either recognize the record or fail closed without
+   selection, budget reset, publication, or branch mutation. Any unclear head,
+   report, journal, continuation, or compatibility result keeps both schedules
    disabled.
 6. Restore the snapshotted installed skills and both prompts atomically while
-   schedules remain paused. Do not re-enable an older orchestrator while an
-   active remediation continuation exists; recover or explicitly invalidate it
-   with the helper version that created it first.
+   schedules remain paused. Do not restore or re-enable a pre-change helper or
+   older orchestrator while any active CI continuation remains; complete or
+   safely terminalize it with the helper version that created or understands it
+   first. Apply the same rule to an active remediation continuation: recover or
+   explicitly invalidate it with the compatible helper first.
 7. Revert the repository helper through normal Git history and a reviewed PR.
    Do not use plain `git push --force` and do not execute the superseded Task 10.
 8. Keep schedules disabled until the reverted or corrected merged version has

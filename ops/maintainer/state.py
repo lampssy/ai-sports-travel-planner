@@ -1028,7 +1028,17 @@ class StateStore:
             )
         if not owned:
             return None
-        return self.record_ci_heartbeat(owned[0].work_id, lease, now=now)
+        continuation = owned[0]
+        if continuation.phase in {
+            CiContinuationPhase.INITIAL_WAIT,
+            CiContinuationPhase.SECOND_WAIT,
+        }:
+            return self.record_ci_wait_observation(
+                continuation.work_id,
+                lease,
+                now=now,
+            )
+        return self.record_ci_heartbeat(continuation.work_id, lease, now=now)
 
     def save_remediation_continuation(
         self,

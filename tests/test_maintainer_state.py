@@ -568,6 +568,84 @@ def test_ci_continuation_transitions_preserve_budgets_and_fence_old_owners(
         )
 
 
+@pytest.mark.parametrize(
+    ("phase", "budget_field"),
+    [
+        (CiContinuationPhase.INITIAL_WAIT, "first_wait_seconds"),
+        (CiContinuationPhase.SECOND_WAIT, "second_wait_seconds"),
+    ],
+)
+def test_owned_ci_heartbeat_records_monotonic_capped_wait_budget(
+    tmp_path: Path,
+    phase: CiContinuationPhase,
+    budget_field: str,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    continuation = _ci_continuation(lease)
+    store.save_ci_continuation(continuation, lease)
+    wait_started_at = continuation.first_wait_started_at
+    if phase is CiContinuationPhase.SECOND_WAIT:
+        active_at = NOW + timedelta(minutes=1)
+        continuation = store.advance_ci_continuation(
+            continuation.model_copy(
+                update={
+                    "phase": CiContinuationPhase.REPAIR_ACTIVE,
+                    "repair_attempted": True,
+                    "repair_activity_observed_at": active_at,
+                }
+            ),
+            lease,
+            now=active_at,
+        )
+        reviewed_at = NOW + timedelta(minutes=2)
+        continuation = store.advance_ci_continuation(
+            continuation.model_copy(
+                update={
+                    "phase": CiContinuationPhase.REPAIR_REVIEWED,
+                    "repair_head": SHA_4,
+                    "repair_ref": (
+                        "refs/snowcast-maintainer/ci-repair/pr-42/checkpoint"
+                    ),
+                    "repair_paths": frozenset({"tests/test_public_pages.py"}),
+                }
+            ),
+            lease,
+            now=reviewed_at,
+        )
+        wait_started_at = NOW + timedelta(minutes=3)
+        continuation = store.advance_ci_continuation(
+            continuation.model_copy(
+                update={
+                    "phase": CiContinuationPhase.SECOND_WAIT,
+                    "current_head": SHA_4,
+                    "second_wait_started_at": wait_started_at,
+                }
+            ),
+            lease,
+            now=wait_started_at,
+        )
+
+    first = store.record_owned_ci_heartbeat(
+        lease,
+        now=wait_started_at + timedelta(minutes=5),
+    )
+    assert first is not None
+    assert getattr(first, budget_field) == 300
+    second = store.record_owned_ci_heartbeat(
+        lease,
+        now=wait_started_at + timedelta(minutes=5, seconds=1),
+    )
+    assert second is not None
+    assert getattr(second, budget_field) == 301
+    capped = store.record_owned_ci_heartbeat(
+        lease,
+        now=wait_started_at + timedelta(minutes=40),
+    )
+    assert capped is not None
+    assert getattr(capped, budget_field) == 1800
+
+
 def test_remediation_persistence_adoption_replacement_and_invalidation(
     tmp_path: Path,
 ) -> None:
