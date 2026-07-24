@@ -468,6 +468,7 @@ class GitRepository:
             current_head=current_head,
             repair_head=repair_head,
             expected_non_test_tree_digest=expected_non_test_tree_digest,
+            allowed_live_heads=frozenset({current_head}),
         )
         result = self._git(
             "update-ref",
@@ -509,6 +510,7 @@ class GitRepository:
             current_head=current_head,
             repair_head=checkpoint.repair_head,
             expected_non_test_tree_digest=checkpoint.non_test_tree_digest,
+            allowed_live_heads=frozenset({current_head, checkpoint.repair_head}),
         )
         if revalidated != checkpoint:
             raise RepositorySafetyError(
@@ -524,15 +526,16 @@ class GitRepository:
         current_head: str,
         repair_head: str,
         expected_non_test_tree_digest: str,
+        allowed_live_heads: frozenset[str],
     ) -> CiRepairCheckpoint:
         _validate_pull_request(pull_request)
         _validate_sha(semantic_head)
         _validate_sha(current_head)
         _validate_sha(repair_head)
         _validate_tree_digest(expected_non_test_tree_digest)
-        if pull_request.head_sha != current_head:
+        if pull_request.head_sha not in allowed_live_heads:
             raise StaleRemoteHeadError(
-                "current CI repair head does not match the live PR head"
+                "live PR head does not match the checkpointed CI repair heads"
             )
         self.verify_repository()
         self._verify_commit(semantic_head)

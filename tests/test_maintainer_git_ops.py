@@ -1551,6 +1551,49 @@ def test_checkpoint_ci_repair_persists_and_revalidates_exact_test_only_head(
     )
 
 
+def test_revalidate_ci_repair_checkpoint_accepts_live_repair_head_and_rejects_h2(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    repair_head = _commit_allowed_ci_repair(local)
+    checkpoint = repository.checkpoint_ci_repair(
+        pull_request=local.pull_request,
+        semantic_head=local.semantic_head,
+        current_head=local.current_head,
+        repair_head=repair_head,
+        expected_non_test_tree_digest=expected_digest,
+    )
+    live_repaired_pull_request = local.pull_request.model_copy(
+        update={"head_sha": repair_head}
+    )
+
+    assert (
+        repository.revalidate_ci_repair_checkpoint(
+            pull_request=live_repaired_pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            checkpoint=checkpoint,
+        )
+        == checkpoint
+    )
+
+    _git(local.checkout, "commit", "--allow-empty", "-m", "unrelated head drift")
+    drifted_head = _git(local.checkout, "rev-parse", "HEAD")
+    drifted_pull_request = local.pull_request.model_copy(
+        update={"head_sha": drifted_head}
+    )
+    with pytest.raises(StaleRemoteHeadError, match="live PR head"):
+        repository.revalidate_ci_repair_checkpoint(
+            pull_request=drifted_pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            checkpoint=checkpoint,
+        )
+
+
 @pytest.mark.parametrize(
     ("mutation", "path"),
     [
@@ -1698,7 +1741,9 @@ def test_checkpoint_ci_repair_rejects_ref_collision(tmp_path: Path) -> None:
         )
 
 
-def test_push_exact_with_lease_uses_remote_current_head(tmp_path: Path) -> None:
+def test_ci_repair_push_exact_with_lease_uses_remote_current_head(
+    tmp_path: Path,
+) -> None:
     local = _ci_repair_repository(tmp_path)
     runner = RecordingRunner()
     repository = _ci_repair_git_repository(local, runner=runner)
@@ -1732,7 +1777,9 @@ def test_push_exact_with_lease_uses_remote_current_head(tmp_path: Path) -> None:
     ]
 
 
-def test_push_exact_with_lease_rejects_stale_remote_state(tmp_path: Path) -> None:
+def test_ci_repair_push_exact_with_lease_rejects_stale_remote_state(
+    tmp_path: Path,
+) -> None:
     local = _ci_repair_repository(tmp_path)
     runner = RecordingRunner()
     repository = _ci_repair_git_repository(local, runner=runner)
