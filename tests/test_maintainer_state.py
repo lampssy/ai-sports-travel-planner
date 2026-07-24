@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from threading import Event, Thread
 
@@ -10,6 +10,8 @@ from pydantic import ValidationError
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.runtime import LeaseOwnershipError, RunLease
 from ops.maintainer.state import (
+    CiContinuation,
+    CiContinuationPhase,
     ContinuationStatus,
     ContinuationValidationStatus,
     PushJournal,
@@ -194,9 +196,75 @@ def _remediation(
     )
 
 
+def _ci_continuation(
+    lease: RunLease,
+    *,
+    phase: CiContinuationPhase = CiContinuationPhase.INITIAL_WAIT,
+) -> CiContinuation:
+    return CiContinuation(
+        work_id="curation-pr-42",
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        updated_at=NOW,
+        pr_number=42,
+        branch="codex/catalog-curation-42",
+        semantic_head=SHA_3,
+        current_head=SHA_3,
+        report_path="docs/catalog-curation/fr-les-arcs.json",
+        resulting_graph_markdown="```mermaid\ngraph LR\n  a --> b\n```",
+        non_test_tree_digest="a" * 64,
+        phase=phase,
+        repair_attempted=False,
+        first_wait_started_at=NOW,
+        first_wait_seconds=0,
+        repair_active_seconds=0,
+        second_wait_seconds=0,
+    )
+
+
+def _ci_repair_active(lease: RunLease) -> CiContinuation:
+    return CiContinuation.model_validate(
+        {
+            **_ci_continuation(lease).model_dump(),
+            "phase": CiContinuationPhase.REPAIR_ACTIVE,
+            "repair_attempted": True,
+            "repair_activity_observed_at": NOW,
+        }
+    )
+
+
+def _ci_repair_reviewed(lease: RunLease) -> CiContinuation:
+    return CiContinuation.model_validate(
+        {
+            **_ci_repair_active(lease).model_dump(),
+            "phase": CiContinuationPhase.REPAIR_REVIEWED,
+            "repair_head": SHA_4,
+            "repair_ref": "refs/snowcast-maintainer/ci-repair/pr-42/checkpoint",
+            "repair_paths": frozenset({"tests/test_public_pages.py"}),
+        }
+    )
+
+
+def _ci_second_wait(lease: RunLease) -> CiContinuation:
+    return CiContinuation.model_validate(
+        {
+            **_ci_repair_reviewed(lease).model_dump(),
+            "phase": CiContinuationPhase.SECOND_WAIT,
+            "current_head": SHA_4,
+            "second_wait_started_at": NOW,
+        }
+    )
+
+
 def _write_model(
     path: Path,
-    model: WorkState | PushJournal | ReviewedContinuation | RemediationContinuation,
+    model: (
+        WorkState
+        | PushJournal
+        | ReviewedContinuation
+        | RemediationContinuation
+        | CiContinuation
+    ),
 ) -> None:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     path.write_text(model.model_dump_json(indent=2) + "\n", encoding="utf-8")
@@ -242,6 +310,247 @@ def test_remediation_continuation_is_strict_and_requires_exact_facts() -> None:
             RemediationContinuation.model_validate(
                 {**remediation.model_dump(), **update}
             )
+
+
+def test_ci_continuation_is_strict_frozen_and_normalizes_times() -> None:
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
+    continuation = _ci_continuation(lease)
+
+    with pytest.raises(ValidationError, match="frozen"):
+        continuation.phase = CiContinuationPhase.CONSUMED
+    with pytest.raises(ValidationError):
+        CiContinuation.model_validate({**continuation.model_dump(), "unexpected": True})
+
+    offset = timezone(timedelta(hours=2))
+    normalized = CiContinuation.model_validate(
+        {
+            **continuation.model_dump(),
+            "updated_at": NOW.astimezone(offset),
+            "first_wait_started_at": NOW.astimezone(offset),
+        }
+    )
+
+    assert normalized.updated_at.tzinfo is UTC
+    assert normalized.first_wait_started_at.tzinfo is UTC
+
+
+def test_ci_continuation_requires_exact_identity_and_safe_facts() -> None:
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
+    continuation = _ci_continuation(lease)
+
+    for update in (
+        {"work_id": "curation-pr-43"},
+        {"branch": "main"},
+        {"semantic_head": "ABC"},
+        {"non_test_tree_digest": "a" * 63},
+        {"repair_ref": "not-a-ref"},
+    ):
+        with pytest.raises(ValidationError):
+            CiContinuation.model_validate({**continuation.model_dump(), **update})
+
+
+def test_ci_continuation_requires_phase_specific_repair_facts() -> None:
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
+    initial = _ci_continuation(lease)
+    active = _ci_repair_active(lease)
+    reviewed = _ci_repair_reviewed(lease)
+    second_wait = _ci_second_wait(lease)
+
+    assert active.phase is CiContinuationPhase.REPAIR_ACTIVE
+    assert reviewed.phase is CiContinuationPhase.REPAIR_REVIEWED
+    assert second_wait.phase is CiContinuationPhase.SECOND_WAIT
+
+    for payload in (
+        {**initial.model_dump(), "repair_attempted": True},
+        {**initial.model_dump(), "current_head": SHA_4},
+        {**active.model_dump(), "repair_activity_observed_at": None},
+        {**reviewed.model_dump(), "repair_head": None},
+        {**reviewed.model_dump(), "repair_ref": None},
+        {**reviewed.model_dump(), "repair_paths": frozenset()},
+        {**second_wait.model_dump(), "current_head": SHA_3},
+        {**second_wait.model_dump(), "second_wait_started_at": None},
+        {
+            **reviewed.model_dump(),
+            "repair_paths": frozenset({"tests/api/test_search.py"}),
+        },
+    ):
+        with pytest.raises(ValidationError):
+            CiContinuation.model_validate(payload)
+
+
+def test_ci_continuation_persists_adopts_and_hides_terminal_records(
+    tmp_path: Path,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    continuation = _ci_continuation(origin)
+
+    store.save_ci_continuation(continuation, origin)
+    path = tmp_path / "ci-continuations" / "curation-pr-42.json"
+    assert path.stat().st_mode & 0o777 == 0o600
+    assert path.parent.stat().st_mode & 0o777 == 0o700
+    assert store.load_ci_continuation(continuation.work_id) == continuation
+    store.save_ci_continuation(
+        continuation.model_copy(update={"updated_at": NOW + timedelta(seconds=1)}),
+        origin,
+    )
+    assert store.load_ci_continuation(continuation.work_id) == continuation
+
+    for pr_number, phase in (
+        (99, CiContinuationPhase.CONSUMED),
+        (100, CiContinuationPhase.BLOCKED),
+        (101, CiContinuationPhase.INVALIDATED),
+    ):
+        terminal = CiContinuation.model_validate(
+            {
+                **continuation.model_dump(),
+                "work_id": f"curation-pr-{pr_number}",
+                "pr_number": pr_number,
+                "phase": phase,
+            }
+        )
+        _write_model(
+            tmp_path / "ci-continuations" / f"curation-pr-{pr_number}.json",
+            terminal,
+        )
+    assert store.list_ci_continuations_for_inspection() == (continuation,)
+
+    successor = RunLease.acquire(tmp_path, "curation", now=NOW + timedelta(hours=7))
+    adopted = store.adopt_ci_continuation(
+        continuation.work_id,
+        successor,
+        now=NOW + timedelta(hours=7),
+    )
+    assert adopted == continuation.model_copy(
+        update={
+            "recovery_run_id": successor.run_id,
+            "updated_at": NOW + timedelta(hours=7),
+        }
+    )
+    with pytest.raises(LeaseOwnershipError):
+        store.save_ci_continuation(continuation, origin)
+
+
+def test_ci_continuation_adoption_requires_a_clear_push_journal(
+    tmp_path: Path,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    store.save_ci_continuation(_ci_continuation(origin), origin)
+    store.save_push(_journal(origin), origin)
+    successor = RunLease.acquire(tmp_path, "curation", now=NOW + timedelta(hours=7))
+
+    with pytest.raises(StateStoreError, match="unresolved push journal"):
+        store.adopt_ci_continuation(
+            "curation-pr-42",
+            successor,
+            now=NOW + timedelta(hours=7),
+        )
+
+
+def test_ci_continuation_inventory_path_is_read_only(tmp_path: Path) -> None:
+    missing = tmp_path / "missing"
+    assert StateStore.list_ci_continuations_for_inspection_path(missing) == ()
+    assert not missing.exists()
+
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    continuation = _ci_continuation(lease)
+    StateStore(tmp_path).save_ci_continuation(continuation, lease)
+    lease.release()
+
+    assert StateStore.list_ci_continuations_for_inspection_path(tmp_path) == (
+        continuation,
+    )
+
+
+def test_ci_continuation_transitions_preserve_budgets_and_fence_old_owners(
+    tmp_path: Path,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    initial = _ci_continuation(lease)
+    store.save_ci_continuation(initial, lease)
+
+    active = store.advance_ci_continuation(
+        initial.model_copy(
+            update={
+                "phase": CiContinuationPhase.REPAIR_ACTIVE,
+                "repair_attempted": True,
+                "repair_activity_observed_at": NOW + timedelta(minutes=10),
+            }
+        ),
+        lease,
+        now=NOW + timedelta(minutes=10),
+    )
+    assert active.first_wait_seconds == 600
+
+    first_heartbeat = store.record_ci_heartbeat(
+        active.work_id,
+        lease,
+        now=NOW + timedelta(minutes=10, seconds=3),
+    )
+    assert first_heartbeat.repair_active_seconds == 3
+    long_gap = store.record_ci_heartbeat(
+        active.work_id,
+        lease,
+        now=NOW + timedelta(minutes=30),
+    )
+    assert long_gap.repair_active_seconds == 303
+
+    reviewed = store.advance_ci_continuation(
+        long_gap.model_copy(
+            update={
+                "phase": CiContinuationPhase.REPAIR_REVIEWED,
+                "repair_head": SHA_4,
+                "repair_ref": "refs/snowcast-maintainer/ci-repair/pr-42/checkpoint",
+                "repair_paths": frozenset({"tests/test_public_pages.py"}),
+            }
+        ),
+        lease,
+        now=NOW + timedelta(minutes=31),
+    )
+    second_wait = store.advance_ci_continuation(
+        reviewed.model_copy(
+            update={
+                "phase": CiContinuationPhase.SECOND_WAIT,
+                "current_head": SHA_4,
+                "second_wait_started_at": NOW + timedelta(minutes=32),
+            }
+        ),
+        lease,
+        now=NOW + timedelta(minutes=32),
+    )
+    with pytest.raises(StateStoreError, match="budget"):
+        store.advance_ci_continuation(
+            second_wait.model_copy(
+                update={
+                    "phase": CiContinuationPhase.CONSUMED,
+                    "first_wait_seconds": 0,
+                }
+            ),
+            lease,
+            now=NOW + timedelta(minutes=37),
+        )
+    consumed = store.advance_ci_continuation(
+        second_wait.model_copy(update={"phase": CiContinuationPhase.CONSUMED}),
+        lease,
+        now=NOW + timedelta(minutes=37),
+    )
+    assert consumed.second_wait_seconds == 300
+    assert store.list_ci_continuations_for_inspection() == ()
+
+    with pytest.raises(StateStoreError, match="terminal"):
+        store.advance_ci_continuation(
+            consumed.model_copy(
+                update={
+                    "phase": CiContinuationPhase.REPAIR_REVIEWED,
+                    "current_head": SHA_3,
+                    "second_wait_started_at": None,
+                }
+            ),
+            lease,
+            now=NOW + timedelta(minutes=38),
+        )
 
 
 def test_remediation_persistence_adoption_replacement_and_invalidation(

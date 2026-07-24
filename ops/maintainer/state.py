@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.git_refs import is_safe_codex_branch
-from ops.maintainer.intent import is_allowed_curation_path
+from ops.maintainer.intent import is_allowed_ci_repair_path, is_allowed_curation_path
 from ops.maintainer.runtime import (
     LeaseMetadataError,
     LeaseOwnershipError,
@@ -73,6 +73,16 @@ class RemediationContinuationStatus(StrEnum):
     AVAILABLE = "available"
     RESOLVING = "resolving"
     CONSUMED = "consumed"
+    INVALIDATED = "invalidated"
+
+
+class CiContinuationPhase(StrEnum):
+    INITIAL_WAIT = "initial-wait"
+    REPAIR_ACTIVE = "repair-active"
+    REPAIR_REVIEWED = "repair-reviewed"
+    SECOND_WAIT = "second-wait"
+    CONSUMED = "consumed"
+    BLOCKED = "blocked"
     INVALIDATED = "invalidated"
 
 
@@ -270,6 +280,117 @@ class RemediationContinuation(BaseModel):
         return self
 
 
+class CiContinuation(BaseModel):
+    """Durable authority for bounded post-push CI handling of one PR."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    work_id: str = Field(pattern=_ID_PATTERN.pattern)
+    origin_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
+    recovery_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
+    updated_at: datetime
+    pr_number: int = Field(ge=1)
+    branch: str = Field(min_length=1, max_length=200)
+    semantic_head: str = Field(pattern=_SHA_PATTERN)
+    current_head: str = Field(pattern=_SHA_PATTERN)
+    report_path: str = Field(
+        pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$",
+    )
+    resulting_graph_markdown: str = Field(min_length=1, max_length=32768)
+    non_test_tree_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    phase: CiContinuationPhase
+    repair_attempted: bool
+    first_wait_started_at: datetime
+    first_wait_seconds: int = Field(ge=0, le=1800)
+    repair_active_seconds: int = Field(ge=0, le=3600)
+    repair_activity_observed_at: datetime | None = None
+    repair_head: str | None = Field(default=None, pattern=_SHA_PATTERN)
+    repair_ref: str | None = Field(default=None, pattern=_REF_PATTERN)
+    repair_paths: frozenset[str] = frozenset()
+    second_wait_started_at: datetime | None = None
+    second_wait_seconds: int = Field(default=0, ge=0, le=1800)
+
+    @model_validator(mode="after")
+    def validate_ci_continuation(self) -> CiContinuation:
+        for field_name in (
+            "updated_at",
+            "first_wait_started_at",
+            "repair_activity_observed_at",
+            "second_wait_started_at",
+        ):
+            value = getattr(self, field_name)
+            if value is None:
+                continue
+            if value.tzinfo is None or value.utcoffset() is None:
+                raise ValueError(f"{field_name} must include a timezone")
+            object.__setattr__(self, field_name, value.astimezone(UTC))
+
+        if self.work_id != f"curation-pr-{self.pr_number}":
+            raise ValueError("CI continuation identity does not match its PR")
+        if not is_safe_codex_branch(self.branch):
+            raise ValueError("branch must be a safe codex ref")
+        if not all(is_allowed_ci_repair_path(path) for path in self.repair_paths):
+            raise ValueError("CI repair paths are outside test-only scope")
+
+        has_repair_checkpoint = any(
+            value is not None for value in (self.repair_head, self.repair_ref)
+        ) or bool(self.repair_paths)
+        if has_repair_checkpoint and (
+            self.repair_head is None or self.repair_ref is None or not self.repair_paths
+        ):
+            raise ValueError("CI repair checkpoint facts must be complete")
+
+        if self.phase is CiContinuationPhase.INITIAL_WAIT:
+            if (
+                self.current_head != self.semantic_head
+                or self.repair_attempted
+                or self.repair_activity_observed_at is not None
+                or has_repair_checkpoint
+                or self.second_wait_started_at is not None
+            ):
+                raise ValueError("initial CI wait cannot include repair facts")
+        elif self.phase is CiContinuationPhase.REPAIR_ACTIVE:
+            if (
+                not self.repair_attempted
+                or self.repair_activity_observed_at is None
+                or self.current_head != self.semantic_head
+                or has_repair_checkpoint
+                or self.second_wait_started_at is not None
+            ):
+                raise ValueError("active CI repair requires only active repair facts")
+        elif self.phase is CiContinuationPhase.REPAIR_REVIEWED:
+            if (
+                not self.repair_attempted
+                or self.repair_activity_observed_at is None
+                or not has_repair_checkpoint
+                or self.current_head != self.semantic_head
+                or self.second_wait_started_at is not None
+            ):
+                raise ValueError("reviewed CI repair requires a repair checkpoint")
+        elif self.phase is CiContinuationPhase.SECOND_WAIT:
+            if (
+                not self.repair_attempted
+                or self.repair_activity_observed_at is None
+                or not has_repair_checkpoint
+                or self.current_head != self.repair_head
+                or self.second_wait_started_at is None
+            ):
+                raise ValueError("second CI wait requires the pushed repair checkpoint")
+        elif not self.repair_attempted and (
+            self.current_head != self.semantic_head
+            or self.repair_activity_observed_at is not None
+            or has_repair_checkpoint
+            or self.second_wait_started_at is not None
+        ):
+            raise ValueError("unattempted terminal CI state cannot retain repair facts")
+        elif not has_repair_checkpoint and (
+            self.current_head != self.semantic_head
+            or self.second_wait_started_at is not None
+        ):
+            raise ValueError("incomplete terminal CI repair cannot change the head")
+        return self
+
+
 class PushJournal(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -375,6 +496,7 @@ _StateModel = TypeVar(
     PushJournal,
     ReviewedContinuation,
     RemediationContinuation,
+    CiContinuation,
 )
 
 
@@ -436,6 +558,20 @@ class StateStore:
             _read_only=True,
         ).list_remediation_continuations_for_inspection()
 
+    @classmethod
+    def list_ci_continuations_for_inspection_path(
+        cls,
+        state_dir: str | Path,
+    ) -> tuple[CiContinuation, ...]:
+        state_path = Path(state_dir)
+        try:
+            state_path.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("maintainer state directory is unsafe") from exc
+        return cls(state_path, _read_only=True).list_ci_continuations_for_inspection()
+
     @property
     def work_dir(self) -> Path:
         return self.state_dir / "work"
@@ -451,6 +587,10 @@ class StateStore:
     @property
     def remediation_continuation_dir(self) -> Path:
         return self.state_dir / "remediation-continuations"
+
+    @property
+    def ci_continuation_dir(self) -> Path:
+        return self.state_dir / "ci-continuations"
 
     def load_work(self, work_id: str) -> WorkState | None:
         _validate_identifier(work_id, "work_id")
@@ -532,6 +672,212 @@ class StateStore:
         if loaded is not None and loaded.work_id != work_id:
             raise StateStoreError("remediation identity does not match its path")
         return loaded
+
+    def load_ci_continuation(self, work_id: str) -> CiContinuation | None:
+        _validate_identifier(work_id, "work_id")
+        loaded = self._load_model(
+            self.ci_continuation_dir,
+            work_id,
+            CiContinuation,
+        )
+        if loaded is not None and loaded.work_id != work_id:
+            raise StateStoreError("CI continuation identity does not match its path")
+        return loaded
+
+    def save_ci_continuation(
+        self,
+        continuation: CiContinuation,
+        lease: RunLease,
+    ) -> None:
+        continuation = _revalidate_model(continuation, CiContinuation)
+        with _transition_mutex(self.state_dir):
+            self._assert_ci_continuation_lease(continuation, lease)
+            existing = self.load_ci_continuation(continuation.work_id)
+            if existing is None:
+                if continuation.phase is not CiContinuationPhase.INITIAL_WAIT:
+                    raise StateStoreError("new CI continuation must start waiting")
+                if continuation.origin_run_id != continuation.recovery_run_id:
+                    raise StateStoreError(
+                        "new CI continuation must originate in this run"
+                    )
+            elif existing.model_dump(exclude={"updated_at"}) != continuation.model_dump(
+                exclude={"updated_at"}
+            ):
+                raise StateStoreError("CI continuation must use an advance transition")
+            else:
+                return
+            self._save_model(
+                self.ci_continuation_dir,
+                continuation.work_id,
+                continuation,
+            )
+
+    def list_ci_continuations_for_inspection(self) -> tuple[CiContinuation, ...]:
+        try:
+            self.ci_continuation_dir.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("CI continuation directory is unsafe") from exc
+        try:
+            self._validate_existing_directory(self.state_dir)
+            self._validate_existing_directory(self.ci_continuation_dir)
+        except RunLeaseError as exc:
+            raise StateStoreError("CI continuation directory is unsafe") from exc
+        active = []
+        for path in sorted(
+            self.ci_continuation_dir.glob("*.json"),
+            key=lambda item: item.name,
+        ):
+            continuation = self.load_ci_continuation(path.name.removesuffix(".json"))
+            if continuation is None:
+                raise StateStoreError("CI continuation disappeared during inventory")
+            if continuation.phase not in {
+                CiContinuationPhase.CONSUMED,
+                CiContinuationPhase.BLOCKED,
+                CiContinuationPhase.INVALIDATED,
+            }:
+                active.append(continuation)
+        return tuple(sorted(active, key=lambda item: item.work_id))
+
+    def adopt_ci_continuation(
+        self,
+        work_id: str,
+        lease: RunLease,
+        *,
+        now: datetime | None = None,
+    ) -> CiContinuation:
+        _validate_identifier(work_id, "work_id")
+        self._assert_lease_location(lease)
+        observed_at = (
+            _normalize_state_time(now) if now is not None else datetime.now(UTC)
+        )
+        with _transition_mutex(self.state_dir):
+            RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+            if lease.worker != "curation":
+                raise StateStoreError("only curation can adopt CI continuations")
+            if self._list_unresolved_pushes():
+                raise StateStoreError("unresolved push journal blocks CI continuation")
+            continuation = self.load_ci_continuation(work_id)
+            if continuation is None:
+                raise StateStoreError("CI continuation is missing")
+            if continuation.phase in {
+                CiContinuationPhase.CONSUMED,
+                CiContinuationPhase.BLOCKED,
+                CiContinuationPhase.INVALIDATED,
+            }:
+                raise StateStoreError("CI continuation is terminal")
+            if continuation.recovery_run_id == lease.run_id:
+                raise StateStoreError(
+                    "CI continuation adoption requires a successor run"
+                )
+            if observed_at <= continuation.updated_at:
+                observed_at = continuation.updated_at + timedelta(microseconds=1)
+            adopted = continuation.model_copy(
+                update={
+                    "recovery_run_id": lease.run_id,
+                    "updated_at": observed_at,
+                }
+            )
+            self._save_model(self.ci_continuation_dir, work_id, adopted)
+            return adopted
+
+    def advance_ci_continuation(
+        self,
+        continuation: CiContinuation,
+        lease: RunLease,
+        *,
+        now: datetime,
+    ) -> CiContinuation:
+        continuation = _revalidate_model(continuation, CiContinuation)
+        observed_at = _normalize_state_time(now)
+        with _transition_mutex(self.state_dir):
+            self._assert_ci_continuation_lease(continuation, lease)
+            existing = self.load_ci_continuation(continuation.work_id)
+            if existing is None:
+                raise StateStoreError("CI continuation is missing")
+            self._validate_ci_continuation_transition(
+                existing,
+                continuation,
+                observed_at,
+            )
+            updates: dict[str, object] = {"updated_at": observed_at}
+            if existing.phase is CiContinuationPhase.INITIAL_WAIT:
+                updates["first_wait_seconds"] = min(
+                    1800,
+                    max(
+                        existing.first_wait_seconds,
+                        int(
+                            (
+                                observed_at - existing.first_wait_started_at
+                            ).total_seconds()
+                        ),
+                    ),
+                )
+            if existing.phase is CiContinuationPhase.SECOND_WAIT:
+                assert existing.second_wait_started_at is not None
+                updates["second_wait_seconds"] = min(
+                    1800,
+                    max(
+                        existing.second_wait_seconds,
+                        int(
+                            (
+                                observed_at - existing.second_wait_started_at
+                            ).total_seconds()
+                        ),
+                    ),
+                )
+            advanced = continuation.model_copy(update=updates)
+            advanced = _revalidate_model(advanced, CiContinuation)
+            self._save_model(self.ci_continuation_dir, advanced.work_id, advanced)
+            return advanced
+
+    def record_ci_heartbeat(
+        self,
+        work_id: str,
+        lease: RunLease,
+        *,
+        now: datetime,
+    ) -> CiContinuation:
+        _validate_identifier(work_id, "work_id")
+        self._assert_lease_location(lease)
+        observed_at = _normalize_state_time(now)
+        with _transition_mutex(self.state_dir):
+            RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+            continuation = self.load_ci_continuation(work_id)
+            if continuation is None:
+                raise StateStoreError("CI continuation is missing")
+            self._assert_ci_continuation_lease(continuation, lease)
+            if continuation.phase is not CiContinuationPhase.REPAIR_ACTIVE:
+                return continuation
+            assert continuation.repair_activity_observed_at is not None
+            if observed_at < continuation.repair_activity_observed_at:
+                raise StateStoreError("CI heartbeat timestamp must not move backwards")
+            if observed_at < continuation.updated_at:
+                raise StateStoreError("CI heartbeat timestamp must not move backwards")
+            if observed_at == continuation.repair_activity_observed_at:
+                return continuation
+            delta = max(
+                0,
+                int(
+                    (
+                        observed_at - continuation.repair_activity_observed_at
+                    ).total_seconds()
+                ),
+            )
+            heartbeat = continuation.model_copy(
+                update={
+                    "updated_at": observed_at,
+                    "repair_active_seconds": min(
+                        3600,
+                        continuation.repair_active_seconds + min(delta, 300),
+                    ),
+                    "repair_activity_observed_at": observed_at,
+                }
+            )
+            heartbeat = _revalidate_model(heartbeat, CiContinuation)
+            self._save_model(self.ci_continuation_dir, work_id, heartbeat)
+            return heartbeat
 
     def save_remediation_continuation(
         self,
@@ -1074,6 +1420,101 @@ class StateStore:
             raise LeaseOwnershipError("remediation is not owned by this lease")
         RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
 
+    def _assert_ci_continuation_lease(
+        self,
+        continuation: CiContinuation,
+        lease: RunLease,
+    ) -> None:
+        self._assert_lease_location(lease)
+        if lease.worker != "curation" or continuation.recovery_run_id != lease.run_id:
+            raise LeaseOwnershipError("CI continuation is not owned by this lease")
+        RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+
+    def _validate_ci_continuation_identity(
+        self,
+        existing: CiContinuation,
+        continuation: CiContinuation,
+    ) -> None:
+        immutable_fields = (
+            "work_id",
+            "origin_run_id",
+            "recovery_run_id",
+            "pr_number",
+            "branch",
+            "semantic_head",
+            "report_path",
+            "resulting_graph_markdown",
+            "non_test_tree_digest",
+            "first_wait_started_at",
+        )
+        if any(
+            getattr(existing, field_name) != getattr(continuation, field_name)
+            for field_name in immutable_fields
+        ):
+            raise StateStoreError("CI continuation immutable facts changed")
+        if continuation.repair_attempted < existing.repair_attempted:
+            raise StateStoreError("CI repair attempt cannot be reset")
+        budget_fields = (
+            "first_wait_seconds",
+            "repair_active_seconds",
+            "second_wait_seconds",
+        )
+        if any(
+            getattr(existing, field_name) != getattr(continuation, field_name)
+            for field_name in budget_fields
+        ):
+            raise StateStoreError("CI continuation budget is helper-owned")
+
+    def _validate_ci_continuation_transition(
+        self,
+        existing: CiContinuation,
+        continuation: CiContinuation,
+        observed_at: datetime,
+    ) -> None:
+        self._validate_ci_continuation_identity(existing, continuation)
+        if observed_at <= existing.updated_at:
+            raise StateStoreError("CI continuation updated_at must increase")
+        terminal = {
+            CiContinuationPhase.CONSUMED,
+            CiContinuationPhase.BLOCKED,
+            CiContinuationPhase.INVALIDATED,
+        }
+        if existing.phase in terminal:
+            raise StateStoreError("CI continuation is terminal")
+        allowed = {
+            CiContinuationPhase.INITIAL_WAIT: {
+                CiContinuationPhase.REPAIR_ACTIVE,
+                CiContinuationPhase.CONSUMED,
+                CiContinuationPhase.BLOCKED,
+                CiContinuationPhase.INVALIDATED,
+            },
+            CiContinuationPhase.REPAIR_ACTIVE: {
+                CiContinuationPhase.REPAIR_REVIEWED,
+                CiContinuationPhase.BLOCKED,
+                CiContinuationPhase.INVALIDATED,
+            },
+            CiContinuationPhase.REPAIR_REVIEWED: {
+                CiContinuationPhase.SECOND_WAIT,
+                CiContinuationPhase.BLOCKED,
+                CiContinuationPhase.INVALIDATED,
+            },
+            CiContinuationPhase.SECOND_WAIT: {
+                CiContinuationPhase.CONSUMED,
+                CiContinuationPhase.BLOCKED,
+                CiContinuationPhase.INVALIDATED,
+            },
+        }
+        if continuation.phase not in allowed[existing.phase]:
+            raise StateStoreError("CI continuation phase transition is invalid")
+        if continuation.phase is CiContinuationPhase.REPAIR_ACTIVE and (
+            continuation.repair_activity_observed_at != observed_at
+        ):
+            raise StateStoreError("CI repair activity must begin at transition time")
+        if continuation.phase is CiContinuationPhase.SECOND_WAIT and (
+            continuation.second_wait_started_at != observed_at
+        ):
+            raise StateStoreError("second CI wait must begin at transition time")
+
     def _assert_lease_location(self, lease: RunLease) -> None:
         if lease.state_dir.absolute() != self.state_dir.absolute():
             raise LeaseOwnershipError("lease belongs to another state directory")
@@ -1309,7 +1750,13 @@ class StateStore:
         self,
         directory: Path,
         work_id: str,
-        model: WorkState | PushJournal | ReviewedContinuation | RemediationContinuation,
+        model: (
+            WorkState
+            | PushJournal
+            | ReviewedContinuation
+            | RemediationContinuation
+            | CiContinuation
+        ),
     ) -> None:
         _ensure_private_directory(directory, parents=False)
         _write_json_atomic(
@@ -1367,6 +1814,12 @@ def _later_than(timestamp: datetime) -> datetime:
     if observed_at <= timestamp:
         return timestamp + timedelta(microseconds=1)
     return observed_at
+
+
+def _normalize_state_time(value: datetime) -> datetime:
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError("state transition time must include a timezone")
+    return value.astimezone(UTC)
 
 
 def _reviewed_matches_remediation_authority(

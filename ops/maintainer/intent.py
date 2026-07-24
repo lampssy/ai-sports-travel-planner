@@ -36,6 +36,7 @@ CATALOG_SECTIONS: tuple[tuple[str, str, str], ...] = (
 )
 _ENTITY_ID = re.compile(r"^[a-z0-9]+(?:-+[a-z0-9]+)*$")
 _GIT_OID = re.compile(r"^[0-9a-f]{40}$")
+_CI_REPAIR_PATH = re.compile(r"^tests/test_[A-Za-z0-9][A-Za-z0-9_]*\.py$")
 
 
 class IntentValidationError(ValueError):
@@ -207,6 +208,21 @@ def is_allowed_curation_path(path: str) -> bool:
     ):
         return False
     return path.startswith(("docs/", "tests/"))
+
+
+def is_allowed_ci_repair_path(path: str) -> bool:
+    """Return whether a post-push repair may modify this one test module."""
+    if not isinstance(path, str) or not path:
+        return False
+    pure = PurePosixPath(path)
+    segments = path.split("/")
+    if (
+        pure.is_absolute()
+        or any(part in {"", ".", ".."} for part in segments)
+        or "\\" in path
+    ):
+        return False
+    return _CI_REPAIR_PATH.fullmatch(path) is not None
 
 
 def _load_json_object(
