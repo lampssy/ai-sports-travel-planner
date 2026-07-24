@@ -110,7 +110,15 @@ not have to derive an invocation.
     },
     "prepare_ci_repair": {
       "argv": ["prepare", "ci-repair", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "current_head", "failed_checks", "remaining_repair_seconds", "permitted_path_pattern"]
+      "returns": ["work_id", "phase", "resumed", "remaining_repair_seconds"],
+      "conditional_returns": {
+        "repair-active": ["current_head", "failed_checks", "permitted_path_pattern"],
+        "repair-reviewed": ["repair_head", "repair_ref", "repair_paths"]
+      }
+    },
+    "invalidate_ci_continuation": {
+      "argv": ["invalidate", "ci-continuation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "pr_number", "phase", "availability_reason", "continuation_head", "observed_head"]
     },
     "checkpoint_remediation": {
       "argv": ["checkpoint", "remediation", "--pr", "${PR}", "--head", "${HEAD}", "--report", "${REPORT}", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
@@ -298,7 +306,12 @@ not have to derive an invocation.
     "execute_target_pr_tests_locally": false,
     "semantic_work_after_initial_push": false,
     "release_lease_between_post_push_phases": false,
-    "counts_toward_semantic_240_minute_clock": false
+    "counts_toward_semantic_240_minute_clock": false,
+    "repair_successor_resume": "phase-aware-prepare-ci-repair",
+    "repair_capability_journal_gate": "unconditional-exact-recovery-only",
+    "non_resumable_invalidation": "lease-owned-live-facts",
+    "terminal_generation_rollover": "new-validated-pushed-semantic-head-only",
+    "terminal_generation_archive": "owner-private-semantic-head-versioned"
   },
   "dispatch_error_classification": {
     "reason": "invalid-command",
@@ -337,7 +350,8 @@ not have to derive an invocation.
 | `lock_heartbeat_*` | continue the already selected sequence; curation may also return helper-owned cumulative `ci_budget`, but heartbeat grants no new authority |
 | `prepare_curation` | normalize/review the exact returned prepared head |
 | `prepare_continuation*` | obey only the returned continuation kind/result |
-| `prepare_ci_repair` | use its bounded failed-check summary to make one static test-only repair, then obtain a fresh focused independent review |
+| `prepare_ci_repair` | branch on its phase: `repair-active` re-establishes the exact repair worktree for one static test-only repair plus a fresh focused independent review; `repair-reviewed` revalidates and returns the immutable reviewed checkpoint for publication |
+| `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
 | `checkpoint_remediation` | fresh exact-head review, another bounded fix, or safe stop |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
 | `validate_reviewed*` | final deterministic validation or an allowed reviewed-only handoff |
@@ -387,6 +401,10 @@ including both bounded CI waits:
   post-push CI continuation -> reviewed continuation -> remediation
   continuation -> ordinary PR`. A pending CI continuation resumes before
   ordinary PR selection;
+- every `prepare ci-repair`, `checkpoint ci-repair`, `publish ci-repair`, and
+  `invalidate ci-continuation` request rejects any unresolved push journal
+  before changing continuation state or a worktree. Only exact
+  `publish recover` journal recovery may proceed while a journal exists;
 - reviewed and remediation continuations use the same helper command, then
   branch only on the returned `continuation.kind` and `continuation.result`;
 - an ordinary PR uses `prepare curation`, never `prepare continuation`;
@@ -396,6 +414,13 @@ including both bounded CI waits:
   successor enters separately through `lock_acquire_curation ->
   lock_heartbeat_curation -> inspect_curation -> lock_heartbeat_curation`,
   then adopts only the exact returned CI continuation;
+- a successor selected in `repair-active` or `repair-reviewed` calls
+  `prepare ci-repair`. `repair-active` re-establishes the exact pushed-head
+  worktree and still requires a fresh focused review before checkpointing.
+  `repair-reviewed` revalidates the immutable checkpoint and proceeds to
+  `publish ci-repair`; neither path repeats preparation or changes semantic
+  scope. Successor adoption does not reset the repair attempt or any cumulative
+  wait or active-repair budget;
 - a selected CI continuation keeps the same lease through push, wait, optional
   repair, and second wait, and creates fresh publication inputs before
   requesting `maintainer:waiting-ci`, `maintainer:ready`, or
@@ -405,6 +430,12 @@ including both bounded CI waits:
   `maintainer:waiting-ci`. A repairable initial failure uses the repair
   sequence. An unrepairable initial failure or a second CI failure requests
   `maintainer:blocked/ci-failure`;
+- when replaced, a `consumed`, `blocked`, or `invalidated` terminal generation
+  is retained in an owner-private archive keyed by its semantic head. Only a
+  newly validated and pushed, different semantic head for the same work may
+  create the next generation. That new generation begins with zero consumed
+  budgets; recovery, adoption, and invalidation never reset an existing
+  generation's budgets;
 - no sequence approves or merges. The maintainer never approves or merges.
 
 After every successful acquisition, heartbeat before and after each capability

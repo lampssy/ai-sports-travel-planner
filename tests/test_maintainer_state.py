@@ -448,6 +448,144 @@ def test_ci_continuation_adoption_requires_a_clear_push_journal(
         )
 
 
+@pytest.mark.parametrize(
+    "terminal_phase",
+    (
+        CiContinuationPhase.CONSUMED,
+        CiContinuationPhase.BLOCKED,
+        CiContinuationPhase.INVALIDATED,
+    ),
+)
+def test_terminal_ci_generation_rollover_archives_by_semantic_head(
+    tmp_path: Path,
+    terminal_phase: CiContinuationPhase,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    initial = _ci_continuation(origin)
+    store.save_ci_continuation(initial, origin)
+    terminal = store.advance_ci_continuation(
+        initial.model_copy(update={"phase": terminal_phase}),
+        origin,
+        now=NOW + timedelta(minutes=1),
+    )
+    origin.release()
+    successor = RunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(minutes=2),
+    )
+    replacement = CiContinuation.model_validate(
+        {
+            **initial.model_dump(),
+            "origin_run_id": successor.run_id,
+            "recovery_run_id": successor.run_id,
+            "updated_at": NOW + timedelta(minutes=2),
+            "semantic_head": SHA_4,
+            "current_head": SHA_4,
+            "first_wait_started_at": NOW + timedelta(minutes=2),
+            "first_wait_seconds": 0,
+        }
+    )
+    same_generation = replacement.model_copy(
+        update={
+            "semantic_head": terminal.semantic_head,
+            "current_head": terminal.current_head,
+        }
+    )
+
+    with pytest.raises(StateStoreError, match="new semantic head"):
+        store.save_ci_continuation(same_generation, successor)
+
+    store.save_ci_continuation(replacement, successor)
+
+    assert store.load_ci_continuation(initial.work_id) == replacement
+    assert store.list_ci_continuations_for_inspection() == (replacement,)
+    archive_path = (
+        store.ci_continuation_archive_dir
+        / f"{initial.work_id}-{initial.semantic_head}.json"
+    )
+    assert archive_path.stat().st_mode & 0o777 == 0o600
+    assert archive_path.parent.stat().st_mode & 0o777 == 0o700
+    assert CiContinuation.model_validate_json(archive_path.read_text()) == terminal
+    assert replacement.first_wait_seconds == 0
+    assert terminal.first_wait_seconds == 60
+
+
+def test_ci_generation_rollover_rejects_a_previously_archived_semantic_head(
+    tmp_path: Path,
+) -> None:
+    first_lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    first = _ci_continuation(first_lease)
+    store.save_ci_continuation(first, first_lease)
+    first_terminal = store.advance_ci_continuation(
+        first.model_copy(update={"phase": CiContinuationPhase.CONSUMED}),
+        first_lease,
+        now=NOW + timedelta(minutes=1),
+    )
+    first_lease.release()
+
+    second_lease = RunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(minutes=2),
+    )
+    second = CiContinuation.model_validate(
+        {
+            **first.model_dump(),
+            "origin_run_id": second_lease.run_id,
+            "recovery_run_id": second_lease.run_id,
+            "updated_at": NOW + timedelta(minutes=2),
+            "semantic_head": SHA_4,
+            "current_head": SHA_4,
+            "first_wait_started_at": NOW + timedelta(minutes=2),
+            "first_wait_seconds": 0,
+        }
+    )
+    store.save_ci_continuation(second, second_lease)
+    second_terminal = store.advance_ci_continuation(
+        second.model_copy(update={"phase": CiContinuationPhase.CONSUMED}),
+        second_lease,
+        now=NOW + timedelta(minutes=3),
+    )
+    second_lease.release()
+
+    third_lease = RunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(minutes=4),
+    )
+    reused = CiContinuation.model_validate(
+        {
+            **second.model_dump(),
+            "origin_run_id": third_lease.run_id,
+            "recovery_run_id": third_lease.run_id,
+            "updated_at": NOW + timedelta(minutes=4),
+            "semantic_head": first.semantic_head,
+            "current_head": first.semantic_head,
+            "first_wait_started_at": NOW + timedelta(minutes=4),
+            "first_wait_seconds": 0,
+        }
+    )
+
+    with pytest.raises(StateStoreError, match="already archived"):
+        store.save_ci_continuation(reused, third_lease)
+
+    assert store.load_ci_continuation(first.work_id) == second_terminal
+    first_archive = (
+        store.ci_continuation_archive_dir
+        / f"{first.work_id}-{first.semantic_head}.json"
+    )
+    assert (
+        CiContinuation.model_validate_json(first_archive.read_text()) == first_terminal
+    )
+    assert not (
+        store.ci_continuation_archive_dir
+        / f"{second.work_id}-{second.semantic_head}.json"
+    ).exists()
+
+
 def test_ci_continuation_inventory_path_is_read_only(tmp_path: Path) -> None:
     missing = tmp_path / "missing"
     assert StateStore.list_ci_continuations_for_inspection_path(missing) == ()

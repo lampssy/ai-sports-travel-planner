@@ -482,7 +482,7 @@ def _elapsed_wait_seconds(
     )
 
 
-def _ci_continuation_availability(
+def ci_continuation_availability(
     continuation: CiContinuation,
     pull_request: PullRequest | None,
 ) -> Literal[
@@ -534,7 +534,7 @@ def _ci_continuation_summary(
             started_at=continuation.second_wait_started_at,
             observed_at=observed_at,
         )
-    availability = _ci_continuation_availability(continuation, pull_request)
+    availability = ci_continuation_availability(continuation, pull_request)
     return CiContinuationSummary(
         pr_number=continuation.pr_number,
         semantic_head=continuation.semantic_head,

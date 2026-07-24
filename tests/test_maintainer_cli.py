@@ -866,6 +866,7 @@ EXPECTED_HANDLERS = {
     ("prepare", "ci-repair"),
     ("checkpoint", "remediation"),
     ("checkpoint", "ci-repair"),
+    ("invalidate", "ci-continuation"),
     ("validate", "curation"),
     ("validate", "reviewed"),
     ("validate", "proposal"),
@@ -937,6 +938,46 @@ def test_prepare_ci_repair_checkpoint_ci_repair_publish_ci_repair_dispatch(
     assert {key: observed[key] for key in expected} == expected
 
 
+def test_invalidate_ci_continuation_dispatches_only_pr_and_run_id(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    observed: dict[str, object] = {}
+
+    def handler(args: object, dependencies: object) -> dict[str, object]:
+        observed.update(
+            {
+                "pr": getattr(args, "pr"),
+                "repository": getattr(dependencies, "repository"),
+            }
+        )
+        return {"command": "invalidate-ci-continuation"}
+
+    monkeypatch.setitem(HANDLERS, ("invalidate", "ci-continuation"), handler)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "invalidate",
+            "ci-continuation",
+            "--pr",
+            "42",
+            "--run-id",
+            "1" * 32,
+        ],
+    )
+
+    assert code == 0
+    assert payload["command"] == "invalidate-ci-continuation"
+    assert payload["outcome"]["worker"] == "curation"
+    assert observed["pr"] == 42
+    assert type(observed["repository"]) is object
+
+
 @pytest.mark.parametrize(
     ("family", "arguments"),
     (
@@ -957,6 +998,27 @@ def test_prepare_ci_repair_checkpoint_ci_repair_publish_ci_repair_require_argume
     code, payload = _invoke(
         capsys,
         [family, "ci-repair", *arguments],
+    )
+
+    assert code == 2
+    assert payload["reason"] == "invalid-command"
+    assert payload["outcome"]["worker"] == "curation"
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    (
+        ("--run-id", "1" * 32),
+        ("--pr", "42"),
+    ),
+)
+def test_invalidate_ci_continuation_requires_pr_and_run_id(
+    capsys: pytest.CaptureFixture[str],
+    arguments: tuple[str, ...],
+) -> None:
+    code, payload = _invoke(
+        capsys,
+        ["invalidate", "ci-continuation", *arguments],
     )
 
     assert code == 2
@@ -1105,6 +1167,167 @@ def test_prepare_ci_repair_successor_adopts_expired_initial_wait_after_failure(
     assert active.phase is CiContinuationPhase.REPAIR_ACTIVE
     assert active.first_wait_seconds == 1800
     assert active.repair_attempted is True
+
+
+def test_prepare_ci_repair_successor_resumes_active_attempt_then_checkpoints(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin = RunLease.acquire(
+        state_dir,
+        "curation",
+        now=NOW - timedelta(minutes=20),
+    )
+    store = StateStore(state_dir)
+    active = _save_active_ci_continuation(
+        store,
+        origin,
+        activity_started_at=NOW - timedelta(minutes=10),
+        active_seconds=120,
+    )
+    origin.release()
+    successor = _acquire(capsys, state_dir, "curation")
+    pull_request = _failed_ci_pull_request()
+    github = FakeGitHub(pull_requests={42: pull_request})
+    repository = FakeRepository(head=SHA_A, remote=SHA_B)
+
+    prepare_code, prepared = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "ci-repair",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert prepare_code == 0, prepared
+    assert prepared["phase"] == "repair-active"
+    assert prepared["resumed"] is True
+    assert repository.ci_repair_prepare_calls == [pull_request]
+    resumed = store.load_ci_continuation(active.work_id)
+    assert resumed is not None
+    assert resumed.recovery_run_id == successor
+    assert resumed.phase is CiContinuationPhase.REPAIR_ACTIVE
+    assert resumed.repair_attempted is True
+    assert resumed.first_wait_seconds == active.first_wait_seconds
+    assert resumed.repair_active_seconds == active.repair_active_seconds + 300
+
+    repository.head = SHA_C
+    checkpoint_code, checkpointed = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "ci-repair",
+            "--pr",
+            "42",
+            "--head",
+            SHA_C,
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert checkpoint_code == 0, checkpointed
+    reviewed = store.load_ci_continuation(active.work_id)
+    assert reviewed is not None
+    assert reviewed.phase is CiContinuationPhase.REPAIR_REVIEWED
+    assert reviewed.repair_head == SHA_C
+    assert reviewed.recovery_run_id == successor
+
+
+def test_prepare_ci_repair_successor_resumes_reviewed_attempt_then_publishes(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin = RunLease.acquire(
+        state_dir,
+        "curation",
+        now=NOW - timedelta(minutes=20),
+    )
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, origin)
+    reviewed = _save_reviewed_ci_repair(
+        store,
+        origin,
+        reviewed_at=NOW - timedelta(minutes=5),
+    )
+    origin.release()
+    successor = _acquire(capsys, state_dir, "curation")
+    pull_request = _failed_ci_pull_request()
+    github = FakeGitHub(pull_requests={42: pull_request})
+    repository = FakeRepository(
+        head=SHA_C,
+        remote=SHA_B,
+        github=github,
+    )
+
+    prepare_code, prepared = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "ci-repair",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert prepare_code == 0, prepared
+    assert prepared["phase"] == "repair-reviewed"
+    assert prepared["resumed"] is True
+    assert prepared["repair_head"] == SHA_C
+    assert repository.ci_repair_prepare_calls == []
+    assert len(repository.ci_repair_revalidate_calls) == 1
+    adopted = store.load_ci_continuation(reviewed.work_id)
+    assert adopted is not None
+    assert adopted.recovery_run_id == successor
+    assert adopted.phase is CiContinuationPhase.REPAIR_REVIEWED
+    assert adopted.repair_head == reviewed.repair_head
+    assert adopted.repair_ref == reviewed.repair_ref
+    assert adopted.repair_paths == reviewed.repair_paths
+    assert adopted.first_wait_seconds == reviewed.first_wait_seconds
+    assert adopted.repair_active_seconds == reviewed.repair_active_seconds
+
+    publish_code, published = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "ci-repair",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert publish_code == 0, published
+    waiting = store.load_ci_continuation(reviewed.work_id)
+    assert waiting is not None
+    assert waiting.phase is CiContinuationPhase.SECOND_WAIT
+    assert waiting.recovery_run_id == successor
+    assert waiting.current_head == SHA_C
 
 
 @pytest.mark.parametrize(
@@ -1492,6 +1715,242 @@ def test_checkpoint_ci_repair_rejects_wrong_phase_and_repeat_checkpoint(
     assert second_code == 2
     assert second["reason"] == "invalid-command"
     assert len(repository.ci_repair_checkpoint_calls) == 1
+
+
+@pytest.mark.parametrize("family", ("prepare", "checkpoint", "publish"))
+def test_ci_repair_capabilities_reject_any_unresolved_journal_without_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    family: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    if family == "prepare":
+        continuation = _ci_continuation_for_cli(lease)
+        store.save_ci_continuation(continuation, lease)
+        repository = FakeRepository(head=SHA_A, remote=SHA_B)
+    elif family == "checkpoint":
+        continuation = _save_active_ci_continuation(
+            store,
+            lease,
+            activity_started_at=NOW - timedelta(minutes=1),
+        )
+        repository = FakeRepository(head=SHA_C, remote=SHA_B)
+    else:
+        _save_published_initial_push(store, lease)
+        continuation = _save_reviewed_ci_repair(store, lease)
+        repository = FakeRepository(head=SHA_C, remote=SHA_B)
+    blocker = PushJournal(
+        work_id="curation-pr-43",
+        worker="curation",
+        origin_run_id=run_id,
+        recovery_run_id=run_id,
+        pr_number=43,
+        branch="codex/catalog-curation-43",
+        expected_remote_head=SHA_A,
+        new_head=SHA_D,
+        phase=PushPhase.AUTHORIZED,
+    )
+    store.save_push(blocker, lease)
+    own_journal_before = store.load_push("curation-pr-42")
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+    arguments = [
+        "--state-dir",
+        str(state_dir),
+        family,
+        "ci-repair",
+        "--pr",
+        "42",
+        "--run-id",
+        run_id,
+    ]
+    if family == "checkpoint":
+        arguments[6:6] = ["--head", SHA_C]
+
+    code, payload = _invoke(
+        capsys,
+        arguments,
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "invalid-command"
+    assert store.load_ci_continuation(continuation.work_id) == continuation
+    assert store.load_push(blocker.work_id) == blocker
+    assert store.load_push("curation-pr-42") == own_journal_before
+    assert repository.head == (SHA_A if family == "prepare" else SHA_C)
+    assert repository.ci_repair_prepare_calls == []
+    assert repository.ci_repair_checkpoint_calls == []
+    assert repository.ci_repair_revalidate_calls == []
+    assert repository.push_exact_calls == []
+
+
+def test_invalidate_ci_continuation_terminalizes_head_drift_then_exposes_new_head(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin = RunLease.acquire(
+        state_dir,
+        "curation",
+        now=NOW - timedelta(minutes=20),
+    )
+    store = StateStore(state_dir)
+    continuation = _ci_continuation_for_cli(origin)
+    store.save_ci_continuation(continuation, origin)
+    origin.release()
+    successor = _acquire(capsys, state_dir, "curation")
+    pull_request = _pull_request(head_sha=SHA_C)
+    github = FakeGitHub(pull_requests={42: pull_request})
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "invalidate",
+            "ci-continuation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+    )
+
+    assert code == 0, payload
+    assert payload["phase"] == "invalidated"
+    assert payload["availability_reason"] == "head-drift"
+    invalidated = store.load_ci_continuation(continuation.work_id)
+    assert invalidated is not None
+    assert invalidated.phase is CiContinuationPhase.INVALIDATED
+    assert invalidated.recovery_run_id == successor
+    assert invalidated.origin_run_id == continuation.origin_run_id
+    assert invalidated.semantic_head == continuation.semantic_head
+    assert invalidated.current_head == continuation.current_head
+    assert invalidated.first_wait_seconds == 120
+
+    inspect_code, inventory = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+
+    assert inspect_code == 0
+    assert inventory["ci_continuations"] == []
+    assert [candidate["number"] for candidate in inventory["eligible"]] == [42]
+
+
+@pytest.mark.parametrize(
+    ("pull_request", "reason"),
+    (
+        (_pull_request(head_sha=SHA_B, lifecycle_state="CLOSED"), "closed-or-merged"),
+        (
+            _pull_request(
+                head_sha=SHA_B,
+                head_ref_name="codex/catalog-curation-other",
+            ),
+            "branch-drift",
+        ),
+        (
+            _pull_request(head_sha=SHA_B, is_cross_repository=True),
+            "invalid-state",
+        ),
+    ),
+)
+def test_invalidate_ci_continuation_uses_refreshed_non_resumable_live_reason(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    pull_request: PullRequest,
+    reason: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    continuation = _ci_continuation_for_cli(lease)
+    store = StateStore(state_dir)
+    store.save_ci_continuation(continuation, lease)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "invalidate",
+            "ci-continuation",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=FakeGitHub(pull_requests={42: pull_request}),
+    )
+
+    assert code == 0, payload
+    assert payload["availability_reason"] == reason
+    invalidated = store.load_ci_continuation(continuation.work_id)
+    assert invalidated is not None
+    assert invalidated.phase is CiContinuationPhase.INVALIDATED
+
+
+def test_invalidate_ci_continuation_rejects_available_or_journal_blocked_state(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    continuation = _ci_continuation_for_cli(lease)
+    store = StateStore(state_dir)
+    store.save_ci_continuation(continuation, lease)
+    github = FakeGitHub(pull_requests={42: _pull_request(head_sha=SHA_B)})
+    command = [
+        "--state-dir",
+        str(state_dir),
+        "invalidate",
+        "ci-continuation",
+        "--pr",
+        "42",
+        "--run-id",
+        run_id,
+    ]
+
+    available_code, available = _invoke(
+        capsys,
+        command,
+        github=github,
+    )
+
+    assert available_code == 2
+    assert available["reason"] == "invalid-command"
+    assert store.load_ci_continuation(continuation.work_id) == continuation
+
+    blocker = PushJournal(
+        work_id="curation-pr-43",
+        worker="curation",
+        origin_run_id=run_id,
+        recovery_run_id=run_id,
+        pr_number=43,
+        branch="codex/catalog-curation-43",
+        expected_remote_head=SHA_A,
+        new_head=SHA_D,
+        phase=PushPhase.AUTHORIZED,
+    )
+    store.save_push(blocker, lease)
+    github.pull_requests[42] = _pull_request(head_sha=SHA_C)
+    journal_code, journal_blocked = _invoke(
+        capsys,
+        command,
+        github=github,
+    )
+
+    assert journal_code == 2
+    assert journal_blocked["reason"] == "invalid-command"
+    assert store.load_ci_continuation(continuation.work_id) == continuation
+    assert store.load_push(blocker.work_id) == blocker
 
 
 def _save_published_initial_push(
@@ -6125,14 +6584,20 @@ def test_publish_push_journals_before_exact_force_with_lease_mutation(
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
 
 
-def test_completed_curation_journal_can_start_a_second_fix_cycle(
+def test_terminal_ci_generation_can_start_a_new_validated_push_generation(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     github = FakeGitHub()
     repository = FakeRepository(github=github)
-    first_run = _validated_curation(capsys, state_dir, github, repository)
+    first_run = _validated_curation(
+        capsys,
+        state_dir,
+        github,
+        repository,
+        resulting_graph_markdown=CANONICAL_GRAPH,
+    )
     first_push, _ = _invoke(
         capsys,
         [
@@ -6149,33 +6614,55 @@ def test_completed_curation_journal_can_start_a_second_fix_cycle(
         repository=repository,
     )
     assert first_push == 0
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"check_state": "pending"}
+    )
     summary = _private_text(state_dir, "summary.md", "First cycle ready.")
-    body = _private_text(state_dir, "body.md", "First cycle synopsis.")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"First cycle synopsis.\n\n{CANONICAL_GRAPH}",
+    )
+    waiting_command = [
+        "--state-dir",
+        str(state_dir),
+        "publish",
+        "state",
+        "--pr",
+        "42",
+        "--state",
+        "maintainer:waiting-ci",
+        "--reviewed-head",
+        SHA_B,
+        "--summary-file",
+        summary,
+        "--body-file",
+        body,
+        "--adopt-body",
+        "--run-id",
+        first_run,
+    ]
+    first_waiting, waiting_payload = _invoke(
+        capsys,
+        waiting_command,
+        github=github,
+        repository=repository,
+    )
+    assert first_waiting == 0, waiting_payload
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"check_state": "success"}
+    )
+    waiting_command[7] = "maintainer:ready"
     first_publish, _ = _invoke(
         capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "publish",
-            "state",
-            "--pr",
-            "42",
-            "--state",
-            "maintainer:ready",
-            "--reviewed-head",
-            SHA_B,
-            "--summary-file",
-            summary,
-            "--body-file",
-            body,
-            "--adopt-body",
-            "--run-id",
-            first_run,
-        ],
+        waiting_command,
         github=github,
         repository=repository,
     )
     assert first_publish == 0
+    first_generation = StateStore(state_dir).load_ci_continuation("curation-pr-42")
+    assert first_generation is not None
+    assert first_generation.phase is CiContinuationPhase.CONSUMED
     release_code, _ = _invoke(
         capsys,
         [
@@ -6240,6 +6727,8 @@ def test_completed_curation_journal_can_start_a_second_fix_cycle(
             "phase": WorkPhase.VALIDATED,
             "updated_at": cycle_time + timedelta(seconds=3),
             "validated_head": SHA_C,
+            "report_path": "docs/catalog-curation/nendaz.json",
+            "resulting_graph_markdown": CANONICAL_GRAPH,
         }
     )
     store.save_work(validated, lease)
@@ -6301,6 +6790,57 @@ def test_completed_curation_journal_can_start_a_second_fix_cycle(
     assert journal.phase is PushPhase.PUSHED
     assert repository.push_calls == 2
     _assert_outcome(payload, worker="curation", mutation=True, run_id=second_run)
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"check_state": "pending"}
+    )
+    second_summary = _private_text(
+        state_dir,
+        "second-summary.md",
+        "Second generation checks pending.",
+    )
+    second_body = _private_text(
+        state_dir,
+        "second-body.md",
+        f"Second cycle synopsis.\n\n{CANONICAL_GRAPH}",
+    )
+
+    second_waiting, second_waiting_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:waiting-ci",
+            "--reviewed-head",
+            SHA_C,
+            "--summary-file",
+            second_summary,
+            "--body-file",
+            second_body,
+            "--adopt-body",
+            "--run-id",
+            second_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert second_waiting == 0, second_waiting_payload
+    second_generation = store.load_ci_continuation("curation-pr-42")
+    assert second_generation is not None
+    assert second_generation.phase is CiContinuationPhase.INITIAL_WAIT
+    assert second_generation.semantic_head == SHA_C
+    assert second_generation.current_head == SHA_C
+    assert second_generation.origin_run_id == second_run
+    assert second_generation.first_wait_seconds == 0
+    assert second_generation.repair_active_seconds == 0
+    assert second_generation.second_wait_seconds == 0
+    archived = store.ci_continuation_archive_dir / f"curation-pr-42-{SHA_B}.json"
+    assert CiContinuation.model_validate_json(archived.read_text()) == first_generation
 
 
 def test_publish_push_stale_remote_is_safe_and_journal_remains_authorized(

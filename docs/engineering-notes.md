@@ -1055,6 +1055,21 @@ automation memory and labels are hints and presentation only. GitHub CI remains
 the execution boundary for the modified test code; `maintainer:waiting-ci` is
 retained only as human-visible compatibility state.
 
+Post-push recovery is phase-aware. A successor resumes both `repair-active` and
+`repair-reviewed` through `prepare ci-repair`: the former recreates the exact
+worktree and still needs a fresh focused review, while the latter revalidates
+the immutable repair checkpoint before publication. Recovery does not reset
+the single repair attempt or any cumulative 30/60/30 budget. Every
+`prepare ci-repair`, `checkpoint ci-repair`, `publish ci-repair`, and
+`invalidate ci-continuation` request rejects any unresolved push journal; only
+exact journal recovery may proceed. The helper uses live exact-PR facts to
+`invalidate ci-continuation` when a continuation is no longer resumable. On
+rollover, replaced terminal `consumed`, `blocked`, and `invalidated`
+generations move to an owner-private archive keyed by semantic head. A new
+generation is allowed only after a different semantic head is validated and
+pushed for the same work, and only that generation starts with zero consumed
+budgets.
+
 All publication text is created by the lease-bound `publication-input create`
 capability: it consumes bounded UTF-8 from stdin, makes a random mode-`0600`
 direct child through the already-validated state-directory descriptor, fsyncs,

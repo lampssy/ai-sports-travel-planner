@@ -107,6 +107,10 @@ The installed skill must:
   `lock acquire curation -> lock heartbeat curation -> inspect curation ->
   lock heartbeat curation` before any selected next capability; this entry is
   separate from same-run polling;
+- reject `prepare ci-repair`, `checkpoint ci-repair`, `publish ci-repair`, and
+  `invalidate ci-continuation` whenever any unresolved push journal exists.
+  Journal recovery through the exact `publish recover` route is the only
+  capability allowed to cross that boundary;
 - consume the helper's curation recovery continuation before choosing a state:
   `validated` may use current CI/readiness facts, `absent` must never request
   waiting-CI or ready and instead publishes the honest reviewed-only pause,
@@ -149,6 +153,16 @@ The installed skill must:
   focused independent review, call `checkpoint ci-repair`, and then
   `publish ci-repair`. Codex does not execute target-PR `tests/test_*.py` files
   locally; GitHub CI is the execution boundary;
+- when a successor selects a `repair-active` continuation, call
+  `prepare ci-repair` to re-establish the exact worktree and then obtain the
+  still-required fresh focused review. When it selects `repair-reviewed`, call
+  `prepare ci-repair` to revalidate the immutable checkpoint and continue
+  directly to `publish ci-repair`. Adoption does not reset the one repair
+  attempt or any cumulative continuation budget;
+- if live exact-PR facts make an active continuation non-resumable, call
+  `invalidate ci-continuation` under the owning lease. Only the helper may
+  record that live reason. Do not infer invalidation from labels, memory, or
+  saved check conclusions;
 - keep the curation lease through the initial push, first wait, optional repair,
   repair push, and second wait. The cumulative post-push budget is 30/60/30:
   30 elapsed minutes for the first wait, 60 active minutes for the single
@@ -157,6 +171,12 @@ The installed skill must:
 - start no semantic work after the initial push. The post-push 30/60/30 phase
   is excluded from the semantic 240-minute clock but cannot exceed its separate
   cumulative continuation budgets;
+- when a new generation starts, preserve the replaced `consumed`, `blocked`, or
+  `invalidated` CI generation in an owner-private archive keyed by semantic
+  head. Only a newly validated and pushed, different semantic head for the
+  same work starts that generation. Its budgets begin at zero; terminalization,
+  recovery, adoption, and invalidation never reset budgets in an existing
+  generation;
 - during the second wait, again call `lock heartbeat curation` and then
   `inspect curation`, followed by another `lock heartbeat curation`, before
   every branch. Publish ready only for the exact CI-green mergeable head,
@@ -454,6 +474,14 @@ For each schedule, confirm:
   tests locally, passes a fresh focused independent review and
   `checkpoint ci-repair`, calls `publish ci-repair`, and enters the second wait
   without releasing the lease;
+- synthetic successor routes resume both `repair-active` and `repair-reviewed`
+  through phase-aware `prepare ci-repair`, preserve the one-attempt and
+  cumulative-budget facts, and reject every repair capability while an
+  unrelated unresolved push journal exists;
+- a synthetic non-resumable route revalidates live exact-PR facts, calls
+  `invalidate ci-continuation`, archives the terminal generation by semantic
+  head, and exposes only a newly validated and pushed different head as
+  eligible for another generation;
 - a synthetic second-failure route publishes
   `maintainer:blocked/ci-failure` only after
   `lock heartbeat curation -> inspect curation -> lock heartbeat curation`,

@@ -224,6 +224,27 @@ Its entry route is separately `lock acquire curation -> lock heartbeat curation
 -> inspect curation -> lock heartbeat curation` before any selected next
 capability. Same-run wait polling never includes lease acquisition.
 
+Repair recovery is phase-aware. A successor selected in `repair-active` calls
+`prepare ci-repair` to recreate the exact pushed-head worktree and must still
+obtain a fresh focused review. A successor selected in `repair-reviewed` calls
+the same capability to revalidate the immutable checkpoint before
+`publish ci-repair`; it does not repeat the edit or review. Neither path resets
+the one repair attempt or cumulative 30/60/30 consumption. `prepare ci-repair`,
+`checkpoint ci-repair`, `publish ci-repair`, and
+`invalidate ci-continuation` all reject any unresolved push journal before
+touching continuation state or a worktree. Only exact journal recovery may
+proceed while one exists.
+
+When live exact-PR facts make an active continuation non-resumable, the
+lease-owning run asks the helper to `invalidate ci-continuation`. The helper
+records the bounded observed reason; labels, automation memory, and saved check
+conclusions cannot invalidate it. On rollover, the replaced `consumed`,
+`blocked`, or `invalidated` generation moves to an owner-private archive keyed
+by its semantic head. Only a newly validated and pushed, different semantic
+head for the same work can start another generation. That new generation
+begins with zero budgets; terminalization, adoption, recovery, and invalidation
+never reset an existing generation's consumed budgets.
+
 If the Mac sleeps longer than the stale-lease interval, a successor may fence
 the old run. The waking run must discover lost ownership on its next heartbeat
 and stop. The continuation lets the successor resume without repeating catalog
@@ -298,8 +319,8 @@ the repair scope, create a second attempt, or authorize readiness.
 - **Second CI failure:** blocked/ci-failure; no same-run retry.
 - **Pending after second wait:** exact-head CI continuation for lightweight
   successor readiness.
-- **Head drift:** invalidate prior CI evidence; never blend another commit with
-  the continuation.
+- **Head drift:** call `invalidate ci-continuation` so the helper records the
+  live mismatch; never blend another commit with the continuation.
 - **Lease loss:** old run stops; successor revalidates from durable state.
 
 ## Verification

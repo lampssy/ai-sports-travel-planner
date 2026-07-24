@@ -174,6 +174,12 @@ def _parser() -> argparse.ArgumentParser:
     checkpoint_ci_repair.add_argument("--head", type=_sha, required=True)
     _add_run_id(checkpoint_ci_repair)
 
+    invalidate = families.add_parser("invalidate")
+    invalidate_commands = invalidate.add_subparsers(dest="command", required=True)
+    invalidate_ci_continuation = invalidate_commands.add_parser("ci-continuation")
+    invalidate_ci_continuation.add_argument("--pr", type=int, required=True)
+    _add_run_id(invalidate_ci_continuation)
+
     validate_reviewed_parser = validate_commands.add_parser("reviewed")
     validate_reviewed_parser.add_argument("--pr", type=int, required=True)
     validate_reviewed_parser.add_argument("--reviewed-head", type=_sha, required=True)

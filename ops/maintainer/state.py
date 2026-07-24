@@ -87,6 +87,13 @@ class CiContinuationPhase(StrEnum):
 
 
 _WORK_PHASES = tuple(WorkPhase)
+_TERMINAL_CI_PHASES = frozenset(
+    {
+        CiContinuationPhase.CONSUMED,
+        CiContinuationPhase.BLOCKED,
+        CiContinuationPhase.INVALIDATED,
+    }
+)
 
 
 class WorkState(BaseModel):
@@ -592,6 +599,10 @@ class StateStore:
     def ci_continuation_dir(self) -> Path:
         return self.state_dir / "ci-continuations"
 
+    @property
+    def ci_continuation_archive_dir(self) -> Path:
+        return self.state_dir / "ci-continuation-archive"
+
     def load_work(self, work_id: str) -> WorkState | None:
         _validate_identifier(work_id, "work_id")
         loaded = self._load_model(self.work_dir, work_id, WorkState)
@@ -700,6 +711,39 @@ class StateStore:
                     raise StateStoreError(
                         "new CI continuation must originate in this run"
                     )
+            elif (
+                existing.phase in _TERMINAL_CI_PHASES
+                and continuation.phase is CiContinuationPhase.INITIAL_WAIT
+            ):
+                self._validate_ci_continuation_rollover(existing, continuation)
+                successor_archive_id = (
+                    f"{continuation.work_id}-{continuation.semantic_head}"
+                )
+                if (
+                    self._load_model(
+                        self.ci_continuation_archive_dir,
+                        successor_archive_id,
+                        CiContinuation,
+                    )
+                    is not None
+                ):
+                    raise StateStoreError(
+                        "new CI generation semantic head is already archived"
+                    )
+                archive_id = f"{existing.work_id}-{existing.semantic_head}"
+                archived = self._load_model(
+                    self.ci_continuation_archive_dir,
+                    archive_id,
+                    CiContinuation,
+                )
+                if archived is None:
+                    self._save_model(
+                        self.ci_continuation_archive_dir,
+                        archive_id,
+                        existing,
+                    )
+                elif archived != existing:
+                    raise StateStoreError("CI continuation archive collision")
             elif existing.model_dump(exclude={"updated_at"}) != continuation.model_dump(
                 exclude={"updated_at"}
             ):
@@ -732,11 +776,7 @@ class StateStore:
             continuation = self.load_ci_continuation(path.name.removesuffix(".json"))
             if continuation is None:
                 raise StateStoreError("CI continuation disappeared during inventory")
-            if continuation.phase not in {
-                CiContinuationPhase.CONSUMED,
-                CiContinuationPhase.BLOCKED,
-                CiContinuationPhase.INVALIDATED,
-            }:
+            if continuation.phase not in _TERMINAL_CI_PHASES:
                 active.append(continuation)
         return tuple(sorted(active, key=lambda item: item.work_id))
 
@@ -761,11 +801,7 @@ class StateStore:
             continuation = self.load_ci_continuation(work_id)
             if continuation is None:
                 raise StateStoreError("CI continuation is missing")
-            if continuation.phase in {
-                CiContinuationPhase.CONSUMED,
-                CiContinuationPhase.BLOCKED,
-                CiContinuationPhase.INVALIDATED,
-            }:
+            if continuation.phase in _TERMINAL_CI_PHASES:
                 raise StateStoreError("CI continuation is terminal")
             if continuation.recovery_run_id == lease.run_id:
                 raise StateStoreError(
@@ -1639,6 +1675,37 @@ class StateStore:
         ):
             raise StateStoreError("CI continuation budget is helper-owned")
 
+    def _validate_ci_continuation_rollover(
+        self,
+        existing: CiContinuation,
+        continuation: CiContinuation,
+    ) -> None:
+        if (
+            continuation.work_id != existing.work_id
+            or continuation.pr_number != existing.pr_number
+            or continuation.branch != existing.branch
+        ):
+            raise StateStoreError("new CI generation changed PR identity")
+        if continuation.origin_run_id == existing.origin_run_id:
+            raise StateStoreError("new CI generation requires a successor run")
+        if continuation.origin_run_id != continuation.recovery_run_id:
+            raise StateStoreError("new CI generation must originate in this run")
+        if continuation.semantic_head in {
+            existing.semantic_head,
+            existing.current_head,
+        }:
+            raise StateStoreError("new CI generation requires a new semantic head")
+        if continuation.updated_at <= existing.updated_at:
+            raise StateStoreError("new CI generation must be newer than its archive")
+        if continuation.first_wait_started_at != continuation.updated_at:
+            raise StateStoreError("new CI generation must start a fresh first wait")
+        if (
+            continuation.first_wait_seconds != 0
+            or continuation.repair_active_seconds != 0
+            or continuation.second_wait_seconds != 0
+        ):
+            raise StateStoreError("new CI generation must start with fresh budgets")
+
     def _validate_ci_continuation_transition(
         self,
         existing: CiContinuation,
@@ -1648,12 +1715,7 @@ class StateStore:
         self._validate_ci_continuation_identity(existing, continuation)
         if observed_at <= existing.updated_at:
             raise StateStoreError("CI continuation updated_at must increase")
-        terminal = {
-            CiContinuationPhase.CONSUMED,
-            CiContinuationPhase.BLOCKED,
-            CiContinuationPhase.INVALIDATED,
-        }
-        if existing.phase in terminal:
+        if existing.phase in _TERMINAL_CI_PHASES:
             raise StateStoreError("CI continuation is terminal")
         allowed = {
             CiContinuationPhase.INITIAL_WAIT: {

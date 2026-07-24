@@ -423,10 +423,39 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
         ],
         "returns": [
             "work_id",
-            "current_head",
-            "failed_checks",
+            "phase",
+            "resumed",
             "remaining_repair_seconds",
-            "permitted_path_pattern",
+        ],
+        "conditional_returns": {
+            "repair-active": [
+                "current_head",
+                "failed_checks",
+                "permitted_path_pattern",
+            ],
+            "repair-reviewed": [
+                "repair_head",
+                "repair_ref",
+                "repair_paths",
+            ],
+        },
+    }
+    assert recipes["invalidate_ci_continuation"] == {
+        "argv": [
+            "invalidate",
+            "ci-continuation",
+            "--pr",
+            "${PR}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": [
+            "work_id",
+            "pr_number",
+            "phase",
+            "availability_reason",
+            "continuation_head",
+            "observed_head",
         ],
     }
     assert recipes["checkpoint_ci_repair"] == {
@@ -472,7 +501,30 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
         "semantic_work_after_initial_push": False,
         "release_lease_between_post_push_phases": False,
         "counts_toward_semantic_240_minute_clock": False,
+        "repair_successor_resume": "phase-aware-prepare-ci-repair",
+        "repair_capability_journal_gate": "unconditional-exact-recovery-only",
+        "non_resumable_invalidation": "lease-owned-live-facts",
+        "terminal_generation_rollover": "new-validated-pushed-semantic-head-only",
+        "terminal_generation_archive": "owner-private-semantic-head-versioned",
     }
+
+
+def test_runtime_sources_document_ci_recovery_and_rollover() -> None:
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+        "ci_design": CI_REMEDIATION_DESIGN_PATH.read_text(encoding="utf-8"),
+        "engineering_notes": ENGINEERING_NOTES_PATH.read_text(encoding="utf-8"),
+    }
+    normalized = {
+        name: " ".join(text.split()).lower() for name, text in sources.items()
+    }
+    for name, text in normalized.items():
+        assert "invalidate ci-continuation" in text, name
+        assert "repair-active" in text and "repair-reviewed" in text, name
+        assert "semantic head" in text and "archive" in text, name
+        assert "unresolved push journal" in text, name
+        assert "does not reset" in text or "never reset" in text, name
 
 
 def test_checked_in_sources_freeze_the_post_push_ci_runtime_contract() -> None:
