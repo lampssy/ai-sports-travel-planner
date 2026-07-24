@@ -242,12 +242,14 @@ not have to derive an invocation.
     ],
     "curation_ci_successor_entry": [
       "lock_acquire_curation",
-      "inspect_curation"
+      "lock_heartbeat_curation",
+      "inspect_curation",
+      "lock_heartbeat_curation"
     ]
   },
   "ci_waits": {
     "initial_wait": {
-      "poll": ["lock_heartbeat_curation", "inspect_curation"],
+      "poll": ["lock_heartbeat_curation", "inspect_curation", "lock_heartbeat_curation"],
       "branches": {
         "success": {
           "substitutions": {"${STATE}": "maintainer:ready"},
@@ -267,7 +269,7 @@ not have to derive an invocation.
       }
     },
     "second_wait": {
-      "poll": ["lock_heartbeat_curation", "inspect_curation"],
+      "poll": ["lock_heartbeat_curation", "inspect_curation", "lock_heartbeat_curation"],
       "branches": {
         "success": {
           "substitutions": {"${STATE}": "maintainer:ready"},
@@ -389,10 +391,11 @@ including both bounded CI waits:
   branch only on the returned `continuation.kind` and `continuation.result`;
 - an ordinary PR uses `prepare curation`, never `prepare continuation`;
 - same-run first-wait and second-wait polling uses the already-held lease and
-  composes `lock_heartbeat_curation -> inspect_curation` before every branch;
-  it never reacquires. A successor enters separately through
-  `lock_acquire_curation -> inspect_curation`, then adopts only the exact
-  returned CI continuation;
+  composes `lock_heartbeat_curation -> inspect_curation ->
+  lock_heartbeat_curation` before every branch; it never reacquires. A
+  successor enters separately through `lock_acquire_curation ->
+  lock_heartbeat_curation -> inspect_curation -> lock_heartbeat_curation`,
+  then adopts only the exact returned CI continuation;
 - a selected CI continuation keeps the same lease through push, wait, optional
   repair, and second wait, and creates fresh publication inputs before
   requesting `maintainer:waiting-ci`, `maintainer:ready`, or
@@ -427,6 +430,7 @@ publish waiting-ci and create durable CI continuation
 while initial wait remains:
   heartbeat
   inspect curation
+  heartbeat
   success -> publish ready
   failure -> Codex classifies
   pending -> continue
@@ -438,6 +442,7 @@ publish ci-repair
 while second wait remains:
   heartbeat
   inspect curation
+  heartbeat
   success -> publish ready
   failure -> publish blocked/ci-failure
   pending -> continue
@@ -451,14 +456,16 @@ initial push, first wait, repair, repair push, and second wait; release happens
 only at a terminal or pending stop.
 
 The `ci_waits` object is the machine-readable branch contract. Both same-run
-polls begin with `lock_heartbeat_curation -> inspect_curation`; each success and
-pending-timeout branch creates summary and body inputs, publishes the bound
-ready or waiting-CI state, heartbeats, and releases. An initial confirmed
-repairable failure proceeds directly to `prepare_ci_repair`, focused review,
-checkpoint, repair publication, and the second wait without release. A terminal
-initial failure and every confirmed second failure create a summary, publish
-the bound blocked/CI-failure outcome, heartbeat, and release. No second-wait
-branch can prepare another repair.
+poll unit is `lock_heartbeat_curation -> inspect_curation ->
+lock_heartbeat_curation`, so branch composition begins only after the
+post-inspection heartbeat. Each success and pending-timeout branch creates
+summary and body inputs, publishes the bound ready or waiting-CI state,
+heartbeats, and releases. An initial confirmed repairable failure proceeds
+directly to `prepare_ci_repair`, focused review, checkpoint, repair publication,
+and the second wait without release. A terminal initial failure and every
+confirmed second failure create a summary, publish the bound blocked/CI-failure
+outcome, heartbeat, and release. No second-wait branch can prepare another
+repair.
 
 `inspect curation` is the read-only selection and polling input. Its
 `ci_continuations` entries provide bounded exact-head phase, check-state,

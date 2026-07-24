@@ -95,10 +95,10 @@ CI handling.
 ### 2. First CI wait
 
 The current curation run retains its lease for up to 30 elapsed wall-clock
-minutes. Every same-run iteration calls `lock heartbeat curation` and then
-`inspect curation` before branching; it does not reacquire. Heartbeats remain
-no more than five minutes apart, so the run heartbeats at least every five
-minutes.
+minutes. Every same-run iteration calls `lock heartbeat curation -> inspect
+curation -> lock heartbeat curation` before branching; it does not reacquire.
+Heartbeats remain no more than five minutes apart, so the run heartbeats at
+least every five minutes.
 
 - **Success and mergeable:** publish `maintainer:ready`.
 - **Pending at 30 minutes:** keep the exact CI continuation, publish or retain
@@ -150,8 +150,9 @@ the continuation's single repair attempt has been consumed.
 ### 4. Second CI wait
 
 After the repaired head is pushed, the run waits up to another 30 elapsed
-wall-clock minutes under the same lease. Every iteration again calls
-`lock heartbeat curation` and then `inspect curation` before branching.
+wall-clock minutes under the same lease. Every iteration again calls `lock
+heartbeat curation -> inspect curation -> lock heartbeat curation` before
+branching.
 
 - **Success and mergeable:** publish `maintainer:ready`, complete the
   continuation, and release.
@@ -219,8 +220,9 @@ A push journal remains the sole authority for an ambiguous branch mutation.
 The CI continuation becomes authoritative only after exact push convergence
 and journal handoff. A successor always re-fetches the current PR head, checks,
 mergeability, labels, and lease state; saved CI conclusions are never reused.
-Its entry route is separately `lock acquire curation -> inspect curation`.
-Same-run wait polling never includes lease acquisition.
+Its entry route is separately `lock acquire curation -> lock heartbeat curation
+-> inspect curation -> lock heartbeat curation` before any selected next
+capability. Same-run wait polling never includes lease acquisition.
 
 If the Mac sleeps longer than the stale-lease interval, a successor may fence
 the old run. The waking run must discover lost ownership on its next heartbeat

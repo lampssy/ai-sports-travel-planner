@@ -1024,18 +1024,20 @@ or repeating semantic review.
 
 After the reviewed and validated head is pushed, the implemented post-push
 lifecycle keeps the same curation lease through a 30-minute exact-head CI wait.
-Every first-wait and second-wait iteration calls `lock heartbeat curation` and
-then `inspect curation` before branching, with heartbeats at least every five
-minutes and no same-run reacquisition. A successor separately enters through
-`lock acquire curation -> inspect curation`. Success plus mergeability
-publishes ready; pending at the limit retains the continuation; Codex classifies
-a confirmed failure from bounded helper facts and, only when needed, read-only
-untrusted failed-check logs. A failure caused only by stale assertions in
-ordinary root-level `tests/test_*.py` modules may receive one statically
-prepared and independently reviewed repair, with at most 60 active minutes for
-that repair and one final 30-minute CI wait. Codex does not execute target-PR
-`tests/test_*.py` files locally. A second CI failure publishes
-blocked/CI-failure and permits no second repair.
+Every first-wait and second-wait iteration calls `lock heartbeat curation ->
+inspect curation -> lock heartbeat curation` before branching, with heartbeats
+at least every five minutes and no same-run reacquisition. A successor
+separately enters through `lock acquire curation -> lock heartbeat curation ->
+inspect curation -> lock heartbeat curation` before any selected next
+capability. Success plus mergeability publishes ready; pending at the limit
+retains the continuation; Codex classifies a confirmed failure from bounded
+helper facts and, only when needed, read-only untrusted failed-check logs. A
+failure caused only by stale assertions in ordinary root-level
+`tests/test_*.py` modules may receive one statically prepared and independently
+reviewed repair, with at most 60 active minutes for that repair and one final
+30-minute CI wait. Codex does not execute target-PR `tests/test_*.py` files
+locally. A second CI failure publishes blocked/CI-failure and permits no second
+repair.
 
 Heartbeat always returns base field `worker`. Only when the run owns an active
 CI continuation does it conditionally add `ci_budget`, containing exactly the

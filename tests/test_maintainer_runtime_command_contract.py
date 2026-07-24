@@ -217,7 +217,9 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
         ],
         "curation_ci_successor_entry": [
             "lock_acquire_curation",
+            "lock_heartbeat_curation",
             "inspect_curation",
+            "lock_heartbeat_curation",
         ],
     }
 
@@ -241,6 +243,7 @@ def test_runtime_contract_composes_same_run_ci_waits_before_every_branch() -> No
         assert wait["poll"] == [
             "lock_heartbeat_curation",
             "inspect_curation",
+            "lock_heartbeat_curation",
         ]
         assert set(wait["branches"]) == branch_names
         for branch_name, branch in wait["branches"].items():
@@ -249,15 +252,16 @@ def test_runtime_contract_composes_same_run_ci_waits_before_every_branch() -> No
                 composed,
                 substitutions=branch.get("substitutions"),
             )
-            assert [(item.family, item.command) for item in parsed[:2]] == [
+            assert [(item.family, item.command) for item in parsed[:3]] == [
                 ("lock", "heartbeat"),
                 ("inspect", "curation"),
+                ("lock", "heartbeat"),
             ]
             assert all(
                 (item.family, item.command) != ("lock", "acquire") for item in parsed
             )
             if branch_name == "repairable_failure":
-                assert (parsed[2].family, parsed[2].command) == (
+                assert (parsed[3].family, parsed[3].command) == (
                     "prepare",
                     "ci-repair",
                 )
@@ -271,7 +275,9 @@ def test_runtime_contract_composes_same_run_ci_waits_before_every_branch() -> No
     successor = _parse_recipe_sequence(contract["flows"]["curation_ci_successor_entry"])
     assert [(item.family, item.command) for item in successor] == [
         ("lock", "acquire"),
+        ("lock", "heartbeat"),
         ("inspect", "curation"),
+        ("lock", "heartbeat"),
     ]
 
     state_sequence = [
