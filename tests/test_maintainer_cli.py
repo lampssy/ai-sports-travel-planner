@@ -5784,6 +5784,86 @@ def test_waiting_ci_journal_does_not_create_continuation_before_exact_pr_head(
     assert repository.non_test_tree_digest_calls == []
 
 
+def test_waiting_ci_journal_rejects_same_head_from_different_branch(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _validated_curation(
+        capsys,
+        state_dir,
+        github,
+        repository,
+        resulting_graph_markdown=CANONICAL_GRAPH,
+    )
+    push_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "push",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert push_code == 0
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={
+            "check_state": "pending",
+            "head_ref_name": "codex/catalog-curation-other",
+        }
+    )
+    summary = _private_text(state_dir, "waiting-summary.md", "Checks pending.")
+    body = _private_text(
+        state_dir,
+        "waiting-body.md",
+        f"Current review synopsis.\n\n{CANONICAL_GRAPH}",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:waiting-ci",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary,
+            "--body-file",
+            body,
+            "--adopt-body",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "stale-head"
+    store = StateStore(state_dir)
+    assert store.load_ci_continuation("curation-pr-42") is None
+    journal = store.load_push("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.PUSHED
+    assert github.body_writes == 0
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+    assert repository.non_test_tree_digest_calls == []
+
+
 def test_waiting_ci_continuation_keeps_journal_first_during_recovery(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

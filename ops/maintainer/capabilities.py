@@ -1919,6 +1919,8 @@ def _pull_request_after_exact_push(
         and journal.new_head == reviewed_head
     )
     if matching_journal and journal is not None:
+        if pull_request.head_ref_name != journal.branch:
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
         if (
             dependencies.repository.optional_remote_head(journal.branch)
             != reviewed_head
@@ -1936,6 +1938,8 @@ def _pull_request_after_exact_push(
     for _attempt in range(_PR_HEAD_CONVERGENCE_ATTEMPTS):
         sleep(_PR_HEAD_CONVERGENCE_DELAY_SECONDS)
         pull_request = dependencies.github.get_pull_request(pr_number)
+        if pull_request.head_ref_name != journal.branch:
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
         if (
             dependencies.repository.optional_remote_head(journal.branch)
             != reviewed_head
