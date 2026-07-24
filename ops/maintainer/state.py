@@ -1454,6 +1454,19 @@ class StateStore:
             raise StateStoreError("CI continuation immutable facts changed")
         if continuation.repair_attempted < existing.repair_attempted:
             raise StateStoreError("CI repair attempt cannot be reset")
+        if existing.phase in {
+            CiContinuationPhase.REPAIR_REVIEWED,
+            CiContinuationPhase.SECOND_WAIT,
+        } and (
+            continuation.repair_head != existing.repair_head
+            or continuation.repair_ref != existing.repair_ref
+            or continuation.repair_paths != existing.repair_paths
+        ):
+            raise StateStoreError("reviewed repair checkpoint is immutable")
+        if existing.phase is CiContinuationPhase.SECOND_WAIT and (
+            continuation.current_head != existing.current_head
+        ):
+            raise StateStoreError("second-wait current head is immutable")
         budget_fields = (
             "first_wait_seconds",
             "repair_active_seconds",
@@ -1514,6 +1527,10 @@ class StateStore:
             continuation.second_wait_started_at != observed_at
         ):
             raise StateStoreError("second CI wait must begin at transition time")
+        if continuation.phase is CiContinuationPhase.SECOND_WAIT and (
+            continuation.current_head != existing.repair_head
+        ):
+            raise StateStoreError("second CI wait must use the reviewed repair head")
 
     def _assert_lease_location(self, lease: RunLease) -> None:
         if lease.state_dir.absolute() != self.state_dir.absolute():

@@ -509,6 +509,21 @@ def test_ci_continuation_transitions_preserve_budgets_and_fence_old_owners(
         lease,
         now=NOW + timedelta(minutes=31),
     )
+    with pytest.raises(StateStoreError, match="reviewed repair"):
+        store.advance_ci_continuation(
+            reviewed.model_copy(
+                update={
+                    "phase": CiContinuationPhase.SECOND_WAIT,
+                    "repair_head": SHA_1,
+                    "repair_ref": "refs/snowcast-maintainer/ci-repair/pr-42/substitute",
+                    "repair_paths": frozenset({"tests/test_maintainer_state.py"}),
+                    "current_head": SHA_1,
+                    "second_wait_started_at": NOW + timedelta(minutes=32),
+                }
+            ),
+            lease,
+            now=NOW + timedelta(minutes=32),
+        )
     second_wait = store.advance_ci_continuation(
         reviewed.model_copy(
             update={
