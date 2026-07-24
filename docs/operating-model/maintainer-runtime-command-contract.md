@@ -61,7 +61,13 @@ not have to derive an invocation.
     },
     "lock_heartbeat_curation": {
       "argv": ["lock", "heartbeat", "curation", "--run-id", "${RUN_ID}"],
-      "returns": ["worker"]
+      "returns": ["worker"],
+      "conditional_returns": {
+        "ci_budget": {
+          "when": "run-owned active CI continuation exists",
+          "fields": ["first_wait_seconds", "repair_active_seconds", "second_wait_seconds"]
+        }
+      }
     },
     "lock_heartbeat_discovery": {
       "argv": ["lock", "heartbeat", "discovery", "--run-id", "${RUN_ID}"],
@@ -234,70 +240,49 @@ not have to derive an invocation.
       "publish_state_adopt_body",
       "lock_heartbeat_curation"
     ],
-    "curation_ci_continuation_through_initial_wait": [
-      "inspect_curation",
-      "inspect_discovery",
+    "curation_ci_successor_entry": [
       "lock_acquire_curation",
-      "lock_heartbeat_curation"
-    ],
-    "curation_ci_initial_wait_success": [
-      "publication_input_summary",
-      "lock_heartbeat_curation",
-      "publication_input_body",
-      "lock_heartbeat_curation",
-      "publish_state_adopt_body",
-      "lock_heartbeat_curation",
-      "lock_release_curation"
-    ],
-    "curation_ci_initial_wait_pending": [
-      "publication_input_summary",
-      "lock_heartbeat_curation",
-      "publication_input_body",
-      "lock_heartbeat_curation",
-      "publish_state_adopt_body",
-      "lock_heartbeat_curation",
-      "lock_release_curation"
-    ],
-    "curation_ci_initial_wait_unrepairable_failure": [
-      "publication_input_summary",
-      "lock_heartbeat_curation",
-      "publish_outcome",
-      "lock_heartbeat_curation",
-      "lock_release_curation"
-    ],
-    "curation_ci_repair_through_second_wait": [
-      "prepare_ci_repair",
-      "lock_heartbeat_curation",
-      "checkpoint_ci_repair",
-      "lock_heartbeat_curation",
-      "publish_ci_repair",
-      "lock_heartbeat_curation"
-    ],
-    "curation_ci_second_wait_success": [
-      "publication_input_summary",
-      "lock_heartbeat_curation",
-      "publication_input_body",
-      "lock_heartbeat_curation",
-      "publish_state_adopt_body",
-      "lock_heartbeat_curation",
-      "lock_release_curation"
-    ],
-    "curation_ci_second_wait_pending": [
-      "publication_input_summary",
-      "lock_heartbeat_curation",
-      "publication_input_body",
-      "lock_heartbeat_curation",
-      "publish_state_adopt_body",
-      "lock_heartbeat_curation",
-      "lock_release_curation"
-    ],
-    "curation_ci_second_wait_failure": [
-      "publication_input_summary",
-      "lock_heartbeat_curation",
-      "publish_outcome",
-      "lock_heartbeat_curation",
-      "lock_release_curation"
+      "inspect_curation"
     ]
+  },
+  "ci_waits": {
+    "initial_wait": {
+      "poll": ["lock_heartbeat_curation", "inspect_curation"],
+      "branches": {
+        "success": {
+          "substitutions": {"${STATE}": "maintainer:ready"},
+          "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publication_input_body", "lock_heartbeat_curation", "publish_state_adopt_body", "lock_heartbeat_curation", "lock_release_curation"]
+        },
+        "pending_timeout": {
+          "substitutions": {"${STATE}": "maintainer:waiting-ci"},
+          "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publication_input_body", "lock_heartbeat_curation", "publish_state_adopt_body", "lock_heartbeat_curation", "lock_release_curation"]
+        },
+        "repairable_failure": {
+          "sequence": ["prepare_ci_repair", "lock_heartbeat_curation", "checkpoint_ci_repair", "lock_heartbeat_curation", "publish_ci_repair", "lock_heartbeat_curation"]
+        },
+        "terminal_failure": {
+          "substitutions": {"${OUTCOME_STATE}": "maintainer:blocked", "${OUTCOME_REASON}": "ci-failure"},
+          "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publish_outcome", "lock_heartbeat_curation", "lock_release_curation"]
+        }
+      }
+    },
+    "second_wait": {
+      "poll": ["lock_heartbeat_curation", "inspect_curation"],
+      "branches": {
+        "success": {
+          "substitutions": {"${STATE}": "maintainer:ready"},
+          "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publication_input_body", "lock_heartbeat_curation", "publish_state_adopt_body", "lock_heartbeat_curation", "lock_release_curation"]
+        },
+        "pending_timeout": {
+          "substitutions": {"${STATE}": "maintainer:waiting-ci"},
+          "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publication_input_body", "lock_heartbeat_curation", "publish_state_adopt_body", "lock_heartbeat_curation", "lock_release_curation"]
+        },
+        "terminal_failure": {
+          "substitutions": {"${OUTCOME_STATE}": "maintainer:blocked", "${OUTCOME_REASON}": "ci-failure"},
+          "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publish_outcome", "lock_heartbeat_curation", "lock_release_curation"]
+        }
+      }
+    }
   },
   "ci_continuation_policy": {
     "recovery_priority": ["push_journal", "post_push_ci_continuation", "reviewed_continuation", "remediation_continuation", "ordinary_pr"],
@@ -344,9 +329,10 @@ not have to derive an invocation.
 
 | Completed recipe | Only allowed next step |
 | --- | --- |
-| `inspect_*` | recover one journal first; otherwise select one CI continuation, reviewed continuation, remediation continuation, or ordinary item in that order, then acquire the matching worker lock |
+| `inspect_curation` | recover one journal first; otherwise select one CI continuation, reviewed continuation, remediation continuation, ordinary curation PR, or bounded no-op in that order |
+| `inspect_discovery` | recover one journal first; otherwise select preferred retry, merged regional completion, active backlog, bounded external official-source scan, or bounded no-op in that order |
 | `lock_acquire_*` | copy `run_id`, heartbeat, then run the selected worker capability |
-| `lock_heartbeat_*` | continue the already selected sequence; it grants no new authority |
+| `lock_heartbeat_*` | continue the already selected sequence; curation may also return helper-owned cumulative `ci_budget`, but heartbeat grants no new authority |
 | `prepare_curation` | normalize/review the exact returned prepared head |
 | `prepare_continuation*` | obey only the returned continuation kind/result |
 | `prepare_ci_repair` | use its bounded failed-check summary to make one static test-only repair, then obtain a fresh focused independent review |
@@ -402,9 +388,14 @@ including both bounded CI waits:
 - reviewed and remediation continuations use the same helper command, then
   branch only on the returned `continuation.kind` and `continuation.result`;
 - an ordinary PR uses `prepare curation`, never `prepare continuation`;
-- a selected CI continuation acquires curation, keeps the same lease through
-  push, wait, optional repair, and second wait, and creates fresh publication
-  inputs before requesting `maintainer:waiting-ci`, `maintainer:ready`, or
+- same-run first-wait and second-wait polling uses the already-held lease and
+  composes `lock_heartbeat_curation -> inspect_curation` before every branch;
+  it never reacquires. A successor enters separately through
+  `lock_acquire_curation -> inspect_curation`, then adopts only the exact
+  returned CI continuation;
+- a selected CI continuation keeps the same lease through push, wait, optional
+  repair, and second wait, and creates fresh publication inputs before
+  requesting `maintainer:waiting-ci`, `maintainer:ready`, or
   `maintainer:blocked/ci-failure`;
 - success requires the exact head to be CI-green and mergeable. Pending at the
   end of either wait retains the continuation and requests
@@ -417,6 +408,12 @@ After every successful acquisition, heartbeat before and after each capability
 and at least every five minutes during Codex work. Release exactly once in a
 `finally` path if and only if acquisition succeeded. `lock-busy` before
 acquisition is a terminal no-op and never triggers release.
+
+A successful curation heartbeat always returns base field `worker`. When that
+run owns an active CI continuation it also returns conditional `ci_budget` with
+exactly `first_wait_seconds`, `repair_active_seconds`, and
+`second_wait_seconds`. These are helper-owned cumulative facts; their absence
+means no run-owned active CI continuation was charged by that heartbeat.
 
 ## Post-Push CI Continuation
 
@@ -452,6 +449,16 @@ budget is 30/60/30. Heartbeat before and after capabilities and at least every
 five minutes while holding the lease. There is no lease release between the
 initial push, first wait, repair, repair push, and second wait; release happens
 only at a terminal or pending stop.
+
+The `ci_waits` object is the machine-readable branch contract. Both same-run
+polls begin with `lock_heartbeat_curation -> inspect_curation`; each success and
+pending-timeout branch creates summary and body inputs, publishes the bound
+ready or waiting-CI state, heartbeats, and releases. An initial confirmed
+repairable failure proceeds directly to `prepare_ci_repair`, focused review,
+checkpoint, repair publication, and the second wait without release. A terminal
+initial failure and every confirmed second failure create a summary, publish
+the bound blocked/CI-failure outcome, heartbeat, and release. No second-wait
+branch can prepare another repair.
 
 `inspect curation` is the read-only selection and polling input. Its
 `ci_continuations` entries provide bounded exact-head phase, check-state,

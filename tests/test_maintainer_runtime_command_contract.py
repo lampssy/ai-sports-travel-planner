@@ -66,6 +66,45 @@ def _substitute(argv: list[str]) -> list[str]:
     return [PLACEHOLDERS.get(value, value) for value in argv]
 
 
+def _parse_recipe_sequence(
+    names: list[str],
+    *,
+    substitutions: dict[str, str] | None = None,
+) -> list[object]:
+    recipes = _contract()["recipes"]
+    values = {**PLACEHOLDERS, **(substitutions or {})}
+    parsed = []
+    for name in names:
+        argv = recipes[name]["argv"]
+        parsed.append(
+            _parser().parse_args(
+                [
+                    "--state-dir",
+                    "/tmp/snowcast-maintainer-state",
+                    "--gh-config-dir",
+                    "/tmp/snowcast-maintainer-gh",
+                    *(values.get(value, value) for value in argv),
+                ]
+            )
+        )
+    return parsed
+
+
+def _allowed_next_steps() -> dict[str, str]:
+    text = CONTRACT_PATH.read_text(encoding="utf-8")
+    section = text.split("## Allowed Next Steps", 1)[1].split(
+        "## Completion And Branching Rules",
+        1,
+    )[0]
+    rows: dict[str, str] = {}
+    for line in section.splitlines():
+        if not line.startswith("| `"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        rows[cells[0].strip("`")] = cells[1]
+    return rows
+
+
 def test_runtime_contract_documents_every_cli_route_with_parseable_argv() -> None:
     contract = _contract()
     assert contract["command_prefix"] == [
@@ -176,70 +215,184 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
             "publish_state_adopt_body",
             "lock_heartbeat_curation",
         ],
-        "curation_ci_continuation_through_initial_wait": [
-            "inspect_curation",
-            "inspect_discovery",
+        "curation_ci_successor_entry": [
             "lock_acquire_curation",
-            "lock_heartbeat_curation",
+            "inspect_curation",
         ],
-        "curation_ci_initial_wait_success": [
-            "publication_input_summary",
+    }
+
+
+def test_runtime_contract_composes_same_run_ci_waits_before_every_branch() -> None:
+    contract = _contract()
+    waits = contract["ci_waits"]
+    assert set(waits) == {"initial_wait", "second_wait"}
+    expected_branches = {
+        "initial_wait": {
+            "success",
+            "pending_timeout",
+            "repairable_failure",
+            "terminal_failure",
+        },
+        "second_wait": {"success", "pending_timeout", "terminal_failure"},
+    }
+
+    for wait_name, branch_names in expected_branches.items():
+        wait = waits[wait_name]
+        assert wait["poll"] == [
             "lock_heartbeat_curation",
-            "publication_input_body",
-            "lock_heartbeat_curation",
-            "publish_state_adopt_body",
-            "lock_heartbeat_curation",
-            "lock_release_curation",
+            "inspect_curation",
+        ]
+        assert set(wait["branches"]) == branch_names
+        for branch_name, branch in wait["branches"].items():
+            composed = [*wait["poll"], *branch["sequence"]]
+            parsed = _parse_recipe_sequence(
+                composed,
+                substitutions=branch.get("substitutions"),
+            )
+            assert [(item.family, item.command) for item in parsed[:2]] == [
+                ("lock", "heartbeat"),
+                ("inspect", "curation"),
+            ]
+            assert all(
+                (item.family, item.command) != ("lock", "acquire") for item in parsed
+            )
+            if branch_name == "repairable_failure":
+                assert (parsed[2].family, parsed[2].command) == (
+                    "prepare",
+                    "ci-repair",
+                )
+                assert all(item.command != "release" for item in parsed)
+            else:
+                assert (parsed[-1].family, parsed[-1].command) == (
+                    "lock",
+                    "release",
+                )
+
+    successor = _parse_recipe_sequence(contract["flows"]["curation_ci_successor_entry"])
+    assert [(item.family, item.command) for item in successor] == [
+        ("lock", "acquire"),
+        ("inspect", "curation"),
+    ]
+
+    state_sequence = [
+        "publication_input_summary",
+        "lock_heartbeat_curation",
+        "publication_input_body",
+        "lock_heartbeat_curation",
+        "publish_state_adopt_body",
+        "lock_heartbeat_curation",
+        "lock_release_curation",
+    ]
+    repair_sequence = [
+        "prepare_ci_repair",
+        "lock_heartbeat_curation",
+        "checkpoint_ci_repair",
+        "lock_heartbeat_curation",
+        "publish_ci_repair",
+        "lock_heartbeat_curation",
+    ]
+    outcome_sequence = [
+        "publication_input_summary",
+        "lock_heartbeat_curation",
+        "publish_outcome",
+        "lock_heartbeat_curation",
+        "lock_release_curation",
+    ]
+    initial = waits["initial_wait"]["branches"]
+    assert initial["success"]["sequence"] == state_sequence
+    assert initial["pending_timeout"]["sequence"] == state_sequence
+    assert initial["repairable_failure"]["sequence"] == repair_sequence
+    assert initial["terminal_failure"]["sequence"] == outcome_sequence
+    assert initial["success"]["substitutions"] == {"${STATE}": "maintainer:ready"}
+    assert initial["pending_timeout"]["substitutions"] == {
+        "${STATE}": "maintainer:waiting-ci"
+    }
+    assert initial["terminal_failure"]["substitutions"] == {
+        "${OUTCOME_STATE}": "maintainer:blocked",
+        "${OUTCOME_REASON}": "ci-failure",
+    }
+
+    second = waits["second_wait"]["branches"]
+    assert second["success"]["sequence"] == state_sequence
+    assert second["pending_timeout"]["sequence"] == state_sequence
+    assert second["terminal_failure"]["sequence"] == outcome_sequence
+    assert second["success"]["substitutions"] == {"${STATE}": "maintainer:ready"}
+    assert second["pending_timeout"]["substitutions"] == {
+        "${STATE}": "maintainer:waiting-ci"
+    }
+    assert second["terminal_failure"]["substitutions"] == {
+        "${OUTCOME_STATE}": "maintainer:blocked",
+        "${OUTCOME_REASON}": "ci-failure",
+    }
+    for branch in second.values():
+        assert "prepare_ci_repair" not in branch["sequence"]
+
+    for wait in waits.values():
+        for branch_name, branch in wait["branches"].items():
+            parsed = _parse_recipe_sequence(
+                branch["sequence"],
+                substitutions=branch.get("substitutions"),
+            )
+            publications = [item for item in parsed if item.family == "publish"]
+            if branch_name in {"success", "pending_timeout"}:
+                assert [(item.command, item.state) for item in publications] == [
+                    ("state", branch["substitutions"]["${STATE}"])
+                ]
+            elif branch_name == "terminal_failure":
+                assert [
+                    (item.command, item.state, item.reason) for item in publications
+                ] == [("outcome", "maintainer:blocked", "ci-failure")]
+            else:
+                assert [item.command for item in publications] == ["ci-repair"]
+
+
+def test_runtime_contract_splits_curation_and_discovery_inspection_next_steps() -> None:
+    rows = _allowed_next_steps()
+    assert "inspect_*" not in rows
+    assert rows["inspect_curation"] == (
+        "recover one journal first; otherwise select one CI continuation, "
+        "reviewed continuation, remediation continuation, ordinary curation "
+        "PR, or bounded no-op in that order"
+    )
+    assert rows["inspect_discovery"] == (
+        "recover one journal first; otherwise select preferred retry, merged "
+        "regional completion, active backlog, bounded external official-source "
+        "scan, or bounded no-op in that order"
+    )
+
+
+def test_runtime_contract_documents_conditional_ci_budget_heartbeat_result() -> None:
+    recipes = _contract()["recipes"]
+    recipe = recipes["lock_heartbeat_curation"]
+    assert recipe == {
+        "argv": [
+            "lock",
+            "heartbeat",
+            "curation",
+            "--run-id",
+            "${RUN_ID}",
         ],
-        "curation_ci_initial_wait_pending": [
-            "publication_input_summary",
-            "lock_heartbeat_curation",
-            "publication_input_body",
-            "lock_heartbeat_curation",
-            "publish_state_adopt_body",
-            "lock_heartbeat_curation",
-            "lock_release_curation",
+        "returns": ["worker"],
+        "conditional_returns": {
+            "ci_budget": {
+                "when": "run-owned active CI continuation exists",
+                "fields": [
+                    "first_wait_seconds",
+                    "repair_active_seconds",
+                    "second_wait_seconds",
+                ],
+            }
+        },
+    }
+    assert recipes["lock_heartbeat_discovery"] == {
+        "argv": [
+            "lock",
+            "heartbeat",
+            "discovery",
+            "--run-id",
+            "${RUN_ID}",
         ],
-        "curation_ci_initial_wait_unrepairable_failure": [
-            "publication_input_summary",
-            "lock_heartbeat_curation",
-            "publish_outcome",
-            "lock_heartbeat_curation",
-            "lock_release_curation",
-        ],
-        "curation_ci_repair_through_second_wait": [
-            "prepare_ci_repair",
-            "lock_heartbeat_curation",
-            "checkpoint_ci_repair",
-            "lock_heartbeat_curation",
-            "publish_ci_repair",
-            "lock_heartbeat_curation",
-        ],
-        "curation_ci_second_wait_success": [
-            "publication_input_summary",
-            "lock_heartbeat_curation",
-            "publication_input_body",
-            "lock_heartbeat_curation",
-            "publish_state_adopt_body",
-            "lock_heartbeat_curation",
-            "lock_release_curation",
-        ],
-        "curation_ci_second_wait_pending": [
-            "publication_input_summary",
-            "lock_heartbeat_curation",
-            "publication_input_body",
-            "lock_heartbeat_curation",
-            "publish_state_adopt_body",
-            "lock_heartbeat_curation",
-            "lock_release_curation",
-        ],
-        "curation_ci_second_wait_failure": [
-            "publication_input_summary",
-            "lock_heartbeat_curation",
-            "publish_outcome",
-            "lock_heartbeat_curation",
-            "lock_release_curation",
-        ],
+        "returns": ["worker"],
     }
 
 

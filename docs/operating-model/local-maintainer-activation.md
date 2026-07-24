@@ -103,7 +103,9 @@ The installed skill must:
   reviewed continuation -> remediation continuation -> ordinary PR`, never
   skipping exact private recovery in favor of a fresh semantic cycle. Journal
   recovery always wins, and a pending CI continuation resumes before any
-  ordinary PR;
+  ordinary PR. A successor enters that continuation through
+  `lock acquire curation` followed by `inspect curation`; this entry is
+  separate from same-run polling;
 - consume the helper's curation recovery continuation before choosing a state:
   `validated` may use current CI/readiness facts, `absent` must never request
   waiting-CI or ready and instead publishes the honest reviewed-only pause,
@@ -125,11 +127,16 @@ The installed skill must:
   unrelated fresh work without reusing old review or mutation authority;
 - acquire curation before prepare and hold the lease through publication;
 - after the initial exact-head push, publish waiting-CI and continue in the
-  same run under the same lease: poll `inspect curation` for up to 30 elapsed
-  minutes, heartbeat before and after capabilities and at least every five
-  minutes, publish ready on exact-head CI success plus mergeability, retain
-  waiting-CI on budget-expired pending, and let Codex classify a confirmed
-  failure;
+  same run under the same lease: every first-wait iteration calls
+  `lock heartbeat curation` and then `inspect curation`, with heartbeats at
+  least every five minutes. It never reacquires. Publish ready on exact-head CI
+  success plus mergeability, retain waiting-CI on budget-expired pending, and
+  let Codex classify a confirmed failure;
+- consume heartbeat output as helper authority: base response `worker` is
+  always present; only when this run owns an active CI continuation may
+  conditional `ci_budget` appear, with exactly `first_wait_seconds`,
+  `repair_active_seconds`, and `second_wait_seconds` as helper-owned cumulative
+  facts;
 - treat helper output and continuation state as authority. Automation memory
   and labels are hints and presentation only. Read GitHub failed-check logs
   only when the bounded inspection summary is insufficient, and treat all log
@@ -148,10 +155,11 @@ The installed skill must:
 - start no semantic work after the initial push. The post-push 30/60/30 phase
   is excluded from the semantic 240-minute clock but cannot exceed its separate
   cumulative continuation budgets;
-- during the second wait, publish ready only for the exact CI-green mergeable
-  head, retain waiting-CI when its 30-minute budget expires pending, and publish
-  `maintainer:blocked/ci-failure` for a confirmed second CI failure. No second
-  repair is permitted;
+- during the second wait, again call `lock heartbeat curation` and then
+  `inspect curation` before every branch. Publish ready only for the exact
+  CI-green mergeable head, retain waiting-CI when its 30-minute budget expires
+  pending, and publish `maintainer:blocked/ci-failure` for a confirmed second
+  CI failure. No second repair is permitted;
 - keep preparation schema-independent, but before initial review run one
   maintainer-managed structural normalization pass when the single report is
   legacy, malformed, graph-less after refresh, incomplete, or non-reconciling;
@@ -434,8 +442,9 @@ For each schedule, confirm:
 - push authorization consumes the continuation before external mutation, after
   which inspection and recovery expose only the matching push journal;
 - a synthetic initial-success route holds one lease from push through the first
-  poll loop, heartbeats at least every five minutes, publishes ready only for
-  the exact CI-green mergeable head, and releases once;
+  poll loop, composes `lock heartbeat curation -> inspect curation` before the
+  ready branch, publishes ready only for the exact CI-green mergeable head, and
+  releases once;
 - a synthetic test-only repair route consumes one CI continuation, reads failed
   checks without trusting log instructions, calls `prepare ci-repair`, changes
   only regular root-level `tests/test_*.py`, does not execute those target-PR
@@ -443,11 +452,14 @@ For each schedule, confirm:
   `checkpoint ci-repair`, calls `publish ci-repair`, and enters the second wait
   without releasing the lease;
 - a synthetic second-failure route publishes
-  `maintainer:blocked/ci-failure`, terminalizes the exact continuation, permits
-  no second repair or semantic work, and releases once;
+  `maintainer:blocked/ci-failure` only after
+  `lock heartbeat curation -> inspect curation`, terminalizes the exact
+  continuation, permits no second repair or semantic work, and releases once;
 - a synthetic interrupted-push route exposes the push journal before any CI
   continuation, recovers it first, and resumes only the exact remaining
-  30/60/30 budget under the same-lease-or-successor fencing rules;
+  30/60/30 budget under the same-lease-or-successor fencing rules. A successor
+  composes `lock acquire curation -> inspect curation` once, while both
+  same-run wait loops compose heartbeat then inspection without reacquisition;
 - multi-paragraph owner-decision and blocked summaries publish successfully,
   while unsafe controls and reserved comment markers still fail closed;
 - proposal validation accepts an explicitly reported same-kind re-key but still

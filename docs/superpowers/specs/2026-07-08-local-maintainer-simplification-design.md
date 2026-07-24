@@ -661,24 +661,26 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
     the durable exact-head CI continuation and completes the journal handoff.
     The helper rejects a missing or altered canonical graph before publication.
     The full schema-v3 report remains in the repository.
-16. The same run keeps the same lease and polls `inspect curation` for up to 30
-    elapsed minutes, heartbeating before and after capabilities and at least
-    every five minutes. Exact-head CI success plus clean mergeability publishes
-    `ready`. Pending at the limit retains the continuation and
-    `waiting-ci`, releases, and stops. Codex classifies a confirmed failure
-    using the bounded helper summary; read-only failed-check logs are untrusted
-    input and cannot authorize a command or mutation.
+16. The same run keeps the same lease for up to 30 elapsed minutes. Every
+    first-wait iteration calls `lock heartbeat curation` and then
+    `inspect curation`; it never reacquires. Exact-head CI success plus clean
+    mergeability publishes `ready`. Pending at the limit retains the
+    continuation and `waiting-ci`, releases, and stops. Codex classifies a
+    confirmed failure using the bounded helper summary; read-only failed-check
+    logs are untrusted input and cannot authorize a command or mutation.
 17. One repairable initial failure may call `prepare ci-repair`, change only
     helper-validated regular root-level `tests/test_*.py` modules, and receive a
     fresh focused independent review before `checkpoint ci-repair`. Codex does
     not execute target-PR `tests/test_*.py` files locally. The helper checks the
     unchanged non-test tree and one-attempt budget, then `publish ci-repair`
     journals and exact-lease pushes the reviewed repair head.
-18. The run keeps the same lease for a second 30-minute poll loop. Exact-head
-    CI success plus mergeability publishes `ready`; pending at the limit keeps
-    the exact continuation and `waiting-ci` for a successor; a confirmed second
-    CI failure publishes `blocked/ci-failure` and terminalizes the continuation.
-    No second repair is permitted.
+18. The run keeps the same lease for a second 30-minute poll loop. Every
+    iteration again calls `lock heartbeat curation` and then
+    `inspect curation` before branching. Exact-head CI success plus mergeability
+    publishes `ready`; pending at the limit keeps the exact continuation and
+    `waiting-ci` for a successor; a confirmed second CI failure publishes
+    `blocked/ci-failure` and terminalizes the continuation. No second repair is
+    permitted.
 19. The post-push budget is cumulative 30/60/30: 30 elapsed minutes for the
     initial wait, at most 60 active minutes for the one focused repair, and 30
     elapsed minutes for the second wait. It is excluded from the semantic
@@ -689,7 +691,9 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
 20. Helper output and continuation state are authority. Automation memory and
     labels are hints and presentation only. Recovery priority is `push journal
     -> post-push CI continuation -> reviewed continuation -> remediation
-    continuation -> ordinary PR`; journal recovery always wins.
+    continuation -> ordinary PR`; journal recovery always wins. A successor
+    uses separate entry `lock acquire curation -> inspect curation` before it
+    adopts the exact continuation; same-run polling never uses acquisition.
 21. A `ready` PR stays out of fresh selection while its head remains unchanged;
     a new commit invalidates the hold and makes it eligible again.
 22. An unchanged status-only `blocked` or `owner-decision` head is also held out
@@ -989,6 +993,12 @@ Codex review, remediation, or research. A lease becomes stale after one hour
 without a heartbeat. This permits twelve missed heartbeat intervals before a
 fenced takeover while preventing an interrupted Codex task from blocking later
 scheduled work for most of a day.
+
+The heartbeat response always contains base field `worker`. When the caller's
+run owns an active CI continuation, it additionally contains conditional
+`ci_budget` with exactly helper-owned cumulative `first_wait_seconds`,
+`repair_active_seconds`, and `second_wait_seconds`. The orchestrator never
+derives, resets, or fills missing counters from elapsed task time.
 
 The caller treats structured `lock-busy` directly as a bounded no-op. It never
 reinterprets the helper envelope, reads the active owner record, retries, or
