@@ -16,7 +16,13 @@ from app.data.repositories import (
     get_raw_weather_history_repository,
     is_condition_fresh,
 )
-from app.domain.catalog import RentalDisplayFact, SkiArea, StayBase, StayDestination
+from app.domain.catalog import (
+    CatalogSnapshot,
+    RentalDisplayFact,
+    SkiArea,
+    StayBase,
+    StayDestination,
+)
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.models import (
     PlanningEvidenceProfile,
@@ -78,10 +84,12 @@ def render_public_destination_page(
     *,
     stay_destination_id: str,
     base_url: str,
+    catalog_snapshot: CatalogSnapshot | None = None,
 ) -> str:
     page = build_public_destination_page(
         stay_destination_id=stay_destination_id,
         base_url=base_url,
+        catalog_snapshot=catalog_snapshot,
     )
     return _render_html(page)
 
@@ -108,8 +116,10 @@ def build_public_destination_page(
     *,
     stay_destination_id: str,
     base_url: str,
+    catalog_snapshot: CatalogSnapshot | None = None,
 ) -> PublicDestinationPage:
-    graph = CatalogGraph.from_snapshot(CatalogRepository().get_snapshot())
+    snapshot = catalog_snapshot or CatalogRepository().get_snapshot()
+    graph = CatalogGraph.from_snapshot(snapshot)
     destination = graph.destinations_by_id.get(stay_destination_id)
     if destination is None:
         raise HTTPException(status_code=404, detail="Unknown stay_destination_id")

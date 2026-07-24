@@ -1917,27 +1917,7 @@ def _configuration(
         ski_area_id=record.ski_area.ski_area_id,
         ski_area_name=record.ski_area.name,
         evidence_profile=_evidence_profile(item.evaluations),
-        access=SearchV4AccessSummary(
-            ski_area_access_id=record.access.ski_area_access_id,
-            access_mode=record.access.access_mode,
-            lift_distance=record.access.lift_distance,
-            nearest_lift_name=record.access.nearest_lift_name,
-            distance_m=record.access.distance_m,
-            duration_minutes=record.access.duration_minutes,
-            is_direct=record.access.is_direct,
-            relationship_trust_status=_status(
-                manifest,
-                "ski_area_access",
-                record.access.ski_area_access_id,
-                "relationship",
-            ),
-            access_mode_distance_trust_status=_status(
-                manifest,
-                "ski_area_access",
-                record.access.ski_area_access_id,
-                "access_mode_distance",
-            ),
-        ),
+        access=_access_summary(record.access, manifest),
         selected_pass=_pass_summary(
             record,
             duration_days=duration_days,
@@ -1952,6 +1932,33 @@ def _configuration(
         groups=ranking.groups if isinstance(ranking, RankedScore) else (),
         factors=ranking.factors if isinstance(ranking, RankedScore) else (),
         constraint_warnings=item.constraint_decision.warnings,
+    )
+
+
+def _access_summary(
+    access: SkiAreaAccess,
+    manifest: CatalogTrustManifest,
+) -> SearchV4AccessSummary:
+    return SearchV4AccessSummary(
+        ski_area_access_id=access.ski_area_access_id,
+        access_mode=access.access_mode,
+        lift_distance=access.lift_distance,
+        nearest_lift_name=access.nearest_lift_name,
+        distance_m=access.distance_m,
+        duration_minutes=access.duration_minutes,
+        is_direct=access.is_direct,
+        relationship_trust_status=_status(
+            manifest,
+            "ski_area_access",
+            access.ski_area_access_id,
+            "relationship",
+        ),
+        access_mode_distance_trust_status=_status(
+            manifest,
+            "ski_area_access",
+            access.ski_area_access_id,
+            "access_mode_distance",
+        ),
     )
 
 

@@ -71,6 +71,7 @@ from app.domain.search_v4_service import (
     SearchV4Response,
     SearchV4SnowAssessment,
     UnknownSearchWeatherAreaError,
+    _access_summary,
     forecast_run_is_fresh,
     generate_v4_candidate_records,
     get_search_refinements,
@@ -2600,14 +2601,22 @@ def test_service_constrains_then_bulk_loads_weather_once_and_ranks() -> None:
         set(forecast.calls[0]["ski_area_ids"])
     )
 
-    argentiere_balme = next(
-        configuration
-        for configuration in _configurations(result)
-        if configuration.access.ski_area_access_id
-        == "chamonix-mont-blanc-argentiere--balme-le-tour-vallorcine"
+
+def test_access_summary_projects_manifest_statuses_without_ranking() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    access = snapshot.ski_area_access[0]
+    trust = manifest.entities["ski_area_access"][access.ski_area_access_id]
+
+    summary = _access_summary(access, manifest)
+
+    assert summary.ski_area_access_id == access.ski_area_access_id
+    assert summary.access_mode == access.access_mode
+    assert summary.lift_distance == access.lift_distance
+    assert summary.relationship_trust_status == trust.field_statuses["relationship"]
+    assert (
+        summary.access_mode_distance_trust_status
+        == trust.field_statuses["access_mode_distance"]
     )
-    assert argentiere_balme.access.relationship_trust_status == "estimated"
-    assert argentiere_balme.access.access_mode_distance_trust_status == "needs_source"
 
 
 def test_service_does_not_publish_estimated_area_terrain_for_unverified_coverage() -> (

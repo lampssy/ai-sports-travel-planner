@@ -10,10 +10,14 @@ from app.data.repositories import (
     RawWeatherHistoryRepository,
     ResortConditionsRepository,
 )
+from app.domain.catalog import CatalogSnapshot
 from app.domain.models import RawWeatherObservation, ResortConditions
 from app.domain.planning import PlanningAssessment
 from app.main import create_app
-from app.public_pages import _current_snow_signal_label
+from app.public_pages import (
+    _current_snow_signal_label,
+    render_public_destination_page,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -47,6 +51,91 @@ def _seed_tignes_archive_weather() -> None:
                 source_model="best_match",
             )
         )
+
+
+def _synthetic_multi_area_catalog() -> CatalogSnapshot:
+    return CatalogSnapshot.model_validate(
+        {
+            "schema_version": 2,
+            "ski_regions": [
+                {
+                    "ski_region_id": "sample-valley",
+                    "name": "Sample Valley",
+                    "grouping_policy": "trip_market",
+                }
+            ],
+            "stay_destinations": [
+                {
+                    "stay_destination_id": "sample-town",
+                    "name": "Sample Town",
+                    "country": "Example",
+                    "region": "Example Alps",
+                    "price_level": "medium",
+                    "latitude": 46.0,
+                    "longitude": 7.0,
+                    "trip_market_region_id": "sample-valley",
+                }
+            ],
+            "stay_bases": [
+                {
+                    "stay_base_id": "sample-town-center",
+                    "stay_destination_id": "sample-town",
+                    "name": "Town Center",
+                    "price_range": "EUR 100-200",
+                    "price_min": 100,
+                    "price_max": 200,
+                    "quality": "standard",
+                }
+            ],
+            "ski_areas": [
+                {
+                    "ski_area_id": "sample-east",
+                    "name": "East Bowl",
+                    "latitude": 46.01,
+                    "longitude": 7.01,
+                    "base_elevation_m": 1500,
+                    "summit_elevation_m": 2500,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
+                    "weather_sampling_status": "active",
+                },
+                {
+                    "ski_area_id": "sample-west",
+                    "name": "West Bowl",
+                    "latitude": 46.02,
+                    "longitude": 7.02,
+                    "base_elevation_m": 1600,
+                    "summit_elevation_m": 2600,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
+                    "weather_sampling_status": "active",
+                },
+            ],
+            "ski_area_access": [
+                {
+                    "ski_area_access_id": "sample-town-center--sample-east",
+                    "stay_base_id": "sample-town-center",
+                    "ski_area_id": "sample-east",
+                    "access_mode": "walk",
+                    "lift_distance": "near",
+                    "is_direct": True,
+                    "source_urls": ["https://example.com/sample-east"],
+                },
+                {
+                    "ski_area_access_id": "sample-town-center--sample-west",
+                    "stay_base_id": "sample-town-center",
+                    "ski_area_id": "sample-west",
+                    "access_mode": "ski_bus",
+                    "lift_distance": "medium",
+                    "is_direct": False,
+                    "source_urls": ["https://example.com/sample-west"],
+                },
+            ],
+            "terrain_domains": [],
+            "lift_pass_products": [],
+            "rental_display_facts": [],
+        }
+    )
 
 
 def test_public_destination_page_returns_server_rendered_html() -> None:
@@ -282,16 +371,18 @@ def test_sitemap_lists_every_public_destination_page() -> None:
 
 
 def test_multi_area_destination_keeps_weather_sections_area_specific() -> None:
-    app = create_app()
+    html = render_public_destination_page(
+        stay_destination_id="sample-town",
+        base_url="http://testserver",
+        catalog_snapshot=_synthetic_multi_area_catalog(),
+    )
 
-    with TestClient(app) as client:
-        response = client.get("/ski-destinations/chamonix-mont-blanc")
-
-    assert response.status_code == 200
-    assert "Brevent-Flegere ski-area conditions" in response.text
-    assert "Grands Montets ski-area conditions" in response.text
-    assert "Balme - Le Tour - Vallorcine ski-area conditions" in response.text
-    assert "Chamonix-Mont-Blanc combined snow signal" not in response.text
+    assert html.count('class="card area-section"') == 2
+    assert 'id="ski-area-sample-east"' in html
+    assert 'id="ski-area-sample-west"' in html
+    assert "East Bowl ski-area conditions" in html
+    assert "West Bowl ski-area conditions" in html
+    assert "Sample Town combined snow signal" not in html
 
 
 def test_robots_txt_allows_indexing_and_points_to_sitemap() -> None:
