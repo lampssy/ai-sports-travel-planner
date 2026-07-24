@@ -2083,6 +2083,317 @@ def test_ci_failure_outcome_terminalizes_initial_or_second_wait(
         assert journal is not None and journal.phase is PushPhase.PUBLISHED
 
 
+def test_publish_outcome_second_wait_constructs_repository_dependency(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    _save_ci_wait_for_publication(
+        store,
+        lease,
+        CiContinuationPhase.SECOND_WAIT,
+    )
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request(head_sha=SHA_C)})
+    repository = FakeRepository(head=SHA_C, remote=SHA_C, github=github)
+    constructed_roots: list[Path] = []
+
+    def construct_repository(root: Path) -> FakeRepository:
+        constructed_roots.append(root)
+        return repository
+
+    monkeypatch.setattr(
+        "ops.maintainer.cli.GitRepository",
+        construct_repository,
+    )
+    summary = _private_text(
+        state_dir,
+        "wired-outcome-summary.md",
+        "Confirmed second CI failure.",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_C,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "ci-failure",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository_root=tmp_path,
+    )
+
+    assert code == 0, payload
+    assert constructed_roots == [tmp_path.resolve()]
+    assert len(repository.ci_repair_revalidate_calls) == 1
+
+
+@pytest.mark.parametrize(
+    "conclusion",
+    ("CANCELLED", "ACTION_REQUIRED", None, "UNKNOWN"),
+)
+def test_ci_failure_outcome_rejects_ambiguous_only_conclusions(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    conclusion: str | None,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    continuation = _save_ci_wait_for_publication(
+        store,
+        lease,
+        CiContinuationPhase.INITIAL_WAIT,
+    )
+    github = FakeGitHub(
+        pull_requests={
+            42: _failed_ci_pull_request(
+                checks=(
+                    CheckSummary(
+                        name="backend",
+                        status="failure",
+                        conclusion=conclusion,
+                    ),
+                )
+            )
+        }
+    )
+    summary = _private_text(
+        state_dir,
+        "ambiguous-outcome-summary.md",
+        "Ambiguous check conclusion.",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_B,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "ci-failure",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "invalid-github-state"
+    assert store.load_ci_continuation(continuation.work_id) == continuation
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+
+
+def test_ci_failure_outcome_accepts_mixed_rollup_with_confirmed_failure(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    continuation = _save_ci_wait_for_publication(
+        store,
+        lease,
+        CiContinuationPhase.INITIAL_WAIT,
+    )
+    github = FakeGitHub(
+        pull_requests={
+            42: _failed_ci_pull_request(
+                checks=(
+                    CheckSummary(
+                        name="cancelled",
+                        status="failure",
+                        conclusion="CANCELLED",
+                    ),
+                    CheckSummary(
+                        name="backend",
+                        status="failure",
+                        conclusion="FAILURE",
+                    ),
+                )
+            )
+        }
+    )
+    summary = _private_text(
+        state_dir,
+        "mixed-outcome-summary.md",
+        "Confirmed CI failure.",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_B,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "ci-failure",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+    )
+
+    assert code == 0, payload
+    terminal = store.load_ci_continuation(continuation.work_id)
+    assert terminal is not None
+    assert terminal.phase is CiContinuationPhase.BLOCKED
+
+
+def test_recover_persisted_second_wait_without_repeating_transition(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin_run = _acquire(capsys, state_dir, "curation")
+    origin_lease = RunLease.load_owner(state_dir, "curation", origin_run)
+    store = StateStore(state_dir)
+    waiting = _save_second_ci_wait(
+        store,
+        origin_lease,
+        started_at=NOW - timedelta(minutes=31),
+    )
+    github = FakeGitHub(
+        pull_requests={
+            42: _pull_request(
+                head_sha=SHA_C,
+                check_state="pending",
+            )
+        }
+    )
+    repository = FakeRepository(head=SHA_C, remote=SHA_C, github=github)
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            origin_run,
+        ],
+    )
+    assert release_code == 0
+    successor = _acquire(capsys, state_dir, "curation")
+
+    recover_code, recover = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            waiting.work_id,
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert recover_code == 0, recover
+    assert recover["continuation"]["phase"] == "second-wait"
+    recovered = store.load_ci_continuation(waiting.work_id)
+    assert recovered is not None
+    assert recovered.recovery_run_id == successor
+    assert recovered.phase is CiContinuationPhase.SECOND_WAIT
+    assert recovered.second_wait_started_at == waiting.second_wait_started_at
+    assert recovered.current_head == SHA_C
+    assert len(repository.ci_repair_revalidate_calls) == 1
+    journal = store.load_push(waiting.work_id)
+    assert journal is not None and journal.phase is PushPhase.PUSHED
+
+    summary = _private_text(
+        state_dir,
+        "recovered-waiting-summary.md",
+        "Checks remain pending.",
+    )
+    body = _private_text(
+        state_dir,
+        "recovered-waiting-body.md",
+        f"Current review synopsis.\n\n{CANONICAL_GRAPH}",
+    )
+    publish_code, publish_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:waiting-ci",
+            "--reviewed-head",
+            SHA_C,
+            "--summary-file",
+            summary,
+            "--body-file",
+            body,
+            "--adopt-body",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert publish_code == 0, publish_payload
+    published_journal = store.load_push(waiting.work_id)
+    assert published_journal is not None
+    assert published_journal.phase is PushPhase.PUBLISHED
+    persisted = store.load_ci_continuation(waiting.work_id)
+    assert persisted is not None
+    assert persisted.phase is CiContinuationPhase.SECOND_WAIT
+    inspect_code, inventory = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+    assert inspect_code == 0
+    assert inventory["unresolved_pushes"] == []
+    assert inventory["ci_continuations"][0]["phase"] == "second-wait"
+
+
 @pytest.mark.parametrize(
     "pull_request",
     (

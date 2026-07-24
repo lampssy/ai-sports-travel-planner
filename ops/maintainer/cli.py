@@ -297,6 +297,7 @@ def _compose_dependencies(
         ("publish", "push"),
         ("publish", "ci-repair"),
         ("publish", "manual-check"),
+        ("publish", "outcome"),
         ("publish", "recover"),
         ("publish", "proposal"),
         ("publish", "state"),

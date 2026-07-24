@@ -799,22 +799,33 @@ class StateStore:
             RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
             current_journal = self.load_push(work_id)
             continuation = self.load_ci_continuation(work_id)
-            if (
+            common_mismatch = (
                 lease.worker != "curation"
                 or current_journal != journal
                 or journal.recovery_run_id != lease.run_id
                 or journal.phase not in {PushPhase.AUTHORIZED, PushPhase.PUSHED}
                 or continuation is None
-                or continuation.phase is not CiContinuationPhase.REPAIR_REVIEWED
                 or continuation.work_id != journal.work_id
                 or continuation.pr_number != journal.pr_number
                 or continuation.branch != journal.branch
-                or continuation.current_head != journal.expected_remote_head
                 or continuation.repair_head != journal.new_head
                 or continuation.report_path != journal.report_path
                 or continuation.resulting_graph_markdown
                 != journal.resulting_graph_markdown
-            ):
+            )
+            reviewed_match = (
+                continuation is not None
+                and continuation.phase is CiContinuationPhase.REPAIR_REVIEWED
+                and continuation.current_head == journal.expected_remote_head
+            )
+            second_wait_match = (
+                continuation is not None
+                and continuation.phase is CiContinuationPhase.SECOND_WAIT
+                and journal.phase is PushPhase.PUSHED
+                and continuation.semantic_head == journal.expected_remote_head
+                and continuation.current_head == journal.new_head
+            )
+            if common_mismatch or not (reviewed_match or second_wait_match):
                 raise StateStoreError(
                     "repair push journal does not match the CI continuation"
                 )

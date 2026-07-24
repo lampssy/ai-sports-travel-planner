@@ -1494,31 +1494,55 @@ def _matching_ci_repair_journal(
     )
 
 
+def _ci_repair_journal_matches(
+    continuation: CiContinuation,
+    journal: PushJournal,
+) -> bool:
+    if continuation.phase not in {
+        CiContinuationPhase.REPAIR_REVIEWED,
+        CiContinuationPhase.SECOND_WAIT,
+    }:
+        return False
+    checkpoint = _ci_repair_checkpoint(continuation)
+    if (
+        journal.work_id != continuation.work_id
+        or journal.worker != "curation"
+        or journal.pr_number != continuation.pr_number
+        or journal.branch != continuation.branch
+        or journal.new_head != checkpoint.repair_head
+        or journal.report_path != continuation.report_path
+        or journal.resulting_graph_markdown != continuation.resulting_graph_markdown
+    ):
+        return False
+    if continuation.phase is CiContinuationPhase.REPAIR_REVIEWED:
+        return journal.expected_remote_head == continuation.current_head
+    if continuation.phase is CiContinuationPhase.SECOND_WAIT:
+        return (
+            journal.phase is PushPhase.PUSHED
+            and journal.expected_remote_head == continuation.semantic_head
+            and journal.new_head == continuation.current_head
+        )
+    return False
+
+
 def _revalidate_ci_repair_for_journal(
     continuation: CiContinuation,
     journal: PushJournal,
     dependencies: Dependencies,
 ) -> None:
     checkpoint = _ci_repair_checkpoint(continuation)
-    if (
-        continuation.phase is not CiContinuationPhase.REPAIR_REVIEWED
-        or journal.work_id != continuation.work_id
-        or journal.worker != "curation"
-        or journal.pr_number != continuation.pr_number
-        or journal.branch != continuation.branch
-        or journal.expected_remote_head != continuation.current_head
-        or journal.new_head != checkpoint.repair_head
-        or journal.report_path != continuation.report_path
-        or journal.resulting_graph_markdown != continuation.resulting_graph_markdown
-    ):
+    if not _ci_repair_journal_matches(continuation, journal):
         raise StateStoreError("repair push journal does not match the CI continuation")
     pull_request = dependencies.github.get_pull_request(continuation.pr_number)
-    if pull_request.head_ref_name != continuation.branch:
+    if pull_request.head_ref_name != continuation.branch or (
+        continuation.phase is CiContinuationPhase.SECOND_WAIT
+        and pull_request.head_sha != continuation.current_head
+    ):
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUSH)
     revalidated = dependencies.repository.revalidate_ci_repair_checkpoint(
         pull_request=pull_request,
         semantic_head=continuation.semantic_head,
-        current_head=continuation.current_head,
+        current_head=journal.expected_remote_head,
         checkpoint=checkpoint,
     )
     if revalidated != checkpoint:
@@ -1816,16 +1840,8 @@ def handle_publish_recover(
     recovered_ci_continuation: CiContinuation | None = None
     if journal.worker == "curation":
         ci_continuation = store.load_ci_continuation(journal.work_id)
-        repair_recovery = (
-            ci_continuation is not None
-            and ci_continuation.phase is CiContinuationPhase.REPAIR_REVIEWED
-            and ci_continuation.pr_number == journal.pr_number
-            and ci_continuation.branch == journal.branch
-            and ci_continuation.current_head == journal.expected_remote_head
-            and ci_continuation.repair_head == journal.new_head
-            and ci_continuation.report_path == journal.report_path
-            and ci_continuation.resulting_graph_markdown
-            == journal.resulting_graph_markdown
+        repair_recovery = ci_continuation is not None and _ci_repair_journal_matches(
+            ci_continuation, journal
         )
         journal = _advance_curation_push(
             store,
@@ -2355,6 +2371,10 @@ def _complete_ci_repair_push(
         or pull_request.head_sha != journal.new_head
     ):
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
+    if continuation.phase is CiContinuationPhase.SECOND_WAIT:
+        return continuation
+    if continuation.phase is not CiContinuationPhase.REPAIR_REVIEWED:
+        raise StateStoreError("CI continuation is not ready for repair push completion")
     observed_at = _current_time(dependencies, continuation)
     waiting = continuation.model_copy(
         update={
@@ -2764,7 +2784,10 @@ def handle_publish_outcome(
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
         if requested_state is MaintainerState.BLOCKED and args.reason == "ci-failure":
             if pull_request.check_state != "failure" or not any(
-                check.status == "failure" for check in pull_request.checks
+                check.status == "failure"
+                and check.conclusion is not None
+                and check.conclusion.upper() in _CONFIRMED_FAILURE_CONCLUSIONS
+                for check in pull_request.checks
             ):
                 raise MaintainerError(
                     ErrorReason.INVALID_GITHUB_STATE,
