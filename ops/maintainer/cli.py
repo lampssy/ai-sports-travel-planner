@@ -132,6 +132,9 @@ def _parser() -> argparse.ArgumentParser:
     prepare_continuation.add_argument("--pr", type=int, required=True)
     prepare_continuation.add_argument("--continue-conflict", action="store_true")
     _add_run_id(prepare_continuation)
+    prepare_ci_repair = prepare_commands.add_parser("ci-repair")
+    prepare_ci_repair.add_argument("--pr", type=int, required=True)
+    _add_run_id(prepare_ci_repair)
 
     validate = families.add_parser("validate")
     validate_commands = validate.add_subparsers(dest="command", required=True)
@@ -166,6 +169,10 @@ def _parser() -> argparse.ArgumentParser:
         ),
     )
     _add_run_id(remediation)
+    checkpoint_ci_repair = checkpoint_commands.add_parser("ci-repair")
+    checkpoint_ci_repair.add_argument("--pr", type=int, required=True)
+    checkpoint_ci_repair.add_argument("--head", type=_sha, required=True)
+    _add_run_id(checkpoint_ci_repair)
 
     validate_reviewed_parser = validate_commands.add_parser("reviewed")
     validate_reviewed_parser.add_argument("--pr", type=int, required=True)
@@ -189,6 +196,9 @@ def _parser() -> argparse.ArgumentParser:
     push = publish_commands.add_parser("push")
     push.add_argument("--pr", type=int, required=True)
     _add_run_id(push)
+    ci_repair = publish_commands.add_parser("ci-repair")
+    ci_repair.add_argument("--pr", type=int, required=True)
+    _add_run_id(ci_repair)
     manual_check = publish_commands.add_parser("manual-check")
     manual_check.add_argument("--pr", type=int, required=True)
     manual_check.add_argument("--reviewed-head", type=_sha, required=True)
@@ -278,11 +288,14 @@ def _compose_dependencies(
     needs_repository = (args.family, args.command) in {
         ("prepare", "curation"),
         ("prepare", "continuation"),
+        ("prepare", "ci-repair"),
         ("checkpoint", "remediation"),
+        ("checkpoint", "ci-repair"),
         ("validate", "curation"),
         ("validate", "reviewed"),
         ("validate", "proposal"),
         ("publish", "push"),
+        ("publish", "ci-repair"),
         ("publish", "manual-check"),
         ("publish", "recover"),
         ("publish", "proposal"),

@@ -28,7 +28,13 @@ from ops.maintainer.models import (
     PullRequest,
 )
 from ops.maintainer.runtime import RunLease
-from ops.maintainer.state import PushJournal, PushPhase, StateStore
+from ops.maintainer.state import (
+    CiContinuation,
+    CiContinuationPhase,
+    PushJournal,
+    PushPhase,
+    StateStore,
+)
 
 if TYPE_CHECKING:
     from ops.maintainer.validation import ProposalValidationResult
@@ -415,6 +421,56 @@ def _has_strict_control(value: str) -> bool:
     return any(
         (ord(character) < 32 and character != "\n") or 127 <= ord(character) <= 159
         for character in value
+    )
+
+
+def ci_publication_machine_state(
+    *,
+    continuation: CiContinuation,
+    pull_request: PullRequest,
+    repair_checkpoint_revalidated: bool,
+) -> MachineState:
+    if (
+        type(continuation) is not CiContinuation
+        or type(pull_request) is not PullRequest
+        or type(repair_checkpoint_revalidated) is not bool
+    ):
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "CI publication evidence must use strict helper-owned values",
+            stage=ErrorStage.READINESS,
+        )
+    if continuation.phase not in {
+        CiContinuationPhase.INITIAL_WAIT,
+        CiContinuationPhase.SECOND_WAIT,
+    }:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "CI continuation is not in a publishable wait phase",
+            stage=ErrorStage.READINESS,
+        )
+    if (
+        pull_request.number != continuation.pr_number
+        or pull_request.head_ref_name != continuation.branch
+        or pull_request.head_sha != continuation.current_head
+    ):
+        raise _publication_error(
+            ErrorReason.STALE_HEAD,
+            "PR identity differs from the CI continuation",
+            stage=ErrorStage.READINESS,
+        )
+    repaired = continuation.phase is CiContinuationPhase.SECOND_WAIT
+    if repaired != repair_checkpoint_revalidated:
+        raise _publication_error(
+            ErrorReason.VALIDATION_REQUIRED,
+            "Repaired CI publication requires exact checkpoint revalidation",
+            stage=ErrorStage.READINESS,
+        )
+    return MachineState(
+        schema_version=2,
+        reviewed_head=continuation.current_head,
+        validated_head=continuation.current_head,
+        last_operation="published",
     )
 
 

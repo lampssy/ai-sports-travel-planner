@@ -782,6 +782,55 @@ class StateStore:
             self._save_model(self.ci_continuation_dir, work_id, adopted)
             return adopted
 
+    def adopt_ci_continuation_for_push_recovery(
+        self,
+        work_id: str,
+        lease: RunLease,
+        journal: PushJournal,
+        *,
+        now: datetime,
+    ) -> CiContinuation:
+        """Adopt a reviewed repair only through its matching unresolved journal."""
+        _validate_identifier(work_id, "work_id")
+        journal = _revalidate_model(journal, PushJournal)
+        self._assert_lease_location(lease)
+        observed_at = _normalize_state_time(now)
+        with _transition_mutex(self.state_dir):
+            RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+            current_journal = self.load_push(work_id)
+            continuation = self.load_ci_continuation(work_id)
+            if (
+                lease.worker != "curation"
+                or current_journal != journal
+                or journal.recovery_run_id != lease.run_id
+                or journal.phase not in {PushPhase.AUTHORIZED, PushPhase.PUSHED}
+                or continuation is None
+                or continuation.phase is not CiContinuationPhase.REPAIR_REVIEWED
+                or continuation.work_id != journal.work_id
+                or continuation.pr_number != journal.pr_number
+                or continuation.branch != journal.branch
+                or continuation.current_head != journal.expected_remote_head
+                or continuation.repair_head != journal.new_head
+                or continuation.report_path != journal.report_path
+                or continuation.resulting_graph_markdown
+                != journal.resulting_graph_markdown
+            ):
+                raise StateStoreError(
+                    "repair push journal does not match the CI continuation"
+                )
+            if continuation.recovery_run_id == lease.run_id:
+                return continuation
+            if observed_at <= continuation.updated_at:
+                observed_at = continuation.updated_at + timedelta(microseconds=1)
+            adopted = continuation.model_copy(
+                update={
+                    "recovery_run_id": lease.run_id,
+                    "updated_at": observed_at,
+                }
+            )
+            self._save_model(self.ci_continuation_dir, work_id, adopted)
+            return adopted
+
     def advance_ci_continuation(
         self,
         continuation: CiContinuation,
@@ -878,6 +927,73 @@ class StateStore:
             heartbeat = _revalidate_model(heartbeat, CiContinuation)
             self._save_model(self.ci_continuation_dir, work_id, heartbeat)
             return heartbeat
+
+    def record_ci_wait_observation(
+        self,
+        work_id: str,
+        lease: RunLease,
+        *,
+        now: datetime,
+    ) -> CiContinuation:
+        """Persist monotonic elapsed time while one CI wait remains active."""
+        _validate_identifier(work_id, "work_id")
+        self._assert_lease_location(lease)
+        observed_at = _normalize_state_time(now)
+        with _transition_mutex(self.state_dir):
+            RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+            continuation = self.load_ci_continuation(work_id)
+            if continuation is None:
+                raise StateStoreError("CI continuation is missing")
+            self._assert_ci_continuation_lease(continuation, lease)
+            if continuation.phase not in {
+                CiContinuationPhase.INITIAL_WAIT,
+                CiContinuationPhase.SECOND_WAIT,
+            }:
+                raise StateStoreError("CI continuation is not waiting")
+            if observed_at < continuation.updated_at:
+                raise StateStoreError(
+                    "CI wait observation timestamp must not move backwards"
+                )
+            if continuation.phase is CiContinuationPhase.INITIAL_WAIT:
+                updates = {
+                    "first_wait_seconds": min(
+                        1800,
+                        max(
+                            continuation.first_wait_seconds,
+                            int(
+                                (
+                                    observed_at - continuation.first_wait_started_at
+                                ).total_seconds()
+                            ),
+                        ),
+                    )
+                }
+            else:
+                assert continuation.second_wait_started_at is not None
+                updates = {
+                    "second_wait_seconds": min(
+                        1800,
+                        max(
+                            continuation.second_wait_seconds,
+                            int(
+                                (
+                                    observed_at - continuation.second_wait_started_at
+                                ).total_seconds()
+                            ),
+                        ),
+                    )
+                }
+            if all(
+                getattr(continuation, field_name) == value
+                for field_name, value in updates.items()
+            ):
+                return continuation
+            observed = continuation.model_copy(
+                update={"updated_at": observed_at, **updates}
+            )
+            observed = _revalidate_model(observed, CiContinuation)
+            self._save_model(self.ci_continuation_dir, work_id, observed)
+            return observed
 
     def record_owned_ci_heartbeat(
         self,
