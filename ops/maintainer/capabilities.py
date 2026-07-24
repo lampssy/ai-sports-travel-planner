@@ -42,7 +42,7 @@ from ops.maintainer.github import (
 )
 from ops.maintainer.inspection import (
     DiscoveryInventory,
-    ci_continuation_availability,
+    ci_continuation_invalidation_reason,
     inspect_curation,
     inspect_discovery,
 )
@@ -52,6 +52,7 @@ from ops.maintainer.models import (
     MaintainerLane,
     MaintainerState,
     PullRequest,
+    is_confirmed_ci_failure,
 )
 from ops.maintainer.publication import (
     PublicationInputError,
@@ -104,9 +105,6 @@ Handler = Callable[[argparse.Namespace, "Dependencies"], dict[str, object]]
 
 _PR_HEAD_CONVERGENCE_ATTEMPTS = 5
 _PR_HEAD_CONVERGENCE_DELAY_SECONDS = 3.0
-_CONFIRMED_FAILURE_CONCLUSIONS = frozenset(
-    {"ERROR", "FAILED", "FAILURE", "STARTUP_FAILURE", "TIMED_OUT"}
-)
 
 
 class CLIInputError(ValueError):
@@ -1652,9 +1650,14 @@ def handle_publish_push(
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request.head_sha != work.selected_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
+    assert work.validated_head is not None
+    store.require_ci_generation_eligible(
+        work_id,
+        work.validated_head,
+        lease,
+    )
     journal = store.load_push(work_id)
     if journal is None or journal.phase is PushPhase.PUBLISHED:
-        assert work.validated_head is not None
         journal = _matching_curation_journal(work, lease, work.validated_head)
         store.save_push(journal, lease)
         dependencies.tracker.mutation_occurred = True
@@ -2224,11 +2227,7 @@ def _live_ci_repair_pull_request(
     if pull_request.head_sha != continuation.current_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, stage)
     failed_checks = tuple(
-        check
-        for check in pull_request.checks
-        if check.status == "failure"
-        and check.conclusion is not None
-        and check.conclusion.upper() in _CONFIRMED_FAILURE_CONCLUSIONS
+        check for check in pull_request.checks if is_confirmed_ci_failure(check)
     )
     if require_failed_checks and (
         pull_request.check_state != "failure" or not failed_checks
@@ -2259,12 +2258,14 @@ def handle_invalidate_ci_continuation(
     }:
         raise StateStoreError("active CI continuation is required")
     pull_request = dependencies.github.get_pull_request(args.pr)
-    availability_reason = ci_continuation_availability(
+    availability_reason = ci_continuation_invalidation_reason(
         continuation,
         pull_request,
     )
-    if availability_reason == "available":
-        raise StateStoreError("resumable CI continuation cannot be invalidated")
+    if availability_reason is None:
+        raise StateStoreError(
+            "live CI facts do not authorize continuation invalidation"
+        )
     if continuation.recovery_run_id != lease.run_id:
         continuation = store.adopt_ci_continuation(
             work_id,
@@ -2318,7 +2319,8 @@ def handle_prepare_ci_repair(
         CiContinuationPhase.REPAIR_REVIEWED,
     }:
         raise StateStoreError("CI repair attempt is unavailable")
-    successor_recovery = continuation.recovery_run_id != lease.run_id
+    needs_adoption = continuation.recovery_run_id != lease.run_id
+    successor_recovery = continuation.origin_run_id != lease.run_id
     if (
         continuation.phase
         in {
@@ -2328,13 +2330,6 @@ def handle_prepare_ci_repair(
         and not successor_recovery
     ):
         raise StateStoreError("CI repair attempt is already owned by this run")
-    if successor_recovery:
-        continuation = store.adopt_ci_continuation(
-            work_id,
-            lease,
-            now=dependencies.now(),
-        )
-        dependencies.tracker.mutation_occurred = True
 
     pull_request = dependencies.github.get_pull_request(args.pr)
     failed_checks = _live_ci_repair_pull_request(
@@ -2357,11 +2352,32 @@ def handle_prepare_ci_repair(
             raise RepositorySafetyError(
                 "revalidated CI repair checkpoint changed immutable evidence"
             )
+    else:
+        if (
+            continuation.phase is CiContinuationPhase.REPAIR_ACTIVE
+            and continuation.repair_active_seconds >= 3600
+        ):
+            raise StateStoreError("CI repair active budget is exhausted")
+        prepared_head = dependencies.repository.prepare_ci_repair(pull_request)
+        if prepared_head != continuation.current_head:
+            raise RepositorySafetyError(
+                "prepared CI repair head does not match the continuation"
+            )
+
+    if needs_adoption:
+        continuation = store.adopt_ci_continuation(
+            work_id,
+            lease,
+            now=dependencies.now(),
+        )
+        dependencies.tracker.mutation_occurred = True
+
+    if continuation.phase is CiContinuationPhase.REPAIR_REVIEWED:
         dependencies.tracker.terminal_reason = "ci-repair-reviewed-resumed"
         return {
             "work_id": work_id,
             "phase": continuation.phase.value,
-            "resumed": True,
+            "resumed": successor_recovery,
             "repair_head": continuation.repair_head,
             "repair_ref": continuation.repair_ref,
             "repair_paths": sorted(continuation.repair_paths),
@@ -2378,11 +2394,6 @@ def handle_prepare_ci_repair(
         if continuation.repair_active_seconds >= 3600:
             raise StateStoreError("CI repair active budget is exhausted")
 
-    prepared_head = dependencies.repository.prepare_ci_repair(pull_request)
-    if prepared_head != continuation.current_head:
-        raise RepositorySafetyError(
-            "prepared CI repair head does not match the continuation"
-        )
     if continuation.phase is CiContinuationPhase.INITIAL_WAIT:
         observed_at = _current_time(dependencies, continuation)
         active = continuation.model_copy(
@@ -2401,8 +2412,10 @@ def handle_prepare_ci_repair(
     return {
         "work_id": work_id,
         "phase": active.phase.value,
-        "resumed": successor_recovery
-        and continuation.phase is CiContinuationPhase.REPAIR_ACTIVE,
+        "resumed": (
+            successor_recovery
+            and continuation.phase is CiContinuationPhase.REPAIR_ACTIVE
+        ),
         "current_head": active.current_head,
         "failed_checks": [check.model_dump(mode="json") for check in failed_checks],
         "remaining_repair_seconds": 3600 - active.repair_active_seconds,
@@ -2571,6 +2584,11 @@ def handle_publish_ci_repair(
             "published initial push journal is required for CI repair"
         )
     journal = _matching_ci_repair_journal(continuation, lease)
+    _revalidate_ci_repair_for_journal(
+        continuation,
+        journal,
+        dependencies,
+    )
     store.save_push(journal, lease)
     dependencies.tracker.mutation_occurred = True
     journal = _advance_curation_push(
@@ -2935,10 +2953,7 @@ def handle_publish_outcome(
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
         if requested_state is MaintainerState.BLOCKED and args.reason == "ci-failure":
             if pull_request.check_state != "failure" or not any(
-                check.status == "failure"
-                and check.conclusion is not None
-                and check.conclusion.upper() in _CONFIRMED_FAILURE_CONCLUSIONS
-                for check in pull_request.checks
+                is_confirmed_ci_failure(check) for check in pull_request.checks
             ):
                 raise MaintainerError(
                     ErrorReason.INVALID_GITHUB_STATE,

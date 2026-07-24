@@ -20,7 +20,11 @@ from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
 from ops.maintainer.intent import CATALOG_SECTIONS, is_allowed_curation_path
-from ops.maintainer.models import CheckSummary, PullRequest
+from ops.maintainer.models import (
+    CheckSummary,
+    PullRequest,
+    is_confirmed_ci_failure,
+)
 from ops.maintainer.publication import trusted_hold_head, trusted_machine_state
 from ops.maintainer.state import (
     CiContinuation,
@@ -500,6 +504,7 @@ def ci_continuation_availability(
         return "branch-drift"
     if (
         not pull_request.routing_labels_valid
+        or pull_request.mergeable != "MERGEABLE"
         or pull_request.is_cross_repository
         or pull_request.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
         or pull_request.base_ref_name != "main"
@@ -509,7 +514,51 @@ def ci_continuation_availability(
         )
     ):
         return "invalid-state"
+    if continuation.phase is CiContinuationPhase.REPAIR_ACTIVE and (
+        pull_request.check_state != "failure"
+        or not any(is_confirmed_ci_failure(check) for check in pull_request.checks)
+    ):
+        return "invalid-state"
     return "available"
+
+
+def ci_continuation_invalidation_reason(
+    continuation: CiContinuation,
+    pull_request: PullRequest | None,
+) -> (
+    Literal[
+        "head-drift",
+        "closed-or-merged",
+        "branch-drift",
+        "invalid-state",
+    ]
+    | None
+):
+    """Return only live helper facts that authorize terminal invalidation."""
+    if pull_request is None or pull_request.lifecycle_state in {"CLOSED", "MERGED"}:
+        return "closed-or-merged"
+    if pull_request.head_sha != continuation.current_head:
+        return "head-drift"
+    if pull_request.head_ref_name != continuation.branch:
+        return "branch-drift"
+    if (
+        pull_request.is_cross_repository
+        or pull_request.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
+        or pull_request.base_ref_name != "main"
+        or not pull_request.changed_paths
+        or not all(
+            is_allowed_curation_path(path) for path in pull_request.changed_paths
+        )
+    ):
+        return "invalid-state"
+    if pull_request.mergeable == "CONFLICTING":
+        return "invalid-state"
+    if (
+        continuation.phase is CiContinuationPhase.REPAIR_ACTIVE
+        and pull_request.check_state == "success"
+    ):
+        return "invalid-state"
+    return None
 
 
 def _ci_continuation_summary(

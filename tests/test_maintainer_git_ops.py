@@ -4,7 +4,7 @@ import json
 import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -40,6 +40,8 @@ from ops.maintainer.intent import (
     build_intent_snapshot,
 )
 from ops.maintainer.models import PullRequest
+from ops.maintainer.runtime import RunLease
+from ops.maintainer.state import PushJournal, PushPhase, StateStore
 
 pytestmark = pytest.mark.db_free
 
@@ -1592,6 +1594,83 @@ def test_revalidate_ci_repair_checkpoint_accepts_live_repair_head_and_rejects_h2
             current_head=local.current_head,
             checkpoint=checkpoint,
         )
+
+
+def test_revalidate_ci_repair_checkpoint_restores_repair_head_for_journal_recovery(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    repair_head = _commit_allowed_ci_repair(local)
+    checkpoint = repository.checkpoint_ci_repair(
+        pull_request=local.pull_request,
+        semantic_head=local.semantic_head,
+        current_head=local.current_head,
+        repair_head=repair_head,
+        expected_non_test_tree_digest=expected_digest,
+    )
+    state_dir = tmp_path / "state"
+    observed_at = datetime(2026, 7, 8, tzinfo=UTC)
+    origin = RunLease.acquire(state_dir, "curation", now=observed_at)
+    store = StateStore(state_dir)
+    journal = PushJournal(
+        work_id="curation-pr-42",
+        worker="curation",
+        origin_run_id=origin.run_id,
+        recovery_run_id=origin.run_id,
+        pr_number=local.pull_request.number,
+        branch=local.pull_request.head_ref_name,
+        expected_remote_head=local.current_head,
+        new_head=repair_head,
+        phase=PushPhase.AUTHORIZED,
+    )
+    store.save_push(journal, origin)
+    origin.release()
+    successor = RunLease.acquire(
+        state_dir,
+        "curation",
+        now=observed_at + timedelta(minutes=1),
+    )
+    adopted = store.adopt_push(
+        journal.work_id,
+        successor,
+        local.current_head,
+    )
+    _git(local.checkout, "switch", "--detach", local.semantic_head)
+
+    assert _git(local.checkout, "rev-parse", "HEAD") == local.semantic_head
+    assert (
+        repository.revalidate_ci_repair_checkpoint(
+            pull_request=local.pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            checkpoint=checkpoint,
+        )
+        == checkpoint
+    )
+    assert _git(local.checkout, "rev-parse", "HEAD") == repair_head
+    assert _git(local.checkout, "rev-parse", "--abbrev-ref", "HEAD") == "HEAD"
+
+    with store.guard_push_mutation(adopted, successor):
+        repository.push_exact_with_lease(
+            local.pull_request.head_ref_name,
+            local.current_head,
+            repair_head,
+        )
+    pushed = adopted.model_copy(update={"phase": PushPhase.PUSHED})
+    store.save_push(pushed, successor)
+
+    assert (
+        _git(
+            local.remote,
+            "rev-parse",
+            f"refs/heads/{local.pull_request.head_ref_name}",
+        )
+        == repair_head
+    )
+    assert store.load_push(journal.work_id) == pushed
 
 
 @pytest.mark.parametrize(

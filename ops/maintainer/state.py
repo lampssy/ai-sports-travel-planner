@@ -695,6 +695,47 @@ class StateStore:
             raise StateStoreError("CI continuation identity does not match its path")
         return loaded
 
+    def require_ci_generation_eligible(
+        self,
+        work_id: str,
+        semantic_head: str,
+        lease: RunLease,
+    ) -> None:
+        """Read-only lease-owned preflight for one newly pushed CI generation."""
+        _validate_identifier(work_id, "work_id")
+        if re.fullmatch(_SHA_PATTERN, semantic_head) is None:
+            raise StateStoreError("CI generation semantic head is invalid")
+        self._assert_lease_location(lease)
+        with _transition_mutex(self.state_dir):
+            RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+            if lease.worker != "curation":
+                raise StateStoreError("only curation can start a CI generation")
+            existing = self.load_ci_continuation(work_id)
+            if existing is not None:
+                if existing.phase not in _TERMINAL_CI_PHASES:
+                    raise StateStoreError(
+                        "active CI continuation blocks a new generation"
+                    )
+                if semantic_head in {
+                    existing.semantic_head,
+                    existing.current_head,
+                }:
+                    raise StateStoreError(
+                        "new CI generation requires a new semantic head"
+                    )
+            archive_id = f"{work_id}-{semantic_head}"
+            if (
+                self._load_model(
+                    self.ci_continuation_archive_dir,
+                    archive_id,
+                    CiContinuation,
+                )
+                is not None
+            ):
+                raise StateStoreError(
+                    "new CI generation semantic head is already archived"
+                )
+
     def save_ci_continuation(
         self,
         continuation: CiContinuation,

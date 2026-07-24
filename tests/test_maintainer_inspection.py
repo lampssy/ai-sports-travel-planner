@@ -235,6 +235,17 @@ def _ci_continuation(
     )
 
 
+def _ci_repair_active() -> CiContinuation:
+    return CiContinuation.model_validate(
+        {
+            **_ci_continuation().model_dump(),
+            "phase": CiContinuationPhase.REPAIR_ACTIVE,
+            "repair_attempted": True,
+            "repair_activity_observed_at": NOW - timedelta(minutes=1),
+        }
+    )
+
+
 def test_ci_continuation_summary_is_safe_live_and_first_recovery_authority() -> None:
     ci_continuation = _ci_continuation()
     failed_check = CheckSummary(
@@ -417,6 +428,103 @@ def test_ci_continuation_conflicting_routing_labels_are_visible_but_invalid(
     assert len(inventory.ci_continuations) == 1
     assert inventory.ci_continuations[0].resumable is False
     assert inventory.ci_continuations[0].availability_reason == "invalid-state"
+    assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    ("continuation", "pull_request", "resumable", "reason"),
+    [
+        (
+            _ci_continuation(),
+            _pull_request(head_sha=SHA_B, mergeable="CONFLICTING"),
+            False,
+            "invalid-state",
+        ),
+        (
+            _ci_continuation(),
+            _pull_request(head_sha=SHA_B, mergeable="UNKNOWN"),
+            False,
+            "invalid-state",
+        ),
+        (
+            _ci_repair_active(),
+            _pull_request(
+                head_sha=SHA_B,
+                check_state="success",
+                checks=(
+                    CheckSummary(
+                        name="backend",
+                        status="success",
+                        conclusion="SUCCESS",
+                    ),
+                ),
+            ),
+            False,
+            "invalid-state",
+        ),
+        (
+            _ci_repair_active(),
+            _pull_request(
+                head_sha=SHA_B,
+                check_state="failure",
+                checks=(
+                    CheckSummary(
+                        name="backend",
+                        status="failure",
+                        conclusion="FAILURE",
+                    ),
+                ),
+            ),
+            True,
+            "available",
+        ),
+        (
+            _ci_repair_active(),
+            _pull_request(
+                head_sha=SHA_B,
+                check_state="failure",
+                checks=(
+                    CheckSummary(
+                        name="backend",
+                        status="failure",
+                        conclusion="CANCELLED",
+                    ),
+                ),
+            ),
+            False,
+            "invalid-state",
+        ),
+        (
+            _ci_repair_active(),
+            _pull_request(
+                head_sha=SHA_B,
+                check_state="pending",
+                checks=(CheckSummary(name="backend", status="pending"),),
+            ),
+            False,
+            "invalid-state",
+        ),
+    ],
+)
+def test_ci_continuation_inspection_availability_is_phase_aware(
+    continuation: CiContinuation,
+    pull_request: PullRequest,
+    resumable: bool,
+    reason: str,
+) -> None:
+    inventory = inspect_curation(
+        (pull_request,),
+        {},
+        (),
+        (),
+        (),
+        (continuation,),
+        now=NOW,
+    )
+
+    assert len(inventory.ci_continuations) == 1
+    assert inventory.ci_continuations[0].resumable is resumable
+    assert inventory.ci_continuations[0].availability_reason == reason
     assert inventory.eligible == ()
 
 

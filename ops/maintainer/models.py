@@ -47,6 +47,15 @@ class CheckSummary(_MaintainerModel):
         return details_url
 
 
+def is_confirmed_ci_failure(check: CheckSummary) -> bool:
+    return (
+        check.status == "failure"
+        and check.conclusion is not None
+        and check.conclusion.upper()
+        in {"ERROR", "FAILED", "FAILURE", "STARTUP_FAILURE", "TIMED_OUT"}
+    )
+
+
 class PullRequest(_MaintainerModel):
     number: int = Field(gt=0)
     title: str

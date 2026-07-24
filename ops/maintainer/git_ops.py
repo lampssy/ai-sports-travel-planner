@@ -494,6 +494,14 @@ class GitRepository:
         if not isinstance(checkpoint, CiRepairCheckpoint):
             raise RepositorySafetyError("CI repair checkpoint is malformed")
         _validate_pull_request(pull_request)
+        if pull_request.head_sha not in {
+            current_head,
+            checkpoint.repair_head,
+        }:
+            raise StaleRemoteHeadError(
+                "live PR head does not match the checkpointed CI repair heads"
+            )
+        self._ensure_clean_preflight()
         _validate_ci_repair_ref(
             checkpoint.repair_ref,
             pull_request.number,
@@ -503,6 +511,15 @@ class GitRepository:
         if self._optional_ref_head(checkpoint.repair_ref) != checkpoint.repair_head:
             raise RepositorySafetyError(
                 "CI repair ref no longer matches the checkpointed head"
+            )
+        switch = self._git("switch", "--detach", checkpoint.repair_ref)
+        if switch.returncode != 0:
+            raise RepositorySafetyError(
+                "cannot restore the immutable CI repair checkpoint"
+            )
+        if self.current_head() != checkpoint.repair_head:
+            raise RepositorySafetyError(
+                "restored CI repair checkout does not match the checkpointed head"
             )
         revalidated = self._build_ci_repair_checkpoint(
             pull_request=pull_request,
