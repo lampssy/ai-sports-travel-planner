@@ -91,7 +91,12 @@ def _parser() -> argparse.ArgumentParser:
     acquire = lock_commands.add_parser("acquire")
     acquire.add_argument("worker", choices=("curation", "discovery"))
     for command in ("heartbeat", "release"):
-        operation = lock_commands.add_parser(command)
+        help_text = (
+            "Refresh the lease and active CI-repair budget."
+            if command == "heartbeat"
+            else "Release the active worker lease."
+        )
+        operation = lock_commands.add_parser(command, help=help_text)
         operation.add_argument("worker", choices=("curation", "discovery"))
         _add_run_id(operation)
 

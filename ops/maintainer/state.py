@@ -879,6 +879,30 @@ class StateStore:
             self._save_model(self.ci_continuation_dir, work_id, heartbeat)
             return heartbeat
 
+    def record_owned_ci_heartbeat(
+        self,
+        lease: RunLease,
+        *,
+        now: datetime,
+    ) -> CiContinuation | None:
+        """Account for the one active CI continuation owned by this lease."""
+        self._assert_lease_location(lease)
+        RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+        if lease.worker != "curation":
+            return None
+        owned = tuple(
+            continuation
+            for continuation in self.list_ci_continuations_for_inspection()
+            if continuation.recovery_run_id == lease.run_id
+        )
+        if len(owned) > 1:
+            raise StateStoreError(
+                "one curation run cannot own multiple active CI continuations"
+            )
+        if not owned:
+            return None
+        return self.record_ci_heartbeat(owned[0].work_id, lease, now=now)
+
     def save_remediation_continuation(
         self,
         remediation: RemediationContinuation,

@@ -70,6 +70,8 @@ from ops.maintainer.runtime import (
     RunLeaseError,
 )
 from ops.maintainer.state import (
+    CiContinuation,
+    CiContinuationPhase,
     ContinuationStatus,
     ContinuationValidationStatus,
     PushJournal,
@@ -1946,6 +1948,89 @@ def _pull_request_after_exact_push(
     return pull_request
 
 
+def _ensure_initial_ci_continuation(
+    *,
+    store: StateStore,
+    lease: RunLease,
+    work: WorkState | None,
+    journal: PushJournal,
+    reviewed_head: str,
+    dependencies: Dependencies,
+) -> CiContinuation:
+    if (
+        work is None
+        or work.worker != "curation"
+        or work.work_id != journal.work_id
+        or work.run_id != journal.origin_run_id
+        or work.pr_number != journal.pr_number
+        or work.validated_head != reviewed_head
+        or work.report_path is None
+        or work.resulting_graph_markdown is None
+        or journal.report_path != work.report_path
+        or journal.resulting_graph_markdown != work.resulting_graph_markdown
+    ):
+        raise StateStoreError(
+            "waiting-CI handoff requires matching validated work and push evidence"
+        )
+    non_test_tree_digest = dependencies.repository.non_test_tree_digest(reviewed_head)
+    existing = store.load_ci_continuation(work.work_id)
+    if existing is not None:
+        expected_facts = {
+            "work_id": work.work_id,
+            "pr_number": journal.pr_number,
+            "branch": journal.branch,
+            "semantic_head": reviewed_head,
+            "current_head": reviewed_head,
+            "report_path": work.report_path,
+            "resulting_graph_markdown": work.resulting_graph_markdown,
+            "non_test_tree_digest": non_test_tree_digest,
+            "phase": CiContinuationPhase.INITIAL_WAIT,
+            "repair_attempted": False,
+            "first_wait_seconds": 0,
+            "repair_active_seconds": 0,
+            "repair_activity_observed_at": None,
+            "repair_head": None,
+            "repair_ref": None,
+            "repair_paths": frozenset(),
+            "second_wait_started_at": None,
+            "second_wait_seconds": 0,
+        }
+        if (
+            any(
+                getattr(existing, field_name) != expected
+                for field_name, expected in expected_facts.items()
+            )
+            or existing.origin_run_id != existing.recovery_run_id
+        ):
+            raise StateStoreError(
+                "existing CI continuation conflicts with push handoff"
+            )
+        return existing
+
+    observed_at = dependencies.now()
+    continuation = CiContinuation(
+        work_id=work.work_id,
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        updated_at=observed_at,
+        pr_number=journal.pr_number,
+        branch=journal.branch,
+        semantic_head=reviewed_head,
+        current_head=reviewed_head,
+        report_path=work.report_path,
+        resulting_graph_markdown=work.resulting_graph_markdown,
+        non_test_tree_digest=non_test_tree_digest,
+        phase=CiContinuationPhase.INITIAL_WAIT,
+        repair_attempted=False,
+        first_wait_started_at=observed_at,
+        first_wait_seconds=0,
+        repair_active_seconds=0,
+        second_wait_seconds=0,
+    )
+    store.save_ci_continuation(continuation, lease)
+    return continuation
+
+
 def handle_publish_state(
     args: argparse.Namespace,
     dependencies: Dependencies,
@@ -2001,6 +2086,21 @@ def handle_publish_state(
     )
     if pull_request.head_sha != args.reviewed_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
+    ci_continuation = None
+    if (
+        requested_state is MaintainerState.WAITING_CI
+        and matching_pushed_journal
+        and journal is not None
+        and journal.phase is PushPhase.PUSHED
+    ):
+        ci_continuation = _ensure_initial_ci_continuation(
+            store=store,
+            lease=lease,
+            work=work,
+            journal=journal,
+            reviewed_head=args.reviewed_head,
+            dependencies=dependencies,
+        )
     comments = tuple(dependencies.github.list_issue_comments(args.pr))
     existing_machine = trusted_machine_state(comments)
     validated_head = None
@@ -2083,6 +2183,15 @@ def handle_publish_state(
         journal = journal.model_copy(update={"phase": PushPhase.PUBLISHED})
         store.save_push(journal, lease)
         dependencies.tracker.mutation_occurred = True
+        if (
+            ci_continuation is not None
+            and ci_continuation.recovery_run_id != lease.run_id
+        ):
+            store.adopt_ci_continuation(
+                ci_continuation.work_id,
+                lease,
+                now=dependencies.now(),
+            )
     if (
         work is not None
         and work.run_id == lease.run_id
@@ -2265,10 +2374,22 @@ def handle_lock(
     tracker.lease_run_id = args.run_id
     lease = RunLease.load_owner(args.state_dir, args.worker, args.run_id)
     if args.command == "heartbeat":
-        lease.heartbeat(now=now())
+        observed_at = now()
+        lease.heartbeat(now=observed_at)
+        continuation = StateStore(args.state_dir).record_owned_ci_heartbeat(
+            lease,
+            now=observed_at,
+        )
         tracker.mutation_occurred = True
         tracker.terminal_reason = "heartbeat"
-        return {"worker": lease.worker}
+        result: dict[str, object] = {"worker": lease.worker}
+        if continuation is not None:
+            result["ci_budget"] = {
+                "first_wait_seconds": continuation.first_wait_seconds,
+                "repair_active_seconds": continuation.repair_active_seconds,
+                "second_wait_seconds": continuation.second_wait_seconds,
+            }
+        return result
     if args.command == "release":
         lease.release()
         tracker.mutation_occurred = True
