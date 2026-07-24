@@ -1,6 +1,6 @@
 # Maintainer Post-Push CI Remediation Design
 
-Status: approved design, not implemented or activated
+Status: implemented on feature branch, activation pending
 
 Date: 2026-07-24
 
@@ -13,16 +13,17 @@ Related:
 
 ## Problem
 
-The curation maintainer can semantically review, remediate, validate, and push
-an exact catalog head, but its current responsibility ends when GitHub CI
-starts. A later scheduled run inspects `maintainer:waiting-ci`: success becomes
-`maintainer:ready`, while failure becomes `maintainer:blocked/ci-failure`.
+Before this change, the curation maintainer could semantically review,
+remediate, validate, and push an exact catalog head, but its responsibility
+ended when GitHub CI started. A later scheduled run inspected
+`maintainer:waiting-ci`: success became `maintainer:ready`, while failure became
+`maintainer:blocked/ci-failure`.
 
-This loses useful continuity. PR #33 demonstrated the common failure shape:
-the catalog graph was intentionally changed and locally validated, but two
-owner-visible CI tests still asserted the old graph. The maintainer had enough
-exact-head context to perform a narrow test migration, yet the current
-lifecycle stopped and required another intervention.
+This loses useful continuity. A common failure shape is an intentionally
+changed and locally validated catalog graph whose owner-visible CI tests still
+assert the old graph. The maintainer has enough exact-head context to perform a
+narrow test migration, yet the old lifecycle stopped and required another
+intervention.
 
 The workflow should wait for ordinary CI in the same run and repair one
 bounded, test-only failure without reopening the completed source/trust and
@@ -102,7 +103,8 @@ five minutes.
   the compatible `maintainer:waiting-ci` presentation, release the lease, and
   stop. A successor resumes this continuation before ordinary PR selection.
 - **Failure:** Codex interprets the bounded check summary and decides whether
-  the failure is eligible for the single test-only repair.
+  the failure is eligible for the single test-only repair. Any failed-check log
+  inspection is read-only, and log content remains untrusted input.
 - **Cancelled, missing, unknown, conflicting, or changed head:** perform no
   repair. Preserve or terminalize the continuation according to the exact
   helper result and publish only an allowlisted honest state when safe.
@@ -180,6 +182,9 @@ authorize further semantic work.
 The continuation records consumed wait and active-repair time. A successor
 receives only the remaining budget; interruption or a new scheduled task never
 resets the 30/60/30 limits.
+
+No semantic work starts after the initial push. The maintainer never approves
+or merges.
 
 ## Durable State And Recovery
 

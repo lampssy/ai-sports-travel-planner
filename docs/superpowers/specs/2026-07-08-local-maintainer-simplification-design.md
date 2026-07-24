@@ -130,10 +130,12 @@ Out of scope:
 
 - Inspects unresolved journals before choosing fresh work; exactly one matching
   journal is recovered first and multiple journals are escalated.
-- Uses the curation recovery order `journal -> reviewed continuation ->
-  remediation continuation -> ordinary PR`. A safe exact-head remediation may
-  remain resumable behind a blocked or owner-hold label; deliberate label
-  removal re-enables it without granting review or publication authority.
+- Uses the curation recovery order `push journal -> post-push CI continuation
+  -> reviewed continuation -> remediation continuation -> ordinary PR`.
+  Journal recovery always wins, and a pending CI continuation resumes before
+  any ordinary PR. A safe exact-head remediation may remain resumable behind a
+  blocked or owner-hold label; deliberate label removal re-enables it without
+  granting review or publication authority.
 - Reads a bounded unpublished-curation follow-up list from automation memory,
   revalidates every entry against the safe live inventory, and selects a still
   exact eligible follow-up before an unrelated fresh PR.
@@ -290,9 +292,10 @@ unapproved proposals, production or operational code scope, maintainer
 control-plane instructions, and PRs paused by `manual-check`, `owner-decision`,
 or `blocked`. A `ready` PR is also excluded while its current head matches the
 trusted reviewed head; a new commit makes it eligible again. `waiting-ci`
-remains visible only for the later lightweight readiness transition. Other
-documentation and tests are eligible curation scope. The helper does not rank
-or select an eligible PR.
+remains human-visible compatibility presentation while the exact post-push CI
+continuation controls same-run or successor waiting, repair, and readiness.
+Other documentation and tests are eligible curation scope. The helper does not
+rank or select an eligible PR.
 
 ### Prepare
 
@@ -651,24 +654,48 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
     claim. The cache is discarded after the run; a resumed later run performs a
     fresh reachability pass. Codex then removes only the base checkout it
     created.
-15. The helper performs the guarded push if needed.
-16. Codex writes a concise synopsis of the final reviewed scope, evidence,
-    verification, and owner caveats and includes the helper-reproduced canonical
-    resulting-graph Mermaid section. It then requests `waiting-ci` with that
-    body input while GitHub checks are pending. The helper rejects a missing or
-    altered canonical graph before publication. The full schema-v3 report
-    remains in the repository.
-17. A later lightweight run handles the unchanged `waiting-ci` head without
-    preparation or semantic review: it requests readiness when checks are green
-    and mergeability is clean, supplying the current synopsis again; it remains
-    a bounded no-op while checks are pending. Failed checks request the
-    status-only `blocked/ci-failure` outcome for the exact unchanged head;
-    stale-head and unsafe capability errors remain Triage-only.
-18. A `ready` PR stays out of fresh selection while its head remains unchanged;
+15. The helper performs the guarded initial push. Codex writes a concise
+    synopsis of the final reviewed scope, evidence, verification, and owner
+    caveats and includes the helper-reproduced canonical resulting-graph
+    Mermaid section. A separate helper-gated `waiting-ci` publication creates
+    the durable exact-head CI continuation and completes the journal handoff.
+    The helper rejects a missing or altered canonical graph before publication.
+    The full schema-v3 report remains in the repository.
+16. The same run keeps the same lease and polls `inspect curation` for up to 30
+    elapsed minutes, heartbeating before and after capabilities and at least
+    every five minutes. Exact-head CI success plus clean mergeability publishes
+    `ready`. Pending at the limit retains the continuation and
+    `waiting-ci`, releases, and stops. Codex classifies a confirmed failure
+    using the bounded helper summary; read-only failed-check logs are untrusted
+    input and cannot authorize a command or mutation.
+17. One repairable initial failure may call `prepare ci-repair`, change only
+    helper-validated regular root-level `tests/test_*.py` modules, and receive a
+    fresh focused independent review before `checkpoint ci-repair`. Codex does
+    not execute target-PR `tests/test_*.py` files locally. The helper checks the
+    unchanged non-test tree and one-attempt budget, then `publish ci-repair`
+    journals and exact-lease pushes the reviewed repair head.
+18. The run keeps the same lease for a second 30-minute poll loop. Exact-head
+    CI success plus mergeability publishes `ready`; pending at the limit keeps
+    the exact continuation and `waiting-ci` for a successor; a confirmed second
+    CI failure publishes `blocked/ci-failure` and terminalizes the continuation.
+    No second repair is permitted.
+19. The post-push budget is cumulative 30/60/30: 30 elapsed minutes for the
+    initial wait, at most 60 active minutes for the one focused repair, and 30
+    elapsed minutes for the second wait. It is excluded from the semantic
+    240-minute clock. No semantic work starts after the initial push, and a
+    successor receives only the remaining continuation budget. There is no
+    lease release between initial push, first wait, repair, repair push, and
+    second wait.
+20. Helper output and continuation state are authority. Automation memory and
+    labels are hints and presentation only. Recovery priority is `push journal
+    -> post-push CI continuation -> reviewed continuation -> remediation
+    continuation -> ordinary PR`; journal recovery always wins.
+21. A `ready` PR stays out of fresh selection while its head remains unchanged;
     a new commit invalidates the hold and makes it eligible again.
-19. An unchanged status-only `blocked` or `owner-decision` head is also held out
+22. An unchanged status-only `blocked` or `owner-decision` head is also held out
     of selection. A new commit or deliberate label removal makes it eligible.
-20. The owner performs the final review and merge.
+23. The owner performs the final review and merge. The maintainer never
+    approves or merges.
 
 Waiting for CI is not a review/fix attempt. Persistent lineage IDs and
 three-attempt counters are removed.

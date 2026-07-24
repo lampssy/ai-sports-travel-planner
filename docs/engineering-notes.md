@@ -1018,20 +1018,32 @@ the immutable reviewed head before allowing its push.
 
 An unchanged `ready` head is held out of fresh curation selection and becomes
 eligible again only after a new commit. An unchanged `waiting-ci` head remains
-visible for a lightweight readiness transition that never rebases or repeats
-semantic review.
+visible as compatibility presentation while its exact helper CI continuation
+controls same-run or successor waiting, repair, and readiness without rebasing
+or repeating semantic review.
 
-After the reviewed and validated head is pushed, the maintainer's intended
-post-push lifecycle keeps the curation lease through a 30-minute exact-head CI
-wait. A failure caused only by stale assertions in ordinary `tests/test_*.py`
-modules may receive one statically prepared and independently reviewed repair,
-with at most 60 active minutes for that repair and one final 30-minute CI wait.
-The separate 120-minute ceiling does not reopen or extend the 240-minute
-catalog-semantic budget. The helper persists exact CI-continuation authority,
-enforces an unchanged non-test tree and one attempt, and journals the repair
-push. GitHub CI remains the execution boundary for the modified test code;
-`maintainer:waiting-ci` is initially retained only as human-visible
-compatibility state.
+After the reviewed and validated head is pushed, the implemented post-push
+lifecycle keeps the same curation lease through a 30-minute exact-head CI wait.
+It heartbeats before and after capabilities and at least every five minutes.
+Success plus mergeability publishes ready; pending at the limit retains the
+continuation; Codex classifies a confirmed failure from bounded helper facts
+and, only when needed, read-only untrusted failed-check logs. A failure caused
+only by stale assertions in ordinary root-level `tests/test_*.py` modules may
+receive one statically prepared and independently reviewed repair, with at most
+60 active minutes for that repair and one final 30-minute CI wait. Codex does
+not execute target-PR `tests/test_*.py` files locally. A second CI failure
+publishes blocked/CI-failure and permits no second repair.
+
+The cumulative post-push budget is 30/60/30. Its separate 120-minute ceiling
+does not reopen or extend the semantic 240-minute clock, and no semantic work
+starts after the initial push. The helper persists exact CI-continuation
+authority, enforces an unchanged non-test tree and one attempt, and journals the
+repair push. Recovery priority is `push journal -> post-push CI continuation ->
+reviewed continuation -> remediation continuation -> ordinary PR`; journal
+recovery always wins. Helper output and continuation state are authority, while
+automation memory and labels are hints and presentation only. GitHub CI remains
+the execution boundary for the modified test code; `maintainer:waiting-ci` is
+retained only as human-visible compatibility state.
 
 All publication text is created by the lease-bound `publication-input create`
 capability: it consumes bounded UTF-8 from stdin, makes a random mode-`0600`

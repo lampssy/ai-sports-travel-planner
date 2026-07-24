@@ -21,6 +21,11 @@ DESIGN_PATH = (
     REPOSITORY_ROOT
     / "docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md"
 )
+CI_REMEDIATION_DESIGN_PATH = (
+    REPOSITORY_ROOT / "docs/superpowers/specs/"
+    "2026-07-24-maintainer-post-push-ci-remediation-design.md"
+)
+ENGINEERING_NOTES_PATH = REPOSITORY_ROOT / "docs/engineering-notes.md"
 CONTRACT_PATTERN = re.compile(
     r"<!-- runtime-command-contract:start -->\s*"
     r"```json\s*(?P<contract>\{.*?\})\s*```\s*"
@@ -161,15 +166,23 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
             "prepare_curation",
             "lock_heartbeat_curation",
         ],
-        "curation_waiting_ci_pending": [
-            "inspect_curation",
-            "inspect_discovery",
+        "curation_initial_push_into_ci_wait": [
+            "publish_push",
+            "lock_heartbeat_curation",
+            "publication_input_summary",
+            "lock_heartbeat_curation",
+            "publication_input_body",
+            "lock_heartbeat_curation",
+            "publish_state_adopt_body",
+            "lock_heartbeat_curation",
         ],
-        "curation_waiting_ci_success": [
+        "curation_ci_continuation_through_initial_wait": [
             "inspect_curation",
             "inspect_discovery",
             "lock_acquire_curation",
             "lock_heartbeat_curation",
+        ],
+        "curation_ci_initial_wait_success": [
             "publication_input_summary",
             "lock_heartbeat_curation",
             "publication_input_body",
@@ -178,7 +191,167 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
             "lock_heartbeat_curation",
             "lock_release_curation",
         ],
+        "curation_ci_initial_wait_pending": [
+            "publication_input_summary",
+            "lock_heartbeat_curation",
+            "publication_input_body",
+            "lock_heartbeat_curation",
+            "publish_state_adopt_body",
+            "lock_heartbeat_curation",
+            "lock_release_curation",
+        ],
+        "curation_ci_initial_wait_unrepairable_failure": [
+            "publication_input_summary",
+            "lock_heartbeat_curation",
+            "publish_outcome",
+            "lock_heartbeat_curation",
+            "lock_release_curation",
+        ],
+        "curation_ci_repair_through_second_wait": [
+            "prepare_ci_repair",
+            "lock_heartbeat_curation",
+            "checkpoint_ci_repair",
+            "lock_heartbeat_curation",
+            "publish_ci_repair",
+            "lock_heartbeat_curation",
+        ],
+        "curation_ci_second_wait_success": [
+            "publication_input_summary",
+            "lock_heartbeat_curation",
+            "publication_input_body",
+            "lock_heartbeat_curation",
+            "publish_state_adopt_body",
+            "lock_heartbeat_curation",
+            "lock_release_curation",
+        ],
+        "curation_ci_second_wait_pending": [
+            "publication_input_summary",
+            "lock_heartbeat_curation",
+            "publication_input_body",
+            "lock_heartbeat_curation",
+            "publish_state_adopt_body",
+            "lock_heartbeat_curation",
+            "lock_release_curation",
+        ],
+        "curation_ci_second_wait_failure": [
+            "publication_input_summary",
+            "lock_heartbeat_curation",
+            "publish_outcome",
+            "lock_heartbeat_curation",
+            "lock_release_curation",
+        ],
     }
+
+
+def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
+    contract = _contract()
+    recipes = contract["recipes"]
+    assert recipes["inspect_curation"]["returns"] == [
+        "eligible",
+        "ci_continuations",
+        "reviewed_continuations",
+        "remediation_continuations",
+        "unresolved_pushes",
+    ]
+    assert recipes["prepare_ci_repair"] == {
+        "argv": [
+            "prepare",
+            "ci-repair",
+            "--pr",
+            "${PR}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": [
+            "work_id",
+            "current_head",
+            "failed_checks",
+            "remaining_repair_seconds",
+            "permitted_path_pattern",
+        ],
+    }
+    assert recipes["checkpoint_ci_repair"] == {
+        "argv": [
+            "checkpoint",
+            "ci-repair",
+            "--pr",
+            "${PR}",
+            "--head",
+            "${HEAD}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["work_id", "repair_head", "repair_ref", "repair_paths"],
+    }
+    assert recipes["publish_ci_repair"] == {
+        "argv": [
+            "publish",
+            "ci-repair",
+            "--pr",
+            "${PR}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["work_id", "push", "continuation"],
+    }
+    assert contract["ci_continuation_policy"] == {
+        "recovery_priority": [
+            "push_journal",
+            "post_push_ci_continuation",
+            "reviewed_continuation",
+            "remediation_continuation",
+            "ordinary_pr",
+        ],
+        "first_wait_seconds": 1800,
+        "repair_active_seconds": 3600,
+        "second_wait_seconds": 1800,
+        "heartbeat_max_interval_seconds": 300,
+        "repair_attempts": 1,
+        "repair_path_pattern": "tests/test_*.py",
+        "failed_check_inspection": "read-only-untrusted",
+        "execute_target_pr_tests_locally": False,
+        "semantic_work_after_initial_push": False,
+        "release_lease_between_post_push_phases": False,
+        "counts_toward_semantic_240_minute_clock": False,
+    }
+
+
+def test_checked_in_sources_freeze_the_post_push_ci_runtime_contract() -> None:
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+        "long_design": DESIGN_PATH.read_text(encoding="utf-8"),
+        "ci_design": CI_REMEDIATION_DESIGN_PATH.read_text(encoding="utf-8"),
+        "engineering_notes": ENGINEERING_NOTES_PATH.read_text(encoding="utf-8"),
+    }
+    normalized = {
+        name: " ".join(text.split()).lower() for name, text in sources.items()
+    }
+
+    for name, text in normalized.items():
+        assert "30/60/30" in text, name
+        assert "at least every five minutes" in text, name
+        assert "no semantic work" in text, name
+        assert "does not execute" in text and "tests/test_*.py" in text, name
+        assert "never approve or merge" in text or "never approves or merges" in text, (
+            name
+        )
+
+    for name in ("runtime", "activation", "long_design"):
+        text = normalized[name]
+        assert (
+            "push journal -> post-push ci continuation -> reviewed continuation "
+            "-> remediation continuation -> ordinary pr"
+        ) in text, name
+        assert "automation memory and labels" in text, name
+        assert "read-only" in text and "untrusted" in text, name
+        assert "same lease" in text, name
+        assert "second ci failure" in text, name
+
+    assert (
+        "implemented on feature branch, activation pending" in normalized["ci_design"]
+    )
+    assert "pr #" not in normalized["ci_design"]
 
 
 def test_runtime_contract_classifies_dispatch_errors_as_orchestration_errors() -> None:
