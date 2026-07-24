@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from ops.maintainer import SUMMARY_MARKER
-from ops.maintainer.errors import MaintainerError
+from ops.maintainer.errors import ErrorReason, MaintainerError
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.github import GitHubComment
 from ops.maintainer.inspection import (
@@ -15,8 +15,19 @@ from ops.maintainer.inspection import (
     inspect_curation,
     inspect_discovery,
 )
-from ops.maintainer.models import CheckSummary, MachineState, OutcomeState, PullRequest
-from ops.maintainer.publication import render_machine_state, render_outcome_state
+from ops.maintainer.models import (
+    CheckSummary,
+    MachineState,
+    MaintainerLane,
+    MaintainerState,
+    OutcomeState,
+    PullRequest,
+)
+from ops.maintainer.publication import (
+    publication_plan,
+    render_machine_state,
+    render_outcome_state,
+)
 from ops.maintainer.state import (
     CiContinuation,
     CiContinuationPhase,
@@ -369,6 +380,128 @@ def test_ci_continuation_authority_is_independent_of_labels(
     assert inventory.ci_continuations[0].resumable is True
     assert inventory.ci_continuations[0].availability_reason == "available"
     assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        frozenset(
+            {
+                "lane:catalog-curation",
+                "maintainer:working",
+                "maintainer:waiting-ci",
+            }
+        ),
+        frozenset(
+            {
+                "lane:catalog-curation",
+                "lane:catalog-discovery",
+                "maintainer:waiting-ci",
+            }
+        ),
+    ],
+)
+def test_ci_continuation_conflicting_routing_labels_are_visible_but_invalid(
+    labels: frozenset[str],
+) -> None:
+    inventory = inspect_curation(
+        (_pull_request(head_sha=SHA_B, labels=labels),),
+        {},
+        (),
+        (),
+        (),
+        (_ci_continuation(),),
+        now=NOW,
+    )
+
+    assert len(inventory.ci_continuations) == 1
+    assert inventory.ci_continuations[0].resumable is False
+    assert inventory.ci_continuations[0].availability_reason == "invalid-state"
+    assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        frozenset(
+            {
+                "lane:catalog-curation",
+                "maintainer:working",
+                "maintainer:waiting-ci",
+            }
+        ),
+        frozenset(
+            {
+                "lane:catalog-curation",
+                "lane:catalog-discovery",
+            }
+        ),
+    ],
+)
+def test_inspect_curation_rejects_conflicting_routing_labels_from_selection(
+    labels: frozenset[str],
+) -> None:
+    pull_request = _pull_request(labels=labels)
+
+    inventory = inspect_curation((pull_request,), {}, ())
+
+    assert inventory.eligible == ()
+    with pytest.raises(MaintainerError) as exc_info:
+        publication_plan(
+            requested_state=MaintainerState.WORKING,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=pull_request,
+            machine_state=_machine_state(
+                reviewed_head=SHA_A,
+                last_operation="reviewed",
+            ),
+        )
+
+    assert exc_info.value.reason is ErrorReason.INVALID_GITHUB_STATE
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        frozenset(
+            {
+                "lane:catalog-discovery",
+                "maintainer:proposal",
+                "maintainer:working",
+            }
+        ),
+        frozenset(
+            {
+                "lane:catalog-discovery",
+                "lane:catalog-curation",
+                "maintainer:proposal",
+            }
+        ),
+    ],
+)
+def test_inspect_discovery_conflicting_routing_labels_fail_closed(
+    labels: frozenset[str],
+) -> None:
+    pull_request = _pull_request(labels=labels)
+    comment = _canonical_comment(
+        _machine_state(
+            candidate_key="ski_area:tignes",
+            candidate_origin="backlog",
+        )
+    )
+
+    inventory = inspect_discovery(
+        frozenset(),
+        (pull_request,),
+        (),
+        {42: (comment,)},
+    )
+
+    assert inventory.open_proposal_count == 1
+    assert inventory.open_proposals[0].identity_known is False
+    assert inventory.open_candidate_keys == frozenset()
+    assert inventory.has_unknown_proposal_identity is True
+    assert inventory.can_create_proposal is False
 
 
 def test_curation_inventory_exposes_only_safe_continuation_summary() -> None:

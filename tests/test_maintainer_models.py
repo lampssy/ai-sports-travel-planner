@@ -163,28 +163,36 @@ def test_pull_request_rejects_unknown_lifecycle_state() -> None:
         _pull_request(lifecycle_state="DRAFT")
 
 
-def test_pull_request_rejects_multiple_maintainer_states() -> None:
+def test_pull_request_check_conflicting_states_are_non_authoritative() -> None:
     labels = frozenset(
         {
+            MaintainerLane.CATALOG_CURATION,
             MaintainerState.WORKING,
             MaintainerState.WAITING_CI,
         }
     )
 
-    with pytest.raises(ValidationError, match="at most one maintainer state"):
-        _pull_request(labels=labels)
+    pull_request = _pull_request(labels=labels)
+
+    assert pull_request.routing_labels_valid is False
+    assert pull_request.lane is MaintainerLane.CATALOG_CURATION
+    assert pull_request.maintainer_state is None
 
 
-def test_pull_request_rejects_multiple_lanes() -> None:
+def test_pull_request_check_conflicting_lanes_are_non_authoritative() -> None:
     labels = frozenset(
         {
             MaintainerLane.CATALOG_DISCOVERY,
             MaintainerLane.CATALOG_CURATION,
+            MaintainerState.WAITING_CI,
         }
     )
 
-    with pytest.raises(ValidationError, match="at most one maintainer lane"):
-        _pull_request(labels=labels)
+    pull_request = _pull_request(labels=labels)
+
+    assert pull_request.routing_labels_valid is False
+    assert pull_request.lane is None
+    assert pull_request.maintainer_state is MaintainerState.WAITING_CI
 
 
 def test_pull_request_rejects_non_github_url_and_invalid_head_sha() -> None:

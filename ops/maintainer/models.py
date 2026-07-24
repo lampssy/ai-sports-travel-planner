@@ -87,30 +87,21 @@ class PullRequest(_MaintainerModel):
             raise ValueError("url must be a GitHub URL")
         return url
 
-    @model_validator(mode="after")
-    def validate_routing_labels(self) -> Self:
+    @property
+    def routing_labels_valid(self) -> bool:
         lanes = [lane for lane in MaintainerLane if lane.value in self.labels]
-        if len(lanes) > 1:
-            raise ValueError("pull request may have at most one maintainer lane")
-
         states = [state for state in MaintainerState if state.value in self.labels]
-        if len(states) > 1:
-            raise ValueError("pull request may have at most one maintainer state")
-        return self
+        return len(lanes) <= 1 and len(states) <= 1
 
     @property
     def lane(self) -> MaintainerLane | None:
-        return next(
-            (lane for lane in MaintainerLane if lane.value in self.labels),
-            None,
-        )
+        lanes = [lane for lane in MaintainerLane if lane.value in self.labels]
+        return lanes[0] if len(lanes) == 1 else None
 
     @property
     def maintainer_state(self) -> MaintainerState | None:
-        return next(
-            (state for state in MaintainerState if state.value in self.labels),
-            None,
-        )
+        states = [state for state in MaintainerState if state.value in self.labels]
+        return states[0] if len(states) == 1 else None
 
 
 class MachineState(_MaintainerModel):

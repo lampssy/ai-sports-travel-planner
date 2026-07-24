@@ -499,7 +499,8 @@ def _ci_continuation_availability(
     if pull_request.head_ref_name != continuation.branch:
         return "branch-drift"
     if (
-        pull_request.is_cross_repository
+        not pull_request.routing_labels_valid
+        or pull_request.is_cross_repository
         or pull_request.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
         or pull_request.base_ref_name != "main"
         or not pull_request.changed_paths
@@ -602,7 +603,8 @@ def _is_safe_curation_candidate(
     comments: Sequence[GitHubComment],
 ) -> bool:
     if (
-        pull_request.lifecycle_state != "OPEN"
+        not pull_request.routing_labels_valid
+        or pull_request.lifecycle_state != "OPEN"
         or pull_request.is_cross_repository
         or pull_request.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
         or pull_request.base_ref_name != "main"
@@ -680,7 +682,9 @@ def _proposal_summary(
     pull_request: PullRequest,
     comments: Sequence[GitHubComment],
 ) -> ProposalSummary:
-    state = trusted_machine_state(comments)
+    state = (
+        trusted_machine_state(comments) if pull_request.routing_labels_valid else None
+    )
     if state is None or state.candidate_key is None:
         candidate_key = None
         candidate_origin = None

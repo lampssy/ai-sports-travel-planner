@@ -637,7 +637,8 @@ def _require_publication_authority(
         and lane is MaintainerLane.CATALOG_CURATION
     )
     if (
-        pull_request.lifecycle_state != "OPEN"
+        not pull_request.routing_labels_valid
+        or pull_request.lifecycle_state != "OPEN"
         or pull_request.is_cross_repository
         or pull_request.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
         or pull_request.base_ref_name != "main"

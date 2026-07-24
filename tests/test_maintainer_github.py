@@ -514,6 +514,29 @@ def test_parse_pull_request_preserves_draft_state() -> None:
     assert parse_pull_request(_raw_pull_request(isDraft=True)).is_draft is True
 
 
+@pytest.mark.parametrize(
+    "labels",
+    [
+        [
+            {"name": "lane:catalog-curation"},
+            {"name": "maintainer:working"},
+            {"name": "maintainer:waiting-ci"},
+        ],
+        [
+            {"name": "lane:catalog-curation"},
+            {"name": "lane:catalog-discovery"},
+            {"name": "maintainer:waiting-ci"},
+        ],
+    ],
+)
+def test_parse_pull_request_check_tolerates_conflicting_routing_labels(
+    labels: list[dict[str, str]],
+) -> None:
+    pull_request = parse_pull_request(_raw_pull_request(labels=labels))
+
+    assert pull_request.routing_labels_valid is False
+
+
 def test_create_draft_pull_request_uses_fixed_scope_and_private_body_file() -> None:
     runner = RecordingRunner(outputs=['{"number":73}'])
     client = GitHubClient(runner=runner)
