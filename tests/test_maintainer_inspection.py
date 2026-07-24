@@ -15,9 +15,11 @@ from ops.maintainer.inspection import (
     inspect_curation,
     inspect_discovery,
 )
-from ops.maintainer.models import MachineState, OutcomeState, PullRequest
+from ops.maintainer.models import CheckSummary, MachineState, OutcomeState, PullRequest
 from ops.maintainer.publication import render_machine_state, render_outcome_state
 from ops.maintainer.state import (
+    CiContinuation,
+    CiContinuationPhase,
     ContinuationStatus,
     ContinuationValidationStatus,
     PushJournal,
@@ -33,6 +35,7 @@ pytestmark = pytest.mark.db_free
 SHA_A = "a" * 40
 SHA_B = "b" * 40
 SHA_C = "c" * 40
+NOW = datetime(2026, 7, 8, 10, tzinfo=UTC)
 
 
 def _pull_request(number: int = 42, **overrides: object) -> PullRequest:
@@ -192,6 +195,180 @@ def _remediation(
         completed_stage="delta-validated",
         status=RemediationContinuationStatus.AVAILABLE,
     )
+
+
+def _ci_continuation(
+    *,
+    pr_number: int = 42,
+    semantic_head: str = SHA_B,
+    current_head: str = SHA_B,
+) -> CiContinuation:
+    return CiContinuation(
+        work_id=f"curation-pr-{pr_number}",
+        origin_run_id="1" * 32,
+        recovery_run_id="2" * 32,
+        updated_at=NOW - timedelta(minutes=2),
+        pr_number=pr_number,
+        branch=f"codex/catalog-{pr_number}",
+        semantic_head=semantic_head,
+        current_head=current_head,
+        report_path=f"docs/catalog-curation/pr-{pr_number}.json",
+        resulting_graph_markdown="```mermaid\ngraph LR\n  a --> b\n```",
+        non_test_tree_digest="d" * 64,
+        phase=CiContinuationPhase.INITIAL_WAIT,
+        repair_attempted=False,
+        first_wait_started_at=NOW - timedelta(minutes=2),
+        first_wait_seconds=0,
+        repair_active_seconds=0,
+        second_wait_seconds=0,
+    )
+
+
+def test_ci_continuation_summary_is_safe_live_and_first_recovery_authority() -> None:
+    ci_continuation = _ci_continuation()
+    failed_check = CheckSummary(
+        name="backend",
+        status="failure",
+        conclusion="FAILURE",
+        details_url=(
+            "https://github.com/lampssy/ai-sports-travel-planner/actions/runs/1"
+        ),
+    )
+    matching = _pull_request(
+        head_sha=SHA_B,
+        check_state="failure",
+        checks=(failed_check,),
+    )
+
+    inventory = inspect_curation(
+        (matching, _pull_request(43)),
+        {},
+        (),
+        (_continuation(selected_head=SHA_B),),
+        (_remediation(selected_head=SHA_B),),
+        (ci_continuation,),
+        now=NOW,
+    )
+
+    assert inventory.ci_continuations[0].model_dump(mode="json") == {
+        "pr_number": 42,
+        "semantic_head": SHA_B,
+        "current_head": SHA_B,
+        "phase": "initial-wait",
+        "check_state": "failure",
+        "mergeable": "MERGEABLE",
+        "repair_attempted": False,
+        "first_wait_seconds": 120,
+        "repair_active_seconds": 0,
+        "second_wait_seconds": 0,
+        "failed_checks": [
+            {
+                "name": "backend",
+                "status": "failure",
+                "conclusion": "FAILURE",
+                "details_url": (
+                    "https://github.com/lampssy/ai-sports-travel-planner/actions/runs/1"
+                ),
+            }
+        ],
+        "resumable": True,
+        "availability_reason": "available",
+    }
+    assert inventory.reviewed_continuations == ()
+    assert inventory.remediation_continuations == ()
+    assert [candidate.number for candidate in inventory.eligible] == [43]
+    serialized = json.dumps(inventory.model_dump(mode="json"))
+    for private_value in (
+        ci_continuation.origin_run_id,
+        ci_continuation.recovery_run_id,
+        ci_continuation.report_path,
+        ci_continuation.resulting_graph_markdown,
+        ci_continuation.non_test_tree_digest,
+    ):
+        assert private_value not in serialized
+
+
+def test_ci_continuation_recovery_priority_yields_only_to_unresolved_journal() -> None:
+    inventory = inspect_curation(
+        (_pull_request(head_sha=SHA_B),),
+        {},
+        (_journal(),),
+        (_continuation(selected_head=SHA_B),),
+        (_remediation(selected_head=SHA_B),),
+        (_ci_continuation(),),
+        now=NOW,
+    )
+
+    assert len(inventory.unresolved_pushes) == 1
+    assert inventory.ci_continuations == ()
+    assert inventory.reviewed_continuations == ()
+    assert inventory.remediation_continuations == ()
+    assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    ("pull_request", "reason"),
+    [
+        (_pull_request(head_sha=SHA_C), "head-drift"),
+        (_pull_request(head_sha=SHA_B, lifecycle_state="CLOSED"), "closed-or-merged"),
+        (
+            _pull_request(
+                head_sha=SHA_B,
+                head_ref_name="codex/catalog-other",
+            ),
+            "branch-drift",
+        ),
+        (
+            _pull_request(head_sha=SHA_B, is_cross_repository=True),
+            "invalid-state",
+        ),
+    ],
+)
+def test_ci_continuation_exposes_non_resumable_live_invalidated_reason(
+    pull_request: PullRequest,
+    reason: str,
+) -> None:
+    inventory = inspect_curation(
+        (pull_request,),
+        {},
+        (),
+        (),
+        (),
+        (_ci_continuation(),),
+        now=NOW,
+    )
+
+    assert inventory.ci_continuations[0].resumable is False
+    assert inventory.ci_continuations[0].availability_reason == reason
+    assert inventory.reviewed_continuations == ()
+    assert inventory.remediation_continuations == ()
+    assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        frozenset({"lane:catalog-curation", "maintainer:waiting-ci"}),
+        frozenset({"lane:catalog-curation"}),
+        frozenset({"lane:catalog-curation", "maintainer:blocked"}),
+    ],
+)
+def test_ci_continuation_authority_is_independent_of_labels(
+    labels: frozenset[str],
+) -> None:
+    inventory = inspect_curation(
+        (_pull_request(head_sha=SHA_B, labels=labels),),
+        {},
+        (),
+        (),
+        (),
+        (_ci_continuation(),),
+        now=NOW,
+    )
+
+    assert inventory.ci_continuations[0].resumable is True
+    assert inventory.ci_continuations[0].availability_reason == "available"
+    assert inventory.eligible == ()
 
 
 def test_curation_inventory_exposes_only_safe_continuation_summary() -> None:

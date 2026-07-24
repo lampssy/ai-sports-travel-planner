@@ -33,6 +33,20 @@ class _MaintainerModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
 
+class CheckSummary(_MaintainerModel):
+    name: str = Field(min_length=1, max_length=256)
+    status: Literal["pending", "success", "failure"]
+    conclusion: str | None = Field(default=None, max_length=64)
+    details_url: HttpUrl | None = None
+
+    @field_validator("details_url")
+    @classmethod
+    def validate_details_url(cls, details_url: HttpUrl | None) -> HttpUrl | None:
+        if details_url is not None and details_url.scheme != "https":
+            raise ValueError("details URL must use HTTPS")
+        return details_url
+
+
 class PullRequest(_MaintainerModel):
     number: int = Field(gt=0)
     title: str
@@ -48,6 +62,7 @@ class PullRequest(_MaintainerModel):
     head_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
     mergeable: Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
     check_state: Literal["pending", "success", "failure"]
+    checks: tuple[CheckSummary, ...] = ()
     changed_paths: frozenset[str] = Field(default_factory=frozenset)
     body: str = ""
 

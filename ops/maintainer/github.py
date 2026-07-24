@@ -14,7 +14,7 @@ from typing import Literal, Protocol
 from urllib.parse import quote
 
 from ops.maintainer import REPOSITORY
-from ops.maintainer.models import PullRequest
+from ops.maintainer.models import CheckSummary, PullRequest
 
 PR_FIELDS = (
     "number",
@@ -154,6 +154,57 @@ def check_state(
     return "success"
 
 
+def _check_summaries(
+    rollup: Sequence[Mapping[str, object]] | None,
+) -> tuple[CheckSummary, ...]:
+    if not rollup:
+        return ()
+    summaries = tuple(_check_summary(item) for item in rollup)
+    return tuple(
+        sorted(
+            set(summaries),
+            key=lambda item: (
+                item.name,
+                item.status,
+                item.conclusion or "",
+                str(item.details_url or ""),
+            ),
+        )
+    )
+
+
+def _check_summary(value: Mapping[str, object]) -> CheckSummary:
+    has_name = "name" in value
+    has_context = "context" in value
+    if has_name == has_context:
+        raise TypeError("check entry must have one name field")
+    if has_name:
+        name = value["name"]
+        if "status" not in value:
+            raise TypeError("check run must include status")
+        details_url = value.get("detailsUrl")
+    else:
+        name = value["context"]
+        if "state" not in value:
+            raise TypeError("status context must include state")
+        details_url = value.get("targetUrl")
+    if not isinstance(name, str):
+        raise TypeError("check name must be a string")
+    if details_url is not None and not isinstance(details_url, str):
+        raise TypeError("check details URL must be a string")
+    conclusion = value.get("conclusion")
+    if conclusion is None:
+        conclusion = value.get("state")
+    if conclusion is not None and not isinstance(conclusion, str):
+        raise TypeError("check conclusion must be a string")
+    return CheckSummary(
+        name=name,
+        status=check_state((value,)),
+        conclusion=conclusion.upper() if conclusion is not None else None,
+        details_url=details_url,
+    )
+
+
 def parse_pull_request(value: Mapping[str, object]) -> PullRequest:
     try:
         owner = value["headRepositoryOwner"]
@@ -197,6 +248,7 @@ def parse_pull_request(value: Mapping[str, object]) -> PullRequest:
                 "head_sha": value["headRefOid"],
                 "mergeable": value["mergeable"],
                 "check_state": check_state(rollup),
+                "checks": _check_summaries(rollup),
                 "changed_paths": frozenset(
                     _object_string(item, "path") for item in files
                 ),

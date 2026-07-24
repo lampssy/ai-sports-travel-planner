@@ -219,13 +219,38 @@ def handle_inspect_curation(
 ) -> dict[str, object]:
     dependencies.tracker.worker = "curation"
     dependencies.tracker.stage = ErrorStage.INSPECT
-    pull_requests = tuple(dependencies.github.list_all_open_pull_requests())
+    unresolved_pushes = StateStore.list_unresolved_for_inspection(args.state_dir)
+    ci_continuations = (
+        ()
+        if unresolved_pushes
+        else StateStore.list_ci_continuations_for_inspection_path(args.state_dir)
+    )
+    open_pull_requests = tuple(dependencies.github.list_all_open_pull_requests())
+    open_pr_numbers = {item.number for item in open_pull_requests}
+    continuation_pull_requests = tuple(
+        dependencies.github.get_pull_request(continuation.pr_number)
+        for continuation in ci_continuations
+        if continuation.pr_number not in open_pr_numbers
+    )
+    pull_requests = (*open_pull_requests, *continuation_pull_requests)
     inventory = inspect_curation(
         pull_requests,
         _comments_by_pr(dependencies.github, pull_requests),
-        StateStore.list_unresolved_for_inspection(args.state_dir),
-        StateStore.list_continuations_for_inspection_path(args.state_dir),
-        StateStore.list_remediation_continuations_for_inspection_path(args.state_dir),
+        unresolved_pushes,
+        (
+            ()
+            if unresolved_pushes
+            else StateStore.list_continuations_for_inspection_path(args.state_dir)
+        ),
+        (
+            ()
+            if unresolved_pushes
+            else StateStore.list_remediation_continuations_for_inspection_path(
+                args.state_dir
+            )
+        ),
+        ci_continuations,
+        now=_current_time(dependencies),
     )
     dependencies.tracker.terminal_reason = (
         "recovery-required" if inventory.unresolved_pushes else "inspected"

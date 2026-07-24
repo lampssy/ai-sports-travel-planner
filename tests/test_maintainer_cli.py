@@ -40,6 +40,8 @@ from ops.maintainer.publication import (
 )
 from ops.maintainer.runtime import RunLease
 from ops.maintainer.state import (
+    CiContinuation,
+    CiContinuationPhase,
     ContinuationStatus,
     ContinuationValidationStatus,
     PushJournal,
@@ -725,6 +727,28 @@ def _assert_outcome(
     return outcome
 
 
+def _ci_continuation_for_cli(lease: RunLease) -> CiContinuation:
+    return CiContinuation(
+        work_id="curation-pr-42",
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        updated_at=NOW - timedelta(minutes=2),
+        pr_number=42,
+        branch=BRANCH,
+        semantic_head=SHA_B,
+        current_head=SHA_B,
+        report_path="docs/catalog-curation/nendaz.json",
+        resulting_graph_markdown=CANONICAL_GRAPH,
+        non_test_tree_digest="d" * 64,
+        phase=CiContinuationPhase.INITIAL_WAIT,
+        repair_attempted=False,
+        first_wait_started_at=NOW - timedelta(minutes=2),
+        first_wait_seconds=0,
+        repair_active_seconds=0,
+        second_wait_seconds=0,
+    )
+
+
 EXPECTED_HANDLERS = {
     ("inspect", "curation"),
     ("inspect", "discovery"),
@@ -1064,6 +1088,66 @@ def test_inspect_curation_is_read_only_and_returns_all_safe_candidates(
     assert [item["number"] for item in payload["eligible"]] == [42, 43]
     assert payload["unresolved_pushes"] == []
     _assert_outcome(payload, worker="curation", mutation=False, run_id=None)
+    assert not (state_dir / "run.lock").exists()
+
+
+def test_inspect_curation_exposes_ci_continuation_before_ordinary_selection(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(state_dir, "curation", now=NOW - timedelta(minutes=2))
+    continuation = _ci_continuation_for_cli(lease)
+    StateStore(state_dir).save_ci_continuation(continuation, lease)
+    lease.release()
+    github = FakeGitHub(
+        pull_requests={
+            42: _pull_request(
+                head_sha=SHA_B,
+                check_state="failure",
+                checks=(
+                    {
+                        "name": "backend",
+                        "status": "failure",
+                        "conclusion": "FAILURE",
+                        "details_url": (
+                            "https://github.com/lampssy/"
+                            "ai-sports-travel-planner/actions/runs/1"
+                        ),
+                    },
+                ),
+            ),
+            43: _pull_request(
+                number=43,
+                head_sha=SHA_C,
+                changed_paths=frozenset({"app/data/catalog.json"}),
+            ),
+        }
+    )
+
+    code, payload = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+
+    assert code == 0, payload
+    assert payload["ci_continuations"][0]["pr_number"] == 42
+    assert payload["ci_continuations"][0]["first_wait_seconds"] == 120
+    assert payload["ci_continuations"][0]["failed_checks"][0]["name"] == "backend"
+    assert [item["number"] for item in payload["eligible"]] == [43]
+    serialized = json.dumps(payload)
+    for private_value in (
+        continuation.origin_run_id,
+        continuation.recovery_run_id,
+        continuation.report_path,
+        continuation.resulting_graph_markdown,
+        continuation.non_test_tree_digest,
+    ):
+        assert private_value not in serialized
+    assert StateStore.list_ci_continuations_for_inspection_path(state_dir) == (
+        continuation,
+    )
     assert not (state_dir / "run.lock").exists()
 
 

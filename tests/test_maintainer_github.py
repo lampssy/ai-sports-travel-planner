@@ -134,7 +134,14 @@ def _raw_pull_request(**overrides: object) -> dict[str, object]:
         ],
         "headRefOid": "a" * 40,
         "mergeable": "MERGEABLE",
-        "statusCheckRollup": [{"status": "COMPLETED", "conclusion": "SUCCESS"}],
+        "statusCheckRollup": [
+            {
+                "name": "backend",
+                "status": "COMPLETED",
+                "conclusion": "SUCCESS",
+                "detailsUrl": None,
+            }
+        ],
         "files": [{"path": "app/data/catalog_v2.json"}],
         "body": "Owner text",
     }
@@ -367,6 +374,123 @@ def test_check_state_classifies_rollups(
     expected: str,
 ) -> None:
     assert check_state(rollup) == expected
+
+
+def test_parse_pull_request_normalizes_mixed_checks_with_stable_deduplication() -> None:
+    pull_request = parse_pull_request(
+        _raw_pull_request(
+            statusCheckRollup=[
+                {
+                    "__typename": "StatusContext",
+                    "context": "backend",
+                    "state": "FAILURE",
+                    "targetUrl": (
+                        "https://github.com/lampssy/ai-sports-travel-planner/"
+                        "actions/runs/1"
+                    ),
+                },
+                {
+                    "__typename": "CheckRun",
+                    "name": "frontend",
+                    "status": "IN_PROGRESS",
+                    "conclusion": None,
+                    "detailsUrl": (
+                        "https://github.com/lampssy/ai-sports-travel-planner/"
+                        "actions/runs/2"
+                    ),
+                },
+                {
+                    "__typename": "StatusContext",
+                    "context": "backend",
+                    "state": "failure",
+                    "targetUrl": (
+                        "https://github.com/lampssy/ai-sports-travel-planner/"
+                        "actions/runs/1"
+                    ),
+                },
+            ]
+        )
+    )
+
+    assert pull_request.check_state == "failure"
+    assert [item.model_dump(mode="json") for item in pull_request.checks] == [
+        {
+            "name": "backend",
+            "status": "failure",
+            "conclusion": "FAILURE",
+            "details_url": (
+                "https://github.com/lampssy/ai-sports-travel-planner/actions/runs/1"
+            ),
+        },
+        {
+            "name": "frontend",
+            "status": "pending",
+            "conclusion": None,
+            "details_url": (
+                "https://github.com/lampssy/ai-sports-travel-planner/actions/runs/2"
+            ),
+        },
+    ]
+
+
+def test_check_metadata_and_aggregate_use_the_same_rollup_facts() -> None:
+    pull_request = parse_pull_request(
+        _raw_pull_request(
+            statusCheckRollup=[
+                {
+                    "name": "backend",
+                    "status": "COMPLETED",
+                    "conclusion": "SUCCESS",
+                    "detailsUrl": None,
+                },
+                {
+                    "context": "deploy",
+                    "state": "EXPECTED",
+                    "targetUrl": None,
+                },
+            ]
+        )
+    )
+
+    assert pull_request.check_state == "pending"
+    assert [check.status for check in pull_request.checks] == ["success", "pending"]
+    assert [check.conclusion for check in pull_request.checks] == [
+        "SUCCESS",
+        "EXPECTED",
+    ]
+
+
+@pytest.mark.parametrize(
+    "rollup",
+    [
+        [{"status": "COMPLETED", "conclusion": "SUCCESS"}],
+        [{"name": 17, "status": "COMPLETED", "conclusion": "SUCCESS"}],
+        [{"name": "", "status": "COMPLETED", "conclusion": "SUCCESS"}],
+        [{"name": "x" * 257, "status": "COMPLETED", "conclusion": "SUCCESS"}],
+        [{"name": "backend", "status": 17, "conclusion": "SUCCESS"}],
+        [{"name": "backend", "status": "COMPLETED", "conclusion": "x" * 65}],
+        [
+            {
+                "name": "backend",
+                "status": "COMPLETED",
+                "conclusion": "SUCCESS",
+                "detailsUrl": "http://github.com/actions/runs/1",
+            }
+        ],
+        [
+            {
+                "context": "backend",
+                "state": "SUCCESS",
+                "targetUrl": 17,
+            }
+        ],
+    ],
+)
+def test_parse_pull_request_rejects_malformed_check_metadata(
+    rollup: list[dict[str, object]],
+) -> None:
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        parse_pull_request(_raw_pull_request(statusCheckRollup=rollup))
 
 
 def test_parse_pull_request_maps_gh_json_to_strict_model() -> None:

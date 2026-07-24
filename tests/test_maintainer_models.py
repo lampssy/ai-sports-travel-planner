@@ -15,6 +15,7 @@ from ops.maintainer import (
     SUMMARY_MARKER,
 )
 from ops.maintainer.models import (
+    CheckSummary,
     MachineState,
     MaintainerLane,
     MaintainerState,
@@ -113,6 +114,34 @@ def test_valid_pull_request_exposes_lane_and_maintainer_state() -> None:
 
 def test_pull_request_accepts_additive_draft_metadata() -> None:
     assert _pull_request(is_draft=True).is_draft is True
+
+
+def test_check_summary_is_bounded_and_requires_https_details_url() -> None:
+    check = CheckSummary(
+        name="backend",
+        status="failure",
+        conclusion="FAILURE",
+        details_url=(
+            "https://github.com/lampssy/ai-sports-travel-planner/actions/runs/1"
+        ),
+    )
+
+    assert check.name == "backend"
+    assert str(check.details_url).startswith("https://github.com/")
+
+    for update in (
+        {"name": ""},
+        {"name": "x" * 257},
+        {"status": "cancelled"},
+        {"conclusion": "x" * 65},
+        {"details_url": "http://github.com/actions/runs/1"},
+    ):
+        with pytest.raises(ValidationError):
+            CheckSummary.model_validate({**check.model_dump(), **update})
+
+
+def test_pull_request_defaults_to_no_check_metadata() -> None:
+    assert _pull_request().checks == ()
 
 
 def test_pull_request_rejects_naive_created_at() -> None:
