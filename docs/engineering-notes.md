@@ -780,7 +780,12 @@ design spec remains rationale and workflow-change authority rather than
 per-cycle command input. This keeps semantic orchestration in Codex without
 making command spelling an inference problem; a dispatch-stage
 `invalid-command` is treated as an orchestration-contract defect, not as a
-finding against the selected PR.
+finding against the selected PR. A completed structured dispatch rejection may
+receive one corrected attempt of the same named registry recipe after the exact
+contract is reloaded, provided the structured outcome also reports no mutation.
+The malformed argv is never repeated, and uncertainty, missing or positive
+mutation status, recipe ambiguity, capability switching, a non-dispatch error,
+or a second dispatch rejection still stops the cycle.
 
 Incoming curation reports are review input, not preparation authority.
 Preparation validates the resulting diff rather than freezing the incoming
