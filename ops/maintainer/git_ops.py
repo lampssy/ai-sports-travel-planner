@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import stat
@@ -20,11 +21,13 @@ from ops.maintainer.intent import (
     IntentValidationError,
     build_intent_snapshot,
     build_preparation_intent_snapshot,
+    is_allowed_ci_repair_path,
     is_allowed_curation_path,
 )
 from ops.maintainer.models import PullRequest
 
 __all__ = [
+    "CiRepairCheckpoint",
     "GitRepository",
     "ContinuationReplayResult",
     "GitAuthenticationError",
@@ -76,6 +79,10 @@ _REMEDIATION_REF = re.compile(
 _REMEDIATION_CONTINUATION_REF = re.compile(
     r"^refs/snowcast-maintainer/remediation-continuations/pr-[1-9][0-9]*/"
     r"(?P<base>[0-9a-f]{12})-(?P<remediated>[0-9a-f]{12})$"
+)
+_CI_REPAIR_REF = re.compile(
+    r"^refs/snowcast-maintainer/ci-repairs/pr-[1-9][0-9]*/"
+    r"(?P<current>[0-9a-f]{12})-(?P<repair>[0-9a-f]{12})$"
 )
 _RAW_DIFF_HEADER = re.compile(
     r"^:(?P<old_mode>[0-7]{6}) (?P<new_mode>[0-7]{6}) "
@@ -164,6 +171,15 @@ class ContinuationReplayResult(BaseModel):
     head: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
     conflict_paths: tuple[str, ...] = ()
     sync: GuardedSyncResult | None = None
+
+
+class CiRepairCheckpoint(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    repair_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    repair_ref: str = Field(pattern=r"^refs/snowcast-maintainer/ci-repairs/")
+    repair_paths: frozenset[str] = Field(min_length=1)
+    non_test_tree_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 class CommandRunner(Protocol):
@@ -408,6 +424,160 @@ class GitRepository:
         if result.returncode != 0:
             _raise_sanitized_network_error("fetch", result.stderr)
         return self._rev_parse("refs/remotes/origin/main")
+
+    def prepare_ci_repair(self, pull_request: PullRequest) -> str:
+        """Detach the clean worktree at the exact live PR head without rebasing."""
+        _validate_pull_request(pull_request)
+        branch = pull_request.head_ref_name
+        self._ensure_clean_preflight()
+        self.verify_repository()
+        self.fetch_for_pr(branch)
+        fetched_head = self._rev_parse(f"refs/remotes/origin/{branch}")
+        if fetched_head != pull_request.head_sha:
+            raise StaleRemoteHeadError(
+                f"fetched head {fetched_head} does not match current PR head "
+                f"{pull_request.head_sha}"
+            )
+        switch = self._git("switch", "--detach", fetched_head)
+        if switch.returncode != 0:
+            raise RepositorySafetyError("cannot detach at exact current PR head")
+        if self.current_head() != fetched_head:
+            raise RepositorySafetyError(
+                "detached CI repair head drifted during prepare"
+            )
+        return fetched_head
+
+    def checkpoint_ci_repair(
+        self,
+        *,
+        pull_request: PullRequest,
+        semantic_head: str,
+        current_head: str,
+        repair_head: str,
+        expected_non_test_tree_digest: str,
+    ) -> CiRepairCheckpoint:
+        """Create one immutable checkpoint for a structurally test-only repair."""
+        self._ensure_clean_preflight()
+        if self.current_head() != repair_head:
+            raise RepositorySafetyError(
+                "current HEAD does not match the requested CI repair head"
+            )
+        checkpoint = self._build_ci_repair_checkpoint(
+            pull_request=pull_request,
+            semantic_head=semantic_head,
+            current_head=current_head,
+            repair_head=repair_head,
+            expected_non_test_tree_digest=expected_non_test_tree_digest,
+        )
+        result = self._git(
+            "update-ref",
+            checkpoint.repair_ref,
+            checkpoint.repair_head,
+            "0" * 40,
+        )
+        if result.returncode != 0:
+            raise RepositorySafetyError(
+                "CI repair ref collision or create-only checkpoint failure"
+            )
+        return checkpoint
+
+    def revalidate_ci_repair_checkpoint(
+        self,
+        *,
+        pull_request: PullRequest,
+        semantic_head: str,
+        current_head: str,
+        checkpoint: CiRepairCheckpoint,
+    ) -> CiRepairCheckpoint:
+        """Revalidate one exact repair solely from its immutable checkpoint ref."""
+        if not isinstance(checkpoint, CiRepairCheckpoint):
+            raise RepositorySafetyError("CI repair checkpoint is malformed")
+        _validate_pull_request(pull_request)
+        _validate_ci_repair_ref(
+            checkpoint.repair_ref,
+            pull_request.number,
+            current_head,
+            checkpoint.repair_head,
+        )
+        if self._optional_ref_head(checkpoint.repair_ref) != checkpoint.repair_head:
+            raise RepositorySafetyError(
+                "CI repair ref no longer matches the checkpointed head"
+            )
+        revalidated = self._build_ci_repair_checkpoint(
+            pull_request=pull_request,
+            semantic_head=semantic_head,
+            current_head=current_head,
+            repair_head=checkpoint.repair_head,
+            expected_non_test_tree_digest=checkpoint.non_test_tree_digest,
+        )
+        if revalidated != checkpoint:
+            raise RepositorySafetyError(
+                "CI repair checkpoint no longer matches immutable structure"
+            )
+        return revalidated
+
+    def _build_ci_repair_checkpoint(
+        self,
+        *,
+        pull_request: PullRequest,
+        semantic_head: str,
+        current_head: str,
+        repair_head: str,
+        expected_non_test_tree_digest: str,
+    ) -> CiRepairCheckpoint:
+        _validate_pull_request(pull_request)
+        _validate_sha(semantic_head)
+        _validate_sha(current_head)
+        _validate_sha(repair_head)
+        _validate_tree_digest(expected_non_test_tree_digest)
+        if pull_request.head_sha != current_head:
+            raise StaleRemoteHeadError(
+                "current CI repair head does not match the live PR head"
+            )
+        self.verify_repository()
+        self._verify_commit(semantic_head)
+        self._verify_commit(current_head)
+        self._verify_commit(repair_head)
+        self._assert_ancestor(
+            current_head,
+            repair_head,
+            "CI repair head must descend from the current pushed head",
+        )
+        semantic_digest = self.non_test_tree_digest(semantic_head)
+        repair_digest = self.non_test_tree_digest(repair_head)
+        if (
+            semantic_digest != expected_non_test_tree_digest
+            or repair_digest != expected_non_test_tree_digest
+        ):
+            raise RepositorySafetyError(
+                "CI repair changed the checkpointed non-test tree"
+            )
+        entries = self.diff_entries(current_head, repair_head)
+        if not entries:
+            raise RepositorySafetyError("CI repair diff must not be empty")
+        for entry in entries:
+            valid_modes = entry.new_mode == "100644" and (
+                (entry.status == "A" and entry.old_mode == "000000")
+                or (entry.status == "M" and entry.old_mode == "100644")
+            )
+            if (
+                entry.status not in {"A", "M"}
+                or not valid_modes
+                or not is_allowed_ci_repair_path(entry.path)
+            ):
+                raise RepositorySafetyError(
+                    "CI repair diff contains a disallowed path or file shape"
+                )
+        repair_ref = (
+            f"refs/snowcast-maintainer/ci-repairs/pr-{pull_request.number}/"
+            f"{current_head[:12]}-{repair_head[:12]}"
+        )
+        return CiRepairCheckpoint(
+            repair_head=repair_head,
+            repair_ref=repair_ref,
+            repair_paths=frozenset(entry.path for entry in entries),
+            non_test_tree_digest=repair_digest,
+        )
 
     def create_backup_ref(self, pr_number: int, head_sha: str) -> str:
         _validate_pr_number(pr_number)
@@ -1126,6 +1296,42 @@ class GitRepository:
         if push.returncode != 0:
             _raise_sanitized_push_error(push.stderr)
 
+    def push_exact_with_lease(
+        self,
+        branch: str,
+        expected_head: str,
+        repair_head: str,
+    ) -> None:
+        """Push one exact repair commit against one exact remote branch head."""
+        self._validate_target_branch(branch)
+        _validate_sha(expected_head)
+        _validate_sha(repair_head)
+        self._ensure_clean_preflight()
+        if self.current_head() != repair_head:
+            raise RepositorySafetyError(
+                "current HEAD does not match the exact CI repair head"
+            )
+        self._assert_ancestor(
+            expected_head,
+            repair_head,
+            "CI repair push must descend from the expected remote head",
+        )
+        self.verify_repository()
+        remote_head = self.remote_head(branch)
+        if remote_head != expected_head:
+            raise StaleRemoteHeadError(
+                f"remote head moved: expected {expected_head}, found {remote_head}"
+            )
+        push = self._git(
+            "push",
+            f"--force-with-lease=refs/heads/{branch}:{expected_head}",
+            "origin",
+            f"{repair_head}:refs/heads/{branch}",
+            network=True,
+        )
+        if push.returncode != 0:
+            _raise_sanitized_push_error(push.stderr)
+
     def diff_entries(self, base: str, head: str) -> tuple[IntentDiffEntry, ...]:
         _validate_revision(base)
         _validate_revision(head)
@@ -1162,6 +1368,41 @@ class GitRepository:
                 )
             )
         return tuple(entries)
+
+    def non_test_tree_digest(self, head: str) -> str:
+        """Hash the exact non-repair tree, including object modes and identities."""
+        _validate_sha(head)
+        result = self._git("ls-tree", "-r", "-z", "--full-tree", head, "--")
+        if result.returncode != 0:
+            raise RepositorySafetyError("cannot inspect non-test tree")
+        if result.stdout and not result.stdout.endswith("\0"):
+            raise RepositorySafetyError("Git returned malformed tree metadata")
+        tuples: list[tuple[str, str, str]] = []
+        for record in result.stdout.removesuffix("\0").split("\0"):
+            if not record:
+                continue
+            header, separator, path = record.partition("\t")
+            fields = header.split(" ")
+            if (
+                not separator
+                or len(fields) != 3
+                or re.fullmatch(r"[0-7]{6}", fields[0]) is None
+                or fields[1] not in {"blob", "commit"}
+                or _SHA_PATTERN.fullmatch(fields[2]) is None
+                or not path
+            ):
+                raise RepositorySafetyError("Git returned malformed tree metadata")
+            if not is_allowed_ci_repair_path(path):
+                tuples.append((fields[0], fields[2], path))
+        digest = hashlib.sha256()
+        for mode, oid, path in sorted(tuples):
+            digest.update(mode.encode("ascii"))
+            digest.update(b"\0")
+            digest.update(oid.encode("ascii"))
+            digest.update(b"\0")
+            digest.update(path.encode("utf-8"))
+            digest.update(b"\0")
+        return digest.hexdigest()
 
     def _staged_diff_entries(self) -> tuple[IntentDiffEntry, ...]:
         result = self._git(
@@ -1700,6 +1941,35 @@ def _validate_pr_number(pr_number: int) -> None:
 def _validate_sha(sha: str) -> None:
     if not isinstance(sha, str) or _SHA_PATTERN.fullmatch(sha) is None:
         raise RepositorySafetyError("SHA must be lowercase 40-hex")
+
+
+def _validate_tree_digest(digest: str) -> None:
+    if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+        raise RepositorySafetyError("tree digest must be lowercase 64-hex")
+
+
+def _validate_ci_repair_ref(
+    repair_ref: str,
+    pr_number: int,
+    current_head: str,
+    repair_head: str,
+) -> None:
+    _validate_pr_number(pr_number)
+    _validate_sha(current_head)
+    _validate_sha(repair_head)
+    if not isinstance(repair_ref, str):
+        raise RepositorySafetyError("CI repair ref is malformed")
+    match = _CI_REPAIR_REF.fullmatch(repair_ref)
+    expected_prefix = f"refs/snowcast-maintainer/ci-repairs/pr-{pr_number}/"
+    if (
+        match is None
+        or not repair_ref.startswith(expected_prefix)
+        or match.group("current") != current_head[:12]
+        or match.group("repair") != repair_head[:12]
+    ):
+        raise RepositorySafetyError(
+            "CI repair ref is not bound to the checkpointed heads"
+        )
 
 
 def _validate_backup_ref(backup_ref: str, original_head: str) -> None:
