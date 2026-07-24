@@ -604,17 +604,19 @@ Blocking dependency:
 
 Next bounded slice after unblock:
 
-- Complete the Zillertal 3000 regional parent/shared map plus the reviewed
-  Mayrhofen-Hippach stay/access graph. The policy-determined Tux-Finkenberg
-  destination migration is handled separately and must not be reopened by this
-  slice.
+- Complete only the Zillertal 3000 regional parent/shared-map ownership. The
+  policy-determined Tux-Finkenberg migration and the complete
+  Mayrhofen-Hippach six-base stay/access graph are already represented and must
+  not be reopened by this slice.
 
 Why it matters:
 
-- PR #16 correctly retains the 142 km Mayrhofen ski-area owner for Ahorn,
-  Penken, Finkenberg, Rastkogel, and Eggalm, while official sources also expose
-  direct access and accommodation contexts in Hippach, Schwendau,
-  Hochschwendberg, and Finkenberg.
+- The catalog retains the 142 km Mayrhofen ski-area owner for Ahorn, Penken,
+  Finkenberg, Rastkogel, and Eggalm. The Mayrhofen-Hippach stay market now
+  represents Mayrhofen, Brandberg, Ginzling, Hippach, Ramsau, and Schwendau,
+  each with one explicit access edge to that owner. Hochschwendberg and
+  Schwendberg remain locality context under Hippach rather than duplicate
+  bases.
 - The retained Hintertux Glacier ski area remains an independent weather owner
   inside the wider Tux-Finkenberg accommodation market. The shared 202 km Ski &
   Glacier World claim still must not be attached to either child ski-area
@@ -635,28 +637,12 @@ Candidate inventory:
   independent weather, season, terrain, and operational owners. Leave
   Mayrhofen's local `official_trail_map` null unless a genuinely child-scoped
   map becomes available.
-- `stay_destination:mayrhofen-hippach` — decide whether Hippach remains a
-  separate recommendation market or becomes the destination owner for the
-  lower-valley bases.
-- `stay_base:mayrhofen-hippach` (typed report alias
-  `stay_base:mayrhofen-hippach-base`) and `stay_base:mayrhofen-ramsau` —
-  complete the lower-valley base inventory without inventing access edges that
-  lack route-specific evidence.
-- `stay_base:mayrhofen-schwendau` and
-  `ski_area_access:mayrhofen-schwendau--mayrhofen-ski-area` — accommodation
-  base with direct Horbergbahn access.
-- `stay_base:mayrhofen-hochschwendberg` and
-  `ski_area_access:mayrhofen-hochschwendberg--mayrhofen-ski-area` — mountain
-  accommodation base with direct Moeslbahn access.
 - `official_document:ski-glacier-world-zillertal-3000-map` — keep the shared
   official map as regional document context until its owning schema lands; do
   not attach it to either child ski area.
 
 Why it was deferred from the source PR:
 
-- Adding one isolated base would leave the official Mayrhofen-Hippach
-  accommodation graph incomplete. The remaining extension requires one
-  destination-boundary decision plus the complete sourced base/access set.
 - Regional map ownership depends on the separate Ski Region Trail Map Ownership
   schema refinement before the shared map and parent relationships can be
   represented without weakening current ski-area and terrain-domain semantics.

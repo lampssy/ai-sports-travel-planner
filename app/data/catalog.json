@@ -119,10 +119,14 @@
     },
     {
       "ski_region_id": "mayrhofen",
-      "name": "Mayrhofen",
+      "name": "Mayrhofen-Hippach",
       "grouping_policy": "trip_market",
       "parent_ski_region_id": null,
-      "source_urls": []
+      "source_urls": [
+        "https://www.mayrhofen.at/en/pages/1vDVSmzKSsHzItF2MgDFwB",
+        "https://www.mayrhofen.at/en/pages/accommodation-search-book",
+        "https://www.mayrhofen.at/en/pages/arrival-and-getting-here"
+      ]
     },
     {
       "ski_region_id": "misurina",
@@ -578,7 +582,7 @@
     },
     {
       "stay_destination_id": "mayrhofen",
-      "name": "Mayrhofen",
+      "name": "Mayrhofen-Hippach",
       "country": "Austria",
       "region": "Tyrol",
       "price_level": "medium",
@@ -1789,6 +1793,75 @@
       }
     },
     {
+      "stay_base_id": "mayrhofen-brandberg",
+      "stay_destination_id": "mayrhofen",
+      "name": "Brandberg",
+      "price_range": "EUR 160-220",
+      "price_min": 160.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "village",
+      "regional_data_ids": {},
+      "elevation_m": 1080,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "mayrhofen-ginzling",
+      "stay_destination_id": "mayrhofen",
+      "name": "Ginzling",
+      "price_range": "EUR 160-220",
+      "price_min": 160.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "village",
+      "regional_data_ids": {},
+      "elevation_m": 999,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "mayrhofen-hippach",
+      "stay_destination_id": "mayrhofen",
+      "name": "Hippach",
+      "price_range": "EUR 160-220",
+      "price_min": 160.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "village",
+      "regional_data_ids": {},
+      "elevation_m": 608,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
       "stay_base_id": "mayrhofen-mayrhofen",
       "stay_destination_id": "mayrhofen",
       "name": "Mayrhofen",
@@ -1810,6 +1883,52 @@
       "local_apres_profile": {
         "availability": "available",
         "intensity": "lively",
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "mayrhofen-ramsau",
+      "stay_destination_id": "mayrhofen",
+      "name": "Ramsau",
+      "price_range": "EUR 160-220",
+      "price_min": 160.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "village",
+      "regional_data_ids": {},
+      "elevation_m": 604,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "mayrhofen-schwendau",
+      "stay_destination_id": "mayrhofen",
+      "name": "Schwendau",
+      "price_range": "EUR 160-220",
+      "price_min": 160.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "village",
+      "regional_data_ids": {},
+      "elevation_m": 620,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     },
@@ -5807,6 +5926,54 @@
       ]
     },
     {
+      "ski_area_access_id": "mayrhofen-brandberg--mayrhofen-ski-area",
+      "stay_base_id": "mayrhofen-brandberg",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.mayrhofen.at/en/service-providers/landhaus-christina-9e5a8963-38c8-4ef7-8966-46ee08ce63b9",
+        "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+      ]
+    },
+    {
+      "ski_area_access_id": "mayrhofen-ginzling--mayrhofen-ski-area",
+      "stay_base_id": "mayrhofen-ginzling",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.mayrhofen.at/en/service-providers/ferienhof-talaste-b736d9e2-4cec-49b0-9165-a4cb9aac6325",
+        "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+      ]
+    },
+    {
+      "ski_area_access_id": "mayrhofen-hippach--mayrhofen-ski-area",
+      "stay_base_id": "mayrhofen-hippach",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Horbergbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.mayrhofen.at/en/service-providers/appartement-aloisia-51666",
+        "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+      ]
+    },
+    {
       "ski_area_access_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
       "stay_base_id": "mayrhofen-mayrhofen",
       "ski_area_id": "mayrhofen-ski-area",
@@ -5823,6 +5990,38 @@
         "https://www.bergfex.com/mayrhofen/",
         "https://www.openstreetmap.org/node/344469170",
         "https://www.openstreetmap.org/relation/80064"
+      ]
+    },
+    {
+      "ski_area_access_id": "mayrhofen-ramsau--mayrhofen-ski-area",
+      "stay_base_id": "mayrhofen-ramsau",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Horbergbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.mayrhofen.at/en/service-providers/gaestehaus-muellauer-47859",
+        "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+      ]
+    },
+    {
+      "ski_area_access_id": "mayrhofen-schwendau--mayrhofen-ski-area",
+      "stay_base_id": "mayrhofen-schwendau",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Horbergbahn",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.mayrhofen.at/en/stories/schwendau-in-zillertal",
+        "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
       ]
     },
     {
@@ -8258,7 +8457,7 @@
     {
       "lift_pass_product_id": "skipass-mayrhofen",
       "name": "Skipass Mayrhofen",
-      "validity_scope": "regional_network",
+      "validity_scope": "single_ski_area",
       "available_from_stay_destination_ids": [
         "mayrhofen"
       ],
@@ -8266,11 +8465,10 @@
         "mayrhofen"
       ],
       "valid_ski_area_ids": [
-        "mayrhofen-ski-area",
-        "hintertux-glacier"
+        "mayrhofen-ski-area"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": "The one-day product is valid in Mayrhofen, Eggalm, Rastkogel, Finkenberg and Hintertux Glacier; conditional cross-owner coverage remains explicit rather than broadening the Mayrhofen ski-area owner.",
+      "external_validity_summary": "The official 2026/27 tariff scopes the 1- and 1.5-day Skipass Mayrhofen to Ahorn, Penken, Rastkogel and Eggalm, including Finkenberg inside Snowcast's Mayrhofen ski-area owner. Hintertux coverage is not asserted because the same-season web page conflicts with the product tariff; glacier-wide entitlement belongs to the separate Zillertaler Superskipass.",
       "pass_accessible_terrain": null,
       "prices": [
         {

@@ -483,20 +483,26 @@
         ]
       },
       "mayrhofen": {
-        "display_name": "Mayrhofen",
+        "display_name": "Mayrhofen-Hippach",
         "field_statuses": {
-          "identity": "needs_source",
-          "membership_context": "estimated"
+          "identity": "verified_with_adjustment",
+          "membership_context": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.mayrhofen.at/en/pages/1vDVSmzKSsHzItF2MgDFwB",
+            "https://www.mayrhofen.at/en/pages/accommodation-search-book",
+            "https://www.mayrhofen.at/en/pages/arrival-and-getting-here"
+          ],
+          "membership_context": [
+            "https://www.mayrhofen.at/en/pages/1vDVSmzKSsHzItF2MgDFwB",
+            "https://www.mayrhofen.at/en/pages/accommodation-search-book",
+            "https://www.mayrhofen.at/en/pages/arrival-and-getting-here"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Trip-market membership is retained as reviewed migration context and remains estimated.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official Mayrhofen-Hippach destination sources enumerate Mayrhofen, Brandberg, Ginzling, Hippach, Ramsau and Schwendau as one shared holiday and accommodation market.",
+          "The stable mayrhofen identifier is retained while the display name is normalized to the complete Mayrhofen-Hippach market boundary."
         ]
       },
       "misurina": {
@@ -1594,21 +1600,24 @@
         ]
       },
       "mayrhofen": {
-        "display_name": "Mayrhofen",
+        "display_name": "Mayrhofen-Hippach",
         "field_statuses": {
-          "identity_location": "needs_source",
+          "identity_location": "verified_with_adjustment",
           "coordinates": "needs_source",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
+          "identity_location": [
+            "https://www.mayrhofen.at/en/pages/1vDVSmzKSsHzItF2MgDFwB",
+            "https://www.mayrhofen.at/en/pages/accommodation-search-book",
+            "https://www.mayrhofen.at/en/pages/arrival-and-getting-here"
+          ],
           "coordinates": [],
           "price_level": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official destination and booking sources establish the shared Mayrhofen-Hippach accommodation market and its six represented village bases.",
+          "Existing destination coordinates and price level remain unsourced or estimated; the stable destination identifier is retained."
         ]
       },
       "misurina": {
@@ -5921,6 +5930,166 @@
         "notes": [
           "Official Tux-Finkenberg material identifies this village inside the shared accommodation market.",
           "Price and quality are broad product estimates; unsupported coordinates, character and local-apres facts remain unknown."
+        ]
+      },
+      "mayrhofen-brandberg": {
+        "display_name": "Brandberg",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "needs_source",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.mayrhofen.at/en/stories/brandberg-in-zillertal",
+            "https://www.mayrhofen.at/en/pages/accommodation-search-book"
+          ],
+          "coordinates": [],
+          "elevation": [
+            "https://www.mayrhofen.at/en/stories/brandberg-in-zillertal"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.mayrhofen.at/en/stories/brandberg-in-zillertal"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Mayrhofen-Hippach village material establishes Brandberg as a named village base and publishes its elevation; the shared booking source supports membership in the destination market.",
+          "Coordinates, lodging price and quality, base character and local apres remain unresolved or estimated rather than inferred from the destination-level sources."
+        ]
+      },
+      "mayrhofen-ginzling": {
+        "display_name": "Ginzling",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "needs_source",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.mayrhofen.at/en/stories/ginzling-in-zillertal",
+            "https://www.mayrhofen.at/en/pages/accommodation-search-book"
+          ],
+          "coordinates": [],
+          "elevation": [
+            "https://www.mayrhofen.at/en/stories/ginzling-in-zillertal"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.mayrhofen.at/en/stories/ginzling-in-zillertal"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Mayrhofen-Hippach village material establishes Ginzling as a named village base and publishes its elevation; the shared booking source supports membership in the destination market.",
+          "Coordinates, lodging price and quality, base character and local apres remain unresolved or estimated rather than inferred from the destination-level sources."
+        ]
+      },
+      "mayrhofen-hippach": {
+        "display_name": "Hippach",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "needs_source",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.mayrhofen.at/en/stories/hippach-in-zillertal",
+            "https://www.mayrhofen.at/en/pages/accommodation-search-book"
+          ],
+          "coordinates": [],
+          "elevation": [
+            "https://www.mayrhofen.at/en/stories/hippach-in-zillertal"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.mayrhofen.at/en/stories/hippach-in-zillertal"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Mayrhofen-Hippach village material establishes Hippach as a named village base and publishes its elevation; the shared booking source supports membership in the destination market.",
+          "Coordinates, lodging price and quality, base character and local apres remain unresolved or estimated rather than inferred from the destination-level sources."
+        ]
+      },
+      "mayrhofen-ramsau": {
+        "display_name": "Ramsau",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "needs_source",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.mayrhofen.at/en/stories/ramsau-in-zillertal",
+            "https://www.mayrhofen.at/en/pages/accommodation-search-book"
+          ],
+          "coordinates": [],
+          "elevation": [
+            "https://www.mayrhofen.at/en/stories/ramsau-in-zillertal"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.mayrhofen.at/en/stories/ramsau-in-zillertal"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Mayrhofen-Hippach village material establishes Ramsau as a named village base and publishes its elevation; the shared booking source supports membership in the destination market.",
+          "Coordinates, lodging price and quality, base character and local apres remain unresolved or estimated rather than inferred from the destination-level sources."
+        ]
+      },
+      "mayrhofen-schwendau": {
+        "display_name": "Schwendau",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "needs_source",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.mayrhofen.at/en/stories/schwendau-in-zillertal",
+            "https://www.mayrhofen.at/en/pages/accommodation-search-book"
+          ],
+          "coordinates": [],
+          "elevation": [
+            "https://www.mayrhofen.at/en/stories/schwendau-in-zillertal"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.mayrhofen.at/en/stories/schwendau-in-zillertal"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official Mayrhofen-Hippach village material establishes Schwendau as a named village base and publishes its elevation; the shared booking source supports membership in the destination market.",
+          "Coordinates, lodging price and quality, base character and local apres remain unresolved or estimated rather than inferred from the destination-level sources."
         ]
       }
     },
@@ -10899,6 +11068,111 @@
           "The current official line 4104 timetable names both the stay-base stop and the target-area lift stop on the same Mayrhofen-Finkenberg-Lanersbach-Hintertux route.",
           "Snowcast normalizes the explicit same-route link to ski_bus/far without asserting an unsupported point distance or journey duration; is_direct=false because the base does not itself own the target lift."
         ]
+      },
+      "mayrhofen-brandberg--mayrhofen-ski-area": {
+        "display_name": "Brandberg -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.mayrhofen.at/en/service-providers/landhaus-christina-9e5a8963-38c8-4ef7-8966-46ee08ce63b9",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ],
+          "access_mode_distance": [
+            "https://www.mayrhofen.at/en/service-providers/landhaus-christina-9e5a8963-38c8-4ef7-8966-46ee08ce63b9",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ]
+        },
+        "notes": [
+          "First-party Mayrhofen-Hippach material supports a ski-bus relationship to the Mayrhofen lift network.",
+          "The coarse ski_bus/far normalization is conservative; no exact route distance or duration is asserted."
+        ]
+      },
+      "mayrhofen-ginzling--mayrhofen-ski-area": {
+        "display_name": "Ginzling -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.mayrhofen.at/en/service-providers/ferienhof-talaste-b736d9e2-4cec-49b0-9165-a4cb9aac6325",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ],
+          "access_mode_distance": [
+            "https://www.mayrhofen.at/en/service-providers/ferienhof-talaste-b736d9e2-4cec-49b0-9165-a4cb9aac6325",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ]
+        },
+        "notes": [
+          "First-party Mayrhofen-Hippach material supports a ski-bus relationship to the Mayrhofen lift network.",
+          "The coarse ski_bus/far normalization is conservative; no exact route distance or duration is asserted."
+        ]
+      },
+      "mayrhofen-hippach--mayrhofen-ski-area": {
+        "display_name": "Hippach -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.mayrhofen.at/en/service-providers/appartement-aloisia-51666",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ],
+          "access_mode_distance": [
+            "https://www.mayrhofen.at/en/service-providers/appartement-aloisia-51666",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ]
+        },
+        "notes": [
+          "First-party Mayrhofen-Hippach material supports a ski-bus relationship to the Mayrhofen lift network.",
+          "The coarse ski_bus/far normalization is conservative; no exact route distance or duration is asserted."
+        ]
+      },
+      "mayrhofen-ramsau--mayrhofen-ski-area": {
+        "display_name": "Ramsau -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.mayrhofen.at/en/service-providers/gaestehaus-muellauer-47859",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ],
+          "access_mode_distance": [
+            "https://www.mayrhofen.at/en/service-providers/gaestehaus-muellauer-47859",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ]
+        },
+        "notes": [
+          "First-party Mayrhofen-Hippach material supports a ski-bus relationship to the Mayrhofen lift network.",
+          "The coarse ski_bus/far normalization is conservative; no exact route distance or duration is asserted."
+        ]
+      },
+      "mayrhofen-schwendau--mayrhofen-ski-area": {
+        "display_name": "Schwendau -> Mayrhofen",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.mayrhofen.at/en/stories/schwendau-in-zillertal",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ],
+          "access_mode_distance": [
+            "https://www.mayrhofen.at/en/stories/schwendau-in-zillertal",
+            "https://www.mayrhofen.at/en/stories/skibus-mayrhofner-bergbahnen"
+          ]
+        },
+        "notes": [
+          "First-party Mayrhofen-Hippach material supports a ski-bus relationship to the Mayrhofen lift network.",
+          "The coarse ski_bus/far normalization is conservative; no exact route distance or duration is asserted."
+        ]
       }
     },
     "terrain_domains": {
@@ -13089,7 +13363,8 @@
             "https://assets.contenthub.dev/390osprlshgj/c043e8576ce9b8e9606c8d2f8c447189/2026-27_Prices%20Winter_EN.pdf"
           ],
           "coverage": [
-            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+            "https://assets.contenthub.dev/390osprlshgj/c043e8576ce9b8e9606c8d2f8c447189/2026-27_Prices%20Winter_EN.pdf"
           ],
           "prices": [
             "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
@@ -13097,10 +13372,10 @@
           "pass_accessible_terrain": []
         },
         "notes": [
-          "Official product-specific tariffs separate the day, local multi-day, Mayrhofen day and valley-wide Superskipass entitlements.",
-          "Both currently modeled ski-area owners covered by the published product are enumerated; the external validity summary preserves its conditional cross-owner coverage.",
-          "Representative adult prices retain explicit 2026/27 product windows; no pass-accessible aggregate is inferred.",
-          "The exact pass validity window is modeled from the published 2026/27 operator/tariff dates; it constrains ticket entitlement without replacing member ski-area operating dates."
+          "The structured official 2026/27 tariff scopes the 1- and 1.5-day Skipass Mayrhofen to Ahorn, Penken, Rastkogel and Eggalm.",
+          "A same-season web-page line also names Hintertux Glacier; the product-specific tariff controls the normalized exact entitlement, so Hintertux is not asserted for this product.",
+          "Finkenberg remains inside the existing Mayrhofen ski-area owner, while glacier-wide entitlement belongs to the separate Zillertaler Superskipass.",
+          "Representative adult price and validity-window fields retain their existing official evidence; no pass-accessible terrain aggregate is inferred."
         ]
       },
       "zillertaler-superskipass": {
