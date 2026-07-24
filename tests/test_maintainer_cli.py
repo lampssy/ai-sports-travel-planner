@@ -2419,6 +2419,93 @@ def test_publish_ci_repair_revalidates_before_replacing_published_journal(
     assert len(repository.ci_repair_revalidate_calls) == 1
 
 
+@pytest.mark.parametrize(
+    ("live_head", "remote_head", "mergeable", "expected_reason"),
+    (
+        pytest.param(
+            SHA_C,
+            SHA_C,
+            "MERGEABLE",
+            "stale-head",
+            id="externally-pre-pushed-repair-head",
+        ),
+        pytest.param(
+            SHA_B,
+            SHA_D,
+            "MERGEABLE",
+            "stale-head",
+            id="live-remote-mismatch",
+        ),
+        pytest.param(
+            SHA_B,
+            SHA_B,
+            "CONFLICTING",
+            "invalid-github-state",
+            id="conflicting-mergeability",
+        ),
+    ),
+)
+def test_publish_ci_repair_rejects_untrusted_new_push_provenance_before_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    live_head: str,
+    remote_head: str,
+    mergeable: str,
+    expected_reason: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    prior_journal = _save_published_initial_push(store, lease)
+    reviewed = _save_reviewed_ci_repair(store, lease)
+    pull_request = _failed_ci_pull_request().model_copy(
+        update={
+            "head_sha": live_head,
+            "mergeable": mergeable,
+        }
+    )
+    github = FakeGitHub(pull_requests={42: pull_request})
+    repository = FakeRepository(
+        head=SHA_B,
+        remote=remote_head,
+        github=github,
+    )
+    journal_before = store.load_push(reviewed.work_id)
+    continuation_before = store.load_ci_continuation(reviewed.work_id)
+    github_before = github.pull_requests[42]
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "ci-repair",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == expected_reason
+    assert journal_before == prior_journal
+    assert store.load_push(reviewed.work_id) == journal_before
+    assert store.load_ci_continuation(reviewed.work_id) == continuation_before
+    assert repository.head == SHA_B
+    assert repository.remote == remote_head
+    assert repository.ci_repair_revalidate_calls == []
+    assert repository.push_exact_calls == []
+    assert github.pull_requests[42] == github_before
+    assert github.body_writes == 0
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+
+
 def test_publish_ci_repair_requires_prior_journal_to_be_published(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

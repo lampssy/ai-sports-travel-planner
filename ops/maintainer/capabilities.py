@@ -1551,6 +1551,39 @@ def _revalidate_ci_repair_for_journal(
         )
 
 
+def _preflight_new_ci_repair_push(
+    continuation: CiContinuation,
+    journal: PushJournal,
+    dependencies: Dependencies,
+) -> None:
+    checkpoint = _ci_repair_checkpoint(continuation)
+    if (
+        continuation.phase is not CiContinuationPhase.REPAIR_REVIEWED
+        or not _ci_repair_journal_matches(continuation, journal)
+    ):
+        raise StateStoreError("repair push journal does not match the CI continuation")
+    pull_request = dependencies.github.get_pull_request(continuation.pr_number)
+    _live_ci_repair_pull_request(
+        continuation=continuation,
+        pull_request=pull_request,
+        stage=ErrorStage.PUSH,
+        require_failed_checks=False,
+    )
+    remote_head = dependencies.repository.optional_remote_head(continuation.branch)
+    if remote_head != continuation.current_head:
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUSH)
+    revalidated = dependencies.repository.revalidate_ci_repair_checkpoint(
+        pull_request=pull_request,
+        semantic_head=continuation.semantic_head,
+        current_head=continuation.current_head,
+        checkpoint=checkpoint,
+    )
+    if revalidated != checkpoint:
+        raise RepositorySafetyError(
+            "revalidated CI repair checkpoint changed immutable evidence"
+        )
+
+
 def _advance_curation_push(
     store: StateStore,
     lease: RunLease,
@@ -1559,13 +1592,21 @@ def _advance_curation_push(
     dependencies: Dependencies,
     *,
     ci_continuation: CiContinuation | None = None,
+    strict_new_ci_repair_push: bool = False,
 ) -> PushJournal:
     if ci_continuation is not None:
-        _revalidate_ci_repair_for_journal(
-            ci_continuation,
-            journal,
-            dependencies,
-        )
+        if strict_new_ci_repair_push:
+            _preflight_new_ci_repair_push(
+                ci_continuation,
+                journal,
+                dependencies,
+            )
+        else:
+            _revalidate_ci_repair_for_journal(
+                ci_continuation,
+                journal,
+                dependencies,
+            )
     remote_head = dependencies.repository.optional_remote_head(journal.branch)
     if journal.phase is PushPhase.AUTHORIZED:
         if remote_head == journal.expected_remote_head:
@@ -2584,7 +2625,7 @@ def handle_publish_ci_repair(
             "published initial push journal is required for CI repair"
         )
     journal = _matching_ci_repair_journal(continuation, lease)
-    _revalidate_ci_repair_for_journal(
+    _preflight_new_ci_repair_push(
         continuation,
         journal,
         dependencies,
@@ -2598,6 +2639,7 @@ def handle_publish_ci_repair(
         None,
         dependencies,
         ci_continuation=continuation,
+        strict_new_ci_repair_push=True,
     )
     waiting = _complete_ci_repair_push(
         store=store,
