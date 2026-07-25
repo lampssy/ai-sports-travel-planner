@@ -470,16 +470,10 @@ class GitRepository:
             expected_non_test_tree_digest=expected_non_test_tree_digest,
             allowed_live_heads=frozenset({current_head}),
         )
-        result = self._git(
-            "update-ref",
+        self._create_exact_ref(
             checkpoint.repair_ref,
             checkpoint.repair_head,
-            "0" * 40,
         )
-        if result.returncode != 0:
-            raise RepositorySafetyError(
-                "CI repair ref collision or create-only checkpoint failure"
-            )
         return checkpoint
 
     def revalidate_ci_repair_checkpoint(

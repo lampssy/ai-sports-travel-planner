@@ -183,6 +183,9 @@ The installed skill must:
   retain waiting-CI when its 30-minute budget expires pending, and publish
   `maintainer:blocked/ci-failure` for a confirmed second CI failure. No second
   repair is permitted;
+- `publish ci-repair` completes the canonical waiting-CI body, comment, and
+  label handoff and marks the repair push journal `PUBLISHED` before
+  second-wait inspection can expose the continuation;
 - keep preparation schema-independent, but before initial review run one
   maintainer-managed structural normalization pass when the single report is
   legacy, malformed, graph-less after refresh, incomplete, or non-reconciling;

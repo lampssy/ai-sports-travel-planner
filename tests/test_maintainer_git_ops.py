@@ -1553,6 +1553,35 @@ def test_checkpoint_ci_repair_persists_and_revalidates_exact_test_only_head(
     )
 
 
+def test_checkpoint_ci_repair_reuses_exact_preexisting_immutable_ref(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    repair_head = _commit_allowed_ci_repair(local)
+    first = repository.checkpoint_ci_repair(
+        pull_request=local.pull_request,
+        semantic_head=local.semantic_head,
+        current_head=local.current_head,
+        repair_head=repair_head,
+        expected_non_test_tree_digest=expected_digest,
+    )
+
+    successor_repository = _ci_repair_git_repository(local)
+    recovered = successor_repository.checkpoint_ci_repair(
+        pull_request=local.pull_request,
+        semantic_head=local.semantic_head,
+        current_head=local.current_head,
+        repair_head=repair_head,
+        expected_non_test_tree_digest=expected_digest,
+    )
+
+    assert recovered == first
+    assert _git(local.checkout, "rev-parse", recovered.repair_ref) == repair_head
+
+
 def test_revalidate_ci_repair_checkpoint_accepts_live_repair_head_and_rejects_h2(
     tmp_path: Path,
 ) -> None:

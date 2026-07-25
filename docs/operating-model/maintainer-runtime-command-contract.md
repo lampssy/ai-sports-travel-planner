@@ -479,6 +479,10 @@ while second wait remains:
   pending -> continue
 ```
 
+`publish ci-repair` completes the canonical waiting-CI body, comment, and label
+handoff and marks the repair push journal `PUBLISHED` before second-wait
+inspection can expose the continuation.
+
 Each wait is 30 elapsed minutes, the one repair has at most 60 active minutes,
 and the continuation persists consumed time across successors: the cumulative
 budget is 30/60/30. Heartbeat before and after capabilities and at least every

@@ -25,6 +25,7 @@ from ops.maintainer.publication import (
     PublicationPlan,
     ci_publication_machine_state,
     create_publication_text,
+    extract_managed_body,
     outcome_plan,
     parse_machine_state,
     parse_outcome_state,
@@ -156,6 +157,14 @@ def test_managed_body_preserves_unmarked_content_without_adoption() -> None:
     )
 
 
+def test_extract_managed_body_round_trips_or_reports_absence() -> None:
+    managed = "Current concise synopsis"
+    marked = replace_managed_body("Owner-authored context", managed)
+
+    assert extract_managed_body(marked) == managed
+    assert extract_managed_body("Owner-authored context") is None
+
+
 @pytest.mark.parametrize(
     "current",
     [
@@ -170,6 +179,8 @@ def test_managed_body_adoption_never_overwrites_untrusted_markers(
 ) -> None:
     with pytest.raises(ValueError):
         replace_managed_body(current, "Current synopsis", adopt_unmanaged=True)
+    with pytest.raises(ValueError):
+        extract_managed_body(current)
 
 
 def test_machine_state_v2_marker_is_canonical_and_round_trips() -> None:
@@ -726,6 +737,38 @@ def test_waiting_ci_requires_exact_validated_head_and_pending_checks() -> None:
         )
 
     assert exc_info.value.reason is ErrorReason.VALIDATION_REQUIRED
+
+
+def test_exact_repair_push_handoff_allows_only_published_waiting_evidence() -> None:
+    plan = publication_plan(
+        requested_state=MaintainerState.WAITING_CI,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=_pull_request(check_state="failure"),
+        machine_state=_machine(last_operation="published"),
+        exact_repair_push_handoff=True,
+    )
+
+    assert plan.exact_repair_push_handoff is True
+
+    with pytest.raises(MaintainerError) as unvalidated:
+        publication_plan(
+            requested_state=MaintainerState.WAITING_CI,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=_pull_request(check_state="failure"),
+            machine_state=_machine(last_operation="pushed"),
+            exact_repair_push_handoff=True,
+        )
+    assert unvalidated.value.reason is ErrorReason.INVALID_COMMAND
+
+    with pytest.raises(MaintainerError) as wrong_state:
+        publication_plan(
+            requested_state=MaintainerState.READY,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=_pull_request(check_state="success"),
+            machine_state=_machine(last_operation="published"),
+            exact_repair_push_handoff=True,
+        )
+    assert wrong_state.value.reason is ErrorReason.INVALID_COMMAND
 
 
 def test_ci_continuation_initial_wait_derives_exact_published_machine_state() -> None:

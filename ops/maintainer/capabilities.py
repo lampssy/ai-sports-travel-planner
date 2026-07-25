@@ -58,6 +58,7 @@ from ops.maintainer.publication import (
     PublicationInputError,
     ci_publication_machine_state,
     create_publication_text,
+    extract_managed_body,
     outcome_plan,
     publication_plan,
     publish_discovery_proposal,
@@ -105,6 +106,10 @@ Handler = Callable[[argparse.Namespace, "Dependencies"], dict[str, object]]
 
 _PR_HEAD_CONVERGENCE_ATTEMPTS = 5
 _PR_HEAD_CONVERGENCE_DELAY_SECONDS = 3.0
+_CI_REPAIR_WAITING_SUMMARY = (
+    "One focused test-only CI repair was pushed. "
+    "GitHub CI is running on the exact repaired head."
+)
 
 
 class CLIInputError(ValueError):
@@ -323,6 +328,10 @@ def handle_prepare_curation(
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
     dependencies.tracker.stage = ErrorStage.PREPARE
+    if store.list_ci_continuations_for_inspection():
+        raise StateStoreError(
+            "active CI continuation requires exact recovery before preparation"
+        )
     pull_request = dependencies.github.get_pull_request(args.pr)
     _require_exact_curation_candidate(pull_request, dependencies, store)
     continuation = store.load_continuation(work_id)
@@ -1503,6 +1512,17 @@ def _ci_repair_journal_matches(
         CiContinuationPhase.SECOND_WAIT,
     }:
         return False
+    if not _ci_repair_journal_has_identity(continuation, journal):
+        return False
+    if continuation.phase is CiContinuationPhase.REPAIR_REVIEWED:
+        return journal.phase in {PushPhase.AUTHORIZED, PushPhase.PUSHED}
+    return journal.phase is PushPhase.PUSHED
+
+
+def _ci_repair_journal_has_identity(
+    continuation: CiContinuation,
+    journal: PushJournal,
+) -> bool:
     checkpoint = _ci_repair_checkpoint(continuation)
     if (
         journal.work_id != continuation.work_id
@@ -1518,11 +1538,32 @@ def _ci_repair_journal_matches(
         return journal.expected_remote_head == continuation.current_head
     if continuation.phase is CiContinuationPhase.SECOND_WAIT:
         return (
-            journal.phase is PushPhase.PUSHED
-            and journal.expected_remote_head == continuation.semantic_head
+            journal.expected_remote_head == continuation.semantic_head
             and journal.new_head == continuation.current_head
         )
     return False
+
+
+def _require_no_nonconverged_ci_repair_publication(
+    continuation: CiContinuation | None,
+    journal: PushJournal | None,
+) -> None:
+    if (
+        continuation is None
+        or journal is None
+        or continuation.phase
+        not in {
+            CiContinuationPhase.REPAIR_REVIEWED,
+            CiContinuationPhase.SECOND_WAIT,
+        }
+        or not _ci_repair_journal_has_identity(continuation, journal)
+    ):
+        return
+    if (
+        continuation.phase is not CiContinuationPhase.SECOND_WAIT
+        or journal.phase is not PushPhase.PUBLISHED
+    ):
+        raise StateStoreError("non-converged CI repair journal requires exact recovery")
 
 
 def _revalidate_ci_repair_for_journal(
@@ -1898,7 +1939,7 @@ def handle_publish_recover(
             ci_continuation=ci_continuation if repair_recovery else None,
         )
         if repair_recovery and ci_continuation is not None:
-            recovered_ci_continuation = _complete_ci_repair_push(
+            journal, recovered_ci_continuation = _complete_ci_repair_push(
                 store=store,
                 lease=lease,
                 journal=journal,
@@ -2547,7 +2588,7 @@ def _complete_ci_repair_push(
     journal: PushJournal,
     continuation: CiContinuation,
     dependencies: Dependencies,
-) -> CiContinuation:
+) -> tuple[PushJournal, CiContinuation]:
     if journal.phase is not PushPhase.PUSHED:
         raise StateStoreError("CI repair journal has not reached pushed phase")
     if continuation.recovery_run_id != lease.run_id:
@@ -2569,25 +2610,79 @@ def _complete_ci_repair_push(
         or pull_request.head_sha != journal.new_head
     ):
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
-    if continuation.phase is CiContinuationPhase.SECOND_WAIT:
-        return continuation
-    if continuation.phase is not CiContinuationPhase.REPAIR_REVIEWED:
+    if continuation.phase not in {
+        CiContinuationPhase.REPAIR_REVIEWED,
+        CiContinuationPhase.SECOND_WAIT,
+    }:
         raise StateStoreError("CI continuation is not ready for repair push completion")
-    observed_at = _current_time(dependencies, continuation)
-    waiting = continuation.model_copy(
-        update={
-            "phase": CiContinuationPhase.SECOND_WAIT,
-            "current_head": journal.new_head,
-            "second_wait_started_at": observed_at,
-        }
+    if continuation.phase is CiContinuationPhase.REPAIR_REVIEWED:
+        observed_at = _current_time(dependencies, continuation)
+        waiting = continuation.model_copy(
+            update={
+                "phase": CiContinuationPhase.SECOND_WAIT,
+                "current_head": journal.new_head,
+                "second_wait_started_at": observed_at,
+            }
+        )
+        waiting = store.advance_ci_continuation(
+            waiting,
+            lease,
+            now=observed_at,
+        )
+        dependencies.tracker.mutation_occurred = True
+    else:
+        waiting = continuation
+
+    try:
+        managed_body = extract_managed_body(pull_request.body)
+    except ValueError:
+        raise MaintainerError(
+            ErrorReason.INVALID_GITHUB_STATE,
+            ErrorStage.READINESS,
+            detail="Managed body markers are not trusted",
+        ) from None
+    if managed_body is None:
+        managed_body = waiting.resulting_graph_markdown
+    _require_canonical_resulting_graph(
+        None,
+        managed_body,
+        expected=waiting.resulting_graph_markdown,
     )
-    waiting = store.advance_ci_continuation(
-        waiting,
-        lease,
-        now=observed_at,
+    comments = tuple(dependencies.github.list_issue_comments(waiting.pr_number))
+    machine = ci_publication_machine_state(
+        continuation=waiting,
+        pull_request=pull_request,
+        repair_checkpoint_revalidated=True,
     )
+    plan = publication_plan(
+        requested_state=MaintainerState.WAITING_CI,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=machine,
+        superseded_hold_head=trusted_hold_head(pull_request, comments),
+        exact_repair_push_handoff=True,
+    )
+
+    def mutation_guard() -> AbstractContextManager[None]:
+        return store.guard_push_mutation(journal, lease)
+
+    publication_mutated = publish_state(
+        dependencies.github,
+        pull_request,
+        plan,
+        managed_body,
+        _CI_REPAIR_WAITING_SUMMARY,
+        allow_comment_repair=True,
+        mutation_guard=mutation_guard,
+        validate_mutation=lambda _step, _current: lease.assert_owner(),
+    )
+    dependencies.tracker.mutation_occurred = (
+        dependencies.tracker.mutation_occurred or publication_mutated
+    )
+    journal = journal.model_copy(update={"phase": PushPhase.PUBLISHED})
+    store.save_push(journal, lease)
     dependencies.tracker.mutation_occurred = True
-    return waiting
+    return journal, waiting
 
 
 def handle_publish_ci_repair(
@@ -2641,7 +2736,7 @@ def handle_publish_ci_repair(
         ci_continuation=continuation,
         strict_new_ci_repair_push=True,
     )
-    waiting = _complete_ci_repair_push(
+    journal, waiting = _complete_ci_repair_push(
         store=store,
         lease=lease,
         journal=journal,
@@ -2695,6 +2790,10 @@ def handle_publish_state(
     work = store.load_work(work_id)
     journal = store.load_push(work_id)
     ci_continuation = store.load_ci_continuation(work_id)
+    _require_no_nonconverged_ci_repair_publication(
+        ci_continuation,
+        journal,
+    )
     ci_needs_adoption = False
     if (
         ci_continuation is not None
@@ -2982,18 +3081,41 @@ def handle_publish_outcome(
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
     journal = store.load_push(work_id)
     ci_continuation = store.load_ci_continuation(work_id)
-    active_ci_wait = ci_continuation is not None and ci_continuation.phase in {
+    _require_no_nonconverged_ci_repair_publication(
+        ci_continuation,
+        journal,
+    )
+    active_ci_continuation = ci_continuation is not None and ci_continuation.phase in {
+        CiContinuationPhase.INITIAL_WAIT,
+        CiContinuationPhase.REPAIR_ACTIVE,
+        CiContinuationPhase.REPAIR_REVIEWED,
+        CiContinuationPhase.SECOND_WAIT,
+    }
+    repair_in_progress = ci_continuation is not None and ci_continuation.phase in {
+        CiContinuationPhase.REPAIR_ACTIVE,
+        CiContinuationPhase.REPAIR_REVIEWED,
+    }
+    ci_wait_phase = ci_continuation is not None and ci_continuation.phase in {
         CiContinuationPhase.INITIAL_WAIT,
         CiContinuationPhase.SECOND_WAIT,
     }
     ci_needs_adoption = False
-    if active_ci_wait and ci_continuation is not None:
+    if active_ci_continuation and ci_continuation is not None:
         if (
             pull_request.head_ref_name != ci_continuation.branch
             or pull_request.head_sha != ci_continuation.current_head
         ):
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
-        if requested_state is MaintainerState.BLOCKED and args.reason == "ci-failure":
+        if repair_in_progress:
+            if requested_state is not MaintainerState.BLOCKED:
+                raise StateStoreError(
+                    "active CI repair requires a terminal blocked outcome"
+                )
+        elif (
+            ci_wait_phase
+            and requested_state is MaintainerState.BLOCKED
+            and args.reason == "ci-failure"
+        ):
             if pull_request.check_state != "failure" or not any(
                 is_confirmed_ci_failure(check) for check in pull_request.checks
             ):
@@ -3083,7 +3205,7 @@ def handle_publish_outcome(
             now=dependencies.now(),
         )
         dependencies.tracker.mutation_occurred = True
-    if active_ci_wait and ci_continuation is not None:
+    if active_ci_continuation and ci_continuation is not None:
         blocked = ci_continuation.model_copy(
             update={"phase": CiContinuationPhase.BLOCKED}
         )

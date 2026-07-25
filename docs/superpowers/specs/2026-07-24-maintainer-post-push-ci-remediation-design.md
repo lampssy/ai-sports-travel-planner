@@ -220,6 +220,9 @@ A push journal remains the sole authority for an ambiguous branch mutation.
 The CI continuation becomes authoritative only after exact push convergence
 and journal handoff. A successor always re-fetches the current PR head, checks,
 mergeability, labels, and lease state; saved CI conclusions are never reused.
+`publish ci-repair` completes the canonical waiting-CI body, comment, and label
+handoff and marks the repair push journal `PUBLISHED` before second-wait
+inspection can expose the continuation.
 Its entry route is separately `lock acquire curation -> lock heartbeat curation
 -> inspect curation -> lock heartbeat curation` before any selected next
 capability. Same-run wait polling never includes lease acquisition.

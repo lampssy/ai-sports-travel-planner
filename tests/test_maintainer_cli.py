@@ -1643,6 +1643,86 @@ def test_checkpoint_ci_repair_records_reviewed_exact_test_only_checkpoint(
     assert reviewed.repair_activity_observed_at == NOW
 
 
+def test_checkpoint_ci_repair_recovers_after_checkpoint_ref_precedes_state_write(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    active = _save_active_ci_continuation(
+        store,
+        lease,
+        activity_started_at=NOW - timedelta(minutes=5),
+    )
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+    repository = FakeRepository(head=SHA_C, remote=SHA_B)
+    original_advance = StateStore.advance_ci_continuation
+    injected = False
+
+    def fail_first_reviewed_state_write(
+        self: StateStore,
+        continuation: CiContinuation,
+        owned_lease: RunLease,
+        *,
+        now: datetime,
+    ) -> CiContinuation:
+        nonlocal injected
+        if continuation.phase is CiContinuationPhase.REPAIR_REVIEWED and not injected:
+            injected = True
+            raise StateStoreError("injected state write failure after checkpoint ref")
+        return original_advance(self, continuation, owned_lease, now=now)
+
+    monkeypatch.setattr(
+        StateStore,
+        "advance_ci_continuation",
+        fail_first_reviewed_state_write,
+    )
+    command = [
+        "--state-dir",
+        str(state_dir),
+        "checkpoint",
+        "ci-repair",
+        "--pr",
+        "42",
+        "--head",
+        SHA_C,
+        "--run-id",
+        run_id,
+    ]
+
+    first_code, first_payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+    )
+
+    assert first_code == 2
+    assert first_payload["reason"] == "invalid-command"
+    after_failure = store.load_ci_continuation(active.work_id)
+    assert after_failure is not None
+    assert after_failure.phase is CiContinuationPhase.REPAIR_ACTIVE
+    assert len(repository.ci_repair_checkpoint_calls) == 1
+
+    retry_code, retry_payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+    )
+
+    assert retry_code == 0, retry_payload
+    recovered = store.load_ci_continuation(active.work_id)
+    assert recovered is not None
+    assert recovered.recovery_run_id == run_id
+    assert recovered.phase is CiContinuationPhase.REPAIR_REVIEWED
+    assert recovered.repair_head == SHA_C
+    assert len(repository.ci_repair_checkpoint_calls) == 2
+
+
 def test_checkpoint_ci_repair_rejects_exhausted_active_budget_before_git(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -2263,6 +2343,7 @@ def _save_second_ci_wait(
     lease: RunLease,
     *,
     started_at: datetime = NOW - timedelta(minutes=1),
+    publish_journal: bool = True,
 ) -> CiContinuation:
     _save_published_initial_push(store, lease)
     reviewed = _save_reviewed_ci_repair(
@@ -2281,11 +2362,15 @@ def _save_second_ci_wait(
             "second_wait_started_at": started_at,
         }
     )
-    return store.advance_ci_continuation(
+    waiting = store.advance_ci_continuation(
         waiting,
         lease,
         now=started_at,
     )
+    if publish_journal:
+        journal = journal.model_copy(update={"phase": PushPhase.PUBLISHED})
+        store.save_push(journal, lease)
+    return waiting
 
 
 def _matching_repair_push_for_test(
@@ -2360,7 +2445,7 @@ def test_publish_ci_repair_journals_exact_second_push_and_enters_second_wait(
     ]
     journal = store.load_push(reviewed.work_id)
     assert journal is not None
-    assert journal.phase is PushPhase.PUSHED
+    assert journal.phase is PushPhase.PUBLISHED
     assert journal.expected_remote_head == SHA_B
     assert journal.new_head == SHA_C
     assert journal.branch == BRANCH
@@ -2371,8 +2456,243 @@ def test_publish_ci_repair_journals_exact_second_push_and_enters_second_wait(
     assert continuation.repair_head == SHA_C
     assert continuation.repair_attempted is True
     assert continuation.second_wait_started_at == NOW
-    assert payload["push"]["phase"] == "pushed"
+    assert payload["push"]["phase"] == "published"
     assert payload["continuation"]["phase"] == "second-wait"
+    published_pull_request = github.pull_requests[42]
+    assert published_pull_request.maintainer_state is MaintainerState.WAITING_CI
+    assert CANONICAL_GRAPH.strip() in published_pull_request.body
+    machine = trusted_machine_state(github.comments[42])
+    assert machine is not None
+    assert machine.reviewed_head == SHA_C
+    assert machine.validated_head == SHA_C
+    assert machine.last_operation == "published"
+
+    inspect_code, inventory = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+
+    assert inspect_code == 0
+    assert inventory["unresolved_pushes"] == []
+    assert inventory["ci_continuations"][0]["phase"] == "second-wait"
+
+
+@pytest.mark.parametrize(
+    ("branch", "expected_phase", "expected_state"),
+    (
+        ("pending", CiContinuationPhase.SECOND_WAIT, MaintainerState.WAITING_CI),
+        ("ready", CiContinuationPhase.CONSUMED, MaintainerState.READY),
+        ("failure", CiContinuationPhase.BLOCKED, MaintainerState.BLOCKED),
+    ),
+)
+def test_repair_push_handoff_exposes_complete_second_wait_branches(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    branch: str,
+    expected_phase: CiContinuationPhase,
+    expected_state: MaintainerState,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, lease)
+    reviewed = _save_reviewed_ci_repair(store, lease)
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+    repository = FakeRepository(
+        head=SHA_C,
+        remote=SHA_B,
+        github=github,
+    )
+
+    publish_code, publish_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "ci-repair",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert publish_code == 0, publish_payload
+
+    inspect_code, inventory = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+    assert inspect_code == 0
+    assert inventory["unresolved_pushes"] == []
+    assert inventory["ci_continuations"][0]["phase"] == "second-wait"
+
+    if branch in {"pending", "ready"}:
+        github.pull_requests[42] = github.pull_requests[42].model_copy(
+            update={
+                "check_state": "pending" if branch == "pending" else "success",
+                "checks": (),
+            }
+        )
+        summary = _private_text(
+            state_dir,
+            f"{branch}-second-wait-summary.md",
+            "GitHub CI is still running."
+            if branch == "pending"
+            else "The repaired head passed GitHub CI.",
+        )
+        body = _private_text(
+            state_dir,
+            f"{branch}-second-wait-body.md",
+            f"Current review synopsis.\n\n{CANONICAL_GRAPH}",
+        )
+        branch_code, branch_payload = _invoke(
+            capsys,
+            [
+                "--state-dir",
+                str(state_dir),
+                "publish",
+                "state",
+                "--pr",
+                "42",
+                "--state",
+                (
+                    MaintainerState.WAITING_CI.value
+                    if branch == "pending"
+                    else MaintainerState.READY.value
+                ),
+                "--reviewed-head",
+                SHA_C,
+                "--summary-file",
+                summary,
+                "--body-file",
+                body,
+                "--run-id",
+                run_id,
+            ],
+            github=github,
+            repository=repository,
+        )
+    else:
+        summary = _private_text(
+            state_dir,
+            "failed-second-wait-summary.md",
+            "The repaired head failed GitHub CI.",
+        )
+        branch_code, branch_payload = _invoke(
+            capsys,
+            [
+                "--state-dir",
+                str(state_dir),
+                "publish",
+                "outcome",
+                "--pr",
+                "42",
+                "--expected-head",
+                SHA_C,
+                "--state",
+                MaintainerState.BLOCKED.value,
+                "--reason",
+                "ci-failure",
+                "--summary-file",
+                summary,
+                "--run-id",
+                run_id,
+            ],
+            github=github,
+            repository=repository,
+        )
+
+    assert branch_code == 0, branch_payload
+    persisted = store.load_ci_continuation(reviewed.work_id)
+    assert persisted is not None
+    assert persisted.phase is expected_phase
+    assert github.pull_requests[42].maintainer_state is expected_state
+
+
+def test_repair_push_publication_failure_keeps_journal_first_until_recovery(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, lease)
+    reviewed = _save_reviewed_ci_repair(store, lease)
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+
+    def fail_publication() -> None:
+        raise GitHubError("injected repair handoff publication failure")
+
+    github.before_mutation = fail_publication
+    repository = FakeRepository(
+        head=SHA_C,
+        remote=SHA_B,
+        github=github,
+    )
+
+    failed_code, failed_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "ci-repair",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert failed_code == 2
+    assert failed_payload["reason"] == "transport-failed"
+    pushed = store.load_push(reviewed.work_id)
+    assert pushed is not None and pushed.phase is PushPhase.PUSHED
+    hidden_wait = store.load_ci_continuation(reviewed.work_id)
+    assert hidden_wait is not None
+    assert hidden_wait.phase is CiContinuationPhase.SECOND_WAIT
+    inspect_code, inventory = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+    assert inspect_code == 0
+    assert inventory["unresolved_pushes"][0]["work_id"] == reviewed.work_id
+    assert inventory["ci_continuations"] == []
+
+    github.before_mutation = None
+    recover_code, recover_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            reviewed.work_id,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert recover_code == 0, recover_payload
+    recovered_journal = store.load_push(reviewed.work_id)
+    assert recovered_journal is not None
+    assert recovered_journal.phase is PushPhase.PUBLISHED
+    assert recover_payload["continuation"]["phase"] == "second-wait"
+    assert github.pull_requests[42].maintainer_state is MaintainerState.WAITING_CI
+    assert CANONICAL_GRAPH.strip() in github.pull_requests[42].body
 
 
 def test_publish_ci_repair_revalidates_before_replacing_published_journal(
@@ -2650,7 +2970,7 @@ def test_publish_ci_repair_interruption_recovers_journal_before_continuation(
     recovered_journal = store.load_push(reviewed.work_id)
     assert recovered_journal is not None
     assert recovered_journal.recovery_run_id == successor
-    assert recovered_journal.phase is PushPhase.PUSHED
+    assert recovered_journal.phase is PushPhase.PUBLISHED
     recovered = store.load_ci_continuation(reviewed.work_id)
     assert recovered is not None
     assert recovered.recovery_run_id == successor
@@ -2675,6 +2995,240 @@ def test_publish_ci_repair_interruption_recovers_journal_before_continuation(
     )
     assert second_attempt_code == 2
     assert repository.ci_repair_prepare_calls == []
+
+
+@pytest.mark.parametrize("endpoint", ("state", "outcome"))
+@pytest.mark.parametrize("journal_phase", (PushPhase.AUTHORIZED, PushPhase.PUSHED))
+def test_generic_publication_cannot_bypass_non_converged_ci_repair_journal(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    endpoint: str,
+    journal_phase: PushPhase,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, lease)
+    reviewed = _save_reviewed_ci_repair(store, lease)
+    journal = _matching_repair_push_for_test(reviewed, lease)
+    store.save_push(journal, lease)
+    if journal_phase is PushPhase.PUSHED:
+        journal = journal.model_copy(update={"phase": PushPhase.PUSHED})
+        store.save_push(journal, lease)
+    live_head = SHA_C if journal_phase is PushPhase.PUSHED else SHA_B
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request(head_sha=live_head)})
+    repository = FakeRepository(
+        head=SHA_C,
+        remote=live_head,
+        github=github,
+    )
+    summary = _private_text(
+        state_dir,
+        f"generic-{endpoint}-{journal_phase.value}.md",
+        "This generic publication must not bypass repair recovery.",
+    )
+    if endpoint == "state":
+        command = [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            MaintainerState.BLOCKED.value,
+            "--reviewed-head",
+            live_head,
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ]
+    else:
+        command = [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            live_head,
+            "--state",
+            MaintainerState.BLOCKED.value,
+            "--reason",
+            "deadline",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ]
+    journal_before = store.load_push(reviewed.work_id)
+    continuation_before = store.load_ci_continuation(reviewed.work_id)
+    github_before = github.pull_requests[42]
+
+    code, payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "invalid-command"
+    assert store.load_push(reviewed.work_id) == journal_before
+    assert store.load_ci_continuation(reviewed.work_id) == continuation_before
+    assert github.pull_requests[42] == github_before
+    assert github.body_writes == 0
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+
+
+@pytest.mark.parametrize(
+    "phase",
+    (CiContinuationPhase.REPAIR_ACTIVE, CiContinuationPhase.REPAIR_REVIEWED),
+)
+def test_blocked_outcome_terminalizes_active_or_reviewed_ci_repair(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    phase: CiContinuationPhase,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, lease)
+    if phase is CiContinuationPhase.REPAIR_ACTIVE:
+        continuation = _save_active_ci_continuation(
+            store,
+            lease,
+            activity_started_at=NOW - timedelta(minutes=5),
+        )
+    else:
+        continuation = _save_reviewed_ci_repair(store, lease)
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+    summary = _private_text(
+        state_dir,
+        f"blocked-{phase.value}-summary.md",
+        "The focused CI repair stopped safely.",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_B,
+            "--state",
+            MaintainerState.BLOCKED.value,
+            "--reason",
+            "deadline",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+    )
+
+    assert code == 0, payload
+    terminal = store.load_ci_continuation(continuation.work_id)
+    assert terminal is not None
+    assert terminal.phase is CiContinuationPhase.BLOCKED
+    assert github.pull_requests[42].maintainer_state is MaintainerState.BLOCKED
+    assert trusted_outcome_state(github.comments[42]) is not None
+
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            run_id,
+        ],
+    )
+    assert release_code == 0
+    inspect_code, inventory = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+    assert inspect_code == 0
+    assert inventory["ci_continuations"] == []
+
+
+@pytest.mark.parametrize(
+    "phase",
+    (CiContinuationPhase.REPAIR_ACTIVE, CiContinuationPhase.REPAIR_REVIEWED),
+)
+def test_blocked_repair_outcome_publication_failure_keeps_phase_resumable(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    phase: CiContinuationPhase,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, lease)
+    if phase is CiContinuationPhase.REPAIR_ACTIVE:
+        continuation = _save_active_ci_continuation(
+            store,
+            lease,
+            activity_started_at=NOW - timedelta(minutes=5),
+        )
+    else:
+        continuation = _save_reviewed_ci_repair(store, lease)
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+
+    def fail_publication() -> None:
+        raise GitHubError("injected terminal publication failure")
+
+    github.before_mutation = fail_publication
+    summary = _private_text(
+        state_dir,
+        f"failed-blocked-{phase.value}-summary.md",
+        "The focused CI repair stopped safely.",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_B,
+            "--state",
+            MaintainerState.BLOCKED.value,
+            "--reason",
+            "deadline",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "transport-failed"
+    persisted = store.load_ci_continuation(continuation.work_id)
+    assert persisted is not None
+    assert persisted.phase is phase
+    assert github.pull_requests[42].maintainer_state is not MaintainerState.BLOCKED
 
 
 def _save_ci_wait_for_publication(
@@ -3128,6 +3682,7 @@ def test_recover_persisted_second_wait_without_repeating_transition(
         store,
         origin_lease,
         started_at=NOW - timedelta(minutes=31),
+        publish_journal=False,
     )
     github = FakeGitHub(
         pull_requests={
@@ -3179,7 +3734,7 @@ def test_recover_persisted_second_wait_without_repeating_transition(
     assert recovered.current_head == SHA_C
     assert len(repository.ci_repair_revalidate_calls) == 1
     journal = store.load_push(waiting.work_id)
-    assert journal is not None and journal.phase is PushPhase.PUSHED
+    assert journal is not None and journal.phase is PushPhase.PUBLISHED
 
     summary = _private_text(
         state_dir,
@@ -3880,6 +4435,45 @@ def test_prepare_curation_persists_one_phase_record_for_requested_safe_pr(
     assert work.prepared_head == SHA_B
     assert work.sync == _sync()
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
+
+
+def test_prepare_curation_rejects_before_sync_when_another_ci_continuation_is_active(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    store.save_ci_continuation(_ci_continuation_for_cli(lease), lease)
+    github = FakeGitHub(
+        pull_requests={
+            42: _pull_request(head_sha=SHA_B),
+            43: _pull_request(number=43, head_sha=SHA_C),
+        }
+    )
+    repository = FakeRepository(github=github)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "43",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "invalid-command"
+    assert repository.prepare_calls == 0
+    assert store.load_work("curation-pr-43") is None
 
 
 def test_remediation_checkpoint_persists_private_recovery_authority(

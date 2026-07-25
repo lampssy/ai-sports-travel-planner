@@ -527,6 +527,22 @@ def test_runtime_sources_document_ci_recovery_and_rollover() -> None:
         assert "does not reset" in text or "never reset" in text, name
 
 
+def test_runtime_sources_require_repair_handoff_before_second_wait() -> None:
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+        "ci_design": CI_REMEDIATION_DESIGN_PATH.read_text(encoding="utf-8"),
+    }
+    normalized = {
+        name: " ".join(text.split()).lower() for name, text in sources.items()
+    }
+
+    for name, text in normalized.items():
+        assert "canonical waiting-ci" in text, name
+        assert "before second-wait inspection" in text, name
+        assert "repair push journal" in text and "published" in text, name
+
+
 def test_checked_in_sources_freeze_the_post_push_ci_runtime_contract() -> None:
     sources = {
         "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),

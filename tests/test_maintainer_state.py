@@ -1708,6 +1708,25 @@ def test_begin_work_rejects_any_unresolved_push_journal(tmp_path: Path) -> None:
         )
 
 
+def test_begin_work_rejects_any_active_ci_continuation(tmp_path: Path) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    store.save_ci_continuation(_ci_continuation(lease), lease)
+
+    with pytest.raises(StateStoreError, match="active CI continuation"):
+        store.begin_work(
+            _work_state(
+                lease,
+                work_id="curation-pr-43",
+                updated_at=NOW + timedelta(minutes=1),
+                pr_number=43,
+            ),
+            lease,
+        )
+
+    assert store.load_work("curation-pr-43") is None
+
+
 def test_push_journal_is_strict_and_requires_recovery_facts() -> None:
     lease = RunLease("discovery", "a" * 32, Path("/tmp/state"))
     base = _journal(

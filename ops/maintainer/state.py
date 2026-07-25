@@ -619,6 +619,8 @@ class StateStore:
             unresolved = self._list_unresolved_pushes()
             if unresolved:
                 raise StateStoreError("unresolved push journal blocks fresh work")
+            if self.list_ci_continuations_for_inspection():
+                raise StateStoreError("active CI continuation blocks fresh work")
             existing = self.load_work(state.work_id)
             if existing is not None:
                 if existing.worker != state.worker:
