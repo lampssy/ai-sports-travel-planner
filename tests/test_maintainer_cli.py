@@ -4387,6 +4387,8 @@ def test_cli_exposes_only_the_bounded_capabilities_and_explicit_dispatch_table(
 
     assert code == 2
     assert payload["reason"] == "invalid-command"
+    assert payload["stage"] == "dispatch"
+    _assert_outcome(payload, worker="curation", mutation=False, run_id=None)
 
 
 def test_final_machine_state_contract_is_reduced() -> None:

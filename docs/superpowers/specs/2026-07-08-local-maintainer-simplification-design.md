@@ -269,6 +269,23 @@ The helper provides four capability groups only:
 
 ## Deterministic Capability Contracts
 
+### Dispatch correction
+
+The parser remains the fail-closed boundary for helper command spelling. A
+completed structured `invalid-command` rejection at `stage=dispatch` proves
+that no helper capability was entered, so the orchestrator may reload the exact
+runtime contract and make one corrected execution of the same registered
+recipe when the structured outcome also reports `mutation_occurred=false`. It
+substitutes only values already authorized by current helper output or
+exact-head state and never repeats the malformed argv.
+
+This is not a general capability retry. An uncertain or incomplete process,
+capture loss, missing or positive mutation status, recipe ambiguity,
+implementation-source inspection, `--help`, capability switching, a
+non-dispatch error, or a second dispatch rejection still stops the cycle after
+the normal finally-style cleanup. Existing journal and continuation authority
+remains unchanged.
+
 ### Inspect
 
 Read-only inspection returns:
@@ -1791,6 +1808,14 @@ replaced. It is history, not current operational instruction:
   run-local Codex judgment, while the helper stays limited to objective
   command, state, validation, and publication gates; cycle/time bounds and the
   terminal hold label prevent unattended infinite retry.
+- Advisory dispatch-correction feature review: complete for observability/ops
+  and release/change management. The review found and resolved one High safety
+  ambiguity by requiring both a completed `stage=dispatch` rejection and
+  `outcome.mutation_occurred=false` before the single corrected-recipe attempt.
+  No unresolved Blocker, High, or Medium finding remains. The accepted residual
+  risk is that Codex still assembles recipe argv; exact contract reload, same-
+  recipe restriction, one-attempt limit, and the second-rejection hard stop
+  bound that failure mode without adding another executor layer.
 - Implementation and activation: the base design is complete. Its feature work
   passed the recorded maintainer, focused catalog, lint/format, full-suite,
   prospective-merge, and CI checks before merge. The owner then approved and

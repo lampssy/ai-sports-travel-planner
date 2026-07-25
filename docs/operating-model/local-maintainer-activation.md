@@ -94,9 +94,15 @@ The installed skill must:
   family or option, translate semantic “lease” wording into argv, inspect source
   to discover a command, or call `--help` during a cycle;
 - classify helper `invalid-command` at `dispatch` as
-  `orchestration-command-invalid`, preserve existing recovery authority, avoid
-  retry/probing, and stop after finally-style cleanup rather than blaming the
-  selected PR or deterministic validation;
+  `orchestration-command-invalid`; after a completed structured dispatch
+  rejection with `outcome.mutation_occurred=false`, reload the exact runtime
+  contract and permit one corrected execution of the same registered recipe
+  without repeating malformed argv, probing with `--help`, inspecting
+  implementation source, or switching capabilities; preserve existing recovery
+  authority and stop after finally-style cleanup when mutation status is missing
+  or true, the recipe is not exact, execution is uncertain, or a second dispatch
+  rejection occurs rather than blaming the selected PR or deterministic
+  validation;
 - inspect unresolved terminal-publication intents and push journals before
   fresh selection; recover exactly one matching authority first and escalate
   multiple records;

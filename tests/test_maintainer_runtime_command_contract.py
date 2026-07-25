@@ -642,7 +642,14 @@ def test_runtime_contract_classifies_dispatch_errors_as_orchestration_errors() -
         "reason": "invalid-command",
         "stage": "dispatch",
         "classification": "orchestration-command-invalid",
-        "retry_same_call": False,
+        "retry_policy": {
+            "require_completed_dispatch_rejection": True,
+            "require_mutation_occurred_false": True,
+            "repeat_malformed_argv": False,
+            "corrected_registered_recipe_attempts": 1,
+            "same_intended_recipe_only": True,
+            "allow_help_or_capability_switch": False,
+        },
     }
 
 
@@ -650,6 +657,7 @@ def test_per_cycle_sources_use_the_short_runtime_contract() -> None:
     activation = ACTIVATION_PATH.read_text(encoding="utf-8")
     design = DESIGN_PATH.read_text(encoding="utf-8")
     normalized_activation = " ".join(activation.split())
+    normalized_design = " ".join(design.split())
 
     assert "maintainer-runtime-command-contract.md" in activation
     assert "maintainer-runtime-command-contract.md" in design
@@ -659,6 +667,9 @@ def test_per_cycle_sources_use_the_short_runtime_contract() -> None:
         "does not prove that the personal runtime is activated" in normalized_activation
     )
     assert "Before merging a change to this runtime source set" in normalized_activation
+    for source in (normalized_activation, normalized_design):
+        assert "one corrected execution of the same registered recipe" in source
+        assert "second dispatch rejection" in source
 
 
 def test_convergence_contract_tolerates_residuals_and_two_exact_repeats() -> None:
