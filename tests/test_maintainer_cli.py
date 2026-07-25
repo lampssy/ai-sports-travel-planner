@@ -57,6 +57,8 @@ from ops.maintainer.state import (
     ReviewedContinuation,
     StateStore,
     StateStoreError,
+    TerminalPublicationIntent,
+    TerminalPublicationPhase,
     WorkPhase,
     WorkState,
 )
@@ -3139,8 +3141,11 @@ def test_blocked_outcome_terminalizes_active_or_reviewed_ci_repair(
 
     assert code == 0, payload
     terminal = store.load_ci_continuation(continuation.work_id)
+    terminal_publication = store.load_terminal_publication(continuation.work_id)
     assert terminal is not None
     assert terminal.phase is CiContinuationPhase.BLOCKED
+    assert terminal_publication is not None
+    assert terminal_publication.phase is TerminalPublicationPhase.COMPLETED
     assert github.pull_requests[42].maintainer_state is MaintainerState.BLOCKED
     assert trusted_outcome_state(github.comments[42]) is not None
 
@@ -3228,7 +3233,482 @@ def test_blocked_repair_outcome_publication_failure_keeps_phase_resumable(
     persisted = store.load_ci_continuation(continuation.work_id)
     assert persisted is not None
     assert persisted.phase is phase
+    intent = store.load_terminal_publication(continuation.work_id)
+    assert intent is not None
+    assert intent.phase is TerminalPublicationPhase.AUTHORIZED
     assert github.pull_requests[42].maintainer_state is not MaintainerState.BLOCKED
+
+
+def test_terminal_repair_outcome_validates_summary_before_authorization(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, lease)
+    continuation = _save_active_ci_continuation(
+        store,
+        lease,
+        activity_started_at=NOW - timedelta(minutes=5),
+    )
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+    summary = _private_text(
+        state_dir,
+        "unsafe-terminal-summary.md",
+        f"Unsafe reserved marker: {SUMMARY_MARKER}",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_B,
+            "--state",
+            MaintainerState.BLOCKED.value,
+            "--reason",
+            "deadline",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert store.load_terminal_publication(continuation.work_id) is None
+    assert store.load_ci_continuation(continuation.work_id) == continuation
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+
+
+@pytest.mark.parametrize(
+    "phase",
+    (CiContinuationPhase.REPAIR_ACTIVE, CiContinuationPhase.REPAIR_REVIEWED),
+)
+@pytest.mark.parametrize(
+    "crash_point",
+    ("after-comment", "after-labels", "before-continuation-write"),
+)
+def test_terminal_repair_publication_crash_recovers_only_exact_intent(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    phase: CiContinuationPhase,
+    crash_point: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin_run = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", origin_run)
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, lease)
+    if phase is CiContinuationPhase.REPAIR_ACTIVE:
+        continuation = _save_active_ci_continuation(
+            store,
+            lease,
+            activity_started_at=NOW - timedelta(minutes=5),
+        )
+    else:
+        continuation = _save_reviewed_ci_repair(store, lease)
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+    repository = FakeRepository(github=github)
+    injected = False
+    if crash_point == "after-comment":
+        create_comment = github.create_comment
+
+        def create_comment_then_crash(number: int, body: str) -> int:
+            nonlocal injected
+            comment_id = create_comment(number, body)
+            if not injected:
+                injected = True
+                raise GitHubError("injected crash after comment publication")
+            return comment_id
+
+        github.create_comment = create_comment_then_crash
+    elif crash_point == "after-labels":
+        update_labels = github.update_labels
+
+        def update_labels_then_crash(
+            number: int,
+            add: set[str] | frozenset[str],
+            remove: set[str] | frozenset[str],
+        ) -> None:
+            nonlocal injected
+            update_labels(number, add, remove)
+            if not injected:
+                injected = True
+                raise GitHubError("injected crash after label publication")
+
+        github.update_labels = update_labels_then_crash
+    else:
+        complete_terminal_publication = StateStore.complete_terminal_publication
+
+        def fail_before_continuation_write(
+            self: StateStore,
+            intent: TerminalPublicationIntent,
+            owned_lease: RunLease,
+            *,
+            now: datetime,
+        ) -> tuple[TerminalPublicationIntent, CiContinuation]:
+            nonlocal injected
+            if not injected:
+                injected = True
+                raise StateStoreError("injected crash before continuation state write")
+            return complete_terminal_publication(
+                self,
+                intent,
+                owned_lease,
+                now=now,
+            )
+
+        monkeypatch.setattr(
+            StateStore,
+            "complete_terminal_publication",
+            fail_before_continuation_write,
+        )
+    summary_text = "The focused CI repair stopped safely."
+    summary = _private_text(
+        state_dir,
+        f"crash-{phase.value}-{crash_point}.md",
+        summary_text,
+    )
+    command = [
+        "--state-dir",
+        str(state_dir),
+        "publish",
+        "outcome",
+        "--pr",
+        "42",
+        "--expected-head",
+        SHA_B,
+        "--state",
+        MaintainerState.BLOCKED.value,
+        "--reason",
+        "deadline",
+        "--summary-file",
+        summary,
+        "--run-id",
+        origin_run,
+    ]
+
+    failed_code, failed = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+    )
+
+    assert failed_code == 2
+    assert failed["reason"] in {"transport-failed", "invalid-command"}
+    persisted = store.load_ci_continuation(continuation.work_id)
+    intent = store.load_terminal_publication(continuation.work_id)
+    assert persisted == continuation
+    assert intent is not None
+    assert intent.phase is TerminalPublicationPhase.AUTHORIZED
+    assert intent.continuation == continuation
+    assert intent.summary == summary_text
+    assert intent.target_state is MaintainerState.BLOCKED
+    assert intent.reason == "deadline"
+    assert trusted_outcome_state(github.comments[42]) is not None
+    if crash_point == "after-comment":
+        assert github.pull_requests[42].maintainer_state is not MaintainerState.BLOCKED
+    else:
+        assert github.pull_requests[42].maintainer_state is MaintainerState.BLOCKED
+
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            origin_run,
+        ],
+    )
+    assert release_code == 0
+    successor = _acquire(capsys, state_dir, "curation")
+    github.failure = GitHubError(
+        "terminal publication inspection must not require GitHub"
+    )
+    inspect_code, inventory = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=github,
+    )
+    github.failure = None
+    assert inspect_code == 0
+    assert inventory["terminal_publications"][0]["work_id"] == continuation.work_id
+    assert inventory["unresolved_pushes"] == []
+    assert inventory["ci_continuations"] == []
+    assert inventory["reviewed_continuations"] == []
+    assert inventory["remediation_continuations"] == []
+    assert inventory["eligible"] == []
+
+    prepare_code, prepare_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "ci-repair",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert prepare_code == 2
+    assert prepare_payload["reason"] == "invalid-command"
+    assert repository.ci_repair_prepare_calls == []
+    assert repository.ci_repair_revalidate_calls == []
+
+    recover_code, recovered = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            continuation.work_id,
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert recover_code == 0, recovered
+    assert recovered["terminal_publication"] == {
+        "work_id": continuation.work_id,
+        "pr_number": 42,
+        "state": MaintainerState.BLOCKED.value,
+        "reason": "deadline",
+        "phase": TerminalPublicationPhase.COMPLETED.value,
+    }
+    terminal = store.load_ci_continuation(continuation.work_id)
+    completed = store.load_terminal_publication(continuation.work_id)
+    assert terminal is not None
+    assert terminal.phase is CiContinuationPhase.BLOCKED
+    assert terminal.recovery_run_id == successor
+    assert completed is not None
+    assert completed.phase is TerminalPublicationPhase.COMPLETED
+    assert completed.recovery_run_id == successor
+    assert store.list_unresolved_terminal_publications() == ()
+    assert github.pull_requests[42].maintainer_state is MaintainerState.BLOCKED
+    assert trusted_outcome_state(github.comments[42]) is not None
+    assert github.comment_creates == 1
+    assert github.label_writes == 1
+
+
+def test_unresolved_terminal_publication_rejects_changed_canonical_inputs(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, lease)
+    continuation = _save_active_ci_continuation(
+        store,
+        lease,
+        activity_started_at=NOW - timedelta(minutes=5),
+    )
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+    original_complete = StateStore.complete_terminal_publication
+    injected = False
+
+    def fail_once(
+        self: StateStore,
+        intent: TerminalPublicationIntent,
+        owned_lease: RunLease,
+        *,
+        now: datetime,
+    ) -> tuple[TerminalPublicationIntent, CiContinuation]:
+        nonlocal injected
+        if not injected:
+            injected = True
+            raise StateStoreError("injected crash before continuation state write")
+        return original_complete(self, intent, owned_lease, now=now)
+
+    monkeypatch.setattr(StateStore, "complete_terminal_publication", fail_once)
+    first_summary = _private_text(
+        state_dir,
+        "terminal-original-summary.md",
+        "The focused CI repair stopped safely.",
+    )
+    base_command = [
+        "--state-dir",
+        str(state_dir),
+        "publish",
+        "outcome",
+        "--pr",
+        "42",
+        "--expected-head",
+        SHA_B,
+        "--state",
+        MaintainerState.BLOCKED.value,
+        "--reason",
+        "deadline",
+        "--summary-file",
+        first_summary,
+        "--run-id",
+        run_id,
+    ]
+    first_code, _ = _invoke(capsys, base_command, github=github)
+    assert first_code == 2
+    comment_creates = github.comment_creates
+    label_writes = github.label_writes
+    changed_summary = _private_text(
+        state_dir,
+        "terminal-changed-summary.md",
+        "A different terminal explanation.",
+    )
+    changed_command = list(base_command)
+    changed_command[changed_command.index(first_summary)] = changed_summary
+
+    retry_code, retry = _invoke(capsys, changed_command, github=github)
+
+    assert retry_code == 2
+    assert retry["reason"] == "invalid-command"
+    assert store.load_ci_continuation(continuation.work_id) == continuation
+    intent = store.load_terminal_publication(continuation.work_id)
+    assert intent is not None
+    assert intent.phase is TerminalPublicationPhase.AUTHORIZED
+    assert intent.summary == "The focused CI repair stopped safely."
+    assert github.comment_creates == comment_creates
+    assert github.label_writes == label_writes
+
+
+@pytest.mark.parametrize("drift", ("head", "branch", "generation"))
+def test_terminal_publication_recovery_fails_closed_on_exact_authority_drift(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    drift: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin_run = _acquire(capsys, state_dir, "curation")
+    lease = RunLease.load_owner(state_dir, "curation", origin_run)
+    store = StateStore(state_dir)
+    _save_published_initial_push(store, lease)
+    continuation = _save_reviewed_ci_repair(store, lease)
+    github = FakeGitHub(pull_requests={42: _failed_ci_pull_request()})
+    complete = StateStore.complete_terminal_publication
+    injected = False
+
+    def fail_once(
+        self: StateStore,
+        intent: TerminalPublicationIntent,
+        owned_lease: RunLease,
+        *,
+        now: datetime,
+    ) -> tuple[TerminalPublicationIntent, CiContinuation]:
+        nonlocal injected
+        if not injected:
+            injected = True
+            raise StateStoreError("injected crash before continuation state write")
+        return complete(self, intent, owned_lease, now=now)
+
+    monkeypatch.setattr(StateStore, "complete_terminal_publication", fail_once)
+    summary = _private_text(
+        state_dir,
+        f"terminal-drift-{drift}.md",
+        "The focused CI repair stopped safely.",
+    )
+    first_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_B,
+            "--state",
+            MaintainerState.BLOCKED.value,
+            "--reason",
+            "deadline",
+            "--summary-file",
+            summary,
+            "--run-id",
+            origin_run,
+        ],
+        github=github,
+    )
+    assert first_code == 2
+    if drift == "head":
+        github.pull_requests[42] = github.pull_requests[42].model_copy(
+            update={"head_sha": SHA_C}
+        )
+    elif drift == "branch":
+        github.pull_requests[42] = github.pull_requests[42].model_copy(
+            update={"head_ref_name": "codex/catalog-curation-other"}
+        )
+    else:
+        drifted = continuation.model_copy(update={"origin_run_id": "f" * 32})
+        path = store.ci_continuation_dir / f"{continuation.work_id}.json"
+        path.write_text(drifted.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        os.chmod(path, 0o600)
+    comment_creates = github.comment_creates
+    label_writes = github.label_writes
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            origin_run,
+        ],
+    )
+    assert release_code == 0
+    successor = _acquire(capsys, state_dir, "curation")
+
+    recover_code, recover = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            continuation.work_id,
+            "--run-id",
+            successor,
+        ],
+        github=github,
+    )
+
+    assert recover_code == 2
+    assert recover["reason"] in {"stale-head", "invalid-command"}
+    intent = store.load_terminal_publication(continuation.work_id)
+    assert intent is not None
+    assert intent.phase is TerminalPublicationPhase.AUTHORIZED
+    persisted = store.load_ci_continuation(continuation.work_id)
+    assert persisted is not None
+    assert persisted.phase is not CiContinuationPhase.BLOCKED
+    assert github.comment_creates == comment_creates
+    assert github.label_writes == label_writes
 
 
 def _save_ci_wait_for_publication(

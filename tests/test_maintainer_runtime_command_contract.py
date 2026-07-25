@@ -356,9 +356,10 @@ def test_runtime_contract_splits_curation_and_discovery_inspection_next_steps() 
     rows = _allowed_next_steps()
     assert "inspect_*" not in rows
     assert rows["inspect_curation"] == (
-        "recover one journal first; otherwise select one CI continuation, "
-        "reviewed continuation, remediation continuation, ordinary curation "
-        "PR, or bounded no-op in that order"
+        "recover one terminal publication first, then one push journal; "
+        "otherwise select one CI continuation, reviewed continuation, "
+        "remediation continuation, ordinary curation PR, or bounded no-op "
+        "in that order"
     )
     assert rows["inspect_discovery"] == (
         "recover one journal first; otherwise select preferred retry, merged "
@@ -407,11 +408,27 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
     recipes = contract["recipes"]
     assert recipes["inspect_curation"]["returns"] == [
         "eligible",
+        "terminal_publications",
         "ci_continuations",
         "reviewed_continuations",
         "remediation_continuations",
         "unresolved_pushes",
     ]
+    assert recipes["publish_recover"] == {
+        "argv": [
+            "publish",
+            "recover",
+            "--work-id",
+            "${WORK_ID}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["work_id"],
+        "conditional_returns": {
+            "push-journal": ["push", "continuation"],
+            "terminal-publication": ["terminal_publication"],
+        },
+    }
     assert recipes["prepare_ci_repair"] == {
         "argv": [
             "prepare",
@@ -484,6 +501,7 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
     }
     assert contract["ci_continuation_policy"] == {
         "recovery_priority": [
+            "terminal_publication",
             "push_journal",
             "post_push_ci_continuation",
             "reviewed_continuation",
@@ -506,7 +524,31 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
         "non_resumable_invalidation": "lease-owned-live-facts",
         "terminal_generation_rollover": "new-validated-pushed-semantic-head-only",
         "terminal_generation_archive": "owner-private-semantic-head-versioned",
+        "terminal_publication_intent": "owner-private-before-external-mutation",
+        "terminal_publication_completion": (
+            "external-publication-then-exact-continuation-block"
+        ),
+        "terminal_publication_recovery": "idempotent-exact-authority-only",
     }
+
+
+def test_runtime_sources_freeze_terminal_publication_recovery() -> None:
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+        "ci_design": CI_REMEDIATION_DESIGN_PATH.read_text(encoding="utf-8"),
+        "engineering_notes": ENGINEERING_NOTES_PATH.read_text(encoding="utf-8"),
+    }
+    normalized = {
+        name: " ".join(text.split()).lower() for name, text in sources.items()
+    }
+
+    for name, text in normalized.items():
+        assert "owner-private terminal-publication intent" in text, name
+        assert "before any github mutation" in text, name
+        assert "idempotent" in text, name
+        assert "exact matching continuation" in text, name
+        assert "repair cannot resume" in text, name
 
 
 def test_runtime_sources_document_ci_recovery_and_rollover() -> None:
@@ -567,8 +609,8 @@ def test_checked_in_sources_freeze_the_post_push_ci_runtime_contract() -> None:
     for name in ("runtime", "activation", "long_design"):
         text = normalized[name]
         assert (
-            "push journal -> post-push ci continuation -> reviewed continuation "
-            "-> remediation continuation -> ordinary pr"
+            "terminal publication -> push journal -> post-push ci continuation "
+            "-> reviewed continuation -> remediation continuation -> ordinary pr"
         ) in text, name
         assert "automation memory and labels" in text, name
         assert "read-only" in text and "untrusted" in text, name

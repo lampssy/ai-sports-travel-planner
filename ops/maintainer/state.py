@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.intent import is_allowed_ci_repair_path, is_allowed_curation_path
+from ops.maintainer.models import OUTCOME_REASONS, MachineState, MaintainerState
 from ops.maintainer.runtime import (
     LeaseMetadataError,
     LeaseOwnershipError,
@@ -84,6 +85,11 @@ class CiContinuationPhase(StrEnum):
     CONSUMED = "consumed"
     BLOCKED = "blocked"
     INVALIDATED = "invalidated"
+
+
+class TerminalPublicationPhase(StrEnum):
+    AUTHORIZED = "authorized"
+    COMPLETED = "completed"
 
 
 _WORK_PHASES = tuple(WorkPhase)
@@ -398,6 +404,46 @@ class CiContinuation(BaseModel):
         return self
 
 
+class TerminalPublicationIntent(BaseModel):
+    """Exact owner-private authority for one terminal repair publication."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    work_id: str = Field(pattern=_ID_PATTERN.pattern)
+    worker: Literal["curation"]
+    origin_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
+    recovery_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
+    updated_at: datetime
+    continuation: CiContinuation
+    target_state: MaintainerState
+    reason: str = Field(pattern=_REASON_PATTERN)
+    summary: str = Field(min_length=1, max_length=16384)
+    machine_state: MachineState
+    phase: TerminalPublicationPhase
+
+    @model_validator(mode="after")
+    def validate_terminal_publication_intent(self) -> TerminalPublicationIntent:
+        if self.updated_at.tzinfo is None or self.updated_at.utcoffset() is None:
+            raise ValueError("updated_at must include a timezone")
+        object.__setattr__(self, "updated_at", self.updated_at.astimezone(UTC))
+        if self.work_id != self.continuation.work_id:
+            raise ValueError(
+                "terminal publication identity does not match continuation"
+            )
+        if self.continuation.phase not in {
+            CiContinuationPhase.REPAIR_ACTIVE,
+            CiContinuationPhase.REPAIR_REVIEWED,
+        }:
+            raise ValueError("terminal publication requires active repair authority")
+        if self.target_state is not MaintainerState.BLOCKED:
+            raise ValueError("terminal publication target must be blocked")
+        if self.reason not in OUTCOME_REASONS or self.reason == "owner-decision":
+            raise ValueError("terminal publication reason is not allowlisted")
+        if not self.summary.strip():
+            raise ValueError("terminal publication summary cannot be blank")
+        return self
+
+
 class PushJournal(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -504,6 +550,7 @@ _StateModel = TypeVar(
     ReviewedContinuation,
     RemediationContinuation,
     CiContinuation,
+    TerminalPublicationIntent,
 )
 
 
@@ -579,6 +626,23 @@ class StateStore:
             raise StateStoreError("maintainer state directory is unsafe") from exc
         return cls(state_path, _read_only=True).list_ci_continuations_for_inspection()
 
+    @classmethod
+    def list_terminal_publications_for_inspection_path(
+        cls,
+        state_dir: str | Path,
+    ) -> tuple[TerminalPublicationIntent, ...]:
+        state_path = Path(state_dir)
+        try:
+            state_path.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("maintainer state directory is unsafe") from exc
+        return cls(
+            state_path,
+            _read_only=True,
+        ).list_unresolved_terminal_publications()
+
     @property
     def work_dir(self) -> Path:
         return self.state_dir / "work"
@@ -603,6 +667,10 @@ class StateStore:
     def ci_continuation_archive_dir(self) -> Path:
         return self.state_dir / "ci-continuation-archive"
 
+    @property
+    def terminal_publication_dir(self) -> Path:
+        return self.state_dir / "terminal-publications"
+
     def load_work(self, work_id: str) -> WorkState | None:
         _validate_identifier(work_id, "work_id")
         loaded = self._load_model(self.work_dir, work_id, WorkState)
@@ -619,6 +687,10 @@ class StateStore:
             unresolved = self._list_unresolved_pushes()
             if unresolved:
                 raise StateStoreError("unresolved push journal blocks fresh work")
+            if self.list_unresolved_terminal_publications():
+                raise StateStoreError(
+                    "unresolved terminal publication blocks fresh work"
+                )
             if self.list_ci_continuations_for_inspection():
                 raise StateStoreError("active CI continuation blocks fresh work")
             existing = self.load_work(state.work_id)
@@ -697,6 +769,239 @@ class StateStore:
             raise StateStoreError("CI continuation identity does not match its path")
         return loaded
 
+    def load_terminal_publication(
+        self,
+        work_id: str,
+    ) -> TerminalPublicationIntent | None:
+        _validate_identifier(work_id, "work_id")
+        loaded = self._load_model(
+            self.terminal_publication_dir,
+            work_id,
+            TerminalPublicationIntent,
+        )
+        if loaded is not None and loaded.work_id != work_id:
+            raise StateStoreError(
+                "terminal publication identity does not match its path"
+            )
+        return loaded
+
+    def save_terminal_publication(
+        self,
+        intent: TerminalPublicationIntent,
+        lease: RunLease,
+    ) -> TerminalPublicationIntent:
+        intent = _revalidate_model(intent, TerminalPublicationIntent)
+        with _transition_mutex(self.state_dir):
+            self._assert_terminal_publication_lease(intent, lease)
+            if self._list_unresolved_pushes():
+                raise StateStoreError(
+                    "unresolved push journal blocks terminal publication"
+                )
+            unresolved = self.list_unresolved_terminal_publications()
+            if unresolved and (len(unresolved) != 1 or unresolved[0] != intent):
+                raise StateStoreError(
+                    "another unresolved terminal publication blocks authorization"
+                )
+            current_continuation = self.load_ci_continuation(intent.work_id)
+            if current_continuation != intent.continuation:
+                raise StateStoreError(
+                    "terminal publication continuation does not match persisted state"
+                )
+            existing = self.load_terminal_publication(intent.work_id)
+            if existing is None:
+                if intent.phase is not TerminalPublicationPhase.AUTHORIZED:
+                    raise StateStoreError(
+                        "new terminal publication must start authorized"
+                    )
+                if intent.origin_run_id != intent.recovery_run_id:
+                    raise StateStoreError(
+                        "new terminal publication must originate in this run"
+                    )
+            elif existing.phase is TerminalPublicationPhase.AUTHORIZED:
+                if existing != intent:
+                    raise StateStoreError("terminal publication authority changed")
+                return existing
+            elif intent.phase is not TerminalPublicationPhase.AUTHORIZED:
+                raise StateStoreError(
+                    "completed terminal publication cannot be rewritten"
+                )
+            elif (
+                existing.continuation.semantic_head == intent.continuation.semantic_head
+            ):
+                raise StateStoreError(
+                    "terminal publication generation is already completed"
+                )
+            elif intent.origin_run_id != intent.recovery_run_id:
+                raise StateStoreError(
+                    "new terminal publication must originate in this run"
+                )
+            self._save_model(
+                self.terminal_publication_dir,
+                intent.work_id,
+                intent,
+            )
+            return intent
+
+    def list_unresolved_terminal_publications(
+        self,
+    ) -> tuple[TerminalPublicationIntent, ...]:
+        try:
+            self.terminal_publication_dir.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("terminal publication directory is unsafe") from exc
+        try:
+            self._validate_existing_directory(self.state_dir)
+            self._validate_existing_directory(self.terminal_publication_dir)
+        except RunLeaseError as exc:
+            raise StateStoreError("terminal publication directory is unsafe") from exc
+        unresolved = []
+        for path in sorted(
+            self.terminal_publication_dir.glob("*.json"),
+            key=lambda item: item.name,
+        ):
+            intent = self.load_terminal_publication(path.name.removesuffix(".json"))
+            if intent is None:
+                raise StateStoreError(
+                    "terminal publication disappeared during inventory"
+                )
+            if intent.phase is TerminalPublicationPhase.AUTHORIZED:
+                unresolved.append(intent)
+        return tuple(sorted(unresolved, key=lambda item: item.work_id))
+
+    def adopt_terminal_publication(
+        self,
+        work_id: str,
+        lease: RunLease,
+        *,
+        now: datetime,
+    ) -> TerminalPublicationIntent:
+        _validate_identifier(work_id, "work_id")
+        self._assert_lease_location(lease)
+        observed_at = _normalize_state_time(now)
+        with _transition_mutex(self.state_dir):
+            RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+            if lease.worker != "curation":
+                raise StateStoreError("only curation can adopt terminal publication")
+            if self._list_unresolved_pushes():
+                raise StateStoreError(
+                    "unresolved push journal blocks terminal publication"
+                )
+            unresolved = self.list_unresolved_terminal_publications()
+            if len(unresolved) != 1 or unresolved[0].work_id != work_id:
+                raise StateStoreError(
+                    "terminal publication adoption requires exact authority"
+                )
+            intent = unresolved[0]
+            self._require_terminal_publication_continuation(intent)
+            if intent.recovery_run_id == lease.run_id:
+                return intent
+            if observed_at <= intent.updated_at:
+                observed_at = intent.updated_at + timedelta(microseconds=1)
+            adopted = intent.model_copy(
+                update={
+                    "recovery_run_id": lease.run_id,
+                    "updated_at": observed_at,
+                }
+            )
+            adopted = _revalidate_model(adopted, TerminalPublicationIntent)
+            self._save_model(
+                self.terminal_publication_dir,
+                adopted.work_id,
+                adopted,
+            )
+            return adopted
+
+    @contextmanager
+    def guard_terminal_publication_mutation(
+        self,
+        intent: TerminalPublicationIntent,
+        lease: RunLease,
+    ) -> Iterator[None]:
+        """Hold exact terminal authority stable across one GitHub mutation."""
+        intent = _revalidate_model(intent, TerminalPublicationIntent)
+        with _transition_mutex(self.state_dir):
+            current = self.load_terminal_publication(intent.work_id)
+            if (
+                current != intent
+                or intent.phase is not TerminalPublicationPhase.AUTHORIZED
+            ):
+                raise StateStoreError("terminal publication authority changed")
+            self._assert_terminal_publication_lease(intent, lease)
+            self._require_terminal_publication_continuation(intent)
+            yield
+
+    def complete_terminal_publication(
+        self,
+        intent: TerminalPublicationIntent,
+        lease: RunLease,
+        *,
+        now: datetime,
+    ) -> tuple[TerminalPublicationIntent, CiContinuation]:
+        """Terminalize the exact continuation, then complete its publication."""
+        intent = _revalidate_model(intent, TerminalPublicationIntent)
+        observed_at = _normalize_state_time(now)
+        with _transition_mutex(self.state_dir):
+            current_intent = self.load_terminal_publication(intent.work_id)
+            if (
+                current_intent != intent
+                or intent.phase is not TerminalPublicationPhase.AUTHORIZED
+            ):
+                raise StateStoreError("terminal publication authority changed")
+            self._assert_terminal_publication_lease(intent, lease)
+            current = self._require_terminal_publication_continuation(intent)
+            if current == intent.continuation:
+                if observed_at <= current.updated_at:
+                    observed_at = current.updated_at + timedelta(microseconds=1)
+                blocked = current.model_copy(
+                    update={
+                        "recovery_run_id": intent.recovery_run_id,
+                        "updated_at": observed_at,
+                        "phase": CiContinuationPhase.BLOCKED,
+                    }
+                )
+                blocked = _revalidate_model(blocked, CiContinuation)
+                self._save_model(
+                    self.ci_continuation_dir,
+                    blocked.work_id,
+                    blocked,
+                )
+            else:
+                blocked = current
+            completed_at = observed_at
+            if completed_at <= intent.updated_at:
+                completed_at = intent.updated_at + timedelta(microseconds=1)
+            if completed_at <= blocked.updated_at:
+                completed_at = blocked.updated_at + timedelta(microseconds=1)
+            completed = intent.model_copy(
+                update={
+                    "updated_at": completed_at,
+                    "phase": TerminalPublicationPhase.COMPLETED,
+                }
+            )
+            completed = _revalidate_model(completed, TerminalPublicationIntent)
+            self._save_model(
+                self.terminal_publication_dir,
+                completed.work_id,
+                completed,
+            )
+            if blocked.recovery_run_id != intent.recovery_run_id:
+                recovered_at = completed.updated_at + timedelta(microseconds=1)
+                blocked = blocked.model_copy(
+                    update={
+                        "recovery_run_id": intent.recovery_run_id,
+                        "updated_at": recovered_at,
+                    }
+                )
+                blocked = _revalidate_model(blocked, CiContinuation)
+                self._save_model(
+                    self.ci_continuation_dir,
+                    blocked.work_id,
+                    blocked,
+                )
+            return completed, blocked
+
     def require_ci_generation_eligible(
         self,
         work_id: str,
@@ -712,6 +1017,10 @@ class StateStore:
             RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
             if lease.worker != "curation":
                 raise StateStoreError("only curation can start a CI generation")
+            if self.list_unresolved_terminal_publications():
+                raise StateStoreError(
+                    "unresolved terminal publication blocks a new generation"
+                )
             existing = self.load_ci_continuation(work_id)
             if existing is not None:
                 if existing.phase not in _TERMINAL_CI_PHASES:
@@ -746,6 +1055,10 @@ class StateStore:
         continuation = _revalidate_model(continuation, CiContinuation)
         with _transition_mutex(self.state_dir):
             self._assert_ci_continuation_lease(continuation, lease)
+            if self.list_unresolved_terminal_publications():
+                raise StateStoreError(
+                    "unresolved terminal publication blocks CI continuation"
+                )
             existing = self.load_ci_continuation(continuation.work_id)
             if existing is None:
                 if continuation.phase is not CiContinuationPhase.INITIAL_WAIT:
@@ -841,6 +1154,10 @@ class StateStore:
                 raise StateStoreError("only curation can adopt CI continuations")
             if self._list_unresolved_pushes():
                 raise StateStoreError("unresolved push journal blocks CI continuation")
+            if self.list_unresolved_terminal_publications():
+                raise StateStoreError(
+                    "unresolved terminal publication blocks CI continuation"
+                )
             continuation = self.load_ci_continuation(work_id)
             if continuation is None:
                 raise StateStoreError("CI continuation is missing")
@@ -1095,6 +1412,8 @@ class StateStore:
         self._assert_lease_location(lease)
         RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
         if lease.worker != "curation":
+            return None
+        if self.list_unresolved_terminal_publications():
             return None
         owned = tuple(
             continuation
@@ -1669,6 +1988,44 @@ class StateStore:
         if lease.worker != "curation" or continuation.recovery_run_id != lease.run_id:
             raise LeaseOwnershipError("CI continuation is not owned by this lease")
         RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+
+    def _assert_terminal_publication_lease(
+        self,
+        intent: TerminalPublicationIntent,
+        lease: RunLease,
+    ) -> None:
+        self._assert_lease_location(lease)
+        if lease.worker != intent.worker or intent.recovery_run_id != lease.run_id:
+            raise LeaseOwnershipError("terminal publication is not owned by this lease")
+        RunLease.load_owner(self.state_dir, lease.worker, lease.run_id)
+
+    def _require_terminal_publication_continuation(
+        self,
+        intent: TerminalPublicationIntent,
+    ) -> CiContinuation:
+        continuation = self.load_ci_continuation(intent.work_id)
+        if continuation is None:
+            raise StateStoreError("terminal publication continuation is missing")
+        if continuation == intent.continuation:
+            return continuation
+        if (
+            continuation.phase is CiContinuationPhase.BLOCKED
+            and continuation.recovery_run_id
+            in {
+                intent.recovery_run_id,
+                intent.continuation.recovery_run_id,
+            }
+            and continuation.model_dump(
+                exclude={"phase", "recovery_run_id", "updated_at"}
+            )
+            == intent.continuation.model_dump(
+                exclude={"phase", "recovery_run_id", "updated_at"}
+            )
+        ):
+            return continuation
+        raise StateStoreError(
+            "terminal publication continuation does not match exact authority"
+        )
 
     def _validate_ci_continuation_identity(
         self,

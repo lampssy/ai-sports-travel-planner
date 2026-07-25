@@ -22,6 +22,7 @@ from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
 from ops.maintainer.intent import CATALOG_SECTIONS, is_allowed_curation_path
 from ops.maintainer.models import (
     CheckSummary,
+    MaintainerState,
     PullRequest,
     is_confirmed_ci_failure,
 )
@@ -36,6 +37,8 @@ from ops.maintainer.state import (
     RemediationContinuation,
     RemediationContinuationStatus,
     ReviewedContinuation,
+    TerminalPublicationIntent,
+    TerminalPublicationPhase,
     remediation_supersedes_reviewed,
 )
 
@@ -110,7 +113,24 @@ class CiContinuationSummary(_InspectionModel):
     ]
 
 
+class TerminalPublicationSummary(_InspectionModel):
+    worker: Literal["curation"]
+    work_id: str = Field(min_length=1, max_length=128)
+    pr_number: int = Field(gt=0)
+    branch: str = Field(min_length=1, max_length=200)
+    continuation_phase: Literal[
+        CiContinuationPhase.REPAIR_ACTIVE,
+        CiContinuationPhase.REPAIR_REVIEWED,
+    ]
+    semantic_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    current_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    repair_head: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
+    target_state: Literal[MaintainerState.BLOCKED]
+    reason: str = Field(min_length=1, max_length=64)
+
+
 class CurationInventory(_InspectionModel):
+    terminal_publications: tuple[TerminalPublicationSummary, ...] = ()
     unresolved_pushes: tuple[PushJournalSummary, ...] = ()
     ci_continuations: tuple[CiContinuationSummary, ...] = ()
     reviewed_continuations: tuple[ReviewedContinuationSummary, ...] = ()
@@ -228,9 +248,17 @@ def inspect_curation(
     reviewed_continuations: Sequence[ReviewedContinuation] = (),
     remediation_continuations: Sequence[RemediationContinuation] = (),
     ci_continuations: Sequence[CiContinuation] = (),
+    terminal_publications: Sequence[TerminalPublicationIntent] = (),
     *,
     now: datetime | None = None,
 ) -> CurationInventory:
+    publications = _normalize_terminal_publications(terminal_publications)
+    if publications:
+        return CurationInventory(
+            terminal_publications=tuple(
+                _terminal_publication_summary(item) for item in publications
+            )
+        )
     journals = _normalize_journals(unresolved_pushes)
     if journals:
         return CurationInventory(
@@ -453,6 +481,41 @@ def _normalize_journals(
             )
         by_work_id[journal.work_id] = journal
     return tuple(by_work_id[work_id] for work_id in sorted(by_work_id))
+
+
+def _normalize_terminal_publications(
+    terminal_publications: Sequence[TerminalPublicationIntent],
+) -> tuple[TerminalPublicationIntent, ...]:
+    by_work_id: dict[str, TerminalPublicationIntent] = {}
+    for intent in terminal_publications:
+        if intent.phase is not TerminalPublicationPhase.AUTHORIZED:
+            raise _invalid_journal_inventory(
+                "Terminal publication inventory contains a completed record"
+            )
+        if intent.work_id in by_work_id:
+            raise _invalid_journal_inventory(
+                "Terminal publication inventory contains duplicate work identifiers"
+            )
+        by_work_id[intent.work_id] = intent
+    return tuple(by_work_id[work_id] for work_id in sorted(by_work_id))
+
+
+def _terminal_publication_summary(
+    intent: TerminalPublicationIntent,
+) -> TerminalPublicationSummary:
+    continuation = intent.continuation
+    return TerminalPublicationSummary(
+        worker=intent.worker,
+        work_id=intent.work_id,
+        pr_number=continuation.pr_number,
+        branch=continuation.branch,
+        continuation_phase=continuation.phase,
+        semantic_head=continuation.semantic_head,
+        current_head=continuation.current_head,
+        repair_head=continuation.repair_head,
+        target_state=intent.target_state,
+        reason=intent.reason,
+    )
 
 
 def _push_journal_summary(journal: PushJournal) -> PushJournalSummary:

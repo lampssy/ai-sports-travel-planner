@@ -38,6 +38,8 @@ from ops.maintainer.state import (
     RemediationContinuation,
     RemediationContinuationStatus,
     ReviewedContinuation,
+    TerminalPublicationIntent,
+    TerminalPublicationPhase,
     remediation_supersedes_reviewed,
 )
 
@@ -244,6 +246,65 @@ def _ci_repair_active() -> CiContinuation:
             "repair_activity_observed_at": NOW - timedelta(minutes=1),
         }
     )
+
+
+def _terminal_publication_intent() -> TerminalPublicationIntent:
+    continuation = _ci_repair_active()
+    return TerminalPublicationIntent(
+        work_id=continuation.work_id,
+        worker="curation",
+        origin_run_id="2" * 32,
+        recovery_run_id="2" * 32,
+        updated_at=NOW,
+        continuation=continuation,
+        target_state=MaintainerState.BLOCKED,
+        reason="deadline",
+        summary="The focused CI repair stopped safely.",
+        machine_state=MachineState(
+            schema_version=2,
+            reviewed_head=SHA_B,
+            validated_head=SHA_B,
+            last_operation="published",
+        ),
+        phase=TerminalPublicationPhase.AUTHORIZED,
+    )
+
+
+def test_terminal_publication_is_the_only_recovery_authority() -> None:
+    intent = _terminal_publication_intent()
+
+    inventory = inspect_curation(
+        (_pull_request(head_sha=SHA_B), _pull_request(43)),
+        {},
+        (_journal(),),
+        (_continuation(selected_head=SHA_B),),
+        (_remediation(selected_head=SHA_B),),
+        (_ci_continuation(),),
+        (intent,),
+        now=NOW,
+    )
+
+    assert tuple(
+        item.model_dump(mode="json") for item in inventory.terminal_publications
+    ) == (
+        {
+            "worker": "curation",
+            "work_id": "curation-pr-42",
+            "pr_number": 42,
+            "branch": "codex/catalog-42",
+            "continuation_phase": "repair-active",
+            "semantic_head": SHA_B,
+            "current_head": SHA_B,
+            "repair_head": None,
+            "target_state": "maintainer:blocked",
+            "reason": "deadline",
+        },
+    )
+    assert inventory.unresolved_pushes == ()
+    assert inventory.ci_continuations == ()
+    assert inventory.reviewed_continuations == ()
+    assert inventory.remediation_continuations == ()
+    assert inventory.eligible == ()
 
 
 def test_ci_continuation_summary_is_safe_live_and_first_recovery_authority() -> None:

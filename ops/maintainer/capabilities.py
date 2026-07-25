@@ -67,6 +67,7 @@ from ops.maintainer.publication import (
     read_publication_text,
     trusted_hold_head,
     trusted_machine_state,
+    validate_outcome_publication_input,
     validate_publication_state_directory,
 )
 from ops.maintainer.runtime import (
@@ -88,6 +89,8 @@ from ops.maintainer.state import (
     RunOutcome,
     StateStore,
     StateStoreError,
+    TerminalPublicationIntent,
+    TerminalPublicationPhase,
     WorkPhase,
     WorkState,
     remediation_supersedes_reviewed,
@@ -237,6 +240,18 @@ def handle_inspect_curation(
 ) -> dict[str, object]:
     dependencies.tracker.worker = "curation"
     dependencies.tracker.stage = ErrorStage.INSPECT
+    terminal_publications = StateStore.list_terminal_publications_for_inspection_path(
+        args.state_dir
+    )
+    if terminal_publications:
+        inventory = inspect_curation(
+            (),
+            {},
+            terminal_publications=terminal_publications,
+            now=_current_time(dependencies),
+        )
+        dependencies.tracker.terminal_reason = "recovery-required"
+        return _serialize_model(inventory)
     unresolved_pushes = StateStore.list_unresolved_for_inspection(args.state_dir)
     ci_continuations = (
         ()
@@ -328,6 +343,10 @@ def handle_prepare_curation(
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
     dependencies.tracker.stage = ErrorStage.PREPARE
+    if store.list_unresolved_terminal_publications():
+        raise StateStoreError(
+            "unresolved terminal publication requires exact recovery before preparation"
+        )
     if store.list_ci_continuations_for_inspection():
         raise StateStoreError(
             "active CI continuation requires exact recovery before preparation"
@@ -1897,11 +1916,133 @@ def handle_publish_manual_check(
     return {"work_id": work_id, **result}
 
 
+def _terminal_publication_payload(
+    intent: TerminalPublicationIntent,
+) -> dict[str, object]:
+    return {
+        "work_id": intent.work_id,
+        "pr_number": intent.continuation.pr_number,
+        "state": intent.target_state.value,
+        "reason": intent.reason,
+        "phase": intent.phase.value,
+    }
+
+
+def _require_matching_terminal_publication_request(
+    intent: TerminalPublicationIntent,
+    *,
+    work_id: str,
+    pr_number: int,
+    expected_head: str,
+    requested_state: MaintainerState,
+    reason: str,
+    summary: str,
+) -> None:
+    if (
+        intent.work_id != work_id
+        or intent.continuation.pr_number != pr_number
+        or intent.continuation.current_head != expected_head
+        or intent.target_state is not requested_state
+        or intent.reason != reason
+        or intent.summary != summary
+    ):
+        raise StateStoreError(
+            "terminal publication retry does not match exact authority"
+        )
+
+
+def _replay_terminal_publication(
+    *,
+    store: StateStore,
+    lease: RunLease,
+    intent: TerminalPublicationIntent,
+    dependencies: Dependencies,
+) -> TerminalPublicationIntent:
+    if (
+        intent.phase is not TerminalPublicationPhase.AUTHORIZED
+        or intent.recovery_run_id != lease.run_id
+    ):
+        raise StateStoreError("terminal publication is not owned recovery authority")
+    continuation = intent.continuation
+    pull_request = dependencies.github.get_pull_request(continuation.pr_number)
+    if (
+        pull_request.head_ref_name != continuation.branch
+        or pull_request.head_sha != continuation.current_head
+    ):
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
+    plan = outcome_plan(
+        requested_state=intent.target_state,
+        reason=intent.reason,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        existing_machine_state=intent.machine_state,
+    )
+    if plan.machine_state != intent.machine_state:
+        raise StateStoreError("terminal publication machine evidence changed")
+
+    def mutation_guard() -> AbstractContextManager[None]:
+        return store.guard_terminal_publication_mutation(intent, lease)
+
+    mutated = publish_outcome(
+        dependencies.github,
+        pull_request,
+        plan,
+        intent.summary,
+        allow_comment_repair=True,
+        mutation_guard=mutation_guard,
+        validate_mutation=lambda _step, _current: lease.assert_owner(),
+    )
+    completed, _blocked = store.complete_terminal_publication(
+        intent,
+        lease,
+        now=_current_time(dependencies, intent.continuation),
+    )
+    dependencies.tracker.mutation_occurred = True
+    dependencies.tracker.terminal_reason = (
+        "outcome-blocked" if mutated else "outcome-blocked-recovered"
+    )
+    return completed
+
+
 def handle_publish_recover(
     args: argparse.Namespace,
     dependencies: Dependencies,
 ) -> dict[str, object]:
     store = _state_store(args)
+    terminal_publications = store.list_unresolved_terminal_publications()
+    if terminal_publications:
+        if (
+            len(terminal_publications) != 1
+            or terminal_publications[0].work_id != args.work_id
+        ):
+            raise MaintainerError(
+                ErrorReason.INVALID_COMMAND,
+                ErrorStage.PUBLISH,
+                detail=("Recovery requires exactly one matching terminal publication"),
+            )
+        intent = terminal_publications[0]
+        lease = _owned_lease(args, "curation", dependencies)
+        dependencies.tracker.work_id = intent.work_id
+        dependencies.tracker.pr_number = intent.continuation.pr_number
+        dependencies.tracker.stage = ErrorStage.PUBLISH
+        if intent.recovery_run_id != lease.run_id:
+            intent = store.adopt_terminal_publication(
+                intent.work_id,
+                lease,
+                now=dependencies.now(),
+            )
+            dependencies.tracker.mutation_occurred = True
+        completed = _replay_terminal_publication(
+            store=store,
+            lease=lease,
+            intent=intent,
+            dependencies=dependencies,
+        )
+        return {
+            "work_id": completed.work_id,
+            "terminal_publication": _terminal_publication_payload(completed),
+        }
+
     unresolved = store.list_unresolved_pushes()
     if len(unresolved) != 1 or unresolved[0].work_id != args.work_id:
         raise MaintainerError(
@@ -2281,6 +2422,10 @@ def _ensure_initial_ci_continuation(
 
 
 def _require_clear_ci_repair_journal(store: StateStore) -> None:
+    if store.list_unresolved_terminal_publications():
+        raise StateStoreError(
+            "unresolved terminal publication requires exact recovery before CI repair"
+        )
     if store.list_unresolved_pushes():
         raise StateStoreError(
             "unresolved push journal requires exact recovery before CI repair"
@@ -2773,6 +2918,8 @@ def handle_publish_state(
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
     dependencies.tracker.stage = ErrorStage.PUBLISH
+    if store.list_unresolved_terminal_publications():
+        raise StateStoreError("unresolved terminal publication requires exact recovery")
     if hasattr(args, "_trusted_summary"):
         summary = args._trusted_summary
         body = args._trusted_body
@@ -3076,6 +3223,38 @@ def handle_publish_outcome(
         args.summary_file,
         kind="summary",
     )
+    terminal_publications = store.list_unresolved_terminal_publications()
+    if terminal_publications:
+        if (
+            len(terminal_publications) != 1
+            or terminal_publications[0].work_id != work_id
+        ):
+            raise StateStoreError("terminal publication retry requires exact authority")
+        intent = terminal_publications[0]
+        _require_matching_terminal_publication_request(
+            intent,
+            work_id=work_id,
+            pr_number=args.pr,
+            expected_head=args.expected_head,
+            requested_state=requested_state,
+            reason=args.reason,
+            summary=summary,
+        )
+        if intent.recovery_run_id != lease.run_id:
+            raise StateStoreError(
+                "successor terminal publication requires publish recover"
+            )
+        completed = _replay_terminal_publication(
+            store=store,
+            lease=lease,
+            intent=intent,
+            dependencies=dependencies,
+        )
+        return {
+            "pr_number": completed.continuation.pr_number,
+            "state": completed.target_state.value,
+            "reason": completed.reason,
+        }
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request.head_sha != args.expected_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
@@ -3168,6 +3347,34 @@ def handle_publish_outcome(
         pull_request=pull_request,
         existing_machine_state=machine_state,
     )
+    if repair_in_progress and ci_continuation is not None:
+        validate_outcome_publication_input(plan, summary)
+        intent = TerminalPublicationIntent(
+            work_id=work_id,
+            worker="curation",
+            origin_run_id=lease.run_id,
+            recovery_run_id=lease.run_id,
+            updated_at=_current_time(dependencies, ci_continuation),
+            continuation=ci_continuation,
+            target_state=requested_state,
+            reason=args.reason,
+            summary=summary,
+            machine_state=plan.machine_state,
+            phase=TerminalPublicationPhase.AUTHORIZED,
+        )
+        intent = store.save_terminal_publication(intent, lease)
+        dependencies.tracker.mutation_occurred = True
+        completed = _replay_terminal_publication(
+            store=store,
+            lease=lease,
+            intent=intent,
+            dependencies=dependencies,
+        )
+        return {
+            "pr_number": completed.continuation.pr_number,
+            "state": completed.target_state.value,
+            "reason": completed.reason,
+        }
     if journal is not None and journal.recovery_run_id == lease.run_id:
 
         def mutation_guard() -> AbstractContextManager[None]:
@@ -3322,6 +3529,17 @@ def handle_lock(
     if args.command == "acquire":
 
         def require_recoverable_worker() -> None:
+            terminal_publications = (
+                StateStore.list_terminal_publications_for_inspection_path(
+                    args.state_dir
+                )
+            )
+            if len(terminal_publications) > 1:
+                raise RunLeaseError(
+                    "multiple terminal publications require owner attention"
+                )
+            if terminal_publications and args.worker != "curation":
+                raise LeaseOwnershipError("terminal publication belongs to curation")
             unresolved = StateStore.list_unresolved_for_inspection(args.state_dir)
             if len(unresolved) > 1:
                 raise RunLeaseError(

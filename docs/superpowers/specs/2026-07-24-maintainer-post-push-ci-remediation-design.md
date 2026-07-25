@@ -209,12 +209,23 @@ automation-memory authority.
 Recovery priority becomes:
 
 ```text
-push journal
+terminal publication
+-> push journal
 -> post-push CI continuation
 -> reviewed continuation
 -> remediation continuation
 -> ordinary PR
 ```
+
+A blocked outcome while repair is active or reviewed first persists an
+owner-private terminal-publication intent before any GitHub mutation. That
+intent binds the lease/recovery owner, PR, branch, continuation generation,
+current/semantic/repair heads, target state and reason, canonical summary, and
+machine evidence. Inspection exposes only that record until `publish recover`
+replays it idempotently. Only after public completion does the helper block the
+exact matching continuation and complete the intent; repair cannot resume
+while the intent is unresolved. Any head, branch, generation, or canonical
+input drift fails closed.
 
 A push journal remains the sole authority for an ambiguous branch mutation.
 The CI continuation becomes authoritative only after exact push convergence
@@ -320,6 +331,9 @@ the repair scope, create a second attempt, or authorize readiness.
   review evidence was not durably recorded.
 - **Repair push interrupted:** recover only through the push journal.
 - **Second CI failure:** blocked/ci-failure; no same-run retry.
+- **Terminal publication interrupted:** retain the exact owner-private intent,
+  expose no repair selection, and replay only its idempotent recovery before
+  blocking the exact matching continuation.
 - **Pending after second wait:** exact-head CI continuation for lightweight
   successor readiness.
 - **Head drift:** call `invalidate ci-continuation` so the helper records the
@@ -332,6 +346,10 @@ Implementation must add focused contract coverage for:
 
 - CI-continuation creation only after confirmed initial push convergence;
 - journal-to-continuation handoff and recovery priority;
+- terminal-publication crashes after each GitHub step and immediately before
+  the continuation write for both active and reviewed repair phases;
+- exact terminal-publication recovery, inspection exclusivity, and
+  head/branch/generation/input drift rejection;
 - 30/60/30 budget transitions and one-attempt enforcement;
 - heartbeats while polling and lost-lease fencing after sleep;
 - exact-head and non-test-tree binding;

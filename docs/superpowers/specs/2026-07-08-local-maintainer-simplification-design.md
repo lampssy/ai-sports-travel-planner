@@ -128,12 +128,14 @@ Out of scope:
 
 ### Codex orchestration skill
 
-- Inspects unresolved journals before choosing fresh work; exactly one matching
-  journal is recovered first and multiple journals are escalated.
-- Uses the curation recovery order `push journal -> post-push CI continuation
-  -> reviewed continuation -> remediation continuation -> ordinary PR`.
-  Journal recovery always wins, and a pending CI continuation resumes before
-  any ordinary PR. A safe exact-head remediation may remain resumable behind a
+- Inspects unresolved terminal-publication intents and push journals before
+  choosing fresh work; exactly one matching authority is recovered first and
+  multiple records are escalated.
+- Uses the curation recovery order `terminal publication -> push journal ->
+  post-push CI continuation -> reviewed continuation -> remediation
+  continuation -> ordinary PR`. Terminal-publication recovery wins before
+  push-journal recovery, and a pending CI continuation resumes before any
+  ordinary PR. A safe exact-head remediation may remain resumable behind a
   blocked or owner-hold label; deliberate label removal re-enables it without
   granting review or publication authority.
 - Reads a bounded unpublished-curation follow-up list from automation memory,
@@ -682,6 +684,11 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
     continuation and `waiting-ci` for a successor; a confirmed second CI
     failure publishes `blocked/ci-failure` and terminalizes the continuation.
     No second repair is permitted.
+    While repair is active or reviewed, the helper first persists an
+    owner-private terminal-publication intent before any GitHub mutation. It
+    replays the exact publication idempotently and only then blocks the exact
+    matching continuation and completes the intent; repair cannot resume while
+    that intent is unresolved.
 19. The post-push budget is cumulative 30/60/30: 30 elapsed minutes for the
     initial wait, at most 60 active minutes for the one focused repair, and 30
     elapsed minutes for the second wait. It is excluded from the semantic
@@ -690,13 +697,14 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
     lease release between initial push, first wait, repair, repair push, and
     second wait.
 20. Helper output and continuation state are authority. Automation memory and
-    labels are hints and presentation only. Recovery priority is `push journal
-    -> post-push CI continuation -> reviewed continuation -> remediation
-    continuation -> ordinary PR`; journal recovery always wins. A successor
-    uses separate entry `lock acquire curation -> lock heartbeat curation ->
-    inspect curation -> lock heartbeat curation` before it adopts the exact
-    continuation or calls any selected next capability; same-run polling never
-    uses acquisition.
+    labels are hints and presentation only. Recovery priority is `terminal
+    publication -> push journal -> post-push CI continuation -> reviewed
+    continuation -> remediation continuation -> ordinary PR`;
+    terminal-publication recovery wins before push-journal recovery. A
+    successor uses separate entry `lock acquire curation -> lock heartbeat
+    curation -> inspect curation -> lock heartbeat curation` before it adopts
+    the exact continuation or calls any selected next capability; same-run
+    polling never uses acquisition.
 21. A `ready` PR stays out of fresh selection while its head remains unchanged;
     a new commit invalidates the hold and makes it eligible again.
 22. An unchanged status-only `blocked` or `owner-decision` head is also held out

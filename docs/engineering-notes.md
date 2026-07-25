@@ -1048,12 +1048,21 @@ The cumulative post-push budget is 30/60/30. Its separate 120-minute ceiling
 does not reopen or extend the semantic 240-minute clock, and no semantic work
 starts after the initial push. The helper persists exact CI-continuation
 authority, enforces an unchanged non-test tree and one attempt, and journals the
-repair push. Recovery priority is `push journal -> post-push CI continuation ->
-reviewed continuation -> remediation continuation -> ordinary PR`; journal
-recovery always wins. Helper output and continuation state are authority, while
+repair push. Helper output and continuation state are authority, while
 automation memory and labels are hints and presentation only. GitHub CI remains
 the execution boundary for the modified test code; `maintainer:waiting-ci` is
 retained only as human-visible compatibility state.
+
+Terminal blocked publication during an active or reviewed repair uses an
+owner-private terminal-publication intent before any GitHub mutation. The
+intent embeds the exact continuation generation and binds the PR, branch,
+current/semantic/repair heads, lease recovery owner, target state/reason,
+canonical summary, and machine evidence. It has priority over the push journal,
+so the complete recovery order is `terminal publication -> push journal ->
+post-push CI continuation -> reviewed continuation -> remediation continuation
+-> ordinary PR`. Recovery replays publication idempotently, then blocks the
+exact matching continuation and completes the intent. Repair cannot resume
+while the intent is unresolved; drift fails closed.
 
 Post-push recovery is phase-aware. A successor resumes both `repair-active` and
 `repair-reviewed` through `prepare ci-repair`: the former recreates the exact

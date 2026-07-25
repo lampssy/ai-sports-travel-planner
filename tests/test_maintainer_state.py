@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from threading import Event, Thread
@@ -8,6 +9,7 @@ import pytest
 from pydantic import ValidationError
 
 from ops.maintainer.git_ops import GuardedSyncResult
+from ops.maintainer.models import MachineState, MaintainerState
 from ops.maintainer.runtime import LeaseOwnershipError, RunLease
 from ops.maintainer.state import (
     CiContinuation,
@@ -22,6 +24,8 @@ from ops.maintainer.state import (
     RunOutcome,
     StateStore,
     StateStoreError,
+    TerminalPublicationIntent,
+    TerminalPublicationPhase,
     WorkPhase,
     WorkState,
 )
@@ -256,6 +260,32 @@ def _ci_second_wait(lease: RunLease) -> CiContinuation:
     )
 
 
+def _terminal_publication_intent(
+    lease: RunLease,
+    continuation: CiContinuation,
+    *,
+    summary: str = "The focused CI repair stopped safely.",
+) -> TerminalPublicationIntent:
+    return TerminalPublicationIntent(
+        work_id=continuation.work_id,
+        worker="curation",
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        updated_at=NOW + timedelta(minutes=1),
+        continuation=continuation,
+        target_state=MaintainerState.BLOCKED,
+        reason="deadline",
+        summary=summary,
+        machine_state=MachineState(
+            schema_version=2,
+            reviewed_head=continuation.current_head,
+            validated_head=continuation.current_head,
+            last_operation="published",
+        ),
+        phase=TerminalPublicationPhase.AUTHORIZED,
+    )
+
+
 def _write_model(
     path: Path,
     model: (
@@ -264,6 +294,7 @@ def _write_model(
         | ReviewedContinuation
         | RemediationContinuation
         | CiContinuation
+        | TerminalPublicationIntent
     ),
 ) -> None:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -376,6 +407,219 @@ def test_ci_continuation_requires_phase_specific_repair_facts() -> None:
     ):
         with pytest.raises(ValidationError):
             CiContinuation.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    "continuation_factory",
+    (_ci_repair_active, _ci_repair_reviewed),
+)
+def test_terminal_publication_intent_is_strict_and_binds_exact_repair_authority(
+    continuation_factory: Callable[[RunLease], CiContinuation],
+) -> None:
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
+    continuation = continuation_factory(lease)
+    intent = _terminal_publication_intent(lease, continuation)
+
+    with pytest.raises(ValidationError, match="frozen"):
+        intent.phase = TerminalPublicationPhase.COMPLETED
+    for update in (
+        {"unexpected": True},
+        {"work_id": "curation-pr-43"},
+        {"worker": "discovery"},
+        {"target_state": MaintainerState.READY},
+        {"reason": "owner-decision"},
+        {"summary": ""},
+        {"continuation": _ci_continuation(lease)},
+    ):
+        with pytest.raises(ValidationError):
+            TerminalPublicationIntent.model_validate({**intent.model_dump(), **update})
+
+
+@pytest.mark.parametrize(
+    "continuation_factory",
+    (_ci_repair_active, _ci_repair_reviewed),
+)
+def test_terminal_publication_intent_persists_privately_and_completes_exactly(
+    tmp_path: Path,
+    continuation_factory: Callable[[RunLease], CiContinuation],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    initial = _ci_continuation(lease)
+    store.save_ci_continuation(initial, lease)
+    active_at = NOW + timedelta(seconds=1)
+    active = store.advance_ci_continuation(
+        initial.model_copy(
+            update={
+                "phase": CiContinuationPhase.REPAIR_ACTIVE,
+                "repair_attempted": True,
+                "repair_activity_observed_at": active_at,
+            }
+        ),
+        lease,
+        now=active_at,
+    )
+    if continuation_factory is _ci_repair_active:
+        continuation = active
+    else:
+        reviewed_at = NOW + timedelta(seconds=2)
+        continuation = store.advance_ci_continuation(
+            active.model_copy(
+                update={
+                    "phase": CiContinuationPhase.REPAIR_REVIEWED,
+                    "repair_head": SHA_4,
+                    "repair_ref": (
+                        "refs/snowcast-maintainer/ci-repair/pr-42/checkpoint"
+                    ),
+                    "repair_paths": frozenset({"tests/test_public_pages.py"}),
+                }
+            ),
+            lease,
+            now=reviewed_at,
+        )
+    intent = _terminal_publication_intent(lease, continuation)
+
+    persisted = store.save_terminal_publication(intent, lease)
+
+    path = tmp_path / "terminal-publications" / f"{continuation.work_id}.json"
+    assert persisted == intent
+    assert path.stat().st_mode & 0o777 == 0o600
+    assert path.parent.stat().st_mode & 0o777 == 0o700
+    assert store.list_unresolved_terminal_publications() == (intent,)
+    with store.guard_terminal_publication_mutation(intent, lease):
+        pass
+
+    completed, blocked = store.complete_terminal_publication(
+        intent,
+        lease,
+        now=NOW + timedelta(minutes=2),
+    )
+
+    assert completed.phase is TerminalPublicationPhase.COMPLETED
+    assert blocked.phase is CiContinuationPhase.BLOCKED
+    assert blocked.semantic_head == continuation.semantic_head
+    assert blocked.current_head == continuation.current_head
+    assert blocked.repair_head == continuation.repair_head
+    assert blocked.repair_ref == continuation.repair_ref
+    assert blocked.repair_paths == continuation.repair_paths
+    assert blocked.non_test_tree_digest == continuation.non_test_tree_digest
+    assert blocked.first_wait_seconds == continuation.first_wait_seconds
+    assert blocked.repair_active_seconds == continuation.repair_active_seconds
+    assert store.list_unresolved_terminal_publications() == ()
+
+
+def test_unresolved_terminal_publication_blocks_repair_adoption_and_fails_on_drift(
+    tmp_path: Path,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    initial = _ci_continuation(origin)
+    store.save_ci_continuation(initial, origin)
+    active_at = NOW + timedelta(seconds=1)
+    active = store.advance_ci_continuation(
+        initial.model_copy(
+            update={
+                "phase": CiContinuationPhase.REPAIR_ACTIVE,
+                "repair_attempted": True,
+                "repair_activity_observed_at": active_at,
+            }
+        ),
+        origin,
+        now=active_at,
+    )
+    intent = _terminal_publication_intent(origin, active)
+    store.save_terminal_publication(intent, origin)
+    origin.release()
+    successor = RunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(hours=2),
+    )
+
+    with pytest.raises(StateStoreError, match="terminal publication"):
+        store.adopt_ci_continuation(
+            active.work_id,
+            successor,
+            now=NOW + timedelta(hours=2),
+        )
+
+    adopted = store.adopt_terminal_publication(
+        intent.work_id,
+        successor,
+        now=NOW + timedelta(hours=2),
+    )
+    assert adopted.recovery_run_id == successor.run_id
+    current = store.load_ci_continuation(active.work_id)
+    assert current is not None
+    drifted = current.model_copy(update={"origin_run_id": "f" * 32})
+    _write_model(
+        store.ci_continuation_dir / f"{active.work_id}.json",
+        drifted,
+    )
+
+    with pytest.raises(StateStoreError, match="does not match"):
+        store.complete_terminal_publication(
+            adopted,
+            successor,
+            now=NOW + timedelta(hours=2, minutes=1),
+        )
+    assert store.list_unresolved_terminal_publications() == (adopted,)
+
+
+def test_terminal_publication_recovers_after_blocked_continuation_write(
+    tmp_path: Path,
+) -> None:
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    initial = _ci_continuation(origin)
+    store.save_ci_continuation(initial, origin)
+    active_at = NOW + timedelta(seconds=1)
+    active = store.advance_ci_continuation(
+        initial.model_copy(
+            update={
+                "phase": CiContinuationPhase.REPAIR_ACTIVE,
+                "repair_attempted": True,
+                "repair_activity_observed_at": active_at,
+            }
+        ),
+        origin,
+        now=active_at,
+    )
+    intent = _terminal_publication_intent(origin, active)
+    store.save_terminal_publication(intent, origin)
+    blocked = active.model_copy(
+        update={
+            "phase": CiContinuationPhase.BLOCKED,
+            "updated_at": NOW + timedelta(seconds=2),
+        }
+    )
+    _write_model(
+        store.ci_continuation_dir / f"{active.work_id}.json",
+        blocked,
+    )
+    origin.release()
+    successor = RunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(hours=2),
+    )
+
+    adopted = store.adopt_terminal_publication(
+        intent.work_id,
+        successor,
+        now=NOW + timedelta(hours=2),
+    )
+    completed, recovered = store.complete_terminal_publication(
+        adopted,
+        successor,
+        now=NOW + timedelta(hours=2, minutes=1),
+    )
+
+    assert completed.phase is TerminalPublicationPhase.COMPLETED
+    assert completed.recovery_run_id == successor.run_id
+    assert recovered.phase is CiContinuationPhase.BLOCKED
+    assert recovered.recovery_run_id == successor.run_id
+    assert store.list_unresolved_terminal_publications() == ()
 
 
 def test_ci_continuation_persists_adopts_and_hides_terminal_records(

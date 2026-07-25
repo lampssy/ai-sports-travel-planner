@@ -45,7 +45,7 @@ not have to derive an invocation.
   "recipes": {
     "inspect_curation": {
       "argv": ["inspect", "curation"],
-      "returns": ["eligible", "ci_continuations", "reviewed_continuations", "remediation_continuations", "unresolved_pushes"]
+      "returns": ["eligible", "terminal_publications", "ci_continuations", "reviewed_continuations", "remediation_continuations", "unresolved_pushes"]
     },
     "inspect_discovery": {
       "argv": ["inspect", "discovery"],
@@ -158,7 +158,11 @@ not have to derive an invocation.
     },
     "publish_recover": {
       "argv": ["publish", "recover", "--work-id", "${WORK_ID}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "push", "continuation"]
+      "returns": ["work_id"],
+      "conditional_returns": {
+        "push-journal": ["push", "continuation"],
+        "terminal-publication": ["terminal_publication"]
+      }
     },
     "publish_proposal": {
       "argv": ["publish", "proposal", "--branch", "${BRANCH}", "--candidate-key", "${CANDIDATE_KEY}", "--candidate-origin", "${CANDIDATE_ORIGIN}", "--head", "${HEAD}", "--title-file", "${TITLE_FILE}", "--body-file", "${BODY_FILE}", "--summary-file", "${SUMMARY_FILE}", "--run-id", "${RUN_ID}"],
@@ -295,7 +299,7 @@ not have to derive an invocation.
     }
   },
   "ci_continuation_policy": {
-    "recovery_priority": ["push_journal", "post_push_ci_continuation", "reviewed_continuation", "remediation_continuation", "ordinary_pr"],
+    "recovery_priority": ["terminal_publication", "push_journal", "post_push_ci_continuation", "reviewed_continuation", "remediation_continuation", "ordinary_pr"],
     "first_wait_seconds": 1800,
     "repair_active_seconds": 3600,
     "second_wait_seconds": 1800,
@@ -311,7 +315,10 @@ not have to derive an invocation.
     "repair_capability_journal_gate": "unconditional-exact-recovery-only",
     "non_resumable_invalidation": "lease-owned-live-facts",
     "terminal_generation_rollover": "new-validated-pushed-semantic-head-only",
-    "terminal_generation_archive": "owner-private-semantic-head-versioned"
+    "terminal_generation_archive": "owner-private-semantic-head-versioned",
+    "terminal_publication_intent": "owner-private-before-external-mutation",
+    "terminal_publication_completion": "external-publication-then-exact-continuation-block",
+    "terminal_publication_recovery": "idempotent-exact-authority-only"
   },
   "dispatch_error_classification": {
     "reason": "invalid-command",
@@ -344,7 +351,7 @@ not have to derive an invocation.
 
 | Completed recipe | Only allowed next step |
 | --- | --- |
-| `inspect_curation` | recover one journal first; otherwise select one CI continuation, reviewed continuation, remediation continuation, ordinary curation PR, or bounded no-op in that order |
+| `inspect_curation` | recover one terminal publication first, then one push journal; otherwise select one CI continuation, reviewed continuation, remediation continuation, ordinary curation PR, or bounded no-op in that order |
 | `inspect_discovery` | recover one journal first; otherwise select preferred retry, merged regional completion, active backlog, bounded external official-source scan, or bounded no-op in that order |
 | `lock_acquire_*` | copy `run_id`, heartbeat, then run the selected worker capability |
 | `lock_heartbeat_*` | continue the already selected sequence; curation may also return helper-owned cumulative `ci_budget`, but heartbeat grants no new authority |
@@ -389,22 +396,29 @@ preconditions for the resulting requested action.
 The curation lifecycle scenarios freeze their high-risk sequence prefixes,
 including both bounded CI waits:
 
-- journal recovery is exclusive. After `publish recover`, branch only on its
-  returned curation `continuation`. For `validation_status=absent`, inspect only
+- terminal-publication recovery is exclusive and precedes push-journal
+  recovery. Its owner-private terminal-publication intent is persisted before
+  any GitHub mutation, replayed idempotently only for its exact PR, branch,
+  generation, heads, state, reason, summary, and machine evidence, and then
+  completes the exact matching continuation as `blocked`. Repair cannot resume
+  while that intent is unresolved;
+- after push-journal `publish recover`, branch only on its returned curation
+  `continuation`. For `validation_status=absent`, inspect only
   the exact reviewed report: an explicit unresolved owner/model choice uses the
   `curation_recovery_absent_owner_decision_after_recover` suffix with
   `${STATE}=maintainer:owner-decision`; otherwise use the
   `curation_recovery_absent_manual_check_after_recover` suffix with the exact
   canonical Resulting Graph in the body. An absent, unknown, or mismatched
   continuation stops and releases. Never select fresh work;
-- after journal recovery, selection priority is exactly `push journal ->
-  post-push CI continuation -> reviewed continuation -> remediation
+- after recovery, selection priority is exactly `terminal publication -> push
+  journal -> post-push CI continuation -> reviewed continuation -> remediation
   continuation -> ordinary PR`. A pending CI continuation resumes before
   ordinary PR selection;
 - every `prepare ci-repair`, `checkpoint ci-repair`, `publish ci-repair`, and
-  `invalidate ci-continuation` request rejects any unresolved push journal
-  before changing continuation state or a worktree. Only exact
-  `publish recover` journal recovery may proceed while a journal exists;
+  `invalidate ci-continuation` request rejects any unresolved terminal
+  publication before changing continuation state or a worktree. It also
+  rejects any unresolved push journal. Only exact `publish recover` may proceed
+  while either recovery authority exists;
 - reviewed and remediation continuations use the same helper command, then
   branch only on the returned `continuation.kind` and `continuation.result`;
 - an ordinary PR uses `prepare curation`, never `prepare continuation`;
@@ -483,6 +497,15 @@ while second wait remains:
 handoff and marks the repair push journal `PUBLISHED` before second-wait
 inspection can expose the continuation.
 
+If an active or reviewed repair stops with a blocked outcome, the helper
+persists an owner-private terminal-publication intent before any GitHub
+mutation. Inspection then exposes only that recovery obligation. The exact
+same PR, branch, continuation generation, current/semantic/repair heads,
+machine evidence, state, reason, and summary are replayed idempotently through
+`publish recover`; only after publication completes does the helper block the
+exact matching continuation and complete the intent. Repair cannot resume
+while the intent is unresolved, and any drift fails closed.
+
 Each wait is 30 elapsed minutes, the one repair has at most 60 active minutes,
 and the continuation persists consumed time across successors: the cumulative
 budget is 30/60/30. Heartbeat before and after capabilities and at least every
@@ -519,9 +542,9 @@ unchanged.
 
 The post-push phase is outside the semantic 240-minute clock but remains bounded
 by the cumulative 30/60/30 continuation budgets. A successor receives only the
-remaining budget. Journal recovery always wins, helper output and continuation
-state remain authority, and automation memory and labels remain
-hints/presentation only.
+remaining budget. Terminal-publication recovery wins before push-journal
+recovery; helper output and continuation state remain authority, and automation
+memory and labels remain hints/presentation only.
 
 ## Dispatch Errors
 

@@ -1172,6 +1172,23 @@ def publish_outcome(
     return mutated
 
 
+def validate_outcome_publication_input(
+    plan: OutcomePlan,
+    summary: str,
+) -> None:
+    """Validate canonical terminal text without performing external mutation."""
+    if type(plan) is not OutcomePlan:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Outcome publication requires a strict plan",
+        )
+    _render_summary(
+        summary,
+        plan.machine_state,
+        outcome_state=plan.outcome_state,
+    )
+
+
 def publish_discovery_proposal(
     *,
     store: StateStore,
