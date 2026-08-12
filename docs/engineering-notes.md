@@ -26,6 +26,18 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - Completion may change only the canonical curation report. Catalog and trust
   payloads and object IDs remain unchanged, and no helper continuation or
   cross-run authority is created from the local report commit.
+- Inventory completeness is a knowledge gate, not a correctness gate. Each
+  checklist item becomes missing, verified complete, actionable, defensibly
+  deferred, or blocked by concretely unavailable evidence. Actionable catalog,
+  trust, backlog, rendered-report, and focused-test defects move into ordinary
+  remediation rather than keeping the review incomplete.
+- A graph-blocking deferral closes the knowledge gap but creates a graph-safety
+  finding; only a regional follow-up can defer without remediation. Conflicting
+  lane outcomes remain missing until a focused exact-head reconciliation.
+- A first pass that strictly shrinks the checklist receives the second permitted
+  pass before the 210-minute cutoff. Unavailable items are excluded without
+  cancelling research for other missing items, and predicted non-completion is
+  not a stop condition.
 - Triage exposes only the pass count, remaining unresolved count, and bounded
   stop reason so operators can diagnose convergence without persisting semantic
   evidence in helper state.

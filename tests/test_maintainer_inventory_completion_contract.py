@@ -20,7 +20,7 @@ RUNTIME_CONTRACT_PATH = (
 
 
 def _normalized(path: Path) -> str:
-    return " ".join(path.read_text(encoding="utf-8").split()).lower()
+    return " ".join(path.read_text(encoding="utf-8").replace("`", "").split()).lower()
 
 
 def test_incomplete_inventory_enters_completion_before_blocking() -> None:
@@ -75,3 +75,97 @@ def test_inventory_completion_creates_no_helper_owned_recovery_authority() -> No
     assert "inventory-completion" in contract
     assert "does not persist" in contract
     assert "no helper continuation" in contract
+
+
+def test_inventory_items_are_classified_before_the_completion_gate() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "inventory_outcome" in contract, path
+        for outcome in (
+            "inventory_missing",
+            "verified_complete",
+            "actionable_finding",
+            "defensible_deferred",
+            "evidence_unavailable",
+        ):
+            assert outcome in contract, (path, outcome)
+
+
+def test_actionable_findings_and_deferrals_leave_the_missing_checklist() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "promote it to the finding ledger" in contract, path
+        assert "remove it from the missing-inventory checklist" in contract, path
+        assert (
+            "requires a catalog, trust, backlog, rendered-report, or "
+            "focused-test change"
+        ) in contract, path
+        assert "does not by itself make review incomplete" in contract, path
+
+
+def test_strictly_smaller_checklist_requires_the_permitted_second_pass() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "must run the second inventory-completion pass" in contract, path
+        assert (
+            "a prediction that the second pass will not complete every item is "
+            "not a stop condition"
+        ) in contract, path
+
+
+def test_deferral_graph_impact_controls_remediation_obligation() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "graph-blocking defensible deferral" in contract, path
+        assert "create an actionable graph-safety finding" in contract, path
+        assert (
+            "make the selected graph internally valid without the deferred dependency"
+            in contract
+        ), path
+        assert "regional-followup defensible deferral" in contract, path
+        assert "requires no remediation finding" in contract, path
+
+
+def test_conflicting_inventory_outcomes_remain_fail_closed() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "conflicting inventory outcomes or graph-impact classifications" in (
+            contract
+        ), path
+        assert "remains inventory_missing until reconciled" in contract, path
+
+
+def test_mixed_unavailable_items_do_not_cancel_researchable_work() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "exclude evidence_unavailable items from further research" in (
+            contract
+        ), path
+        assert "does not cancel the second pass for inventory_missing items" in (
+            contract
+        ), path
+
+
+def test_new_actionable_blockers_enter_the_ledger_not_the_checklist() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "new actionable graph blocker enters the finding ledger" in (contract), (
+            path
+        )
+        assert "does not prevent the second inventory-completion pass" in contract, path
+
+
+def test_second_pass_uses_the_objective_new_work_cutoff() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "before the 210-minute new-work cutoff" in contract, path
+        assert "item-specific unsafe scope boundary" in contract, path
+
+
+def test_activation_requires_installed_skill_transition_parity() -> None:
+    contract = _normalized(ACTIVATION_PATH)
+    assert "all five inventory outcomes" in contract
+    assert "graph-impact deferral transition" in contract
+    assert "lane-conflict aggregation rule" in contract
+    assert "mixed unavailable/researchable second-pass rule" in contract
+    assert "keep both schedules paused as contract-mismatch" in contract

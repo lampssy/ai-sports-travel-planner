@@ -2,9 +2,8 @@
 
 ## Status
 
-- Status: post-push CI and bounded evidence-inventory-completion amendments
-  implemented in stacked branches; repository activation pending ordered merge
-  and the owner-controlled local cutover
+- Status: post-push CI lifecycle and inventory-to-remediation transition merged
+  and installed locally
 - Owner: solo-builder
 - Classification: review-gated / full design flow
 - Supersedes before activation:
@@ -12,11 +11,10 @@
 - Related ADR: ADR 0011
 - Replacement implementation plan:
   `docs/superpowers/plans/2026-07-08-local-maintainer-simplification.md`
-- Activation status: the installed personal skills contain the pending
-  amendments for validation, but both schedules remain paused. They are not
-  runtime authority until the post-push CI dependency and this amendment merge
-  in order and the owner completes the atomic post-merge cutover. The
-  post-merge checklist remains the authority for that cutover.
+- Activation status: the installed personal skills contain the current merged
+  lifecycle, including the inventory-to-remediation transition. Both schedules
+  remain owner-controlled; the post-merge checklist remains the authority for
+  any later cutover or rollback.
 
 ## User Outcome
 
@@ -542,19 +540,55 @@ prepare -> provisional evidence envelope -> dual inventory
    remediation, and creates no helper continuation or cross-run authority.
 
    Every completion commit receives fresh independent source-trust and
-   graph-scope review on its exact head. The parent reconciles missing items by
-   semantic acceptance criterion rather than wording or ID. Another pass is
-   allowed only when at least one previous item is resolved and the unresolved
-   checklist is strictly smaller without a new equal-or-wider graph blocker.
-   The provisional evidence envelope becomes frozen only when both fresh lanes
-   return complete dispositions. Codex requests status-only
-   `blocked/review-incomplete` when there is no measurable progress, evidence
-   remains unavailable, unsafe scope expansion is required, the semantic
-   deadline prevents another pass, or the second completion pass remains
-   incomplete. An interrupted local completion commit is non-authoritative; a
-   later cycle starts from fresh helper preparation and review. Terminal Triage
-   reports the inventory-completion pass count, remaining unresolved checklist
-   count, and bounded stop reason without raw evidence or checklist prose.
+   graph-scope review on its exact head. The parent reconciles items by semantic
+   acceptance criterion rather than wording or ID. Each relevant lane assigns
+   one `inventory_outcome` using this decision table:
+
+   | Outcome | Required evidence | Inventory transition | Remediation transition |
+   | --- | --- | --- | --- |
+   | `inventory_missing` | Candidate, source, or verification-capable disposition remains unknown. | Keep unresolved. | None yet. |
+   | `verified_complete` | Direct evidence proves the current representation is correct or the candidate is not applicable. | Remove from the missing-inventory checklist. | No finding. |
+   | `actionable_finding` | Evidence supports one exact defect and acceptance criterion. | Remove from the missing-inventory checklist. | Promote it to the finding ledger. |
+   | `defensible_deferred` | Direct evidence supports a typed deferral, concrete prerequisite, and canonical backlog reference. | Remove from the missing-inventory checklist. | Apply the graph-impact rule below. |
+   | `evidence_unavailable` | Exact required evidence cannot be obtained and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
+
+   A regional-followup defensible deferral requires no remediation finding. A
+   graph-blocking defensible deferral closes the knowledge checklist but must
+   also create an actionable graph-safety finding. Its acceptance criterion is
+   to make the selected graph internally valid without the deferred dependency;
+   if that cannot be done safely, stop `blocked/review-incomplete`. That an item
+   requires a catalog, trust, backlog, rendered-report, or focused-test change
+   does not by itself make review incomplete; it belongs to ordinary remediation.
+   For `verified_complete`, `actionable_finding`, and `defensible_deferred`,
+   remove it from the missing-inventory checklist after applying the remediation
+   transition above.
+
+   The parent aggregates both fresh lane outcomes without silently overriding
+   either lane. A relevant incomplete outcome keeps the aggregate unresolved.
+   Compatible complete outcomes may close it. Conflicting inventory outcomes or
+   graph-impact classifications require one focused exact-head reconciliation,
+   and the item remains `inventory_missing` until reconciled. A new actionable
+   graph blocker enters the finding ledger and does not prevent the second
+   inventory-completion pass; only new `inventory_missing` or
+   `evidence_unavailable` items change the unresolved checklist.
+
+   When the first pass resolves at least one prior item and leaves a strictly
+   smaller checklist containing `inventory_missing` items, Codex must run the
+   second inventory-completion pass when it can start before the 210-minute
+   new-work cutoff. Exclude `evidence_unavailable` items from further research;
+   one such item does not cancel the second pass for `inventory_missing` items.
+   The only scope exception requires an item-specific unsafe scope boundary that
+   names what would be crossed. A prediction that the second pass will not
+   complete every item is not a stop condition. The provisional evidence
+   envelope becomes frozen only when both fresh lanes have no
+   `inventory_missing`, `evidence_unavailable`, or unreconciled item. Codex
+   requests status-only `blocked/review-incomplete` on no measurable progress,
+   evidence remains unavailable, an item-specific unsafe scope boundary, the
+   210-minute cutoff, or an incomplete second completion pass. An interrupted
+   local completion commit is non-authoritative; a later cycle starts from fresh
+   helper preparation and review. Terminal Triage reports the inventory-completion pass count,
+   remaining unresolved checklist count, and bounded stop reason without raw
+   evidence or checklist prose.
 7. Codex consolidates the two complete dispositions into one private candidate
    inventory, finding ledger, and first fix. Candidate inventory and finding
    ledger are separate views. The inventory has one stable coverage entry per
@@ -1718,6 +1752,13 @@ replaced. It is history, not current operational instruction:
   report-only evidence-inventory completion phase before `review-incomplete`:
   at most two passes, strict checklist shrinkage, fresh independent dual review,
   no catalog/trust mutation, and no helper continuation or cross-run authority.
+  The owner then clarified that inventory completeness is a knowledge gate, not
+  a correctness gate: an item that is already correct becomes verified complete,
+  and an item understood well enough to fix becomes actionable. A regional
+  follow-up may defer without remediation, while a graph-blocking deferral also
+  creates a graph-safety finding. Still-missing, concretely unavailable, or
+  unreconciled evidence blocks the transition. A shrinking first-pass checklist
+  receives its second allowed pass before the objective new-work cutoff.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
   No further ADR is needed for the convergence amendment because it changes
@@ -1869,12 +1910,9 @@ replaced. It is history, not current operational instruction:
   personal skill. Scheduled runs use only the generic helper-owned continuation
   inventory and lifecycle; migration of any pre-existing legacy reviewed record
   remains an explicit owner-run operation outside the recurring schedule.
-  The convergence-and-regional-completion amendment is merged. The post-push CI
-  amendment remains open as PR #59, and this evidence-inventory amendment is
-  stacked on its exact head. Neither pending amendment is repository or
-  installed-runtime authority until ordered merge and the owner-controlled
-  personal-runtime cutover. After that cutover, normal
-  scheduled cycles use the tested concise executable interface in
+  The convergence-and-regional-completion, post-push CI, and inventory-to-
+  remediation amendments are merged, and their installed-runtime cutover is
+  complete. Normal scheduled cycles use the tested concise executable interface in
   `docs/operating-model/maintainer-runtime-command-contract.md`; this design
   remains the rationale and durable behavior reference for workflow changes,
   not a required per-cycle command source. Repository status alone never

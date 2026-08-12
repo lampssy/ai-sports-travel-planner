@@ -73,7 +73,12 @@ mismatch that cannot be resolved from the concise runtime source set.
    if acquisition succeeded.
 7. Inspect the installed skill and the actual automation records. Verify repo,
    working directory, schedule, prompt, skill reference, project-scoped GitHub
-   profile, and that no credential content is embedded.
+   profile, and that no credential content is embedded. Compare the installed
+   maintainer, catalog-curation, and catalog-review skills with the merged
+   inventory decision table. Require all five inventory outcomes, the graph-
+   impact deferral transition, the lane-conflict aggregation rule, and the mixed
+   unavailable/researchable second-pass rule. On any mismatch, keep both
+   schedules paused as contract-mismatch.
 8. Run disabled/manual curation and discovery smoke cycles. Confirm curation can
    distinguish post-push CI, reviewed, remediation, and ordinary recovery, and
    discovery uses regional backlog work before external scanning without
@@ -246,17 +251,58 @@ The installed skill must:
   consume a remediation cycle. The local report commit is non-authoritative and
   creates no helper continuation;
 - after each inventory-completion pass, start fresh independent source-trust
-  and graph-scope contexts on the exact new head. Reconcile missing items by
-  semantic acceptance criterion, not wording or identifier changes. Continue
-  only when at least one prior item is resolved and the unresolved checklist is
-  strictly smaller without a new equal-or-wider graph blocker. Freeze the
-  evidence envelope only after both fresh lanes return complete dispositions.
-  Inventory completion cannot authorize catalog or trust remediation; only the
-  resulting complete dual review can do so. Publish status-only
-  `blocked/review-incomplete` when there is no measurable progress, evidence
-  remains unavailable, unsafe scope expansion is required, the semantic
-  deadline prevents another pass, or the second completion pass is still
-  incomplete;
+  and graph-scope contexts on the exact new head. Reconcile items by semantic
+  acceptance criterion, not wording or identifier changes. Each relevant lane
+  assigns one `inventory_outcome` from this decision table:
+
+  | Outcome | Required evidence | Inventory transition | Remediation transition |
+  | --- | --- | --- | --- |
+  | `inventory_missing` | The concrete candidate, relevant source, or verification-capable disposition is still unknown. | Keep on the unresolved checklist. | None yet. |
+  | `verified_complete` | Direct evidence proves the current representation is correct or the candidate is not applicable. | Remove from the missing-inventory checklist. | No finding. |
+  | `actionable_finding` | Candidate and evidence are known well enough to state one exact defect and acceptance criterion. | Remove from the missing-inventory checklist. | Promote it to the finding ledger. |
+  | `defensible_deferred` | Direct evidence supports a typed deferral with its concrete prerequisite and canonical backlog reference. | Remove from the missing-inventory checklist. | Apply the graph-impact rule below. |
+  | `evidence_unavailable` | The exact required evidence cannot currently be obtained and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
+
+  A regional-followup defensible deferral requires no remediation finding
+  because omitting it leaves the selected graph correct. A graph-blocking
+  defensible deferral closes the knowledge checklist but must also create an
+  actionable graph-safety finding. Its acceptance criterion is to make the
+  selected graph internally valid without the deferred dependency; when that
+  cannot be done safely, stop `blocked/review-incomplete`. That an item requires
+  a catalog, trust, backlog, rendered-report, or focused-test change does not by
+  itself make review incomplete; those changes belong to subsequent remediation
+  and remain forbidden only inside the report-only completion pass;
+- for `verified_complete`, `actionable_finding`, and `defensible_deferred`,
+  remove it from the missing-inventory checklist after applying the remediation
+  transition above;
+- the parent aggregates both fresh lane outcomes without silently overriding
+  either lane. Any relevant `inventory_missing` or `evidence_unavailable`
+  outcome keeps the aggregate unresolved. Compatible complete outcomes may
+  close it. Conflicting inventory outcomes or graph-impact classifications
+  require one focused exact-head reconciliation and the item remains
+  `inventory_missing` until reconciled. A new actionable graph blocker enters
+  the finding ledger and does not prevent the second inventory-completion pass;
+  only newly discovered `inventory_missing` or `evidence_unavailable` items
+  alter the unresolved checklist;
+- when a first pass resolves at least one prior item and leaves a strictly
+  smaller unresolved checklist containing `inventory_missing` items, Codex must
+  run the second inventory-completion pass when it can start before the
+  210-minute new-work cutoff. Exclude `evidence_unavailable` items from further
+  research; one such item does not cancel the second pass for
+  `inventory_missing` items. The only scope exception requires an item-specific
+  unsafe scope boundary naming what would be crossed. A prediction that the
+  second pass will not complete every item is not a stop condition. Freeze the
+  evidence envelope only after both fresh lanes have no `inventory_missing`,
+  `evidence_unavailable`, or unreconciled outcome; `verified_complete`,
+  actionable findings, and correctly transitioned defensible deferrals are
+  complete knowledge dispositions. Inventory completion cannot authorize
+  catalog or trust remediation; the resulting complete dual review does so by
+  promoting actionable findings into the ordinary remediation loop. Publish
+  status-only `blocked/review-incomplete` when there is no measurable progress,
+  evidence remains unavailable, an item-specific unsafe scope boundary prevents
+  research, the 210-minute cutoff prevents another pass, or the second
+  completion pass still contains `inventory_missing`, `evidence_unavailable`,
+  or unreconciled items;
 - when inventory completion runs, include its inventory-completion pass count,
   remaining unresolved checklist count, and bounded stop reason in Triage
   without raw source evidence or checklist prose;
@@ -567,6 +613,25 @@ For each schedule, confirm:
   each pass, and publishes `blocked/review-incomplete` on no measurable
   progress, unavailable evidence, unsafe scope expansion, deadline, or an
   incomplete second pass;
+- an inventory-completion scenario that discovers a concrete catalog, trust,
+  backlog, rendered-report, or focused-test defect classifies it as
+  `actionable_finding`, removes it from the missing checklist, and enters
+  ordinary remediation after the dual review completes; a source-backed current
+  or not-applicable disposition classifies as `verified_complete`;
+- a `regional_followup` defensible deferral exits inventory without a finding,
+  while a `graph_blocking` defensible deferral creates the required graph-safety
+  finding or stops review-incomplete when the graph cannot be made internally
+  valid without the dependency;
+- conflicting lane outcomes remain fail-closed until one focused exact-head
+  reconciliation, and an incomplete lane cannot be overridden by a complete one;
+- an inventory-completion scenario whose first pass strictly shrinks the
+  checklist runs its permitted second pass before the 210-minute cutoff for all
+  remaining `inventory_missing` items. An `evidence_unavailable` item is excluded
+  but does not cancel research for the other items; predicted inability to
+  finish is not an accepted stop reason;
+- a newly actionable graph blocker enters the finding ledger and does not stop
+  the second inventory pass; only a new missing or unavailable item changes the
+  unresolved checklist;
 - a narrower residual and the first two consecutive exact repeats can continue
   only through bounded materially different fixes; the third consecutive exact
   repeat, any regression, or unsafe scope expansion stops as non-converging;
@@ -586,6 +651,11 @@ For each schedule, confirm:
 - the installed skill and automation prompts contain no obsolete minute-120
   boundary cutoff, 150-minute semantic cutoff, 180-minute hard deadline, or old
   fewer/lower/narrower and non-narrowing-count convergence rule;
+- activation rejects an installed maintainer, catalog-curation, or catalog-
+  review skill that lacks all five inventory outcomes, the graph-impact deferral
+  transition, the lane-conflict aggregation rule, or the mixed unavailable/
+  researchable second-pass rule, and keeps both schedules paused as contract-
+  mismatch;
 - a legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
   report is normalized before initial dual review, without consuming a
   remediation slot, while canonical intent still rejects it until that commit;
