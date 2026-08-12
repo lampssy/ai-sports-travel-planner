@@ -1730,11 +1730,9 @@
         },
         "field_source_refs": {
           "identity_location": [
-            "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
-            "https://www.openstreetmap.org/relation/47211",
-            "https://www.skiareasanvito.com/en/rates/",
-            "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+            "https://san-vito.visitcadore.com/",
+            "https://visitcadoredolomiti.com/wp-content/uploads/2024/02/Mappa_San_Vito_Cadore-new.pdf",
+            "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Appartamenti-S.Vito-Borca-e-Vodo.pdf"
           ],
           "coordinates": [
             "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
@@ -4305,17 +4303,15 @@
           "coordinates": "verified_with_adjustment",
           "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "verified",
+          "base_type": "needs_source",
           "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
-            "https://www.openstreetmap.org/relation/47211",
-            "https://www.skiareasanvito.com/en/rates/",
-            "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+            "https://san-vito.visitcadore.com/",
+            "https://visitcadoredolomiti.com/wp-content/uploads/2024/02/Mappa_San_Vito_Cadore-new.pdf",
+            "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Appartamenti-S.Vito-Borca-e-Vodo.pdf"
           ],
           "coordinates": [
             "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
@@ -4325,7 +4321,7 @@
             "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
           ],
           "elevation": [
-            "https://www.dolomiti.org/en/cadore/alto-cadore-places/san-vito-di-cadore-dolomiti/"
+            "https://san-vito.visitcadore.com/"
           ],
           "lodging_price_quality": [
             "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
@@ -4334,9 +4330,7 @@
             "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
             "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
           ],
-          "base_type": [
-            "https://www.dolomiti.org/en/cadore/alto-cadore-places/san-vito-di-cadore-dolomiti/"
-          ],
+          "base_type": [],
           "base_character": [
             "https://www.visitdolomitibellunesi.com/en/hotels/dolomiti-5"
           ],
@@ -4347,7 +4341,9 @@
           "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
           "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
           "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
-          "Source-aware v2 enrichment reviewed official San Vito town and stay material on 2026-07-05."
+          "Source-aware v2 enrichment reviewed official San Vito town and stay material on 2026-07-05.",
+          "The official destination, village-map, and accommodation collections support one San Vito stay market and one represented town base; named internal localities do not own separate accommodation-and-access graphs.",
+          "The Dolomiti Bellunesi accommodation listing's quiet mountain village wording is normalized to local_pace=quiet; it is one lodging listing, not a complete destination-character inventory."
         ]
       },
       "solden-solden": {
@@ -8233,7 +8229,7 @@
           "marked_freeride_routes": [],
           "ski_day_apres": [],
           "official_documents": [
-            "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Cartina_San_Vito_di_Cadore_low-1.pdf"
+            "https://www.skiareasanvito.com/wp-content/uploads/2019/06/cartina-impianti-san-vito-di-cadore.jpg"
           ]
         },
         "notes": [
@@ -8242,7 +8238,9 @@
           "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
           "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed official San Vito Ski Area material on 2026-07-05.",
-          "NeveSole family snow-play facilities are not normalized as a dedicated freestyle snowpark."
+          "NeveSole family snow-play facilities are not normalized as a dedicated freestyle snowpark.",
+          "The operator's whole-area programmed-snow wording supports availability only; no numerical percentage or denominator is stored.",
+          "The official trail-map URL points to the operator-owned San Vito child-area map image rather than the broader regional network map."
         ]
       },
       "schmittenhoehe": {
@@ -10017,17 +10015,20 @@
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.skiareasanvito.com/en/rates/"
+            "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+            "https://www.skiareasanvito.com/ski-bus/"
           ],
           "access_mode_distance": [
-            "https://www.skiareasanvito.com/en/rates/"
+            "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+            "https://www.skiareasanvito.com/ski-bus/"
           ]
         },
         "notes": [
           "Modeled as a separate destination because San Vito has independent lodging identity, local lift access, a local-only ski pass, and distinct family/value recommendation value.",
           "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
           "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+          "The official route links central Piazza Serantoni to the NeveSole ski-area parking by free ski bus. Snowcast retains ski_bus/near/non-direct semantics but omits an unsupported point distance and nearest-lift name."
         ]
       },
       "solden-solden--solden-ski-area": {
