@@ -743,11 +743,41 @@
       "target_id": "san-vito-di-cadore",
       "field_path": "name",
       "source_type": "official",
-      "source_url": "https://www.dolomiti.org/en/cadore/alto-cadore-places/san-vito-di-cadore-dolomiti/",
-      "source_title": "Cadore official San Vito di Cadore destination guide",
+      "source_url": "https://san-vito.visitcadore.com/",
+      "source_title": "VisitCadore official San Vito di Cadore destination page",
       "source_value": "San Vito di Cadore",
-      "evidence_summary": "The official destination guide presents San Vito di Cadore as the named local stay market; the initial review must verify the complete ownership boundary.",
+      "evidence_summary": "The current official destination page presents San Vito di Cadore as a distinct stay destination, exposes a where-to-stay collection, and lists Cortina, Borca, and Vodo as neighboring destinations.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-san-vito-locality-accommodation-map",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://visitcadoredolomiti.com/wp-content/uploads/2024/02/Mappa_San_Vito_Cadore-new.pdf",
+      "source_title": "Cadore Dolomiti official San Vito village and accommodation map",
+      "source_value": "San Vito di Cadore",
+      "evidence_summary": "The official village map places Mosigo, Chiapuzza, Serdes, Resinego, Tambres, Belvedere, Costa, and Dogana Vecchia inside one San Vito map and enumerates the townwide accommodation inventory and skibus context.",
+      "normalization_note": "The named localities remain locality context inside the represented town base because the source does not give them independent accommodation-market or ski-access ownership."
+    },
+    {
+      "evidence_id": "scope-san-vito-accommodation-inventory",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Appartamenti-S.Vito-Borca-e-Vodo.pdf",
+      "source_title": "Cadore Dolomiti official San Vito, Borca, and Vodo apartment inventory",
+      "source_value": "San Vito di Cadore",
+      "evidence_summary": "The official inventory groups Chiapuzza, Costa, central San Vito, Belvedere and Resinego Alto, Resinego, and Serdes under the San Vito destination while listing Borca and Vodo separately.",
+      "normalization_note": "Named San Vito locality headings describe lodging addresses within one destination inventory; they do not establish independent catalog stay-base owners."
     },
     {
       "evidence_id": "scope-access-san-vito",
@@ -798,25 +828,29 @@
         {
           "gate_name": "complete_stay_market_scope",
           "status": "pass",
-          "notes": "The official destination guide provisionally presents San Vito as a coherent multi-night destination; the initial review must verify inventory completeness.",
+          "notes": "The current official destination page and accommodation inventories present San Vito as one coherent multi-night market and distinguish neighboring destinations.",
           "evidence_refs": [
-            "scope-stay-market-san-vito"
+            "scope-stay-market-san-vito",
+            "scope-san-vito-locality-accommodation-map",
+            "scope-san-vito-accommodation-inventory"
           ]
         },
         {
           "gate_name": "independent_stay_market_ownership",
           "status": "pass",
-          "notes": "The official destination guide provisionally supports distinct destination treatment; the initial review must verify ownership strength.",
+          "notes": "VisitCadore and Cadore Dolomiti directly own the San Vito destination and townwide accommodation collections.",
           "evidence_refs": [
-            "scope-stay-market-san-vito"
+            "scope-stay-market-san-vito",
+            "scope-san-vito-accommodation-inventory"
           ]
         },
         {
           "gate_name": "material_destination_level_separation_value",
           "status": "pass",
-          "notes": "The focus destination has distinct local lodging context and ski access; the initial review must verify material separation value.",
+          "notes": "The official destination collection separates San Vito from Cortina, Borca, and Vodo and pairs its own lodging market with local ski-area access.",
           "evidence_refs": [
             "scope-stay-market-san-vito",
+            "scope-san-vito-accommodation-inventory",
             "scope-access-san-vito"
           ]
         }
@@ -853,7 +887,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The current stay destination is represented provisionally for exact-head source-trust and graph-scope review.",
+      "rationale": "The current official destination and accommodation collections establish San Vito as the complete independently owned stay market, separate from the neighboring destination collections.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -868,6 +902,8 @@
       ],
       "evidence_refs": [
         "scope-stay-market-san-vito",
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory",
         "scope-access-san-vito"
       ],
       "target_refs": [
@@ -877,7 +913,189 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The current stay base is represented provisionally as the focus destination's accommodation base.",
+      "rationale": "The official village map and townwide accommodation inventory support one represented San Vito base; named localities remain internal locality context because no independent lodging-and-access owner is established.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-mosigo",
+      "candidate_name": "Mosigo",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official inventory places Mosigo-address lodging inside the Chiapuzza grouping and the village map supplies no independently owned lodging-and-access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-chiapuzza",
+      "candidate_name": "Chiapuzza",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official apartment inventory uses Chiapuzza as a San Vito locality heading, but no independent base-level destination or ski-access owner is established.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-serdes",
+      "candidate_name": "Serdes",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official apartment inventory uses Serdes as a San Vito locality heading, but no independent base-level destination or ski-access owner is established.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-resinego",
+      "candidate_name": "Resinego",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official inventory presents Resinego and Resinego Alto within San Vito lodging, without independent base-level destination or ski-access ownership.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-tambres",
+      "candidate_name": "Tambres",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official village map identifies Tambres inside San Vito but the accommodation inventory does not establish it as an independently owned stay-and-access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-belvedere",
+      "candidate_name": "Belvedere",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official inventory combines Belvedere with Resinego Alto inside San Vito and establishes no independent base-level destination or ski-access owner.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-costa",
+      "candidate_name": "Costa",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official apartment inventory uses Costa as a San Vito locality heading, but no independent base-level destination or ski-access owner is established.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-dogana-vecchia",
+      "candidate_name": "Dogana Vecchia",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official village map includes Dogana Vecchia and its lodging inside San Vito but does not establish an independent accommodation-and-access base.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -994,7 +1212,9 @@
       "family_id": "san-vito-destination-booking",
       "source_kind": "destination_booking",
       "source_urls": [
-        "https://www.dolomiti.org/en/cadore/alto-cadore-places/san-vito-di-cadore-dolomiti/",
+        "https://san-vito.visitcadore.com/",
+        "https://visitcadoredolomiti.com/wp-content/uploads/2024/02/Mappa_San_Vito_Cadore-new.pdf",
+        "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Appartamenti-S.Vito-Borca-e-Vodo.pdf",
         "https://www.visitdolomitibellunesi.com/en/hotels/dolomiti-5"
       ],
       "candidate_kinds": [
