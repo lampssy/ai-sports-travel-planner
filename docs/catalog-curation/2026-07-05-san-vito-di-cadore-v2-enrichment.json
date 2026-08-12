@@ -1071,6 +1071,32 @@
       "source_value": "Valle Skipass Cortina",
       "evidence_summary": "The operator tariff presents the Cortina valley pass context for independent coverage and linked-dependency review.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-dolomiti-superski-san-vito",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/en/rates/",
+      "source_title": "Ski Area San Vito official rates",
+      "source_value": "Dolomiti Superski",
+      "evidence_summary": "The operator tariff explicitly lists Dolomiti Superski validity as a wider pass option available from San Vito.",
+      "normalization_note": "The product is retained as a deferred regional candidate because modeling its complete network is outside this child-area slice."
+    },
+    {
+      "evidence_id": "scope-nevesole-small-treadmill-access",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Cartina_San_Vito_di_Cadore_low-1.pdf",
+      "source_title": "Cadore Dolomiti official San Vito village and ski-area map",
+      "source_value": "Free access to the small treadmill in the NeveSole area",
+      "evidence_summary": "The official map describes the small NeveSole treadmill as free access, so it is facility context rather than a ticket or pass product.",
+      "normalization_note": "The former ticket candidate is renamed and classified as non-product context; no pass entity or backlog item is created."
     }
   ],
   "destination_boundary_assessments": [
@@ -1648,7 +1674,7 @@
         "official_product_identity"
       ],
       "evidence_refs": [
-        "scope-valley-pass-san-vito"
+        "scope-dolomiti-superski-san-vito"
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#alta-badia-and-regional-catalog-refinements",
@@ -1657,19 +1683,19 @@
       "graph_impact": "regional_followup"
     },
     {
-      "candidate_id": "san-vito-nevesole-treadmill",
-      "candidate_name": "NeveSole treadmill ticket",
+      "candidate_id": "san-vito-nevesole-small-treadmill-access",
+      "candidate_name": "NeveSole small treadmill access",
       "candidate_kind": "lift_pass_product",
       "disposition": "external_pass_context",
       "signals": [
         "official_product_identity"
       ],
       "evidence_refs": [
-        "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url"
+        "scope-nevesole-small-treadmill-access"
       ],
       "target_refs": [],
       "backlog_ref": null,
-      "rationale": "This is a limited beginner-facility fare rather than a full ski-area pass product.",
+      "rationale": "The official map describes this beginner-facility access as free, so it is not a ticket or full ski-area pass product.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -1858,6 +1884,16 @@
       "source_kind": "pass_tariff",
       "source_urls": [
         "https://www.skiareasanvito.com/en/rates/"
+      ],
+      "candidate_kinds": [
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "san-vito-limited-facility-access",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Cartina_San_Vito_di_Cadore_low-1.pdf"
       ],
       "candidate_kinds": [
         "lift_pass_product"
