@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from ops.maintainer import SUMMARY_MARKER
-from ops.maintainer.errors import MaintainerError
+from ops.maintainer.errors import ErrorReason, MaintainerError
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.github import GitHubComment
 from ops.maintainer.inspection import (
@@ -15,9 +15,22 @@ from ops.maintainer.inspection import (
     inspect_curation,
     inspect_discovery,
 )
-from ops.maintainer.models import MachineState, OutcomeState, PullRequest
-from ops.maintainer.publication import render_machine_state, render_outcome_state
+from ops.maintainer.models import (
+    CheckSummary,
+    MachineState,
+    MaintainerLane,
+    MaintainerState,
+    OutcomeState,
+    PullRequest,
+)
+from ops.maintainer.publication import (
+    publication_plan,
+    render_machine_state,
+    render_outcome_state,
+)
 from ops.maintainer.state import (
+    CiContinuation,
+    CiContinuationPhase,
     ContinuationStatus,
     ContinuationValidationStatus,
     PushJournal,
@@ -25,6 +38,8 @@ from ops.maintainer.state import (
     RemediationContinuation,
     RemediationContinuationStatus,
     ReviewedContinuation,
+    TerminalPublicationIntent,
+    TerminalPublicationPhase,
     remediation_supersedes_reviewed,
 )
 
@@ -33,6 +48,7 @@ pytestmark = pytest.mark.db_free
 SHA_A = "a" * 40
 SHA_B = "b" * 40
 SHA_C = "c" * 40
+NOW = datetime(2026, 7, 8, 10, tzinfo=UTC)
 
 
 def _pull_request(number: int = 42, **overrides: object) -> PullRequest:
@@ -192,6 +208,469 @@ def _remediation(
         completed_stage="delta-validated",
         status=RemediationContinuationStatus.AVAILABLE,
     )
+
+
+def _ci_continuation(
+    *,
+    pr_number: int = 42,
+    semantic_head: str = SHA_B,
+    current_head: str = SHA_B,
+) -> CiContinuation:
+    return CiContinuation(
+        work_id=f"curation-pr-{pr_number}",
+        origin_run_id="1" * 32,
+        recovery_run_id="2" * 32,
+        updated_at=NOW - timedelta(minutes=2),
+        pr_number=pr_number,
+        branch=f"codex/catalog-{pr_number}",
+        semantic_head=semantic_head,
+        current_head=current_head,
+        report_path=f"docs/catalog-curation/pr-{pr_number}.json",
+        resulting_graph_markdown="```mermaid\ngraph LR\n  a --> b\n```",
+        non_test_tree_digest="d" * 64,
+        phase=CiContinuationPhase.INITIAL_WAIT,
+        repair_attempted=False,
+        first_wait_started_at=NOW - timedelta(minutes=2),
+        first_wait_seconds=0,
+        repair_active_seconds=0,
+        second_wait_seconds=0,
+    )
+
+
+def _ci_repair_active() -> CiContinuation:
+    return CiContinuation.model_validate(
+        {
+            **_ci_continuation().model_dump(),
+            "phase": CiContinuationPhase.REPAIR_ACTIVE,
+            "repair_attempted": True,
+            "repair_activity_observed_at": NOW - timedelta(minutes=1),
+        }
+    )
+
+
+def _terminal_publication_intent() -> TerminalPublicationIntent:
+    continuation = _ci_repair_active()
+    return TerminalPublicationIntent(
+        work_id=continuation.work_id,
+        worker="curation",
+        origin_run_id="2" * 32,
+        recovery_run_id="2" * 32,
+        updated_at=NOW,
+        continuation=continuation,
+        target_state=MaintainerState.BLOCKED,
+        reason="deadline",
+        summary="The focused CI repair stopped safely.",
+        machine_state=MachineState(
+            schema_version=2,
+            reviewed_head=SHA_B,
+            validated_head=SHA_B,
+            last_operation="published",
+        ),
+        phase=TerminalPublicationPhase.AUTHORIZED,
+    )
+
+
+def test_terminal_publication_is_the_only_recovery_authority() -> None:
+    intent = _terminal_publication_intent()
+
+    inventory = inspect_curation(
+        (_pull_request(head_sha=SHA_B), _pull_request(43)),
+        {},
+        (_journal(),),
+        (_continuation(selected_head=SHA_B),),
+        (_remediation(selected_head=SHA_B),),
+        (_ci_continuation(),),
+        (intent,),
+        now=NOW,
+    )
+
+    assert tuple(
+        item.model_dump(mode="json") for item in inventory.terminal_publications
+    ) == (
+        {
+            "worker": "curation",
+            "work_id": "curation-pr-42",
+            "pr_number": 42,
+            "branch": "codex/catalog-42",
+            "continuation_phase": "repair-active",
+            "semantic_head": SHA_B,
+            "current_head": SHA_B,
+            "repair_head": None,
+            "target_state": "maintainer:blocked",
+            "reason": "deadline",
+        },
+    )
+    assert inventory.unresolved_pushes == ()
+    assert inventory.ci_continuations == ()
+    assert inventory.reviewed_continuations == ()
+    assert inventory.remediation_continuations == ()
+    assert inventory.eligible == ()
+
+
+def test_ci_continuation_summary_is_safe_live_and_first_recovery_authority() -> None:
+    ci_continuation = _ci_continuation()
+    failed_check = CheckSummary(
+        name="backend",
+        status="failure",
+        conclusion="FAILURE",
+        details_url=(
+            "https://github.com/lampssy/ai-sports-travel-planner/actions/runs/1"
+        ),
+    )
+    matching = _pull_request(
+        head_sha=SHA_B,
+        check_state="failure",
+        checks=(failed_check,),
+    )
+
+    inventory = inspect_curation(
+        (matching, _pull_request(43)),
+        {},
+        (),
+        (_continuation(selected_head=SHA_B),),
+        (_remediation(selected_head=SHA_B),),
+        (ci_continuation,),
+        now=NOW,
+    )
+
+    assert inventory.ci_continuations[0].model_dump(mode="json") == {
+        "pr_number": 42,
+        "semantic_head": SHA_B,
+        "current_head": SHA_B,
+        "phase": "initial-wait",
+        "check_state": "failure",
+        "mergeable": "MERGEABLE",
+        "repair_attempted": False,
+        "first_wait_seconds": 120,
+        "repair_active_seconds": 0,
+        "second_wait_seconds": 0,
+        "failed_checks": [
+            {
+                "name": "backend",
+                "status": "failure",
+                "conclusion": "FAILURE",
+                "details_url": (
+                    "https://github.com/lampssy/ai-sports-travel-planner/actions/runs/1"
+                ),
+            }
+        ],
+        "resumable": True,
+        "availability_reason": "available",
+    }
+    assert inventory.reviewed_continuations == ()
+    assert inventory.remediation_continuations == ()
+    assert [candidate.number for candidate in inventory.eligible] == [43]
+    serialized = json.dumps(inventory.model_dump(mode="json"))
+    for private_value in (
+        ci_continuation.origin_run_id,
+        ci_continuation.recovery_run_id,
+        ci_continuation.report_path,
+        ci_continuation.resulting_graph_markdown,
+        ci_continuation.non_test_tree_digest,
+    ):
+        assert private_value not in serialized
+
+
+def test_ci_continuation_recovery_priority_yields_only_to_unresolved_journal() -> None:
+    inventory = inspect_curation(
+        (_pull_request(head_sha=SHA_B),),
+        {},
+        (_journal(),),
+        (_continuation(selected_head=SHA_B),),
+        (_remediation(selected_head=SHA_B),),
+        (_ci_continuation(),),
+        now=NOW,
+    )
+
+    assert len(inventory.unresolved_pushes) == 1
+    assert inventory.ci_continuations == ()
+    assert inventory.reviewed_continuations == ()
+    assert inventory.remediation_continuations == ()
+    assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    ("pull_request", "reason"),
+    [
+        (_pull_request(head_sha=SHA_C), "head-drift"),
+        (_pull_request(head_sha=SHA_B, lifecycle_state="CLOSED"), "closed-or-merged"),
+        (
+            _pull_request(
+                head_sha=SHA_B,
+                head_ref_name="codex/catalog-other",
+            ),
+            "branch-drift",
+        ),
+        (
+            _pull_request(head_sha=SHA_B, is_cross_repository=True),
+            "invalid-state",
+        ),
+    ],
+)
+def test_ci_continuation_exposes_non_resumable_live_invalidated_reason(
+    pull_request: PullRequest,
+    reason: str,
+) -> None:
+    inventory = inspect_curation(
+        (pull_request,),
+        {},
+        (),
+        (),
+        (),
+        (_ci_continuation(),),
+        now=NOW,
+    )
+
+    assert inventory.ci_continuations[0].resumable is False
+    assert inventory.ci_continuations[0].availability_reason == reason
+    assert inventory.reviewed_continuations == ()
+    assert inventory.remediation_continuations == ()
+    assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        frozenset({"lane:catalog-curation", "maintainer:waiting-ci"}),
+        frozenset({"lane:catalog-curation"}),
+        frozenset({"lane:catalog-curation", "maintainer:blocked"}),
+    ],
+)
+def test_ci_continuation_authority_is_independent_of_labels(
+    labels: frozenset[str],
+) -> None:
+    inventory = inspect_curation(
+        (_pull_request(head_sha=SHA_B, labels=labels),),
+        {},
+        (),
+        (),
+        (),
+        (_ci_continuation(),),
+        now=NOW,
+    )
+
+    assert inventory.ci_continuations[0].resumable is True
+    assert inventory.ci_continuations[0].availability_reason == "available"
+    assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        frozenset(
+            {
+                "lane:catalog-curation",
+                "maintainer:working",
+                "maintainer:waiting-ci",
+            }
+        ),
+        frozenset(
+            {
+                "lane:catalog-curation",
+                "lane:catalog-discovery",
+                "maintainer:waiting-ci",
+            }
+        ),
+    ],
+)
+def test_ci_continuation_conflicting_routing_labels_are_visible_but_invalid(
+    labels: frozenset[str],
+) -> None:
+    inventory = inspect_curation(
+        (_pull_request(head_sha=SHA_B, labels=labels),),
+        {},
+        (),
+        (),
+        (),
+        (_ci_continuation(),),
+        now=NOW,
+    )
+
+    assert len(inventory.ci_continuations) == 1
+    assert inventory.ci_continuations[0].resumable is False
+    assert inventory.ci_continuations[0].availability_reason == "invalid-state"
+    assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    ("continuation", "pull_request", "resumable", "reason"),
+    [
+        (
+            _ci_continuation(),
+            _pull_request(head_sha=SHA_B, mergeable="CONFLICTING"),
+            False,
+            "invalid-state",
+        ),
+        (
+            _ci_continuation(),
+            _pull_request(head_sha=SHA_B, mergeable="UNKNOWN"),
+            False,
+            "invalid-state",
+        ),
+        (
+            _ci_repair_active(),
+            _pull_request(
+                head_sha=SHA_B,
+                check_state="success",
+                checks=(
+                    CheckSummary(
+                        name="backend",
+                        status="success",
+                        conclusion="SUCCESS",
+                    ),
+                ),
+            ),
+            False,
+            "invalid-state",
+        ),
+        (
+            _ci_repair_active(),
+            _pull_request(
+                head_sha=SHA_B,
+                check_state="failure",
+                checks=(
+                    CheckSummary(
+                        name="backend",
+                        status="failure",
+                        conclusion="FAILURE",
+                    ),
+                ),
+            ),
+            True,
+            "available",
+        ),
+        (
+            _ci_repair_active(),
+            _pull_request(
+                head_sha=SHA_B,
+                check_state="failure",
+                checks=(
+                    CheckSummary(
+                        name="backend",
+                        status="failure",
+                        conclusion="CANCELLED",
+                    ),
+                ),
+            ),
+            False,
+            "invalid-state",
+        ),
+        (
+            _ci_repair_active(),
+            _pull_request(
+                head_sha=SHA_B,
+                check_state="pending",
+                checks=(CheckSummary(name="backend", status="pending"),),
+            ),
+            False,
+            "invalid-state",
+        ),
+    ],
+)
+def test_ci_continuation_inspection_availability_is_phase_aware(
+    continuation: CiContinuation,
+    pull_request: PullRequest,
+    resumable: bool,
+    reason: str,
+) -> None:
+    inventory = inspect_curation(
+        (pull_request,),
+        {},
+        (),
+        (),
+        (),
+        (continuation,),
+        now=NOW,
+    )
+
+    assert len(inventory.ci_continuations) == 1
+    assert inventory.ci_continuations[0].resumable is resumable
+    assert inventory.ci_continuations[0].availability_reason == reason
+    assert inventory.eligible == ()
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        frozenset(
+            {
+                "lane:catalog-curation",
+                "maintainer:working",
+                "maintainer:waiting-ci",
+            }
+        ),
+        frozenset(
+            {
+                "lane:catalog-curation",
+                "lane:catalog-discovery",
+            }
+        ),
+    ],
+)
+def test_inspect_curation_rejects_conflicting_routing_labels_from_selection(
+    labels: frozenset[str],
+) -> None:
+    pull_request = _pull_request(labels=labels)
+
+    inventory = inspect_curation((pull_request,), {}, ())
+
+    assert inventory.eligible == ()
+    with pytest.raises(MaintainerError) as exc_info:
+        publication_plan(
+            requested_state=MaintainerState.WORKING,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=pull_request,
+            machine_state=_machine_state(
+                reviewed_head=SHA_A,
+                last_operation="reviewed",
+            ),
+        )
+
+    assert exc_info.value.reason is ErrorReason.INVALID_GITHUB_STATE
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        frozenset(
+            {
+                "lane:catalog-discovery",
+                "maintainer:proposal",
+                "maintainer:working",
+            }
+        ),
+        frozenset(
+            {
+                "lane:catalog-discovery",
+                "lane:catalog-curation",
+                "maintainer:proposal",
+            }
+        ),
+    ],
+)
+def test_inspect_discovery_conflicting_routing_labels_fail_closed(
+    labels: frozenset[str],
+) -> None:
+    pull_request = _pull_request(labels=labels)
+    comment = _canonical_comment(
+        _machine_state(
+            candidate_key="ski_area:tignes",
+            candidate_origin="backlog",
+        )
+    )
+
+    inventory = inspect_discovery(
+        frozenset(),
+        (pull_request,),
+        (),
+        {42: (comment,)},
+    )
+
+    assert inventory.open_proposal_count == 1
+    assert inventory.open_proposals[0].identity_known is False
+    assert inventory.open_candidate_keys == frozenset()
+    assert inventory.has_unknown_proposal_identity is True
+    assert inventory.can_create_proposal is False
 
 
 def test_curation_inventory_exposes_only_safe_continuation_summary() -> None:

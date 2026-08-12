@@ -91,7 +91,12 @@ def _parser() -> argparse.ArgumentParser:
     acquire = lock_commands.add_parser("acquire")
     acquire.add_argument("worker", choices=("curation", "discovery"))
     for command in ("heartbeat", "release"):
-        operation = lock_commands.add_parser(command)
+        help_text = (
+            "Refresh the lease and active CI-repair budget."
+            if command == "heartbeat"
+            else "Release the active worker lease."
+        )
+        operation = lock_commands.add_parser(command, help=help_text)
         operation.add_argument("worker", choices=("curation", "discovery"))
         _add_run_id(operation)
 
@@ -127,6 +132,9 @@ def _parser() -> argparse.ArgumentParser:
     prepare_continuation.add_argument("--pr", type=int, required=True)
     prepare_continuation.add_argument("--continue-conflict", action="store_true")
     _add_run_id(prepare_continuation)
+    prepare_ci_repair = prepare_commands.add_parser("ci-repair")
+    prepare_ci_repair.add_argument("--pr", type=int, required=True)
+    _add_run_id(prepare_ci_repair)
 
     validate = families.add_parser("validate")
     validate_commands = validate.add_subparsers(dest="command", required=True)
@@ -161,6 +169,16 @@ def _parser() -> argparse.ArgumentParser:
         ),
     )
     _add_run_id(remediation)
+    checkpoint_ci_repair = checkpoint_commands.add_parser("ci-repair")
+    checkpoint_ci_repair.add_argument("--pr", type=int, required=True)
+    checkpoint_ci_repair.add_argument("--head", type=_sha, required=True)
+    _add_run_id(checkpoint_ci_repair)
+
+    invalidate = families.add_parser("invalidate")
+    invalidate_commands = invalidate.add_subparsers(dest="command", required=True)
+    invalidate_ci_continuation = invalidate_commands.add_parser("ci-continuation")
+    invalidate_ci_continuation.add_argument("--pr", type=int, required=True)
+    _add_run_id(invalidate_ci_continuation)
 
     validate_reviewed_parser = validate_commands.add_parser("reviewed")
     validate_reviewed_parser.add_argument("--pr", type=int, required=True)
@@ -184,6 +202,9 @@ def _parser() -> argparse.ArgumentParser:
     push = publish_commands.add_parser("push")
     push.add_argument("--pr", type=int, required=True)
     _add_run_id(push)
+    ci_repair = publish_commands.add_parser("ci-repair")
+    ci_repair.add_argument("--pr", type=int, required=True)
+    _add_run_id(ci_repair)
     manual_check = publish_commands.add_parser("manual-check")
     manual_check.add_argument("--pr", type=int, required=True)
     manual_check.add_argument("--reviewed-head", type=_sha, required=True)
@@ -273,12 +294,16 @@ def _compose_dependencies(
     needs_repository = (args.family, args.command) in {
         ("prepare", "curation"),
         ("prepare", "continuation"),
+        ("prepare", "ci-repair"),
         ("checkpoint", "remediation"),
+        ("checkpoint", "ci-repair"),
         ("validate", "curation"),
         ("validate", "reviewed"),
         ("validate", "proposal"),
         ("publish", "push"),
+        ("publish", "ci-repair"),
         ("publish", "manual-check"),
+        ("publish", "outcome"),
         ("publish", "recover"),
         ("publish", "proposal"),
         ("publish", "state"),

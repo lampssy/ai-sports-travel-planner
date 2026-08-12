@@ -14,6 +14,25 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 
 ## Architecture
 
+### Maintainer evidence inventory completion
+
+- The initial catalog review evidence envelope is provisional until independent
+  source-trust and graph-scope lanes both return complete dispositions.
+- An incomplete lane produces a structured missing-item checklist instead of
+  immediately authorizing a catalog fix or ending an otherwise productive run.
+- The maintainer may perform at most two report-only inventory-completion passes.
+  Each pass must shrink the unresolved checklist and is followed by fresh dual
+  review on the exact new head.
+- Completion may change only the canonical curation report. Catalog and trust
+  payloads and object IDs remain unchanged, and no helper continuation or
+  cross-run authority is created from the local report commit.
+- Triage exposes only the pass count, remaining unresolved count, and bounded
+  stop reason so operators can diagnose convergence without persisting semantic
+  evidence in helper state.
+- `review-incomplete` remains the safe outcome when evidence cannot be found,
+  progress stops, scope becomes unsafe, time expires, or two passes do not
+  complete the inventory.
+
 ### User-facing content ownership
 
 - B2 English is the maximum product-language complexity; simpler is preferred.
@@ -1023,8 +1042,66 @@ the immutable reviewed head before allowing its push.
 
 An unchanged `ready` head is held out of fresh curation selection and becomes
 eligible again only after a new commit. An unchanged `waiting-ci` head remains
-visible for a lightweight readiness transition that never rebases or repeats
-semantic review.
+visible as compatibility presentation while its exact helper CI continuation
+controls same-run or successor waiting, repair, and readiness without rebasing
+or repeating semantic review.
+
+After the reviewed and validated head is pushed, the implemented post-push
+lifecycle keeps the same curation lease through a 30-minute exact-head CI wait.
+Every first-wait and second-wait iteration calls `lock heartbeat curation ->
+inspect curation -> lock heartbeat curation` before branching, with heartbeats
+at least every five minutes and no same-run reacquisition. A successor
+separately enters through `lock acquire curation -> lock heartbeat curation ->
+inspect curation -> lock heartbeat curation` before any selected next
+capability. Success plus mergeability publishes ready; pending at the limit
+retains the continuation; Codex classifies a confirmed failure from bounded
+helper facts and, only when needed, read-only untrusted failed-check logs. A
+failure caused only by stale assertions in ordinary root-level
+`tests/test_*.py` modules may receive one statically prepared and independently
+reviewed repair, with at most 60 active minutes for that repair and one final
+30-minute CI wait. Codex does not execute target-PR `tests/test_*.py` files
+locally. A second CI failure publishes blocked/CI-failure and permits no second
+repair.
+
+Heartbeat always returns base field `worker`. Only when the run owns an active
+CI continuation does it conditionally add `ci_budget`, containing exactly the
+helper-owned cumulative `first_wait_seconds`, `repair_active_seconds`, and
+`second_wait_seconds`.
+
+The cumulative post-push budget is 30/60/30. Its separate 120-minute ceiling
+does not reopen or extend the semantic 240-minute clock, and no semantic work
+starts after the initial push. The helper persists exact CI-continuation
+authority, enforces an unchanged non-test tree and one attempt, and journals the
+repair push. Helper output and continuation state are authority, while
+automation memory and labels are hints and presentation only. GitHub CI remains
+the execution boundary for the modified test code; `maintainer:waiting-ci` is
+retained only as human-visible compatibility state.
+
+Terminal blocked publication during an active or reviewed repair uses an
+owner-private terminal-publication intent before any GitHub mutation. The
+intent embeds the exact continuation generation and binds the PR, branch,
+current/semantic/repair heads, lease recovery owner, target state/reason,
+canonical summary, and machine evidence. It has priority over the push journal,
+so the complete recovery order is `terminal publication -> push journal ->
+post-push CI continuation -> reviewed continuation -> remediation continuation
+-> ordinary PR`. Recovery replays publication idempotently, then blocks the
+exact matching continuation and completes the intent. Repair cannot resume
+while the intent is unresolved; drift fails closed.
+
+Post-push recovery is phase-aware. A successor resumes both `repair-active` and
+`repair-reviewed` through `prepare ci-repair`: the former recreates the exact
+worktree and still needs a fresh focused review, while the latter revalidates
+the immutable repair checkpoint before publication. Recovery does not reset
+the single repair attempt or any cumulative 30/60/30 budget. Every
+`prepare ci-repair`, `checkpoint ci-repair`, `publish ci-repair`, and
+`invalidate ci-continuation` request rejects any unresolved push journal; only
+exact journal recovery may proceed. The helper uses live exact-PR facts to
+`invalidate ci-continuation` when a continuation is no longer resumable. On
+rollover, replaced terminal `consumed`, `blocked`, and `invalidated`
+generations move to an owner-private archive keyed by semantic head. A new
+generation is allowed only after a different semantic head is validated and
+pushed for the same work, and only that generation starts with zero consumed
+budgets.
 
 All publication text is created by the lease-bound `publication-input create`
 capability: it consumes bounded UTF-8 from stdin, makes a random mode-`0600`

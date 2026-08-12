@@ -33,6 +33,29 @@ class _MaintainerModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
 
+class CheckSummary(_MaintainerModel):
+    name: str = Field(min_length=1, max_length=256)
+    status: Literal["pending", "success", "failure"]
+    conclusion: str | None = Field(default=None, max_length=64)
+    details_url: HttpUrl | None = None
+
+    @field_validator("details_url")
+    @classmethod
+    def validate_details_url(cls, details_url: HttpUrl | None) -> HttpUrl | None:
+        if details_url is not None and details_url.scheme != "https":
+            raise ValueError("details URL must use HTTPS")
+        return details_url
+
+
+def is_confirmed_ci_failure(check: CheckSummary) -> bool:
+    return (
+        check.status == "failure"
+        and check.conclusion is not None
+        and check.conclusion.upper()
+        in {"ERROR", "FAILED", "FAILURE", "STARTUP_FAILURE", "TIMED_OUT"}
+    )
+
+
 class PullRequest(_MaintainerModel):
     number: int = Field(gt=0)
     title: str
@@ -48,6 +71,7 @@ class PullRequest(_MaintainerModel):
     head_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
     mergeable: Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
     check_state: Literal["pending", "success", "failure"]
+    checks: tuple[CheckSummary, ...] = ()
     changed_paths: frozenset[str] = Field(default_factory=frozenset)
     body: str = ""
 
@@ -72,30 +96,21 @@ class PullRequest(_MaintainerModel):
             raise ValueError("url must be a GitHub URL")
         return url
 
-    @model_validator(mode="after")
-    def validate_routing_labels(self) -> Self:
+    @property
+    def routing_labels_valid(self) -> bool:
         lanes = [lane for lane in MaintainerLane if lane.value in self.labels]
-        if len(lanes) > 1:
-            raise ValueError("pull request may have at most one maintainer lane")
-
         states = [state for state in MaintainerState if state.value in self.labels]
-        if len(states) > 1:
-            raise ValueError("pull request may have at most one maintainer state")
-        return self
+        return len(lanes) <= 1 and len(states) <= 1
 
     @property
     def lane(self) -> MaintainerLane | None:
-        return next(
-            (lane for lane in MaintainerLane if lane.value in self.labels),
-            None,
-        )
+        lanes = [lane for lane in MaintainerLane if lane.value in self.labels]
+        return lanes[0] if len(lanes) == 1 else None
 
     @property
     def maintainer_state(self) -> MaintainerState | None:
-        return next(
-            (state for state in MaintainerState if state.value in self.labels),
-            None,
-        )
+        states = [state for state in MaintainerState if state.value in self.labels]
+        return states[0] if len(states) == 1 else None
 
 
 class MachineState(_MaintainerModel):

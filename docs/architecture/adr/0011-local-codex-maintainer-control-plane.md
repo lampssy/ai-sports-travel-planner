@@ -2,7 +2,7 @@
 
 Status: accepted
 Date: 2026-07-08
-Amended: 2026-07-22
+Amended: 2026-07-24
 
 Supersedes: N/A
 Superseded by: N/A
@@ -12,6 +12,7 @@ Related specs:
 - `docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md`
 - `docs/superpowers/specs/2026-07-09-maintainer-manual-check-handoff-design.md`
 - `docs/superpowers/specs/2026-07-22-maintainer-convergence-and-regional-completion-design.md`
+- `docs/superpowers/specs/2026-07-24-maintainer-post-push-ci-remediation-design.md`
 
 Related docs:
 - `docs/operating-model/review-playbook.md`
@@ -80,6 +81,31 @@ run-local URL cache. The helper owns only typed shape, exact identity,
 path/mode/ref safety, exact backlog-anchor existence, one-focus proposal
 identity, and mutation/publication boundaries.
 
+After a reviewed and validated curation head is pushed, keep the curation lease
+for a bounded same-run CI phase. Wait up to 30 minutes for the first exact-head
+CI result. When CI exposes only stale assertions in ordinary test modules,
+allow one focused, independently reviewed, test-only repair with a 60-minute
+active-execution budget, followed by one final 30-minute CI wait. This phase is
+separate from the 240-minute catalog-semantic deadline and may extend one run
+by at most 120 minutes.
+
+Persist that phase as an exact helper-owned post-push CI continuation. It binds
+the reviewed and validated non-test tree, pushed head, attempt count, and
+focused-review checkpoint; it never stores CI prose or model conclusions.
+Recovery order is push journal, post-push CI continuation, reviewed
+continuation, remediation continuation, then ordinary PR. Keep
+`maintainer:waiting-ci` initially as presentation and compatibility state, not
+as recovery authority.
+
+Do not execute modified PR test modules on the unattended local full-access
+machine. Codex may statically migrate assertions and a focused reviewer must
+confirm that coverage was not weakened. The helper permits only regular
+`tests/test_*.py` changes, proves the non-test tree is identical to the reviewed
+and validated tree, enforces one attempt, and uses the existing journaled
+exact-lease boundary for the repair push. Production, operational, dependency,
+pytest-configuration, catalog, trust, report, and backlog changes remain outside
+this post-push phase.
+
 Rewrite stale catalog branches only through the helper, which creates a local
 backup ref, rebases onto selected `origin/main`, verifies that the resulting
 diff contains only catalog data, non-control-plane documentation, tests, and
@@ -96,6 +122,10 @@ test-module paths. It supplies the prepared catalog/trust files as data to
 those trusted tests and runs with a fresh private `HOME`. PR-supplied Python and
 pytest configuration execute only in owner-visible CI or deliberate review,
 not in the local maintainer.
+The bounded post-push CI repair may edit ordinary test modules after static
+reasoning and focused independent review, but still does not execute those
+modified modules locally; owner-visible GitHub CI remains their execution
+boundary.
 
 Do not parse human backlog prose deterministically and do not use the initial
 69-entry Alpine registry as a runtime discovery gate. Preserve a researched
@@ -199,6 +229,13 @@ repeating completed remediation. Additive regional findings no longer expand an
 otherwise correct curation indefinitely; they become visible owner-gated
 backlog/proposal work. GitHub proposal identity and the merged schema-v3 report,
 not private memory, remain the durable proposal record.
+
+A normal CI wait now delays discovery or another curation run for up to 30
+minutes because the current curation run retains the global lease. The accepted
+tradeoff is simpler exact-head ownership: normal CI is shorter than another
+useful mutation cycle, while heartbeats and stale-owner fencing still recover
+from sleep or task loss. One post-push repair can extend the run by at most two
+hours without reopening catalog-semantic work.
 
 ## Alternatives Considered
 

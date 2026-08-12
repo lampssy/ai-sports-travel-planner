@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import AbstractSet, Annotated, Literal, Self
 
@@ -19,9 +20,16 @@ from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
 from ops.maintainer.intent import CATALOG_SECTIONS, is_allowed_curation_path
-from ops.maintainer.models import PullRequest
+from ops.maintainer.models import (
+    CheckSummary,
+    MaintainerState,
+    PullRequest,
+    is_confirmed_ci_failure,
+)
 from ops.maintainer.publication import trusted_hold_head, trusted_machine_state
 from ops.maintainer.state import (
+    CiContinuation,
+    CiContinuationPhase,
     ContinuationStatus,
     ContinuationValidationStatus,
     PushJournal,
@@ -29,6 +37,8 @@ from ops.maintainer.state import (
     RemediationContinuation,
     RemediationContinuationStatus,
     ReviewedContinuation,
+    TerminalPublicationIntent,
+    TerminalPublicationPhase,
     remediation_supersedes_reviewed,
 )
 
@@ -81,11 +91,51 @@ class CurationCandidate(_InspectionModel):
         return paths
 
 
+class CiContinuationSummary(_InspectionModel):
+    pr_number: int = Field(gt=0)
+    semantic_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    current_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    phase: CiContinuationPhase
+    check_state: Literal["pending", "success", "failure"]
+    mergeable: Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+    repair_attempted: bool
+    first_wait_seconds: int = Field(ge=0, le=1800)
+    repair_active_seconds: int = Field(ge=0, le=3600)
+    second_wait_seconds: int = Field(ge=0, le=1800)
+    failed_checks: tuple[CheckSummary, ...] = ()
+    resumable: bool
+    availability_reason: Literal[
+        "available",
+        "head-drift",
+        "closed-or-merged",
+        "branch-drift",
+        "invalid-state",
+    ]
+
+
+class TerminalPublicationSummary(_InspectionModel):
+    worker: Literal["curation"]
+    work_id: str = Field(min_length=1, max_length=128)
+    pr_number: int = Field(gt=0)
+    branch: str = Field(min_length=1, max_length=200)
+    continuation_phase: Literal[
+        CiContinuationPhase.REPAIR_ACTIVE,
+        CiContinuationPhase.REPAIR_REVIEWED,
+    ]
+    semantic_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    current_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    repair_head: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
+    target_state: Literal[MaintainerState.BLOCKED]
+    reason: str = Field(min_length=1, max_length=64)
+
+
 class CurationInventory(_InspectionModel):
-    eligible: tuple[CurationCandidate, ...] = ()
+    terminal_publications: tuple[TerminalPublicationSummary, ...] = ()
     unresolved_pushes: tuple[PushJournalSummary, ...] = ()
+    ci_continuations: tuple[CiContinuationSummary, ...] = ()
     reviewed_continuations: tuple[ReviewedContinuationSummary, ...] = ()
     remediation_continuations: tuple[RemediationContinuationSummary, ...] = ()
+    eligible: tuple[CurationCandidate, ...] = ()
 
 
 class PushJournalSummary(_InspectionModel):
@@ -197,7 +247,18 @@ def inspect_curation(
     unresolved_pushes: Sequence[PushJournal] = (),
     reviewed_continuations: Sequence[ReviewedContinuation] = (),
     remediation_continuations: Sequence[RemediationContinuation] = (),
+    ci_continuations: Sequence[CiContinuation] = (),
+    terminal_publications: Sequence[TerminalPublicationIntent] = (),
+    *,
+    now: datetime | None = None,
 ) -> CurationInventory:
+    publications = _normalize_terminal_publications(terminal_publications)
+    if publications:
+        return CurationInventory(
+            terminal_publications=tuple(
+                _terminal_publication_summary(item) for item in publications
+            )
+        )
     journals = _normalize_journals(unresolved_pushes)
     if journals:
         return CurationInventory(
@@ -205,12 +266,38 @@ def inspect_curation(
         )
     pull_requests = _deduplicate_pull_requests(pull_requests)
     pull_requests_by_number = {item.number: item for item in pull_requests}
+    active_ci_continuations = tuple(
+        continuation
+        for continuation in ci_continuations
+        if continuation.phase
+        not in {
+            CiContinuationPhase.CONSUMED,
+            CiContinuationPhase.BLOCKED,
+            CiContinuationPhase.INVALIDATED,
+        }
+    )
+    if active_ci_continuations and now is None:
+        raise ValueError("current time is required for CI continuation inspection")
+    observed_at = _inspection_time(now) if now is not None else None
+    ci_summaries = tuple(
+        _ci_continuation_summary(
+            continuation,
+            pull_requests_by_number.get(continuation.pr_number),
+            observed_at,
+        )
+        for continuation in sorted(
+            active_ci_continuations,
+            key=lambda item: item.pr_number,
+        )
+    )
+    ci_pr_numbers = {item.pr_number for item in active_ci_continuations}
 
     active_reviewed = tuple(
         continuation
         for continuation in reviewed_continuations
         if continuation.status
         not in {ContinuationStatus.CONSUMED, ContinuationStatus.INVALIDATED}
+        and continuation.pr_number not in ci_pr_numbers
     )
     active_remediations = tuple(
         continuation
@@ -220,6 +307,7 @@ def inspect_curation(
             RemediationContinuationStatus.CONSUMED,
             RemediationContinuationStatus.INVALIDATED,
         }
+        and continuation.pr_number not in ci_pr_numbers
     )
     superseded_reviewed_work_ids = {
         reviewed.work_id
@@ -251,6 +339,7 @@ def inspect_curation(
                     comments_by_pr.get(pull_request.number, ()),
                 )
                 and pull_request.number not in suppressed_remediation_prs
+                and pull_request.number not in ci_pr_numbers
             ),
             key=lambda pull_request: pull_request.number,
         )
@@ -286,9 +375,10 @@ def inspect_curation(
         if continuation.pr_number not in reviewed_pr_numbers
     )
     return CurationInventory(
-        eligible=eligible,
+        ci_continuations=ci_summaries,
         reviewed_continuations=summaries,
         remediation_continuations=remediation_summaries,
+        eligible=eligible,
     )
 
 
@@ -393,6 +483,41 @@ def _normalize_journals(
     return tuple(by_work_id[work_id] for work_id in sorted(by_work_id))
 
 
+def _normalize_terminal_publications(
+    terminal_publications: Sequence[TerminalPublicationIntent],
+) -> tuple[TerminalPublicationIntent, ...]:
+    by_work_id: dict[str, TerminalPublicationIntent] = {}
+    for intent in terminal_publications:
+        if intent.phase is not TerminalPublicationPhase.AUTHORIZED:
+            raise _invalid_journal_inventory(
+                "Terminal publication inventory contains a completed record"
+            )
+        if intent.work_id in by_work_id:
+            raise _invalid_journal_inventory(
+                "Terminal publication inventory contains duplicate work identifiers"
+            )
+        by_work_id[intent.work_id] = intent
+    return tuple(by_work_id[work_id] for work_id in sorted(by_work_id))
+
+
+def _terminal_publication_summary(
+    intent: TerminalPublicationIntent,
+) -> TerminalPublicationSummary:
+    continuation = intent.continuation
+    return TerminalPublicationSummary(
+        worker=intent.worker,
+        work_id=intent.work_id,
+        pr_number=continuation.pr_number,
+        branch=continuation.branch,
+        continuation_phase=continuation.phase,
+        semantic_head=continuation.semantic_head,
+        current_head=continuation.current_head,
+        repair_head=continuation.repair_head,
+        target_state=intent.target_state,
+        reason=intent.reason,
+    )
+
+
 def _push_journal_summary(journal: PushJournal) -> PushJournalSummary:
     return PushJournalSummary(
         worker=journal.worker,
@@ -403,6 +528,149 @@ def _push_journal_summary(journal: PushJournal) -> PushJournalSummary:
         phase=journal.phase,
         expected_remote_head=journal.expected_remote_head,
         new_head=journal.new_head,
+    )
+
+
+def _inspection_time(now: datetime) -> datetime:
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("current time must include a timezone")
+    return now.astimezone(UTC)
+
+
+def _elapsed_wait_seconds(
+    *,
+    saved_seconds: int,
+    started_at: datetime,
+    observed_at: datetime,
+) -> int:
+    return min(
+        1800,
+        max(saved_seconds, int((observed_at - started_at).total_seconds())),
+    )
+
+
+def ci_continuation_availability(
+    continuation: CiContinuation,
+    pull_request: PullRequest | None,
+) -> Literal[
+    "available",
+    "head-drift",
+    "closed-or-merged",
+    "branch-drift",
+    "invalid-state",
+]:
+    if pull_request is None or pull_request.lifecycle_state in {"CLOSED", "MERGED"}:
+        return "closed-or-merged"
+    if pull_request.head_sha != continuation.current_head:
+        return "head-drift"
+    if pull_request.head_ref_name != continuation.branch:
+        return "branch-drift"
+    if (
+        not pull_request.routing_labels_valid
+        or pull_request.mergeable != "MERGEABLE"
+        or pull_request.is_cross_repository
+        or pull_request.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
+        or pull_request.base_ref_name != "main"
+        or not pull_request.changed_paths
+        or not all(
+            is_allowed_curation_path(path) for path in pull_request.changed_paths
+        )
+    ):
+        return "invalid-state"
+    if continuation.phase is CiContinuationPhase.REPAIR_ACTIVE and (
+        pull_request.check_state != "failure"
+        or not any(is_confirmed_ci_failure(check) for check in pull_request.checks)
+    ):
+        return "invalid-state"
+    return "available"
+
+
+def ci_continuation_invalidation_reason(
+    continuation: CiContinuation,
+    pull_request: PullRequest | None,
+) -> (
+    Literal[
+        "head-drift",
+        "closed-or-merged",
+        "branch-drift",
+        "invalid-state",
+    ]
+    | None
+):
+    """Return only live helper facts that authorize terminal invalidation."""
+    if pull_request is None or pull_request.lifecycle_state in {"CLOSED", "MERGED"}:
+        return "closed-or-merged"
+    if pull_request.head_sha != continuation.current_head:
+        return "head-drift"
+    if pull_request.head_ref_name != continuation.branch:
+        return "branch-drift"
+    if (
+        pull_request.is_cross_repository
+        or pull_request.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
+        or pull_request.base_ref_name != "main"
+        or not pull_request.changed_paths
+        or not all(
+            is_allowed_curation_path(path) for path in pull_request.changed_paths
+        )
+    ):
+        return "invalid-state"
+    if pull_request.mergeable == "CONFLICTING":
+        return "invalid-state"
+    if (
+        continuation.phase is CiContinuationPhase.REPAIR_ACTIVE
+        and pull_request.check_state == "success"
+    ):
+        return "invalid-state"
+    return None
+
+
+def _ci_continuation_summary(
+    continuation: CiContinuation,
+    pull_request: PullRequest | None,
+    observed_at: datetime | None,
+) -> CiContinuationSummary:
+    if observed_at is None:
+        raise ValueError("current time is required for CI continuation inspection")
+    first_wait_seconds = continuation.first_wait_seconds
+    second_wait_seconds = continuation.second_wait_seconds
+    if continuation.phase is CiContinuationPhase.INITIAL_WAIT:
+        first_wait_seconds = _elapsed_wait_seconds(
+            saved_seconds=first_wait_seconds,
+            started_at=continuation.first_wait_started_at,
+            observed_at=observed_at,
+        )
+    elif continuation.phase is CiContinuationPhase.SECOND_WAIT:
+        assert continuation.second_wait_started_at is not None
+        second_wait_seconds = _elapsed_wait_seconds(
+            saved_seconds=second_wait_seconds,
+            started_at=continuation.second_wait_started_at,
+            observed_at=observed_at,
+        )
+    availability = ci_continuation_availability(continuation, pull_request)
+    return CiContinuationSummary(
+        pr_number=continuation.pr_number,
+        semantic_head=continuation.semantic_head,
+        current_head=(
+            pull_request.head_sha
+            if pull_request is not None
+            else continuation.current_head
+        ),
+        phase=continuation.phase,
+        check_state=(
+            pull_request.check_state if pull_request is not None else "pending"
+        ),
+        mergeable=pull_request.mergeable if pull_request is not None else "UNKNOWN",
+        repair_attempted=continuation.repair_attempted,
+        first_wait_seconds=first_wait_seconds,
+        repair_active_seconds=continuation.repair_active_seconds,
+        second_wait_seconds=second_wait_seconds,
+        failed_checks=(
+            tuple(check for check in pull_request.checks if check.status == "failure")
+            if pull_request is not None
+            else ()
+        ),
+        resumable=availability == "available",
+        availability_reason=availability,
     )
 
 
@@ -447,7 +715,8 @@ def _is_safe_curation_candidate(
     comments: Sequence[GitHubComment],
 ) -> bool:
     if (
-        pull_request.lifecycle_state != "OPEN"
+        not pull_request.routing_labels_valid
+        or pull_request.lifecycle_state != "OPEN"
         or pull_request.is_cross_repository
         or pull_request.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
         or pull_request.base_ref_name != "main"
@@ -525,7 +794,9 @@ def _proposal_summary(
     pull_request: PullRequest,
     comments: Sequence[GitHubComment],
 ) -> ProposalSummary:
-    state = trusted_machine_state(comments)
+    state = (
+        trusted_machine_state(comments) if pull_request.routing_labels_valid else None
+    )
     if state is None or state.candidate_key is None:
         candidate_key = None
         candidate_origin = None

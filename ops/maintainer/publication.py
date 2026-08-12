@@ -28,7 +28,13 @@ from ops.maintainer.models import (
     PullRequest,
 )
 from ops.maintainer.runtime import RunLease
-from ops.maintainer.state import PushJournal, PushPhase, StateStore
+from ops.maintainer.state import (
+    CiContinuation,
+    CiContinuationPhase,
+    PushJournal,
+    PushPhase,
+    StateStore,
+)
 
 if TYPE_CHECKING:
     from ops.maintainer.validation import ProposalValidationResult
@@ -202,6 +208,7 @@ class PublicationPlan(BaseModel):
         default=None,
         pattern=r"^[0-9a-f]{40}$",
     )
+    exact_repair_push_handoff: bool = False
 
 
 class OutcomePlan(BaseModel):
@@ -242,6 +249,28 @@ def replace_managed_body(
         raise ValueError("managed body markers are reversed")
     suffix = end + len(BODY_END)
     return f"{current[:start]}{_managed_block(managed)}{current[suffix:]}"
+
+
+def extract_managed_body(current: str) -> str | None:
+    """Return trusted managed body content while rejecting malformed markers."""
+    start_count = current.count(BODY_START)
+    end_count = current.count(BODY_END)
+    if start_count == 0 and end_count == 0:
+        return None
+    if start_count != 1 or end_count != 1:
+        raise ValueError("managed body markers are malformed or duplicated")
+
+    start = current.index(BODY_START)
+    end = current.index(BODY_END)
+    if end < start:
+        raise ValueError("managed body markers are reversed")
+    content_start = start + len(BODY_START)
+    managed = current[content_start:end]
+    if managed.startswith("\n"):
+        managed = managed[1:]
+    if managed.endswith("\n"):
+        managed = managed[:-1]
+    return managed
 
 
 def _managed_block(managed: str) -> str:
@@ -418,6 +447,56 @@ def _has_strict_control(value: str) -> bool:
     )
 
 
+def ci_publication_machine_state(
+    *,
+    continuation: CiContinuation,
+    pull_request: PullRequest,
+    repair_checkpoint_revalidated: bool,
+) -> MachineState:
+    if (
+        type(continuation) is not CiContinuation
+        or type(pull_request) is not PullRequest
+        or type(repair_checkpoint_revalidated) is not bool
+    ):
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "CI publication evidence must use strict helper-owned values",
+            stage=ErrorStage.READINESS,
+        )
+    if continuation.phase not in {
+        CiContinuationPhase.INITIAL_WAIT,
+        CiContinuationPhase.SECOND_WAIT,
+    }:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "CI continuation is not in a publishable wait phase",
+            stage=ErrorStage.READINESS,
+        )
+    if (
+        pull_request.number != continuation.pr_number
+        or pull_request.head_ref_name != continuation.branch
+        or pull_request.head_sha != continuation.current_head
+    ):
+        raise _publication_error(
+            ErrorReason.STALE_HEAD,
+            "PR identity differs from the CI continuation",
+            stage=ErrorStage.READINESS,
+        )
+    repaired = continuation.phase is CiContinuationPhase.SECOND_WAIT
+    if repaired != repair_checkpoint_revalidated:
+        raise _publication_error(
+            ErrorReason.VALIDATION_REQUIRED,
+            "Repaired CI publication requires exact checkpoint revalidation",
+            stage=ErrorStage.READINESS,
+        )
+    return MachineState(
+        schema_version=2,
+        reviewed_head=continuation.current_head,
+        validated_head=continuation.current_head,
+        last_operation="published",
+    )
+
+
 def publication_plan(
     *,
     requested_state: MaintainerState,
@@ -425,6 +504,7 @@ def publication_plan(
     pull_request: PullRequest,
     machine_state: MachineState,
     superseded_hold_head: str | None = None,
+    exact_repair_push_handoff: bool = False,
     proposal_validation: ProposalValidationResult | None = None,
     discovery_inventory: object | None = None,
 ) -> PublicationPlan:
@@ -440,6 +520,18 @@ def publication_plan(
             "Machine state must use schema version 2",
         )
     machine_state = MachineState.model_validate(machine_state.model_dump())
+    if type(exact_repair_push_handoff) is not bool or (
+        exact_repair_push_handoff
+        and (
+            requested_state is not MaintainerState.WAITING_CI
+            or machine_state.last_operation != "published"
+        )
+    ):
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Exact repair push handoff is limited to published waiting-CI evidence",
+            stage=ErrorStage.READINESS,
+        )
     if (
         MaintainerState.PROPOSAL.value in pull_request.labels
         and requested_state is not MaintainerState.PROPOSAL
@@ -471,7 +563,7 @@ def publication_plan(
                 "Current head has no matching pushed evidence",
                 stage=ErrorStage.READINESS,
             )
-        if pull_request.check_state != "pending":
+        if pull_request.check_state != "pending" and not exact_repair_push_handoff:
             raise _publication_error(
                 ErrorReason.NOT_READY,
                 "Required checks are not pending",
@@ -502,6 +594,7 @@ def publication_plan(
         state=requested_state,
         machine_state=machine_state,
         superseded_hold_head=superseded_hold_head,
+        exact_repair_push_handoff=exact_repair_push_handoff,
     )
 
 
@@ -637,7 +730,8 @@ def _require_publication_authority(
         and lane is MaintainerLane.CATALOG_CURATION
     )
     if (
-        pull_request.lifecycle_state != "OPEN"
+        not pull_request.routing_labels_valid
+        or pull_request.lifecycle_state != "OPEN"
         or pull_request.is_cross_repository
         or pull_request.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
         or pull_request.base_ref_name != "main"
@@ -1078,6 +1172,23 @@ def publish_outcome(
     return mutated
 
 
+def validate_outcome_publication_input(
+    plan: OutcomePlan,
+    summary: str,
+) -> None:
+    """Validate canonical terminal text without performing external mutation."""
+    if type(plan) is not OutcomePlan:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Outcome publication requires a strict plan",
+        )
+    _render_summary(
+        summary,
+        plan.machine_state,
+        outcome_state=plan.outcome_state,
+    )
+
+
 def publish_discovery_proposal(
     *,
     store: StateStore,
@@ -1474,6 +1585,7 @@ def _refetch_publication_target(
             pull_request=current,
             machine_state=plan.machine_state,
             superseded_hold_head=plan.superseded_hold_head,
+            exact_repair_push_handoff=plan.exact_repair_push_handoff,
         )
     return current
 

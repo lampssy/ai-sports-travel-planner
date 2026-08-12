@@ -23,7 +23,9 @@ from ops.maintainer.models import (
 from ops.maintainer.publication import (
     PublicationInputError,
     PublicationPlan,
+    ci_publication_machine_state,
     create_publication_text,
+    extract_managed_body,
     outcome_plan,
     parse_machine_state,
     parse_outcome_state,
@@ -40,13 +42,20 @@ from ops.maintainer.publication import (
     trusted_outcome_state,
 )
 from ops.maintainer.runtime import LeaseOwnershipError, RunLease
-from ops.maintainer.state import PushJournal, PushPhase, StateStore
+from ops.maintainer.state import (
+    CiContinuation,
+    CiContinuationPhase,
+    PushJournal,
+    PushPhase,
+    StateStore,
+)
 from ops.maintainer.validation import ProposalValidationResult
 
 pytestmark = pytest.mark.db_free
 
 SHA_A = "a" * 40
 SHA_B = "b" * 40
+SHA_C = "c" * 40
 
 
 def _machine(**overrides: object) -> MachineState:
@@ -93,6 +102,31 @@ def _pull_request(**overrides: object) -> PullRequest:
     return PullRequest.model_validate(values)
 
 
+def _ci_continuation(**overrides: object) -> CiContinuation:
+    now = datetime(2026, 7, 8, 10, tzinfo=UTC)
+    values: dict[str, object] = {
+        "work_id": "curation-pr-42",
+        "origin_run_id": "1" * 32,
+        "recovery_run_id": "1" * 32,
+        "updated_at": now,
+        "pr_number": 42,
+        "branch": "codex/catalog-curation-nendaz",
+        "semantic_head": SHA_A,
+        "current_head": SHA_A,
+        "report_path": "docs/catalog-curation/nendaz.json",
+        "resulting_graph_markdown": "## Resulting Graph\n",
+        "non_test_tree_digest": "d" * 64,
+        "phase": CiContinuationPhase.INITIAL_WAIT,
+        "repair_attempted": False,
+        "first_wait_started_at": now,
+        "first_wait_seconds": 0,
+        "repair_active_seconds": 0,
+        "second_wait_seconds": 0,
+    }
+    values.update(overrides)
+    return CiContinuation.model_validate(values)
+
+
 def _comment(
     body: str,
     *,
@@ -123,6 +157,14 @@ def test_managed_body_preserves_unmarked_content_without_adoption() -> None:
     )
 
 
+def test_extract_managed_body_round_trips_or_reports_absence() -> None:
+    managed = "Current concise synopsis"
+    marked = replace_managed_body("Owner-authored context", managed)
+
+    assert extract_managed_body(marked) == managed
+    assert extract_managed_body("Owner-authored context") is None
+
+
 @pytest.mark.parametrize(
     "current",
     [
@@ -137,6 +179,8 @@ def test_managed_body_adoption_never_overwrites_untrusted_markers(
 ) -> None:
     with pytest.raises(ValueError):
         replace_managed_body(current, "Current synopsis", adopt_unmanaged=True)
+    with pytest.raises(ValueError):
+        extract_managed_body(current)
 
 
 def test_machine_state_v2_marker_is_canonical_and_round_trips() -> None:
@@ -693,6 +737,120 @@ def test_waiting_ci_requires_exact_validated_head_and_pending_checks() -> None:
         )
 
     assert exc_info.value.reason is ErrorReason.VALIDATION_REQUIRED
+
+
+def test_exact_repair_push_handoff_allows_only_published_waiting_evidence() -> None:
+    plan = publication_plan(
+        requested_state=MaintainerState.WAITING_CI,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=_pull_request(check_state="failure"),
+        machine_state=_machine(last_operation="published"),
+        exact_repair_push_handoff=True,
+    )
+
+    assert plan.exact_repair_push_handoff is True
+
+    with pytest.raises(MaintainerError) as unvalidated:
+        publication_plan(
+            requested_state=MaintainerState.WAITING_CI,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=_pull_request(check_state="failure"),
+            machine_state=_machine(last_operation="pushed"),
+            exact_repair_push_handoff=True,
+        )
+    assert unvalidated.value.reason is ErrorReason.INVALID_COMMAND
+
+    with pytest.raises(MaintainerError) as wrong_state:
+        publication_plan(
+            requested_state=MaintainerState.READY,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=_pull_request(check_state="success"),
+            machine_state=_machine(last_operation="published"),
+            exact_repair_push_handoff=True,
+        )
+    assert wrong_state.value.reason is ErrorReason.INVALID_COMMAND
+
+
+def test_ci_continuation_initial_wait_derives_exact_published_machine_state() -> None:
+    continuation = _ci_continuation()
+
+    machine = ci_publication_machine_state(
+        continuation=continuation,
+        pull_request=_pull_request(),
+        repair_checkpoint_revalidated=False,
+    )
+
+    assert machine == MachineState(
+        schema_version=2,
+        reviewed_head=SHA_A,
+        validated_head=SHA_A,
+        last_operation="published",
+    )
+
+
+def test_ci_continuation_second_wait_requires_revalidated_test_repair() -> None:
+    continuation = _ci_continuation(
+        current_head=SHA_C,
+        phase=CiContinuationPhase.SECOND_WAIT,
+        repair_attempted=True,
+        repair_active_seconds=300,
+        repair_activity_observed_at=datetime(2026, 7, 8, 10, tzinfo=UTC),
+        repair_head=SHA_C,
+        repair_ref=(
+            f"refs/snowcast-maintainer/ci-repairs/pr-42/{SHA_A[:12]}-{SHA_C[:12]}"
+        ),
+        repair_paths=frozenset({"tests/test_catalog_models.py"}),
+        second_wait_started_at=datetime(2026, 7, 8, 10, tzinfo=UTC),
+    )
+    pull_request = _pull_request(head_sha=SHA_C)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        ci_publication_machine_state(
+            continuation=continuation,
+            pull_request=pull_request,
+            repair_checkpoint_revalidated=False,
+        )
+
+    assert exc_info.value.reason is ErrorReason.VALIDATION_REQUIRED
+    machine = ci_publication_machine_state(
+        continuation=continuation,
+        pull_request=pull_request,
+        repair_checkpoint_revalidated=True,
+    )
+    assert machine.reviewed_head == SHA_C
+    assert machine.validated_head == SHA_C
+    assert machine.last_operation == "published"
+
+
+@pytest.mark.parametrize(
+    ("continuation", "pull_request"),
+    (
+        (
+            _ci_continuation(
+                phase=CiContinuationPhase.BLOCKED,
+            ),
+            _pull_request(),
+        ),
+        (
+            _ci_continuation(),
+            _pull_request(head_sha=SHA_B),
+        ),
+        (
+            _ci_continuation(),
+            _pull_request(head_ref_name="codex/catalog-curation-other"),
+        ),
+    ),
+)
+def test_ci_continuation_publication_rejects_terminal_or_drifted_identity(
+    continuation: CiContinuation,
+    pull_request: PullRequest,
+) -> None:
+    with pytest.raises(MaintainerError):
+        ci_publication_machine_state(
+            continuation=continuation,
+            pull_request=pull_request,
+            repair_checkpoint_revalidated=False,
+        )
 
 
 @pytest.mark.parametrize(

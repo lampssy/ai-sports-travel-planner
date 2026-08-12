@@ -4,7 +4,7 @@ import json
 import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -40,6 +40,8 @@ from ops.maintainer.intent import (
     build_intent_snapshot,
 )
 from ops.maintainer.models import PullRequest
+from ops.maintainer.runtime import RunLease
+from ops.maintainer.state import PushJournal, PushPhase, StateStore
 
 pytestmark = pytest.mark.db_free
 
@@ -1380,6 +1382,532 @@ class LocalRepository:
     target_sha: str
     main_sha: str
     pull_request: PullRequest
+
+
+@dataclass(frozen=True)
+class CiRepairRepository:
+    remote: Path
+    seed: Path
+    checkout: Path
+    semantic_head: str
+    current_head: str
+    main_head: str
+    pull_request: PullRequest
+
+
+def _ci_repair_repository(tmp_path: Path) -> CiRepairRepository:
+    remote = tmp_path / "ci-remote.git"
+    seed = tmp_path / "ci-seed"
+    checkout = tmp_path / "ci-checkout"
+    remote.mkdir()
+    _git(remote, "init", "--bare", "--initial-branch=main")
+    seed.mkdir()
+    _git(seed, "init", "--initial-branch=main")
+    _git(seed, "config", "user.name", "Snowcast Test")
+    _git(seed, "config", "user.email", "snowcast@example.test")
+    _git(seed, "config", "commit.gpgsign", "false")
+    (seed / "app" / "data").mkdir(parents=True)
+    (seed / "docs" / "catalog-curation").mkdir(parents=True)
+    (seed / "tests").mkdir()
+    (seed / "app" / "public_pages.py").write_text(
+        "def status_code() -> int:\n    return 200\n",
+        encoding="utf-8",
+    )
+    (seed / CATALOG_PATH).write_text('{"version": 1}\n', encoding="utf-8")
+    (seed / REPORT_PATH).write_text('{"status": "base"}\n', encoding="utf-8")
+    (seed / "pyproject.toml").write_text("[tool.pytest.ini_options]\n")
+    (seed / "tests" / "conftest.py").write_text(
+        "# repository-owned test configuration\n",
+        encoding="utf-8",
+    )
+    (seed / "tests" / "test_public_pages.py").write_text(
+        "def test_public_page_status() -> None:\n    assert 503 == 200\n",
+        encoding="utf-8",
+    )
+    _git(seed, "add", ".")
+    _git(seed, "commit", "-m", "base")
+    _git(seed, "remote", "add", "origin", str(remote))
+    _git(seed, "push", "origin", "main")
+
+    branch = "codex/catalog-curation-alpha"
+    _git(seed, "switch", "-c", branch)
+    (seed / "app" / "public_pages.py").write_text(
+        "def status_code() -> int:\n    return 201\n",
+        encoding="utf-8",
+    )
+    (seed / CATALOG_PATH).write_text('{"version": 2}\n', encoding="utf-8")
+    (seed / REPORT_PATH).write_text('{"status": "reviewed"}\n', encoding="utf-8")
+    _git(seed, "add", ".")
+    _git(seed, "commit", "-m", "review product and catalog")
+    current_head = _git(seed, "rev-parse", "HEAD")
+    _git(seed, "push", "origin", branch)
+
+    _git(seed, "switch", "main")
+    (seed / "README.md").write_text(
+        "newer main must not be rebased\n",
+        encoding="utf-8",
+    )
+    _git(seed, "add", "README.md")
+    _git(seed, "commit", "-m", "advance main independently")
+    main_head = _git(seed, "rev-parse", "HEAD")
+    _git(seed, "push", "origin", "main")
+
+    _git(tmp_path, "clone", str(remote), str(checkout))
+    _git(checkout, "config", "user.name", "Snowcast Test")
+    _git(checkout, "config", "user.email", "snowcast@example.test")
+    _git(checkout, "config", "commit.gpgsign", "false")
+    _git(checkout, "remote", "set-url", "origin", CANONICAL_REMOTE)
+    _git(
+        checkout,
+        "config",
+        f"url.file://{remote}.insteadOf",
+        CANONICAL_REMOTE,
+    )
+    pull_request = _pull_request(
+        head_sha=current_head,
+        changed_paths=frozenset({CATALOG_PATH, REPORT_PATH, "app/public_pages.py"}),
+    )
+    return CiRepairRepository(
+        remote=remote,
+        seed=seed,
+        checkout=checkout,
+        semantic_head=current_head,
+        current_head=current_head,
+        main_head=main_head,
+        pull_request=pull_request,
+    )
+
+
+def _ci_repair_git_repository(
+    local: CiRepairRepository,
+    *,
+    runner: RecordingRunner | None = None,
+) -> GitRepository:
+    return GitRepository(
+        local.checkout.resolve(),
+        runner=runner,
+        remote_policy=ExactTestRemotePolicy(f"file://{local.remote}"),
+    )
+
+
+def _commit_allowed_ci_repair(local: CiRepairRepository) -> str:
+    (local.checkout / "tests" / "test_public_pages.py").write_text(
+        "def test_public_page_status() -> None:\n    assert 200 == 200\n",
+        encoding="utf-8",
+    )
+    _git(local.checkout, "add", "tests/test_public_pages.py")
+    _git(local.checkout, "commit", "-m", "fix public page assertion")
+    return _git(local.checkout, "rev-parse", "HEAD")
+
+
+def test_prepare_ci_repair_detaches_exact_current_head_without_rebase(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    runner = RecordingRunner()
+    repository = _ci_repair_git_repository(local, runner=runner)
+
+    prepared_head = repository.prepare_ci_repair(local.pull_request)
+
+    assert prepared_head == local.current_head
+    assert _git(local.checkout, "rev-parse", "HEAD") == local.current_head
+    assert _git(local.checkout, "rev-parse", "--abbrev-ref", "HEAD") == "HEAD"
+    assert not (local.checkout / "README.md").exists()
+    assert not any("rebase" in call for call in runner.calls)
+
+
+def test_checkpoint_ci_repair_persists_and_revalidates_exact_test_only_head(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    repair_head = _commit_allowed_ci_repair(local)
+
+    checkpoint = repository.checkpoint_ci_repair(
+        pull_request=local.pull_request,
+        semantic_head=local.semantic_head,
+        current_head=local.current_head,
+        repair_head=repair_head,
+        expected_non_test_tree_digest=expected_digest,
+    )
+
+    assert checkpoint.repair_paths == frozenset({"tests/test_public_pages.py"})
+    assert checkpoint.repair_ref == (
+        "refs/snowcast-maintainer/ci-repairs/"
+        f"pr-{local.pull_request.number}/"
+        f"{local.current_head[:12]}-{repair_head[:12]}"
+    )
+    assert _git(local.checkout, "rev-parse", checkpoint.repair_ref) == repair_head
+    assert checkpoint.non_test_tree_digest == expected_digest
+    assert repository.non_test_tree_digest(repair_head) == expected_digest
+    assert (
+        repository.revalidate_ci_repair_checkpoint(
+            pull_request=local.pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            checkpoint=checkpoint,
+        )
+        == checkpoint
+    )
+
+
+def test_checkpoint_ci_repair_reuses_exact_preexisting_immutable_ref(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    repair_head = _commit_allowed_ci_repair(local)
+    first = repository.checkpoint_ci_repair(
+        pull_request=local.pull_request,
+        semantic_head=local.semantic_head,
+        current_head=local.current_head,
+        repair_head=repair_head,
+        expected_non_test_tree_digest=expected_digest,
+    )
+
+    successor_repository = _ci_repair_git_repository(local)
+    recovered = successor_repository.checkpoint_ci_repair(
+        pull_request=local.pull_request,
+        semantic_head=local.semantic_head,
+        current_head=local.current_head,
+        repair_head=repair_head,
+        expected_non_test_tree_digest=expected_digest,
+    )
+
+    assert recovered == first
+    assert _git(local.checkout, "rev-parse", recovered.repair_ref) == repair_head
+
+
+def test_revalidate_ci_repair_checkpoint_accepts_live_repair_head_and_rejects_h2(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    repair_head = _commit_allowed_ci_repair(local)
+    checkpoint = repository.checkpoint_ci_repair(
+        pull_request=local.pull_request,
+        semantic_head=local.semantic_head,
+        current_head=local.current_head,
+        repair_head=repair_head,
+        expected_non_test_tree_digest=expected_digest,
+    )
+    live_repaired_pull_request = local.pull_request.model_copy(
+        update={"head_sha": repair_head}
+    )
+
+    assert (
+        repository.revalidate_ci_repair_checkpoint(
+            pull_request=live_repaired_pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            checkpoint=checkpoint,
+        )
+        == checkpoint
+    )
+
+    _git(local.checkout, "commit", "--allow-empty", "-m", "unrelated head drift")
+    drifted_head = _git(local.checkout, "rev-parse", "HEAD")
+    drifted_pull_request = local.pull_request.model_copy(
+        update={"head_sha": drifted_head}
+    )
+    with pytest.raises(StaleRemoteHeadError, match="live PR head"):
+        repository.revalidate_ci_repair_checkpoint(
+            pull_request=drifted_pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            checkpoint=checkpoint,
+        )
+
+
+def test_revalidate_ci_repair_checkpoint_restores_repair_head_for_journal_recovery(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    repair_head = _commit_allowed_ci_repair(local)
+    checkpoint = repository.checkpoint_ci_repair(
+        pull_request=local.pull_request,
+        semantic_head=local.semantic_head,
+        current_head=local.current_head,
+        repair_head=repair_head,
+        expected_non_test_tree_digest=expected_digest,
+    )
+    state_dir = tmp_path / "state"
+    observed_at = datetime(2026, 7, 8, tzinfo=UTC)
+    origin = RunLease.acquire(state_dir, "curation", now=observed_at)
+    store = StateStore(state_dir)
+    journal = PushJournal(
+        work_id="curation-pr-42",
+        worker="curation",
+        origin_run_id=origin.run_id,
+        recovery_run_id=origin.run_id,
+        pr_number=local.pull_request.number,
+        branch=local.pull_request.head_ref_name,
+        expected_remote_head=local.current_head,
+        new_head=repair_head,
+        phase=PushPhase.AUTHORIZED,
+    )
+    store.save_push(journal, origin)
+    origin.release()
+    successor = RunLease.acquire(
+        state_dir,
+        "curation",
+        now=observed_at + timedelta(minutes=1),
+    )
+    adopted = store.adopt_push(
+        journal.work_id,
+        successor,
+        local.current_head,
+    )
+    _git(local.checkout, "switch", "--detach", local.semantic_head)
+
+    assert _git(local.checkout, "rev-parse", "HEAD") == local.semantic_head
+    assert (
+        repository.revalidate_ci_repair_checkpoint(
+            pull_request=local.pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            checkpoint=checkpoint,
+        )
+        == checkpoint
+    )
+    assert _git(local.checkout, "rev-parse", "HEAD") == repair_head
+    assert _git(local.checkout, "rev-parse", "--abbrev-ref", "HEAD") == "HEAD"
+
+    with store.guard_push_mutation(adopted, successor):
+        repository.push_exact_with_lease(
+            local.pull_request.head_ref_name,
+            local.current_head,
+            repair_head,
+        )
+    pushed = adopted.model_copy(update={"phase": PushPhase.PUSHED})
+    store.save_push(pushed, successor)
+
+    assert (
+        _git(
+            local.remote,
+            "rev-parse",
+            f"refs/heads/{local.pull_request.head_ref_name}",
+        )
+        == repair_head
+    )
+    assert store.load_push(journal.work_id) == pushed
+
+
+@pytest.mark.parametrize(
+    ("mutation", "path"),
+    [
+        ("application", "app/public_pages.py"),
+        ("catalog", CATALOG_PATH),
+        ("report", REPORT_PATH),
+        ("config", "pyproject.toml"),
+        ("conftest", "tests/conftest.py"),
+    ],
+)
+def test_checkpoint_ci_repair_rejects_non_test_tree_changes(
+    tmp_path: Path,
+    mutation: str,
+    path: str,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    target = local.checkout / path
+    target.write_text(target.read_text(encoding="utf-8") + f"# {mutation}\n")
+    _git(local.checkout, "add", path)
+    _git(local.checkout, "commit", "-m", f"unsafe {mutation} repair")
+    repair_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    with pytest.raises(RepositorySafetyError):
+        repository.checkpoint_ci_repair(
+            pull_request=local.pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            repair_head=repair_head,
+            expected_non_test_tree_digest=expected_digest,
+        )
+
+
+@pytest.mark.parametrize("mutation", ["deletion", "rename", "symlink", "executable"])
+def test_checkpoint_ci_repair_rejects_unsafe_test_metadata(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    test_path = local.checkout / "tests" / "test_public_pages.py"
+    if mutation == "deletion":
+        test_path.unlink()
+        _git(local.checkout, "add", "-u", "tests/test_public_pages.py")
+    elif mutation == "rename":
+        _git(
+            local.checkout,
+            "mv",
+            "tests/test_public_pages.py",
+            "tests/test_renamed_public_pages.py",
+        )
+    elif mutation == "symlink":
+        test_path.unlink()
+        test_path.symlink_to("../app/public_pages.py")
+        _git(local.checkout, "add", "tests/test_public_pages.py")
+    else:
+        test_path.chmod(0o755)
+        _git(local.checkout, "add", "tests/test_public_pages.py")
+    _git(local.checkout, "commit", "-m", f"unsafe test {mutation}")
+    repair_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    with pytest.raises(RepositorySafetyError):
+        repository.checkpoint_ci_repair(
+            pull_request=local.pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            repair_head=repair_head,
+            expected_non_test_tree_digest=expected_digest,
+        )
+
+
+def test_checkpoint_ci_repair_rejects_extra_non_test_commit(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    _commit_allowed_ci_repair(local)
+    target = local.checkout / "app" / "public_pages.py"
+    target.write_text(target.read_text(encoding="utf-8") + "# unsafe\n")
+    _git(local.checkout, "add", "app/public_pages.py")
+    _git(local.checkout, "commit", "-m", "hide non-test change in extra commit")
+    repair_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    with pytest.raises(RepositorySafetyError):
+        repository.checkpoint_ci_repair(
+            pull_request=local.pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            repair_head=repair_head,
+            expected_non_test_tree_digest=expected_digest,
+        )
+
+
+@pytest.mark.parametrize("invalid_state", ["dirty", "head-drift"])
+def test_checkpoint_ci_repair_requires_clean_exact_repair_head(
+    tmp_path: Path,
+    invalid_state: str,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    repair_head = _commit_allowed_ci_repair(local)
+    if invalid_state == "dirty":
+        (local.checkout / "untracked.txt").write_text("dirty\n", encoding="utf-8")
+    else:
+        _git(local.checkout, "switch", "--detach", local.current_head)
+
+    with pytest.raises(RepositorySafetyError, match="clean|current HEAD"):
+        repository.checkpoint_ci_repair(
+            pull_request=local.pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            repair_head=repair_head,
+            expected_non_test_tree_digest=expected_digest,
+        )
+
+
+def test_checkpoint_ci_repair_rejects_ref_collision(tmp_path: Path) -> None:
+    local = _ci_repair_repository(tmp_path)
+    repository = _ci_repair_git_repository(local)
+    repository.prepare_ci_repair(local.pull_request)
+    expected_digest = repository.non_test_tree_digest(local.semantic_head)
+    repair_head = _commit_allowed_ci_repair(local)
+    repair_ref = (
+        "refs/snowcast-maintainer/ci-repairs/"
+        f"pr-{local.pull_request.number}/"
+        f"{local.current_head[:12]}-{repair_head[:12]}"
+    )
+    _git(local.checkout, "update-ref", repair_ref, local.current_head)
+
+    with pytest.raises(RepositorySafetyError, match="collision"):
+        repository.checkpoint_ci_repair(
+            pull_request=local.pull_request,
+            semantic_head=local.semantic_head,
+            current_head=local.current_head,
+            repair_head=repair_head,
+            expected_non_test_tree_digest=expected_digest,
+        )
+
+
+def test_ci_repair_push_exact_with_lease_uses_remote_current_head(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    runner = RecordingRunner()
+    repository = _ci_repair_git_repository(local, runner=runner)
+    repository.prepare_ci_repair(local.pull_request)
+    repair_head = _commit_allowed_ci_repair(local)
+
+    repository.push_exact_with_lease(
+        local.pull_request.head_ref_name,
+        local.current_head,
+        repair_head,
+    )
+
+    assert (
+        _git(
+            local.remote,
+            "rev-parse",
+            f"refs/heads/{local.pull_request.head_ref_name}",
+        )
+        == repair_head
+    )
+    push_calls = [call for call in runner.calls if call[1:2] == ("push",)]
+    assert push_calls == [
+        (
+            "git",
+            "push",
+            "--force-with-lease="
+            f"refs/heads/{local.pull_request.head_ref_name}:{local.current_head}",
+            "origin",
+            f"{repair_head}:refs/heads/{local.pull_request.head_ref_name}",
+        )
+    ]
+
+
+def test_ci_repair_push_exact_with_lease_rejects_stale_remote_state(
+    tmp_path: Path,
+) -> None:
+    local = _ci_repair_repository(tmp_path)
+    runner = RecordingRunner()
+    repository = _ci_repair_git_repository(local, runner=runner)
+    repository.prepare_ci_repair(local.pull_request)
+    repair_head = _commit_allowed_ci_repair(local)
+    _git(
+        local.remote,
+        "update-ref",
+        f"refs/heads/{local.pull_request.head_ref_name}",
+        local.main_head,
+    )
+
+    with pytest.raises(StaleRemoteHeadError, match="remote head moved"):
+        repository.push_exact_with_lease(
+            local.pull_request.head_ref_name,
+            local.current_head,
+            repair_head,
+        )
+
+    assert not any(call[1:2] == ("push",) for call in runner.calls)
 
 
 def _local_repository(

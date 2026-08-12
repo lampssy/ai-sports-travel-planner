@@ -21,6 +21,11 @@ DESIGN_PATH = (
     REPOSITORY_ROOT
     / "docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md"
 )
+CI_REMEDIATION_DESIGN_PATH = (
+    REPOSITORY_ROOT / "docs/superpowers/specs/"
+    "2026-07-24-maintainer-post-push-ci-remediation-design.md"
+)
+ENGINEERING_NOTES_PATH = REPOSITORY_ROOT / "docs/engineering-notes.md"
 CONTRACT_PATTERN = re.compile(
     r"<!-- runtime-command-contract:start -->\s*"
     r"```json\s*(?P<contract>\{.*?\})\s*```\s*"
@@ -59,6 +64,45 @@ def _contract() -> dict[str, object]:
 
 def _substitute(argv: list[str]) -> list[str]:
     return [PLACEHOLDERS.get(value, value) for value in argv]
+
+
+def _parse_recipe_sequence(
+    names: list[str],
+    *,
+    substitutions: dict[str, str] | None = None,
+) -> list[object]:
+    recipes = _contract()["recipes"]
+    values = {**PLACEHOLDERS, **(substitutions or {})}
+    parsed = []
+    for name in names:
+        argv = recipes[name]["argv"]
+        parsed.append(
+            _parser().parse_args(
+                [
+                    "--state-dir",
+                    "/tmp/snowcast-maintainer-state",
+                    "--gh-config-dir",
+                    "/tmp/snowcast-maintainer-gh",
+                    *(values.get(value, value) for value in argv),
+                ]
+            )
+        )
+    return parsed
+
+
+def _allowed_next_steps() -> dict[str, str]:
+    text = CONTRACT_PATH.read_text(encoding="utf-8")
+    section = text.split("## Allowed Next Steps", 1)[1].split(
+        "## Completion And Branching Rules",
+        1,
+    )[0]
+    rows: dict[str, str] = {}
+    for line in section.splitlines():
+        if not line.startswith("| `"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        rows[cells[0].strip("`")] = cells[1]
+    return rows
 
 
 def test_runtime_contract_documents_every_cli_route_with_parseable_argv() -> None:
@@ -161,14 +205,8 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
             "prepare_curation",
             "lock_heartbeat_curation",
         ],
-        "curation_waiting_ci_pending": [
-            "inspect_curation",
-            "inspect_discovery",
-        ],
-        "curation_waiting_ci_success": [
-            "inspect_curation",
-            "inspect_discovery",
-            "lock_acquire_curation",
+        "curation_initial_push_into_ci_wait": [
+            "publish_push",
             "lock_heartbeat_curation",
             "publication_input_summary",
             "lock_heartbeat_curation",
@@ -176,9 +214,426 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
             "lock_heartbeat_curation",
             "publish_state_adopt_body",
             "lock_heartbeat_curation",
-            "lock_release_curation",
+        ],
+        "curation_ci_successor_entry": [
+            "lock_acquire_curation",
+            "lock_heartbeat_curation",
+            "inspect_curation",
+            "lock_heartbeat_curation",
         ],
     }
+
+
+def test_runtime_contract_composes_same_run_ci_waits_before_every_branch() -> None:
+    contract = _contract()
+    waits = contract["ci_waits"]
+    assert set(waits) == {"initial_wait", "second_wait"}
+    expected_branches = {
+        "initial_wait": {
+            "success",
+            "pending_timeout",
+            "repairable_failure",
+            "terminal_failure",
+        },
+        "second_wait": {"success", "pending_timeout", "terminal_failure"},
+    }
+
+    for wait_name, branch_names in expected_branches.items():
+        wait = waits[wait_name]
+        assert wait["poll"] == [
+            "lock_heartbeat_curation",
+            "inspect_curation",
+            "lock_heartbeat_curation",
+        ]
+        assert set(wait["branches"]) == branch_names
+        for branch_name, branch in wait["branches"].items():
+            composed = [*wait["poll"], *branch["sequence"]]
+            parsed = _parse_recipe_sequence(
+                composed,
+                substitutions=branch.get("substitutions"),
+            )
+            assert [(item.family, item.command) for item in parsed[:3]] == [
+                ("lock", "heartbeat"),
+                ("inspect", "curation"),
+                ("lock", "heartbeat"),
+            ]
+            assert all(
+                (item.family, item.command) != ("lock", "acquire") for item in parsed
+            )
+            if branch_name == "repairable_failure":
+                assert (parsed[3].family, parsed[3].command) == (
+                    "prepare",
+                    "ci-repair",
+                )
+                assert all(item.command != "release" for item in parsed)
+            else:
+                assert (parsed[-1].family, parsed[-1].command) == (
+                    "lock",
+                    "release",
+                )
+
+    successor = _parse_recipe_sequence(contract["flows"]["curation_ci_successor_entry"])
+    assert [(item.family, item.command) for item in successor] == [
+        ("lock", "acquire"),
+        ("lock", "heartbeat"),
+        ("inspect", "curation"),
+        ("lock", "heartbeat"),
+    ]
+
+    state_sequence = [
+        "publication_input_summary",
+        "lock_heartbeat_curation",
+        "publication_input_body",
+        "lock_heartbeat_curation",
+        "publish_state_adopt_body",
+        "lock_heartbeat_curation",
+        "lock_release_curation",
+    ]
+    repair_sequence = [
+        "prepare_ci_repair",
+        "lock_heartbeat_curation",
+        "checkpoint_ci_repair",
+        "lock_heartbeat_curation",
+        "publish_ci_repair",
+        "lock_heartbeat_curation",
+    ]
+    outcome_sequence = [
+        "publication_input_summary",
+        "lock_heartbeat_curation",
+        "publish_outcome",
+        "lock_heartbeat_curation",
+        "lock_release_curation",
+    ]
+    initial = waits["initial_wait"]["branches"]
+    assert initial["success"]["sequence"] == state_sequence
+    assert initial["pending_timeout"]["sequence"] == state_sequence
+    assert initial["repairable_failure"]["sequence"] == repair_sequence
+    assert initial["terminal_failure"]["sequence"] == outcome_sequence
+    assert initial["success"]["substitutions"] == {"${STATE}": "maintainer:ready"}
+    assert initial["pending_timeout"]["substitutions"] == {
+        "${STATE}": "maintainer:waiting-ci"
+    }
+    assert initial["terminal_failure"]["substitutions"] == {
+        "${OUTCOME_STATE}": "maintainer:blocked",
+        "${OUTCOME_REASON}": "ci-failure",
+    }
+
+    second = waits["second_wait"]["branches"]
+    assert second["success"]["sequence"] == state_sequence
+    assert second["pending_timeout"]["sequence"] == state_sequence
+    assert second["terminal_failure"]["sequence"] == outcome_sequence
+    assert second["success"]["substitutions"] == {"${STATE}": "maintainer:ready"}
+    assert second["pending_timeout"]["substitutions"] == {
+        "${STATE}": "maintainer:waiting-ci"
+    }
+    assert second["terminal_failure"]["substitutions"] == {
+        "${OUTCOME_STATE}": "maintainer:blocked",
+        "${OUTCOME_REASON}": "ci-failure",
+    }
+    for branch in second.values():
+        assert "prepare_ci_repair" not in branch["sequence"]
+
+    for wait in waits.values():
+        for branch_name, branch in wait["branches"].items():
+            parsed = _parse_recipe_sequence(
+                branch["sequence"],
+                substitutions=branch.get("substitutions"),
+            )
+            publications = [item for item in parsed if item.family == "publish"]
+            if branch_name in {"success", "pending_timeout"}:
+                assert [(item.command, item.state) for item in publications] == [
+                    ("state", branch["substitutions"]["${STATE}"])
+                ]
+            elif branch_name == "terminal_failure":
+                assert [
+                    (item.command, item.state, item.reason) for item in publications
+                ] == [("outcome", "maintainer:blocked", "ci-failure")]
+            else:
+                assert [item.command for item in publications] == ["ci-repair"]
+
+
+def test_runtime_contract_splits_curation_and_discovery_inspection_next_steps() -> None:
+    rows = _allowed_next_steps()
+    assert "inspect_*" not in rows
+    assert rows["inspect_curation"] == (
+        "recover one terminal publication first, then one push journal; "
+        "otherwise select one CI continuation, reviewed continuation, "
+        "remediation continuation, ordinary curation PR, or bounded no-op "
+        "in that order"
+    )
+    assert rows["inspect_discovery"] == (
+        "recover one journal first; otherwise select preferred retry, merged "
+        "regional completion, active backlog, bounded external official-source "
+        "scan, or bounded no-op in that order"
+    )
+
+
+def test_runtime_contract_documents_conditional_ci_budget_heartbeat_result() -> None:
+    recipes = _contract()["recipes"]
+    recipe = recipes["lock_heartbeat_curation"]
+    assert recipe == {
+        "argv": [
+            "lock",
+            "heartbeat",
+            "curation",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["worker"],
+        "conditional_returns": {
+            "ci_budget": {
+                "when": "run-owned active CI continuation exists",
+                "fields": [
+                    "first_wait_seconds",
+                    "repair_active_seconds",
+                    "second_wait_seconds",
+                ],
+            }
+        },
+    }
+    assert recipes["lock_heartbeat_discovery"] == {
+        "argv": [
+            "lock",
+            "heartbeat",
+            "discovery",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["worker"],
+    }
+
+
+def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
+    contract = _contract()
+    recipes = contract["recipes"]
+    assert recipes["inspect_curation"]["returns"] == [
+        "eligible",
+        "terminal_publications",
+        "ci_continuations",
+        "reviewed_continuations",
+        "remediation_continuations",
+        "unresolved_pushes",
+    ]
+    assert recipes["publish_recover"] == {
+        "argv": [
+            "publish",
+            "recover",
+            "--work-id",
+            "${WORK_ID}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["work_id"],
+        "conditional_returns": {
+            "push-journal": ["push", "continuation"],
+            "terminal-publication": ["terminal_publication"],
+        },
+    }
+    assert recipes["prepare_ci_repair"] == {
+        "argv": [
+            "prepare",
+            "ci-repair",
+            "--pr",
+            "${PR}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": [
+            "work_id",
+            "phase",
+            "resumed",
+            "remaining_repair_seconds",
+        ],
+        "conditional_returns": {
+            "repair-active": [
+                "current_head",
+                "failed_checks",
+                "permitted_path_pattern",
+            ],
+            "repair-reviewed": [
+                "repair_head",
+                "repair_ref",
+                "repair_paths",
+            ],
+        },
+    }
+    assert recipes["invalidate_ci_continuation"] == {
+        "argv": [
+            "invalidate",
+            "ci-continuation",
+            "--pr",
+            "${PR}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": [
+            "work_id",
+            "pr_number",
+            "phase",
+            "availability_reason",
+            "continuation_head",
+            "observed_head",
+        ],
+    }
+    assert recipes["checkpoint_ci_repair"] == {
+        "argv": [
+            "checkpoint",
+            "ci-repair",
+            "--pr",
+            "${PR}",
+            "--head",
+            "${HEAD}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["work_id", "repair_head", "repair_ref", "repair_paths"],
+    }
+    assert recipes["publish_ci_repair"] == {
+        "argv": [
+            "publish",
+            "ci-repair",
+            "--pr",
+            "${PR}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["work_id", "push", "continuation"],
+    }
+    assert contract["ci_continuation_policy"] == {
+        "recovery_priority": [
+            "terminal_publication",
+            "push_journal",
+            "post_push_ci_continuation",
+            "reviewed_continuation",
+            "remediation_continuation",
+            "ordinary_pr",
+        ],
+        "first_wait_seconds": 1800,
+        "repair_active_seconds": 3600,
+        "second_wait_seconds": 1800,
+        "heartbeat_max_interval_seconds": 300,
+        "repair_attempts": 1,
+        "repair_path_pattern": "tests/test_*.py",
+        "failed_check_inspection": "read-only-untrusted",
+        "execute_target_pr_tests_locally": False,
+        "semantic_work_after_initial_push": False,
+        "release_lease_between_post_push_phases": False,
+        "counts_toward_semantic_240_minute_clock": False,
+        "repair_successor_resume": "phase-aware-prepare-ci-repair",
+        "repair_capability_journal_gate": "unconditional-exact-recovery-only",
+        "non_resumable_invalidation": "lease-owned-live-facts",
+        "terminal_generation_rollover": "new-validated-pushed-semantic-head-only",
+        "terminal_generation_archive": "owner-private-semantic-head-versioned",
+        "terminal_publication_intent": "owner-private-before-external-mutation",
+        "terminal_publication_completion": (
+            "external-publication-then-exact-continuation-block"
+        ),
+        "terminal_publication_recovery": "idempotent-exact-authority-only",
+    }
+
+
+def test_runtime_sources_freeze_terminal_publication_recovery() -> None:
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+        "ci_design": CI_REMEDIATION_DESIGN_PATH.read_text(encoding="utf-8"),
+        "engineering_notes": ENGINEERING_NOTES_PATH.read_text(encoding="utf-8"),
+    }
+    normalized = {
+        name: " ".join(text.split()).lower() for name, text in sources.items()
+    }
+
+    for name, text in normalized.items():
+        assert "owner-private terminal-publication intent" in text, name
+        assert "before any github mutation" in text, name
+        assert "idempotent" in text, name
+        assert "exact matching continuation" in text, name
+        assert "repair cannot resume" in text, name
+
+
+def test_runtime_sources_document_ci_recovery_and_rollover() -> None:
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+        "ci_design": CI_REMEDIATION_DESIGN_PATH.read_text(encoding="utf-8"),
+        "engineering_notes": ENGINEERING_NOTES_PATH.read_text(encoding="utf-8"),
+    }
+    normalized = {
+        name: " ".join(text.split()).lower() for name, text in sources.items()
+    }
+    for name, text in normalized.items():
+        assert "invalidate ci-continuation" in text, name
+        assert "repair-active" in text and "repair-reviewed" in text, name
+        assert "semantic head" in text and "archive" in text, name
+        assert "unresolved push journal" in text, name
+        assert "does not reset" in text or "never reset" in text, name
+
+
+def test_runtime_sources_require_repair_handoff_before_second_wait() -> None:
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+        "ci_design": CI_REMEDIATION_DESIGN_PATH.read_text(encoding="utf-8"),
+    }
+    normalized = {
+        name: " ".join(text.split()).lower() for name, text in sources.items()
+    }
+
+    for name, text in normalized.items():
+        assert "canonical waiting-ci" in text, name
+        assert "before second-wait inspection" in text, name
+        assert "repair push journal" in text and "published" in text, name
+
+
+def test_checked_in_sources_freeze_the_post_push_ci_runtime_contract() -> None:
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+        "long_design": DESIGN_PATH.read_text(encoding="utf-8"),
+        "ci_design": CI_REMEDIATION_DESIGN_PATH.read_text(encoding="utf-8"),
+        "engineering_notes": ENGINEERING_NOTES_PATH.read_text(encoding="utf-8"),
+    }
+    normalized = {
+        name: " ".join(text.split()).lower() for name, text in sources.items()
+    }
+
+    for name, text in normalized.items():
+        assert "30/60/30" in text, name
+        assert "at least every five minutes" in text, name
+        assert "no semantic work" in text, name
+        assert "does not execute" in text and "tests/test_*.py" in text, name
+        assert "never approve or merge" in text or "never approves or merges" in text, (
+            name
+        )
+
+    for name in ("runtime", "activation", "long_design"):
+        text = normalized[name]
+        assert (
+            "terminal publication -> push journal -> post-push ci continuation "
+            "-> reviewed continuation -> remediation continuation -> ordinary pr"
+        ) in text, name
+        assert "automation memory and labels" in text, name
+        assert "read-only" in text and "untrusted" in text, name
+        assert "same lease" in text, name
+        assert "second ci failure" in text, name
+
+    assert (
+        "implemented on feature branch, activation pending" in normalized["ci_design"]
+    )
+    assert "pr #" not in normalized["ci_design"]
+
+
+def test_activation_rollback_requires_ci_continuation_safe_downgrade() -> None:
+    rollback = ACTIVATION_PATH.read_text(encoding="utf-8").split("## Rollback", 1)[1]
+    normalized = " ".join(rollback.split()).lower()
+
+    assert "post-push ci continuations" in normalized
+    for phase in ("initial-wait", "repair-active", "repair-reviewed", "second-wait"):
+        assert phase in normalized
+    assert "matching unresolved push journal" in normalized
+    assert "completed or safely terminalized" in normalized
+    assert "while any active ci continuation remains" in normalized
+    assert "helper version that created or understands it" in normalized
 
 
 def test_runtime_contract_classifies_dispatch_errors_as_orchestration_errors() -> None:

@@ -15,6 +15,7 @@ from ops.maintainer import (
     SUMMARY_MARKER,
 )
 from ops.maintainer.models import (
+    CheckSummary,
     MachineState,
     MaintainerLane,
     MaintainerState,
@@ -115,6 +116,34 @@ def test_pull_request_accepts_additive_draft_metadata() -> None:
     assert _pull_request(is_draft=True).is_draft is True
 
 
+def test_check_summary_is_bounded_and_requires_https_details_url() -> None:
+    check = CheckSummary(
+        name="backend",
+        status="failure",
+        conclusion="FAILURE",
+        details_url=(
+            "https://github.com/lampssy/ai-sports-travel-planner/actions/runs/1"
+        ),
+    )
+
+    assert check.name == "backend"
+    assert str(check.details_url).startswith("https://github.com/")
+
+    for update in (
+        {"name": ""},
+        {"name": "x" * 257},
+        {"status": "cancelled"},
+        {"conclusion": "x" * 65},
+        {"details_url": "http://github.com/actions/runs/1"},
+    ):
+        with pytest.raises(ValidationError):
+            CheckSummary.model_validate({**check.model_dump(), **update})
+
+
+def test_pull_request_defaults_to_no_check_metadata() -> None:
+    assert _pull_request().checks == ()
+
+
 def test_pull_request_rejects_naive_created_at() -> None:
     with pytest.raises(ValidationError, match="created_at must be timezone-aware"):
         _pull_request(created_at=datetime(2026, 7, 8, 10))
@@ -134,28 +163,36 @@ def test_pull_request_rejects_unknown_lifecycle_state() -> None:
         _pull_request(lifecycle_state="DRAFT")
 
 
-def test_pull_request_rejects_multiple_maintainer_states() -> None:
+def test_pull_request_check_conflicting_states_are_non_authoritative() -> None:
     labels = frozenset(
         {
+            MaintainerLane.CATALOG_CURATION,
             MaintainerState.WORKING,
             MaintainerState.WAITING_CI,
         }
     )
 
-    with pytest.raises(ValidationError, match="at most one maintainer state"):
-        _pull_request(labels=labels)
+    pull_request = _pull_request(labels=labels)
+
+    assert pull_request.routing_labels_valid is False
+    assert pull_request.lane is MaintainerLane.CATALOG_CURATION
+    assert pull_request.maintainer_state is None
 
 
-def test_pull_request_rejects_multiple_lanes() -> None:
+def test_pull_request_check_conflicting_lanes_are_non_authoritative() -> None:
     labels = frozenset(
         {
             MaintainerLane.CATALOG_DISCOVERY,
             MaintainerLane.CATALOG_CURATION,
+            MaintainerState.WAITING_CI,
         }
     )
 
-    with pytest.raises(ValidationError, match="at most one maintainer lane"):
-        _pull_request(labels=labels)
+    pull_request = _pull_request(labels=labels)
+
+    assert pull_request.routing_labels_valid is False
+    assert pull_request.lane is None
+    assert pull_request.maintainer_state is MaintainerState.WAITING_CI
 
 
 def test_pull_request_rejects_non_github_url_and_invalid_head_sha() -> None:

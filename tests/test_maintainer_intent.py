@@ -14,10 +14,27 @@ from ops.maintainer.intent import (
     IntentValidationError,
     build_intent_snapshot,
     build_preparation_intent_snapshot,
+    is_allowed_ci_repair_path,
     is_allowed_curation_path,
 )
 
 pytestmark = pytest.mark.db_free
+
+
+@pytest.mark.parametrize(
+    ("path", "allowed"),
+    [
+        ("tests/test_public_pages.py", True),
+        ("tests/api/test_search.py", False),
+        ("tests/conftest.py", False),
+        ("tests/test_config.yaml", False),
+        ("tests/test_helper.sh", False),
+        ("app/domain/search_v4_service.py", False),
+        ("docs/catalog-curation/example.json", False),
+    ],
+)
+def test_ci_repair_path_policy(path: str, allowed: bool) -> None:
+    assert is_allowed_ci_repair_path(path) is allowed
 
 
 CATALOG_SECTIONS = {
