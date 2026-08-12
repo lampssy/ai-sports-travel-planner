@@ -2,14 +2,65 @@
 
 Reviews the San Vito child ski area and stay base against official operator and Dolomiti Bellunesi sources, including source-aware normalization of whole-area programmed snow.
 
+## Resulting Graph
+
+```mermaid
+flowchart LR
+  region_1["Trip market<br/>San Vito di Cadore"]
+  destination_1["Stay destination<br/>San Vito di Cadore"]
+  base_1["Stay base<br/>San Vito di Cadore"]
+  area_1["Ski area<br/>San Vito di Cadore"]
+  pass_1["Lift pass<br/>Valle Skipass Cortina"]
+  pass_2["Lift pass<br/>San Vito Ski Area Skipass"]
+  region_1 -->|"trip market"| destination_1
+  destination_1 -->|"stay base"| base_1
+  base_1 -->|"access: ski_bus via Tambres Chairlift, 800 m"| area_1
+  destination_1 -->|"pass available"| pass_1
+  pass_1 -->|"covers area"| area_1
+  destination_1 -->|"default pass"| pass_2
+  pass_2 -->|"covers area"| area_1
+```
+
 ## Reviewed Targets
 
-| Target | Scope | Required Fields |
-| --- | --- | --- |
-| `ski_area:san-vito-di-cadore-ski-area` | `narrow` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label` |
-| `stay_base:san-vito-di-cadore-san-vito-di-cadore` | `narrow` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
-| `trust_manifest:ski_areas:san-vito-di-cadore-ski-area` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
-| `trust_manifest:stay_bases:san-vito-di-cadore-san-vito-di-cadore` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
+| Target | Scope | Graph Role | Required Fields |
+| --- | --- | --- | --- |
+| `ski_area:san-vito-di-cadore-ski-area` | `narrow` | `focus` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label` |
+| `stay_base:san-vito-di-cadore-san-vito-di-cadore` | `narrow` | `focus` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
+| `trust_manifest:ski_areas:san-vito-di-cadore-ski-area` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `trust_manifest:stay_bases:san-vito-di-cadore-san-vito-di-cadore` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `stay_destination:san-vito-di-cadore` | `narrow` | `focus` | `name` |
+| `ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area` | `narrow` | `focus` | `ski_area_id` |
+| `lift_pass_product:san-vito-ski-area-skipass` | `narrow` | `focus` | `name` |
+| `lift_pass_product:san-vito-cortina-valle-skipass` | `narrow` | `focus` | `name` |
+
+## Review Evidence Envelope
+
+| Family | Source Kind | Source URLs | Candidate Kinds |
+| --- | --- | --- | --- |
+| `san-vito-destination-booking` | `destination_booking` | [https://www.dolomiti.org/en/cadore/alto-cadore-places/san-vito-di-cadore-dolomiti/](https://www.dolomiti.org/en/cadore/alto-cadore-places/san-vito-di-cadore-dolomiti/), [https://www.visitdolomitibellunesi.com/en/hotels/dolomiti-5](https://www.visitdolomitibellunesi.com/en/hotels/dolomiti-5) | `stay_destination`, `stay_base` |
+| `san-vito-operator-map` | `ski_area_operator` | [https://www.skiareasanvito.com/impianti/](https://www.skiareasanvito.com/impianti/), [https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Cartina_San_Vito_di_Cadore_low-1.pdf](https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Cartina_San_Vito_di_Cadore_low-1.pdf) | `ski_area` |
+| `san-vito-access` | `access_transport` | [https://visitcadoredolomiti.com/en/ski-area-san-vito-2/](https://visitcadoredolomiti.com/en/ski-area-san-vito-2/) | `ski_area_access` |
+| `san-vito-pass-tariffs` | `pass_tariff` | [https://www.skiareasanvito.com/en/rates/](https://www.skiareasanvito.com/en/rates/) | `lift_pass_product` |
+| `san-vito-linked-cortina-pr` | `linked_pr_dependency` | [https://www.skiareasanvito.com/en/rates/](https://www.skiareasanvito.com/en/rates/) | `ski_area`, `lift_pass_product` |
+| `san-vito-touched-relationships` | `other_official` | [https://visitcadoredolomiti.com/en/ski-area-san-vito-2/](https://visitcadoredolomiti.com/en/ski-area-san-vito-2/), [https://www.skiareasanvito.com/en/rates/](https://www.skiareasanvito.com/en/rates/) | `stay_destination`, `stay_base`, `ski_area`, `ski_area_access`, `lift_pass_product` |
+
+## Entity Scope Assessments
+
+| Candidate | Kind | Disposition | Signals | Catalog Targets | Evidence | Backlog | Graph Impact | Rationale |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `san-vito-di-cadore` (San Vito di Cadore) | `stay_destination` | `represented` | `independent_stay_market` | `stay_destination:san-vito-di-cadore` | `scope-stay-market-san-vito` |  | `graph_blocking` | The current stay destination is represented provisionally for exact-head source-trust and graph-scope review. |
+| `san-vito-di-cadore-san-vito-di-cadore` (San Vito di Cadore stay base) | `stay_base` | `represented` | `independent_stay_market`, `distinct_access` | `stay_base:san-vito-di-cadore-san-vito-di-cadore` | `scope-stay-market-san-vito`, `scope-access-san-vito` |  | `graph_blocking` | The current stay base is represented provisionally as the focus destination's accommodation base. |
+| `san-vito-di-cadore-ski-area` (San Vito di Cadore ski area) | `ski_area` | `represented` | `official_independent_identity`, `separate_operator`, `full_local_pass` | `ski_area:san-vito-di-cadore-ski-area` | `v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url`, `v2-enrichment-002-san-vito-di-cadore-ski-area-snowmaking-availability`, `scope-local-pass-san-vito` |  | `graph_blocking` | The current ski-area identity is represented provisionally and remains subject to independent evidence-owner review. |
+| `san-vito-di-cadore-access` (San Vito stay-base to ski-area access) | `ski_area_access` | `represented` | `direct_access_relationship` | `ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area` | `scope-access-san-vito` |  | `graph_blocking` | The current access edge is represented provisionally; its exact mode and distance require independent source review. |
+| `san-vito-ski-area-skipass` (San Vito Ski Area Skipass) | `lift_pass_product` | `represented` | `official_product_identity`, `full_local_pass` | `lift_pass_product:san-vito-ski-area-skipass` | `scope-local-pass-san-vito` |  | `graph_blocking` | The current local ticket is represented provisionally as the default product for the focus destination. |
+| `san-vito-cortina-valle-skipass` (Valle Skipass Cortina) | `lift_pass_product` | `represented` | `official_product_identity` | `lift_pass_product:san-vito-cortina-valle-skipass` | `scope-valley-pass-san-vito` |  | `graph_blocking` | The current regional-network product is represented provisionally; external coverage and linked-PR dependencies require independent review. |
+
+## Ski-Area Boundary Assessments
+
+| Candidate | Parent | Terrain | Connectivity | Operations | Weather | Pass | Provider Consensus | Separation Value | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `san-vito-di-cadore-ski-area` |  | `complete` | `not_applicable` | `independent` | `unknown` | `full_local` | `separate` | `material` | `v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url`, `v2-enrichment-002-san-vito-di-cadore-ski-area-snowmaking-availability`, `scope-local-pass-san-vito` |
 
 ## Changed Fields
 
@@ -32,6 +83,10 @@ Reviews the San Vito child ski area and stay base against official operator and 
 
 | Target | Field | Status | Notes |
 | --- | --- | --- | --- |
+| `stay_destination:san-vito-di-cadore` | `name` | `reviewed-no-change` | The existing destination name is retained provisionally for independent initial review. |
+| `ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area` | `ski_area_id` | `reviewed-no-change` | The current ski-area endpoint is exposed for independent initial review. |
+| `lift_pass_product:san-vito-ski-area-skipass` | `name` | `reviewed-no-change` | The current local-pass name is exposed for independent initial review. |
+| `lift_pass_product:san-vito-cortina-valle-skipass` | `name` | `reviewed-no-change` | The current valley-pass name is exposed for independent initial review. |
 | `ski_area:san-vito-di-cadore-ski-area` | `snowmaking.availability` | `changed` | The official operator states that programmed snow is present across the entire ski area. |
 | `ski_area:san-vito-di-cadore-ski-area` | `snowmaking.coverage_pct` | `changed` | The operator describes programmed snow across the entire ski area. |
 | `ski_area:san-vito-di-cadore-ski-area` | `snowmaking.coverage_basis` | `changed` | The source scopes its statement to the entire ski area rather than run count or published piste kilometers. |
@@ -74,6 +129,14 @@ Reviews the San Vito child ski area and stay base against official operator and 
 | `ski_area:san-vito-di-cadore-ski-area` | `snowmaking.coverage_pct` | [Ski Area San Vito official lifts and slopes guide](https://www.skiareasanvito.com/impianti/) | `100` | The operator describes programmed snow across the entire ski area. | The whole-area statement is normalized to 100% skiable-area coverage. |
 | `stay_base:san-vito-di-cadore-san-vito-di-cadore` | `base_character.local_pace` | [Dolomiti Bellunesi official San Vito lodging guide](https://www.visitdolomitibellunesi.com/en/hotels/dolomiti-5) | `"quiet"` | Official Dolomiti Bellunesi material describes San Vito as a quiet mountain village, and the ski-area offer emphasizes peace, nature, relaxation, and families. | The explicit quiet and relaxation positioning is mapped to quiet. |
 | `stay_base:san-vito-di-cadore-san-vito-di-cadore` | `elevation_m` | [Cadore official San Vito di Cadore guide](https://www.dolomiti.org/en/cadore/alto-cadore-places/san-vito-di-cadore-dolomiti/) | `1011` | The official destination guide gives San Vito di Cadore at 1,011 m. |  |
+| `stay_destination:san-vito-di-cadore` | `name` | [Cadore official San Vito di Cadore destination guide](https://www.dolomiti.org/en/cadore/alto-cadore-places/san-vito-di-cadore-dolomiti/) | `"San Vito di Cadore"` | The official destination guide presents San Vito di Cadore as the named local stay market; the initial review must verify the complete ownership boundary. |  |
+| `ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area` | `ski_area_id` | [Cadore official San Vito ski-area guide](https://visitcadoredolomiti.com/en/ski-area-san-vito-2/) | `"san-vito-di-cadore-ski-area"` | The official destination source presents the San Vito ski area in the focus destination; exact access mode remains for independent review. |  |
+| `lift_pass_product:san-vito-ski-area-skipass` | `name` | [Ski Area San Vito official rates](https://www.skiareasanvito.com/en/rates/) | `"San Vito Ski Area Skipass"` | The operator tariff presents the local San Vito ski-area ticket product for independent pass-scope review. |  |
+| `lift_pass_product:san-vito-cortina-valle-skipass` | `name` | [Ski Area San Vito official rates](https://www.skiareasanvito.com/en/rates/) | `"Valle Skipass Cortina"` | The operator tariff presents the Cortina valley pass context for independent coverage and linked-dependency review. |  |
+
+## Boundary Decisions
+
+- `san-vito-di-cadore`: `pass`
 
 ## Caveats
 
