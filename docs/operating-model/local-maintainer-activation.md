@@ -224,14 +224,42 @@ The installed skill must:
   fresh private `HOME`; never collect or import PR-supplied Python locally.
   Changes under `tests/` remain eligible for CI and owner review;
 - run complementary independent source/trust and graph/scope reviews in
-  parallel on the normalized prepared head after freezing the bounded evidence
-  envelope, then consolidate them into one first fix and private finding
+  parallel on the normalized prepared head against an exact-head provisional
+  evidence envelope, then consolidate complete lane dispositions into one first
+  fix and private finding
   ledger. Source/trust must enumerate every
   applicable canonical `FIELD_GROUPS` trust field group with its status, direct
   refs, normalization-note need, and coverage disposition. Graph/scope must
   enumerate every concrete operator presentation and lift-pass candidate, with
   typed assessments and canonical backlog refs for deferred or unresolved pass
   products;
+- when either initial lane is incomplete, consolidate its omissions into one
+  run-local inventory-completion checklist before any catalog or trust fix. Each
+  entry has `missing_item_id`, `category`, `candidate_keys`,
+  `missing_evidence`, `acceptance_criterion`, `scope_class`, and
+  `graph_impact`. Invoke `snowcast-catalog-curation` in report-only
+  `inventory-completion` submode for at most two inventory-completion passes in
+  the same semantic-time budget. Each pass researches only that checklist and
+  its immediate official-source neighborhood, updates exactly the canonical
+  report path, requires catalog and trust blobs and object IDs remain
+  identical, runs catalog validation plus exact reconciliation, and does not
+  consume a remediation cycle. The local report commit is non-authoritative and
+  creates no helper continuation;
+- after each inventory-completion pass, start fresh independent source-trust
+  and graph-scope contexts on the exact new head. Reconcile missing items by
+  semantic acceptance criterion, not wording or identifier changes. Continue
+  only when at least one prior item is resolved and the unresolved checklist is
+  strictly smaller without a new equal-or-wider graph blocker. Freeze the
+  evidence envelope only after both fresh lanes return complete dispositions.
+  Inventory completion cannot authorize catalog or trust remediation; only the
+  resulting complete dual review can do so. Publish status-only
+  `blocked/review-incomplete` when there is no measurable progress, evidence
+  remains unavailable, unsafe scope expansion is required, the semantic
+  deadline prevents another pass, or the second completion pass is still
+  incomplete;
+- when inventory completion runs, include its inventory-completion pass count,
+  remaining unresolved checklist count, and bounded stop reason in Triage
+  without raw source evidence or checklist prose;
 - classify every omission as `graph_blocking` or `regional_followup`. Only an
   omission capable of making the selected graph wrong blocks curation. This
   graph correctness boundary sends additive coverage to the report and merged
@@ -278,8 +306,9 @@ The installed skill must:
   of exact-state validation, publication, recovery, and cleanup;
 - bind a complete review disposition to the exact reviewed head; use
   `manual-check` only for a complete scope-safe reviewed handoff, route an
-  incomplete review to status-only `blocked/review-incomplete`, and reserve
-  `owner-decision` for a real owner/model choice;
+  incomplete review through the bounded inventory-completion phase before
+  status-only `blocked/review-incomplete`, and reserve `owner-decision` for a
+  real owner/model choice;
 - after every final exact-head independent review, call `validate reviewed`
   with the PR, reviewed head, and its single curation report before running
   deterministic validation or requesting manual-check publication;
@@ -529,6 +558,15 @@ For each schedule, confirm:
 - a pressure scenario where two prior findings are verified resolved and three
   concrete, source-backed, in-model, bounded findings are newly discovered
   continues when cycle and time remain; raw count growth alone does not stop it;
+- an initial incomplete lane returns the structured inventory-completion
+  checklist, changes exactly the canonical report path while catalog/trust blobs
+  and object IDs remain identical, and receives fresh independent source-trust
+  and graph-scope review before any remediation;
+- an inventory-completion scenario permits at most two passes, requires the
+  semantically reconciled unresolved checklist to become strictly smaller after
+  each pass, and publishes `blocked/review-incomplete` on no measurable
+  progress, unavailable evidence, unsafe scope expansion, deadline, or an
+  incomplete second pass;
 - a narrower residual and the first two consecutive exact repeats can continue
   only through bounded materially different fixes; the third consecutive exact
   repeat, any regression, or unsafe scope expansion stops as non-converging;

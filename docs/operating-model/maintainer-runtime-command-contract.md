@@ -400,6 +400,12 @@ candidate inventory, repeat streak, and convergence decision; the helper only
 checks objective command, state, head, scope, validation, and publication
 preconditions for the resulting requested action.
 
+The run-local report-only `inventory-completion` phase is also outside helper
+state. The helper does not persist its checklist, pass count, local report
+commit, or review conclusions, and that phase creates no helper continuation or
+cross-run authority. If interrupted before an ordinary remediation checkpoint,
+a later cycle starts with fresh preparation and review.
+
 The curation lifecycle scenarios freeze their high-risk sequence prefixes,
 including both bounded CI waits:
 

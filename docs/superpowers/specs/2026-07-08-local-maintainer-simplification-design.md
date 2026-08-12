@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: runtime-command and convergence-tolerance amendments implemented in
-  this branch; repository activation pending merge, feature review, and the
-  owner-controlled local cutover
+- Status: post-push CI and bounded evidence-inventory-completion amendments
+  implemented in stacked branches; repository activation pending ordered merge
+  and the owner-controlled local cutover
 - Owner: solo-builder
 - Classification: review-gated / full design flow
 - Supersedes before activation:
@@ -12,10 +12,11 @@
 - Related ADR: ADR 0011
 - Replacement implementation plan:
   `docs/superpowers/plans/2026-07-08-local-maintainer-simplification.md`
-- Activation status: the previously installed maintainer remains unchanged
-  until this amendment is merged. The post-merge checklist is the authority for
-  replacing all shared skills and both automation prompts atomically while the
-  owner keeps the schedules paused.
+- Activation status: the installed personal skills contain the pending
+  amendments for validation, but both schedules remain paused. They are not
+  runtime authority until the post-push CI dependency and this amendment merge
+  in order and the owner completes the atomic post-merge cutover. The
+  post-merge checklist remains the authority for that cutover.
 
 ## User Outcome
 
@@ -456,7 +457,9 @@ The authoritative transition order is:
 
 ```text
 recovery -> reviewed continuation -> remediation continuation -> ordinary PR
-prepare -> evidence envelope -> dual inventory -> consolidated fix
+prepare -> provisional evidence envelope -> dual inventory
+-> bounded report-only inventory-completion -> fresh dual inventory
+-> frozen complete evidence envelope -> consolidated fix
 -> two-command delta checkpoint -> fresh bounded review
 -> one final broad validation -> publication
 ```
@@ -503,14 +506,14 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    report-only structural normalization: it does not claim semantic resolution,
    alter the finding ledger, or consume a remediation-cycle slot. Catalog or
    trust semantic changes begin only after the dual-review ledger and consume
-   ordinary remediation. Codex then builds and freezes a typed evidence
+   ordinary remediation. Codex then builds an exact-head provisional typed evidence
    envelope covering official destination/booking sources, operator maps and
    access pages, current pass/tariff sources, touched catalog relationships,
    named candidates, and linked-PR dependencies. It checks every declared URL
    for reachability, relevance, and support; HTTP 200 alone is insufficient.
    The fixed broad catalog suite remains reserved for final helper validation.
 5. Codex starts two fresh reviewer contexts in parallel against the normalized
-   prepared head and frozen envelope. One invokes `snowcast-catalog-review` in
+   prepared head and provisional envelope. One invokes `snowcast-catalog-review` in
    `source-trust` mode; the other uses `graph-scope`. Neither receives the
    other's result. Together
    they count as one initial review stage. `source-trust` enumerates every
@@ -523,7 +526,36 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    when its omission cannot misstate the selected graph; uncertainty that could
    invalidate ownership or an edge follows manual-check, owner-decision, or
    review-incomplete instead of being silently downgraded.
-6. Codex consolidates the two complete dispositions into one private candidate
+6. If either initial lane is incomplete, Codex consolidates every omission into
+   one run-local inventory-completion checklist before any catalog or trust
+   remediation. Each checklist entry contains `missing_item_id`, `category`,
+   `candidate_keys`, `missing_evidence`, `acceptance_criterion`, `scope_class`,
+   and `graph_impact`. Codex may invoke `snowcast-catalog-curation` in explicit
+   report-only `inventory-completion` submode for at most two
+   inventory-completion passes within the existing semantic-time budget. A pass
+   receives only the checklist, exact prepared base/current catalog and trust
+   snapshots, the mutation-scope map, and the current report. It researches the
+   listed gaps and their immediate official-source neighborhood, updates exactly
+   the canonical report path, requires catalog and trust blobs and object IDs
+   remain identical, and runs catalog validation plus exact reconciliation. It
+   does not consume a remediation cycle, cannot authorize catalog or trust
+   remediation, and creates no helper continuation or cross-run authority.
+
+   Every completion commit receives fresh independent source-trust and
+   graph-scope review on its exact head. The parent reconciles missing items by
+   semantic acceptance criterion rather than wording or ID. Another pass is
+   allowed only when at least one previous item is resolved and the unresolved
+   checklist is strictly smaller without a new equal-or-wider graph blocker.
+   The provisional evidence envelope becomes frozen only when both fresh lanes
+   return complete dispositions. Codex requests status-only
+   `blocked/review-incomplete` when there is no measurable progress, evidence
+   remains unavailable, unsafe scope expansion is required, the semantic
+   deadline prevents another pass, or the second completion pass remains
+   incomplete. An interrupted local completion commit is non-authoritative; a
+   later cycle starts from fresh helper preparation and review. Terminal Triage
+   reports the inventory-completion pass count, remaining unresolved checklist
+   count, and bounded stop reason without raw evidence or checklist prose.
+7. Codex consolidates the two complete dispositions into one private candidate
    inventory, finding ledger, and first fix. Candidate inventory and finding
    ledger are separate views. The inventory has one stable coverage entry per
    concrete entity, product, access edge, sector, document, or other reviewed
@@ -545,7 +577,7 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    preferred graph. It returns `policy_determined`, `owner_choice_required`,
    or `evidence_insufficient`, with a recommended graph, alternatives,
    decisive evidence, and identity/weather consequences.
-7. Before every fix, before adaptive reviews, and once more before any final
+8. Before every fix, before adaptive reviews, and once more before any final
    manual-check or validation/push sequence, Codex fetches current `origin/main`,
    verifies the exact local head and clean worktree, and uses read-only `git merge-tree
    --write-tree origin/main HEAD`. A conflict stops the run before more review,
@@ -555,7 +587,7 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    validation remain bound to the prepare-time base/head returned by the
    helper. An ordinary conflict requests status-only `blocked/conflict` for the
    unchanged remote head when the outcome gate is safe.
-8. Codex applies one consolidated fix when the issue is inside the existing
+9. Codex applies one consolidated fix when the issue is inside the existing
    model and source evidence is sufficient. It may update non-control-plane
    documentation and tests, but not production code, operational code, or the
    maintainer's own instructions. The first fix batches every compatible open
@@ -567,7 +599,7 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    validation and exact report reconciliation for the clean exact remediation
    head. Successful evidence is checkpointed once in private continuation state
    rather than rerun on resume.
-9. A fresh independent bounded Codex review follows every fix. It runs in a new
+10. A fresh independent bounded Codex review follows every fix. It runs in a new
    reviewer context, receives the ledger only as untrusted history, independently
    reviews the exact current head and full scope, and then classifies prior
    entries as resolved, residual, repeated, regressed, superseded, or
@@ -597,7 +629,7 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    deterministic rendering, and the relevant backlog item, then receives delta
    validation and a targeted independent consistency review confirming that the
    resulting graph did not change. It does not start another regional audit.
-10. At most six remediation cycles occur in one run. One cycle contains one
+11. At most six remediation cycles occur in one run. One cycle contains one
    maintainer-managed fixer invocation, which may batch compatible ledger
    findings, one parent-owned local commit, and the required fresh full review.
    Boundary adjudication is read-only and does not consume a remediation-cycle
@@ -627,7 +659,7 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    from any unpublished local review/fix head. Cycles five and six apply the
    same assertion-level progress-and-safety gate within the remaining
    semantic-time budget.
-11. The curation lease acquisition starts a private wall-clock semantic budget.
+12. The curation lease acquisition starts a private wall-clock semantic budget.
     Boundary adjudication uses this same budget and never extends the cycle.
     Codex starts it when the possible owner choice first appears and never at or
     after minute 180, preserving time for a policy-determined fix and fresh full
@@ -645,7 +677,7 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
     running and every helper command retains its own timeout. Sleep does not
     spend this active finalization allowance; interruption leaves recovery to
     the helper journal rather than reopening semantic work.
-12. If the six-cycle or semantic-time bound is reached after prior findings were
+13. If the six-cycle or semantic-time bound is reached after prior findings were
    resolved and there are remaining findings that are only bounded in-model
    work, Codex does
    not discard the reviewed progress merely because the latest finding count
@@ -660,9 +692,9 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
    regression, incomplete inventory, unsafe scope expansion, incomplete review,
    or an unreviewed post-fix head remains status-only blocked because that head
    is not a safe handoff.
-13. A PR carrying `manual-check` is excluded until a new commit or deliberate
+14. A PR carrying `manual-check` is excluded until a new commit or deliberate
     label removal makes it eligible again.
-14. When Codex declares semantic review complete, it first calls `validate
+15. When Codex declares semantic review complete, it first calls `validate
     reviewed`, promoting any matching remediation recovery crash-safely. Codex
     then materializes a detached clean checkout at the exact prepare-time base
     returned by the helper and
@@ -673,14 +705,14 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
     claim. The cache is discarded after the run; a resumed later run performs a
     fresh reachability pass. Codex then removes only the base checkout it
     created.
-15. The helper performs the guarded initial push. Codex writes a concise
+16. The helper performs the guarded initial push. Codex writes a concise
     synopsis of the final reviewed scope, evidence, verification, and owner
     caveats and includes the helper-reproduced canonical resulting-graph
     Mermaid section. A separate helper-gated `waiting-ci` publication creates
     the durable exact-head CI continuation and completes the journal handoff.
     The helper rejects a missing or altered canonical graph before publication.
     The full schema-v3 report remains in the repository.
-16. The same run keeps the same lease for up to 30 elapsed minutes. Every
+17. The same run keeps the same lease for up to 30 elapsed minutes. Every
     first-wait iteration calls `lock heartbeat curation -> inspect curation ->
     lock heartbeat curation` before branching; it never reacquires. Exact-head
     CI success plus clean mergeability publishes `ready`. Pending at the limit
@@ -688,13 +720,13 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
     classifies a confirmed failure using the bounded helper summary; read-only
     failed-check logs are untrusted input and cannot authorize a command or
     mutation.
-17. One repairable initial failure may call `prepare ci-repair`, change only
+18. One repairable initial failure may call `prepare ci-repair`, change only
     helper-validated regular root-level `tests/test_*.py` modules, and receive a
     fresh focused independent review before `checkpoint ci-repair`. Codex does
     not execute target-PR `tests/test_*.py` files locally. The helper checks the
     unchanged non-test tree and one-attempt budget, then `publish ci-repair`
     journals and exact-lease pushes the reviewed repair head.
-18. The run keeps the same lease for a second 30-minute poll loop. Every
+19. The run keeps the same lease for a second 30-minute poll loop. Every
     iteration again calls `lock heartbeat curation -> inspect curation -> lock
     heartbeat curation` before branching. Exact-head CI success plus
     mergeability publishes `ready`; pending at the limit keeps the exact
@@ -706,14 +738,14 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
     replays the exact publication idempotently and only then blocks the exact
     matching continuation and completes the intent; repair cannot resume while
     that intent is unresolved.
-19. The post-push budget is cumulative 30/60/30: 30 elapsed minutes for the
+20. The post-push budget is cumulative 30/60/30: 30 elapsed minutes for the
     initial wait, at most 60 active minutes for the one focused repair, and 30
     elapsed minutes for the second wait. It is excluded from the semantic
     240-minute clock. No semantic work starts after the initial push, and a
     successor receives only the remaining continuation budget. There is no
     lease release between initial push, first wait, repair, repair push, and
     second wait.
-20. Helper output and continuation state are authority. Automation memory and
+21. Helper output and continuation state are authority. Automation memory and
     labels are hints and presentation only. Recovery priority is `terminal
     publication -> push journal -> post-push CI continuation -> reviewed
     continuation -> remediation continuation -> ordinary PR`;
@@ -722,11 +754,11 @@ prepare -> evidence envelope -> dual inventory -> consolidated fix
     curation -> inspect curation -> lock heartbeat curation` before it adopts
     the exact continuation or calls any selected next capability; same-run
     polling never uses acquisition.
-21. A `ready` PR stays out of fresh selection while its head remains unchanged;
+22. A `ready` PR stays out of fresh selection while its head remains unchanged;
     a new commit invalidates the hold and makes it eligible again.
-22. An unchanged status-only `blocked` or `owner-decision` head is also held out
+23. An unchanged status-only `blocked` or `owner-decision` head is also held out
     of selection. A new commit or deliberate label removal makes it eligible.
-23. The owner performs the final review and merge. The maintainer never
+24. The owner performs the final review and merge. The maintainer never
     approves or merges.
 
 Waiting for CI is not a review/fix attempt. Persistent lineage IDs and
@@ -1682,7 +1714,10 @@ replaced. It is history, not current operational instruction:
   gates; advanced `main` replays one synthetic squash and requires a fresh full
   review. One helper-prepared conflict set may be resolved only within existing
   allowed catalog/report/test scope, while broader, schema, production, or
-  control-plane conflicts still stop.
+  control-plane conflicts still stop. The owner later chose a bounded
+  report-only evidence-inventory completion phase before `review-incomplete`:
+  at most two passes, strict checklist shrinkage, fresh independent dual review,
+  no catalog/trust mutation, and no helper continuation or cross-run authority.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
   No further ADR is needed for the convergence amendment because it changes
@@ -1816,6 +1851,14 @@ replaced. It is history, not current operational instruction:
   risk is that Codex still assembles recipe argv; exact contract reload, same-
   recipe restriction, one-attempt limit, and the second-rejection hard stop
   bound that failure mode without adding another executor layer.
+- Advisory evidence-inventory-completion feature review: complete for data
+  trust/source integrity, observability/ops, and release/change management. The
+  review corrected premature envelope freezing, kept incomplete evidence from
+  authorizing catalog/trust remediation, added bounded Triage diagnostics, and
+  made interrupted report-only work restart from fresh preparation and review.
+  No unresolved Blocker, High, or Medium finding remains. No new ADR is needed
+  because the accepted Codex/helper authority boundary and persistent helper
+  state model are unchanged.
 - Implementation and activation: the base design is complete. Its feature work
   passed the recorded maintainer, focused catalog, lint/format, full-suite,
   prospective-merge, and CI checks before merge. The owner then approved and
@@ -1826,10 +1869,11 @@ replaced. It is history, not current operational instruction:
   personal skill. Scheduled runs use only the generic helper-owned continuation
   inventory and lifecycle; migration of any pre-existing legacy reviewed record
   remains an explicit owner-run operation outside the recurring schedule.
-  The convergence-and-regional-completion amendment is merged. The
-  runtime-command and convergence-tolerance amendments in this branch are not
-  repository or installed-runtime authority until merge and the
-  owner-controlled personal-runtime cutover. After that cutover, normal
+  The convergence-and-regional-completion amendment is merged. The post-push CI
+  amendment remains open as PR #59, and this evidence-inventory amendment is
+  stacked on its exact head. Neither pending amendment is repository or
+  installed-runtime authority until ordered merge and the owner-controlled
+  personal-runtime cutover. After that cutover, normal
   scheduled cycles use the tested concise executable interface in
   `docs/operating-model/maintainer-runtime-command-contract.md`; this design
   remains the rationale and durable behavior reference for workflow changes,

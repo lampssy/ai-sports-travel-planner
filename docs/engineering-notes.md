@@ -14,6 +14,25 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 
 ## Architecture
 
+### Maintainer evidence inventory completion
+
+- The initial catalog review evidence envelope is provisional until independent
+  source-trust and graph-scope lanes both return complete dispositions.
+- An incomplete lane produces a structured missing-item checklist instead of
+  immediately authorizing a catalog fix or ending an otherwise productive run.
+- The maintainer may perform at most two report-only inventory-completion passes.
+  Each pass must shrink the unresolved checklist and is followed by fresh dual
+  review on the exact new head.
+- Completion may change only the canonical curation report. Catalog and trust
+  payloads and object IDs remain unchanged, and no helper continuation or
+  cross-run authority is created from the local report commit.
+- Triage exposes only the pass count, remaining unresolved count, and bounded
+  stop reason so operators can diagnose convergence without persisting semantic
+  evidence in helper state.
+- `review-incomplete` remains the safe outcome when evidence cannot be found,
+  progress stops, scope becomes unsafe, time expires, or two passes do not
+  complete the inventory.
+
 ### User-facing content ownership
 
 - B2 English is the maximum product-language complexity; simpler is preferred.
