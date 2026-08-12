@@ -327,6 +327,7 @@ not have to derive an invocation.
     "retry_policy": {
       "require_completed_dispatch_rejection": true,
       "require_mutation_occurred_false": true,
+      "corrected_registered_recipe_required": true,
       "repeat_malformed_argv": false,
       "corrected_registered_recipe_attempts": 1,
       "same_intended_recipe_only": true,
@@ -564,16 +565,24 @@ memory and labels remain hints/presentation only.
 `reason=invalid-command` at `stage=dispatch` means the orchestrator supplied a
 command outside this interface or malformed a recipe. Report it as
 `orchestration-command-invalid`, not as PR invalidity, validation failure, or
-non-convergence. Only after the underlying process has completed and returned
-that structured dispatch rejection with
-`outcome.mutation_occurred=false`, reload this exact contract and permit one
-corrected execution of the same registered recipe with only authorized
-substitutions. Never repeat the malformed argv, probe with `--help`, inspect
-implementation source, infer a recipe, or switch capabilities. If the intended
-recipe cannot be identified exactly, mutation status is missing or true, the
-corrected execution returns a second dispatch rejection, or execution/capture
-is uncertain, preserve any existing continuation or journal, release only a
-lease this run actually acquired, and stop for contract correction.
+non-convergence. After the underlying process has completed and returned that
+structured dispatch rejection with `outcome.mutation_occurred=false`, the
+orchestrator must reload this exact contract and must execute exactly one
+corrected attempt of the same registered recipe with only authorized
+substitutions. This eligible first
+dispatch rejection is not a terminal capability error and takes precedence over
+generic capability-error stop wording. Never repeat the malformed argv, probe
+with `--help`, inspect implementation source, infer a recipe, or switch
+capabilities. If the intended recipe cannot be identified exactly, mutation
+status is missing or true, the corrected execution returns a second dispatch
+rejection, or execution/capture is uncertain, preserve any existing continuation
+or journal, release only a lease this run actually acquired, and stop for
+contract correction.
+
+Concrete heartbeat example: when the intended registered recipe is
+`lock heartbeat curation --run-id ${RUN_ID}` but the rejected argv has a missing
+`lock` prefix, reload `lock_heartbeat_curation` and execute that exact corrected
+recipe once. Do not stop merely because the first safe dispatch was rejected.
 
 An `invalid-command` returned after a non-dispatch stage is a helper/state gate,
 not this command-authoring classification. It never receives a corrected-recipe

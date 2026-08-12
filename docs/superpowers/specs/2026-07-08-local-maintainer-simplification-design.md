@@ -272,11 +272,15 @@ The helper provides four capability groups only:
 
 The parser remains the fail-closed boundary for helper command spelling. A
 completed structured `invalid-command` rejection at `stage=dispatch` proves
-that no helper capability was entered, so the orchestrator may reload the exact
-runtime contract and make one corrected execution of the same registered
-recipe when the structured outcome also reports `mutation_occurred=false`. It
+that no helper capability was entered. When the structured outcome also reports
+`mutation_occurred=false`, the orchestrator reloads the exact runtime contract
+and must execute exactly one corrected attempt of the same registered recipe.
+This eligible first rejection is not a terminal capability error and takes
+precedence over generic capability-error stop wording. The corrected recipe
 substitutes only values already authorized by current helper output or
-exact-head state and never repeats the malformed argv.
+exact-head state and never repeats the malformed argv. For example, a heartbeat
+rejected with a missing `lock` prefix is corrected to the registered
+`lock heartbeat curation --run-id ${RUN_ID}` recipe and executed once.
 
 This is not a general capability retry. An uncertain or incomplete process,
 capture loss, missing or positive mutation status, recipe ambiguity,

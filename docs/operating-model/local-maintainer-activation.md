@@ -100,14 +100,18 @@ The installed skill must:
   to discover a command, or call `--help` during a cycle;
 - classify helper `invalid-command` at `dispatch` as
   `orchestration-command-invalid`; after a completed structured dispatch
-  rejection with `outcome.mutation_occurred=false`, reload the exact runtime
-  contract and permit one corrected execution of the same registered recipe
+  rejection with `outcome.mutation_occurred=false`, the orchestrator must reload
+  the exact runtime contract and must execute exactly one corrected attempt of
+  the same registered recipe
   without repeating malformed argv, probing with `--help`, inspecting
   implementation source, or switching capabilities; preserve existing recovery
   authority and stop after finally-style cleanup when mutation status is missing
   or true, the recipe is not exact, execution is uncertain, or a second dispatch
   rejection occurs rather than blaming the selected PR or deterministic
-  validation;
+  validation. This eligible first rejection is not a terminal capability error
+  and overrides generic capability-error stop wording. For a heartbeat with a
+  missing `lock` prefix, correct it from the registered recipe to
+  `lock heartbeat curation --run-id ${RUN_ID}` and execute it once;
 - inspect unresolved terminal-publication intents and push journals before
   fresh selection; recover exactly one matching authority first and escalate
   multiple records;

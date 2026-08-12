@@ -645,6 +645,7 @@ def test_runtime_contract_classifies_dispatch_errors_as_orchestration_errors() -
         "retry_policy": {
             "require_completed_dispatch_rejection": True,
             "require_mutation_occurred_false": True,
+            "corrected_registered_recipe_required": True,
             "repeat_malformed_argv": False,
             "corrected_registered_recipe_attempts": 1,
             "same_intended_recipe_only": True,
@@ -668,8 +669,28 @@ def test_per_cycle_sources_use_the_short_runtime_contract() -> None:
     )
     assert "Before merging a change to this runtime source set" in normalized_activation
     for source in (normalized_activation, normalized_design):
-        assert "one corrected execution of the same registered recipe" in source
+        assert "must execute exactly one corrected attempt" in source
         assert "second dispatch rejection" in source
+
+
+def test_eligible_dispatch_rejection_requires_corrected_recipe_before_stop() -> None:
+    sources = {
+        "contract": " ".join(
+            CONTRACT_PATH.read_text(encoding="utf-8").replace("`", "").split()
+        ),
+        "activation": " ".join(
+            ACTIVATION_PATH.read_text(encoding="utf-8").replace("`", "").split()
+        ),
+        "design": " ".join(
+            DESIGN_PATH.read_text(encoding="utf-8").replace("`", "").split()
+        ),
+    }
+
+    for source, text in sources.items():
+        assert "must execute exactly one corrected attempt" in text, source
+        assert "not a terminal capability error" in text, source
+        assert "missing lock prefix" in text, source
+        assert "lock heartbeat curation --run-id" in text, source
 
 
 def test_convergence_contract_tolerates_residuals_and_two_exact_repeats() -> None:

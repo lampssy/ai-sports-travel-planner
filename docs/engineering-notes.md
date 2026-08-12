@@ -14,6 +14,16 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 
 ## Architecture
 
+### Maintainer dispatch correction
+
+- A completed helper rejection with `reason=invalid-command`, `stage=dispatch`,
+  and `outcome.mutation_occurred=false` proves that no capability ran. The
+  maintainer must reload the registered same recipe and execute one corrected
+  attempt; generic capability-error stops do not apply to this first safe
+  rejection.
+- Missing or positive mutation status, uncertain execution, a non-dispatch
+  error, an ambiguous recipe, or a second rejection still stops fail-closed.
+
 ### Maintainer evidence inventory completion
 
 - The initial catalog review evidence envelope is provisional until independent
