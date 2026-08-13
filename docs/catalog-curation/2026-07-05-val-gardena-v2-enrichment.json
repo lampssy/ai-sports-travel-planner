@@ -67,6 +67,46 @@
         "field_statuses",
         "notes"
       ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "ortisei",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "santa-cristina",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "selva-val-gardena",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id"
+      ]
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id"
+      ]
     }
   ],
   "changes": [
@@ -671,6 +711,41 @@
       "field_path": "notes",
       "status": "changed",
       "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": "The official unified Val Gardena booking collection covers Ortisei, S. Cristina, and Selva; the existing umbrella destination remains unchanged during report-only inventory completion."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "ortisei",
+      "field_path": "stay_destination_id",
+      "status": "unresolved",
+      "notes": "The official site exposes a village-specific accommodation inventory, but the evidence gathered in this pass does not prove independent ownership outside the unified Val Gardena booking market."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "santa-cristina",
+      "field_path": "stay_destination_id",
+      "status": "unresolved",
+      "notes": "The official site exposes a village-specific accommodation inventory and distinct access value, but the evidence gathered in this pass does not prove independent ownership outside the unified Val Gardena booking market."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "selva-val-gardena",
+      "field_path": "stay_destination_id",
+      "status": "unresolved",
+      "notes": "The official site exposes a village-specific accommodation inventory and distinct Sellaronda access value, but the evidence gathered in this pass does not prove independent ownership outside the unified Val Gardena booking market."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Official map and route evidence confirms direct Ortisei access into the currently modeled Val Gardena area; sector-level access remains inventory context rather than a catalog edit."
     }
   ],
   "evidence": [
@@ -754,7 +829,9 @@
     },
     {
       "evidence_id": "v2-enrichment-007-val-gardena-ortisei-base-character-development-style",
-      "boundary_target_ids": [],
+      "boundary_target_ids": [
+        "ortisei"
+      ],
       "target_type": "stay_base",
       "target_id": "val-gardena-ortisei",
       "field_path": "base_character.development_style",
@@ -819,7 +896,9 @@
     },
     {
       "evidence_id": "scope-val-gardena-ortisei-access",
-      "boundary_target_ids": [],
+      "boundary_target_ids": [
+        "ortisei"
+      ],
       "target_type": "stay_base",
       "target_id": "val-gardena-ortisei",
       "field_path": "stay_base_id",
@@ -829,10 +908,383 @@
       "source_value": "Ortisei",
       "evidence_summary": "The official destination guide presents Ortisei within the Val Gardena ski-holiday and access context used by the current catalog graph.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-unified-booking",
+      "boundary_target_ids": [
+        "val-gardena",
+        "ortisei",
+        "santa-cristina",
+        "selva-val-gardena"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/booking/",
+      "source_title": "Dolomites Val Gardena official accommodation booking collection",
+      "source_value": "Val Gardena",
+      "evidence_summary": "The official destination booking collection presents more than 950 accommodations across Ortisei, S. Cristina, and Selva under one Val Gardena directBooking market.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-three-villages",
+      "boundary_target_ids": [
+        "val-gardena",
+        "ortisei",
+        "santa-cristina",
+        "selva-val-gardena"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/",
+      "source_title": "Dolomites Val Gardena official destination home",
+      "source_value": "Ortisei, S. Cristina, and Selva Val Gardena",
+      "evidence_summary": "The official destination presents Ortisei, S. Cristina, and Selva as the three villages of the Val Gardena valley, each with distinct visitor character inside the shared destination presentation.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-santa-cristina-market",
+      "boundary_target_ids": [
+        "santa-cristina"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "santa-cristina",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Dolomites Val Gardena official S. Cristina guide",
+      "source_value": "S. Cristina",
+      "evidence_summary": "The official village page provides a dedicated accommodation-booking entry and describes S. Cristina as a direct Dolomiti Superski and Sellaronda starting point.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-selva-market",
+      "boundary_target_ids": [
+        "selva-val-gardena"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "selva-val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Dolomites Val Gardena official Selva guide",
+      "source_value": "Selva Val Gardena",
+      "evidence_summary": "The official village page provides a dedicated accommodation-booking entry and identifies Selva as a tourism-led village and Sellaronda access point.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-core-winter-map",
+      "boundary_target_ids": [
+        "santa-cristina",
+        "selva-val-gardena"
+      ],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+      "source_title": "Val Gardena and Seiser Alm official winter ski map",
+      "source_value": "Val Gardena and Seiser Alm lift graph",
+      "evidence_summary": "The official map names the principal lift presentations and village gateways, including Ortisei-Seceda and Ortisei-Alpe di Siusi, S. Cristina-Col Raiser, Monte Pana and Saslong, and Selva-Ciampinoi, Dantercepies, Plan de Gralba, Piz Sella and Piz Seteur.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-ronda-access",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/",
+      "source_title": "Dolomites Val Gardena official daily ski trips",
+      "source_value": "Val Gardena Ronda village access sequence",
+      "evidence_summary": "The official Val Gardena Ronda routes enumerate Ortisei access through Alpe di Siusi and Seceda, S. Cristina access through Col Raiser and Monte Pana, and Selva access through Dantercepies, Ciampinoi and Piz Sella, while explicitly identifying the Saltria-Monte Pana ski-bus transfer.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-seceda-owner",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.seceda.it/en/winter",
+      "source_title": "Seceda Cableways official winter presentation",
+      "source_value": "Seceda-Col Raiser-Rasciesa skiing consortium",
+      "evidence_summary": "The official operator presents Seceda-Col Raiser-Rasciesa as one connected consortium with 25 km of pistes, shared grooming and snowmaking, and descents to Ortisei and S. Cristina.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-dantercepies-owner-pass",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.dantercepies.it/en/opening-times-and-prices-winter.asp",
+      "source_title": "Dantercepies official winter lifts and tariffs",
+      "source_value": "Dantercepies lift group and three-hour ticket",
+      "evidence_summary": "The operator lists Dantercepies, Cir, Val, Costabella, Risaccia and Panorama under one lift presentation and sells a three-hour ticket valid across those lifts; the page does not establish an independent full-local-pass or weather owner.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-plan-de-gralba-lodging",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/accommodation/base/hotel/selva-di-val-gardena/hotel-plan-de-gralba-das-berghotel/020CA1C27CA15BF9AA254F1D179ABCE0/",
+      "source_title": "Dolomites Val Gardena official Plan de Gralba accommodation record",
+      "source_value": "Plan de Gralba accommodation under Selva di Val Gardena",
+      "evidence_summary": "The official booking system contains bookable lodging at Plan de Gralba and assigns its postal and booking market to Selva di Val Gardena, while the winter map presents Plan de Gralba as a direct lift gateway.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-monte-pana-lodging",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/accommodation/base/hotel/s-cristina-val-gardena/monte-pana-dolomites-hotel/C0DF926F76D911D18F2900A02427D15E/",
+      "source_title": "Dolomites Val Gardena official Monte Pana accommodation record",
+      "source_value": "Monte Pana accommodation under S. Cristina",
+      "evidence_summary": "The official booking system contains a 130-bed hotel at Monte Pana and assigns it to S. Cristina, supporting an accommodation-sector candidate but not an independently managed stay market.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-seiser-alm-pass-graph",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html",
+      "source_title": "Dolomites Region Seiser Alm official ski-pass guide",
+      "source_value": "Seiser Alm and Val Gardena shared pass graph",
+      "evidence_summary": "The official Seiser Alm source distinguishes a 22-lift, 62-km Seiser Alm ski area inside a shared 79-lift, 181-km Seiser Alm/Val Gardena pass area and states that separate area-only passes are no longer sold.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-seiser-alm-stay-market",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.seiseralm.it/en/plan-your-holiday/search-book/all-accommodations.html",
+      "source_title": "Dolomites Region Seiser Alm official accommodation collection",
+      "source_value": "Dolomites Region Seiser Alm accommodation market",
+      "evidence_summary": "The official Seiser Alm booking collection owns a separate accommodation market spanning named villages and the high plateau, establishing that a complete linked stay graph extends beyond Val Gardena and cannot be inferred from the shared pass alone.",
+      "normalization_note": null
     }
   ],
-  "destination_boundary_assessments": [],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "val-gardena",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "pass",
+          "notes": "The unified official booking collection covers all three named valley villages and a broad multi-night accommodation inventory.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "inventory-vg-three-villages"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "pass",
+          "notes": "Dolomites Val Gardena operates the shared official destination and directBooking collection for the valley market.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "pass",
+          "notes": "The unified valley owns a distinct accommodation collection, visitor identity, and direct access to the Val Gardena lift graph.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "inventory-vg-three-villages"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_stay_market_treatment",
+          "status": "pass",
+          "notes": "The official destination treats Val Gardena as the booking market containing all three villages.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking"
+          ]
+        }
+      ],
+      "failure_route": null
+    },
+    {
+      "candidate_id": "ortisei",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "unresolved",
+          "notes": "A large village-specific accommodation inventory exists, but this pass did not establish whether it is complete outside the shared valley collection.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "v2-enrichment-007-val-gardena-ortisei-base-character-development-style"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "unresolved",
+          "notes": "The official site provides an Ortisei collection but presents booking through the unified Val Gardena market.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "v2-enrichment-007-val-gardena-ortisei-base-character-development-style"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "unresolved",
+          "notes": "Ortisei has distinct character and direct lift access, but comparative accommodation, arrival and service separation remains incomplete.",
+          "evidence_refs": [
+            "inventory-vg-three-villages",
+            "scope-val-gardena-ortisei-access"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "independent_accommodation_inventory",
+          "status": "unresolved",
+          "notes": "The village has a dedicated official accommodation view, but its ownership relationship to the valley-wide collection is not established.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking"
+          ]
+        }
+      ],
+      "failure_route": "stay_base"
+    },
+    {
+      "candidate_id": "santa-cristina",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "unresolved",
+          "notes": "A village-specific booking entry exists, but this pass did not establish its complete accommodation boundary outside the shared valley collection.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "inventory-vg-santa-cristina-market"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "unresolved",
+          "notes": "The official village presentation does not establish destination-management ownership separate from Dolomites Val Gardena.",
+          "evidence_refs": [
+            "inventory-vg-santa-cristina-market",
+            "inventory-vg-unified-booking"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "unresolved",
+          "notes": "Direct Col Raiser, Monte Pana and Sellaronda access suggests separation value, but comparative lodging and arrival evidence remains incomplete.",
+          "evidence_refs": [
+            "inventory-vg-santa-cristina-market",
+            "inventory-vg-core-winter-map"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "independent_accommodation_inventory",
+          "status": "unresolved",
+          "notes": "The village has a dedicated official accommodation entry, but its ownership relationship to the valley-wide collection is not established.",
+          "evidence_refs": [
+            "inventory-vg-santa-cristina-market",
+            "inventory-vg-unified-booking"
+          ]
+        }
+      ],
+      "failure_route": "stay_base"
+    },
+    {
+      "candidate_id": "selva-val-gardena",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "unresolved",
+          "notes": "A village-specific booking entry and broad tourism infrastructure exist, but this pass did not establish the complete boundary outside the shared valley collection.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "inventory-vg-selva-market"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "unresolved",
+          "notes": "The official village presentation does not establish destination-management ownership separate from Dolomites Val Gardena.",
+          "evidence_refs": [
+            "inventory-vg-selva-market",
+            "inventory-vg-unified-booking"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "unresolved",
+          "notes": "Direct Ciampinoi, Dantercepies and Sellaronda access suggests separation value, but comparative lodging and arrival evidence remains incomplete.",
+          "evidence_refs": [
+            "inventory-vg-selva-market",
+            "inventory-vg-core-winter-map"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "independent_accommodation_inventory",
+          "status": "unresolved",
+          "notes": "The village has a dedicated official accommodation entry, but its ownership relationship to the valley-wide collection is not established.",
+          "evidence_refs": [
+            "inventory-vg-selva-market",
+            "inventory-vg-unified-booking"
+          ]
+        }
+      ],
+      "failure_route": "stay_base"
+    }
+  ],
   "entity_scope_assessments": [
+    {
+      "candidate_id": "val-gardena",
+      "candidate_name": "Val Gardena",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market"
+      ],
+      "evidence_refs": [
+        "inventory-vg-unified-booking",
+        "inventory-vg-three-villages",
+        "inventory-vg-plan-de-gralba-lodging",
+        "inventory-vg-monte-pana-lodging",
+        "inventory-vg-seiser-alm-stay-market"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "val-gardena"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official destination and directBooking system provide one umbrella Val Gardena stay market across Ortisei, S. Cristina and Selva. Village-level ownership and the missing base graph remain separately unresolved rather than being inferred from the umbrella.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
     {
       "candidate_id": "val-gardena-ortisei",
       "candidate_name": "Ortisei",
@@ -873,7 +1325,11 @@
       "evidence_refs": [
         "v2-enrichment-001-val-gardena-ski-area-official-trail-map-url",
         "v2-enrichment-006-val-gardena-ski-area-snowmaking-availability",
-        "scope-val-gardena-local-pass"
+        "scope-val-gardena-local-pass",
+        "inventory-vg-core-winter-map",
+        "inventory-vg-seceda-owner",
+        "inventory-vg-dantercepies-owner-pass",
+        "inventory-vg-seiser-alm-pass-graph"
       ],
       "target_refs": [
         {
@@ -895,9 +1351,330 @@
         "evidence_refs": [
           "v2-enrichment-001-val-gardena-ski-area-official-trail-map-url",
           "v2-enrichment-006-val-gardena-ski-area-snowmaking-availability",
-          "scope-val-gardena-local-pass"
+          "scope-val-gardena-local-pass",
+          "inventory-vg-core-winter-map",
+          "inventory-vg-seceda-owner",
+          "inventory-vg-dantercepies-owner-pass",
+          "inventory-vg-seiser-alm-pass-graph"
         ]
       },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "seceda-col-raiser-rasciesa",
+      "candidate_name": "Seceda-Col Raiser-Rasciesa",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity",
+        "separate_operator",
+        "child_scoped_terrain_metrics",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-seceda-owner",
+        "inventory-vg-core-winter-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator owns a connected consortium presentation and child-scoped terrain operations, but the official inventory gathered here establishes neither an independent weather owner nor a full local pass; under the connected-area test it remains inside the current Val Gardena owner pending reviewer confirmation.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "mixed",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-vg-seceda-owner",
+          "inventory-vg-core-winter-map"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "dantercepies",
+      "candidate_name": "Dantercepies",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity",
+        "separate_operator",
+        "independent_status_or_schedule",
+        "limited_area_ticket",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-dantercepies-owner-pass",
+        "inventory-vg-core-winter-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Dantercepies has its own lift operator, schedule and limited three-hour tariff, but no independent weather presentation or full-local-pass owner was established; the official regional map aggregates it into Val Gardena.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "independent",
+        "weather_scope": "unknown",
+        "pass_scope": "limited",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-vg-dantercepies-owner-pass",
+          "inventory-vg-core-winter-map"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "ciampinoi-saslong",
+      "candidate_name": "Ciampinoi-Saslong",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official map and route presentation identify Ciampinoi and Saslong as connected sectors and village gateways, without an independent weather or full-local-pass owner in the reviewed source neighborhood.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "monte-pana-mont-de-seura",
+      "candidate_name": "Monte Pana-Mont de Seura",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official map and Ronda route identify Monte Pana and Mont de Seura as connected Val Gardena sectors; no independent operations-plus-weather or full-local-pass ownership was established.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "plan-de-gralba-piz-sella-piz-seteur",
+      "candidate_name": "Plan de Gralba-Piz Sella-Piz Seteur",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official map and village route describe this as a connected lift sector from Selva and Plan de Gralba; no independent weather or full-local-pass owner was found in the bounded source neighborhood.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "resciesa",
+      "candidate_name": "Resciesa-Rasciesa",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity",
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-seceda-owner",
+        "inventory-vg-core-winter-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The Seceda operator expressly includes Rasciesa in the connected consortium and shared grooming presentation; no independent evidence owner was established.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-vg-seceda-owner",
+          "inventory-vg-core-winter-map"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "gardena-pass-sector",
+      "candidate_name": "Gardena Pass sector",
+      "candidate_kind": "ski_area",
+      "disposition": "deferred",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#alta-badia-and-regional-catalog-refinements",
+      "rationale": "The map exposes the Passo Gardena presentation, but its complete boundary crosses into the linked Alta Badia graph. It remains deferred until the owning linked graph can establish full operations, weather and pass scope.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "mixed",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "sella-pass",
+      "candidate_name": "Sella Pass sector",
+      "candidate_kind": "ski_area",
+      "disposition": "deferred",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#alta-badia-and-regional-catalog-refinements",
+      "rationale": "The Sella Pass presentation reaches beyond the selected Val Gardena owner graph. Complete membership and parent ownership require the separately owned adjacent regional graph before it can be safely modeled.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "mixed",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "ortisei--seceda",
+      "candidate_name": "Ortisei to Seceda access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "not_separate",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access",
+        "inventory-vg-seceda-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "val-gardena-ortisei--val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official map and operator establish direct Ortisei-Seceda lift access. Because Seceda remains inside the current Val Gardena area owner, the sector presentation maps to the existing whole-area access edge rather than a second catalog edge.",
+      "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     }
   ],
@@ -962,9 +1739,72 @@
         "lift_pass_product",
         "terrain_domain"
       ]
+    },
+    {
+      "family_id": "inventory-vg-stay-market-completion",
+      "source_kind": "destination_booking",
+      "source_urls": [
+        "https://www.valgardena.it/booking/",
+        "https://www.valgardena.it/en/",
+        "https://www.valgardena.it/en/s-cristina/",
+        "https://www.valgardena.it/en/selva-val-gardena/",
+        "https://www.valgardena.it/en/accommodation/base/hotel/selva-di-val-gardena/hotel-plan-de-gralba-das-berghotel/020CA1C27CA15BF9AA254F1D179ABCE0/",
+        "https://www.valgardena.it/en/accommodation/base/hotel/s-cristina-val-gardena/monte-pana-dolomites-hotel/C0DF926F76D911D18F2900A02427D15E/"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base"
+      ]
+    },
+    {
+      "family_id": "inventory-vg-core-access-completion",
+      "source_kind": "access_transport",
+      "source_urls": [
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
+      ],
+      "candidate_kinds": [
+        "stay_base",
+        "ski_area",
+        "ski_area_access",
+        "terrain_domain"
+      ]
+    },
+    {
+      "family_id": "inventory-vg-operator-boundary-completion",
+      "source_kind": "ski_area_operator",
+      "source_urls": [
+        "https://www.seceda.it/en/winter",
+        "https://www.dantercepies.it/en/opening-times-and-prices-winter.asp",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "inventory-vg-seiser-alm-linked-graph",
+      "source_kind": "linked_pr_dependency",
+      "source_urls": [
+        "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html",
+        "https://www.seiseralm.it/en/plan-your-holiday/search-book/all-accommodations.html"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base",
+        "ski_area",
+        "ski_area_access",
+        "lift_pass_product"
+      ]
     }
   ],
-  "boundary_decision_targets": [],
+  "boundary_decision_targets": [
+    "val-gardena",
+    "ortisei",
+    "santa-cristina",
+    "selva-val-gardena"
+  ],
   "weather_request_geometry_targets": [],
   "weather_request_geometry_assessments": [],
   "resulting_graph": {
@@ -978,6 +1818,12 @@
     "Official sources confirm snowmaking infrastructure but do not publish a stable child-area coverage percentage with a denominator.",
     "No authoritative glacier, night-skiing, or marked downhill freeride-route inventory was established.",
     "Valley-wide huts and après evidence supports the ski-area profile but is not copied into Ortisei's local après object without base-specific evidence.",
-    "Schema-version-3 pre-review normalization preserves the current Val Gardena graph but does not resolve the complete booking, operator, pass, access, or linked-sector candidate inventory; independent source-trust and graph-scope review must do that before remediation."
+    "Schema-version-3 pre-review normalization preserves the current Val Gardena graph but does not resolve the complete booking, operator, pass, access, or linked-sector candidate inventory; independent source-trust and graph-scope review must do that before remediation.",
+    "Stay-market inventory pass 1 establishes one official umbrella booking market and village-specific accommodation views, but independent village ownership and a non-overlapping Ortisei, S. Cristina and Selva destination-or-base graph remain unresolved.",
+    "Core-access inventory pass 1 verifies the named official gateways and route sequence, but exact access mode, transfer, directness and source-backed catalog-edge disposition remain missing for Ortisei-Alpe di Siusi, every S. Cristina edge, and every Selva edge.",
+    "Operator-boundary inventory pass 1 supports not-separate dispositions for the connected Seceda, Dantercepies, Ciampinoi, Monte Pana, Plan de Gralba and Resciesa presentations; independent weather ownership remains unknown and the Gardena Pass and Sella Pass owner boundaries remain deferred.",
+    "The official Seiser Alm evidence establishes a separate 22-lift, 62-km terrain presentation and a separate regional accommodation collection inside the shared pass area, but the complete stay, access, operations/weather-owner and pass graph remains missing and cannot be inferred in this report-only pass.",
+    "Plan de Gralba and Monte Pana both have official bookable lodging under Selva and S. Cristina respectively, but pass 1 does not establish whether either is a separate StayBase or a lodging/access sector; no canonical backlog marker currently exists for a schema-valid regional-followup deferral.",
+    "Dantercepies publishes a current three-hour ticket for its lift group, but pass 1 does not establish durable trip-planning value or a schema-valid separate-product disposition; no canonical backlog marker currently exists for a regional-followup deferral."
   ]
 }
