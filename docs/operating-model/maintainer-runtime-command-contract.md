@@ -298,6 +298,26 @@ not have to derive an invocation.
       }
     }
   },
+  "curation_validated_push_recovery": {
+    "authority": "live-exact-pr-facts-after-publish-recover",
+    "branches": {
+      "success_mergeable": {
+        "substitutions": {"${STATE}": "maintainer:ready"},
+        "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publication_input_body", "lock_heartbeat_curation", "publish_state_adopt_body", "lock_heartbeat_curation", "inspect_curation", "lock_heartbeat_curation", "lock_release_curation"]
+      },
+      "pending": {
+        "substitutions": {"${STATE}": "maintainer:waiting-ci"},
+        "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publication_input_body", "lock_heartbeat_curation", "publish_state_adopt_body", "lock_heartbeat_curation"]
+      },
+      "failure_or_cancelled": {
+        "action": "stop-without-lifecycle-guess"
+      },
+      "unknown_or_nonmergeable": {
+        "action": "stop-without-lifecycle-guess"
+      }
+    },
+    "unconditional_waiting_ci_fallback": false
+  },
   "ci_continuation_policy": {
     "recovery_priority": ["terminal_publication", "push_journal", "post_push_ci_continuation", "reviewed_continuation", "remediation_continuation", "ordinary_pr"],
     "first_wait_seconds": 1800,
@@ -417,7 +437,15 @@ including both bounded CI waits:
   completes the exact matching continuation as `blocked`. Repair cannot resume
   while that intent is unresolved;
 - after push-journal `publish recover`, branch only on its returned curation
-  `continuation`. For `validation_status=absent`, inspect only
+  `continuation`. For `validation_status=validated`, fetch current live facts
+  for the exact PR and recovered head before creating publication inputs. When
+  checks are successful and the PR is mergeable, publish
+  `maintainer:ready` directly. When checks are pending, publish
+  `maintainer:waiting-ci` and enter the initial wait. Failed, cancelled, or
+  unknown checks and non-mergeability stop without guessing; failure repair
+  requires an existing helper-owned post-push CI continuation. Never request
+  `maintainer:waiting-ci` when checks are already successful.
+  For `validation_status=absent`, inspect only
   the exact reviewed report: an explicit unresolved owner/model choice uses the
   `curation_recovery_absent_owner_decision_after_recover` suffix with
   `${STATE}=maintainer:owner-decision`; otherwise use the

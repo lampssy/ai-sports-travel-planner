@@ -129,9 +129,16 @@ The installed skill must:
   intent or push journal exists. Exact recovery through `publish recover` is
   the only capability allowed to cross that boundary;
 - consume the helper's curation recovery continuation before choosing a state:
-  `validated` may use current CI/readiness facts, `absent` must never request
-  waiting-CI or ready and instead publishes the honest reviewed-only pause,
-  while `unknown` stops without guessing or probing lifecycle capabilities;
+  `validated` requires a fresh read-only exact-PR fact check after
+  `publish recover`. Publish `maintainer:ready` directly when checks are
+  successful and the exact head is mergeable; publish `maintainer:waiting-ci`
+  only when checks are pending, then enter the initial wait. Failed, cancelled,
+  or unknown checks and non-mergeability stop without guessing; failure repair
+  requires an existing helper-owned post-push CI continuation. Never request
+  `maintainer:waiting-ci` when checks are already successful. `absent` must
+  never request waiting-CI or ready and instead publishes the honest
+  reviewed-only pause, while `unknown` stops without guessing or probing
+  lifecycle capabilities;
 - resume any yielded orchestration cell, then poll every long-running helper
   command's underlying session through process exit, accumulate all output
   chunks, and parse helper JSON only after completion instead of retrying a

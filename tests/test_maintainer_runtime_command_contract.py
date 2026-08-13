@@ -532,6 +532,76 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
     }
 
 
+def test_validated_push_recovery_branches_on_live_ci_state() -> None:
+    contract = _contract()
+
+    assert contract["curation_validated_push_recovery"] == {
+        "authority": "live-exact-pr-facts-after-publish-recover",
+        "branches": {
+            "success_mergeable": {
+                "substitutions": {"${STATE}": "maintainer:ready"},
+                "sequence": [
+                    "publication_input_summary",
+                    "lock_heartbeat_curation",
+                    "publication_input_body",
+                    "lock_heartbeat_curation",
+                    "publish_state_adopt_body",
+                    "lock_heartbeat_curation",
+                    "inspect_curation",
+                    "lock_heartbeat_curation",
+                    "lock_release_curation",
+                ],
+            },
+            "pending": {
+                "substitutions": {"${STATE}": "maintainer:waiting-ci"},
+                "sequence": [
+                    "publication_input_summary",
+                    "lock_heartbeat_curation",
+                    "publication_input_body",
+                    "lock_heartbeat_curation",
+                    "publish_state_adopt_body",
+                    "lock_heartbeat_curation",
+                ],
+            },
+            "failure_or_cancelled": {
+                "action": "stop-without-lifecycle-guess",
+            },
+            "unknown_or_nonmergeable": {
+                "action": "stop-without-lifecycle-guess",
+            },
+        },
+        "unconditional_waiting_ci_fallback": False,
+    }
+
+    branches = contract["curation_validated_push_recovery"]["branches"]
+    assert branches["success_mergeable"]["substitutions"] == {
+        "${STATE}": "maintainer:ready"
+    }
+    assert branches["pending"]["substitutions"] == {"${STATE}": "maintainer:waiting-ci"}
+    for branch_name in ("success_mergeable", "pending"):
+        branch = branches[branch_name]
+        parsed = _parse_recipe_sequence(
+            branch["sequence"],
+            substitutions=branch["substitutions"],
+        )
+        publication = next(item for item in parsed if item.family == "publish")
+        assert (publication.command, publication.state) == (
+            "state",
+            branch["substitutions"]["${STATE}"],
+        )
+
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+    }
+    for name, text in sources.items():
+        normalized = " ".join(text.split()).lower()
+        assert (
+            "never request `maintainer:waiting-ci` when checks are already successful"
+            in normalized
+        ), name
+
+
 def test_runtime_sources_freeze_terminal_publication_recovery() -> None:
     sources = {
         "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
