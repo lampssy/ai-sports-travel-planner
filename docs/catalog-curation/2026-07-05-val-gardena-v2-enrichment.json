@@ -845,14 +845,9 @@
           "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html"
         ],
         "prices": [
-          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
-          "https://www.everestski.com/en/service.html",
-          "https://www.openstreetmap.org/node/411679826",
-          "https://www.openstreetmap.org/relation/47265",
           "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
-          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
-          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
-          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/skipass-eshop/"
         ]
       },
       "trust_status": "estimated",
@@ -889,7 +884,10 @@
       "after": [
         "The shared product is modeled as local multi-area coverage: Val Gardena is the modeled ski area and Seiser Alm remains explicit unmodeled external validity.",
         "The official shared 181 km and 79-lift totals belong to pass-accessible terrain and are not copied onto the narrower Val Gardena ski-area owner.",
-        "The complete Seiser Alm stay, access, operations/weather, and terrain graph remains a consolidated regional follow-up."
+        "The complete Seiser Alm stay, access, operations/weather, and terrain graph remains a consolidated regional follow-up.",
+        "The retained EUR 80 price is a fixed adult one-day proxy labeled only as main season and sourced from Skiresort.info, not an exact-product official tariff.",
+        "On 2026-08-13, the official Val Gardena/Seiser Alm product page identified the shared pass and linked its real-time price calculator; the official e-shop wrapper was reachable, but the embedded Dolomiti Superski calculator returned HTTP 403, so no exact official amount could be reproduced.",
+        "The proxy is retained only as the existing representative one-day adult EUR comparison. Its exact season year and applicable date band are unknown, and the live Skiresort.info landing page did not reproduce the stored amount."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2227,7 +2225,7 @@
       "target_id": "val-gardena-seiser-alm-skipass",
       "field_path": "prices",
       "status": "reviewed-no-change",
-      "notes": null
+      "notes": "Retained as an adult one-day EUR 80 main-season proxy from Skiresort.info. The official exact-product page links a real-time calculator, but its embedded Dolomiti Superski tariff returned HTTP 403 on 2026-08-13; the exact official amount, season year, and applicable date band could not be reproduced, and the live proxy landing page did not reproduce the stored amount."
     },
     {
       "target_type": "lift_pass_product",
@@ -2830,6 +2828,38 @@
       "normalization_note": null
     },
     {
+      "evidence_id": "remediation-vg-pass-official-tariff-search",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/skipass-eshop/",
+      "source_title": "Val Gardena official ski-pass price calculator and e-shop",
+      "source_value": "Exact-product real-time calculator linked; amount unavailable to the review client",
+      "evidence_summary": "The official wrapper names the Val Gardena/Alpe di Siusi exact-product price calculator and embeds the Dolomiti Superski tariff iframe. The wrapper returned HTTP 200 on 2026-08-13, but the embedded calculator returned HTTP 403, so no official adult one-day amount, season year, or applicable date band could be reproduced.",
+      "normalization_note": "This bounded official search supports retaining verified_with_adjustment rather than upgrading the provider proxy to an official tariff."
+    },
+    {
+      "evidence_id": "remediation-vg-pass-price-proxy",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "prices",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+      "source_title": "Skiresort.info Val Gardena resort profile",
+      "source_value": {
+        "duration_days": 1,
+        "audience": "adult",
+        "amount": 80.0,
+        "currency": "EUR",
+        "season_label": "main season"
+      },
+      "evidence_summary": "The retained EUR 80 fixed adult one-day amount is a provider proxy, not a reproduced official tariff. The official Val Gardena/Seiser Alm product page was reachable on 2026-08-13 and linked its exact-product real-time price calculator, but the embedded Dolomiti Superski calculator returned HTTP 403. Therefore the official amount could not be reproduced; the exact season year and applicable date band remain unknown, and the live proxy landing page did not reproduce the stored amount.",
+      "normalization_note": "Retain only as the existing representative comparison because the exact-product official tariff was not reproducible; do not treat the main-season label as a known date band."
+    },
+    {
       "evidence_id": "remediation-vg-pass-validity-scope",
       "boundary_target_ids": [],
       "target_type": "lift_pass_product",
@@ -3113,7 +3143,6 @@
       "disposition": "unresolved",
       "signals": [
         "official_independent_identity",
-        "full_local_pass",
         "ski_connected_terrain"
       ],
       "evidence_refs": [
@@ -3132,14 +3161,14 @@
         }
       ],
       "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
-      "rationale": "The retained weather/access ID is clipped to evidence-supported local claims; combined Seiser Alm terrain and pass inventory has been removed from this owner. Complete parent operations/weather ownership remains unresolved.",
+      "rationale": "The retained weather/access ID is clipped to evidence-supported local claims; combined Seiser Alm terrain and pass inventory has been removed from this owner. The only modeled local product is shared across Val Gardena and Seiser Alm, so it does not establish a Val Gardena-only full-local-pass owner. Complete parent operations/weather ownership remains unresolved.",
       "ski_area_boundary": {
         "parent_ski_area_id": null,
         "terrain_scope": "unresolved",
         "connectivity_to_parent": "not_applicable",
         "operational_scope": "unknown",
         "weather_scope": "unknown",
-        "pass_scope": "full_local",
+        "pass_scope": "shared_only",
         "provider_consensus": "unknown",
         "separation_value": "unresolved",
         "evidence_refs": [
@@ -3559,7 +3588,9 @@
       ],
       "evidence_refs": [
         "remediation-vg-pass-validity-scope",
-        "remediation-vg-pass-terrain"
+        "remediation-vg-pass-terrain",
+        "remediation-vg-pass-official-tariff-search",
+        "remediation-vg-pass-price-proxy"
       ],
       "target_refs": [
         {
@@ -3568,7 +3599,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The shared product remains available from Val Gardena; modeled coverage points to the retained Val Gardena area and supported aggregate/external Seiser scope stays on the pass.",
+      "rationale": "The shared product remains available from Val Gardena; modeled coverage points to the retained Val Gardena area and supported aggregate/external Seiser scope stays on the pass. Its retained EUR 80 adult one-day main-season amount is explicitly bounded as an unreproduced provider proxy because the official exact-product calculator was blocked and supplied no verifiable amount or date band.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -3734,7 +3765,8 @@
       "family_id": "val-gardena-pass-tariff",
       "source_kind": "pass_tariff",
       "source_urls": [
-        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/skipass-eshop/"
       ],
       "candidate_kinds": [
         "ski_area",

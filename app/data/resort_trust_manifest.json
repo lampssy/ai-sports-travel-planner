@@ -13219,14 +13219,9 @@
             "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
           ],
           "prices": [
-            "https://www.dolomitisuperski.com/en/live-info/open-slopes",
-            "https://www.everestski.com/en/service.html",
-            "https://www.openstreetmap.org/node/411679826",
-            "https://www.openstreetmap.org/relation/47265",
             "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
-            "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
-            "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
-            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/skipass-eshop/"
           ],
           "pass_accessible_terrain": [
             "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html"
@@ -13235,7 +13230,10 @@
         "notes": [
           "The shared product is modeled as local multi-area coverage: Val Gardena is the modeled ski area and Seiser Alm remains explicit unmodeled external validity.",
           "The official shared 181 km and 79-lift totals belong to pass-accessible terrain and are not copied onto the narrower Val Gardena ski-area owner.",
-          "The complete Seiser Alm stay, access, operations/weather, and terrain graph remains a consolidated regional follow-up."
+          "The complete Seiser Alm stay, access, operations/weather, and terrain graph remains a consolidated regional follow-up.",
+          "The retained EUR 80 price is a fixed adult one-day proxy labeled only as main season and sourced from Skiresort.info, not an exact-product official tariff.",
+          "On 2026-08-13, the official Val Gardena/Seiser Alm product page identified the shared pass and linked its real-time price calculator; the official e-shop wrapper was reachable, but the embedded Dolomiti Superski calculator returned HTTP 403, so no exact official amount could be reproduced.",
+          "The proxy is retained only as the existing representative one-day adult EUR comparison. Its exact season year and applicable date band are unknown, and the live Skiresort.info landing page did not reproduce the stored amount."
         ]
       },
       "zermatt-international-ski-pass": {
