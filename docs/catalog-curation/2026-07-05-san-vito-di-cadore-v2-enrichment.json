@@ -1,0 +1,1931 @@
+{
+  "report_schema_version": 3,
+  "title": "San Vito di Cadore Catalog V2 Fact Enrichment",
+  "summary": "Reviews the San Vito child ski area, stay market, local access, and pass context against current official operator and destination sources.",
+  "changed_entities": [
+    "ski_area:san-vito-di-cadore-ski-area",
+    "stay_base:san-vito-di-cadore-san-vito-di-cadore",
+    "ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+    "trust_manifest:ski_areas:san-vito-di-cadore-ski-area",
+    "trust_manifest:stay_bases:san-vito-di-cadore-san-vito-di-cadore",
+    "trust_manifest:stay_destinations:san-vito-di-cadore",
+    "trust_manifest:ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:san-vito-di-cadore-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:san-vito-di-cadore-san-vito-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_id",
+        "access_mode",
+        "lift_distance",
+        "nearest_lift_name",
+        "distance_m",
+        "is_direct",
+        "source_urls"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:san-vito-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-cortina-valle-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_id"
+      ],
+      "resulting_graph_role": "linked_dependency"
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.skiareasanvito.com/wp-content/uploads/2019/06/cartina-impianti-san-vito-di-cadore.jpg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "quiet",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1011,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": "Tambres Chairlift",
+      "after": null,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "distance_m",
+      "before": 800,
+      "after": null,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "source_urls",
+      "before": [
+        "https://www.skiareasanvito.com/en/rates/"
+      ],
+      "after": [
+        "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+        "https://www.skiareasanvito.com/ski-bus/"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:san-vito-di-cadore-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [
+          "https://www.skiareasanvito.com/wp-content/uploads/2019/06/cartina-impianti-san-vito-di-cadore.jpg"
+        ],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "snow_park": [],
+        "snowmaking": [
+          "https://www.skiareasanvito.com/impianti/"
+        ],
+        "terrain_metrics": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:san-vito-di-cadore-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "verified_with_adjustment",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "verified",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "verified_with_adjustment",
+        "snow_park": "needs_source",
+        "snowmaking": "verified_with_adjustment",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:san-vito-di-cadore-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Modeled as a separate destination because San Vito has independent lodging identity, local lift access, a local-only ski pass, and distinct family/value recommendation value.",
+        "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Modeled as a separate destination because San Vito has independent lodging identity, local lift access, a local-only ski pass, and distinct family/value recommendation value.",
+        "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed official San Vito Ski Area material on 2026-07-05.",
+        "NeveSole family snow-play facilities are not normalized as a dedicated freestyle snowpark.",
+        "The operator's whole-area programmed-snow wording supports availability only; no numerical percentage or denominator is stored.",
+        "The official trail-map URL points to the operator-owned San Vito child-area map image rather than the broader regional network map."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.visitdolomitibellunesi.com/en/hotels/dolomiti-5"
+        ],
+        "base_type": [],
+        "coordinates": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "elevation": [
+          "https://san-vito.visitcadore.com/"
+        ],
+        "identity_ownership": [
+          "https://san-vito.visitcadore.com/",
+          "https://visitcadoredolomiti.com/wp-content/uploads/2024/02/Mappa_San_Vito_Cadore-new.pdf",
+          "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Appartamenti-S.Vito-Borca-e-Vodo.pdf"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "notes",
+      "before": [
+        "Modeled as a separate destination because San Vito has independent lodging identity, local lift access, a local-only ski pass, and distinct family/value recommendation value.",
+        "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Modeled as a separate destination because San Vito has independent lodging identity, local lift access, a local-only ski pass, and distinct family/value recommendation value.",
+        "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed official San Vito town and stay material on 2026-07-05.",
+        "The official destination, village-map, and accommodation collections support one San Vito stay market and one represented town base; named internal localities do not own separate accommodation-and-access graphs.",
+        "The Dolomiti Bellunesi accommodation listing's quiet mountain village wording is normalized to local_pace=quiet; it is one lodging listing, not a complete destination-character inventory."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:san-vito-di-cadore",
+      "field_path": "field_source_refs",
+      "before": {
+        "coordinates": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "identity_location": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "price_level": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ]
+      },
+      "after": {
+        "coordinates": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ],
+        "identity_location": [
+          "https://san-vito.visitcadore.com/",
+          "https://visitcadoredolomiti.com/wp-content/uploads/2024/02/Mappa_San_Vito_Cadore-new.pdf",
+          "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Appartamenti-S.Vito-Borca-e-Vodo.pdf"
+        ],
+        "price_level": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.openstreetmap.org/relation/47211",
+          "https://www.skiareasanvito.com/en/rates/",
+          "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "access_mode_distance": [
+          "https://www.skiareasanvito.com/en/rates/"
+        ],
+        "relationship": [
+          "https://www.skiareasanvito.com/en/rates/"
+        ]
+      },
+      "after": {
+        "access_mode_distance": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.skiareasanvito.com/ski-bus/"
+        ],
+        "relationship": [
+          "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+          "https://www.skiareasanvito.com/ski-bus/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Modeled as a separate destination because San Vito has independent lodging identity, local lift access, a local-only ski pass, and distinct family/value recommendation value.",
+        "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Modeled as a separate destination because San Vito has independent lodging identity, local lift access, a local-only ski pass, and distinct family/value recommendation value.",
+        "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+        "The official route links central Piazza Serantoni to the NeveSole ski-area parking by free ski bus. Snowcast retains ski_bus/near/non-direct semantics but omits an unsupported point distance and nearest-lift name."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Cortina is retained unchanged as linked-PR dependency and disconnected Valle-pass context."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The existing destination name is retained provisionally for independent initial review."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Official operator and destination access pages establish that central San Vito reaches this ski area by free ski bus."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "The operator publishes a free ski-bus route from central Piazza Serantoni to the NeveSole ski-area parking."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": "The official ski-area page describes the area as a few minutes from the town centre; Snowcast retains the near bucket without an invented point distance."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "The route terminates at NeveSole parking rather than an explicitly named lift, so the unsupported Tambres endpoint is cleared."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "distance_m",
+      "status": "changed",
+      "notes": "No direct official source establishes the former 800 m point distance, so it is cleared."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": "The published route requires a ski-bus transfer from the town centre, so the access is non-direct."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": "The former tariff-only citation is replaced with the direct operator and destination ski-bus pages."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The current local-pass name is exposed for independent initial review."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-cortina-valle-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The current valley-pass name is exposed for independent initial review."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "changed",
+      "notes": "The official operator states that programmed snow is present across the entire ski area."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "The operator confirms whole-area programmed-snow availability but publishes no numerical percentage or explicit denominator."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Without a numerical percentage and denominator, the coverage basis remains unknown."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "Direct operator-owned child-area map image for the San Vito lifts and pistes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from family snow-play or broader regional material."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official destination guide gives San Vito di Cadore at 1,011 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "base_type",
+      "status": "unresolved",
+      "notes": "The catalog's pre-existing town value is retained, but no reviewed direct source establishes the exact structural type, so trust remains needs_source."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "base_character.development_style",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "Official Dolomiti Bellunesi material describes San Vito as a quiet mountain village, and the ski-area offer emphasizes peace, nature, relaxation, and families."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official San Vito sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:san-vito-di-cadore-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:san-vito-di-cadore-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:san-vito-di-cadore-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:san-vito-di-cadore",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "The identity group now cites the direct destination, village-map, and accommodation collections."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Both access trust groups now cite the direct official ski-bus sources."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust notes preserve the supported route and the omitted unsupported geometry."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/impianti/",
+      "source_title": "Ski Area San Vito official lifts and map page",
+      "source_value": "https://www.skiareasanvito.com/wp-content/uploads/2019/06/cartina-impianti-san-vito-di-cadore.jpg",
+      "evidence_summary": "The operator's San Vito page embeds and links the child-area map image alongside the matching lift and piste inventory.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-san-vito-di-cadore-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/impianti/",
+      "source_title": "Ski Area San Vito official lifts and slopes guide",
+      "source_value": "available",
+      "evidence_summary": "The official operator states that programmed snow is present across the entire ski area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-005-san-vito-di-cadore-san-vito-di-cadore-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.visitdolomitibellunesi.com/en/hotels/dolomiti-5",
+      "source_title": "Dolomiti Bellunesi official San Vito lodging guide",
+      "source_value": "quiet",
+      "evidence_summary": "Official Dolomiti Bellunesi material describes San Vito as a quiet mountain village, and the ski-area offer emphasizes peace, nature, relaxation, and families.",
+      "normalization_note": "The explicit quiet and relaxation positioning is mapped to quiet."
+    },
+    {
+      "evidence_id": "v2-enrichment-006-san-vito-di-cadore-san-vito-di-cadore-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://san-vito.visitcadore.com/",
+      "source_title": "VisitCadore official San Vito di Cadore destination page",
+      "source_value": 1011,
+      "evidence_summary": "The official destination guide gives San Vito di Cadore at 1,011 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-stay-market-san-vito",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://san-vito.visitcadore.com/",
+      "source_title": "VisitCadore official San Vito di Cadore destination page",
+      "source_value": "San Vito di Cadore",
+      "evidence_summary": "The current official destination page presents San Vito di Cadore as a distinct stay destination, exposes a where-to-stay collection, and lists Cortina, Borca, and Vodo as neighboring destinations.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-san-vito-locality-accommodation-map",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://visitcadoredolomiti.com/wp-content/uploads/2024/02/Mappa_San_Vito_Cadore-new.pdf",
+      "source_title": "Cadore Dolomiti official San Vito village and accommodation map",
+      "source_value": "San Vito di Cadore",
+      "evidence_summary": "The official village map places Mosigo, Chiapuzza, Serdes, Resinego, Tambres, Belvedere, Costa, Dogana Vecchia, Sapiaža, and Donariè inside one San Vito map and enumerates the townwide accommodation inventory and skibus context.",
+      "normalization_note": "The named localities remain locality context inside the represented town base because the source does not give them independent accommodation-market or ski-access ownership."
+    },
+    {
+      "evidence_id": "scope-san-vito-accommodation-inventory",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Appartamenti-S.Vito-Borca-e-Vodo.pdf",
+      "source_title": "Cadore Dolomiti official San Vito, Borca, and Vodo apartment inventory",
+      "source_value": "San Vito di Cadore",
+      "evidence_summary": "The official inventory groups Chiapuzza, Costa, central San Vito, Belvedere and Resinego Alto, Resinego, and Serdes under the San Vito destination while listing Borca and Vodo separately.",
+      "normalization_note": "Named San Vito locality headings describe lodging addresses within one destination inventory; they do not establish independent catalog stay-base owners."
+    },
+    {
+      "evidence_id": "scope-access-san-vito",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+      "source_title": "Cadore official San Vito ski-area guide",
+      "source_value": "san-vito-di-cadore-ski-area",
+      "evidence_summary": "The official destination source presents the San Vito ski area in the focus destination; exact access mode remains for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-access-route-san-vito",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/ski-bus/",
+      "source_title": "Ski Area San Vito official ski-bus route",
+      "source_value": "ski_bus",
+      "evidence_summary": "The operator publishes free ski-bus service from central Piazza Serantoni to the NeveSole ski-area parking with named on-call stops.",
+      "normalization_note": "The route supports ski_bus and non-direct access; no point distance or named nearest lift is inferred."
+    },
+    {
+      "evidence_id": "fix-access-nearest-lift-san-vito",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/ski-bus/",
+      "source_title": "Ski Area San Vito official ski-bus route",
+      "source_value": null,
+      "evidence_summary": "The official route terminates at the NeveSole ski-area parking and does not identify Tambres as the route endpoint.",
+      "normalization_note": "The unsupported nearest-lift label is cleared rather than inferred."
+    },
+    {
+      "evidence_id": "fix-access-distance-san-vito",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "distance_m",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/ski-bus/",
+      "source_title": "Ski Area San Vito official ski-bus route",
+      "source_value": null,
+      "evidence_summary": "The official route publishes its endpoints and timetable but no point distance supporting the former 800 m value.",
+      "normalization_note": "The unsupported point distance is cleared while the qualitative route relationship remains."
+    },
+    {
+      "evidence_id": "fix-access-source-urls-san-vito",
+      "boundary_target_ids": [
+        "san-vito-di-cadore"
+      ],
+      "target_type": "ski_area_access",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/ski-bus/",
+      "source_title": "Ski Area San Vito official ski-bus route",
+      "source_value": [
+        "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+        "https://www.skiareasanvito.com/ski-bus/"
+      ],
+      "evidence_summary": "The access edge now cites the two direct official route descriptions instead of the pass-tariff page.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-local-pass-san-vito",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/en/rates/",
+      "source_title": "Ski Area San Vito official rates",
+      "source_value": "San Vito Ski Area Skipass",
+      "evidence_summary": "The operator tariff presents the local San Vito ski-area ticket product for independent pass-scope review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-valley-pass-san-vito",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-cortina-valle-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/en/rates/",
+      "source_title": "Ski Area San Vito official rates",
+      "source_value": "Valle Skipass Cortina",
+      "evidence_summary": "The operator tariff presents the Cortina valley pass context for independent coverage and linked-dependency review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-dolomiti-superski-san-vito",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/en/rates/",
+      "source_title": "Ski Area San Vito official rates",
+      "source_value": "Dolomiti Superski",
+      "evidence_summary": "The operator tariff explicitly lists Dolomiti Superski validity as a wider pass option available from San Vito.",
+      "normalization_note": "The product is retained as a deferred regional candidate because modeling its complete network is outside this child-area slice."
+    },
+    {
+      "evidence_id": "scope-nevesole-small-treadmill-access",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Cartina_San_Vito_di_Cadore_low-1.pdf",
+      "source_title": "Cadore Dolomiti official San Vito village and ski-area map",
+      "source_value": "Free access to the small treadmill in the NeveSole area",
+      "evidence_summary": "The official map describes the small NeveSole treadmill as free access, so it is facility context rather than a ticket or pass product.",
+      "normalization_note": "Free treadmill access is folded into the existing NeveSole facility disposition; no pass-product candidate, entity, or backlog item is created."
+    }
+  ],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "san-vito-di-cadore",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "pass",
+          "notes": "The current official destination page and accommodation inventories present San Vito as one coherent multi-night market and distinguish neighboring destinations.",
+          "evidence_refs": [
+            "scope-stay-market-san-vito",
+            "scope-san-vito-locality-accommodation-map",
+            "scope-san-vito-accommodation-inventory"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "pass",
+          "notes": "VisitCadore and Cadore Dolomiti directly own the San Vito destination and townwide accommodation collections.",
+          "evidence_refs": [
+            "scope-stay-market-san-vito",
+            "scope-san-vito-accommodation-inventory"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "pass",
+          "notes": "The official destination collection separates San Vito from Cortina, Borca, and Vodo and pairs its own lodging market with local ski-area access.",
+          "evidence_refs": [
+            "scope-stay-market-san-vito",
+            "scope-san-vito-accommodation-inventory",
+            "scope-access-san-vito"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_stay_market_treatment",
+          "status": "pass",
+          "notes": "The official destination guide treats San Vito di Cadore as a named destination context.",
+          "evidence_refs": [
+            "scope-stay-market-san-vito"
+          ]
+        }
+      ],
+      "failure_route": null
+    }
+  ],
+  "entity_scope_assessments": [
+    {
+      "candidate_id": "san-vito-di-cadore",
+      "candidate_name": "San Vito di Cadore",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market"
+      ],
+      "evidence_refs": [
+        "scope-stay-market-san-vito"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The current official destination and accommodation collections establish San Vito as the complete independently owned stay market, separate from the neighboring destination collections.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "candidate_name": "San Vito di Cadore stay base",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-stay-market-san-vito",
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory",
+        "scope-access-san-vito"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official village map and townwide accommodation inventory support one represented San Vito base; named localities remain internal locality context because no independent lodging-and-access owner is established.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-mosigo",
+      "candidate_name": "Mosigo",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official inventory places Mosigo-address lodging inside the Chiapuzza grouping and the village map supplies no independently owned lodging-and-access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-chiapuzza",
+      "candidate_name": "Chiapuzza",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official apartment inventory uses Chiapuzza as a San Vito locality heading, but no independent base-level destination or ski-access owner is established.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-serdes",
+      "candidate_name": "Serdes",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official apartment inventory uses Serdes as a San Vito locality heading, but no independent base-level destination or ski-access owner is established.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-resinego",
+      "candidate_name": "Resinego",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official inventory presents Resinego and Resinego Alto within San Vito lodging, without independent base-level destination or ski-access ownership.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-tambres",
+      "candidate_name": "Tambres",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official village map identifies Tambres inside San Vito but the accommodation inventory does not establish it as an independently owned stay-and-access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-belvedere",
+      "candidate_name": "Belvedere",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official inventory combines Belvedere with Resinego Alto inside San Vito and establishes no independent base-level destination or ski-access owner.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-costa",
+      "candidate_name": "Costa",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map",
+        "scope-san-vito-accommodation-inventory"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official apartment inventory uses Costa as a San Vito locality heading, but no independent base-level destination or ski-access owner is established.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-dogana-vecchia",
+      "candidate_name": "Dogana Vecchia",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official village map includes Dogana Vecchia and its lodging inside San Vito but does not establish an independent accommodation-and-access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-di-cadore-ski-area",
+      "candidate_name": "San Vito di Cadore ski area",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "separate_operator",
+        "full_local_pass"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url",
+        "v2-enrichment-002-san-vito-di-cadore-ski-area-snowmaking-availability",
+        "scope-local-pass-san-vito"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "san-vito-di-cadore-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The complete San Vito operator inventory, independent Impianti Scoter ownership, and full local pass support the represented ski-area identity.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "complete",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "independent",
+        "weather_scope": "unknown",
+        "pass_scope": "full_local",
+        "provider_consensus": "separate",
+        "separation_value": "material",
+        "evidence_refs": [
+          "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url",
+          "v2-enrichment-002-san-vito-di-cadore-ski-area-snowmaking-availability",
+          "scope-local-pass-san-vito"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-di-cadore-access",
+      "candidate_name": "San Vito stay-base to ski-area access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "scope-access-san-vito",
+        "scope-access-route-san-vito"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official route establishes free ski-bus access from central San Vito to NeveSole parking; unsupported point distance and nearest-lift fields are omitted.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-ski-area-skipass",
+      "candidate_name": "San Vito Ski Area Skipass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity",
+        "full_local_pass"
+      ],
+      "evidence_refs": [
+        "scope-local-pass-san-vito"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "san-vito-ski-area-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator's full-area San Vito product is represented as the default pass for the focus destination.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-cortina-valle-skipass",
+      "candidate_name": "Valle Skipass Cortina",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "scope-valley-pass-san-vito"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "san-vito-cortina-valle-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The Valle product is represented as a non-default regional-network option; Cortina, Auronzo, and Misurina remain disconnected pass context rather than San Vito terrain.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-sapiaza",
+      "candidate_name": "Sapiaža",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The village map labels Sapiaža inside San Vito, but the reviewed accommodation collection establishes no independent lodging-and-access owner.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-donarie-locality",
+      "candidate_name": "Donariè locality",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-san-vito-locality-accommodation-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "san-vito-di-cadore-san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The map label is lift-side locality context inside San Vito, not an independently owned accommodation-and-access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-donarie-lift",
+      "candidate_name": "Donariè lift facility",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "san-vito-di-cadore-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator presents Donariè as one lift and piste inside the complete San Vito area, not a separate terrain owner.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "san-vito-di-cadore-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-tambres-lift",
+      "candidate_name": "Tambres lift facility",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "san-vito-di-cadore-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator presents Tambres as one chairlift and piste group inside the complete San Vito area, not a separate terrain owner.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "san-vito-di-cadore-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-san-marco-lift",
+      "candidate_name": "San Marco lift facility",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "san-vito-di-cadore-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator presents San Marco as one chairlift inside the complete San Vito area, not a separate terrain owner.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "san-vito-di-cadore-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-nevesole",
+      "candidate_name": "Parco NeveSole",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url",
+        "scope-nevesole-small-treadmill-access"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "san-vito-di-cadore-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator presents NeveSole as a family snow-play and beginner facility inside the San Vito parent area, not a separate terrain owner.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "san-vito-di-cadore-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "limited",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "v2-enrichment-001-san-vito-di-cadore-ski-area-official-trail-map-url",
+          "scope-nevesole-small-treadmill-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "dolomiti-superski",
+      "candidate_name": "Dolomiti Superski",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "scope-dolomiti-superski-san-vito"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#alta-badia-and-regional-catalog-refinements",
+      "rationale": "Official San Vito sources establish this wider network product, but complete Dolomiti Superski graph coverage is outside this child-area slice.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "san-vito-san-marco-single-journey",
+      "candidate_name": "San Marco single-journey fare",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "scope-local-pass-san-vito"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "This is an individual lift fare rather than a full ski-area pass product.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-tambres-single-journey",
+      "candidate_name": "Tambres single-journey fare",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "scope-local-pass-san-vito"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "This is an individual lift fare rather than a full ski-area pass product.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "san-vito-donarie-single-journey",
+      "candidate_name": "Donariè single-journey fare",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "scope-local-pass-san-vito"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "This is an individual lift fare rather than a full ski-area pass product.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "cortina-dampezzo-ski-area",
+      "candidate_name": "Cortina d'Ampezzo ski area",
+      "candidate_kind": "ski_area",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-valley-pass-san-vito"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "cortina-dampezzo-ski-area"
+        }
+      ],
+      "backlog_ref": "docs/product-backlog.md#alta-badia-and-regional-catalog-refinements",
+      "rationale": "Cortina is disconnected Valle-pass context owned by linked PR #34; this report records the dependency without changing Cortina or adding it to the focus destinations.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "unresolved",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "scope-valley-pass-san-vito"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "auronzo-monte-agudo",
+      "candidate_name": "Auronzo Monte Agudo",
+      "candidate_kind": "ski_area",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-valley-pass-san-vito"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "Auronzo is disconnected Valle-pass coverage context and is not part of the San Vito terrain graph.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "unresolved",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "scope-valley-pass-san-vito"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "misurina-passo-tre-croci",
+      "candidate_name": "Misurina Passo Tre Croci",
+      "candidate_kind": "ski_area",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-valley-pass-san-vito"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "Misurina is disconnected Valle-pass coverage context and is not part of the San Vito terrain graph.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "unresolved",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "scope-valley-pass-san-vito"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    }
+  ],
+  "review_evidence_envelope": [
+    {
+      "family_id": "san-vito-destination-booking",
+      "source_kind": "destination_booking",
+      "source_urls": [
+        "https://san-vito.visitcadore.com/",
+        "https://visitcadoredolomiti.com/wp-content/uploads/2024/02/Mappa_San_Vito_Cadore-new.pdf",
+        "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Appartamenti-S.Vito-Borca-e-Vodo.pdf",
+        "https://www.visitdolomitibellunesi.com/en/hotels/dolomiti-5"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base"
+      ]
+    },
+    {
+      "family_id": "san-vito-operator-map",
+      "source_kind": "ski_area_operator",
+      "source_urls": [
+        "https://www.skiareasanvito.com/impianti/"
+      ],
+      "candidate_kinds": [
+        "ski_area"
+      ]
+    },
+    {
+      "family_id": "san-vito-access",
+      "source_kind": "access_transport",
+      "source_urls": [
+        "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+        "https://www.skiareasanvito.com/ski-bus/"
+      ],
+      "candidate_kinds": [
+        "ski_area_access"
+      ]
+    },
+    {
+      "family_id": "san-vito-pass-tariffs",
+      "source_kind": "pass_tariff",
+      "source_urls": [
+        "https://www.skiareasanvito.com/en/rates/"
+      ],
+      "candidate_kinds": [
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "san-vito-limited-facility-access",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Cartina_San_Vito_di_Cadore_low-1.pdf"
+      ],
+      "candidate_kinds": [
+        "ski_area"
+      ]
+    },
+    {
+      "family_id": "san-vito-linked-cortina-pr",
+      "source_kind": "linked_pr_dependency",
+      "source_urls": [
+        "https://www.skiareasanvito.com/en/rates/"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "san-vito-touched-relationships",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+        "https://www.skiareasanvito.com/en/rates/"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base",
+        "ski_area",
+        "ski_area_access",
+        "lift_pass_product"
+      ]
+    }
+  ],
+  "boundary_decision_targets": [
+    "san-vito-di-cadore"
+  ],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "resulting_graph": {
+    "focus_stay_destination_ids": [
+      "san-vito-di-cadore"
+    ]
+  },
+  "validation_commands": [],
+  "ranking_impact_summary": "The direct ski-bus edge remains available but no longer carries an unsupported 800 m point distance or Tambres endpoint; all scoring policy and weather ownership remain unchanged.",
+  "unresolved_caveats": [
+    "NeveSole is a family snow-play and beginner area, not evidence of a dedicated freestyle snowpark, so the snow-park fact remains unknown.",
+    "No child-area glacier, night-skiing, marked-freeride, or explicit ski-day-après inventory was established.",
+    "The operator confirms programmed snow availability across the area but publishes no numerical coverage percentage or denominator, so coverage remains unset."
+  ]
+}

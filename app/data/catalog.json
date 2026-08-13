@@ -2046,10 +2046,10 @@
       "regional_data_ids": {
         "osm_relation_id": "47211"
       },
-      "elevation_m": null,
+      "elevation_m": 1011,
       "base_character": {
         "development_style": "unknown",
-        "local_pace": "unknown"
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -4453,7 +4453,7 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -4475,7 +4475,9 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.skiareasanvito.com/wp-content/uploads/2019/06/cartina-impianti-san-vito-di-cadore.jpg"
+      },
       "ski_day_apres_profile": {
         "availability": "unknown",
         "intensity": null,
@@ -6101,13 +6103,14 @@
       "ski_area_id": "san-vito-di-cadore-ski-area",
       "access_mode": "ski_bus",
       "lift_distance": "near",
-      "nearest_lift_name": "Tambres Chairlift",
-      "distance_m": 800,
+      "nearest_lift_name": null,
+      "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.skiareasanvito.com/en/rates/"
+        "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+        "https://www.skiareasanvito.com/ski-bus/"
       ]
     },
     {
