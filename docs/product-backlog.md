@@ -120,6 +120,41 @@ historical data, migration/backfill handoff, merge order, and rollback. Actual
 database migrations, catalog-schema changes, and production-code changes remain
 separate work and block readiness rather than proposal creation.
 
+### Val Gardena Regional Catalog Refinements
+
+Status: parked
+Area: Data Trust
+Source: Val Gardena graph and source-trust review; PR #39
+
+Next bounded slice:
+
+- Complete the Seiser Alm destination, stay-base, direct-access, terrain-owner,
+  weather-owner, and pass graph before adding it as modeled Val Gardena-linked
+  coverage.
+
+Candidate inventory:
+
+- `ski_area:val-gardena-ski-area`, `ski_area:ciampinoi-saslong`,
+  `ski_area:monte-pana-mont-de-seura`,
+  `ski_area:plan-de-gralba-piz-sella-piz-seteur`, and `ski_area:resciesa`
+  require direct complete operations/weather ownership evidence before the
+  report can resolve their finer owner boundaries.
+- `stay_destination:seiser-alm-region`, `ski_area:seiser-alm`, and
+  `ski_area_access:ortisei--seiser-alm` require one complete linked
+  graph; the shared pass alone does not establish accommodation, access, or
+  weather ownership.
+- `stay_base:val-gardena-plan-de-gralba` and
+  `stay_base:val-gardena-monte-pana` remain lodging/access sectors until their
+  accommodation-market role and separation value from Selva and S. Cristina
+  are established.
+- `lift_pass_product:val-gardena-points-value-card` and
+  `lift_pass_product:dantercepies-three-hour` require current exact tariffs and
+  evidence of durable trip-planning value distinct from the shared main pass.
+
+The selected Val Gardena graph keeps shared 181 km/79-lift inventory on the
+modeled pass, not on the narrower weather-owning ski-area record. No Seiser Alm
+terrain domain or access edge is modeled until the linked graph is complete.
+
 ### Alta Badia and Regional Catalog Refinements
 
 Status: parked
