@@ -1,4 +1,5 @@
 {
+  "report_schema_version": 3,
   "title": "Val Gardena Catalog V2 Fact Enrichment",
   "summary": "Reviews Val Gardena ski-area and Ortisei stay-base facts against official Val Gardena and Dolomiti Superski sources, keeping valley-wide ski-day après separate from base-local evidence.",
   "changed_entities": [
@@ -802,17 +803,181 @@
       "source_value": 1236,
       "evidence_summary": "The official Val Gardena guide gives Ortisei at 1,236 m.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-val-gardena-local-pass",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+      "source_title": "Val Gardena official ski-pass guide",
+      "source_value": "Val Gardena/Seiser Alm Ski Pass",
+      "evidence_summary": "The official destination pass guide identifies the local Val Gardena/Seiser Alm ski-pass scope used by the current catalog graph.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-val-gardena-ortisei-access",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/",
+      "source_title": "Val Gardena official ski-holiday guide",
+      "source_value": "Ortisei",
+      "evidence_summary": "The official destination guide presents Ortisei within the Val Gardena ski-holiday and access context used by the current catalog graph.",
+      "normalization_note": null
     }
   ],
   "destination_boundary_assessments": [],
+  "entity_scope_assessments": [
+    {
+      "candidate_id": "val-gardena-ortisei",
+      "candidate_name": "Ortisei",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-007-val-gardena-ortisei-base-character-development-style",
+        "v2-enrichment-008-val-gardena-ortisei-base-character-local-pace",
+        "v2-enrichment-009-val-gardena-ortisei-base-type",
+        "v2-enrichment-010-val-gardena-ortisei-elevation-m",
+        "scope-val-gardena-ortisei-access"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "val-gardena-ortisei"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The report's existing official Ortisei evidence supports retaining the current stay-base record while the independent review reconstructs the complete Val Gardena stay-market inventory.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-gardena-ski-area",
+      "candidate_name": "Val Gardena",
+      "candidate_kind": "ski_area",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "full_local_pass",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-001-val-gardena-ski-area-official-trail-map-url",
+        "v2-enrichment-006-val-gardena-ski-area-snowmaking-availability",
+        "scope-val-gardena-local-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": "docs/product-backlog.md#alta-badia-and-regional-catalog-refinements",
+      "rationale": "The legacy report did not assess the complete operator, weather-owner, pass, and connected-sector boundary required by schema version 3. The current catalog relationship is retained unchanged for independent source-trust and graph-scope review.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "unresolved",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "full_local",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-enrichment-001-val-gardena-ski-area-official-trail-map-url",
+          "v2-enrichment-006-val-gardena-ski-area-snowmaking-availability",
+          "scope-val-gardena-local-pass"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    }
+  ],
+  "review_evidence_envelope": [
+    {
+      "family_id": "val-gardena-destination-booking",
+      "source_kind": "destination_booking",
+      "source_urls": [
+        "https://www.valgardena.it/en/ortisei/"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base"
+      ]
+    },
+    {
+      "family_id": "val-gardena-operator-map",
+      "source_kind": "ski_area_operator",
+      "source_urls": [
+        "https://www.dolomitisuperski.com/en/live-info/ski-map",
+        "https://www.valgardena.it/en/news-val-gardena/detail/new-slopes-lifts-in-val-gardena/"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "terrain_domain"
+      ]
+    },
+    {
+      "family_id": "val-gardena-pass-tariff",
+      "source_kind": "pass_tariff",
+      "source_urls": [
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "val-gardena-access",
+      "source_kind": "access_transport",
+      "source_urls": [
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+      ],
+      "candidate_kinds": [
+        "stay_base",
+        "ski_area_access"
+      ]
+    },
+    {
+      "family_id": "val-gardena-touched-relationships",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://www.dolomitisuperski.com/en/live-info/ski-map",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+      ],
+      "candidate_kinds": [
+        "stay_base",
+        "ski_area",
+        "ski_area_access",
+        "lift_pass_product",
+        "terrain_domain"
+      ]
+    }
+  ],
   "boundary_decision_targets": [],
   "weather_request_geometry_targets": [],
   "weather_request_geometry_assessments": [],
+  "resulting_graph": {
+    "focus_stay_destination_ids": [
+      "val-gardena"
+    ]
+  },
   "validation_commands": [],
   "ranking_impact_summary": null,
   "unresolved_caveats": [
     "Official sources confirm snowmaking infrastructure but do not publish a stable child-area coverage percentage with a denominator.",
     "No authoritative glacier, night-skiing, or marked downhill freeride-route inventory was established.",
-    "Valley-wide huts and après evidence supports the ski-area profile but is not copied into Ortisei's local après object without base-specific evidence."
+    "Valley-wide huts and après evidence supports the ski-area profile but is not copied into Ortisei's local après object without base-specific evidence.",
+    "Schema-version-3 pre-review normalization preserves the current Val Gardena graph but does not resolve the complete booking, operator, pass, access, or linked-sector candidate inventory; independent source-trust and graph-scope review must do that before remediation."
   ]
 }
