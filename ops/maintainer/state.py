@@ -2291,7 +2291,11 @@ class StateStore:
             },
         }
         replay_reset = (
-            existing.validation_status is ContinuationValidationStatus.PASSED
+            existing.validation_status
+            in {
+                ContinuationValidationStatus.FAILED,
+                ContinuationValidationStatus.PASSED,
+            }
             and continuation.status is ContinuationStatus.RESOLVING
             and continuation.validation_status is ContinuationValidationStatus.NOT_RUN
         )

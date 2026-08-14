@@ -6408,6 +6408,68 @@ def test_validation_failure_preserves_exact_retryable_continuation(
     assert continuation.validation_status is ContinuationValidationStatus.FAILED
 
 
+def test_failed_validation_can_replay_onto_advanced_main_for_fresh_review(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    origin_run = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, origin_run, github, repository)
+    _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "validate",
+            "curation",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--base-dir",
+            str(tmp_path / "base"),
+            "--run-id",
+            origin_run,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        curation_validator=lambda **_kwargs: (_ for _ in ()).throw(
+            MaintainerError(ErrorReason.VALIDATION_FAILED, ErrorStage.VALIDATE)
+        ),
+    )
+    RunLease.load_owner(state_dir, "curation", origin_run).release()
+    successor = _acquire(capsys, state_dir, "curation")
+    repository.continuation_result = "prepared"
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "continuation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0, payload
+    assert payload["continuation"]["result"] == "review-required"
+    continuation = StateStore(state_dir).load_continuation("curation-pr-42")
+    assert continuation is not None
+    assert continuation.status is ContinuationStatus.RESOLVING
+    assert continuation.validation_status is ContinuationValidationStatus.NOT_RUN
+
+
 def test_legacy_reviewed_work_can_be_adopted_only_by_successor_lease(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
