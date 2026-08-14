@@ -41,6 +41,10 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   deferred, or blocked by concretely unavailable evidence. Actionable catalog,
   trust, backlog, rendered-report, and focused-test defects move into ordinary
   remediation rather than keeping the review incomplete.
+- Missing exact evidence for an optional scalar fact is actionable whenever the
+  value can be safely qualified as a proxy, downgraded, or removed. Unavailable
+  evidence blocks inventory only for graph-critical identity, ownership,
+  access, or pass-validity facts with no conservative graph-safe disposition.
 - A graph-blocking deferral closes the knowledge gap but creates a graph-safety
   finding; only a regional follow-up can defer without remediation. Conflicting
   lane outcomes remain missing until a focused exact-head reconciliation.

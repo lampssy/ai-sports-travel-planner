@@ -76,9 +76,10 @@ mismatch that cannot be resolved from the concise runtime source set.
    profile, and that no credential content is embedded. Compare the installed
    maintainer, catalog-curation, and catalog-review skills with the merged
    inventory decision table. Require all five inventory outcomes, the graph-
-   impact deferral transition, the lane-conflict aggregation rule, and the mixed
-   unavailable/researchable second-pass rule. On any mismatch, keep both
-   schedules paused as contract-mismatch.
+   impact deferral transition, the lane-conflict aggregation rule, the mixed
+   unavailable/researchable second-pass rule, and the optional-scalar
+   disposition rule. On any mismatch, keep both schedules paused as
+   contract-mismatch.
 8. Run disabled/manual curation and discovery smoke cycles. Confirm curation can
    distinguish post-push CI, reviewed, remediation, and ordinary recovery, and
    discovery uses regional backlog work before external scanning without
@@ -273,6 +274,19 @@ The installed skill must:
   | `actionable_finding` | Candidate and evidence are known well enough to state one exact defect and acceptance criterion. | Remove from the missing-inventory checklist. | Promote it to the finding ledger. |
   | `defensible_deferred` | Direct evidence supports a typed deferral with its concrete prerequisite and canonical backlog reference. | Remove from the missing-inventory checklist. | Apply the graph-impact rule below. |
   | `evidence_unavailable` | The exact required evidence cannot currently be obtained and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
+
+  For inventory outcomes, an optional scalar fact such as a representative
+  price, count, or descriptive attribute must be `actionable_finding` when the
+  candidate and available evidence support a safe conservative remediation.
+  The acceptance criterion may replace it with exact evidence, retain it as a
+  clearly labeled proxy with `verified_with_adjustment` trust and an explicit
+  limitation caveat, downgrade its trust, or remove or clear the unsupported
+  value. Such an item must not be `evidence_unavailable` and does not block
+  evidence-envelope freeze. Reserve `evidence_unavailable` for a graph-critical
+  identity, ownership, access, or pass-validity fact when no graph-safe
+  conservative representation or defensible typed deferral is possible. Stale
+  rendered Markdown is likewise an `actionable_finding`: regenerate it during
+  ordinary remediation; it does not make review incomplete.
 
   A regional-followup defensible deferral requires no remediation finding
   because omitting it leaves the selected graph correct. A graph-blocking
@@ -664,9 +678,9 @@ For each schedule, confirm:
   fewer/lower/narrower and non-narrowing-count convergence rule;
 - activation rejects an installed maintainer, catalog-curation, or catalog-
   review skill that lacks all five inventory outcomes, the graph-impact deferral
-  transition, the lane-conflict aggregation rule, or the mixed unavailable/
-  researchable second-pass rule, and keeps both schedules paused as contract-
-  mismatch;
+  transition, the lane-conflict aggregation rule, the mixed unavailable/
+  researchable second-pass rule, or the optional-scalar disposition rule, and
+  keeps both schedules paused as contract-mismatch;
 - a legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
   report is normalized before initial dual review, without consuming a
   remediation slot, while canonical intent still rejects it until that commit;

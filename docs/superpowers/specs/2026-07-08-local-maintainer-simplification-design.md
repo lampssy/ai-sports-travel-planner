@@ -556,6 +556,19 @@ prepare -> provisional evidence envelope -> dual inventory
    | `defensible_deferred` | Direct evidence supports a typed deferral, concrete prerequisite, and canonical backlog reference. | Remove from the missing-inventory checklist. | Apply the graph-impact rule below. |
    | `evidence_unavailable` | Exact required evidence cannot be obtained and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
 
+   For inventory outcomes, an optional scalar fact such as a representative
+   price, count, or descriptive attribute must be `actionable_finding` when the
+   candidate and available evidence support a safe conservative remediation.
+   Its acceptance criterion may replace it with exact evidence, retain it as a
+   clearly labeled proxy with `verified_with_adjustment` trust and an explicit
+   limitation caveat, downgrade its trust, or remove or clear the unsupported
+   value. Such an item must not be `evidence_unavailable` and does not block
+   evidence-envelope freeze. Reserve `evidence_unavailable` for a graph-critical
+   identity, ownership, access, or pass-validity fact when no graph-safe
+   conservative representation or defensible typed deferral is possible. Stale
+   rendered Markdown is likewise an `actionable_finding`: regenerate it during
+   ordinary remediation; it does not make review incomplete.
+
    A regional-followup defensible deferral requires no remediation finding. A
    graph-blocking defensible deferral closes the knowledge checklist but must
    also create an actionable graph-safety finding. Its acceptance criterion is
