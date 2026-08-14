@@ -21,6 +21,8 @@ from app.domain.catalog import CatalogSnapshot
 from app.domain.catalog_trust import FIELD_GROUPS
 from tests.test_catalog_models import minimal_catalog_payload
 
+pytestmark = pytest.mark.db_free
+
 
 def _trust_payload(catalog_payload: dict) -> dict:
     snapshot = CatalogSnapshot.model_validate(catalog_payload)

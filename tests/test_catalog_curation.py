@@ -32,6 +32,8 @@ from tests.test_catalog_models import (
     minimal_catalog_payload,
 )
 
+pytestmark = pytest.mark.db_free
+
 NORMALIZED_TARGET_TYPES = {
     "ski_region",
     "stay_destination",
