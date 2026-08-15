@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: draft; conversational design accepted, written-spec review pending
+- Status: accepted
 - Owner: solo-builder
 - Related docs:
   - `docs/operating-model/local-maintainer-activation.md`
@@ -94,8 +94,8 @@ new ski-catalog domain language.
 
 ### Curation Timeline
 
-Each curation PR has at most one `CurationTimeline`. The timeline is the sole
-cross-run authority for pre-push curation progress.
+Each curation PR has at most one logical `CurationTimeline`. The timeline is the
+sole cross-run authority for pre-push curation progress.
 
 The timeline contains:
 
@@ -104,9 +104,14 @@ The timeline contains:
 - target branch identity; and
 - an ordered, non-empty list of immutable generations.
 
-The timeline is stored as one private Pydantic-validated document and replaced
-atomically. Existing events are never edited or removed. New facts are appended
-as new events.
+The timeline is stored as a private directory containing one
+Pydantic-validated document per generation. A generation document is replaced
+atomically only to append events; existing events are never edited or removed.
+The current generation is the highest valid generation number, so no separate
+mutable current-pointer file is required. Each generation document retains the
+existing private-state size limit. The bounded semantic-remediation policy also
+bounds events within one generation, while older generation files remain small
+diagnostic history without growing the active document.
 
 ### Curation Generation
 
@@ -186,7 +191,7 @@ The result includes:
 - result such as `review-required`, `validation-only`,
   `conflict-resolution-required`, or `prepared`;
 - exact allowed conflict paths when applicable; and
-- exact next helper action.
+- exact next helper action as a registered recipe ID plus typed substitutions.
 
 ### `checkpoint curation`
 
@@ -236,7 +241,8 @@ reviewed and remediation continuation inventories. It returns:
 - whether replay or validation is required;
 - whether the generation is stale or invalid;
 - a typed `retryable` boolean; and
-- one registered `next_action` with authorized substitutions.
+- one registered `next_action` containing a recipe ID and authorized typed
+  substitutions, never a shell command string.
 
 Codex no longer reconstructs recovery priority between reviewed and remediation
 objects.
@@ -323,6 +329,12 @@ A one-time registered migration capability will:
 6. write the new state-format marker atomically; and
 7. return an inventory count without exposing private ref names.
 
+Migration writes an archive manifest containing hashes and bounded counts of
+the moved owner-private files and refs. Rollback is permitted only while no new
+generation or external mutation authority has been created after migration.
+Once generation-based work starts, rollback is forbidden; recovery proceeds
+through the new state model instead.
+
 The owner has explicitly accepted restarting unpublished pre-push review and
 remediation work from current remote PR heads. Archived state is diagnostic
 only and cannot be adopted by the new runtime.
@@ -342,9 +354,17 @@ authorized for branch mutation. Existing post-push CI continuations and
 terminal-publication intents retain their current meaning, ordering, recovery,
 and hard-stop behavior.
 
-The validated generation supplies immutable input to push authorization. After
-the push journal becomes authoritative, the generation is consumed. It cannot
-be independently resumed or used to authorize another push.
+The generation supplies immutable input to external mutation through two typed
+values. `ReviewedCurationAuthority` contains the work ID, PR, branch, selected
+remote head, prepare-time base, reviewed head, report path, guarded-sync facts,
+and review timestamp. `ValidatedCurationAuthority` extends that exact authority
+with the validated head, resulting graph, and validation timestamp. Ordinary
+push requires validated authority; the existing exceptional manual-check path
+requires reviewed authority and remains explicitly unvalidated. Existing
+push-journal and CI code consumes these values rather than loading reviewed or
+remediation continuation records. After the push journal becomes authoritative,
+the generation is consumed. It cannot be independently resumed or used to
+authorize another push.
 
 ## Decision And Review Gate
 
@@ -366,7 +386,8 @@ be independently resumed or used to authorize another push.
 - ADR status: required; add ADR 0020 before implementation
 - Advisory design-review:
   - reviewers: backend-api, security-privacy, observability-ops
-  - status: pending written-spec owner review
+  - status: completed; storage bounds, structured next actions, validated
+    authority handoff, and migration rollback boundary incorporated
 - Advisory feature-review before final handoff:
   - reviewers: backend-api, security-privacy, observability-ops
   - status: planned
