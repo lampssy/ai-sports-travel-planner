@@ -105,6 +105,15 @@ def _parser() -> argparse.ArgumentParser:
     inspect_commands.add_parser("curation")
     inspect_commands.add_parser("discovery")
 
+    migrate = families.add_parser("migrate")
+    migrate_commands = migrate.add_subparsers(dest="command", required=True)
+    migrate_curation_state = migrate_commands.add_parser("curation-state")
+    migrate_curation_state.add_argument(
+        "--archive-legacy",
+        action="store_true",
+        required=True,
+    )
+
     publication_input = families.add_parser("publication-input")
     publication_input_commands = publication_input.add_subparsers(
         dest="command",
@@ -290,13 +299,12 @@ def _compose_dependencies(
 ) -> Dependencies:
     root = (repository_root or Path.cwd()).resolve()
     needs_repository = (args.family, args.command) in {
+        ("migrate", "curation-state"),
         ("prepare", "curation"),
-        ("prepare", "continuation"),
         ("prepare", "ci-repair"),
-        ("checkpoint", "remediation"),
+        ("checkpoint", "curation"),
         ("checkpoint", "ci-repair"),
         ("validate", "curation"),
-        ("validate", "reviewed"),
         ("validate", "proposal"),
         ("publish", "push"),
         ("publish", "ci-repair"),

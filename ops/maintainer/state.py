@@ -528,7 +528,11 @@ class RunOutcome(BaseModel):
     @model_validator(mode="after")
     def validate_outcome(self) -> RunOutcome:
         if self.lease_run_id is None:
-            if self.mutation_occurred:
+            migration_mutation = (
+                self.mutation_occurred
+                and self.terminal_reason == "curation_state_migrated"
+            )
+            if self.mutation_occurred and not migration_mutation:
                 raise ValueError("mutation requires a lease run ID")
             if any(
                 value is not None

@@ -2,15 +2,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import secrets
+import stat
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal, Protocol, Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from ops.maintainer.git_ops import GuardedSyncResult
+from ops.maintainer.git_ops import GuardedSyncResult, LegacyCurationRef
 from ops.maintainer.runtime import (
     LeaseMetadataError,
     RunLease,
@@ -20,6 +24,7 @@ from ops.maintainer.runtime import (
     _transition_mutex,
     _write_json_atomic,
 )
+from ops.maintainer.state import StateStore, StateStoreError, WorkState
 
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _GENERATION_ID_PATTERN = r"^[0-9a-f]{32}$"
@@ -31,10 +36,30 @@ _GENERATION_FILE_PATTERN = re.compile(
     r"^(?P<number>[1-9][0-9]*)-(?P<generation_id>[0-9a-f]{32})\.json$"
 )
 _MAX_GENERATION_BYTES = 65_536
+_MAX_LEGACY_FILE_BYTES = 65_536
+_FORMAT_MARKER_NAME = "curation-state-format.json"
+_MIGRATION_POINTER_NAME = "curation-state-migration.json"
+_LEGACY_ARCHIVE_ROOT = "legacy-curation-v1"
 
 
 class CurationStateError(RuntimeError):
     """Raised when generation authority cannot be loaded or advanced safely."""
+
+
+class CurationMigrationError(CurationStateError):
+    """Raised when legacy curation state cannot be archived safely."""
+
+    def __init__(
+        self,
+        reason: Literal[
+            "active-lease",
+            "external-recovery",
+            "format-conflict",
+            "unsafe-state",
+        ],
+    ) -> None:
+        self.reason = reason
+        super().__init__(reason)
 
 
 class CurationCheckpointStage(StrEnum):
@@ -52,6 +77,81 @@ class CurationRecipeId(StrEnum):
 
 class _StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+
+class CurationStateFormat(_StrictModel):
+    schema_version: Literal[1]
+    format: Literal["generation-v2"]
+    archive_id: str = Field(pattern=_GENERATION_ID_PATTERN)
+    migrated_at: datetime
+
+    @model_validator(mode="after")
+    def normalize_migrated_at(self) -> Self:
+        if self.migrated_at.tzinfo is None or self.migrated_at.utcoffset() is None:
+            raise ValueError("curation format time must include a timezone")
+        object.__setattr__(self, "migrated_at", self.migrated_at.astimezone(UTC))
+        return self
+
+
+class LegacyCurationFileEntry(_StrictModel):
+    source_path: str = Field(
+        pattern=(
+            r"^(?:work|continuations|remediation-continuations)/"
+            r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\.json$"
+        )
+    )
+    archive_path: str = Field(
+        pattern=(
+            r"^legacy-curation-v1/[0-9a-f]{32}/"
+            r"(?:work|continuations|remediation-continuations)/"
+            r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\.json$"
+        )
+    )
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    size_bytes: int = Field(ge=1, le=_MAX_LEGACY_FILE_BYTES)
+
+
+class LegacyCurationArchiveManifest(_StrictModel):
+    schema_version: Literal[1]
+    archive_id: str = Field(pattern=_GENERATION_ID_PATTERN)
+    created_at: datetime
+    files: tuple[LegacyCurationFileEntry, ...]
+    refs: tuple[LegacyCurationRef, ...]
+
+    @model_validator(mode="after")
+    def validate_manifest(self) -> Self:
+        if self.created_at.tzinfo is None or self.created_at.utcoffset() is None:
+            raise ValueError("curation archive time must include a timezone")
+        object.__setattr__(self, "created_at", self.created_at.astimezone(UTC))
+        if len({item.source_path for item in self.files}) != len(self.files):
+            raise ValueError("curation archive contains duplicate file paths")
+        if len({item.source_ref for item in self.refs}) != len(self.refs):
+            raise ValueError("curation archive contains duplicate refs")
+        return self
+
+
+class LegacyCurationMigrationPointer(_StrictModel):
+    schema_version: Literal[1]
+    archive_id: str = Field(pattern=_GENERATION_ID_PATTERN)
+
+
+class LegacyCurationMigrationResult(_StrictModel):
+    archive_id: str = Field(pattern=_GENERATION_ID_PATTERN)
+    files_archived: int = Field(ge=0, le=10_000)
+    refs_archived: int = Field(ge=0, le=10_000)
+    already_migrated: bool
+
+
+class LegacyCurationRefRepository(Protocol):
+    def legacy_curation_refs(
+        self,
+        archive_id: str,
+    ) -> tuple[LegacyCurationRef, ...]: ...
+
+    def archive_legacy_curation_refs(
+        self,
+        refs: Sequence[LegacyCurationRef],
+    ) -> int: ...
 
 
 class CurationActionSubstitutions(_StrictModel):
@@ -638,6 +738,314 @@ class CurationGenerationStore:
         if lease.worker != "curation" or lease.state_dir != self.state_dir:
             raise CurationStateError("generation mutation requires curation lease")
         lease.assert_owner()
+
+
+def curation_state_migration_required(state_dir: str | Path) -> bool:
+    state_path = Path(state_dir)
+    try:
+        state_path.lstat()
+    except FileNotFoundError:
+        return False
+    except OSError as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+    marker = _load_format_marker(state_path)
+    if marker is not None:
+        return False
+    if (state_path / _MIGRATION_POINTER_NAME).exists():
+        return True
+    for directory_name in (
+        "continuations",
+        "remediation-continuations",
+    ):
+        directory = state_path / directory_name
+        if directory.exists() and any(directory.iterdir()):
+            return True
+    return False
+
+
+def migrate_legacy_curation_state(
+    state_dir: str | Path,
+    repository: LegacyCurationRefRepository,
+    *,
+    now: datetime,
+    archive_id_factory: Callable[[], str] = lambda: secrets.token_hex(16),
+) -> LegacyCurationMigrationResult:
+    state_path = Path(state_dir)
+    observed_at = _normalize_migration_time(now)
+    _ensure_private_directory(state_path, parents=True)
+    with _transition_mutex(state_path):
+        _require_no_active_lease(state_path)
+        marker = _load_format_marker(state_path)
+        if marker is not None:
+            manifest = _load_archive_manifest(state_path, marker.archive_id)
+            pointer_path = state_path / _MIGRATION_POINTER_NAME
+            if pointer_path.exists():
+                pointer = _load_migration_pointer(pointer_path)
+                if pointer.archive_id != marker.archive_id:
+                    raise CurationMigrationError("format-conflict")
+                pointer_path.unlink()
+            return LegacyCurationMigrationResult(
+                archive_id=marker.archive_id,
+                files_archived=len(manifest.files),
+                refs_archived=len(manifest.refs),
+                already_migrated=True,
+            )
+
+        if CurationGenerationStore.list_current_for_inspection_path(state_path):
+            raise CurationMigrationError("format-conflict")
+        _require_no_external_recovery(state_path)
+        pointer_path = state_path / _MIGRATION_POINTER_NAME
+        if pointer_path.exists():
+            pointer = _load_migration_pointer(pointer_path)
+            manifest = _load_archive_manifest(state_path, pointer.archive_id)
+        else:
+            archive_id = archive_id_factory()
+            if re.fullmatch(_GENERATION_ID_PATTERN, archive_id) is None:
+                raise CurationMigrationError("unsafe-state")
+            files = _inventory_legacy_curation_files(state_path, archive_id)
+            refs = repository.legacy_curation_refs(archive_id)
+            manifest = LegacyCurationArchiveManifest(
+                schema_version=1,
+                archive_id=archive_id,
+                created_at=observed_at,
+                files=files,
+                refs=refs,
+            )
+            archive_dir = _archive_dir(state_path, archive_id)
+            _ensure_private_directory(
+                state_path / _LEGACY_ARCHIVE_ROOT,
+                parents=False,
+            )
+            _ensure_private_directory(archive_dir, parents=False)
+            _write_json_atomic(
+                archive_dir / "manifest.json",
+                manifest.model_dump(mode="json"),
+            )
+            _write_json_atomic(
+                pointer_path,
+                LegacyCurationMigrationPointer(
+                    schema_version=1,
+                    archive_id=archive_id,
+                ).model_dump(mode="json"),
+            )
+
+        repository.archive_legacy_curation_refs(manifest.refs)
+        for entry in manifest.files:
+            _archive_legacy_file(state_path, entry)
+        marker = CurationStateFormat(
+            schema_version=1,
+            format="generation-v2",
+            archive_id=manifest.archive_id,
+            migrated_at=observed_at,
+        )
+        _write_json_atomic(
+            state_path / _FORMAT_MARKER_NAME,
+            marker.model_dump(mode="json"),
+        )
+        pointer_path.unlink(missing_ok=True)
+        return LegacyCurationMigrationResult(
+            archive_id=manifest.archive_id,
+            files_archived=len(manifest.files),
+            refs_archived=len(manifest.refs),
+            already_migrated=False,
+        )
+
+
+def _inventory_legacy_curation_files(
+    state_path: Path,
+    archive_id: str,
+) -> tuple[LegacyCurationFileEntry, ...]:
+    store = StateStore(state_path)
+    candidates: list[Path] = []
+    for directory_name, loader in (
+        ("continuations", store.load_continuation),
+        (
+            "remediation-continuations",
+            store.load_remediation_continuation,
+        ),
+    ):
+        directory = state_path / directory_name
+        for path in _validated_json_directory(directory):
+            work_id = path.name.removesuffix(".json")
+            if loader(work_id) is None:
+                raise CurationMigrationError("unsafe-state")
+            candidates.append(path)
+    work_dir = state_path / "work"
+    for path in _validated_json_directory(work_dir):
+        work_id = path.name.removesuffix(".json")
+        work = store.load_work(work_id)
+        if not isinstance(work, WorkState):
+            raise CurationMigrationError("unsafe-state")
+        if work.worker == "curation":
+            candidates.append(path)
+
+    entries = []
+    for path in sorted(candidates):
+        raw = _read_private_bytes(path)
+        relative = path.relative_to(state_path).as_posix()
+        entries.append(
+            LegacyCurationFileEntry(
+                source_path=relative,
+                archive_path=(f"{_LEGACY_ARCHIVE_ROOT}/{archive_id}/{relative}"),
+                sha256=hashlib.sha256(raw).hexdigest(),
+                size_bytes=len(raw),
+            )
+        )
+    return tuple(entries)
+
+
+def _validated_json_directory(directory: Path) -> tuple[Path, ...]:
+    try:
+        directory.lstat()
+    except FileNotFoundError:
+        return ()
+    except OSError as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+    try:
+        _ensure_private_directory(directory, parents=False, create=False)
+        entries = tuple(sorted(directory.iterdir(), key=lambda item: item.name))
+    except (OSError, RunLeaseError) as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+    if any(
+        not path.name.endswith(".json") or path.name in {".json", "..json"}
+        for path in entries
+    ):
+        raise CurationMigrationError("unsafe-state")
+    return entries
+
+
+def _read_private_bytes(path: Path) -> bytes:
+    descriptor: int | None = None
+    try:
+        flags = os.O_RDONLY
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        descriptor = os.open(path, flags)
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != os.getuid()
+            or metadata.st_mode & 0o077
+            or not 0 < metadata.st_size <= _MAX_LEGACY_FILE_BYTES
+        ):
+            raise CurationMigrationError("unsafe-state")
+        raw = os.read(descriptor, metadata.st_size + 1)
+        if len(raw) != metadata.st_size:
+            raise CurationMigrationError("unsafe-state")
+        return raw
+    except CurationMigrationError:
+        raise
+    except OSError as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+
+def _archive_legacy_file(
+    state_path: Path,
+    entry: LegacyCurationFileEntry,
+) -> None:
+    source = state_path / entry.source_path
+    archive = state_path / entry.archive_path
+    if archive.exists():
+        if source.exists() or not _matches_archive_entry(archive, entry):
+            raise CurationMigrationError("format-conflict")
+        return
+    if not source.exists() or not _matches_archive_entry(source, entry):
+        raise CurationMigrationError("format-conflict")
+    _ensure_private_directory(archive.parent, parents=True)
+    try:
+        source.replace(archive)
+    except OSError as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+    if not _matches_archive_entry(archive, entry):
+        raise CurationMigrationError("unsafe-state")
+
+
+def _matches_archive_entry(path: Path, entry: LegacyCurationFileEntry) -> bool:
+    raw = _read_private_bytes(path)
+    return (
+        len(raw) == entry.size_bytes and hashlib.sha256(raw).hexdigest() == entry.sha256
+    )
+
+
+def _load_format_marker(state_path: Path) -> CurationStateFormat | None:
+    path = state_path / _FORMAT_MARKER_NAME
+    try:
+        raw = _read_private_json(path, max_bytes=4096)
+    except FileNotFoundError:
+        return None
+    except (LeaseMetadataError, RunLeaseError) as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+    try:
+        return CurationStateFormat.model_validate_json(json.dumps(raw))
+    except ValidationError as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+
+
+def _load_migration_pointer(path: Path) -> LegacyCurationMigrationPointer:
+    try:
+        raw = _read_private_json(path, max_bytes=4096)
+        return LegacyCurationMigrationPointer.model_validate_json(json.dumps(raw))
+    except (LeaseMetadataError, RunLeaseError, ValidationError) as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+
+
+def _load_archive_manifest(
+    state_path: Path,
+    archive_id: str,
+) -> LegacyCurationArchiveManifest:
+    try:
+        raw = _read_private_json(
+            _archive_dir(state_path, archive_id) / "manifest.json",
+            max_bytes=1_048_576,
+        )
+        manifest = LegacyCurationArchiveManifest.model_validate_json(json.dumps(raw))
+    except (
+        FileNotFoundError,
+        LeaseMetadataError,
+        RunLeaseError,
+        ValidationError,
+    ) as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+    if manifest.archive_id != archive_id:
+        raise CurationMigrationError("format-conflict")
+    return manifest
+
+
+def _archive_dir(state_path: Path, archive_id: str) -> Path:
+    return state_path / _LEGACY_ARCHIVE_ROOT / archive_id
+
+
+def _require_no_active_lease(state_path: Path) -> None:
+    try:
+        (state_path / "run.lock").lstat()
+    except FileNotFoundError:
+        return
+    except OSError as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+    raise CurationMigrationError("active-lease")
+
+
+def _require_no_external_recovery(state_path: Path) -> None:
+    try:
+        if (
+            StateStore.list_unresolved_for_inspection(state_path)
+            or StateStore.list_ci_continuations_for_inspection_path(state_path)
+            or StateStore.list_terminal_publications_for_inspection_path(state_path)
+        ):
+            raise CurationMigrationError("external-recovery")
+    except StateStoreError as exc:
+        raise CurationMigrationError("unsafe-state") from exc
+
+
+def _normalize_migration_time(value: datetime) -> datetime:
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError("migration time must include a timezone")
+    return value.astimezone(UTC)
 
 
 def _load_generation(path: Path) -> CurationGeneration:

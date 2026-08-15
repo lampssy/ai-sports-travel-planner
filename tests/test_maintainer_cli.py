@@ -36,6 +36,7 @@ from ops.maintainer.git_ops import (
     CurationRecoveryCheckpoint,
     GitTransportError,
     GuardedSyncResult,
+    LegacyCurationRef,
     RebaseConflictError,
     RemediationCheckpointRefs,
     RepositorySafetyError,
@@ -531,6 +532,23 @@ class FakeRepository:
     push_exact_calls: list[tuple[str, str, str]] = field(default_factory=list)
     push_exact_error: Exception | None = None
     push_exact_after_error: Exception | None = None
+    legacy_refs: tuple[LegacyCurationRef, ...] = ()
+    legacy_archive_calls: int = 0
+
+    def legacy_curation_refs(
+        self,
+        archive_id: str,
+    ) -> tuple[LegacyCurationRef, ...]:
+        del archive_id
+        return self.legacy_refs
+
+    def archive_legacy_curation_refs(
+        self,
+        refs: Sequence[LegacyCurationRef],
+    ) -> int:
+        assert tuple(refs) == self.legacy_refs
+        self.legacy_archive_calls += 1
+        return len(refs)
 
     def current_head(self) -> str:
         return self.head
@@ -1041,6 +1059,7 @@ def _ci_continuation_for_cli(lease: RunLease) -> CiContinuation:
 
 
 EXPECTED_HANDLERS = {
+    ("migrate", "curation-state"),
     ("inspect", "curation"),
     ("inspect", "discovery"),
     ("prepare", "curation"),
@@ -5000,6 +5019,76 @@ def test_inspect_curation_requires_legacy_state_migration(
     assert code == 2
     assert payload["reason"] == "state-migration-required"
     assert payload["stage"] == "inspect"
+
+
+def test_migrate_curation_state_archives_legacy_without_lease_or_github(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    repository = FakeRepository()
+    github = FakeGitHub(failure=AssertionError("migration contacted GitHub"))
+
+    first_code, first = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "migrate",
+            "curation-state",
+            "--archive-legacy",
+        ],
+        repository=repository,
+        github=github,
+    )
+    second_code, second = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "migrate",
+            "curation-state",
+            "--archive-legacy",
+        ],
+        repository=repository,
+        github=github,
+    )
+
+    assert first_code == second_code == 0
+    assert first["migration"]["already_migrated"] is False
+    assert second["migration"]["already_migrated"] is True
+    assert first["next_action"] == {
+        "recipe_id": "inspect_curation",
+        "substitutions": {},
+    }
+    _assert_outcome(first, worker="curation", mutation=True, run_id=None)
+    _assert_outcome(second, worker="curation", mutation=False, run_id=None)
+    assert repository.legacy_archive_calls == 1
+
+
+def test_migrate_curation_state_refuses_active_lease(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(state_dir, "curation", now=NOW)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "migrate",
+            "curation-state",
+            "--archive-legacy",
+        ],
+        repository=FakeRepository(),
+    )
+
+    assert code == 2
+    assert payload["reason"] == "lease-conflict"
+    assert payload["stage"] == "lock"
+    lease.release()
 
 
 def test_inspect_does_not_create_missing_state_directory(

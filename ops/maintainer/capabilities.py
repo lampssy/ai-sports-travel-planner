@@ -22,6 +22,7 @@ from ops.maintainer.curation_state import (
     CurationCheckpointStage,
     CurationGeneration,
     CurationGenerationStore,
+    CurationMigrationError,
     CurationNextAction,
     CurationRecipeId,
     CurationStateError,
@@ -30,6 +31,8 @@ from ops.maintainer.curation_state import (
     ValidationFailedEvent,
     ValidationPassedEvent,
     checkpoint_transaction_id,
+    curation_state_migration_required,
+    migrate_legacy_curation_state,
     project_generation,
 )
 from ops.maintainer.errors import (
@@ -292,15 +295,7 @@ def handle_inspect_curation(
         }
     )
     if not unresolved_pushes and not active_ci_continuations:
-        legacy_reviewed = StateStore.list_continuations_for_inspection_path(
-            args.state_dir
-        )
-        legacy_remediation = (
-            StateStore.list_remediation_continuations_for_inspection_path(
-                args.state_dir
-            )
-        )
-        if legacy_reviewed or legacy_remediation:
+        if curation_state_migration_required(args.state_dir):
             raise MaintainerError(
                 ErrorReason.STATE_MIGRATION_REQUIRED,
                 ErrorStage.INSPECT,
@@ -4077,7 +4072,57 @@ def handle_publication_input_create(
     return {"basename": basename}
 
 
+def handle_migrate_curation_state(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    dependencies.tracker.worker = "curation"
+    dependencies.tracker.stage = ErrorStage.PREPARE
+    if not args.archive_legacy:
+        raise CLIInputError("curation state migration mode is required")
+    try:
+        result = migrate_legacy_curation_state(
+            args.state_dir,
+            dependencies.repository,
+            now=_current_time(dependencies),
+        )
+    except CurationMigrationError as exc:
+        if exc.reason == "active-lease":
+            raise MaintainerError(
+                ErrorReason.LEASE_CONFLICT,
+                ErrorStage.LOCK,
+            ) from exc
+        if exc.reason == "external-recovery":
+            raise MaintainerError(
+                ErrorReason.LOCAL_RECOVERY_REQUIRED,
+                ErrorStage.INSPECT,
+            ) from exc
+        if exc.reason == "format-conflict":
+            raise MaintainerError(
+                ErrorReason.STATE_MIGRATION_REQUIRED,
+                ErrorStage.PREPARE,
+            ) from exc
+        raise MaintainerError(
+            ErrorReason.UNSAFE_REPOSITORY,
+            ErrorStage.PREPARE,
+        ) from exc
+    dependencies.tracker.mutation_occurred = not result.already_migrated
+    dependencies.tracker.terminal_reason = (
+        "curation_state_already_migrated"
+        if result.already_migrated
+        else "curation_state_migrated"
+    )
+    return {
+        "migration": result.model_dump(mode="json"),
+        "next_action": {
+            "recipe_id": "inspect_curation",
+            "substitutions": {},
+        },
+    }
+
+
 HANDLERS: dict[tuple[str, str], Handler] = {
+    ("migrate", "curation-state"): handle_migrate_curation_state,
     ("inspect", "curation"): handle_inspect_curation,
     ("inspect", "discovery"): handle_inspect_discovery,
     ("prepare", "curation"): handle_prepare_curation,

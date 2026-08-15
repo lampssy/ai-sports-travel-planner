@@ -40,6 +40,7 @@ __all__ = [
     "GitTransportError",
     "GuardedSyncResult",
     "IntentDriftError",
+    "LegacyCurationRef",
     "RebaseConflictError",
     "RepositorySafetyError",
     "RemotePolicy",
@@ -177,6 +178,16 @@ class CurationCheckpointRefs(BaseModel):
     squash_ref: str
 
 
+class LegacyCurationRef(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    source_ref: str = Field(pattern=r"^refs/snowcast-maintainer/")
+    archive_ref: str = Field(
+        pattern=r"^refs/snowcast-maintainer/archive/legacy-curation-v1/"
+    )
+    head: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+
 class ContinuationReplayResult(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -233,6 +244,7 @@ class CommandRunner(Protocol):
         *,
         cwd: Path,
         timeout: float,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]: ...
 
 
@@ -243,6 +255,7 @@ class _SubprocessRunner:
         *,
         cwd: Path,
         timeout: float,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         environment = os.environ.copy()
         environment.update(
@@ -273,6 +286,7 @@ class _SubprocessRunner:
             shell=False,
             env=environment,
             timeout=timeout,
+            input=stdin,
         )
 
 
@@ -363,6 +377,90 @@ class GitRepository:
     def current_head(self) -> str:
         """Return the exact commit currently checked out in this worktree."""
         return self._rev_parse("HEAD")
+
+    def legacy_curation_refs(
+        self,
+        archive_id: str,
+    ) -> tuple[LegacyCurationRef, ...]:
+        if re.fullmatch(r"[0-9a-f]{32}", archive_id) is None:
+            raise RepositorySafetyError("legacy archive ID is malformed")
+        prefixes = (
+            "refs/snowcast-maintainer/prepared/",
+            "refs/snowcast-maintainer/reviewed/",
+            "refs/snowcast-maintainer/continuations/",
+            "refs/snowcast-maintainer/remediation/",
+            "refs/snowcast-maintainer/remediation-continuations/",
+        )
+        result = self._git(
+            "for-each-ref",
+            "--format=%(refname) %(objectname)",
+            *prefixes,
+        )
+        if result.returncode != 0:
+            raise RepositorySafetyError("cannot inventory legacy curation refs")
+        refs: list[LegacyCurationRef] = []
+        for line in result.stdout.splitlines():
+            source_ref, separator, head = line.partition(" ")
+            if not separator or not any(
+                source_ref.startswith(item) for item in prefixes
+            ):
+                raise RepositorySafetyError(
+                    "legacy curation ref inventory is malformed"
+                )
+            _validate_sha(head)
+            suffix = source_ref.removeprefix("refs/snowcast-maintainer/")
+            refs.append(
+                LegacyCurationRef(
+                    source_ref=source_ref,
+                    archive_ref=(
+                        "refs/snowcast-maintainer/archive/legacy-curation-v1/"
+                        f"{archive_id}/{suffix}"
+                    ),
+                    head=head,
+                )
+            )
+        return tuple(sorted(refs, key=lambda item: item.source_ref))
+
+    def archive_legacy_curation_refs(
+        self,
+        refs: Sequence[LegacyCurationRef],
+    ) -> int:
+        pending: list[LegacyCurationRef] = []
+        for supplied in refs:
+            item = LegacyCurationRef.model_validate(supplied.model_dump())
+            source_head = self._optional_ref_head(item.source_ref)
+            archive_head = self._optional_ref_head(item.archive_ref)
+            if source_head == item.head and archive_head is None:
+                pending.append(item)
+                continue
+            if source_head is None and archive_head == item.head:
+                continue
+            raise RepositorySafetyError("legacy curation ref archive state conflicts")
+        if not pending:
+            return 0
+        commands = ["start"]
+        for item in pending:
+            commands.extend(
+                (
+                    f"create {item.archive_ref} {item.head}",
+                    f"delete {item.source_ref} {item.head}",
+                )
+            )
+        commands.extend(("prepare", "commit"))
+        result = self._git("update-ref", "--stdin", stdin="\n".join(commands) + "\n")
+        if result.returncode != 0:
+            raise RepositorySafetyError(
+                "cannot archive legacy curation refs atomically"
+            )
+        for item in pending:
+            if (
+                self._optional_ref_head(item.source_ref) is not None
+                or self._optional_ref_head(item.archive_ref) != item.head
+            ):
+                raise RepositorySafetyError(
+                    "legacy curation ref archive did not commit"
+                )
+        return len(pending)
 
     def verify_immutable_diff(self, base: str, head: str) -> IntentSnapshot:
         """Validate one immutable ancestor/head pair and return its typed intent."""
@@ -2228,19 +2326,26 @@ class GitRepository:
         self,
         *arguments: str,
         network: bool = False,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         argv = ("git", *arguments)
-        return self._command(argv, network=network)
+        return self._command(argv, network=network, stdin=stdin)
 
     def _command(
         self,
         argv: tuple[str, ...],
         *,
         network: bool = False,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         timeout = NETWORK_GIT_TIMEOUT_SECONDS if network else LOCAL_GIT_TIMEOUT_SECONDS
         try:
-            return self._runner.run(argv, cwd=self.root, timeout=timeout)
+            return self._runner.run(
+                argv,
+                cwd=self.root,
+                timeout=timeout,
+                stdin=stdin,
+            )
         except subprocess.TimeoutExpired:
             operation = "network Git" if network else "local Git/SSH"
             raise GitOperationTimeoutError(

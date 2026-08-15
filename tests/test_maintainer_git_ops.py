@@ -27,6 +27,7 @@ from ops.maintainer.git_ops import (
     GitRepository,
     GitTransportError,
     GuardedSyncResult,
+    LegacyCurationRef,
     RebaseConflictError,
     RemediationCheckpointIntegrityError,
     RemediationCheckpointRefs,
@@ -75,7 +76,9 @@ class FakeRunner:
         *,
         cwd: Path,
         timeout: float = 10.0,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
+        del stdin
         call = tuple(argv)
         self.calls.append(call)
         self.call_metadata.append((call, timeout))
@@ -643,6 +646,7 @@ class TimeoutRunner(FakeRunner):
         *,
         cwd: Path,
         timeout: float = 10.0,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         call = tuple(argv)
         if call[1:2] == ("fetch",):
@@ -650,7 +654,7 @@ class TimeoutRunner(FakeRunner):
                 cmd=["git", "fetch", "https://token@example.test/private"],
                 timeout=timeout,
             )
-        return super().run(argv, cwd=cwd, timeout=timeout)
+        return super().run(argv, cwd=cwd, timeout=timeout, stdin=stdin)
 
 
 def test_network_timeout_is_bounded_typed_and_sanitized(tmp_path: Path) -> None:
@@ -694,6 +698,7 @@ class RecordingRunner:
         *,
         cwd: Path,
         timeout: float,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         call = tuple(argv)
         self.calls.append(call)
@@ -703,7 +708,7 @@ class RecordingRunner:
             and "--abort" not in call
         ):
             return subprocess.CompletedProcess(call, 128, "", "sanitized failure")
-        result = self.delegate.run(argv, cwd=cwd, timeout=timeout)
+        result = self.delegate.run(argv, cwd=cwd, timeout=timeout, stdin=stdin)
         if (
             self.timeout_after_rebase_state
             and "rebase" in call
@@ -726,6 +731,7 @@ class RaceCreatingRunner(RecordingRunner):
         *,
         cwd: Path,
         timeout: float,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         call = tuple(argv)
         if call[1:2] == ("push",) and self.remote is not None:
@@ -735,7 +741,7 @@ class RaceCreatingRunner(RecordingRunner):
                 f"refs/heads/{self.branch}",
                 self.raced_head,
             )
-        return super().run(argv, cwd=cwd, timeout=timeout)
+        return super().run(argv, cwd=cwd, timeout=timeout, stdin=stdin)
 
 
 @pytest.mark.parametrize(
@@ -2122,6 +2128,39 @@ def test_generation_checkpoint_creates_exact_refs_and_restores_unchanged_head(
     assert (
         _git(local.checkout, "rev-parse", refs.checkpoint_ref) == prepared.rebased_head
     )
+
+
+def test_legacy_curation_refs_archive_atomically_and_idempotently(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    source_refs = (
+        "refs/snowcast-maintainer/prepared/pr-42/example",
+        "refs/snowcast-maintainer/reviewed/pr-42/example",
+        "refs/snowcast-maintainer/continuations/pr-42/example",
+        "refs/snowcast-maintainer/remediation/pr-42/example",
+        "refs/snowcast-maintainer/remediation-continuations/pr-42/example",
+    )
+    for ref in source_refs:
+        _git(local.checkout, "update-ref", ref, local.target_sha)
+    backup_ref = "refs/snowcast-maintainer/backups/pr-42/example"
+    ci_ref = "refs/snowcast-maintainer/ci-repairs/pr-42/example"
+    _git(local.checkout, "update-ref", backup_ref, local.target_sha)
+    _git(local.checkout, "update-ref", ci_ref, local.target_sha)
+
+    refs = repository.legacy_curation_refs("1" * 32)
+
+    assert len(refs) == len(source_refs)
+    assert all(isinstance(item, LegacyCurationRef) for item in refs)
+    assert repository.archive_legacy_curation_refs(refs) == len(source_refs)
+    assert repository.archive_legacy_curation_refs(refs) == 0
+    for item in refs:
+        with pytest.raises(subprocess.CalledProcessError):
+            _git(local.checkout, "rev-parse", "--verify", item.source_ref)
+        assert _git(local.checkout, "rev-parse", item.archive_ref) == local.target_sha
+    assert _git(local.checkout, "rev-parse", backup_ref) == local.target_sha
+    assert _git(local.checkout, "rev-parse", ci_ref) == local.target_sha
 
 
 def test_reviewed_checkpoint_rejects_dirty_or_non_descendant_head(
