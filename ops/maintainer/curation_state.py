@@ -470,6 +470,18 @@ class CurationGenerationStore:
         self.state_dir = Path(state_dir)
         _ensure_private_directory(self.state_dir, parents=True)
 
+    @classmethod
+    def list_current_for_inspection_path(
+        cls,
+        state_dir: str | Path,
+    ) -> tuple[CurationGeneration, ...]:
+        path = Path(state_dir)
+        if not path.exists():
+            return ()
+        store = cls.__new__(cls)
+        store.state_dir = path
+        return store.list_current_generations()
+
     @property
     def generation_dir(self) -> Path:
         return self.state_dir / "curation-generations"
@@ -517,6 +529,35 @@ class CurationGenerationStore:
     def load_current(self, work_id: str) -> CurationGeneration | None:
         generations = self.list_generations(work_id)
         return generations[-1] if generations else None
+
+    def list_current_generations(self) -> tuple[CurationGeneration, ...]:
+        try:
+            self.generation_dir.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise CurationStateError("generation root is unsafe") from exc
+        try:
+            _ensure_private_directory(self.state_dir, parents=False, create=False)
+            _ensure_private_directory(
+                self.generation_dir,
+                parents=False,
+                create=False,
+            )
+        except RunLeaseError as exc:
+            raise CurationStateError("generation root is unsafe") from exc
+
+        current: list[CurationGeneration] = []
+        work_directories = sorted(
+            self.generation_dir.iterdir(),
+            key=lambda item: item.name,
+        )
+        for work_dir in work_directories:
+            _validate_id(work_dir.name, "work_id")
+            generation = self.load_current(work_dir.name)
+            if generation is not None:
+                current.append(generation)
+        return tuple(current)
 
     def start_generation(
         self,

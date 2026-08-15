@@ -13,6 +13,10 @@ from typing import Literal
 from pydantic import ValidationError
 
 from ops.maintainer import LABEL_DEFINITIONS
+from ops.maintainer.curation_state import (
+    CurationGenerationStore,
+    CurationStateError,
+)
 from ops.maintainer.errors import (
     ErrorCheck,
     ErrorReason,
@@ -258,32 +262,55 @@ def handle_inspect_curation(
         if unresolved_pushes
         else StateStore.list_ci_continuations_for_inspection_path(args.state_dir)
     )
+    active_ci_continuations = tuple(
+        continuation
+        for continuation in ci_continuations
+        if continuation.phase
+        not in {
+            CiContinuationPhase.CONSUMED,
+            CiContinuationPhase.BLOCKED,
+            CiContinuationPhase.INVALIDATED,
+        }
+    )
+    if not unresolved_pushes and not active_ci_continuations:
+        legacy_reviewed = StateStore.list_continuations_for_inspection_path(
+            args.state_dir
+        )
+        legacy_remediation = (
+            StateStore.list_remediation_continuations_for_inspection_path(
+                args.state_dir
+            )
+        )
+        if legacy_reviewed or legacy_remediation:
+            raise MaintainerError(
+                ErrorReason.STATE_MIGRATION_REQUIRED,
+                ErrorStage.INSPECT,
+            )
+        generations = CurationGenerationStore.list_current_for_inspection_path(
+            args.state_dir
+        )
+    else:
+        generations = ()
     open_pull_requests = tuple(dependencies.github.list_all_open_pull_requests())
     open_pr_numbers = {item.number for item in open_pull_requests}
+    continuation_pr_numbers = {
+        continuation.pr_number for continuation in ci_continuations
+    } | {generation.pr_number for generation in generations}
     continuation_pull_requests = tuple(
-        dependencies.github.get_pull_request(continuation.pr_number)
-        for continuation in ci_continuations
-        if continuation.pr_number not in open_pr_numbers
+        dependencies.github.get_pull_request(pr_number)
+        for pr_number in sorted(continuation_pr_numbers)
+        if pr_number not in open_pr_numbers
     )
     pull_requests = (*open_pull_requests, *continuation_pull_requests)
     inventory = inspect_curation(
         pull_requests,
         _comments_by_pr(dependencies.github, pull_requests),
         unresolved_pushes,
-        (
-            ()
-            if unresolved_pushes
-            else StateStore.list_continuations_for_inspection_path(args.state_dir)
-        ),
-        (
-            ()
-            if unresolved_pushes
-            else StateStore.list_remediation_continuations_for_inspection_path(
-                args.state_dir
-            )
-        ),
+        (),
+        (),
         ci_continuations,
         now=_current_time(dependencies),
+        generations=generations,
     )
     dependencies.tracker.terminal_reason = (
         "recovery-required" if inventory.unresolved_pushes else "inspected"
@@ -3613,14 +3640,18 @@ def safe_error(error: Exception, stage: ErrorStage) -> MaintainerError:
             ErrorCheck.PUBLICATION_INPUT,
             error.kind,
         )
+    if isinstance(error, CurationStateError):
+        return MaintainerError(ErrorReason.LOCAL_RECOVERY_REQUIRED, stage)
+    if isinstance(error, RepositorySafetyError):
+        return MaintainerError(ErrorReason.UNSAFE_REPOSITORY, stage)
+    if isinstance(error, ValidationError):
+        return MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, stage)
     if isinstance(
         error,
         (
             CLIInputError,
             StateStoreError,
             RunLeaseError,
-            RepositorySafetyError,
-            ValidationError,
             ValueError,
             TypeError,
         ),

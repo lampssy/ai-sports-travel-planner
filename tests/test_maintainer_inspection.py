@@ -7,6 +7,14 @@ from pathlib import Path
 import pytest
 
 from ops.maintainer import SUMMARY_MARKER
+from ops.maintainer.curation_state import (
+    CheckpointCompletedEvent,
+    CheckpointStartedEvent,
+    CurationCheckpointStage,
+    CurationGeneration,
+    GenerationPreparedEvent,
+    checkpoint_transaction_id,
+)
 from ops.maintainer.errors import ErrorReason, MaintainerError
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.github import GitHubComment
@@ -48,7 +56,9 @@ pytestmark = pytest.mark.db_free
 SHA_A = "a" * 40
 SHA_B = "b" * 40
 SHA_C = "c" * 40
+SHA_D = "d" * 40
 NOW = datetime(2026, 7, 8, 10, tzinfo=UTC)
+GENERATION_ID = "1" * 32
 
 
 def _pull_request(number: int = 42, **overrides: object) -> PullRequest:
@@ -128,6 +138,70 @@ def _journal(
         expected_remote_head=SHA_A,
         new_head=new_head,
         phase=phase,
+    )
+
+
+def _generation(pr_number: int = 42) -> CurationGeneration:
+    report = f"docs/catalog-curation/pr-{pr_number}.json"
+    transaction_id = checkpoint_transaction_id(
+        GENERATION_ID,
+        CurationCheckpointStage.REVIEWED,
+        SHA_B,
+        report,
+        SHA_C,
+    )
+    checkpoint_ref = (
+        f"refs/snowcast-maintainer/curation/pr-{pr_number}/{GENERATION_ID}/"
+        f"{transaction_id}/checkpoint"
+    )
+    squash_ref = (
+        f"refs/snowcast-maintainer/curation/pr-{pr_number}/{GENERATION_ID}/"
+        f"{transaction_id}/replay"
+    )
+    sync = GuardedSyncResult(
+        target_branch=f"codex/catalog-{pr_number}",
+        original_head=SHA_A,
+        rebased_head=SHA_D,
+        backup_ref=f"refs/maintainer-backups/pr-{pr_number}",
+        prepared_ref=f"refs/maintainer-prepared/pr-{pr_number}",
+        base_head=SHA_C,
+        merge_base=SHA_C,
+    )
+    return CurationGeneration(
+        schema_version=2,
+        work_id=f"curation-pr-{pr_number}",
+        pr_number=pr_number,
+        generation_number=1,
+        generation_id=GENERATION_ID,
+        created_at=NOW,
+        selected_head=SHA_A,
+        target_branch=sync.target_branch,
+        sync=sync,
+        events=(
+            GenerationPreparedEvent(
+                sequence=1,
+                recorded_at=NOW,
+                prepared_head=SHA_D,
+            ),
+            CheckpointStartedEvent(
+                sequence=2,
+                recorded_at=NOW + timedelta(seconds=1),
+                transaction_id=transaction_id,
+                stage=CurationCheckpointStage.REVIEWED,
+                head=SHA_B,
+                report_path=report,
+                validation_base=SHA_C,
+                expected_checkpoint_ref=checkpoint_ref,
+                expected_squash_ref=squash_ref,
+            ),
+            CheckpointCompletedEvent(
+                sequence=3,
+                recorded_at=NOW + timedelta(seconds=2),
+                transaction_id=transaction_id,
+                checkpoint_ref=checkpoint_ref,
+                squash_ref=squash_ref,
+            ),
+        ),
     )
 
 
@@ -697,6 +771,71 @@ def test_curation_inventory_exposes_only_safe_continuation_summary() -> None:
     serialized = json.dumps(inventory.model_dump(mode="json"))
     assert continuation.origin_run_id not in serialized
     assert continuation.reviewed_ref not in serialized
+
+
+def test_curation_inventory_exposes_current_generation_and_suppresses_eligibility() -> (
+    None
+):
+    generation = _generation()
+
+    inventory = inspect_curation(
+        (_pull_request(), _pull_request(43)),
+        {},
+        generations=(generation,),
+    )
+
+    assert inventory.generations[0].model_dump(mode="json", exclude_none=True) == {
+        "pr_number": 42,
+        "generation_number": 1,
+        "generation_id": GENERATION_ID,
+        "selected_head": SHA_A,
+        "base_head": SHA_C,
+        "latest_head": SHA_B,
+        "stage": "reviewed",
+        "retryable": True,
+        "availability_reason": "available",
+        "next_action": {
+            "recipe_id": "validate_curation",
+            "substitutions": {
+                "pr": 42,
+                "generation_id": GENERATION_ID,
+                "head": SHA_B,
+                "report": "docs/catalog-curation/pr-42.json",
+                "validation_base": SHA_C,
+            },
+        },
+    }
+    assert [candidate.number for candidate in inventory.eligible] == [43]
+
+
+def test_external_recovery_authority_hides_curation_generation() -> None:
+    generation = _generation()
+    pull_request = _pull_request()
+
+    push_recovery = inspect_curation(
+        (pull_request,),
+        {},
+        (_journal(),),
+        generations=(generation,),
+    )
+    ci_recovery = inspect_curation(
+        (pull_request,),
+        {},
+        ci_continuations=(_ci_continuation(),),
+        generations=(generation,),
+        now=NOW,
+    )
+    terminal_recovery = inspect_curation(
+        (pull_request,),
+        {},
+        terminal_publications=(_terminal_publication_intent(),),
+        generations=(generation,),
+        now=NOW,
+    )
+
+    assert push_recovery.generations == ()
+    assert ci_recovery.generations == ()
+    assert terminal_recovery.generations == ()
 
 
 def test_curation_continuation_stays_visible_but_paused_and_yields_to_journal() -> None:

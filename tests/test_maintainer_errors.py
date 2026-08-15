@@ -4,6 +4,11 @@ import json
 
 import pytest
 
+from ops.maintainer.curation_state import (
+    CurationActionSubstitutions,
+    CurationNextAction,
+    CurationRecipeId,
+)
 from ops.maintainer.errors import (
     ErrorCheck,
     ErrorKind,
@@ -70,6 +75,54 @@ def test_maintainer_error_allows_optional_diagnostic_fields_to_be_absent() -> No
         "reason": "lock-busy",
         "stage": "lock",
     }
+
+
+def test_recoverable_error_emits_only_typed_next_action() -> None:
+    action = CurationNextAction(
+        recipe_id=CurationRecipeId.CHECKPOINT_REVIEWED,
+        substitutions=CurationActionSubstitutions(
+            pr=37,
+            generation_id="a" * 32,
+            head="c" * 40,
+            report="docs/catalog-curation/example.json",
+            validation_base="b" * 40,
+        ),
+    )
+
+    error = MaintainerError(
+        reason=ErrorReason.LOCAL_RECOVERY_REQUIRED,
+        stage=ErrorStage.VALIDATE,
+        retryable=True,
+        next_action=action,
+    )
+
+    assert error.payload() == {
+        "status": "error",
+        "reason": "local-recovery-required",
+        "stage": "validate",
+        "retryable": True,
+        "next_action": action.model_dump(mode="json", exclude_none=True),
+    }
+
+
+def test_next_action_requires_retryable_error() -> None:
+    action = CurationNextAction(
+        recipe_id=CurationRecipeId.VALIDATE,
+        substitutions=CurationActionSubstitutions(
+            pr=37,
+            generation_id="a" * 32,
+            head="c" * 40,
+            report="docs/catalog-curation/example.json",
+            validation_base="b" * 40,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="retryable"):
+        MaintainerError(
+            reason=ErrorReason.LOCAL_RECOVERY_REQUIRED,
+            stage=ErrorStage.VALIDATE,
+            next_action=action,
+        )
 
 
 @pytest.mark.parametrize(
@@ -158,6 +211,12 @@ def test_error_enums_cover_the_accepted_contract() -> None:
         "rebase-conflict",
         "intent-drift",
         "continuation-required",
+        "stale-base",
+        "lease-conflict",
+        "checkpoint-conflict",
+        "local-recovery-required",
+        "unsafe-repository",
+        "state-migration-required",
         "validation-failed",
         "validation-required",
         "proposal-cap",

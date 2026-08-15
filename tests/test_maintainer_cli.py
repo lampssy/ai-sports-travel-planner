@@ -11,6 +11,15 @@ import pytest
 
 from ops.maintainer import SUMMARY_MARKER
 from ops.maintainer.cli import HANDLERS, main
+from ops.maintainer.curation_state import (
+    CheckpointCompletedEvent,
+    CheckpointStartedEvent,
+    CurationCheckpointStage,
+    CurationGeneration,
+    CurationGenerationStore,
+    GenerationPreparedEvent,
+    checkpoint_transaction_id,
+)
 from ops.maintainer.errors import (
     ErrorCheck,
     ErrorKind,
@@ -85,6 +94,7 @@ CANONICAL_GRAPH = (
     "```\n"
 )
 BRANCH = "codex/catalog-curation-nendaz"
+GENERATION_ID = "1" * 32
 
 
 @pytest.fixture(autouse=True)
@@ -181,6 +191,85 @@ def _sync() -> GuardedSyncResult:
         ),
         base_head=SHA_D,
         merge_base=SHA_C,
+    )
+
+
+def _curation_generation() -> CurationGeneration:
+    report = "docs/catalog-curation/nendaz.json"
+    transaction_id = checkpoint_transaction_id(
+        GENERATION_ID,
+        CurationCheckpointStage.REVIEWED,
+        SHA_C,
+        report,
+        SHA_D,
+    )
+    checkpoint_ref = (
+        f"refs/snowcast-maintainer/curation/pr-42/{GENERATION_ID}/"
+        f"{transaction_id}/checkpoint"
+    )
+    squash_ref = (
+        f"refs/snowcast-maintainer/curation/pr-42/{GENERATION_ID}/"
+        f"{transaction_id}/replay"
+    )
+    sync = _sync()
+    return CurationGeneration(
+        schema_version=2,
+        work_id="curation-pr-42",
+        pr_number=42,
+        generation_number=1,
+        generation_id=GENERATION_ID,
+        created_at=NOW,
+        selected_head=SHA_A,
+        target_branch=BRANCH,
+        sync=sync,
+        events=(
+            GenerationPreparedEvent(
+                sequence=1,
+                recorded_at=NOW,
+                prepared_head=sync.rebased_head,
+            ),
+            CheckpointStartedEvent(
+                sequence=2,
+                recorded_at=NOW + timedelta(seconds=1),
+                transaction_id=transaction_id,
+                stage=CurationCheckpointStage.REVIEWED,
+                head=SHA_C,
+                report_path=report,
+                validation_base=SHA_D,
+                expected_checkpoint_ref=checkpoint_ref,
+                expected_squash_ref=squash_ref,
+            ),
+            CheckpointCompletedEvent(
+                sequence=3,
+                recorded_at=NOW + timedelta(seconds=2),
+                transaction_id=transaction_id,
+                checkpoint_ref=checkpoint_ref,
+                squash_ref=squash_ref,
+            ),
+        ),
+    )
+
+
+def _legacy_reviewed_continuation(lease: RunLease) -> ReviewedContinuation:
+    sync = _sync()
+    return ReviewedContinuation(
+        work_id="curation-pr-42",
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        updated_at=NOW,
+        pr_number=42,
+        selected_head=SHA_A,
+        reviewed_head=SHA_C,
+        report_path="docs/catalog-curation/nendaz.json",
+        sync=sync,
+        reviewed_ref=(
+            f"refs/snowcast-maintainer/reviewed/pr-42/{SHA_A[:12]}-{SHA_C[:12]}"
+        ),
+        squash_ref=(
+            f"refs/snowcast-maintainer/continuations/pr-42/{SHA_D[:12]}-{SHA_C[:12]}"
+        ),
+        status=ContinuationStatus.AVAILABLE,
+        validation_status=ContinuationValidationStatus.NOT_RUN,
     )
 
 
@@ -1826,7 +1915,7 @@ def test_checkpoint_ci_repair_rejects_structurally_invalid_git_state(
     )
 
     assert code == 2
-    assert payload["reason"] == "invalid-command"
+    assert payload["reason"] == "unsafe-repository"
     persisted = store.load_ci_continuation(active.work_id)
     assert persisted is not None
     assert persisted.phase is CiContinuationPhase.REPAIR_ACTIVE
@@ -2732,7 +2821,7 @@ def test_publish_ci_repair_revalidates_before_replacing_published_journal(
     )
 
     assert code == 2
-    assert payload["reason"] == "invalid-command"
+    assert payload["reason"] == "unsafe-repository"
     assert store.load_push(reviewed.work_id) == prior_journal
     assert store.load_ci_continuation(reviewed.work_id) == reviewed
     assert repository.head == SHA_B
@@ -4762,6 +4851,72 @@ def test_inspect_curation_exposes_ci_continuation_before_ordinary_selection(
     assert not (state_dir / "run.lock").exists()
 
 
+def test_inspect_curation_exposes_generation_retry_action(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(state_dir, "curation", now=NOW)
+    CurationGenerationStore(state_dir).start_generation(
+        _curation_generation(),
+        lease,
+    )
+    lease.release()
+
+    code, payload = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=FakeGitHub(),
+    )
+
+    assert code == 0, payload
+    assert payload["generations"] == [
+        {
+            "pr_number": 42,
+            "generation_number": 1,
+            "generation_id": GENERATION_ID,
+            "selected_head": SHA_A,
+            "base_head": SHA_D,
+            "latest_head": SHA_C,
+            "stage": "reviewed",
+            "retryable": True,
+            "availability_reason": "available",
+            "next_action": {
+                "recipe_id": "validate_curation",
+                "substitutions": {
+                    "pr": 42,
+                    "generation_id": GENERATION_ID,
+                    "head": SHA_C,
+                    "report": "docs/catalog-curation/nendaz.json",
+                    "validation_base": SHA_D,
+                },
+            },
+        }
+    ]
+    assert payload["eligible"] == []
+
+
+def test_inspect_curation_requires_legacy_state_migration(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(state_dir, "curation", now=NOW)
+    store = StateStore(state_dir)
+    store.save_continuation(_legacy_reviewed_continuation(lease), lease)
+    lease.release()
+
+    code, payload = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=FakeGitHub(),
+    )
+
+    assert code == 2
+    assert payload["reason"] == "state-migration-required"
+    assert payload["stage"] == "inspect"
+
+
 def test_inspect_curation_surfaces_safe_remediation_recovery_before_fresh_work(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -4786,19 +4941,8 @@ def test_inspect_curation_surfaces_safe_remediation_recovery_before_fresh_work(
         github=github,
     )
 
-    assert code == 0, payload
-    assert payload["reviewed_continuations"] == []
-    assert payload["remediation_continuations"] == [
-        {
-            "pr_number": 42,
-            "selected_head": SHA_A,
-            "remediation_head": SHA_C,
-            "base_head": SHA_D,
-            "report_path": "docs/catalog-curation/nendaz.json",
-            "resumable": True,
-            "availability_reason": "available",
-        }
-    ]
+    assert code == 2
+    assert payload["reason"] == "state-migration-required"
     serialized = json.dumps(payload)
     for private_value in (
         remediation.origin_run_id,
@@ -5568,7 +5712,7 @@ def test_remediation_replay_invalidates_tampered_checkpoint_refs(
     )
 
     assert code == 2
-    assert payload["reason"] == "invalid-command"
+    assert payload["reason"] == "unsafe-repository"
     remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
     assert remediation is not None
     assert remediation.status is RemediationContinuationStatus.INVALIDATED
@@ -5603,7 +5747,7 @@ def test_transient_remediation_repository_failure_preserves_same_run_retry(
     )
 
     assert failed_code == 2
-    assert failed_payload["reason"] == "invalid-command"
+    assert failed_payload["reason"] == "unsafe-repository"
     checkpoint = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
     assert checkpoint is not None
     assert checkpoint.status is RemediationContinuationStatus.RESOLVING
@@ -6011,19 +6155,8 @@ def test_successor_recreates_abandoned_remediation_conflict_from_checkpoint(
         ["--state-dir", str(state_dir), "inspect", "curation"],
         github=github,
     )
-    assert inspect_code == 0, inspect_payload
-    assert inspect_payload["eligible"] == []
-    assert inspect_payload["remediation_continuations"] == [
-        {
-            "pr_number": 42,
-            "selected_head": SHA_A,
-            "remediation_head": SHA_C,
-            "base_head": SHA_D,
-            "report_path": "docs/catalog-curation/nendaz.json",
-            "resumable": True,
-            "availability_reason": "recovery-authority",
-        }
-    ]
+    assert inspect_code == 2
+    assert inspect_payload["reason"] == "state-migration-required"
 
     successor = _acquire(capsys, state_dir, "curation")
     repository.continuation_result = "prepared"
@@ -7437,7 +7570,7 @@ def test_publish_manual_check_revalidation_failure_prevents_push_authorization(
     )
 
     assert code == 2
-    assert payload["reason"] == "invalid-command"
+    assert payload["reason"] == "unsafe-repository"
     assert repository.push_calls == 0
     assert StateStore(state_dir).load_push("curation-pr-42") is None
     work = StateStore(state_dir).load_work("curation-pr-42")

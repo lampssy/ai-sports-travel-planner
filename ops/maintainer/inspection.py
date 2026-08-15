@@ -16,6 +16,12 @@ from pydantic import (
 
 from app.data.catalog_loader import load_catalog_from_path
 from app.domain.catalog import CatalogSnapshot
+from ops.maintainer.curation_state import (
+    CurationGeneration,
+    CurationGenerationProjection,
+    CurationNextAction,
+    project_generation,
+)
 from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
@@ -133,6 +139,7 @@ class CurationInventory(_InspectionModel):
     terminal_publications: tuple[TerminalPublicationSummary, ...] = ()
     unresolved_pushes: tuple[PushJournalSummary, ...] = ()
     ci_continuations: tuple[CiContinuationSummary, ...] = ()
+    generations: tuple[CurationGenerationSummary, ...] = ()
     reviewed_continuations: tuple[ReviewedContinuationSummary, ...] = ()
     remediation_continuations: tuple[RemediationContinuationSummary, ...] = ()
     eligible: tuple[CurationCandidate, ...] = ()
@@ -201,6 +208,26 @@ class RemediationContinuationSummary(_InspectionModel):
     ]
 
 
+class CurationGenerationSummary(_InspectionModel):
+    pr_number: int = Field(gt=0)
+    generation_number: int = Field(gt=0)
+    generation_id: str = Field(pattern=r"^[0-9a-f]{32}$")
+    selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    base_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    latest_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    stage: str = Field(min_length=1, max_length=32)
+    retryable: bool
+    availability_reason: Literal[
+        "available",
+        "hold-label",
+        "head-drift",
+        "closed-or-merged",
+        "invalid-state",
+        "complete",
+    ]
+    next_action: CurationNextAction | None = None
+
+
 class ProposalSummary(_InspectionModel):
     pr_number: int = Field(gt=0)
     lifecycle_state: Literal["OPEN", "CLOSED", "MERGED"]
@@ -251,6 +278,7 @@ def inspect_curation(
     terminal_publications: Sequence[TerminalPublicationIntent] = (),
     *,
     now: datetime | None = None,
+    generations: Sequence[CurationGeneration] = (),
 ) -> CurationInventory:
     publications = _normalize_terminal_publications(terminal_publications)
     if publications:
@@ -291,6 +319,19 @@ def inspect_curation(
         )
     )
     ci_pr_numbers = {item.pr_number for item in active_ci_continuations}
+
+    active_generations = (
+        () if active_ci_continuations else _current_generations(generations)
+    )
+    generation_summaries = tuple(
+        _generation_summary(
+            generation,
+            pull_requests_by_number.get(generation.pr_number),
+            comments_by_pr.get(generation.pr_number, ()),
+        )
+        for generation in active_generations
+    )
+    generation_pr_numbers = {item.pr_number for item in active_generations}
 
     active_reviewed = tuple(
         continuation
@@ -340,6 +381,7 @@ def inspect_curation(
                 )
                 and pull_request.number not in suppressed_remediation_prs
                 and pull_request.number not in ci_pr_numbers
+                and pull_request.number not in generation_pr_numbers
             ),
             key=lambda pull_request: pull_request.number,
         )
@@ -376,10 +418,82 @@ def inspect_curation(
     )
     return CurationInventory(
         ci_continuations=ci_summaries,
+        generations=generation_summaries,
         reviewed_continuations=summaries,
         remediation_continuations=remediation_summaries,
         eligible=eligible,
     )
+
+
+def _current_generations(
+    generations: Sequence[CurationGeneration],
+) -> tuple[CurationGeneration, ...]:
+    by_pr: dict[int, CurationGeneration] = {}
+    for generation in generations:
+        current = by_pr.get(generation.pr_number)
+        if current is not None and (
+            generation.generation_number == current.generation_number
+            or generation.work_id != current.work_id
+        ):
+            raise ValueError("curation generations contain ambiguous authority")
+        if current is None or generation.generation_number > current.generation_number:
+            by_pr[generation.pr_number] = generation
+    return tuple(by_pr[number] for number in sorted(by_pr))
+
+
+def _generation_summary(
+    generation: CurationGeneration,
+    pull_request: PullRequest | None,
+    comments: Sequence[GitHubComment],
+) -> CurationGenerationSummary:
+    projection = project_generation(generation)
+    availability = _generation_availability(
+        generation,
+        projection,
+        pull_request,
+        comments,
+    )
+    retryable = availability == "available" and projection.next_action is not None
+    return CurationGenerationSummary(
+        pr_number=generation.pr_number,
+        generation_number=generation.generation_number,
+        generation_id=generation.generation_id,
+        selected_head=generation.selected_head,
+        base_head=generation.sync.base_head,
+        latest_head=projection.latest_head,
+        stage=projection.latest_stage,
+        retryable=retryable,
+        availability_reason=availability,
+        next_action=projection.next_action if retryable else None,
+    )
+
+
+def _generation_availability(
+    generation: CurationGeneration,
+    projection: CurationGenerationProjection,
+    pull_request: PullRequest | None,
+    comments: Sequence[GitHubComment],
+) -> Literal[
+    "available",
+    "hold-label",
+    "head-drift",
+    "closed-or-merged",
+    "invalid-state",
+    "complete",
+]:
+    if projection.latest_stage in {"superseded", "invalidated", "consumed"}:
+        return "complete"
+    if pull_request is None or pull_request.lifecycle_state in {"CLOSED", "MERGED"}:
+        return "closed-or-merged"
+    if pull_request.head_sha != generation.selected_head:
+        return "head-drift"
+    if not pull_request.labels.isdisjoint(_SELECTION_HOLD_LABELS):
+        return "hold-label"
+    if not _is_safe_curation_candidate(pull_request, comments):
+        return "invalid-state"
+    if projection.next_action is None:
+        return "complete"
+    return "available"
 
 
 def inspect_discovery(
