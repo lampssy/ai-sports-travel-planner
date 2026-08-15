@@ -1454,6 +1454,25 @@ accessible data table. A failed chart chunk falls back to a compact table of the
 same values. The browser must not interpolate observations or derive new
 weather claims.
 
+## Maintainer Pre-Push Curation Authority
+
+Pre-push curation recovery uses one bounded generation timeline per PR. A
+generation binds the selected remote head, prepare-time base, current local
+head, report, and append-only stage events. Both delta-validated and reviewed
+heads use the same two-phase idempotent `checkpoint curation` capability;
+inspection returns a typed recipe ID and substitutions for the only authorized
+next action. Reviewed authority remains distinct from fully validated authority,
+so ordinary push cannot bypass the final deterministic suite while the existing
+manual-check path can still preserve an explicitly unvalidated reviewed head.
+
+Legacy reviewed/remediation continuations are archived once through the
+lease-free `migrate curation-state --archive-legacy` capability. Migration
+refuses active leases and unresolved push, CI, or terminal-publication recovery,
+leaves discovery and external-mutation state unchanged, and writes the
+generation-v2 format marker last. Once a generation exists, the archived
+pre-push state cannot be restored as authority. Push journals, post-push CI
+continuations, and terminal-publication recovery remain unchanged by ADR 0020.
+
 ## Concepts Clarified
 
 ### BFF
