@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 from typing import Literal, Protocol
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.intent import (
@@ -28,6 +28,9 @@ from ops.maintainer.models import PullRequest
 
 __all__ = [
     "CiRepairCheckpoint",
+    "CurationCheckpointRefs",
+    "CurationCheckpointIntegrityError",
+    "CurationRecoveryCheckpoint",
     "GitRepository",
     "ContinuationReplayResult",
     "GitAuthenticationError",
@@ -129,6 +132,10 @@ class RemediationCheckpointIntegrityError(RepositorySafetyError):
     """Immutable remediation checkpoint refs are missing or no longer exact."""
 
 
+class CurationCheckpointIntegrityError(RepositorySafetyError):
+    """Immutable generation checkpoint refs are missing or no longer exact."""
+
+
 class RebaseConflictError(RuntimeError):
     """A guarded rebase failed and was aborted without conflict resolution."""
 
@@ -163,6 +170,13 @@ class RemediationCheckpointRefs(BaseModel):
     squash_ref: str
 
 
+class CurationCheckpointRefs(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    checkpoint_ref: str
+    squash_ref: str
+
+
 class ContinuationReplayResult(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -171,6 +185,36 @@ class ContinuationReplayResult(BaseModel):
     head: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
     conflict_paths: tuple[str, ...] = ()
     sync: GuardedSyncResult | None = None
+
+
+class CurationRecoveryCheckpoint(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    pr_number: int = Field(ge=1)
+    generation_id: str = Field(pattern=r"^[0-9a-f]{32}$")
+    transaction_id: str = Field(pattern=r"^[0-9a-f]{64}$")
+    selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    checkpoint_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    report_path: str = Field(
+        pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$"
+    )
+    sync: GuardedSyncResult
+    checkpoint_ref: str
+    squash_ref: str
+
+    @model_validator(mode="after")
+    def validate_recovery_identity(self) -> CurationRecoveryCheckpoint:
+        if self.sync.original_head != self.selected_head:
+            raise ValueError("curation recovery sync does not match selected head")
+        expected_prefix = (
+            f"refs/snowcast-maintainer/curation/pr-{self.pr_number}/"
+            f"{self.generation_id}/{self.transaction_id}/"
+        )
+        if self.checkpoint_ref != f"{expected_prefix}checkpoint":
+            raise ValueError("curation checkpoint ref does not match recovery identity")
+        if self.squash_ref != f"{expected_prefix}replay":
+            raise ValueError("curation replay ref does not match recovery identity")
+        return self
 
 
 class CiRepairCheckpoint(BaseModel):
@@ -804,6 +848,42 @@ class GitRepository:
             squash_ref=squash_ref,
         )
 
+    def checkpoint_curation_generation(
+        self,
+        pull_request: PullRequest,
+        sync: GuardedSyncResult,
+        checkpoint_head: str,
+        generation_id: str,
+        transaction_id: str,
+    ) -> CurationCheckpointRefs:
+        """Create or verify one exact generation checkpoint transaction."""
+        self.revalidate_prepared_result(pull_request, sync, checkpoint_head)
+        prefix = (
+            f"refs/snowcast-maintainer/curation/pr-{pull_request.number}/"
+            f"{generation_id}/{transaction_id}/"
+        )
+        refs = CurationCheckpointRefs(
+            checkpoint_ref=f"{prefix}checkpoint",
+            squash_ref=f"{prefix}replay",
+        )
+        self._create_continuation_checkpoint(
+            checkpoint_ref=refs.checkpoint_ref,
+            squash_ref=refs.squash_ref,
+            checkpoint_head=checkpoint_head,
+            base_head=sync.base_head,
+            message=(
+                f"Snowcast curation generation checkpoint for PR #{pull_request.number}"
+            ),
+            failure_message="curation generation replay commit cannot be created",
+        )
+        self._validate_curation_checkpoint_refs(
+            checkpoint_head=checkpoint_head,
+            sync=sync,
+            checkpoint_ref=refs.checkpoint_ref,
+            squash_ref=refs.squash_ref,
+        )
+        return refs
+
     def prepare_reviewed_continuation(
         self,
         pull_request: PullRequest,
@@ -906,6 +986,180 @@ class GitRepository:
             reviewed_head,
             refs,
         )
+
+    def prepare_curation_recovery(
+        self,
+        pull_request: PullRequest,
+        recovery: CurationRecoveryCheckpoint,
+        *,
+        restart_interrupted: bool = False,
+    ) -> ContinuationReplayResult:
+        """Restore or replay one generation checkpoint onto current main."""
+        _validate_pull_request(pull_request)
+        self.verify_repository()
+        if restart_interrupted:
+            self._abort_cherry_pick_if_active()
+        if self._cherry_pick_in_progress():
+            raise RepositorySafetyError("pre-existing Git operation blocks prepare")
+        self._ensure_clean_preflight()
+        self.fetch_for_pr(pull_request.head_ref_name)
+        fetched_head = self._rev_parse(
+            f"refs/remotes/origin/{pull_request.head_ref_name}"
+        )
+        if (
+            recovery.pr_number != pull_request.number
+            or fetched_head != pull_request.head_sha
+            or fetched_head != recovery.selected_head
+        ):
+            raise StaleRemoteHeadError("remote PR head changed after checkpoint")
+        squash_head = self._validate_curation_checkpoint(recovery)
+        base_head = self._rev_parse("refs/remotes/origin/main")
+        if base_head == recovery.sync.base_head:
+            switch = self._git("switch", "--detach", recovery.checkpoint_ref)
+            if switch.returncode != 0:
+                raise CurationCheckpointIntegrityError(
+                    "cannot restore exact curation checkpoint"
+                )
+            self._revalidate_prepared_result(
+                pull_request,
+                recovery.sync,
+                recovery.checkpoint_head,
+                builder=build_preparation_intent_snapshot,
+            )
+            return ContinuationReplayResult(
+                result="unchanged",
+                base_head=base_head,
+                head=recovery.checkpoint_head,
+                sync=recovery.sync,
+            )
+
+        self._assert_ancestor(
+            recovery.sync.base_head,
+            base_head,
+            "current main must descend from the curation checkpoint base",
+        )
+        switch = self._git("switch", "--detach", base_head)
+        if switch.returncode != 0:
+            raise RepositorySafetyError("cannot detach at curation replay base")
+        replay = self._git("cherry-pick", "--no-edit", recovery.squash_ref)
+        if replay.returncode != 0:
+            if not self._cherry_pick_in_progress():
+                raise RepositorySafetyError(
+                    "curation replay failed without conflict state"
+                )
+            conflict_paths = self._nul_paths(
+                "diff",
+                "--name-only",
+                "--diff-filter=U",
+                "-z",
+            )
+            expected_paths = frozenset(
+                entry.path
+                for entry in self.diff_entries(
+                    recovery.sync.base_head,
+                    squash_head,
+                )
+            )
+            if (
+                not conflict_paths
+                or not set(conflict_paths).issubset(expected_paths)
+                or not all(is_allowed_curation_path(path) for path in conflict_paths)
+            ):
+                self._abort_cherry_pick_if_active()
+                raise RepositorySafetyError(
+                    "curation conflict includes a disallowed path"
+                )
+            return ContinuationReplayResult(
+                result="conflict",
+                base_head=base_head,
+                conflict_paths=conflict_paths,
+            )
+        return self._completed_continuation_replay(
+            pull_request,
+            recovery.sync,
+            base_head,
+        )
+
+    def continue_curation_conflict(
+        self,
+        pull_request: PullRequest,
+        recovery: CurationRecoveryCheckpoint,
+    ) -> ContinuationReplayResult:
+        """Complete one resolved generation-checkpoint replay conflict."""
+        _validate_pull_request(pull_request)
+        self.verify_repository()
+        if not self._cherry_pick_in_progress():
+            raise RepositorySafetyError("curation cherry-pick is not active")
+        self.fetch_for_pr(pull_request.head_ref_name)
+        if (
+            self._rev_parse(f"refs/remotes/origin/{pull_request.head_ref_name}")
+            != pull_request.head_sha
+            or pull_request.head_sha != recovery.selected_head
+        ):
+            self._abort_cherry_pick_if_active()
+            raise StaleRemoteHeadError("remote PR head changed during replay")
+        try:
+            squash_head = self._validate_curation_checkpoint(recovery)
+        except Exception:
+            self._abort_cherry_pick_if_active()
+            raise
+        base_head = self.current_head()
+        if self._rev_parse("refs/remotes/origin/main") != base_head:
+            self._abort_cherry_pick_if_active()
+            raise StaleRemoteHeadError("main moved during curation conflict")
+        if self._nul_paths("diff", "--name-only", "--diff-filter=U", "-z"):
+            raise RepositorySafetyError("curation conflicts remain unresolved")
+        if self._nul_paths("diff", "--name-only", "-z") or self._nul_paths(
+            "ls-files", "--others", "--exclude-standard", "-z"
+        ):
+            self._abort_cherry_pick_if_active()
+            raise RepositorySafetyError(
+                "curation worktree contains unrelated unstaged changes"
+            )
+        expected_entries = {
+            entry.path: entry
+            for entry in self.diff_entries(recovery.sync.base_head, squash_head)
+        }
+        staged_entries = self._staged_diff_entries()
+        staged_paths = frozenset(entry.path for entry in staged_entries)
+        if (
+            not staged_paths
+            or not staged_paths.issubset(expected_entries)
+            or any(
+                entry.new_mode != expected_entries[entry.path].new_mode
+                for entry in staged_entries
+            )
+        ):
+            self._abort_cherry_pick_if_active()
+            raise RepositorySafetyError(
+                "curation resolution changed a path outside checkpoint scope"
+            )
+        completed = self._git("cherry-pick", "--continue")
+        if completed.returncode != 0:
+            self._abort_cherry_pick_if_active()
+            raise RepositorySafetyError("curation replay did not complete once")
+        return self._completed_continuation_replay(
+            pull_request,
+            recovery.sync,
+            base_head,
+        )
+
+    def revalidate_curation_checkpoint(
+        self,
+        pull_request: PullRequest,
+        recovery: CurationRecoveryCheckpoint,
+    ) -> None:
+        """Recheck one exact generation checkpoint and its private refs."""
+        if recovery.pr_number != pull_request.number:
+            raise CurationCheckpointIntegrityError(
+                "curation checkpoint does not match pull request"
+            )
+        self.revalidate_prepared_result(
+            pull_request,
+            recovery.sync,
+            recovery.checkpoint_head,
+        )
+        self._validate_curation_checkpoint(recovery)
 
     def continue_reviewed_conflict(
         self,
@@ -1710,6 +1964,71 @@ class GitRepository:
         if remediated_intent.diff_entries != squash_intent.diff_entries:
             raise RemediationCheckpointIntegrityError(
                 "remediation continuation diff no longer matches checkpoint"
+            )
+        return squash_head
+
+    def _validate_curation_checkpoint(
+        self,
+        recovery: CurationRecoveryCheckpoint,
+    ) -> str:
+        return self._validate_curation_checkpoint_refs(
+            checkpoint_head=recovery.checkpoint_head,
+            sync=recovery.sync,
+            checkpoint_ref=recovery.checkpoint_ref,
+            squash_ref=recovery.squash_ref,
+        )
+
+    def _validate_curation_checkpoint_refs(
+        self,
+        *,
+        checkpoint_head: str,
+        sync: GuardedSyncResult,
+        checkpoint_ref: str,
+        squash_ref: str,
+    ) -> str:
+        resolved_checkpoint = self._optional_ref_head(checkpoint_ref)
+        if resolved_checkpoint is None:
+            raise CurationCheckpointIntegrityError(
+                "curation checkpoint ref cannot be resolved"
+            )
+        self._verify_commit(resolved_checkpoint)
+        if resolved_checkpoint != checkpoint_head:
+            raise CurationCheckpointIntegrityError(
+                "curation checkpoint ref no longer matches its head"
+            )
+        squash_head = self._optional_ref_head(squash_ref)
+        if squash_head is None:
+            raise CurationCheckpointIntegrityError(
+                "curation replay ref cannot be resolved"
+            )
+        self._verify_commit(squash_head)
+        if self._commit_tree(squash_head) != self._commit_tree(resolved_checkpoint):
+            raise CurationCheckpointIntegrityError(
+                "curation replay tree no longer matches checkpoint"
+            )
+        parents = self._git("show", "-s", "--format=%P", squash_head)
+        if parents.returncode != 0 or parents.stdout.strip() != sync.base_head:
+            raise CurationCheckpointIntegrityError(
+                "curation replay parent no longer matches base"
+            )
+        try:
+            checkpoint_intent = build_preparation_intent_snapshot(
+                self,
+                sync.base_head,
+                resolved_checkpoint,
+            )
+            replay_intent = build_preparation_intent_snapshot(
+                self,
+                sync.base_head,
+                squash_head,
+            )
+        except (IntentDriftError, IntentValidationError):
+            raise CurationCheckpointIntegrityError(
+                "curation checkpoint has unsafe immutable intent"
+            ) from None
+        if checkpoint_intent.diff_entries != replay_intent.diff_entries:
+            raise CurationCheckpointIntegrityError(
+                "curation replay diff no longer matches checkpoint"
             )
         return squash_head
 

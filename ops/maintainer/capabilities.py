@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import secrets
 import sys
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import AbstractContextManager, contextmanager
@@ -14,8 +15,22 @@ from pydantic import ValidationError
 
 from ops.maintainer import LABEL_DEFINITIONS
 from ops.maintainer.curation_state import (
+    CheckpointCompletedEvent,
+    CheckpointStartedEvent,
+    CurationActionSubstitutions,
+    CurationCheckpointAuthority,
+    CurationCheckpointStage,
+    CurationGeneration,
     CurationGenerationStore,
+    CurationNextAction,
+    CurationRecipeId,
     CurationStateError,
+    GenerationClosedEvent,
+    GenerationPreparedEvent,
+    ValidationFailedEvent,
+    ValidationPassedEvent,
+    checkpoint_transaction_id,
+    project_generation,
 )
 from ops.maintainer.errors import (
     ErrorCheck,
@@ -26,12 +41,16 @@ from ops.maintainer.errors import (
 from ops.maintainer.git_ops import (
     CiRepairCheckpoint,
     ContinuationReplayResult,
+    CurationCheckpointIntegrityError,
+    CurationCheckpointRefs,
+    CurationRecoveryCheckpoint,
     GitAuthenticationError,
     GitOperationTimeoutError,
     GitPushRejectedError,
     GitRemotePolicyError,
     GitRepository,
     GitTransportError,
+    GuardedSyncResult,
     IntentDriftError,
     RebaseConflictError,
     RemediationCheckpointIntegrityError,
@@ -366,6 +385,7 @@ def handle_prepare_curation(
 ) -> dict[str, object]:
     lease = _owned_lease(args, "curation", dependencies)
     store = _state_store(args)
+    generation_store = CurationGenerationStore(args.state_dir)
     work_id = _work_id_for_pr(args.pr)
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
@@ -380,81 +400,395 @@ def handle_prepare_curation(
         )
     pull_request = dependencies.github.get_pull_request(args.pr)
     _require_exact_curation_candidate(pull_request, dependencies, store)
-    continuation = store.load_continuation(work_id)
-    if continuation is not None and continuation.status not in {
-        ContinuationStatus.CONSUMED,
-        ContinuationStatus.INVALIDATED,
-    }:
-        if continuation.selected_head == pull_request.head_sha:
-            raise MaintainerError(
-                ErrorReason.CONTINUATION_REQUIRED,
-                ErrorStage.PREPARE,
-            )
-        if continuation.recovery_run_id != lease.run_id:
-            continuation = store.adopt_continuation(work_id, lease)
-        invalidated = continuation.model_copy(
-            update={
-                "status": ContinuationStatus.INVALIDATED,
-                "updated_at": _current_time(dependencies, continuation),
-            }
+    if (
+        store.load_continuation(work_id) is not None
+        or store.load_remediation_continuation(work_id) is not None
+    ):
+        raise MaintainerError(
+            ErrorReason.STATE_MIGRATION_REQUIRED,
+            ErrorStage.PREPARE,
         )
-        store.save_continuation(invalidated, lease)
-    remediation = store.load_remediation_continuation(work_id)
-    if remediation is not None:
-        remediation_is_terminal = remediation.status in {
-            RemediationContinuationStatus.CONSUMED,
-            RemediationContinuationStatus.INVALIDATED,
-        }
-        if not remediation_is_terminal and (
-            remediation.selected_head == pull_request.head_sha
-        ):
+    current = generation_store.load_current(work_id)
+    if current is None:
+        if args.continue_conflict:
             raise MaintainerError(
-                ErrorReason.CONTINUATION_REQUIRED,
+                ErrorReason.CHECKPOINT_CONFLICT,
                 ErrorStage.PREPARE,
             )
-        if not remediation_is_terminal:
-            _invalidate_remediation_continuation(
-                store=store,
-                lease=lease,
-                continuation=remediation,
+        return _prepare_new_curation_generation(
+            pull_request=pull_request,
+            lease=lease,
+            store=store,
+            generation_store=generation_store,
+            dependencies=dependencies,
+            generation_number=1,
+        )
+
+    projection = project_generation(current)
+    if projection.latest_stage in {"superseded", "invalidated", "consumed"}:
+        if args.continue_conflict:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PREPARE,
             )
+        return _prepare_new_curation_generation(
+            pull_request=pull_request,
+            lease=lease,
+            store=store,
+            generation_store=generation_store,
+            dependencies=dependencies,
+            generation_number=current.generation_number + 1,
+        )
+    if current.selected_head != pull_request.head_sha:
+        _close_generation(
+            generation_store,
+            current,
+            lease,
+            dependencies,
+            kind="generation-invalidated",
+            reason="remote_head_changed",
+        )
+        if args.continue_conflict:
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PREPARE)
-        if (
-            remediation.status is RemediationContinuationStatus.INVALIDATED
-            and remediation.recovery_run_id == lease.run_id
-        ):
-            reason = (
-                ErrorReason.STALE_HEAD
-                if remediation.selected_head != pull_request.head_sha
-                else ErrorReason.CONTINUATION_REQUIRED
+        return _prepare_new_curation_generation(
+            pull_request=pull_request,
+            lease=lease,
+            store=store,
+            generation_store=generation_store,
+            dependencies=dependencies,
+            generation_number=current.generation_number + 1,
+        )
+
+    checkpoint = projection.checkpoint_authority
+    if checkpoint is None:
+        _close_generation(
+            generation_store,
+            current,
+            lease,
+            dependencies,
+            kind="generation-superseded",
+            reason="prepared_restart",
+        )
+        if args.continue_conflict:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PREPARE,
             )
-            raise MaintainerError(reason, ErrorStage.PREPARE)
+        return _prepare_new_curation_generation(
+            pull_request=pull_request,
+            lease=lease,
+            store=store,
+            generation_store=generation_store,
+            dependencies=dependencies,
+            generation_number=current.generation_number + 1,
+        )
+
+    recovery = _generation_recovery(current, checkpoint)
+    existing_work = store.load_work(work_id)
+    if args.continue_conflict:
+        if (
+            existing_work is None
+            or existing_work.run_id != lease.run_id
+            or existing_work.phase is not WorkPhase.SELECTED
+        ):
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PREPARE,
+            )
+        replay = dependencies.repository.continue_curation_conflict(
+            pull_request,
+            recovery,
+        )
+        selected = existing_work
+    else:
+        if existing_work is not None and existing_work.run_id == lease.run_id:
+            raise MaintainerError(
+                ErrorReason.LOCAL_RECOVERY_REQUIRED,
+                ErrorStage.PREPARE,
+                retryable=True,
+                next_action=_continue_conflict_action(current),
+            )
+        selected = _begin_selected_curation_work(
+            pull_request,
+            lease,
+            store,
+            dependencies,
+        )
+        try:
+            replay = dependencies.repository.prepare_curation_recovery(
+                pull_request,
+                recovery,
+                restart_interrupted=(
+                    existing_work is not None and existing_work.run_id != lease.run_id
+                ),
+            )
+        except CurationCheckpointIntegrityError:
+            _close_generation(
+                generation_store,
+                current,
+                lease,
+                dependencies,
+                kind="generation-invalidated",
+                reason="checkpoint_missing",
+            )
+            return _prepare_new_curation_generation(
+                pull_request=pull_request,
+                lease=lease,
+                store=store,
+                generation_store=generation_store,
+                dependencies=dependencies,
+                generation_number=current.generation_number + 1,
+                selected=selected,
+            )
+
+    if replay.result == "conflict":
+        dependencies.tracker.mutation_occurred = True
+        dependencies.tracker.last_phase = WorkPhase.SELECTED
+        dependencies.tracker.terminal_reason = "curation-conflict"
+        return {
+            "work_id": work_id,
+            "generation": _generation_result(
+                current,
+                result="conflict-resolution-required",
+                conflict_paths=replay.conflict_paths,
+                next_action=_continue_conflict_action(current),
+            ),
+        }
+    if replay.sync is None or replay.head is None:
+        raise CurationStateError("curation replay omitted prepared facts")
+    prepared_work = _advance_work(
+        store,
+        lease,
+        selected,
+        dependencies,
+        WorkPhase.PREPARED,
+        prepared_head=replay.sync.rebased_head,
+        backup_ref=replay.sync.backup_ref,
+        sync=replay.sync,
+    )
+    if replay.result == "unchanged":
+        result = "review-required"
+        if checkpoint.stage is CurationCheckpointStage.REVIEWED:
+            prepared_work = _advance_work(
+                store,
+                lease,
+                prepared_work,
+                dependencies,
+                WorkPhase.REVIEWED,
+                reviewed_head=checkpoint.reviewed_head,
+            )
+            result = "validation-only"
+        dependencies.tracker.last_phase = prepared_work.phase
+        dependencies.tracker.terminal_reason = f"generation-{result}"
+        return {
+            "work_id": work_id,
+            "generation": _generation_result(current, result=result),
+        }
+
+    _close_generation(
+        generation_store,
+        current,
+        lease,
+        dependencies,
+        kind="generation-superseded",
+        reason="main_advanced",
+    )
+    generation = _new_generation(
+        pull_request,
+        replay.sync,
+        current.generation_number + 1,
+        dependencies,
+    )
+    generation_store.start_generation(generation, lease)
+    dependencies.tracker.mutation_occurred = True
+    dependencies.tracker.last_phase = WorkPhase.PREPARED
+    dependencies.tracker.terminal_reason = "generation-review-required"
+    return {
+        "work_id": work_id,
+        "generation": _generation_result(generation, result="review-required"),
+        "prepared": replay.sync.model_dump(mode="json"),
+    }
+
+
+def _prepare_new_curation_generation(
+    *,
+    pull_request: PullRequest,
+    lease: RunLease,
+    store: StateStore,
+    generation_store: CurationGenerationStore,
+    dependencies: Dependencies,
+    generation_number: int,
+    selected: WorkState | None = None,
+) -> dict[str, object]:
+    selected = selected or _begin_selected_curation_work(
+        pull_request,
+        lease,
+        store,
+        dependencies,
+    )
+    sync = dependencies.repository.prepare_guarded_sync(pull_request)
+    _advance_work(
+        store,
+        lease,
+        selected,
+        dependencies,
+        WorkPhase.PREPARED,
+        prepared_head=sync.rebased_head,
+        backup_ref=sync.backup_ref,
+        sync=sync,
+    )
+    generation = _new_generation(
+        pull_request,
+        sync,
+        generation_number,
+        dependencies,
+    )
+    generation_store.start_generation(generation, lease)
+    dependencies.tracker.mutation_occurred = True
+    dependencies.tracker.last_phase = WorkPhase.PREPARED
+    dependencies.tracker.terminal_reason = "prepared"
+    return {
+        "work_id": selected.work_id,
+        "generation": _generation_result(generation, result="prepared"),
+        "prepared": sync.model_dump(mode="json"),
+    }
+
+
+def _begin_selected_curation_work(
+    pull_request: PullRequest,
+    lease: RunLease,
+    store: StateStore,
+    dependencies: Dependencies,
+) -> WorkState:
+    work_id = _work_id_for_pr(pull_request.number)
     selected = WorkState(
         work_id=work_id,
         worker="curation",
         run_id=lease.run_id,
         phase=WorkPhase.SELECTED,
         updated_at=_current_time(dependencies, store.load_work(work_id)),
-        pr_number=args.pr,
+        pr_number=pull_request.number,
         selected_head=pull_request.head_sha,
     )
     store.begin_work(selected, lease)
     dependencies.tracker.mutation_occurred = True
     dependencies.tracker.last_phase = WorkPhase.SELECTED
-    sync = dependencies.repository.prepare_guarded_sync(pull_request)
-    prepared = selected.model_copy(
-        update={
-            "phase": WorkPhase.PREPARED,
-            "updated_at": _current_time(dependencies, selected),
-            "prepared_head": sync.rebased_head,
-            "backup_ref": sync.backup_ref,
-            "sync": sync,
-        }
+    return selected
+
+
+def _new_generation(
+    pull_request: PullRequest,
+    sync: GuardedSyncResult,
+    generation_number: int,
+    dependencies: Dependencies,
+) -> CurationGeneration:
+    created_at = _current_time(dependencies)
+    return CurationGeneration(
+        schema_version=2,
+        work_id=_work_id_for_pr(pull_request.number),
+        pr_number=pull_request.number,
+        generation_number=generation_number,
+        generation_id=secrets.token_hex(16),
+        created_at=created_at,
+        selected_head=pull_request.head_sha,
+        target_branch=pull_request.head_ref_name,
+        sync=sync,
+        events=(
+            GenerationPreparedEvent(
+                sequence=1,
+                recorded_at=created_at,
+                prepared_head=sync.rebased_head,
+            ),
+        ),
     )
-    store.save_work(prepared, lease)
-    dependencies.tracker.last_phase = WorkPhase.PREPARED
-    dependencies.tracker.terminal_reason = "prepared"
-    return {"work_id": work_id, "prepared": sync.model_dump(mode="json")}
+
+
+def _close_generation(
+    store: CurationGenerationStore,
+    generation: CurationGeneration,
+    lease: RunLease,
+    dependencies: Dependencies,
+    *,
+    kind: Literal[
+        "generation-superseded",
+        "generation-invalidated",
+        "generation-consumed",
+    ],
+    reason: str,
+) -> None:
+    recorded_at = max(
+        _current_time(dependencies),
+        generation.events[-1].recorded_at + timedelta(microseconds=1),
+    )
+    store.append_event(
+        generation.work_id,
+        generation.generation_id,
+        GenerationClosedEvent(
+            sequence=len(generation.events) + 1,
+            recorded_at=recorded_at,
+            kind=kind,
+            reason=reason,
+        ),
+        lease,
+    )
+    dependencies.tracker.mutation_occurred = True
+
+
+def _generation_recovery(
+    generation: CurationGeneration,
+    checkpoint: CurationCheckpointAuthority,
+) -> CurationRecoveryCheckpoint:
+    return CurationRecoveryCheckpoint(
+        pr_number=generation.pr_number,
+        generation_id=generation.generation_id,
+        transaction_id=checkpoint.transaction_id,
+        selected_head=generation.selected_head,
+        checkpoint_head=checkpoint.reviewed_head,
+        report_path=checkpoint.report_path,
+        sync=generation.sync,
+        checkpoint_ref=checkpoint.checkpoint_ref,
+        squash_ref=checkpoint.squash_ref,
+    )
+
+
+def _continue_conflict_action(
+    generation: CurationGeneration,
+) -> CurationNextAction:
+    return CurationNextAction(
+        recipe_id=CurationRecipeId.PREPARE,
+        substitutions=CurationActionSubstitutions(
+            pr=generation.pr_number,
+            generation_id=generation.generation_id,
+            head=project_generation(generation).latest_head,
+            validation_base=generation.sync.base_head,
+            continue_conflict=True,
+        ),
+    )
+
+
+def _generation_result(
+    generation: CurationGeneration,
+    *,
+    result: str,
+    conflict_paths: Sequence[str] = (),
+    next_action: CurationNextAction | None = None,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "generation_id": generation.generation_id,
+        "generation_number": generation.generation_number,
+        "selected_head": generation.selected_head,
+        "base_head": generation.sync.base_head,
+        "prepared_head": generation.sync.rebased_head,
+        "result": result,
+    }
+    if conflict_paths:
+        payload["conflict_paths"] = list(conflict_paths)
+    if next_action is not None:
+        payload["next_action"] = next_action.model_dump(
+            mode="json",
+            exclude_none=True,
+        )
+    return payload
 
 
 def _checkpoint_refs(continuation: ReviewedContinuation) -> ReviewedCheckpointRefs:
@@ -462,6 +796,198 @@ def _checkpoint_refs(continuation: ReviewedContinuation) -> ReviewedCheckpointRe
         reviewed_ref=continuation.reviewed_ref,
         squash_ref=continuation.squash_ref,
     )
+
+
+def _generation_event_time(
+    generation: CurationGeneration,
+    dependencies: Dependencies,
+) -> datetime:
+    return max(
+        _current_time(dependencies),
+        generation.events[-1].recorded_at + timedelta(microseconds=1),
+    )
+
+
+def _curation_checkpoint_refs(
+    pr_number: int,
+    generation_id: str,
+    transaction_id: str,
+) -> CurationCheckpointRefs:
+    prefix = (
+        f"refs/snowcast-maintainer/curation/pr-{pr_number}/"
+        f"{generation_id}/{transaction_id}/"
+    )
+    return CurationCheckpointRefs(
+        checkpoint_ref=f"{prefix}checkpoint",
+        squash_ref=f"{prefix}replay",
+    )
+
+
+def handle_checkpoint_curation(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    lease = _owned_lease(args, "curation", dependencies)
+    state_store = _state_store(args)
+    generation_store = CurationGenerationStore(args.state_dir)
+    work_id = _work_id_for_pr(args.pr)
+    dependencies.tracker.work_id = work_id
+    dependencies.tracker.pr_number = args.pr
+    dependencies.tracker.stage = ErrorStage.VALIDATE
+    if state_store.list_unresolved_pushes():
+        raise StateStoreError("unresolved push journal blocks curation checkpoint")
+
+    generation = generation_store.load_current(work_id)
+    if generation is None or generation.generation_id != args.generation_id:
+        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
+    projection = project_generation(generation)
+    if projection.latest_stage in {
+        "fully-validated",
+        "superseded",
+        "invalidated",
+        "consumed",
+    }:
+        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
+    pull_request = dependencies.github.get_pull_request(args.pr)
+    if (
+        pull_request.head_sha != generation.selected_head
+        or pull_request.head_sha != generation.sync.original_head
+    ):
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
+    _require_exact_curation_candidate(pull_request, dependencies, state_store)
+    work = _load_work_for_run(state_store, work_id, lease)
+    if work.phase not in {WorkPhase.PREPARED, WorkPhase.REVIEWED}:
+        raise StateStoreError("curation work is not prepared for checkpointing")
+    if work.sync is None or work.sync != generation.sync:
+        raise MaintainerError(ErrorReason.STALE_BASE, ErrorStage.VALIDATE)
+
+    stage = CurationCheckpointStage(args.stage)
+    transaction_id = checkpoint_transaction_id(
+        generation.generation_id,
+        stage,
+        args.head,
+        args.report,
+        generation.sync.base_head,
+    )
+    expected_refs = _curation_checkpoint_refs(
+        args.pr,
+        generation.generation_id,
+        transaction_id,
+    )
+    incomplete = projection.incomplete_transaction
+    if incomplete is not None and incomplete != transaction_id:
+        raise MaintainerError(
+            ErrorReason.LOCAL_RECOVERY_REQUIRED,
+            ErrorStage.VALIDATE,
+            retryable=True,
+            next_action=projection.next_action,
+        )
+    authority = projection.checkpoint_authority
+    if authority is not None and authority.transaction_id == transaction_id:
+        recovery = _generation_recovery(generation, authority)
+        dependencies.repository.revalidate_curation_checkpoint(
+            pull_request,
+            recovery,
+        )
+        dependencies.tracker.last_phase = work.phase
+        dependencies.tracker.terminal_reason = "already-completed"
+        return {
+            "work_id": work_id,
+            "generation": _generation_result(
+                generation,
+                result="already-completed",
+            ),
+        }
+    if (
+        stage is CurationCheckpointStage.REVIEWED
+        and args.head != projection.latest_head
+    ):
+        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
+    if dependencies.repository.current_head() != args.head:
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
+
+    snapshot = dependencies.repository.revalidate_prepared_result(
+        pull_request,
+        generation.sync,
+        args.head,
+    )
+    try:
+        require_single_curation_report_path(snapshot, args.report)
+    except ValueError:
+        raise MaintainerError(
+            ErrorReason.CHECKPOINT_CONFLICT,
+            ErrorStage.VALIDATE,
+        ) from None
+    base_repository = dependencies.base_repository or GitRepository(
+        args.base_dir.resolve()
+    )
+    delta = dependencies.curation_delta_validator(
+        pull_request=pull_request,
+        sync=generation.sync,
+        remediation_head=args.head,
+        report_path=args.report,
+        repository=dependencies.repository,
+        base_repository=base_repository,
+    )
+    if delta.remediation_head != args.head:
+        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
+
+    if incomplete is None:
+        generation = generation_store.append_event(
+            work_id,
+            generation.generation_id,
+            CheckpointStartedEvent(
+                sequence=len(generation.events) + 1,
+                recorded_at=_generation_event_time(generation, dependencies),
+                transaction_id=transaction_id,
+                stage=stage,
+                head=args.head,
+                report_path=args.report,
+                validation_base=generation.sync.base_head,
+                expected_checkpoint_ref=expected_refs.checkpoint_ref,
+                expected_squash_ref=expected_refs.squash_ref,
+            ),
+            lease,
+        )
+        dependencies.tracker.mutation_occurred = True
+
+    refs = dependencies.repository.checkpoint_curation_generation(
+        pull_request,
+        generation.sync,
+        args.head,
+        generation.generation_id,
+        transaction_id,
+    )
+    if refs != expected_refs:
+        raise CurationStateError("curation checkpoint returned unexpected refs")
+    generation = generation_store.append_event(
+        work_id,
+        generation.generation_id,
+        CheckpointCompletedEvent(
+            sequence=len(generation.events) + 1,
+            recorded_at=_generation_event_time(generation, dependencies),
+            transaction_id=transaction_id,
+            checkpoint_ref=refs.checkpoint_ref,
+            squash_ref=refs.squash_ref,
+        ),
+        lease,
+    )
+    dependencies.tracker.mutation_occurred = True
+    if stage is CurationCheckpointStage.REVIEWED and work.phase is WorkPhase.PREPARED:
+        work = _advance_work(
+            state_store,
+            lease,
+            work,
+            dependencies,
+            WorkPhase.REVIEWED,
+            reviewed_head=args.head,
+        )
+    dependencies.tracker.last_phase = work.phase
+    dependencies.tracker.terminal_reason = "curation-checkpointed"
+    return {
+        "work_id": work_id,
+        "generation": _generation_result(generation, result="completed"),
+    }
 
 
 def _remediation_checkpoint_refs(
@@ -1276,63 +1802,55 @@ def handle_validate_curation(
 ) -> dict[str, object]:
     lease = _owned_lease(args, "curation", dependencies)
     store = _state_store(args)
+    generation_store = CurationGenerationStore(args.state_dir)
     work_id = _work_id_for_pr(args.pr)
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
     dependencies.tracker.stage = ErrorStage.VALIDATE
     work = _load_work_for_run(store, work_id, lease)
     pull_request = dependencies.github.get_pull_request(args.pr)
-    if pull_request.head_sha != work.selected_head:
-        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
-    continuation = store.load_continuation(work_id)
+    generation = generation_store.load_current(work_id)
+    if generation is None or generation.generation_id != args.generation_id:
+        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
+    projection = project_generation(generation)
+    reviewed = projection.reviewed_authority
+    checkpoint = projection.checkpoint_authority
     if (
-        continuation is None
-        or continuation.recovery_run_id != lease.run_id
-        or continuation.pr_number != args.pr
-        or continuation.selected_head != work.selected_head
-        or continuation.reviewed_head != args.reviewed_head
-        or continuation.report_path != args.report
-        or continuation.sync != work.sync
-        or continuation.status
-        in {ContinuationStatus.CONSUMED, ContinuationStatus.INVALIDATED}
+        reviewed is None
+        or checkpoint is None
+        or reviewed.reviewed_head != args.head
+        or reviewed.report_path != args.report
     ):
-        raise StateStoreError("exact reviewed continuation is required")
-    assert work.sync is not None
-    dependencies.repository.revalidate_reviewed_checkpoint(
+        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
+    if pull_request.head_sha != work.selected_head or (
+        pull_request.head_sha != generation.selected_head
+    ):
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
+    if work.sync is None or work.sync != generation.sync:
+        raise MaintainerError(ErrorReason.STALE_BASE, ErrorStage.VALIDATE)
+    dependencies.repository.revalidate_curation_checkpoint(
         pull_request,
-        work.sync,
-        args.reviewed_head,
-        _checkpoint_refs(continuation),
+        _generation_recovery(generation, checkpoint),
     )
     base_repository = dependencies.base_repository or GitRepository(
         args.base_dir.resolve()
     )
-    if work.phase is WorkPhase.VALIDATED:
+    if projection.validated_authority is not None:
         if (
-            work.sync is None
-            or work.reviewed_head != args.reviewed_head
-            or work.validated_head != args.reviewed_head
+            work.phase is not WorkPhase.VALIDATED
+            or work.reviewed_head != args.head
+            or work.validated_head != args.head
             or work.report_path != args.report
         ):
             raise StateStoreError("validated curation request does not match")
         revalidate_curation_request(
             pull_request=pull_request,
-            sync=work.sync,
-            reviewed_head=args.reviewed_head,
+            sync=generation.sync,
+            reviewed_head=args.head,
             report_path=args.report,
             repository=dependencies.repository,
             base_repository=base_repository,
         )
-        if continuation.status is not ContinuationStatus.VALIDATED:
-            continuation = continuation.model_copy(
-                update={
-                    "status": ContinuationStatus.VALIDATED,
-                    "validation_status": ContinuationValidationStatus.PASSED,
-                    "updated_at": _current_time(dependencies, continuation),
-                }
-            )
-            store.save_continuation(continuation, lease)
-            dependencies.tracker.mutation_occurred = True
         dependencies.tracker.last_phase = WorkPhase.VALIDATED
         dependencies.tracker.terminal_reason = "already_validated"
         return {
@@ -1342,30 +1860,48 @@ def handle_validate_curation(
                 "validated_head": work.validated_head,
             },
         }
-    if work.phase is not WorkPhase.REVIEWED or work.sync is None:
+    if work.phase is not WorkPhase.REVIEWED:
         raise StateStoreError("curation work is not checkpointed for validation")
-    if work.reviewed_head != args.reviewed_head:
+    if work.reviewed_head != args.head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
     try:
         result = dependencies.curation_validator(
             pull_request=pull_request,
-            sync=work.sync,
-            reviewed_head=args.reviewed_head,
+            sync=generation.sync,
+            reviewed_head=args.head,
             report_path=args.report,
             repository=dependencies.repository,
             base_repository=base_repository,
         )
     except Exception:
-        failed = continuation.model_copy(
-            update={
-                "status": ContinuationStatus.AVAILABLE,
-                "validation_status": ContinuationValidationStatus.FAILED,
-                "updated_at": _current_time(dependencies, continuation),
-            }
+        generation_store.append_event(
+            work_id,
+            generation.generation_id,
+            ValidationFailedEvent(
+                sequence=len(generation.events) + 1,
+                recorded_at=_generation_event_time(generation, dependencies),
+                head=args.head,
+                report_path=args.report,
+            ),
+            lease,
         )
-        store.save_continuation(failed, lease)
         dependencies.tracker.mutation_occurred = True
         raise
+    if result.validated_head != args.head:
+        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
+    generation = generation_store.append_event(
+        work_id,
+        generation.generation_id,
+        ValidationPassedEvent(
+            sequence=len(generation.events) + 1,
+            recorded_at=_generation_event_time(generation, dependencies),
+            head=args.head,
+            report_path=args.report,
+            resulting_graph_markdown=result.resulting_graph_markdown,
+        ),
+        lease,
+    )
+    dependencies.tracker.mutation_occurred = True
     work = _advance_work(
         store,
         lease,
@@ -1376,14 +1912,6 @@ def handle_validate_curation(
         report_path=args.report,
         resulting_graph_markdown=result.resulting_graph_markdown,
     )
-    validated = continuation.model_copy(
-        update={
-            "status": ContinuationStatus.VALIDATED,
-            "validation_status": ContinuationValidationStatus.PASSED,
-            "updated_at": _current_time(dependencies, continuation),
-        }
-    )
-    store.save_continuation(validated, lease)
     dependencies.tracker.terminal_reason = "validated"
     return {
         "work_id": work_id,
@@ -1762,12 +2290,49 @@ def _consume_continuation_for_journal(
     dependencies.tracker.mutation_occurred = True
 
 
+def _consume_generation_for_journal(
+    *,
+    generation_store: CurationGenerationStore,
+    lease: RunLease,
+    work: WorkState,
+    expected_head: str,
+    dependencies: Dependencies,
+    require_validated: bool,
+) -> None:
+    generation = generation_store.load_current(work.work_id)
+    if generation is None:
+        raise StateStoreError("matching curation generation is required")
+    projection = project_generation(generation)
+    authority = (
+        projection.validated_authority
+        if require_validated
+        else projection.reviewed_authority
+    )
+    if (
+        authority is None
+        or authority.selected_head != work.selected_head
+        or authority.reviewed_head != expected_head
+        or authority.sync != work.sync
+        or (not require_validated and projection.validated_authority is not None)
+    ):
+        raise StateStoreError("matching curation generation authority is required")
+    _close_generation(
+        generation_store,
+        generation,
+        lease,
+        dependencies,
+        kind="generation-consumed",
+        reason="external_journal_authorized",
+    )
+
+
 def handle_publish_push(
     args: argparse.Namespace,
     dependencies: Dependencies,
 ) -> dict[str, object]:
     lease = _owned_lease(args, "curation", dependencies)
     store = _state_store(args)
+    generation_store = CurationGenerationStore(args.state_dir)
     work_id = _work_id_for_pr(args.pr)
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
@@ -1789,8 +2354,8 @@ def handle_publish_push(
         journal = _matching_curation_journal(work, lease, work.validated_head)
         store.save_push(journal, lease)
         dependencies.tracker.mutation_occurred = True
-        _consume_continuation_for_journal(
-            store=store,
+        _consume_generation_for_journal(
+            generation_store=generation_store,
             lease=lease,
             work=work,
             expected_head=work.validated_head,
@@ -1817,6 +2382,7 @@ def handle_publish_manual_check(
 ) -> dict[str, object]:
     lease = _owned_lease(args, "curation", dependencies)
     store = _state_store(args)
+    generation_store = CurationGenerationStore(args.state_dir)
     work_id = _work_id_for_pr(args.pr)
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
@@ -1874,30 +2440,33 @@ def handle_publish_manual_check(
             or work.reviewed_head != args.reviewed_head
         ):
             raise StateStoreError("manual-check publication requires reviewed work")
-        continuation = store.load_continuation(work_id)
+        generation = generation_store.load_current(work_id)
+        projection = project_generation(generation) if generation is not None else None
+        reviewed = projection.reviewed_authority if projection is not None else None
+        checkpoint = projection.checkpoint_authority if projection is not None else None
         if (
-            continuation is None
-            or continuation.recovery_run_id != lease.run_id
-            or continuation.status is not ContinuationStatus.AVAILABLE
-            or continuation.selected_head != work.selected_head
-            or continuation.reviewed_head != args.reviewed_head
-            or continuation.sync != work.sync
+            generation is None
+            or reviewed is None
+            or checkpoint is None
+            or projection is None
+            or projection.validated_authority is not None
+            or reviewed.selected_head != work.selected_head
+            or reviewed.reviewed_head != args.reviewed_head
+            or reviewed.sync != work.sync
         ):
             raise StateStoreError(
-                "manual-check publication requires exact reviewed continuation"
+                "manual-check publication requires exact reviewed generation"
             )
-        if continuation.report_path != args.report:
+        if reviewed.report_path != args.report:
             raise PublicationInputError(
                 "manual-check report must match the reviewed checkpoint"
             )
         pull_request = dependencies.github.get_pull_request(args.pr)
         if pull_request.head_sha != work.selected_head:
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
-        dependencies.repository.revalidate_reviewed_checkpoint(
+        dependencies.repository.revalidate_curation_checkpoint(
             pull_request,
-            work.sync,
-            args.reviewed_head,
-            _checkpoint_refs(continuation),
+            _generation_recovery(generation, checkpoint),
         )
         snapshot = dependencies.repository.revalidate_prepared_result(
             pull_request,
@@ -1919,8 +2488,8 @@ def handle_publish_manual_check(
         )
         store.save_push(journal, lease)
         dependencies.tracker.mutation_occurred = True
-        _consume_continuation_for_journal(
-            store=store,
+        _consume_generation_for_journal(
+            generation_store=generation_store,
             lease=lease,
             work=work,
             expected_head=args.reviewed_head,
@@ -3512,13 +4081,11 @@ HANDLERS: dict[tuple[str, str], Handler] = {
     ("inspect", "curation"): handle_inspect_curation,
     ("inspect", "discovery"): handle_inspect_discovery,
     ("prepare", "curation"): handle_prepare_curation,
-    ("prepare", "continuation"): handle_prepare_continuation,
     ("prepare", "ci-repair"): handle_prepare_ci_repair,
-    ("checkpoint", "remediation"): handle_checkpoint_remediation,
+    ("checkpoint", "curation"): handle_checkpoint_curation,
     ("checkpoint", "ci-repair"): handle_checkpoint_ci_repair,
     ("invalidate", "ci-continuation"): handle_invalidate_ci_continuation,
     ("validate", "curation"): handle_validate_curation,
-    ("validate", "reviewed"): handle_validate_reviewed,
     ("validate", "proposal"): handle_validate_proposal,
     ("publish", "push"): handle_publish_push,
     ("publish", "ci-repair"): handle_publish_ci_repair,
@@ -3658,3 +4225,5 @@ def safe_error(error: Exception, stage: ErrorStage) -> MaintainerError:
     ):
         return MaintainerError(ErrorReason.INVALID_COMMAND, stage)
     return MaintainerError(ErrorReason.INTERNAL_ERROR, stage)
+    (CurationCheckpointIntegrityError,)
+    (CurationRecoveryCheckpoint,)

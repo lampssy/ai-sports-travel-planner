@@ -18,6 +18,8 @@ from app.data.catalog_curation_reconciliation import reconcile_catalog_curation_
 from app.data.catalog_loader import load_catalog_from_path
 from ops.maintainer.git_ops import (
     ContinuationReplayResult,
+    CurationCheckpointRefs,
+    CurationRecoveryCheckpoint,
     GitAuthenticationError,
     GitOperationTimeoutError,
     GitPushRejectedError,
@@ -2079,6 +2081,46 @@ def test_reviewed_checkpoint_creates_exact_reviewed_and_squash_refs(
     )
     assert _git(local.checkout, "show", "-s", "--format=%T", refs.squash_ref) == _git(
         local.checkout, "show", "-s", "--format=%T", prepared.rebased_head
+    )
+
+
+def test_generation_checkpoint_creates_exact_refs_and_restores_unchanged_head(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    generation_id = "1" * 32
+    transaction_id = "2" * 64
+
+    refs = repository.checkpoint_curation_generation(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+        generation_id,
+        transaction_id,
+    )
+    _git(local.checkout, "switch", "--detach", local.target_sha)
+    replay = repository.prepare_curation_recovery(
+        local.pull_request,
+        CurationRecoveryCheckpoint(
+            pr_number=local.pull_request.number,
+            generation_id=generation_id,
+            transaction_id=transaction_id,
+            selected_head=local.pull_request.head_sha,
+            checkpoint_head=prepared.rebased_head,
+            report_path=REPORT_PATH,
+            sync=prepared,
+            checkpoint_ref=refs.checkpoint_ref,
+            squash_ref=refs.squash_ref,
+        ),
+    )
+
+    assert isinstance(refs, CurationCheckpointRefs)
+    assert replay.result == "unchanged"
+    assert replay.head == prepared.rebased_head
+    assert (
+        _git(local.checkout, "rev-parse", refs.checkpoint_ref) == prepared.rebased_head
     )
 
 

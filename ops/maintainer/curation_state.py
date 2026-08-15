@@ -43,6 +43,7 @@ class CurationCheckpointStage(StrEnum):
 
 
 class CurationRecipeId(StrEnum):
+    PREPARE = "prepare_curation"
     CHECKPOINT_DELTA = "checkpoint_curation_delta"
     CHECKPOINT_REVIEWED = "checkpoint_curation_reviewed"
     VALIDATE = "validate_curation"
@@ -59,6 +60,7 @@ class CurationActionSubstitutions(_StrictModel):
     head: str = Field(pattern=_SHA_PATTERN)
     report: str | None = Field(default=None, pattern=_REPORT_PATTERN)
     validation_base: str | None = Field(default=None, pattern=_SHA_PATTERN)
+    continue_conflict: bool = False
 
 
 class CurationNextAction(_StrictModel):
@@ -138,6 +140,7 @@ class ReviewedCurationAuthority(_StrictModel):
     work_id: str = Field(pattern=_ID_PATTERN.pattern)
     pr_number: int = Field(ge=1)
     generation_id: str = Field(pattern=_GENERATION_ID_PATTERN)
+    transaction_id: str = Field(pattern=_TRANSACTION_ID_PATTERN)
     branch: str = Field(min_length=1, max_length=200)
     selected_head: str = Field(pattern=_SHA_PATTERN)
     base_head: str = Field(pattern=_SHA_PATTERN)
@@ -147,6 +150,10 @@ class ReviewedCurationAuthority(_StrictModel):
     reviewed_at: datetime
     checkpoint_ref: str = Field(pattern=_REF_PATTERN)
     squash_ref: str = Field(pattern=_REF_PATTERN)
+
+
+class CurationCheckpointAuthority(ReviewedCurationAuthority):
+    stage: CurationCheckpointStage
 
 
 class ValidatedCurationAuthority(ReviewedCurationAuthority):
@@ -285,6 +292,7 @@ class CurationGenerationProjection(_StrictModel):
         default=None,
         pattern=_TRANSACTION_ID_PATTERN,
     )
+    checkpoint_authority: CurationCheckpointAuthority | None = None
     reviewed_authority: ReviewedCurationAuthority | None = None
     validated_authority: ValidatedCurationAuthority | None = None
     next_action: CurationNextAction | None = None
@@ -320,6 +328,7 @@ def project_generation(
     incomplete: CheckpointStartedEvent | None = None
     starts: dict[str, CheckpointStartedEvent] = {}
     reviewed: ReviewedCurationAuthority | None = None
+    checkpoint: CurationCheckpointAuthority | None = None
     validated: ValidatedCurationAuthority | None = None
     latest_report: str | None = None
     latest_refs: tuple[str, str] | None = None
@@ -335,6 +344,7 @@ def project_generation(
             latest_stage = started.stage
             latest_report = started.report_path
             latest_refs = (event.checkpoint_ref, event.squash_ref)
+            checkpoint = _checkpoint_authority(generation, started, event)
             validated = None
             if started.stage is CurationCheckpointStage.REVIEWED:
                 reviewed = _reviewed_authority(
@@ -358,6 +368,7 @@ def project_generation(
             )
         elif isinstance(event, GenerationClosedEvent):
             latest_stage = event.kind.removeprefix("generation-")
+            checkpoint = None
             reviewed = None
             validated = None
 
@@ -417,6 +428,7 @@ def project_generation(
         incomplete_transaction=(
             incomplete.transaction_id if incomplete is not None else None
         ),
+        checkpoint_authority=checkpoint,
         reviewed_authority=reviewed,
         validated_authority=validated,
         next_action=next_action,
@@ -432,6 +444,7 @@ def _reviewed_authority(
         work_id=generation.work_id,
         pr_number=generation.pr_number,
         generation_id=generation.generation_id,
+        transaction_id=started.transaction_id,
         branch=generation.target_branch,
         selected_head=generation.selected_head,
         base_head=generation.sync.base_head,
@@ -441,6 +454,17 @@ def _reviewed_authority(
         reviewed_at=completed.recorded_at,
         checkpoint_ref=completed.checkpoint_ref,
         squash_ref=completed.squash_ref,
+    )
+
+
+def _checkpoint_authority(
+    generation: CurationGeneration,
+    started: CheckpointStartedEvent,
+    completed: CheckpointCompletedEvent,
+) -> CurationCheckpointAuthority:
+    return CurationCheckpointAuthority(
+        **_reviewed_authority(generation, started, completed).model_dump(),
+        stage=started.stage,
     )
 
 

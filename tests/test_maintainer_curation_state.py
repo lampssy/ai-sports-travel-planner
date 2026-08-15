@@ -132,6 +132,11 @@ def test_newer_delta_checkpoint_supersedes_reviewed_head_within_generation() -> 
     assert projection.latest_head == SHA_3
     assert projection.latest_stage is CurationCheckpointStage.DELTA_VALIDATED
     assert projection.reviewed_authority is None
+    assert projection.checkpoint_authority is not None
+    assert projection.checkpoint_authority.reviewed_head == SHA_3
+    assert (
+        projection.checkpoint_authority.stage is CurationCheckpointStage.DELTA_VALIDATED
+    )
     assert projection.next_action is not None
     assert projection.next_action.recipe_id == "checkpoint_curation_reviewed"
 

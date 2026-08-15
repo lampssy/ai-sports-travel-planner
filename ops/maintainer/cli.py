@@ -127,11 +127,8 @@ def _parser() -> argparse.ArgumentParser:
     prepare_commands = prepare.add_subparsers(dest="command", required=True)
     prepare_curation = prepare_commands.add_parser("curation")
     prepare_curation.add_argument("--pr", type=int, required=True)
+    prepare_curation.add_argument("--continue-conflict", action="store_true")
     _add_run_id(prepare_curation)
-    prepare_continuation = prepare_commands.add_parser("continuation")
-    prepare_continuation.add_argument("--pr", type=int, required=True)
-    prepare_continuation.add_argument("--continue-conflict", action="store_true")
-    _add_run_id(prepare_continuation)
     prepare_ci_repair = prepare_commands.add_parser("ci-repair")
     prepare_ci_repair.add_argument("--pr", type=int, required=True)
     _add_run_id(prepare_ci_repair)
@@ -140,7 +137,8 @@ def _parser() -> argparse.ArgumentParser:
     validate_commands = validate.add_subparsers(dest="command", required=True)
     validate_curation_parser = validate_commands.add_parser("curation")
     validate_curation_parser.add_argument("--pr", type=int, required=True)
-    validate_curation_parser.add_argument("--reviewed-head", type=_sha, required=True)
+    validate_curation_parser.add_argument("--generation-id", required=True)
+    validate_curation_parser.add_argument("--head", type=_sha, required=True)
     validate_curation_parser.add_argument("--report", required=True)
     validate_curation_parser.add_argument(
         "--base-dir",
@@ -155,20 +153,26 @@ def _parser() -> argparse.ArgumentParser:
 
     checkpoint = families.add_parser("checkpoint")
     checkpoint_commands = checkpoint.add_subparsers(dest="command", required=True)
-    remediation = checkpoint_commands.add_parser("remediation")
-    remediation.add_argument("--pr", type=int, required=True)
-    remediation.add_argument("--head", type=_sha, required=True)
-    remediation.add_argument("--report", required=True)
-    remediation.add_argument(
+    checkpoint_curation = checkpoint_commands.add_parser("curation")
+    checkpoint_curation.add_argument("--pr", type=int, required=True)
+    checkpoint_curation.add_argument("--generation-id", required=True)
+    checkpoint_curation.add_argument("--head", type=_sha, required=True)
+    checkpoint_curation.add_argument("--report", required=True)
+    checkpoint_curation.add_argument(
+        "--stage",
+        choices=("delta-validated", "reviewed"),
+        required=True,
+    )
+    checkpoint_curation.add_argument(
         "--base-dir",
         type=Path,
         required=True,
         help=(
             "detached clean checkout at the exact prepare-time base; "
-            "must not be the remediation worktree"
+            "must not be the checkpoint worktree"
         ),
     )
-    _add_run_id(remediation)
+    _add_run_id(checkpoint_curation)
     checkpoint_ci_repair = checkpoint_commands.add_parser("ci-repair")
     checkpoint_ci_repair.add_argument("--pr", type=int, required=True)
     checkpoint_ci_repair.add_argument("--head", type=_sha, required=True)
@@ -180,12 +184,6 @@ def _parser() -> argparse.ArgumentParser:
     invalidate_ci_continuation.add_argument("--pr", type=int, required=True)
     _add_run_id(invalidate_ci_continuation)
 
-    validate_reviewed_parser = validate_commands.add_parser("reviewed")
-    validate_reviewed_parser.add_argument("--pr", type=int, required=True)
-    validate_reviewed_parser.add_argument("--reviewed-head", type=_sha, required=True)
-    validate_reviewed_parser.add_argument("--report", required=True)
-    validate_reviewed_parser.add_argument("--adopt-existing", action="store_true")
-    _add_run_id(validate_reviewed_parser)
     validate_proposal_parser = validate_commands.add_parser("proposal")
     validate_proposal_parser.add_argument("--candidate-key", required=True)
     validate_proposal_parser.add_argument(
