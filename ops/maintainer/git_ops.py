@@ -44,8 +44,6 @@ __all__ = [
     "RebaseConflictError",
     "RepositorySafetyError",
     "RemotePolicy",
-    "RemediationCheckpointRefs",
-    "ReviewedCheckpointRefs",
     "StaleRemoteHeadError",
 ]
 
@@ -55,6 +53,17 @@ BASE_BRANCH = "main"
 LOCAL_GIT_TIMEOUT_SECONDS = 10.0
 NETWORK_GIT_TIMEOUT_SECONDS = 60.0
 _SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+_LEGACY_CURATION_SOURCE_REF = re.compile(
+    r"^refs/snowcast-maintainer/"
+    r"(?P<suffix>(?:prepared|reviewed|continuations|remediation|"
+    r"remediation-continuations)/[A-Za-z0-9][A-Za-z0-9._/-]{0,255})$"
+)
+_LEGACY_CURATION_ARCHIVE_REF = re.compile(
+    r"^refs/snowcast-maintainer/archive/legacy-curation-v1/"
+    r"(?P<archive_id>[0-9a-f]{32})/"
+    r"(?P<suffix>(?:prepared|reviewed|continuations|remediation|"
+    r"remediation-continuations)/[A-Za-z0-9][A-Za-z0-9._/-]{0,255})$"
+)
 _OBJECT_SIZE_PATTERN = re.compile(r"^(?:0|[1-9][0-9]*)\n?$")
 _SCP_REMOTE = re.compile(
     r"^git@(?P<host>github\.com|github\.com-lampss):"
@@ -67,22 +76,6 @@ _BACKUP_REF = re.compile(
 _PREPARED_REF = re.compile(
     r"^refs/snowcast-maintainer/prepared/pr-[1-9][0-9]*/"
     r"(?P<base>[0-9a-f]{12})-(?P<rebased>[0-9a-f]{12})$"
-)
-_REVIEWED_REF = re.compile(
-    r"^refs/snowcast-maintainer/reviewed/pr-[1-9][0-9]*/"
-    r"(?P<selected>[0-9a-f]{12})-(?P<reviewed>[0-9a-f]{12})$"
-)
-_CONTINUATION_REF = re.compile(
-    r"^refs/snowcast-maintainer/continuations/pr-[1-9][0-9]*/"
-    r"(?P<base>[0-9a-f]{12})-(?P<reviewed>[0-9a-f]{12})$"
-)
-_REMEDIATION_REF = re.compile(
-    r"^refs/snowcast-maintainer/remediation/pr-[1-9][0-9]*/"
-    r"(?P<selected>[0-9a-f]{12})-(?P<remediated>[0-9a-f]{12})$"
-)
-_REMEDIATION_CONTINUATION_REF = re.compile(
-    r"^refs/snowcast-maintainer/remediation-continuations/pr-[1-9][0-9]*/"
-    r"(?P<base>[0-9a-f]{12})-(?P<remediated>[0-9a-f]{12})$"
 )
 _CI_REPAIR_REF = re.compile(
     r"^refs/snowcast-maintainer/ci-repairs/pr-[1-9][0-9]*/"
@@ -129,10 +122,6 @@ class GitRemotePolicyError(RepositorySafetyError):
     """A remote denied or could not locate the configured repository."""
 
 
-class RemediationCheckpointIntegrityError(RepositorySafetyError):
-    """Immutable remediation checkpoint refs are missing or no longer exact."""
-
-
 class CurationCheckpointIntegrityError(RepositorySafetyError):
     """Immutable generation checkpoint refs are missing or no longer exact."""
 
@@ -157,20 +146,6 @@ class GuardedSyncResult(BaseModel):
     merge_base: str = Field(pattern=r"^[0-9a-f]{40}$")
 
 
-class ReviewedCheckpointRefs(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
-
-    reviewed_ref: str
-    squash_ref: str
-
-
-class RemediationCheckpointRefs(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
-
-    remediation_ref: str
-    squash_ref: str
-
-
 class CurationCheckpointRefs(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -186,6 +161,16 @@ class LegacyCurationRef(BaseModel):
         pattern=r"^refs/snowcast-maintainer/archive/legacy-curation-v1/"
     )
     head: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+    @model_validator(mode="after")
+    def validate_archive_target(self) -> LegacyCurationRef:
+        source = _LEGACY_CURATION_SOURCE_REF.fullmatch(self.source_ref)
+        archive = _LEGACY_CURATION_ARCHIVE_REF.fullmatch(self.archive_ref)
+        if source is None or archive is None:
+            raise ValueError("legacy curation ref uses an unrecognized namespace")
+        if source.group("suffix") != archive.group("suffix"):
+            raise ValueError("legacy curation archive ref does not match its source")
+        return self
 
 
 class ContinuationReplayResult(BaseModel):
@@ -865,87 +850,6 @@ class GitRepository:
             builder=build_preparation_intent_snapshot,
         )
 
-    def checkpoint_reviewed_continuation(
-        self,
-        pull_request: PullRequest,
-        sync: GuardedSyncResult,
-        reviewed_head: str,
-    ) -> ReviewedCheckpointRefs:
-        """Persist immutable refs for one exact reviewed curation tree."""
-        self.revalidate_prepared_result(pull_request, sync, reviewed_head)
-        reviewed_ref = (
-            f"refs/snowcast-maintainer/reviewed/pr-{pull_request.number}/"
-            f"{sync.original_head[:12]}-{reviewed_head[:12]}"
-        )
-        squash_ref = (
-            f"refs/snowcast-maintainer/continuations/pr-{pull_request.number}/"
-            f"{sync.base_head[:12]}-{reviewed_head[:12]}"
-        )
-        self._create_continuation_checkpoint(
-            checkpoint_ref=reviewed_ref,
-            squash_ref=squash_ref,
-            checkpoint_head=reviewed_head,
-            base_head=sync.base_head,
-            message=f"Snowcast reviewed continuation for PR #{pull_request.number}",
-            failure_message="reviewed continuation commit cannot be created",
-        )
-        self._validate_checkpoint_refs(
-            pull_request.number,
-            sync,
-            reviewed_head,
-            ReviewedCheckpointRefs(
-                reviewed_ref=reviewed_ref,
-                squash_ref=squash_ref,
-            ),
-        )
-        return ReviewedCheckpointRefs(
-            reviewed_ref=reviewed_ref,
-            squash_ref=squash_ref,
-        )
-
-    def checkpoint_remediation_continuation(
-        self,
-        pull_request: PullRequest,
-        sync: GuardedSyncResult,
-        remediated_head: str,
-    ) -> RemediationCheckpointRefs:
-        """Persist immutable refs for one exact remediation tree."""
-        self._revalidate_prepared_result(
-            pull_request,
-            sync,
-            remediated_head,
-            builder=build_preparation_intent_snapshot,
-        )
-        remediation_ref = (
-            f"refs/snowcast-maintainer/remediation/pr-{pull_request.number}/"
-            f"{sync.original_head[:12]}-{remediated_head[:12]}"
-        )
-        squash_ref = (
-            "refs/snowcast-maintainer/remediation-continuations/"
-            f"pr-{pull_request.number}/{sync.base_head[:12]}-{remediated_head[:12]}"
-        )
-        self._create_continuation_checkpoint(
-            checkpoint_ref=remediation_ref,
-            squash_ref=squash_ref,
-            checkpoint_head=remediated_head,
-            base_head=sync.base_head,
-            message=f"Snowcast remediation continuation for PR #{pull_request.number}",
-            failure_message="remediation continuation commit cannot be created",
-        )
-        self._validate_remediation_checkpoint_refs(
-            pull_request.number,
-            sync,
-            remediated_head,
-            RemediationCheckpointRefs(
-                remediation_ref=remediation_ref,
-                squash_ref=squash_ref,
-            ),
-        )
-        return RemediationCheckpointRefs(
-            remediation_ref=remediation_ref,
-            squash_ref=squash_ref,
-        )
-
     def checkpoint_curation_generation(
         self,
         pull_request: PullRequest,
@@ -981,109 +885,6 @@ class GitRepository:
             squash_ref=refs.squash_ref,
         )
         return refs
-
-    def prepare_reviewed_continuation(
-        self,
-        pull_request: PullRequest,
-        sync: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        """Restore or replay one helper-checkpointed reviewed curation tree."""
-        _validate_pull_request(pull_request)
-        if self._cherry_pick_in_progress():
-            raise RepositorySafetyError("pre-existing Git operation blocks prepare")
-        self._ensure_clean_preflight()
-        self.verify_repository()
-        self.fetch_for_pr(pull_request.head_ref_name)
-        fetched_head = self._rev_parse(
-            f"refs/remotes/origin/{pull_request.head_ref_name}"
-        )
-        if fetched_head != pull_request.head_sha or fetched_head != sync.original_head:
-            raise StaleRemoteHeadError("remote PR head changed after review")
-        squash_head = self._validate_checkpoint_refs(
-            pull_request.number,
-            sync,
-            reviewed_head,
-            refs,
-        )
-        base_head = self._rev_parse("refs/remotes/origin/main")
-        if base_head == sync.base_head:
-            switch = self._git("switch", "--detach", refs.reviewed_ref)
-            if switch.returncode != 0:
-                raise RepositorySafetyError("cannot restore exact reviewed head")
-            self._revalidate_prepared_result(
-                pull_request,
-                sync,
-                reviewed_head,
-                builder=build_preparation_intent_snapshot,
-            )
-            return ContinuationReplayResult(
-                result="unchanged",
-                base_head=base_head,
-                head=reviewed_head,
-                sync=sync,
-            )
-
-        self._assert_ancestor(
-            sync.base_head,
-            base_head,
-            "current main must descend from the reviewed continuation base",
-        )
-
-        switch = self._git("switch", "--detach", base_head)
-        if switch.returncode != 0:
-            raise RepositorySafetyError("cannot detach at continuation replay base")
-        replay = self._git("cherry-pick", "--no-edit", refs.squash_ref)
-        if replay.returncode != 0:
-            if not self._cherry_pick_in_progress():
-                raise RepositorySafetyError(
-                    "continuation replay failed without conflict state"
-                )
-            conflict_paths = self._nul_paths(
-                "diff",
-                "--name-only",
-                "--diff-filter=U",
-                "-z",
-            )
-            expected_paths = frozenset(
-                entry.path for entry in self.diff_entries(sync.base_head, squash_head)
-            )
-            if (
-                not conflict_paths
-                or not set(conflict_paths).issubset(expected_paths)
-                or not all(is_allowed_curation_path(path) for path in conflict_paths)
-            ):
-                self._abort_cherry_pick_if_active()
-                raise RepositorySafetyError(
-                    "continuation conflict includes a disallowed path"
-                )
-            return ContinuationReplayResult(
-                result="conflict",
-                base_head=base_head,
-                conflict_paths=conflict_paths,
-            )
-        return self._completed_continuation_replay(
-            pull_request,
-            sync,
-            base_head,
-        )
-
-    def revalidate_reviewed_checkpoint(
-        self,
-        pull_request: PullRequest,
-        sync: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> None:
-        """Recheck exact reviewed lineage and its persistent recovery refs."""
-        self.revalidate_prepared_result(pull_request, sync, reviewed_head)
-        self._validate_checkpoint_refs(
-            pull_request.number,
-            sync,
-            reviewed_head,
-            refs,
-        )
 
     def prepare_curation_recovery(
         self,
@@ -1258,229 +1059,6 @@ class GitRepository:
             recovery.checkpoint_head,
         )
         self._validate_curation_checkpoint(recovery)
-
-    def continue_reviewed_conflict(
-        self,
-        pull_request: PullRequest,
-        sync: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        """Complete one already-resolved helper-owned squash replay conflict."""
-        _validate_pull_request(pull_request)
-        self.verify_repository()
-        if not self._cherry_pick_in_progress():
-            raise RepositorySafetyError("continuation cherry-pick is not active")
-        self.fetch_for_pr(pull_request.head_ref_name)
-        if (
-            self._rev_parse(f"refs/remotes/origin/{pull_request.head_ref_name}")
-            != pull_request.head_sha
-        ):
-            self._abort_cherry_pick_if_active()
-            raise StaleRemoteHeadError("remote PR head changed during replay")
-        squash_head = self._validate_checkpoint_refs(
-            pull_request.number,
-            sync,
-            reviewed_head,
-            refs,
-        )
-        base_head = self.current_head()
-        if self._rev_parse("refs/remotes/origin/main") != base_head:
-            self._abort_cherry_pick_if_active()
-            raise StaleRemoteHeadError("main moved during continuation conflict")
-        if self._nul_paths("diff", "--name-only", "--diff-filter=U", "-z"):
-            raise RepositorySafetyError("continuation conflicts remain unresolved")
-        if self._nul_paths("diff", "--name-only", "-z") or self._nul_paths(
-            "ls-files", "--others", "--exclude-standard", "-z"
-        ):
-            self._abort_cherry_pick_if_active()
-            raise RepositorySafetyError(
-                "continuation worktree contains unrelated unstaged changes"
-            )
-        staged_paths = self._nul_paths("diff", "--cached", "--name-only", "-z", "HEAD")
-        expected_paths = frozenset(
-            entry.path for entry in self.diff_entries(sync.base_head, squash_head)
-        )
-        if (
-            not staged_paths
-            or not set(staged_paths).issubset(expected_paths)
-            or not all(is_allowed_curation_path(path) for path in staged_paths)
-        ):
-            self._abort_cherry_pick_if_active()
-            raise RepositorySafetyError(
-                "continuation resolution changed a path outside reviewed scope"
-            )
-        completed = self._git("cherry-pick", "--continue")
-        if completed.returncode != 0:
-            self._abort_cherry_pick_if_active()
-            raise RepositorySafetyError("continuation replay did not complete once")
-        return self._completed_continuation_replay(
-            pull_request,
-            sync,
-            base_head,
-        )
-
-    def prepare_remediation_continuation(
-        self,
-        pull_request: PullRequest,
-        sync: GuardedSyncResult,
-        remediated_head: str,
-        refs: RemediationCheckpointRefs,
-        *,
-        restart_interrupted: bool = False,
-    ) -> ContinuationReplayResult:
-        """Restore or replay one helper-checkpointed remediation tree."""
-        _validate_pull_request(pull_request)
-        self.verify_repository()
-        if restart_interrupted:
-            self._abort_cherry_pick_if_active()
-        if self._cherry_pick_in_progress():
-            raise RepositorySafetyError("pre-existing Git operation blocks prepare")
-        self._ensure_clean_preflight()
-        self.fetch_for_pr(pull_request.head_ref_name)
-        fetched_head = self._rev_parse(
-            f"refs/remotes/origin/{pull_request.head_ref_name}"
-        )
-        if fetched_head != pull_request.head_sha or fetched_head != sync.original_head:
-            raise StaleRemoteHeadError("remote PR head changed after remediation")
-        squash_head = self._validate_remediation_checkpoint_refs(
-            pull_request.number,
-            sync,
-            remediated_head,
-            refs,
-        )
-        base_head = self._rev_parse("refs/remotes/origin/main")
-        if base_head == sync.base_head:
-            switch = self._git("switch", "--detach", refs.remediation_ref)
-            if switch.returncode != 0:
-                raise RepositorySafetyError("cannot restore exact remediation head")
-            self._revalidate_prepared_result(
-                pull_request,
-                sync,
-                remediated_head,
-                builder=build_preparation_intent_snapshot,
-            )
-            return ContinuationReplayResult(
-                result="unchanged",
-                base_head=base_head,
-                head=remediated_head,
-                sync=sync,
-            )
-
-        self._assert_ancestor(
-            sync.base_head,
-            base_head,
-            "current main must descend from the remediation continuation base",
-        )
-        switch = self._git("switch", "--detach", base_head)
-        if switch.returncode != 0:
-            raise RepositorySafetyError("cannot detach at remediation replay base")
-        replay = self._git("cherry-pick", "--no-edit", refs.squash_ref)
-        if replay.returncode != 0:
-            if not self._cherry_pick_in_progress():
-                raise RepositorySafetyError(
-                    "remediation replay failed without conflict state"
-                )
-            conflict_paths = self._nul_paths(
-                "diff",
-                "--name-only",
-                "--diff-filter=U",
-                "-z",
-            )
-            expected_paths = frozenset(
-                entry.path for entry in self.diff_entries(sync.base_head, squash_head)
-            )
-            if (
-                not conflict_paths
-                or not set(conflict_paths).issubset(expected_paths)
-                or not all(is_allowed_curation_path(path) for path in conflict_paths)
-            ):
-                self._abort_cherry_pick_if_active()
-                raise RepositorySafetyError(
-                    "remediation conflict includes a disallowed path"
-                )
-            return ContinuationReplayResult(
-                result="conflict",
-                base_head=base_head,
-                conflict_paths=conflict_paths,
-            )
-        return self._completed_continuation_replay(
-            pull_request,
-            sync,
-            base_head,
-        )
-
-    def continue_remediation_conflict(
-        self,
-        pull_request: PullRequest,
-        sync: GuardedSyncResult,
-        remediated_head: str,
-        refs: RemediationCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        """Complete one already-resolved helper-owned remediation conflict."""
-        _validate_pull_request(pull_request)
-        self.verify_repository()
-        if not self._cherry_pick_in_progress():
-            raise RepositorySafetyError("remediation cherry-pick is not active")
-        self.fetch_for_pr(pull_request.head_ref_name)
-        if (
-            self._rev_parse(f"refs/remotes/origin/{pull_request.head_ref_name}")
-            != pull_request.head_sha
-        ):
-            self._abort_cherry_pick_if_active()
-            raise StaleRemoteHeadError(
-                "remote PR head changed during remediation replay"
-            )
-        try:
-            squash_head = self._validate_remediation_checkpoint_refs(
-                pull_request.number,
-                sync,
-                remediated_head,
-                refs,
-            )
-        except Exception:
-            self._abort_cherry_pick_if_active()
-            raise
-        base_head = self.current_head()
-        if self._rev_parse("refs/remotes/origin/main") != base_head:
-            self._abort_cherry_pick_if_active()
-            raise StaleRemoteHeadError("main moved during remediation conflict")
-        if self._nul_paths("diff", "--name-only", "--diff-filter=U", "-z"):
-            raise RepositorySafetyError("remediation conflicts remain unresolved")
-        if self._nul_paths("diff", "--name-only", "-z") or self._nul_paths(
-            "ls-files", "--others", "--exclude-standard", "-z"
-        ):
-            self._abort_cherry_pick_if_active()
-            raise RepositorySafetyError(
-                "remediation worktree contains unrelated unstaged changes"
-            )
-        expected_entries = {
-            entry.path: entry
-            for entry in self.diff_entries(sync.base_head, squash_head)
-        }
-        staged_entries = self._staged_diff_entries()
-        staged_paths = frozenset(entry.path for entry in staged_entries)
-        if (
-            not staged_paths
-            or not staged_paths.issubset(expected_entries)
-            or any(
-                entry.new_mode != expected_entries[entry.path].new_mode
-                for entry in staged_entries
-            )
-        ):
-            self._abort_cherry_pick_if_active()
-            raise RepositorySafetyError(
-                "remediation resolution changed a path outside remediation scope"
-            )
-        completed = self._git("cherry-pick", "--continue")
-        if completed.returncode != 0:
-            self._abort_cherry_pick_if_active()
-            raise RepositorySafetyError("remediation replay did not complete once")
-        return self._completed_continuation_replay(
-            pull_request,
-            sync,
-            base_head,
-        )
 
     def _revalidate_prepared_result(
         self,
@@ -1963,108 +1541,6 @@ class GitRepository:
         _validate_sha(squash_head)
         self._create_exact_ref(squash_ref, squash_head)
 
-    def _validate_checkpoint_refs(
-        self,
-        pr_number: int,
-        sync: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> str:
-        _validate_reviewed_ref(
-            refs.reviewed_ref,
-            pr_number,
-            sync.original_head,
-            reviewed_head,
-        )
-        _validate_continuation_ref(
-            refs.squash_ref,
-            pr_number,
-            sync.base_head,
-            reviewed_head,
-        )
-        if self._resolve_ref(refs.reviewed_ref) != reviewed_head:
-            raise RepositorySafetyError("reviewed ref no longer matches checkpoint")
-        squash_head = self._resolve_ref(refs.squash_ref)
-        self._verify_commit(squash_head)
-        if self._commit_tree(squash_head) != self._commit_tree(reviewed_head):
-            raise RepositorySafetyError("continuation tree no longer matches review")
-        parents = self._git("show", "-s", "--format=%P", squash_head)
-        if parents.returncode != 0 or parents.stdout.strip() != sync.base_head:
-            raise RepositorySafetyError("continuation parent no longer matches base")
-        return squash_head
-
-    def _validate_remediation_checkpoint_refs(
-        self,
-        pr_number: int,
-        sync: GuardedSyncResult,
-        remediated_head: str,
-        refs: RemediationCheckpointRefs,
-    ) -> str:
-        try:
-            _validate_remediation_ref(
-                refs.remediation_ref,
-                pr_number,
-                sync.original_head,
-                remediated_head,
-            )
-            _validate_remediation_continuation_ref(
-                refs.squash_ref,
-                pr_number,
-                sync.base_head,
-                remediated_head,
-            )
-        except RepositorySafetyError as exc:
-            raise RemediationCheckpointIntegrityError(str(exc)) from None
-        remediation_ref_head = self._optional_ref_head(refs.remediation_ref)
-        if remediation_ref_head is None:
-            raise RemediationCheckpointIntegrityError(
-                "continuation ref cannot be resolved"
-            )
-        self._verify_remediation_checkpoint_commit(remediation_ref_head)
-        if remediation_ref_head != remediated_head:
-            raise RemediationCheckpointIntegrityError(
-                "remediation ref no longer matches checkpoint"
-            )
-        squash_head = self._optional_ref_head(refs.squash_ref)
-        if squash_head is None:
-            raise RemediationCheckpointIntegrityError(
-                "continuation ref cannot be resolved"
-            )
-        self._verify_remediation_checkpoint_commit(squash_head)
-        if self._commit_tree(squash_head) != self._commit_tree(remediated_head):
-            raise RemediationCheckpointIntegrityError(
-                "remediation continuation tree no longer matches checkpoint"
-            )
-        parents = self._git("show", "-s", "--format=%P", squash_head)
-        if parents.returncode != 0:
-            raise RepositorySafetyError(
-                "cannot inspect remediation continuation parent"
-            )
-        if parents.stdout.strip() != sync.base_head:
-            raise RemediationCheckpointIntegrityError(
-                "remediation continuation parent no longer matches base"
-            )
-        try:
-            remediated_intent = build_preparation_intent_snapshot(
-                self,
-                sync.base_head,
-                remediated_head,
-            )
-            squash_intent = build_preparation_intent_snapshot(
-                self,
-                sync.base_head,
-                squash_head,
-            )
-        except (IntentDriftError, IntentValidationError):
-            raise RemediationCheckpointIntegrityError(
-                "remediation checkpoint has unsafe immutable intent"
-            ) from None
-        if remediated_intent.diff_entries != squash_intent.diff_entries:
-            raise RemediationCheckpointIntegrityError(
-                "remediation continuation diff no longer matches checkpoint"
-            )
-        return squash_head
-
     def _validate_curation_checkpoint(
         self,
         recovery: CurationRecoveryCheckpoint,
@@ -2180,16 +1656,6 @@ class GitRepository:
         result = self._git("cat-file", "-e", f"{sha}^{{commit}}")
         if result.returncode != 0:
             raise RepositorySafetyError("prepared revision is not an immutable commit")
-
-    def _verify_remediation_checkpoint_commit(self, sha: str) -> None:
-        _validate_sha(sha)
-        result = self._git("cat-file", "-t", sha)
-        if result.returncode != 0:
-            raise RepositorySafetyError("cannot inspect remediation checkpoint object")
-        if result.stdout.strip() != "commit":
-            raise RemediationCheckpointIntegrityError(
-                "remediation checkpoint ref does not resolve to a commit"
-            )
 
     def _merge_base(self, left: str, right: str) -> str:
         _validate_sha(left)
@@ -2436,82 +1902,6 @@ def _validate_prepared_ref(
         or match.group("rebased") != rebased_head[:12]
     ):
         raise RepositorySafetyError("prepared ref is not bound to prepared heads")
-
-
-def _validate_reviewed_ref(
-    reviewed_ref: str,
-    pr_number: int,
-    selected_head: str,
-    reviewed_head: str,
-) -> None:
-    _validate_pr_number(pr_number)
-    match = _REVIEWED_REF.fullmatch(reviewed_ref)
-    expected_prefix = f"refs/snowcast-maintainer/reviewed/pr-{pr_number}/"
-    if (
-        match is None
-        or not reviewed_ref.startswith(expected_prefix)
-        or match.group("selected") != selected_head[:12]
-        or match.group("reviewed") != reviewed_head[:12]
-    ):
-        raise RepositorySafetyError("reviewed ref is not bound to reviewed heads")
-
-
-def _validate_continuation_ref(
-    squash_ref: str,
-    pr_number: int,
-    base_head: str,
-    reviewed_head: str,
-) -> None:
-    _validate_pr_number(pr_number)
-    match = _CONTINUATION_REF.fullmatch(squash_ref)
-    expected_prefix = f"refs/snowcast-maintainer/continuations/pr-{pr_number}/"
-    if (
-        match is None
-        or not squash_ref.startswith(expected_prefix)
-        or match.group("base") != base_head[:12]
-        or match.group("reviewed") != reviewed_head[:12]
-    ):
-        raise RepositorySafetyError("continuation ref is not bound to reviewed heads")
-
-
-def _validate_remediation_ref(
-    remediation_ref: str,
-    pr_number: int,
-    selected_head: str,
-    remediated_head: str,
-) -> None:
-    _validate_pr_number(pr_number)
-    match = _REMEDIATION_REF.fullmatch(remediation_ref)
-    expected_prefix = f"refs/snowcast-maintainer/remediation/pr-{pr_number}/"
-    if (
-        match is None
-        or not remediation_ref.startswith(expected_prefix)
-        or match.group("selected") != selected_head[:12]
-        or match.group("remediated") != remediated_head[:12]
-    ):
-        raise RepositorySafetyError("remediation ref is not bound to checkpoint heads")
-
-
-def _validate_remediation_continuation_ref(
-    squash_ref: str,
-    pr_number: int,
-    base_head: str,
-    remediated_head: str,
-) -> None:
-    _validate_pr_number(pr_number)
-    match = _REMEDIATION_CONTINUATION_REF.fullmatch(squash_ref)
-    expected_prefix = (
-        f"refs/snowcast-maintainer/remediation-continuations/pr-{pr_number}/"
-    )
-    if (
-        match is None
-        or not squash_ref.startswith(expected_prefix)
-        or match.group("base") != base_head[:12]
-        or match.group("remediated") != remediated_head[:12]
-    ):
-        raise RepositorySafetyError(
-            "remediation continuation ref is not bound to checkpoint heads"
-        )
 
 
 def _raise_sanitized_push_error(stderr: str) -> None:

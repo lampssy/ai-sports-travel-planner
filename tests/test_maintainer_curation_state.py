@@ -22,6 +22,7 @@ from ops.maintainer.curation_state import (
     ValidationFailedEvent,
     ValidationPassedEvent,
     checkpoint_transaction_id,
+    curation_state_migration_required,
     migrate_legacy_curation_state,
     project_generation,
 )
@@ -294,7 +295,7 @@ def test_legacy_migration_archives_only_pre_push_curation_state_and_is_idempoten
     assert first.already_migrated is False
     assert second.already_migrated is True
     assert second.archive_id == archive_id
-    assert repository.archive_calls == 1
+    assert repository.archive_calls == 2
     assert not (state_dir / "work/curation-pr-42.json").exists()
     assert not (state_dir / "continuations/curation-pr-42.json").exists()
     assert not (state_dir / "remediation-continuations/curation-pr-42.json").exists()
@@ -305,6 +306,49 @@ def test_legacy_migration_archives_only_pre_push_curation_state_and_is_idempoten
     assert (archive / "work/curation-pr-42.json").is_file()
     assert (state_dir / "curation-state-format.json").is_file()
     assert not (state_dir / "curation-state-migration.json").exists()
+
+
+def test_legacy_migration_retry_rejects_tampered_completed_archive(
+    tmp_path: Path,
+) -> None:
+    state_dir = tmp_path / "state"
+    state_dir.mkdir(mode=0o700)
+    curation_work, _, _, _ = _legacy_models()
+    _write_private_model(state_dir / "work/curation-pr-42.json", curation_work)
+    archive_id = "b" * 32
+    repository = LegacyRefRepositoryStub()
+    migrate_legacy_curation_state(
+        state_dir,
+        repository,
+        now=NOW,
+        archive_id_factory=lambda: archive_id,
+    )
+    archived_work = (
+        state_dir / "legacy-curation-v1" / archive_id / "work/curation-pr-42.json"
+    )
+    archived_work.write_bytes(b"{}\n")
+
+    with pytest.raises(CurationMigrationError, match="format-conflict"):
+        migrate_legacy_curation_state(
+            state_dir,
+            repository,
+            now=NOW + timedelta(seconds=1),
+        )
+
+
+def test_migration_required_detects_curation_work_without_continuation(
+    tmp_path: Path,
+) -> None:
+    state_dir = tmp_path / "state"
+    state_dir.mkdir(mode=0o700)
+    curation_work, discovery_work, _, _ = _legacy_models()
+    _write_private_model(state_dir / "work/proposal-example.json", discovery_work)
+
+    assert curation_state_migration_required(state_dir) is False
+
+    _write_private_model(state_dir / "work/curation-pr-42.json", curation_work)
+
+    assert curation_state_migration_required(state_dir) is True
 
 
 def test_legacy_migration_refuses_active_lease(tmp_path: Path) -> None:

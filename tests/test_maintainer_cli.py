@@ -38,9 +38,7 @@ from ops.maintainer.git_ops import (
     GuardedSyncResult,
     LegacyCurationRef,
     RebaseConflictError,
-    RemediationCheckpointRefs,
     RepositorySafetyError,
-    ReviewedCheckpointRefs,
     StaleRemoteHeadError,
 )
 from ops.maintainer.github import GitHubComment, GitHubError
@@ -518,10 +516,6 @@ class FakeRepository:
     )
     curation_checkpoint_calls: list[tuple[str, str]] = field(default_factory=list)
     curation_checkpoint_error: Exception | None = None
-    remediation_replay_error: Exception | None = None
-    remediation_prepare_calls: int = 0
-    remediation_continue_calls: int = 0
-    remediation_restart_flags: list[bool] = field(default_factory=list)
     non_test_tree_digest_calls: list[str] = field(default_factory=list)
     ci_repair_prepare_calls: list[PullRequest] = field(default_factory=list)
     ci_repair_checkpoint_calls: list[dict[str, object]] = field(default_factory=list)
@@ -590,38 +584,6 @@ class FakeRepository:
         assert result == self.prepared
         assert reviewed_head == self.head
         return self.snapshot
-
-    def checkpoint_reviewed_continuation(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-    ) -> ReviewedCheckpointRefs:
-        assert pull_request.number == 42
-        assert result == self.prepared
-        assert reviewed_head == self.head
-        return ReviewedCheckpointRefs(
-            reviewed_ref=(
-                f"refs/snowcast-maintainer/reviewed/pr-42/"
-                f"{result.original_head[:12]}-{reviewed_head[:12]}"
-            ),
-            squash_ref=(
-                f"refs/snowcast-maintainer/continuations/pr-42/"
-                f"{result.base_head[:12]}-{reviewed_head[:12]}"
-            ),
-        )
-
-    def revalidate_reviewed_checkpoint(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> None:
-        assert pull_request.number == 42
-        assert result == self.prepared
-        assert reviewed_head == self.head
-        assert refs.reviewed_ref.startswith("refs/snowcast-maintainer/reviewed/pr-42/")
 
     def prepare_curation_recovery(
         self,
@@ -698,141 +660,6 @@ class FakeRepository:
     ) -> None:
         assert pull_request.number == recovery.pr_number
         assert recovery.sync == self.prepared
-
-    def prepare_reviewed_continuation(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        self.revalidate_reviewed_checkpoint(pull_request, result, reviewed_head, refs)
-        if self.continuation_result == "conflict":
-            return ContinuationReplayResult(
-                result="conflict",
-                base_head=SHA_D,
-                conflict_paths=("app/data/catalog.json",),
-            )
-        if self.continuation_result == "prepared":
-            replay_sync = result.model_copy(
-                update={"base_head": SHA_C, "rebased_head": SHA_D}
-            )
-            self.prepared = replay_sync
-            self.head = SHA_D
-            return ContinuationReplayResult(
-                result="prepared",
-                base_head=SHA_C,
-                head=SHA_D,
-                sync=replay_sync,
-            )
-        self.head = reviewed_head
-        return ContinuationReplayResult(
-            result="unchanged",
-            base_head=result.base_head,
-            head=reviewed_head,
-            sync=result,
-        )
-
-    def continue_reviewed_conflict(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        self.continuation_result = "prepared"
-        return self.prepare_reviewed_continuation(
-            pull_request, result, reviewed_head, refs
-        )
-
-    def checkpoint_remediation_continuation(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        remediation_head: str,
-    ) -> RemediationCheckpointRefs:
-        assert pull_request.number == 42
-        assert result == self.prepared
-        assert remediation_head == self.head
-        return RemediationCheckpointRefs(
-            remediation_ref=(
-                f"refs/snowcast-maintainer/remediation/pr-42/"
-                f"{result.original_head[:12]}-{remediation_head[:12]}"
-            ),
-            squash_ref=(
-                "refs/snowcast-maintainer/remediation-continuations/pr-42/"
-                f"{result.base_head[:12]}-{remediation_head[:12]}"
-            ),
-        )
-
-    def prepare_remediation_continuation(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        remediation_head: str,
-        refs: RemediationCheckpointRefs,
-        *,
-        restart_interrupted: bool = False,
-    ) -> ContinuationReplayResult:
-        self.remediation_prepare_calls += 1
-        self.remediation_restart_flags.append(restart_interrupted)
-        return self._remediation_replay(
-            pull_request,
-            result,
-            remediation_head,
-            refs,
-        )
-
-    def _remediation_replay(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        remediation_head: str,
-        refs: RemediationCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        assert pull_request.number == 42
-        assert result == self.prepared
-        assert refs.remediation_ref.startswith(
-            "refs/snowcast-maintainer/remediation/pr-42/"
-        )
-        if self.remediation_replay_error is not None:
-            raise self.remediation_replay_error
-        if self.continuation_result == "conflict":
-            return ContinuationReplayResult(
-                result="conflict",
-                base_head=SHA_D,
-                conflict_paths=("app/data/catalog.json",),
-            )
-        if self.continuation_result == "prepared":
-            replay_sync = result.model_copy(
-                update={"base_head": SHA_C, "rebased_head": SHA_D}
-            )
-            self.prepared = replay_sync
-            self.head = SHA_D
-            return ContinuationReplayResult(
-                result="prepared",
-                base_head=SHA_C,
-                head=SHA_D,
-                sync=replay_sync,
-            )
-        self.head = remediation_head
-        return ContinuationReplayResult(
-            result="unchanged",
-            base_head=result.base_head,
-            head=remediation_head,
-            sync=result,
-        )
-
-    def continue_remediation_conflict(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        remediation_head: str,
-        refs: RemediationCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        self.remediation_continue_calls += 1
-        self.continuation_result = "prepared"
-        return self._remediation_replay(pull_request, result, remediation_head, refs)
 
     def push_with_lease(self, sync: GuardedSyncResult, reviewed_head: str) -> None:
         self.push_calls += 1
@@ -3643,8 +3470,8 @@ def test_terminal_repair_publication_crash_recovers_only_exact_intent(
     assert inventory["terminal_publications"][0]["work_id"] == continuation.work_id
     assert inventory["unresolved_pushes"] == []
     assert inventory["ci_continuations"] == []
-    assert inventory["reviewed_continuations"] == []
-    assert inventory["remediation_continuations"] == []
+    assert "reviewed_continuations" not in inventory
+    assert "remediation_continuations" not in inventory
     assert inventory["eligible"] == []
 
     prepare_code, prepare_payload = _invoke(
@@ -5006,8 +4833,14 @@ def test_inspect_curation_requires_legacy_state_migration(
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     lease = RunLease.acquire(state_dir, "curation", now=NOW)
-    store = StateStore(state_dir)
-    store.save_continuation(_legacy_reviewed_continuation(lease), lease)
+    continuation_dir = state_dir / "continuations"
+    continuation_dir.mkdir(mode=0o700)
+    continuation_path = continuation_dir / "curation-pr-42.json"
+    continuation_path.write_text(
+        _legacy_reviewed_continuation(lease).model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    continuation_path.chmod(0o600)
     lease.release()
 
     code, payload = _invoke(
@@ -5063,7 +4896,7 @@ def test_migrate_curation_state_archives_legacy_without_lease_or_github(
     }
     _assert_outcome(first, worker="curation", mutation=True, run_id=None)
     _assert_outcome(second, worker="curation", mutation=False, run_id=None)
-    assert repository.legacy_archive_calls == 1
+    assert repository.legacy_archive_calls == 2
 
 
 def test_migrate_curation_state_refuses_active_lease(

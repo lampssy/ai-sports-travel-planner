@@ -127,6 +127,17 @@ class LegacyCurationArchiveManifest(_StrictModel):
             raise ValueError("curation archive contains duplicate file paths")
         if len({item.source_ref for item in self.refs}) != len(self.refs):
             raise ValueError("curation archive contains duplicate refs")
+        for item in self.files:
+            expected = f"{_LEGACY_ARCHIVE_ROOT}/{self.archive_id}/{item.source_path}"
+            if item.archive_path != expected:
+                raise ValueError("curation archive file target is inconsistent")
+        archive_ref_prefix = (
+            f"refs/snowcast-maintainer/archive/legacy-curation-v1/{self.archive_id}/"
+        )
+        if any(
+            not item.archive_ref.startswith(archive_ref_prefix) for item in self.refs
+        ):
+            raise ValueError("curation archive ref uses the wrong archive ID")
         return self
 
 
@@ -760,6 +771,16 @@ def curation_state_migration_required(state_dir: str | Path) -> bool:
         directory = state_path / directory_name
         if directory.exists() and any(directory.iterdir()):
             return True
+    try:
+        store = StateStore(state_path)
+        for path in _validated_json_directory(state_path / "work"):
+            work = store.load_work(path.name.removesuffix(".json"))
+            if not isinstance(work, WorkState):
+                raise CurationMigrationError("unsafe-state")
+            if work.worker == "curation":
+                return True
+    except StateStoreError as exc:
+        raise CurationMigrationError("unsafe-state") from exc
     return False
 
 
@@ -778,6 +799,16 @@ def migrate_legacy_curation_state(
         marker = _load_format_marker(state_path)
         if marker is not None:
             manifest = _load_archive_manifest(state_path, marker.archive_id)
+            for entry in manifest.files:
+                source = state_path / entry.source_path
+                archive = state_path / entry.archive_path
+                if (
+                    source.exists()
+                    or not archive.exists()
+                    or not _matches_archive_entry(archive, entry)
+                ):
+                    raise CurationMigrationError("format-conflict")
+            repository.archive_legacy_curation_refs(manifest.refs)
             pointer_path = state_path / _MIGRATION_POINTER_NAME
             if pointer_path.exists():
                 pointer = _load_migration_pointer(pointer_path)
