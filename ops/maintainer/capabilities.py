@@ -559,7 +559,11 @@ def handle_prepare_curation(
         dependencies.tracker.terminal_reason = f"generation-{result}"
         return {
             "work_id": work_id,
-            "generation": _generation_result(current, result=result),
+            "generation": _generation_result(
+                current,
+                result=result,
+                next_action=projection.next_action,
+            ),
         }
 
     _close_generation(
@@ -866,6 +870,7 @@ def handle_checkpoint_curation(
             "generation": _generation_result(
                 generation,
                 result="already-completed",
+                next_action=projection.next_action,
             ),
         }
     if (
@@ -956,7 +961,11 @@ def handle_checkpoint_curation(
     dependencies.tracker.terminal_reason = "curation-checkpointed"
     return {
         "work_id": work_id,
-        "generation": _generation_result(generation, result="completed"),
+        "generation": _generation_result(
+            generation,
+            result="completed",
+            next_action=project_generation(generation).next_action,
+        ),
     }
 
 

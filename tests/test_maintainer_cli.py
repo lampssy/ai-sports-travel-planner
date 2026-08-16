@@ -5110,6 +5110,17 @@ def test_prepare_curation_restores_reviewed_generation_for_validation_only(
     assert code == 0, payload
     assert payload["generation"]["generation_number"] == 1
     assert payload["generation"]["result"] == "validation-only"
+    assert payload["generation"]["next_action"] == {
+        "recipe_id": "validate_curation",
+        "substitutions": {
+            "pr": 42,
+            "generation_id": GENERATION_ID,
+            "head": SHA_C,
+            "report": "docs/catalog-curation/nendaz.json",
+            "validation_base": SHA_D,
+            "continue_conflict": False,
+        },
+    }
     assert len(repository.curation_recovery_calls) == 1
     work = StateStore(state_dir).load_work("curation-pr-42")
     assert work is not None and work.phase is WorkPhase.REVIEWED
@@ -5375,10 +5386,34 @@ def test_checkpoint_curation_completes_delta_review_and_idempotent_retry(
 
     assert delta_code == review_code == retry_code == 0
     assert delta["generation"]["result"] == "completed"
-    assert reviewed["generation"]["result"] == "completed"
-    assert retry["generation"]["result"] == "already-completed"
     generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
     assert generation is not None
+    assert delta["generation"]["next_action"] == {
+        "recipe_id": "checkpoint_curation_reviewed",
+        "substitutions": {
+            "pr": 42,
+            "generation_id": generation.generation_id,
+            "head": SHA_B,
+            "report": "docs/catalog-curation/nendaz.json",
+            "validation_base": SHA_D,
+            "continue_conflict": False,
+        },
+    }
+    assert reviewed["generation"]["result"] == "completed"
+    expected_validation_action = {
+        "recipe_id": "validate_curation",
+        "substitutions": {
+            "pr": 42,
+            "generation_id": generation.generation_id,
+            "head": SHA_B,
+            "report": "docs/catalog-curation/nendaz.json",
+            "validation_base": SHA_D,
+            "continue_conflict": False,
+        },
+    }
+    assert reviewed["generation"]["next_action"] == expected_validation_action
+    assert retry["generation"]["result"] == "already-completed"
+    assert retry["generation"]["next_action"] == expected_validation_action
     projection = project_generation(generation)
     assert projection.latest_stage is CurationCheckpointStage.REVIEWED
     assert projection.reviewed_authority is not None
