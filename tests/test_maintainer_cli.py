@@ -5029,6 +5029,16 @@ def test_prepare_curation_persists_one_phase_record_for_requested_safe_pr(
     assert generation is not None
     assert generation.generation_number == 1
     assert generation.selected_head == SHA_A
+    assert payload["generation"]["next_action"] == {
+        "recipe_id": "checkpoint_curation_reviewed",
+        "substitutions": {
+            "pr": 42,
+            "generation_id": generation.generation_id,
+            "head": SHA_B,
+            "validation_base": SHA_D,
+            "continue_conflict": False,
+        },
+    }
     work = StateStore(state_dir).load_work("curation-pr-42")
     assert work is not None
     assert work.phase is WorkPhase.PREPARED
@@ -5160,6 +5170,16 @@ def test_prepare_curation_replays_same_pr_head_into_new_generation(
     assert payload["generation"]["generation_number"] == 2
     assert payload["generation"]["result"] == "review-required"
     generations = generation_store.list_generations("curation-pr-42")
+    assert payload["generation"]["next_action"] == {
+        "recipe_id": "checkpoint_curation_reviewed",
+        "substitutions": {
+            "pr": 42,
+            "generation_id": generations[1].generation_id,
+            "head": SHA_D,
+            "validation_base": SHA_C,
+            "continue_conflict": False,
+        },
+    }
     assert generations[0].selected_head == generations[1].selected_head == SHA_A
     assert generations[0].sync.base_head != generations[1].sync.base_head
     assert project_generation(generations[0]).latest_stage == "superseded"

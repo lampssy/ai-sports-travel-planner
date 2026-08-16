@@ -764,6 +764,8 @@ def _generation_result(
     }
     if conflict_paths:
         payload["conflict_paths"] = list(conflict_paths)
+    if next_action is None:
+        next_action = project_generation(generation).next_action
     if next_action is not None:
         payload["next_action"] = next_action.model_dump(
             mode="json",
