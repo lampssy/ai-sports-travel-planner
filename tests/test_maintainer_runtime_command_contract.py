@@ -40,6 +40,7 @@ PLACEHOLDERS = {
     "${CANDIDATE_KEY}": "stay_destination:example",
     "${CANDIDATE_ORIGIN}": "backlog",
     "${EXPECTED_HEAD}": "a" * 40,
+    "${GENERATION_ID}": "f" * 32,
     "${HEAD}": "b" * 40,
     "${OUTCOME_REASON}": "non-converging",
     "${OUTCOME_STATE}": "maintainer:blocked",
@@ -181,20 +182,12 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
             "lock_heartbeat_curation",
             "lock_release_curation",
         ],
-        "curation_reviewed_continuation_through_prepare": [
+        "curation_generation_through_prepare": [
             "inspect_curation",
             "inspect_discovery",
             "lock_acquire_curation",
             "lock_heartbeat_curation",
-            "prepare_continuation",
-            "lock_heartbeat_curation",
-        ],
-        "curation_remediation_continuation_through_prepare": [
-            "inspect_curation",
-            "inspect_discovery",
-            "lock_acquire_curation",
-            "lock_heartbeat_curation",
-            "prepare_continuation",
+            "prepare_curation",
             "lock_heartbeat_curation",
         ],
         "curation_ordinary_pr_through_prepare": [
@@ -357,9 +350,8 @@ def test_runtime_contract_splits_curation_and_discovery_inspection_next_steps() 
     assert "inspect_*" not in rows
     assert rows["inspect_curation"] == (
         "recover one terminal publication first, then one push journal; "
-        "otherwise select one CI continuation, reviewed continuation, "
-        "remediation continuation, ordinary curation PR, or bounded no-op "
-        "in that order"
+        "otherwise select one CI continuation, current curation generation, "
+        "ordinary curation PR, or bounded no-op in that order"
     )
     assert rows["inspect_discovery"] == (
         "recover one journal first; otherwise select preferred retry, merged "
@@ -410,8 +402,7 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
         "eligible",
         "terminal_publications",
         "ci_continuations",
-        "reviewed_continuations",
-        "remediation_continuations",
+        "generations",
         "unresolved_pushes",
     ]
     assert recipes["publish_recover"] == {
@@ -504,8 +495,7 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
             "terminal_publication",
             "push_journal",
             "post_push_ci_continuation",
-            "reviewed_continuation",
-            "remediation_continuation",
+            "curation_generation",
             "ordinary_pr",
         ],
         "first_wait_seconds": 1800,
@@ -680,7 +670,7 @@ def test_checked_in_sources_freeze_the_post_push_ci_runtime_contract() -> None:
         text = normalized[name]
         assert (
             "terminal publication -> push journal -> post-push ci continuation "
-            "-> reviewed continuation -> remediation continuation -> ordinary pr"
+            "-> current curation generation -> ordinary pr"
         ) in text, name
         assert "automation memory and labels" in text, name
         assert "read-only" in text and "untrusted" in text, name

@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from app.data.catalog_curation import (
     CatalogCurationReport,
@@ -17,7 +18,8 @@ from app.data.catalog_curation import (
 from app.data.catalog_curation_reconciliation import reconcile_catalog_curation_report
 from app.data.catalog_loader import load_catalog_from_path
 from ops.maintainer.git_ops import (
-    ContinuationReplayResult,
+    CurationCheckpointRefs,
+    CurationRecoveryCheckpoint,
     GitAuthenticationError,
     GitOperationTimeoutError,
     GitPushRejectedError,
@@ -25,12 +27,10 @@ from ops.maintainer.git_ops import (
     GitRepository,
     GitTransportError,
     GuardedSyncResult,
+    LegacyCurationRef,
     RebaseConflictError,
-    RemediationCheckpointIntegrityError,
-    RemediationCheckpointRefs,
     RemotePolicy,
     RepositorySafetyError,
-    ReviewedCheckpointRefs,
     StaleRemoteHeadError,
     _SubprocessRunner,
 )
@@ -73,7 +73,9 @@ class FakeRunner:
         *,
         cwd: Path,
         timeout: float = 10.0,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
+        del stdin
         call = tuple(argv)
         self.calls.append(call)
         self.call_metadata.append((call, timeout))
@@ -641,6 +643,7 @@ class TimeoutRunner(FakeRunner):
         *,
         cwd: Path,
         timeout: float = 10.0,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         call = tuple(argv)
         if call[1:2] == ("fetch",):
@@ -648,7 +651,7 @@ class TimeoutRunner(FakeRunner):
                 cmd=["git", "fetch", "https://token@example.test/private"],
                 timeout=timeout,
             )
-        return super().run(argv, cwd=cwd, timeout=timeout)
+        return super().run(argv, cwd=cwd, timeout=timeout, stdin=stdin)
 
 
 def test_network_timeout_is_bounded_typed_and_sanitized(tmp_path: Path) -> None:
@@ -692,6 +695,7 @@ class RecordingRunner:
         *,
         cwd: Path,
         timeout: float,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         call = tuple(argv)
         self.calls.append(call)
@@ -701,7 +705,7 @@ class RecordingRunner:
             and "--abort" not in call
         ):
             return subprocess.CompletedProcess(call, 128, "", "sanitized failure")
-        result = self.delegate.run(argv, cwd=cwd, timeout=timeout)
+        result = self.delegate.run(argv, cwd=cwd, timeout=timeout, stdin=stdin)
         if (
             self.timeout_after_rebase_state
             and "rebase" in call
@@ -724,6 +728,7 @@ class RaceCreatingRunner(RecordingRunner):
         *,
         cwd: Path,
         timeout: float,
+        stdin: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         call = tuple(argv)
         if call[1:2] == ("push",) and self.remote is not None:
@@ -733,7 +738,7 @@ class RaceCreatingRunner(RecordingRunner):
                 f"refs/heads/{self.branch}",
                 self.raced_head,
             )
-        return super().run(argv, cwd=cwd, timeout=timeout)
+        return super().run(argv, cwd=cwd, timeout=timeout, stdin=stdin)
 
 
 @pytest.mark.parametrize(
@@ -2059,644 +2064,103 @@ def test_v2_git_entry_points_build_prepare_and_revalidate_objective_intent(
     assert reviewed.changed_paths == immutable.changed_paths
 
 
-def test_reviewed_checkpoint_creates_exact_reviewed_and_squash_refs(
+def test_generation_checkpoint_creates_exact_refs_and_restores_unchanged_head(
     tmp_path: Path,
 ) -> None:
     local = _local_repository(tmp_path)
     repository = _integration_repository(local)
     prepared = repository.prepare_guarded_sync(local.pull_request)
+    generation_id = "1" * 32
+    transaction_id = "2" * 64
 
-    refs = repository.checkpoint_reviewed_continuation(
+    refs = repository.checkpoint_curation_generation(
         local.pull_request,
         prepared,
         prepared.rebased_head,
-    )
-
-    assert isinstance(refs, ReviewedCheckpointRefs)
-    assert _git(local.checkout, "rev-parse", refs.reviewed_ref) == prepared.rebased_head
-    assert (
-        _git(local.checkout, "rev-parse", f"{refs.squash_ref}^") == prepared.base_head
-    )
-    assert _git(local.checkout, "show", "-s", "--format=%T", refs.squash_ref) == _git(
-        local.checkout, "show", "-s", "--format=%T", prepared.rebased_head
-    )
-
-
-def test_reviewed_checkpoint_rejects_dirty_or_non_descendant_head(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    (local.checkout / "untracked.txt").write_text("dirty\n", encoding="utf-8")
-
-    with pytest.raises(RepositorySafetyError, match="clean"):
-        repository.checkpoint_reviewed_continuation(
-            local.pull_request,
-            prepared,
-            prepared.rebased_head,
-        )
-
-    (local.checkout / "untracked.txt").unlink()
-    _git(local.checkout, "switch", "--detach", prepared.base_head)
-    with pytest.raises(RepositorySafetyError, match="descend"):
-        repository.checkpoint_reviewed_continuation(
-            local.pull_request,
-            prepared,
-            prepared.base_head,
-        )
-
-
-def test_continuation_replay_restores_unchanged_reviewed_head(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_reviewed_continuation(
-        local.pull_request, prepared, prepared.rebased_head
+        generation_id,
+        transaction_id,
     )
     _git(local.checkout, "switch", "--detach", local.target_sha)
-
-    replay = repository.prepare_reviewed_continuation(
+    replay = repository.prepare_curation_recovery(
         local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
+        CurationRecoveryCheckpoint(
+            pr_number=local.pull_request.number,
+            generation_id=generation_id,
+            transaction_id=transaction_id,
+            selected_head=local.pull_request.head_sha,
+            checkpoint_head=prepared.rebased_head,
+            report_path=REPORT_PATH,
+            sync=prepared,
+            checkpoint_ref=refs.checkpoint_ref,
+            squash_ref=refs.squash_ref,
+        ),
     )
 
-    assert replay == ContinuationReplayResult(
-        result="unchanged",
-        base_head=prepared.base_head,
-        head=prepared.rebased_head,
-        sync=prepared,
-    )
-    assert _git(local.checkout, "rev-parse", "HEAD") == prepared.rebased_head
-
-
-def test_continuation_replay_squashes_onto_advanced_main(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_reviewed_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    seed = tmp_path / "seed"
-    _git(seed, "switch", "main")
-    (seed / "README.md").write_text("base\nmain update\nagain\n", encoding="utf-8")
-    _git(seed, "add", "README.md")
-    _git(seed, "commit", "-m", "advance main again")
-    _git(seed, "push", "origin", "main")
-    advanced_main = _git(seed, "rev-parse", "HEAD")
-
-    replay = repository.prepare_reviewed_continuation(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
-    )
-
-    assert replay.result == "prepared"
-    assert replay.base_head == advanced_main
-    assert replay.head is not None
-    assert replay.sync is not None
-    assert _git(local.checkout, "rev-parse", f"{replay.head}^") == advanced_main
-    assert _git(local.checkout, "show", f"{replay.head}:app/data/catalog.json") == (
-        _catalog(alpha_name="Target Alpha").strip()
-    )
-
-
-def test_continuation_replay_rejects_rewritten_main_history(tmp_path: Path) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_reviewed_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    _git(
-        local.remote,
-        "update-ref",
-        "refs/heads/main",
-        local.target_sha,
-        local.main_sha,
-    )
-
-    with pytest.raises(RepositorySafetyError, match="main must descend"):
-        repository.prepare_reviewed_continuation(
-            local.pull_request,
-            prepared,
-            prepared.rebased_head,
-            refs,
-        )
-
-
-def test_continuation_replay_returns_one_allowed_conflict_and_completes_it(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_reviewed_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    seed = tmp_path / "seed"
-    _git(seed, "switch", "main")
-    (seed / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
-    )
-    _git(seed, "add", "app/data/catalog.json")
-    _git(seed, "commit", "-m", "change alpha on main")
-    _git(seed, "push", "origin", "main")
-    advanced_main = _git(seed, "rev-parse", "HEAD")
-
-    replay = repository.prepare_reviewed_continuation(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
-    )
-
-    assert replay.result == "conflict"
-    assert replay.base_head == advanced_main
-    assert replay.conflict_paths == ("app/data/catalog.json",)
-    (local.checkout / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Target Alpha"), encoding="utf-8"
-    )
-    _git(local.checkout, "add", "app/data/catalog.json")
-    completed = repository.continue_reviewed_conflict(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
-    )
-
-    assert completed.result == "prepared"
-    assert completed.sync is not None
-    assert completed.sync.base_head == advanced_main
-    assert _git(local.checkout, "status", "--porcelain") == ""
-
-
-def test_continuation_conflict_rejects_unrelated_staged_path_and_cleans_up(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_reviewed_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    seed = tmp_path / "seed"
-    _git(seed, "switch", "main")
-    (seed / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
-    )
-    _git(seed, "add", "app/data/catalog.json")
-    _git(seed, "commit", "-m", "change alpha on main")
-    _git(seed, "push", "origin", "main")
-    replay = repository.prepare_reviewed_continuation(
-        local.pull_request, prepared, prepared.rebased_head, refs
-    )
-    assert replay.result == "conflict"
-    (local.checkout / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Target Alpha"), encoding="utf-8"
-    )
-    (local.checkout / "README.md").write_text("unauthorized\n", encoding="utf-8")
-    _git(local.checkout, "add", "app/data/catalog.json", "README.md")
-
-    with pytest.raises(RepositorySafetyError, match="outside reviewed scope"):
-        repository.continue_reviewed_conflict(
-            local.pull_request, prepared, prepared.rebased_head, refs
-        )
-
-    assert _git(local.checkout, "status", "--porcelain") == ""
-
-
-def test_remediation_checkpoint_creates_exact_remediation_and_squash_refs(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-    )
-
-    assert isinstance(refs, RemediationCheckpointRefs)
+    assert isinstance(refs, CurationCheckpointRefs)
+    assert replay.result == "unchanged"
+    assert replay.head == prepared.rebased_head
     assert (
-        _git(local.checkout, "rev-parse", refs.remediation_ref) == prepared.rebased_head
-    )
-    assert (
-        _git(local.checkout, "rev-parse", f"{refs.squash_ref}^") == prepared.base_head
-    )
-    assert _git(local.checkout, "show", "-s", "--format=%T", refs.squash_ref) == _git(
-        local.checkout, "show", "-s", "--format=%T", prepared.rebased_head
+        _git(local.checkout, "rev-parse", refs.checkpoint_ref) == prepared.rebased_head
     )
 
 
-def test_remediation_checkpoint_rejects_dirty_or_non_descendant_head(
+def test_legacy_curation_refs_archive_atomically_and_idempotently(
     tmp_path: Path,
 ) -> None:
     local = _local_repository(tmp_path)
     repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    (local.checkout / "untracked.txt").write_text("dirty\n", encoding="utf-8")
+    source_refs = (
+        "refs/snowcast-maintainer/prepared/pr-42/example",
+        "refs/snowcast-maintainer/reviewed/pr-42/example",
+        "refs/snowcast-maintainer/continuations/pr-42/example",
+        "refs/snowcast-maintainer/remediation/pr-42/example",
+        "refs/snowcast-maintainer/remediation-continuations/pr-42/example",
+    )
+    for ref in source_refs:
+        _git(local.checkout, "update-ref", ref, local.target_sha)
+    backup_ref = "refs/snowcast-maintainer/backups/pr-42/example"
+    ci_ref = "refs/snowcast-maintainer/ci-repairs/pr-42/example"
+    _git(local.checkout, "update-ref", backup_ref, local.target_sha)
+    _git(local.checkout, "update-ref", ci_ref, local.target_sha)
 
-    with pytest.raises(RepositorySafetyError, match="clean"):
-        repository.checkpoint_remediation_continuation(
-            local.pull_request,
-            prepared,
-            prepared.rebased_head,
-        )
+    refs = repository.legacy_curation_refs("1" * 32)
 
-    (local.checkout / "untracked.txt").unlink()
-    _git(local.checkout, "switch", "--detach", prepared.base_head)
-    with pytest.raises(RepositorySafetyError, match="descend"):
-        repository.checkpoint_remediation_continuation(
-            local.pull_request,
-            prepared,
-            prepared.base_head,
-        )
+    assert len(refs) == len(source_refs)
+    assert all(isinstance(item, LegacyCurationRef) for item in refs)
+    assert repository.archive_legacy_curation_refs(refs) == len(source_refs)
+    assert repository.archive_legacy_curation_refs(refs) == 0
+    for item in refs:
+        with pytest.raises(subprocess.CalledProcessError):
+            _git(local.checkout, "rev-parse", "--verify", item.source_ref)
+        assert _git(local.checkout, "rev-parse", item.archive_ref) == local.target_sha
+    assert _git(local.checkout, "rev-parse", backup_ref) == local.target_sha
+    assert _git(local.checkout, "rev-parse", ci_ref) == local.target_sha
 
 
-def test_remediation_replay_restores_unchanged_remediated_head(
-    tmp_path: Path,
+@pytest.mark.parametrize(
+    ("source_ref", "archive_ref"),
+    (
+        (
+            "refs/snowcast-maintainer/backups/pr-42/example",
+            "refs/snowcast-maintainer/archive/legacy-curation-v1/"
+            f"{'1' * 32}/backups/pr-42/example",
+        ),
+        (
+            "refs/snowcast-maintainer/reviewed/pr-42/example",
+            "refs/snowcast-maintainer/archive/legacy-curation-v1/"
+            f"{'1' * 32}/prepared/pr-42/example",
+        ),
+    ),
+)
+def test_legacy_curation_ref_rejects_unrecognized_or_mismatched_paths(
+    source_ref: str,
+    archive_ref: str,
 ) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    _git(local.checkout, "switch", "--detach", local.target_sha)
-
-    replay = repository.prepare_remediation_continuation(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
-    )
-
-    assert replay == ContinuationReplayResult(
-        result="unchanged",
-        base_head=prepared.base_head,
-        head=prepared.rebased_head,
-        sync=prepared,
-    )
-    assert _git(local.checkout, "rev-parse", "HEAD") == prepared.rebased_head
-
-
-def test_remediation_replay_squashes_onto_advanced_main(tmp_path: Path) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    seed = tmp_path / "seed"
-    _git(seed, "switch", "main")
-    (seed / "README.md").write_text("base\nmain update\nagain\n", encoding="utf-8")
-    _git(seed, "add", "README.md")
-    _git(seed, "commit", "-m", "advance main again")
-    _git(seed, "push", "origin", "main")
-    advanced_main = _git(seed, "rev-parse", "HEAD")
-
-    replay = repository.prepare_remediation_continuation(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
-    )
-
-    assert replay.result == "prepared"
-    assert replay.base_head == advanced_main
-    assert replay.head is not None
-    assert replay.sync is not None
-    assert _git(local.checkout, "rev-parse", f"{replay.head}^") == advanced_main
-    assert _git(local.checkout, "show", f"{replay.head}:app/data/catalog.json") == (
-        _catalog(alpha_name="Target Alpha").strip()
-    )
-
-
-def test_remediation_replay_rejects_remote_head_drift_and_rewritten_main(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    _git(
-        local.remote,
-        "update-ref",
-        f"refs/heads/{local.pull_request.head_ref_name}",
-        local.main_sha,
-        local.target_sha,
-    )
-
-    with pytest.raises(StaleRemoteHeadError, match="remote PR head changed"):
-        repository.prepare_remediation_continuation(
-            local.pull_request,
-            prepared,
-            prepared.rebased_head,
-            refs,
-        )
-
-    _git(
-        local.remote,
-        "update-ref",
-        f"refs/heads/{local.pull_request.head_ref_name}",
-        local.target_sha,
-        local.main_sha,
-    )
-    _git(
-        local.remote,
-        "update-ref",
-        "refs/heads/main",
-        local.target_sha,
-        local.main_sha,
-    )
-
-    with pytest.raises(RepositorySafetyError, match="main must descend"):
-        repository.prepare_remediation_continuation(
-            local.pull_request,
-            prepared,
-            prepared.rebased_head,
-            refs,
-        )
-
-
-def test_remediation_replay_returns_one_allowed_conflict_and_completes_it(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    seed = tmp_path / "seed"
-    _git(seed, "switch", "main")
-    (seed / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
-    )
-    _git(seed, "add", "app/data/catalog.json")
-    _git(seed, "commit", "-m", "change alpha on main")
-    _git(seed, "push", "origin", "main")
-    advanced_main = _git(seed, "rev-parse", "HEAD")
-
-    replay = repository.prepare_remediation_continuation(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
-    )
-
-    assert replay.result == "conflict"
-    assert replay.base_head == advanced_main
-    assert replay.conflict_paths == ("app/data/catalog.json",)
-    (local.checkout / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Target Alpha"), encoding="utf-8"
-    )
-    _git(local.checkout, "add", "app/data/catalog.json")
-    completed = repository.continue_remediation_conflict(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
-    )
-
-    assert completed.result == "prepared"
-    assert completed.sync is not None
-    assert completed.sync.base_head == advanced_main
-    assert _git(local.checkout, "status", "--porcelain") == ""
-
-
-def test_remediation_replay_recreates_abandoned_helper_conflict_from_refs(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    seed = tmp_path / "seed"
-    _git(seed, "switch", "main")
-    (seed / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
-    )
-    _git(seed, "add", "app/data/catalog.json")
-    _git(seed, "commit", "-m", "change alpha on main")
-    _git(seed, "push", "origin", "main")
-    first = repository.prepare_remediation_continuation(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
-    )
-    assert first.result == "conflict"
-    assert (local.checkout / ".git" / "CHERRY_PICK_HEAD").exists()
-
-    recreated = repository.prepare_remediation_continuation(
-        local.pull_request,
-        prepared,
-        prepared.rebased_head,
-        refs,
-        restart_interrupted=True,
-    )
-
-    assert recreated.result == "conflict"
-    assert recreated.base_head == first.base_head
-    assert recreated.conflict_paths == first.conflict_paths
-    assert (local.checkout / ".git" / "CHERRY_PICK_HEAD").exists()
-
-
-def test_remediation_conflict_rederives_scope_and_cleans_up_unsafe_resolution(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path, base_trust_manifest="{}\n")
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    seed = tmp_path / "seed"
-    _git(seed, "switch", "main")
-    (seed / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
-    )
-    _git(seed, "add", "app/data/catalog.json")
-    _git(seed, "commit", "-m", "change alpha on main")
-    _git(seed, "push", "origin", "main")
-    replay = repository.prepare_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head, refs
-    )
-    assert replay.result == "conflict"
-    (local.checkout / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Target Alpha"), encoding="utf-8"
-    )
-    persisted_allowed_paths = frozenset(
-        {
-            "app/data/catalog.json",
-            "app/data/resort_trust_manifest.json",
-        }
-    )
-    assert "app/data/resort_trust_manifest.json" in persisted_allowed_paths
-    # This models a tampered persisted allowlist. It is deliberately not passed
-    # to GitRepository: replay authorization must come from immutable refs.
-    (local.checkout / "app/data/resort_trust_manifest.json").write_text(
-        '{"widened": true}\n',
-        encoding="utf-8",
-    )
-    _git(
-        local.checkout,
-        "add",
-        "app/data/catalog.json",
-        "app/data/resort_trust_manifest.json",
-    )
-
-    with pytest.raises(RepositorySafetyError, match="outside remediation scope"):
-        repository.continue_remediation_conflict(
-            local.pull_request, prepared, prepared.rebased_head, refs
-        )
-
-    assert _git(local.checkout, "status", "--porcelain") == ""
-
-
-@pytest.mark.parametrize("tamper", ["missing", "rewritten"])
-def test_remediation_conflict_aborts_when_checkpoint_refs_are_tampered(
-    tmp_path: Path,
-    tamper: str,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    seed = tmp_path / "seed"
-    _git(seed, "switch", "main")
-    (seed / "app/data/catalog.json").write_text(
-        _catalog(alpha_name="Main Alpha"), encoding="utf-8"
-    )
-    _git(seed, "add", "app/data/catalog.json")
-    _git(seed, "commit", "-m", "change alpha on main")
-    _git(seed, "push", "origin", "main")
-    replay = repository.prepare_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head, refs
-    )
-    assert replay.result == "conflict"
-    if tamper == "missing":
-        _git(local.checkout, "update-ref", "-d", refs.remediation_ref)
-    else:
-        _git(local.checkout, "update-ref", refs.squash_ref, local.target_sha)
-
-    with pytest.raises(RepositorySafetyError):
-        repository.continue_remediation_conflict(
-            local.pull_request, prepared, prepared.rebased_head, refs
-        )
-
-    assert not (local.checkout / ".git" / "CHERRY_PICK_HEAD").exists()
-    assert _git(local.checkout, "status", "--porcelain") == ""
-
-
-@pytest.mark.parametrize("reference", ["remediation_ref", "squash_ref"])
-def test_remediation_replay_rejects_missing_or_tampered_refs(
-    tmp_path: Path,
-    reference: str,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    _git(local.checkout, "update-ref", "-d", getattr(refs, reference))
-
-    with pytest.raises(
-        RemediationCheckpointIntegrityError,
-        match="continuation ref cannot be resolved",
-    ):
-        repository.prepare_remediation_continuation(
-            local.pull_request, prepared, prepared.rebased_head, refs
-        )
-
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    _git(local.checkout, "update-ref", refs.squash_ref, local.target_sha)
-    with pytest.raises(
-        RemediationCheckpointIntegrityError,
-        match="tree no longer matches",
-    ):
-        repository.prepare_remediation_continuation(
-            local.pull_request, prepared, prepared.rebased_head, refs
-        )
-
-
-@pytest.mark.parametrize("reference", ["remediation_ref", "squash_ref"])
-def test_remediation_replay_classifies_non_commit_ref_as_checkpoint_corruption(
-    tmp_path: Path,
-    reference: str,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    refs = repository.checkpoint_remediation_continuation(
-        local.pull_request, prepared, prepared.rebased_head
-    )
-    blob_sha = _git(local.checkout, "hash-object", "-w", "README.md")
-    _git(local.checkout, "update-ref", getattr(refs, reference), blob_sha)
-
-    with pytest.raises(RemediationCheckpointIntegrityError):
-        repository.prepare_remediation_continuation(
-            local.pull_request, prepared, prepared.rebased_head, refs
-        )
-
-
-def test_remediation_checkpoint_rederives_immutable_paths_and_file_modes(
-    tmp_path: Path,
-) -> None:
-    local = _local_repository(tmp_path)
-    repository = _integration_repository(local)
-    prepared = repository.prepare_guarded_sync(local.pull_request)
-    (local.checkout / "README.md").write_text(
-        "outside prepared scope\n",
-        encoding="utf-8",
-    )
-    _git(local.checkout, "add", "README.md")
-    _git(local.checkout, "commit", "-m", "tamper path")
-    tampered_head = _git(local.checkout, "rev-parse", "HEAD")
-
-    with pytest.raises(
-        RepositorySafetyError,
-        match="prepared semantic intent does not match reviewed state",
-    ):
-        repository.checkpoint_remediation_continuation(
-            local.pull_request,
-            prepared,
-            tampered_head,
-        )
-
-    _git(local.checkout, "reset", "--hard", prepared.rebased_head)
-    (local.checkout / "app/data/catalog.json").chmod(0o755)
-    _git(local.checkout, "add", "app/data/catalog.json")
-    _git(local.checkout, "commit", "-m", "tamper mode")
-    tampered_head = _git(local.checkout, "rev-parse", "HEAD")
-    with pytest.raises(
-        RepositorySafetyError,
-        match="prepared semantic intent does not match reviewed state",
-    ):
-        repository.checkpoint_remediation_continuation(
-            local.pull_request,
-            prepared,
-            tampered_head,
+    with pytest.raises(ValidationError):
+        LegacyCurationRef(
+            source_ref=source_ref,
+            archive_ref=archive_ref,
+            head=SHA_A,
         )
 
 

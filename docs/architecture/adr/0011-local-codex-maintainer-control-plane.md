@@ -2,10 +2,11 @@
 
 Status: accepted
 Date: 2026-07-08
-Amended: 2026-07-24
+Amended: 2026-08-15
 
 Supersedes: N/A
-Superseded by: N/A
+Superseded in part by:
+- `docs/architecture/adr/0020-use-generation-based-pre-push-curation-authority.md`
 
 Related specs:
 - `docs/superpowers/specs/2026-07-08-local-maintainer-automation-design.md`
@@ -80,6 +81,12 @@ wording, coherent-slice selection, URL reachability/relevance checks, and any
 run-local URL cache. The helper owns only typed shape, exact identity,
 path/mode/ref safety, exact backlog-anchor existence, one-focus proposal
 identity, and mutation/publication boundaries.
+
+This separate remediation/reviewed-continuation design is retained here as
+historical context. ADR 0020 supersedes it for pre-push curation authority with
+one generation timeline and one idempotent checkpoint capability. The
+post-push CI, push-journal, terminal-publication, approval, and merge decisions
+in this ADR remain in force.
 
 After a reviewed and validated curation head is pushed, keep the curation lease
 for a bounded same-run CI phase. Wait up to 30 minutes for the first exact-head

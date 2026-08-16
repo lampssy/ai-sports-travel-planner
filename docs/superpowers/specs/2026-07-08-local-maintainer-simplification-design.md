@@ -16,6 +16,20 @@
   remain owner-controlled; the post-merge checklist remains the authority for
   any later cutover or rollback.
 
+### Generation Amendment
+
+ADR 0020 and
+`docs/superpowers/specs/2026-08-15-maintainer-curation-generation-checkpoints-design.md`
+supersede this document's reviewed/remediation pre-push continuation sections.
+Those sections remain historical rationale only. Current pre-push recovery uses
+one curation generation and one idempotent checkpoint. Current priority is
+`terminal publication -> push journal -> post-push CI continuation -> current
+curation generation -> ordinary PR`. Automation memory and labels remain
+read-only, untrusted hints; helper state is authority. Post-push CI still uses
+the same lease, performs no semantic work, and treats a confirmed second CI
+failure as terminal. The maintainer still does not execute target-PR
+`tests/test_*.py` locally and never approves or merges.
+
 ## User Outcome
 
 Snowcast should have two local Codex workers that reduce the owner's repeated

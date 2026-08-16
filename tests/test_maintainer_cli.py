@@ -11,6 +11,16 @@ import pytest
 
 from ops.maintainer import SUMMARY_MARKER
 from ops.maintainer.cli import HANDLERS, main
+from ops.maintainer.curation_state import (
+    CheckpointCompletedEvent,
+    CheckpointStartedEvent,
+    CurationCheckpointStage,
+    CurationGeneration,
+    CurationGenerationStore,
+    GenerationPreparedEvent,
+    checkpoint_transaction_id,
+    project_generation,
+)
 from ops.maintainer.errors import (
     ErrorCheck,
     ErrorKind,
@@ -21,13 +31,14 @@ from ops.maintainer.errors import (
 from ops.maintainer.git_ops import (
     CiRepairCheckpoint,
     ContinuationReplayResult,
+    CurationCheckpointIntegrityError,
+    CurationCheckpointRefs,
+    CurationRecoveryCheckpoint,
     GitTransportError,
     GuardedSyncResult,
+    LegacyCurationRef,
     RebaseConflictError,
-    RemediationCheckpointIntegrityError,
-    RemediationCheckpointRefs,
     RepositorySafetyError,
-    ReviewedCheckpointRefs,
     StaleRemoteHeadError,
 )
 from ops.maintainer.github import GitHubComment, GitHubError
@@ -52,15 +63,12 @@ from ops.maintainer.state import (
     ContinuationValidationStatus,
     PushJournal,
     PushPhase,
-    RemediationContinuation,
-    RemediationContinuationStatus,
     ReviewedContinuation,
     StateStore,
     StateStoreError,
     TerminalPublicationIntent,
     TerminalPublicationPhase,
     WorkPhase,
-    WorkState,
 )
 from ops.maintainer.validation import (
     DeltaValidationResult,
@@ -85,6 +93,7 @@ CANONICAL_GRAPH = (
     "```\n"
 )
 BRANCH = "codex/catalog-curation-nendaz"
+GENERATION_ID = "1" * 32
 
 
 @pytest.fixture(autouse=True)
@@ -184,16 +193,95 @@ def _sync() -> GuardedSyncResult:
     )
 
 
-def test_remediation_checkpoint_help_requires_exact_prepare_time_base(
+def _curation_generation() -> CurationGeneration:
+    report = "docs/catalog-curation/nendaz.json"
+    transaction_id = checkpoint_transaction_id(
+        GENERATION_ID,
+        CurationCheckpointStage.REVIEWED,
+        SHA_C,
+        report,
+        SHA_D,
+    )
+    checkpoint_ref = (
+        f"refs/snowcast-maintainer/curation/pr-42/{GENERATION_ID}/"
+        f"{transaction_id}/checkpoint"
+    )
+    squash_ref = (
+        f"refs/snowcast-maintainer/curation/pr-42/{GENERATION_ID}/"
+        f"{transaction_id}/replay"
+    )
+    sync = _sync()
+    return CurationGeneration(
+        schema_version=2,
+        work_id="curation-pr-42",
+        pr_number=42,
+        generation_number=1,
+        generation_id=GENERATION_ID,
+        created_at=NOW,
+        selected_head=SHA_A,
+        target_branch=BRANCH,
+        sync=sync,
+        events=(
+            GenerationPreparedEvent(
+                sequence=1,
+                recorded_at=NOW,
+                prepared_head=sync.rebased_head,
+            ),
+            CheckpointStartedEvent(
+                sequence=2,
+                recorded_at=NOW + timedelta(seconds=1),
+                transaction_id=transaction_id,
+                stage=CurationCheckpointStage.REVIEWED,
+                head=SHA_C,
+                report_path=report,
+                validation_base=SHA_D,
+                expected_checkpoint_ref=checkpoint_ref,
+                expected_squash_ref=squash_ref,
+            ),
+            CheckpointCompletedEvent(
+                sequence=3,
+                recorded_at=NOW + timedelta(seconds=2),
+                transaction_id=transaction_id,
+                checkpoint_ref=checkpoint_ref,
+                squash_ref=squash_ref,
+            ),
+        ),
+    )
+
+
+def _legacy_reviewed_continuation(lease: RunLease) -> ReviewedContinuation:
+    sync = _sync()
+    return ReviewedContinuation(
+        work_id="curation-pr-42",
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        updated_at=NOW,
+        pr_number=42,
+        selected_head=SHA_A,
+        reviewed_head=SHA_C,
+        report_path="docs/catalog-curation/nendaz.json",
+        sync=sync,
+        reviewed_ref=(
+            f"refs/snowcast-maintainer/reviewed/pr-42/{SHA_A[:12]}-{SHA_C[:12]}"
+        ),
+        squash_ref=(
+            f"refs/snowcast-maintainer/continuations/pr-42/{SHA_D[:12]}-{SHA_C[:12]}"
+        ),
+        status=ContinuationStatus.AVAILABLE,
+        validation_status=ContinuationValidationStatus.NOT_RUN,
+    )
+
+
+def test_curation_checkpoint_help_requires_exact_prepare_time_base(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     with pytest.raises(SystemExit) as exc_info:
-        main(["checkpoint", "remediation", "--help"])
+        main(["checkpoint", "curation", "--help"])
 
     assert exc_info.value.code == 0
     help_text = " ".join(capsys.readouterr().out.split())
     assert "detached clean checkout at the exact prepare-time base" in help_text
-    assert "must not be the remediation worktree" in help_text
+    assert "must not be the checkpoint worktree" in help_text
 
 
 def test_curation_validation_help_requires_exact_prepare_time_base(
@@ -248,6 +336,7 @@ def _validation_result() -> ValidationResult:
             )
             for index in range(1, 4)
         ),
+        resulting_graph_markdown=CANONICAL_GRAPH,
     )
 
 
@@ -418,10 +507,15 @@ class FakeRepository:
     main_catalog_json: str = field(default_factory=_catalog_json)
     fetch_main_calls: int = 0
     continuation_result: str = "unchanged"
-    remediation_replay_error: Exception | None = None
-    remediation_prepare_calls: int = 0
-    remediation_continue_calls: int = 0
-    remediation_restart_flags: list[bool] = field(default_factory=list)
+    curation_recovery_error: Exception | None = None
+    curation_recovery_calls: list[tuple[CurationRecoveryCheckpoint, bool]] = field(
+        default_factory=list
+    )
+    curation_continue_calls: list[CurationRecoveryCheckpoint] = field(
+        default_factory=list
+    )
+    curation_checkpoint_calls: list[tuple[str, str]] = field(default_factory=list)
+    curation_checkpoint_error: Exception | None = None
     non_test_tree_digest_calls: list[str] = field(default_factory=list)
     ci_repair_prepare_calls: list[PullRequest] = field(default_factory=list)
     ci_repair_checkpoint_calls: list[dict[str, object]] = field(default_factory=list)
@@ -432,6 +526,23 @@ class FakeRepository:
     push_exact_calls: list[tuple[str, str, str]] = field(default_factory=list)
     push_exact_error: Exception | None = None
     push_exact_after_error: Exception | None = None
+    legacy_refs: tuple[LegacyCurationRef, ...] = ()
+    legacy_archive_calls: int = 0
+
+    def legacy_curation_refs(
+        self,
+        archive_id: str,
+    ) -> tuple[LegacyCurationRef, ...]:
+        del archive_id
+        return self.legacy_refs
+
+    def archive_legacy_curation_refs(
+        self,
+        refs: Sequence[LegacyCurationRef],
+    ) -> int:
+        assert tuple(refs) == self.legacy_refs
+        self.legacy_archive_calls += 1
+        return len(refs)
 
     def current_head(self) -> str:
         return self.head
@@ -474,136 +585,17 @@ class FakeRepository:
         assert reviewed_head == self.head
         return self.snapshot
 
-    def checkpoint_reviewed_continuation(
+    def prepare_curation_recovery(
         self,
         pull_request: PullRequest,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-    ) -> ReviewedCheckpointRefs:
-        assert pull_request.number == 42
-        assert result == self.prepared
-        assert reviewed_head == self.head
-        return ReviewedCheckpointRefs(
-            reviewed_ref=(
-                f"refs/snowcast-maintainer/reviewed/pr-42/"
-                f"{result.original_head[:12]}-{reviewed_head[:12]}"
-            ),
-            squash_ref=(
-                f"refs/snowcast-maintainer/continuations/pr-42/"
-                f"{result.base_head[:12]}-{reviewed_head[:12]}"
-            ),
-        )
-
-    def revalidate_reviewed_checkpoint(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> None:
-        assert pull_request.number == 42
-        assert result == self.prepared
-        assert reviewed_head == self.head
-        assert refs.reviewed_ref.startswith("refs/snowcast-maintainer/reviewed/pr-42/")
-
-    def prepare_reviewed_continuation(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        self.revalidate_reviewed_checkpoint(pull_request, result, reviewed_head, refs)
-        if self.continuation_result == "conflict":
-            return ContinuationReplayResult(
-                result="conflict",
-                base_head=SHA_D,
-                conflict_paths=("app/data/catalog.json",),
-            )
-        if self.continuation_result == "prepared":
-            replay_sync = result.model_copy(
-                update={"base_head": SHA_C, "rebased_head": SHA_D}
-            )
-            self.prepared = replay_sync
-            self.head = SHA_D
-            return ContinuationReplayResult(
-                result="prepared",
-                base_head=SHA_C,
-                head=SHA_D,
-                sync=replay_sync,
-            )
-        self.head = reviewed_head
-        return ContinuationReplayResult(
-            result="unchanged",
-            base_head=result.base_head,
-            head=reviewed_head,
-            sync=result,
-        )
-
-    def continue_reviewed_conflict(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-        refs: ReviewedCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        self.continuation_result = "prepared"
-        return self.prepare_reviewed_continuation(
-            pull_request, result, reviewed_head, refs
-        )
-
-    def checkpoint_remediation_continuation(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        remediation_head: str,
-    ) -> RemediationCheckpointRefs:
-        assert pull_request.number == 42
-        assert result == self.prepared
-        assert remediation_head == self.head
-        return RemediationCheckpointRefs(
-            remediation_ref=(
-                f"refs/snowcast-maintainer/remediation/pr-42/"
-                f"{result.original_head[:12]}-{remediation_head[:12]}"
-            ),
-            squash_ref=(
-                "refs/snowcast-maintainer/remediation-continuations/pr-42/"
-                f"{result.base_head[:12]}-{remediation_head[:12]}"
-            ),
-        )
-
-    def prepare_remediation_continuation(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        remediation_head: str,
-        refs: RemediationCheckpointRefs,
+        recovery: CurationRecoveryCheckpoint,
         *,
         restart_interrupted: bool = False,
     ) -> ContinuationReplayResult:
-        self.remediation_prepare_calls += 1
-        self.remediation_restart_flags.append(restart_interrupted)
-        return self._remediation_replay(
-            pull_request,
-            result,
-            remediation_head,
-            refs,
-        )
-
-    def _remediation_replay(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        remediation_head: str,
-        refs: RemediationCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        assert pull_request.number == 42
-        assert result == self.prepared
-        assert refs.remediation_ref.startswith(
-            "refs/snowcast-maintainer/remediation/pr-42/"
-        )
-        if self.remediation_replay_error is not None:
-            raise self.remediation_replay_error
+        assert pull_request.number == recovery.pr_number
+        self.curation_recovery_calls.append((recovery, restart_interrupted))
+        if self.curation_recovery_error is not None:
+            raise self.curation_recovery_error
         if self.continuation_result == "conflict":
             return ContinuationReplayResult(
                 result="conflict",
@@ -611,7 +603,7 @@ class FakeRepository:
                 conflict_paths=("app/data/catalog.json",),
             )
         if self.continuation_result == "prepared":
-            replay_sync = result.model_copy(
+            replay_sync = recovery.sync.model_copy(
                 update={"base_head": SHA_C, "rebased_head": SHA_D}
             )
             self.prepared = replay_sync
@@ -622,24 +614,52 @@ class FakeRepository:
                 head=SHA_D,
                 sync=replay_sync,
             )
-        self.head = remediation_head
+        self.head = recovery.checkpoint_head
         return ContinuationReplayResult(
             result="unchanged",
-            base_head=result.base_head,
-            head=remediation_head,
-            sync=result,
+            base_head=recovery.sync.base_head,
+            head=recovery.checkpoint_head,
+            sync=recovery.sync,
         )
 
-    def continue_remediation_conflict(
+    def continue_curation_conflict(
+        self,
+        pull_request: PullRequest,
+        recovery: CurationRecoveryCheckpoint,
+    ) -> ContinuationReplayResult:
+        self.curation_continue_calls.append(recovery)
+        self.continuation_result = "prepared"
+        return self.prepare_curation_recovery(pull_request, recovery)
+
+    def checkpoint_curation_generation(
         self,
         pull_request: PullRequest,
         result: GuardedSyncResult,
-        remediation_head: str,
-        refs: RemediationCheckpointRefs,
-    ) -> ContinuationReplayResult:
-        self.remediation_continue_calls += 1
-        self.continuation_result = "prepared"
-        return self._remediation_replay(pull_request, result, remediation_head, refs)
+        checkpoint_head: str,
+        generation_id: str,
+        transaction_id: str,
+    ) -> CurationCheckpointRefs:
+        assert pull_request.number == 42
+        assert result == self.prepared
+        assert checkpoint_head == self.head
+        self.curation_checkpoint_calls.append((generation_id, transaction_id))
+        if self.curation_checkpoint_error is not None:
+            raise self.curation_checkpoint_error
+        prefix = (
+            f"refs/snowcast-maintainer/curation/pr-42/{generation_id}/{transaction_id}/"
+        )
+        return CurationCheckpointRefs(
+            checkpoint_ref=f"{prefix}checkpoint",
+            squash_ref=f"{prefix}replay",
+        )
+
+    def revalidate_curation_checkpoint(
+        self,
+        pull_request: PullRequest,
+        recovery: CurationRecoveryCheckpoint,
+    ) -> None:
+        assert pull_request.number == recovery.pr_number
+        assert recovery.sync == self.prepared
 
     def push_with_lease(self, sync: GuardedSyncResult, reviewed_head: str) -> None:
         self.push_calls += 1
@@ -819,7 +839,7 @@ def _acquire(
         capsys,
         ["--state-dir", str(state_dir), "lock", "acquire", worker],
     )
-    assert code == 0
+    assert code == 0, payload
     outcome = payload["outcome"]
     assert isinstance(outcome, dict)
     run_id = outcome["lease_run_id"]
@@ -866,16 +886,15 @@ def _ci_continuation_for_cli(lease: RunLease) -> CiContinuation:
 
 
 EXPECTED_HANDLERS = {
+    ("migrate", "curation-state"),
     ("inspect", "curation"),
     ("inspect", "discovery"),
     ("prepare", "curation"),
-    ("prepare", "continuation"),
     ("prepare", "ci-repair"),
-    ("checkpoint", "remediation"),
+    ("checkpoint", "curation"),
     ("checkpoint", "ci-repair"),
     ("invalidate", "ci-continuation"),
     ("validate", "curation"),
-    ("validate", "reviewed"),
     ("validate", "proposal"),
     ("publish", "push"),
     ("publish", "ci-repair"),
@@ -1826,7 +1845,7 @@ def test_checkpoint_ci_repair_rejects_structurally_invalid_git_state(
     )
 
     assert code == 2
-    assert payload["reason"] == "invalid-command"
+    assert payload["reason"] == "unsafe-repository"
     persisted = store.load_ci_continuation(active.work_id)
     assert persisted is not None
     assert persisted.phase is CiContinuationPhase.REPAIR_ACTIVE
@@ -2732,7 +2751,7 @@ def test_publish_ci_repair_revalidates_before_replacing_published_journal(
     )
 
     assert code == 2
-    assert payload["reason"] == "invalid-command"
+    assert payload["reason"] == "unsafe-repository"
     assert store.load_push(reviewed.work_id) == prior_journal
     assert store.load_ci_continuation(reviewed.work_id) == reviewed
     assert repository.head == SHA_B
@@ -3451,8 +3470,8 @@ def test_terminal_repair_publication_crash_recovers_only_exact_intent(
     assert inventory["terminal_publications"][0]["work_id"] == continuation.work_id
     assert inventory["unresolved_pushes"] == []
     assert inventory["ci_continuations"] == []
-    assert inventory["reviewed_continuations"] == []
-    assert inventory["remediation_continuations"] == []
+    assert "reviewed_continuations" not in inventory
+    assert "remediation_continuations" not in inventory
     assert inventory["eligible"] == []
 
     prepare_code, prepare_payload = _invoke(
@@ -4762,51 +4781,147 @@ def test_inspect_curation_exposes_ci_continuation_before_ordinary_selection(
     assert not (state_dir / "run.lock").exists()
 
 
-def test_inspect_curation_surfaces_safe_remediation_recovery_before_fresh_work(
+def test_inspect_curation_exposes_generation_retry_action(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _checkpoint_remediation_for_cli_test(
-        capsys,
-        tmp_path,
-        state_dir,
-        github,
-        repository,
+    lease = RunLease.acquire(state_dir, "curation", now=NOW)
+    CurationGenerationStore(state_dir).start_generation(
+        _curation_generation(),
+        lease,
     )
-    remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    assert remediation is not None
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
+    lease.release()
 
     code, payload = _invoke(
         capsys,
         ["--state-dir", str(state_dir), "inspect", "curation"],
-        github=github,
+        github=FakeGitHub(),
     )
 
     assert code == 0, payload
-    assert payload["reviewed_continuations"] == []
-    assert payload["remediation_continuations"] == [
+    assert payload["generations"] == [
         {
             "pr_number": 42,
+            "generation_number": 1,
+            "generation_id": GENERATION_ID,
             "selected_head": SHA_A,
-            "remediation_head": SHA_C,
             "base_head": SHA_D,
-            "report_path": "docs/catalog-curation/nendaz.json",
-            "resumable": True,
+            "latest_head": SHA_C,
+            "stage": "reviewed",
+            "retryable": True,
             "availability_reason": "available",
+            "next_action": {
+                "recipe_id": "validate_curation",
+                "substitutions": {
+                    "pr": 42,
+                    "generation_id": GENERATION_ID,
+                    "head": SHA_C,
+                    "report": "docs/catalog-curation/nendaz.json",
+                    "validation_base": SHA_D,
+                    "continue_conflict": False,
+                },
+            },
         }
     ]
-    serialized = json.dumps(payload)
-    for private_value in (
-        remediation.origin_run_id,
-        remediation.recovery_run_id,
-        remediation.remediation_ref,
-        remediation.squash_ref,
-    ):
-        assert private_value not in serialized
+    assert payload["eligible"] == []
+
+
+def test_inspect_curation_requires_legacy_state_migration(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(state_dir, "curation", now=NOW)
+    continuation_dir = state_dir / "continuations"
+    continuation_dir.mkdir(mode=0o700)
+    continuation_path = continuation_dir / "curation-pr-42.json"
+    continuation_path.write_text(
+        _legacy_reviewed_continuation(lease).model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    continuation_path.chmod(0o600)
+    lease.release()
+
+    code, payload = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=FakeGitHub(),
+    )
+
+    assert code == 2
+    assert payload["reason"] == "state-migration-required"
+    assert payload["stage"] == "inspect"
+
+
+def test_migrate_curation_state_archives_legacy_without_lease_or_github(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    repository = FakeRepository()
+    github = FakeGitHub(failure=AssertionError("migration contacted GitHub"))
+
+    first_code, first = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "migrate",
+            "curation-state",
+            "--archive-legacy",
+        ],
+        repository=repository,
+        github=github,
+    )
+    second_code, second = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "migrate",
+            "curation-state",
+            "--archive-legacy",
+        ],
+        repository=repository,
+        github=github,
+    )
+
+    assert first_code == second_code == 0
+    assert first["migration"]["already_migrated"] is False
+    assert second["migration"]["already_migrated"] is True
+    assert first["next_action"] == {
+        "recipe_id": "inspect_curation",
+        "substitutions": {},
+    }
+    _assert_outcome(first, worker="curation", mutation=True, run_id=None)
+    _assert_outcome(second, worker="curation", mutation=False, run_id=None)
+    assert repository.legacy_archive_calls == 2
+
+
+def test_migrate_curation_state_refuses_active_lease(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(state_dir, "curation", now=NOW)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "migrate",
+            "curation-state",
+            "--archive-legacy",
+        ],
+        repository=FakeRepository(),
+    )
+
+    assert code == 2
+    assert payload["reason"] == "lease-conflict"
+    assert payload["stage"] == "lock"
+    lease.release()
 
 
 def test_inspect_does_not_create_missing_state_directory(
@@ -4910,6 +5025,10 @@ def test_prepare_curation_persists_one_phase_record_for_requested_safe_pr(
 
     assert code == 0
     assert payload["prepared"]["base_head"] == repository.prepared.base_head
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    assert generation.generation_number == 1
+    assert generation.selected_head == SHA_A
     work = StateStore(state_dir).load_work("curation-pr-42")
     assert work is not None
     assert work.phase is WorkPhase.PREPARED
@@ -4958,160 +5077,204 @@ def test_prepare_curation_rejects_before_sync_when_another_ci_continuation_is_ac
     assert store.load_work("curation-pr-43") is None
 
 
-def test_remediation_checkpoint_persists_private_recovery_authority(
+def test_prepare_curation_restores_reviewed_generation_for_validation_only(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    run_id = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
+    origin = RunLease.acquire(state_dir, "curation", now=NOW)
+    CurationGenerationStore(state_dir).start_generation(
+        _curation_generation(),
+        origin,
+    )
+    origin.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    repository = FakeRepository()
 
     code, payload = _invoke(
         capsys,
         [
             "--state-dir",
             str(state_dir),
-            "checkpoint",
-            "remediation",
+            "prepare",
+            "curation",
             "--pr",
             "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=FakeGitHub(),
+        repository=repository,
+    )
+
+    assert code == 0, payload
+    assert payload["generation"]["generation_number"] == 1
+    assert payload["generation"]["result"] == "validation-only"
+    assert payload["generation"]["next_action"] == {
+        "recipe_id": "validate_curation",
+        "substitutions": {
+            "pr": 42,
+            "generation_id": GENERATION_ID,
+            "head": SHA_C,
+            "report": "docs/catalog-curation/nendaz.json",
+            "validation_base": SHA_D,
+            "continue_conflict": False,
+        },
+    }
+    assert len(repository.curation_recovery_calls) == 1
+    work = StateStore(state_dir).load_work("curation-pr-42")
+    assert work is not None and work.phase is WorkPhase.REVIEWED
+    assert work.reviewed_head == SHA_C
+
+
+def test_prepare_curation_replays_same_pr_head_into_new_generation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin = RunLease.acquire(state_dir, "curation", now=NOW)
+    generation_store = CurationGenerationStore(state_dir)
+    first = _curation_generation()
+    generation_store.start_generation(first, origin)
+    origin.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    repository = FakeRepository(continuation_result="prepared")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=FakeGitHub(),
+        repository=repository,
+    )
+
+    assert code == 0, payload
+    assert payload["generation"]["generation_number"] == 2
+    assert payload["generation"]["result"] == "review-required"
+    generations = generation_store.list_generations("curation-pr-42")
+    assert generations[0].selected_head == generations[1].selected_head == SHA_A
+    assert generations[0].sync.base_head != generations[1].sync.base_head
+    assert project_generation(generations[0]).latest_stage == "superseded"
+
+
+def test_prepare_curation_remote_head_change_starts_clean_generation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin = RunLease.acquire(state_dir, "curation", now=NOW)
+    generation_store = CurationGenerationStore(state_dir)
+    generation_store.start_generation(_curation_generation(), origin)
+    origin.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    github = FakeGitHub(pull_requests={42: _pull_request(head_sha=SHA_B)})
+    repository = FakeRepository(
+        prepared=_sync().model_copy(update={"original_head": SHA_B})
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
             "--run-id",
             run_id,
         ],
         github=github,
         repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
     )
 
     assert code == 0, payload
-    assert payload["continuation"] == {
-        "kind": "remediation",
-        "result": "checkpointed",
-        "head": SHA_C,
-        "report_path": "docs/catalog-curation/nendaz.json",
-    }
-    store = StateStore(state_dir)
-    remediation = store.load_remediation_continuation("curation-pr-42")
-    work = store.load_work("curation-pr-42")
-    assert remediation is not None
-    assert remediation.status is RemediationContinuationStatus.AVAILABLE
-    assert remediation.remediation_head == SHA_C
-    assert work is not None and work.phase is WorkPhase.PREPARED
+    assert payload["generation"]["generation_number"] == 2
+    assert payload["generation"]["selected_head"] == SHA_B
+    assert repository.curation_recovery_calls == []
+    assert (
+        project_generation(
+            generation_store.list_generations("curation-pr-42")[0]
+        ).latest_stage
+        == "invalidated"
+    )
 
 
-def test_remediation_checkpoint_is_idempotent_and_replaces_newer_same_pr_head(
+def test_prepare_curation_conflict_continues_only_with_explicit_flag(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    run_id = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    calls = 0
-
-    def validate_delta(**kwargs: object) -> DeltaValidationResult:
-        nonlocal calls
-        calls += 1
-        return _delta_validation_result().model_copy(
-            update={"remediation_head": kwargs["remediation_head"]}
-        )
-
-    arguments = [
+    origin = RunLease.acquire(state_dir, "curation", now=NOW)
+    CurationGenerationStore(state_dir).start_generation(
+        _curation_generation(),
+        origin,
+    )
+    origin.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    repository = FakeRepository(continuation_result="conflict")
+    command = [
         "--state-dir",
         str(state_dir),
-        "checkpoint",
-        "remediation",
+        "prepare",
+        "curation",
         "--pr",
         "42",
-        "--head",
-        SHA_C,
-        "--report",
-        "docs/catalog-curation/nendaz.json",
-        "--base-dir",
-        str(tmp_path),
         "--run-id",
         run_id,
     ]
-    first_code, first_payload = _invoke(
+
+    first_code, first = _invoke(
         capsys,
-        arguments,
-        github=github,
+        command,
+        github=FakeGitHub(),
         repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=validate_delta,
     )
-    second_code, second_payload = _invoke(
+    retry_code, retry = _invoke(
         capsys,
-        arguments,
-        github=github,
+        command,
+        github=FakeGitHub(),
         repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=validate_delta,
     )
-    repository.head = SHA_D
-    replacement = [SHA_D if value == SHA_C else value for value in arguments]
-    replacement_code, replacement_payload = _invoke(
+    continue_code, continued = _invoke(
         capsys,
-        replacement,
-        github=github,
+        [*command, "--continue-conflict"],
+        github=FakeGitHub(),
         repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=validate_delta,
     )
 
-    assert first_code == 0, first_payload
-    assert second_code == 0, second_payload
-    assert second_payload["continuation"]["result"] == "already-checkpointed"
-    assert replacement_code == 0, replacement_payload
-    assert calls == 2
-    remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    assert remediation is not None
-    assert remediation.remediation_head == SHA_D
+    assert first_code == 0, first
+    assert first["generation"]["result"] == "conflict-resolution-required"
+    assert retry_code == 2
+    assert retry["reason"] == "local-recovery-required"
+    assert retry["retryable"] is True
+    assert retry["next_action"]["substitutions"]["continue_conflict"] is True
+    assert continue_code == 0, continued
+    assert continued["generation"]["generation_number"] == 2
+    assert repository.curation_continue_calls
 
 
-def test_remediation_checkpoint_blocks_same_run_fresh_prepare(
+def test_prepare_curation_missing_checkpoint_invalidates_and_restarts(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    run_id = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    checkpoint_code, checkpoint_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            run_id,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
+    origin = RunLease.acquire(state_dir, "curation", now=NOW)
+    generation_store = CurationGenerationStore(state_dir)
+    generation_store.start_generation(_curation_generation(), origin)
+    origin.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    repository = FakeRepository(
+        curation_recovery_error=CurationCheckpointIntegrityError("missing")
     )
-    assert checkpoint_code == 0, checkpoint_payload
 
     code, payload = _invoke(
         capsys,
@@ -5125,1389 +5288,248 @@ def test_remediation_checkpoint_blocks_same_run_fresh_prepare(
             "--run-id",
             run_id,
         ],
-        github=github,
-        repository=repository,
-    )
-
-    assert code == 2
-    assert payload["reason"] == "continuation-required"
-
-
-def test_remediation_continuation_replays_then_requires_fresh_review(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    checkpoint_code, checkpoint_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            origin_run,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
-    )
-    assert checkpoint_code == 0, checkpoint_payload
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
+        github=FakeGitHub(),
         repository=repository,
     )
 
     assert code == 0, payload
-    assert payload["continuation"] == {
-        "kind": "remediation",
-        "result": "review-required",
-        "base_head": SHA_D,
-        "prepared_head": SHA_C,
-        "report_path": "docs/catalog-curation/nendaz.json",
-    }
-    remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    work = StateStore(state_dir).load_work("curation-pr-42")
-    assert remediation is not None
-    assert remediation.status is RemediationContinuationStatus.AVAILABLE
-    assert work is not None and work.phase is WorkPhase.PREPARED
-
-
-def test_reviewed_checkpoint_promotes_matching_remediation_once(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    checkpoint_code, checkpoint_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            origin_run,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
-    )
-    assert checkpoint_code == 0, checkpoint_payload
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    prepare_code, prepare_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-    assert prepare_code == 0, prepare_payload
-
-    reviewed_code, reviewed_payload = _checkpoint_reviewed(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-        reviewed_head=SHA_C,
+    assert payload["generation"]["generation_number"] == 2
+    assert payload["generation"]["result"] == "prepared"
+    assert (
+        project_generation(
+            generation_store.list_generations("curation-pr-42")[0]
+        ).latest_stage
+        == "invalidated"
     )
 
-    assert reviewed_code == 0, reviewed_payload
-    store = StateStore(state_dir)
-    reviewed = store.load_continuation("curation-pr-42")
-    remediation = store.load_remediation_continuation("curation-pr-42")
-    assert reviewed is not None
-    assert remediation is not None
-    assert remediation.status is RemediationContinuationStatus.CONSUMED
 
-
-def test_advanced_remediation_replay_promotes_replay_derived_authority(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    checkpoint_code, checkpoint_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            origin_run,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
-    )
-    assert checkpoint_code == 0, checkpoint_payload
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    repository.continuation_result = "prepared"
-    prepare_code, prepare_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-    assert prepare_code == 0, prepare_payload
-    assert prepare_payload["continuation"]["prepared_head"] == SHA_D
-
-    reviewed_code, reviewed_payload = _checkpoint_reviewed(
-        capsys, state_dir, successor, github, repository, reviewed_head=SHA_D
-    )
-
-    assert reviewed_code == 0, reviewed_payload
-    store = StateStore(state_dir)
-    reviewed = store.load_continuation("curation-pr-42")
-    remediation = store.load_remediation_continuation("curation-pr-42")
-    assert reviewed is not None and reviewed.sync == repository.prepared
-    assert reviewed.selected_head == SHA_A
-    assert remediation is not None
-    assert remediation.status is RemediationContinuationStatus.CONSUMED
-
-
-def test_newer_remediation_replay_precedes_older_resolving_reviewed_continuation(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    reviewed_code, reviewed_payload = _checkpoint_reviewed(
-        capsys,
-        state_dir,
-        origin_run,
-        github,
-        repository,
-    )
-    assert reviewed_code == 0, reviewed_payload
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-
-    remediation_run = _acquire(capsys, state_dir, "curation")
-    repository.continuation_result = "prepared"
-    replay_code, replay_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            remediation_run,
-        ],
-        github=github,
-        repository=repository,
-    )
-    assert replay_code == 0, replay_payload
-    assert replay_payload["continuation"]["result"] == "review-required"
-    repository.head = SHA_C
-    checkpoint_code, checkpoint_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            remediation_run,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(head=repository.prepared.base_head),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
-    )
-    assert checkpoint_code == 0, checkpoint_payload
-    old_reviewed = StateStore(state_dir).load_continuation("curation-pr-42")
-    remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    assert old_reviewed is not None
-    assert remediation is not None
-    assert remediation.origin_run_id == old_reviewed.origin_run_id
-    RunLease.load_owner(state_dir, "curation", remediation_run).release()
-
-    successor = _acquire(capsys, state_dir, "curation")
-    repository.continuation_result = "unchanged"
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-
-    assert code == 0, payload
-    assert payload["continuation"] == {
-        "kind": "remediation",
-        "result": "review-required",
-        "base_head": SHA_C,
-        "prepared_head": SHA_C,
-        "report_path": "docs/catalog-curation/nendaz.json",
-    }
-
-
-def test_successful_remediation_replay_can_be_recreated_by_a_later_successor(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    checkpoint_code, checkpoint_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            origin_run,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
-    )
-    assert checkpoint_code == 0, checkpoint_payload
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    first_successor = _acquire(capsys, state_dir, "curation")
-    first_code, first_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            first_successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-    assert first_code == 0, first_payload
-    RunLease.load_owner(state_dir, "curation", first_successor).release()
-    second_successor = _acquire(capsys, state_dir, "curation")
-
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            second_successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-
-    assert code == 0, payload
-    assert payload["continuation"]["result"] == "review-required"
-    remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    assert remediation is not None
-    assert remediation.recovery_run_id == second_successor
-
-
-def test_remediation_replay_invalidates_tampered_checkpoint_refs(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    checkpoint_code, checkpoint_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            origin_run,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
-    )
-    assert checkpoint_code == 0, checkpoint_payload
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    repository.remediation_replay_error = RemediationCheckpointIntegrityError(
-        "tampered ref"
-    )
-
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-
-    assert code == 2
-    assert payload["reason"] == "invalid-command"
-    remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    assert remediation is not None
-    assert remediation.status is RemediationContinuationStatus.INVALIDATED
-
-
-def test_transient_remediation_repository_failure_preserves_same_run_retry(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _checkpoint_remediation_for_cli_test(
-        capsys,
-        tmp_path,
-        state_dir,
-        github,
-        repository,
-    )
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    repository.remediation_replay_error = RepositorySafetyError(
-        "transient local worktree failure"
-    )
-
-    failed_code, failed_payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-    )
-
-    assert failed_code == 2
-    assert failed_payload["reason"] == "invalid-command"
-    checkpoint = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    assert checkpoint is not None
-    assert checkpoint.status is RemediationContinuationStatus.RESOLVING
-    assert checkpoint.recovery_run_id == successor
-
-    repository.remediation_replay_error = None
-    retry_code, retry_payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-    )
-
-    assert retry_code == 0, retry_payload
-    assert retry_payload["continuation"]["result"] == "review-required"
-
-
-def test_remediation_remote_drift_invalidates_before_a_fresh_prepare(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    checkpoint_code, checkpoint_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            origin_run,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
-    )
-    assert checkpoint_code == 0, checkpoint_payload
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    github.pull_requests[42] = github.pull_requests[42].model_copy(
-        update={"head_sha": SHA_D}
-    )
-
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-
-    assert code == 2
-    assert payload["reason"] == "stale-head"
-    remediation = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    assert remediation is not None
-    assert remediation.status is RemediationContinuationStatus.INVALIDATED
-
-
-def test_stale_remediation_fences_same_run_then_successor_checkpoints_new_head(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _checkpoint_remediation_for_cli_test(
-        capsys,
-        tmp_path,
-        state_dir,
-        github,
-        repository,
-    )
-    store = StateStore(state_dir)
-    old_checkpoint = store.load_remediation_continuation("curation-pr-42")
-    assert old_checkpoint is not None
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    github.pull_requests[42] = github.pull_requests[42].model_copy(
-        update={"head_sha": SHA_D}
-    )
-    new_sync = repository.prepared.model_copy(
-        update={
-            "original_head": SHA_D,
-            "rebased_head": SHA_B,
-            "backup_ref": "refs/snowcast-maintainer/backups/pr-42/new-head",
-            "prepared_ref": "refs/snowcast-maintainer/prepared/pr-42/new-head",
-        }
-    )
-    repository.prepared = new_sync
-    invalidating_run = _acquire(capsys, state_dir, "curation")
-
-    first_code, first_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "curation",
-            "--pr",
-            "42",
-            "--run-id",
-            invalidating_run,
-        ],
-        github=github,
-        repository=repository,
-    )
-    second_code, second_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "curation",
-            "--pr",
-            "42",
-            "--run-id",
-            invalidating_run,
-        ],
-        github=github,
-        repository=repository,
-    )
-
-    assert first_code == second_code == 2
-    assert first_payload["reason"] == second_payload["reason"] == "stale-head"
-    assert repository.prepare_calls == 1
-    invalidated = store.load_remediation_continuation("curation-pr-42")
-    assert invalidated is not None
-    assert invalidated.status is RemediationContinuationStatus.INVALIDATED
-    assert invalidated.recovery_run_id == invalidating_run
-    RunLease.load_owner(state_dir, "curation", invalidating_run).release()
-
-    successor = _acquire(capsys, state_dir, "curation")
-    prepare_code, prepare_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "curation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-    assert prepare_code == 0, prepare_payload
-    assert repository.prepare_calls == 2
-    repository.head = SHA_B
-    checkpoint_code, checkpoint_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_B,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result().model_copy(
-            update={"remediation_head": SHA_B}
-        ),
-    )
-
-    assert checkpoint_code == 0, checkpoint_payload
-    replacement = store.load_remediation_continuation("curation-pr-42")
-    assert replacement is not None
-    assert replacement.status is RemediationContinuationStatus.AVAILABLE
-    assert replacement.selected_head == SHA_D
-    assert replacement.remediation_head == SHA_B
-    assert replacement.origin_run_id == successor
-    assert replacement.recovery_run_id == successor
-    assert replacement.updated_at > invalidated.updated_at
-    assert replacement.remediation_ref != old_checkpoint.remediation_ref
-    assert replacement.squash_ref != old_checkpoint.squash_ref
-
-
-def _checkpoint_remediation_for_cli_test(
+def _checkpoint_curation_generation(
     capsys: pytest.CaptureFixture[str],
     tmp_path: Path,
-    state_dir: Path,
-    github: FakeGitHub,
-    repository: FakeRepository,
-) -> str:
-    run_id = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "checkpoint",
-            "remediation",
-            "--pr",
-            "42",
-            "--head",
-            SHA_C,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path),
-            "--run-id",
-            run_id,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        delta_validator=lambda **_kwargs: _delta_validation_result(),
-    )
-    assert code == 0, payload
-    return run_id
-
-
-def _prepare_remediation_for_cli_test(
-    capsys: pytest.CaptureFixture[str],
     state_dir: Path,
     run_id: str,
     github: FakeGitHub,
     repository: FakeRepository,
     *,
-    continue_conflict: bool = False,
+    stage: str,
+    head: str = SHA_B,
 ) -> tuple[int, dict[str, object]]:
-    arguments = [
-        "--state-dir",
-        str(state_dir),
-        "prepare",
-        "continuation",
-        "--pr",
-        "42",
-        "--run-id",
-        run_id,
-    ]
-    if continue_conflict:
-        arguments.insert(-2, "--continue-conflict")
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
     return _invoke(
         capsys,
-        arguments,
-        github=github,
-        repository=repository,
-    )
-
-
-def _interrupt_promotion_after_reviewed_write(
-    monkeypatch: pytest.MonkeyPatch,
-) -> Callable[..., None]:
-    original_save = StateStore._save_model
-
-    def crash_before_remediation_consume(
-        self: StateStore,
-        directory: Path,
-        work_id: str,
-        model: object,
-    ) -> None:
-        if (
-            directory == self.remediation_continuation_dir
-            and isinstance(model, RemediationContinuation)
-            and model.status is RemediationContinuationStatus.CONSUMED
-        ):
-            raise OSError("simulated promotion interruption")
-        original_save(self, directory, work_id, model)  # type: ignore[arg-type]
-
-    monkeypatch.setattr(
-        StateStore,
-        "_save_model",
-        crash_before_remediation_consume,
-    )
-    return original_save
-
-
-def test_remediation_conflict_continues_in_run_then_promotes_after_review(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _checkpoint_remediation_for_cli_test(
-        capsys,
-        tmp_path,
-        state_dir,
-        github,
-        repository,
-    )
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    repository.continuation_result = "conflict"
-
-    conflict_code, conflict_payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-    )
-    continue_code, continue_payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-        continue_conflict=True,
-    )
-
-    assert conflict_code == 0, conflict_payload
-    assert conflict_payload["continuation"] == {
-        "kind": "remediation",
-        "result": "conflict-resolution-required",
-        "base_head": SHA_D,
-        "conflict_paths": ["app/data/catalog.json"],
-    }
-    assert continue_code == 0, continue_payload
-    assert continue_payload["continuation"] == {
-        "kind": "remediation",
-        "result": "review-required",
-        "base_head": SHA_C,
-        "prepared_head": SHA_D,
-        "report_path": "docs/catalog-curation/nendaz.json",
-    }
-    assert repository.remediation_prepare_calls == 1
-    assert repository.remediation_continue_calls == 1
-
-    reviewed_code, reviewed_payload = _checkpoint_reviewed(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-        reviewed_head=SHA_D,
-    )
-
-    assert reviewed_code == 0, reviewed_payload
-    store = StateStore(state_dir)
-    reviewed = store.load_continuation("curation-pr-42")
-    remediation = store.load_remediation_continuation("curation-pr-42")
-    assert reviewed is not None and reviewed.reviewed_head == SHA_D
-    assert remediation is not None
-    assert remediation.status is RemediationContinuationStatus.CONSUMED
-
-
-def test_successor_recreates_abandoned_remediation_conflict_from_checkpoint(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _checkpoint_remediation_for_cli_test(
-        capsys,
-        tmp_path,
-        state_dir,
-        github,
-        repository,
-    )
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    interrupted_run = _acquire(capsys, state_dir, "curation")
-    repository.continuation_result = "conflict"
-    conflict_code, conflict_payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        interrupted_run,
-        github,
-        repository,
-    )
-    assert conflict_code == 0, conflict_payload
-    resolving = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    assert resolving is not None
-    assert resolving.status is RemediationContinuationStatus.RESOLVING
-    RunLease.load_owner(state_dir, "curation", interrupted_run).release()
-
-    inspect_code, inspect_payload = _invoke(
-        capsys,
-        ["--state-dir", str(state_dir), "inspect", "curation"],
-        github=github,
-    )
-    assert inspect_code == 0, inspect_payload
-    assert inspect_payload["eligible"] == []
-    assert inspect_payload["remediation_continuations"] == [
-        {
-            "pr_number": 42,
-            "selected_head": SHA_A,
-            "remediation_head": SHA_C,
-            "base_head": SHA_D,
-            "report_path": "docs/catalog-curation/nendaz.json",
-            "resumable": True,
-            "availability_reason": "recovery-authority",
-        }
-    ]
-
-    successor = _acquire(capsys, state_dir, "curation")
-    repository.continuation_result = "prepared"
-    code, payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-    )
-
-    assert code == 0, payload
-    assert payload["continuation"] == {
-        "kind": "remediation",
-        "result": "review-required",
-        "base_head": SHA_C,
-        "prepared_head": SHA_D,
-        "report_path": "docs/catalog-curation/nendaz.json",
-    }
-    assert repository.remediation_prepare_calls == 2
-    assert repository.remediation_continue_calls == 0
-    assert repository.remediation_restart_flags == [False, True]
-    resumed = StateStore(state_dir).load_remediation_continuation("curation-pr-42")
-    assert resumed is not None
-    assert resumed.recovery_run_id == successor
-    assert resumed.status is RemediationContinuationStatus.AVAILABLE
-
-
-def test_validate_reviewed_retry_finishes_interrupted_remediation_promotion(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _checkpoint_remediation_for_cli_test(
-        capsys,
-        tmp_path,
-        state_dir,
-        github,
-        repository,
-    )
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    prepare_code, prepare_payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-    )
-    assert prepare_code == 0, prepare_payload
-    original_save = _interrupt_promotion_after_reviewed_write(monkeypatch)
-    failed_code, failed_payload = _checkpoint_reviewed(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-        reviewed_head=SHA_C,
-        expect_success=False,
-    )
-    assert failed_code == 2
-    assert failed_payload["reason"] == "internal-error"
-    store = StateStore(state_dir)
-    assert store.load_continuation("curation-pr-42") is not None
-    remediation = store.load_remediation_continuation("curation-pr-42")
-    assert remediation is not None
-    assert remediation.status is RemediationContinuationStatus.AVAILABLE
-
-    monkeypatch.setattr(StateStore, "_save_model", original_save)
-    retry_code, retry_payload = _checkpoint_reviewed(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-        reviewed_head=SHA_C,
-    )
-
-    assert retry_code == 0, retry_payload
-    assert retry_payload["continuation"]["result"] == "already-checkpointed"
-    consumed = store.load_remediation_continuation("curation-pr-42")
-    assert consumed is not None
-    assert consumed.status is RemediationContinuationStatus.CONSUMED
-
-
-def test_successor_prefers_reviewed_after_interrupted_promotion_without_reappearance(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _checkpoint_remediation_for_cli_test(
-        capsys,
-        tmp_path,
-        state_dir,
-        github,
-        repository,
-    )
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    interrupted_run = _acquire(capsys, state_dir, "curation")
-    prepare_code, prepare_payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        interrupted_run,
-        github,
-        repository,
-    )
-    assert prepare_code == 0, prepare_payload
-    original_save = _interrupt_promotion_after_reviewed_write(monkeypatch)
-    failed_code, failed_payload = _checkpoint_reviewed(
-        capsys,
-        state_dir,
-        interrupted_run,
-        github,
-        repository,
-        reviewed_head=SHA_C,
-        expect_success=False,
-    )
-    assert failed_code == 2
-    assert failed_payload["reason"] == "internal-error"
-    monkeypatch.setattr(StateStore, "_save_model", original_save)
-    RunLease.load_owner(state_dir, "curation", interrupted_run).release()
-
-    successor = _acquire(capsys, state_dir, "curation")
-    code, payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-    )
-
-    assert code == 0, payload
-    assert payload["continuation"] == {
-        "kind": "reviewed",
-        "result": "validation-only",
-        "base_head": SHA_D,
-        "reviewed_head": SHA_C,
-        "report_path": "docs/catalog-curation/nendaz.json",
-    }
-    store = StateStore(state_dir)
-    assert len(store.list_continuations_for_inspection()) == 1
-    assert store.list_remediation_continuations_for_inspection() == ()
-    reviewed = store.load_continuation("curation-pr-42")
-    remediation = store.load_remediation_continuation("curation-pr-42")
-    assert reviewed is not None
-    assert remediation is not None
-    assert remediation.status is RemediationContinuationStatus.CONSUMED
-
-    terminal = reviewed.model_copy(
-        update={
-            "status": ContinuationStatus.CONSUMED,
-            "updated_at": reviewed.updated_at + timedelta(microseconds=1),
-        }
-    )
-    lease = RunLease.load_owner(state_dir, "curation", successor)
-    store.save_continuation(terminal, lease)
-    lease.release()
-    final_run = _acquire(capsys, state_dir, "curation")
-    final_code, final_payload = _prepare_remediation_for_cli_test(
-        capsys,
-        state_dir,
-        final_run,
-        github,
-        repository,
-    )
-
-    assert final_code == 2
-    assert final_payload["reason"] == "invalid-command"
-    assert store.list_continuations_for_inspection() == ()
-    assert store.list_remediation_continuations_for_inspection() == ()
-
-
-def test_reviewed_checkpoint_blocks_ordinary_prepare_and_resumes_validation_only(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    _checkpoint_reviewed(capsys, state_dir, origin_run, github, repository)
-
-    blocked, blocked_payload = _invoke(
-        capsys,
         [
             "--state-dir",
             str(state_dir),
-            "prepare",
+            "checkpoint",
             "curation",
             "--pr",
             "42",
-            "--run-id",
-            origin_run,
-        ],
-        github=github,
-        repository=repository,
-    )
-    assert blocked == 2
-    assert blocked_payload["reason"] == "continuation-required"
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-
-    assert code == 0
-    assert payload["continuation"]["result"] == "validation-only"
-    work = StateStore(state_dir).load_work("curation-pr-42")
-    assert work is not None and work.phase is WorkPhase.REVIEWED
-    assert work.run_id == successor
-
-
-def test_advanced_continuation_requires_one_fresh_review(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    _checkpoint_reviewed(capsys, state_dir, origin_run, github, repository)
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    repository.continuation_result = "prepared"
-
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-
-    assert code == 0
-    assert payload["continuation"]["kind"] == "reviewed"
-    assert payload["continuation"]["result"] == "review-required"
-    assert payload["continuation"]["base_head"] == SHA_C
-    store = StateStore(state_dir)
-    work = store.load_work("curation-pr-42")
-    continuation = store.load_continuation("curation-pr-42")
-    assert work is not None and work.phase is WorkPhase.PREPARED
-    assert continuation is not None
-    assert continuation.status is ContinuationStatus.RESOLVING
-    _checkpoint_reviewed(
-        capsys,
-        state_dir,
-        successor,
-        github,
-        repository,
-        reviewed_head=SHA_D,
-    )
-    replaced = store.load_continuation("curation-pr-42")
-    assert replaced is not None
-    assert replaced.reviewed_head == SHA_D
-    assert replaced.status is ContinuationStatus.AVAILABLE
-
-
-def test_continuation_conflict_is_bounded_then_returns_to_fresh_review(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    _checkpoint_reviewed(capsys, state_dir, origin_run, github, repository)
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    repository.continuation_result = "conflict"
-
-    first, first_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-    second, second_payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--continue-conflict",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
-    )
-
-    assert first == 0
-    assert first_payload["continuation"] == {
-        "kind": "reviewed",
-        "result": "conflict-resolution-required",
-        "base_head": SHA_D,
-        "conflict_paths": ["app/data/catalog.json"],
-    }
-    assert second == 0
-    assert second_payload["continuation"]["result"] == "review-required"
-
-
-def test_validation_failure_preserves_exact_retryable_continuation(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    run_id = _prepare_curation(capsys, state_dir, github, repository)
-    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
-
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "validate",
-            "curation",
-            "--pr",
-            "42",
-            "--reviewed-head",
-            SHA_B,
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            head,
             "--report",
             "docs/catalog-curation/nendaz.json",
+            "--stage",
+            stage,
             "--base-dir",
-            str(tmp_path / "base"),
+            str(tmp_path),
             "--run-id",
             run_id,
         ],
         github=github,
         repository=repository,
         base_repository=FakeRepository(),
-        curation_validator=lambda **_kwargs: (_ for _ in ()).throw(
-            MaintainerError(ErrorReason.VALIDATION_FAILED, ErrorStage.VALIDATE)
+        delta_validator=lambda **_kwargs: _delta_validation_result().model_copy(
+            update={"remediation_head": head}
         ),
     )
 
-    assert code == 2
-    assert payload["reason"] == "validation-failed"
-    continuation = StateStore(state_dir).load_continuation("curation-pr-42")
-    assert continuation is not None
-    assert continuation.status is ContinuationStatus.AVAILABLE
-    assert continuation.validation_status is ContinuationValidationStatus.FAILED
 
-
-def test_failed_validation_can_replay_onto_advanced_main_for_fresh_review(
+def test_checkpoint_curation_completes_delta_review_and_idempotent_retry(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    _checkpoint_reviewed(capsys, state_dir, origin_run, github, repository)
-    _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "validate",
-            "curation",
-            "--pr",
-            "42",
-            "--reviewed-head",
-            SHA_B,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path / "base"),
-            "--run-id",
-            origin_run,
-        ],
-        github=github,
-        repository=repository,
-        base_repository=FakeRepository(),
-        curation_validator=lambda **_kwargs: (_ for _ in ()).throw(
-            MaintainerError(ErrorReason.VALIDATION_FAILED, ErrorStage.VALIDATE)
-        ),
-    )
-    RunLease.load_owner(state_dir, "curation", origin_run).release()
-    successor = _acquire(capsys, state_dir, "curation")
-    repository.continuation_result = "prepared"
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
 
-    code, payload = _invoke(
+    delta_code, delta = _checkpoint_curation_generation(
         capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "prepare",
-            "continuation",
-            "--pr",
-            "42",
-            "--run-id",
-            successor,
-        ],
-        github=github,
-        repository=repository,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+    )
+    review_code, reviewed = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="reviewed",
+    )
+    retry_code, retry = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="reviewed",
+    )
+
+    assert delta_code == review_code == retry_code == 0
+    assert delta["generation"]["result"] == "completed"
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    assert delta["generation"]["next_action"] == {
+        "recipe_id": "checkpoint_curation_reviewed",
+        "substitutions": {
+            "pr": 42,
+            "generation_id": generation.generation_id,
+            "head": SHA_B,
+            "report": "docs/catalog-curation/nendaz.json",
+            "validation_base": SHA_D,
+            "continue_conflict": False,
+        },
+    }
+    assert reviewed["generation"]["result"] == "completed"
+    expected_validation_action = {
+        "recipe_id": "validate_curation",
+        "substitutions": {
+            "pr": 42,
+            "generation_id": generation.generation_id,
+            "head": SHA_B,
+            "report": "docs/catalog-curation/nendaz.json",
+            "validation_base": SHA_D,
+            "continue_conflict": False,
+        },
+    }
+    assert reviewed["generation"]["next_action"] == expected_validation_action
+    assert retry["generation"]["result"] == "already-completed"
+    assert retry["generation"]["next_action"] == expected_validation_action
+    projection = project_generation(generation)
+    assert projection.latest_stage is CurationCheckpointStage.REVIEWED
+    assert projection.reviewed_authority is not None
+
+
+def test_checkpoint_curation_new_delta_supersedes_reviewed_authority(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="reviewed",
+    )
+    repository.head = SHA_C
+
+    code, payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+        head=SHA_C,
     )
 
     assert code == 0, payload
-    assert payload["continuation"]["result"] == "review-required"
-    continuation = StateStore(state_dir).load_continuation("curation-pr-42")
-    assert continuation is not None
-    assert continuation.status is ContinuationStatus.RESOLVING
-    assert continuation.validation_status is ContinuationValidationStatus.NOT_RUN
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    projection = project_generation(generation)
+    assert projection.latest_head == SHA_C
+    assert projection.latest_stage is CurationCheckpointStage.DELTA_VALIDATED
+    assert projection.reviewed_authority is None
 
 
-def test_legacy_reviewed_work_can_be_adopted_only_by_successor_lease(
+def test_checkpoint_curation_resumes_after_started_event(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     github = FakeGitHub()
-    repository = FakeRepository(github=github)
-    origin_run = _prepare_curation(capsys, state_dir, github, repository)
-    store = StateStore(state_dir)
-    lease = RunLease.load_owner(state_dir, "curation", origin_run)
-    prepared = store.load_work("curation-pr-42")
-    assert prepared is not None
-    store.save_work(
-        prepared.model_copy(
-            update={
-                "phase": WorkPhase.REVIEWED,
-                "reviewed_head": SHA_B,
-                "updated_at": NOW + timedelta(seconds=1),
-            }
-        ),
-        lease,
+    repository = FakeRepository(
+        curation_checkpoint_error=RepositorySafetyError("interrupted")
     )
-    lease.release()
-    successor = _acquire(capsys, state_dir, "curation")
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
 
-    _checkpoint_reviewed(
+    first_code, first = _checkpoint_curation_generation(
         capsys,
+        tmp_path,
         state_dir,
-        successor,
+        run_id,
         github,
         repository,
-        adopt_existing=True,
+        stage="delta-validated",
+    )
+    repository.curation_checkpoint_error = None
+    retry_code, retry = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
     )
 
-    continuation = store.load_continuation("curation-pr-42")
-    assert continuation is not None
-    assert continuation.origin_run_id == origin_run
-    assert continuation.recovery_run_id == successor
+    assert first_code == 2
+    assert first["reason"] == "unsafe-repository"
+    assert first["outcome"]["mutation_occurred"] is True
+    assert retry_code == 0, retry
+    assert retry["generation"]["result"] == "completed"
+
+
+def test_checkpoint_curation_incomplete_transaction_fences_different_request(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(
+        curation_checkpoint_error=RepositorySafetyError("interrupted")
+    )
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+    )
+
+    code, payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="reviewed",
+    )
+
+    assert code == 2
+    assert payload["reason"] == "local-recovery-required"
+    assert payload["retryable"] is True
+    assert payload["next_action"]["recipe_id"] == "checkpoint_curation_delta"
 
 
 @pytest.mark.parametrize(
@@ -6581,6 +5603,36 @@ def _prepare_curation(
     return run_id
 
 
+def _validate_curation_command(
+    state_dir: Path,
+    run_id: str,
+    *,
+    head: str = SHA_B,
+    report: str = "docs/catalog-curation/nendaz.json",
+    base_dir: Path | None = None,
+) -> list[str]:
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    return [
+        "--state-dir",
+        str(state_dir),
+        "validate",
+        "curation",
+        "--pr",
+        "42",
+        "--generation-id",
+        generation.generation_id,
+        "--head",
+        head,
+        "--report",
+        report,
+        "--base-dir",
+        str(base_dir or state_dir.parent / "base"),
+        "--run-id",
+        run_id,
+    ]
+
+
 def test_validate_curation_binds_reviewed_head_and_objective_result(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -6590,6 +5642,11 @@ def test_validate_curation_binds_reviewed_head_and_objective_result(
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
     _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    reviewed = project_generation(generation).reviewed_authority
+    assert reviewed is not None
+    assert reviewed.reviewed_head == SHA_B
     observed: dict[str, object] = {}
 
     def validator(**kwargs: object) -> ValidationResult:
@@ -6598,29 +5655,15 @@ def test_validate_curation_binds_reviewed_head_and_objective_result(
 
     code, payload = _invoke(
         capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "validate",
-            "curation",
-            "--pr",
-            "42",
-            "--reviewed-head",
-            SHA_B,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path / "base"),
-            "--run-id",
-            run_id,
-        ],
+        _validate_curation_command(state_dir, run_id, base_dir=tmp_path / "base"),
         github=github,
         repository=repository,
         base_repository=FakeRepository(),
         curation_validator=validator,
     )
 
-    assert code == 0
+    assert observed.get("reviewed_head") == SHA_B, (payload, observed)
+    assert code == 0, payload
     assert observed["sync"] == _sync()
     work = StateStore(state_dir).load_work("curation-pr-42")
     assert work is not None and work.phase is WorkPhase.VALIDATED
@@ -6644,22 +5687,11 @@ def test_validate_curation_exact_retry_returns_existing_receipt(
         validator_calls += 1
         return _validation_result()
 
-    command = [
-        "--state-dir",
-        str(state_dir),
-        "validate",
-        "curation",
-        "--pr",
-        "42",
-        "--reviewed-head",
-        SHA_B,
-        "--report",
-        "docs/catalog-curation/nendaz.json",
-        "--base-dir",
-        str(tmp_path / "base"),
-        "--run-id",
+    command = _validate_curation_command(
+        state_dir,
         run_id,
-    ]
+        base_dir=tmp_path / "base",
+    )
     first_code, _first_payload = _invoke(
         capsys,
         command,
@@ -6703,22 +5735,7 @@ def test_validate_curation_retry_rejects_a_different_report(
     _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
     first_code, _first_payload = _invoke(
         capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "validate",
-            "curation",
-            "--pr",
-            "42",
-            "--reviewed-head",
-            SHA_B,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path / "base"),
-            "--run-id",
-            run_id,
-        ],
+        _validate_curation_command(state_dir, run_id, base_dir=tmp_path / "base"),
         github=github,
         repository=repository,
         base_repository=FakeRepository(),
@@ -6726,22 +5743,12 @@ def test_validate_curation_retry_rejects_a_different_report(
     )
     retry_code, retry_payload = _invoke(
         capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "validate",
-            "curation",
-            "--pr",
-            "42",
-            "--reviewed-head",
-            SHA_B,
-            "--report",
-            "docs/catalog-curation/other.json",
-            "--base-dir",
-            str(tmp_path / "base"),
-            "--run-id",
+        _validate_curation_command(
+            state_dir,
             run_id,
-        ],
+            report="docs/catalog-curation/other.json",
+            base_dir=tmp_path / "base",
+        ),
         github=github,
         repository=repository,
         base_repository=FakeRepository(),
@@ -6750,7 +5757,7 @@ def test_validate_curation_retry_rejects_a_different_report(
 
     assert first_code == 0
     assert retry_code == 2
-    assert retry_payload["reason"] == "invalid-command"
+    assert retry_payload["reason"] == "checkpoint-conflict"
     assert retry_payload["stage"] == "validate"
 
 
@@ -6763,22 +5770,11 @@ def test_validate_curation_retry_rejects_a_changed_validation_base(
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
     _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
-    command = [
-        "--state-dir",
-        str(state_dir),
-        "validate",
-        "curation",
-        "--pr",
-        "42",
-        "--reviewed-head",
-        SHA_B,
-        "--report",
-        "docs/catalog-curation/nendaz.json",
-        "--base-dir",
-        str(tmp_path / "base"),
-        "--run-id",
+    command = _validate_curation_command(
+        state_dir,
         run_id,
-    ]
+        base_dir=tmp_path / "base",
+    )
     first_code, _first_payload = _invoke(
         capsys,
         command,
@@ -6824,22 +5820,7 @@ def test_validate_failure_exposes_only_allowlisted_check_and_kind(
 
     code, payload = _invoke(
         capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "validate",
-            "curation",
-            "--pr",
-            "42",
-            "--reviewed-head",
-            SHA_B,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(tmp_path / "base"),
-            "--run-id",
-            run_id,
-        ],
+        _validate_curation_command(state_dir, run_id, base_dir=tmp_path / "base"),
         github=github,
         repository=repository,
         base_repository=FakeRepository(),
@@ -7093,27 +6074,16 @@ def _validated_curation(
     )
     code, _payload = _invoke(
         capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "validate",
-            "curation",
-            "--pr",
-            "42",
-            "--reviewed-head",
-            SHA_B,
-            "--report",
-            "docs/catalog-curation/nendaz.json",
-            "--base-dir",
-            str(state_dir.parent / "base"),
-            "--run-id",
-            run_id,
-        ],
+        _validate_curation_command(state_dir, run_id),
         github=github,
         repository=repository,
         base_repository=FakeRepository(),
         curation_validator=lambda **kwargs: _validation_result().model_copy(
-            update={"resulting_graph_markdown": resulting_graph_markdown}
+            update={
+                "resulting_graph_markdown": (
+                    resulting_graph_markdown or CANONICAL_GRAPH
+                )
+            }
         ),
     )
     assert code == 0
@@ -7131,6 +6101,35 @@ def _checkpoint_reviewed(
     adopt_existing: bool = False,
     expect_success: bool = True,
 ) -> tuple[int, dict[str, object]]:
+    if not adopt_existing:
+        generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+        assert generation is not None
+        if project_generation(generation).latest_head != reviewed_head:
+            delta = _checkpoint_curation_generation(
+                capsys,
+                state_dir.parent,
+                state_dir,
+                run_id,
+                github,
+                repository,
+                stage="delta-validated",
+                head=reviewed_head,
+            )
+            if delta[0] != 0:
+                return delta
+        result = _checkpoint_curation_generation(
+            capsys,
+            state_dir.parent,
+            state_dir,
+            run_id,
+            github,
+            repository,
+            stage="reviewed",
+            head=reviewed_head,
+        )
+        if expect_success:
+            assert result[0] == 0, result[1]
+        return result
     arguments = [
         "--state-dir",
         str(state_dir),
@@ -7437,7 +6436,7 @@ def test_publish_manual_check_revalidation_failure_prevents_push_authorization(
     )
 
     assert code == 2
-    assert payload["reason"] == "invalid-command"
+    assert payload["reason"] == "unsafe-repository"
     assert repository.push_calls == 0
     assert StateStore(state_dir).load_push("curation-pr-42") is None
     work = StateStore(state_dir).load_work("curation-pr-42")
@@ -8094,11 +7093,11 @@ def test_publish_push_journals_before_exact_force_with_lease_mutation(
     assert repository.push_calls == 1
     journal = StateStore(state_dir).load_push("curation-pr-42")
     work = StateStore(state_dir).load_work("curation-pr-42")
-    continuation = StateStore(state_dir).load_continuation("curation-pr-42")
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
     assert journal is not None and journal.phase is PushPhase.PUSHED
     assert work is not None and work.phase is WorkPhase.PUSHED
-    assert continuation is not None
-    assert continuation.status is ContinuationStatus.CONSUMED
+    assert generation is not None
+    assert project_generation(generation).latest_stage == "consumed"
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
 
 
@@ -8271,7 +7270,6 @@ def test_terminal_ci_generation_can_start_a_new_validated_push_generation(
     assert release_code == 0
 
     second_run = _acquire(capsys, state_dir, "curation")
-    cycle_time = NOW + timedelta(hours=1)
     sync = GuardedSyncResult(
         target_branch=BRANCH,
         original_head=SHA_B,
@@ -8286,78 +7284,46 @@ def test_terminal_ci_generation_can_start_a_new_validated_push_generation(
         merge_base=SHA_A,
     )
     store = StateStore(state_dir)
-    selected = WorkState(
-        work_id="curation-pr-42",
-        worker="curation",
-        run_id=second_run,
-        phase=WorkPhase.SELECTED,
-        updated_at=cycle_time,
-        pr_number=42,
-        selected_head=SHA_B,
-    )
-    store.begin_work(selected, RunLease.load_owner(state_dir, "curation", second_run))
-    prepared = selected.model_copy(
-        update={
-            "phase": WorkPhase.PREPARED,
-            "updated_at": cycle_time + timedelta(seconds=1),
-            "prepared_head": SHA_C,
-            "backup_ref": sync.backup_ref,
-            "sync": sync,
-        }
-    )
-    lease = RunLease.load_owner(state_dir, "curation", second_run)
-    store.save_work(prepared, lease)
-    reviewed = prepared.model_copy(
-        update={
-            "phase": WorkPhase.REVIEWED,
-            "updated_at": cycle_time + timedelta(seconds=2),
-            "reviewed_head": SHA_C,
-        }
-    )
-    store.save_work(reviewed, lease)
-    validated = reviewed.model_copy(
-        update={
-            "phase": WorkPhase.VALIDATED,
-            "updated_at": cycle_time + timedelta(seconds=3),
-            "validated_head": SHA_C,
-            "report_path": "docs/catalog-curation/nendaz.json",
-            "resulting_graph_markdown": CANONICAL_GRAPH,
-        }
-    )
-    store.save_work(validated, lease)
-    continuation = ReviewedContinuation(
-        work_id="curation-pr-42",
-        origin_run_id=second_run,
-        recovery_run_id=second_run,
-        updated_at=cycle_time + timedelta(seconds=4),
-        pr_number=42,
-        selected_head=SHA_B,
-        reviewed_head=SHA_C,
-        report_path="docs/catalog-curation/nendaz.json",
-        sync=sync,
-        reviewed_ref=(
-            f"refs/snowcast-maintainer/reviewed/pr-42/{SHA_B[:12]}-{SHA_C[:12]}"
-        ),
-        squash_ref=(
-            f"refs/snowcast-maintainer/continuations/pr-42/{SHA_D[:12]}-{SHA_C[:12]}"
-        ),
-        status=ContinuationStatus.AVAILABLE,
-        validation_status=ContinuationValidationStatus.NOT_RUN,
-    )
-    store.save_continuation(continuation, lease)
-    store.save_continuation(
-        continuation.model_copy(
-            update={
-                "updated_at": cycle_time + timedelta(seconds=5),
-                "status": ContinuationStatus.VALIDATED,
-                "validation_status": ContinuationValidationStatus.PASSED,
-            }
-        ),
-        lease,
-    )
     repository.prepared = sync
-    repository.head = SHA_C
     repository.remote = SHA_B
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"labels": frozenset({"lane:catalog-curation"})}
+    )
+    prepare_code, prepare_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            second_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert prepare_code == 0, prepare_payload
+    _checkpoint_reviewed(
+        capsys,
+        state_dir,
+        second_run,
+        github,
+        repository,
+        reviewed_head=SHA_C,
+    )
+    validate_code, validate_payload = _invoke(
+        capsys,
+        _validate_curation_command(state_dir, second_run, head=SHA_C),
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(head=SHA_D),
+        curation_validator=lambda **_kwargs: _validation_result().model_copy(
+            update={"validated_head": SHA_C}
+        ),
+    )
+    assert validate_code == 0, validate_payload
 
     second_push, payload = _invoke(
         capsys,
@@ -9151,7 +8117,7 @@ def test_publish_state_ready_adopts_legacy_body_with_explicit_permission(
     body = _private_text(
         state_dir,
         "body.md",
-        "## Snowcast catalog review\n\nCurrent concise synopsis.",
+        f"## Snowcast catalog review\n\nCurrent concise synopsis.\n\n{CANONICAL_GRAPH}",
     )
 
     code, payload = _invoke(
@@ -9419,7 +8385,11 @@ def test_publish_state_ready_stops_for_pending_ci_without_mutation(
         update={"check_state": "pending"}
     )
     summary = _private_text(state_dir, "summary.md", "Checks pending.")
-    body = _private_text(state_dir, "body.md", "Current review synopsis.")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"Current review synopsis.\n\n{CANONICAL_GRAPH}",
+    )
 
     code, payload = _invoke(
         capsys,
@@ -10247,7 +9217,11 @@ def test_publish_state_rejects_stale_work_from_prior_run(
     assert release_code == 0
     successor = _acquire(capsys, state_dir, "curation")
     summary = _private_text(state_dir, "summary.md", "Ready.")
-    body = _private_text(state_dir, "body.md", "Current review synopsis.")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"Current review synopsis.\n\n{CANONICAL_GRAPH}",
+    )
 
     code, payload = _invoke(
         capsys,
@@ -10339,7 +9313,11 @@ def test_adopted_pushed_journal_authorizes_successor_state_publication(
         "validation_status": "validated",
     }
     summary = _private_text(state_dir, "summary.md", "Ready.")
-    body = _private_text(state_dir, "body.md", "Recovered review synopsis.")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"Recovered review synopsis.\n\n{CANONICAL_GRAPH}",
+    )
 
     code, payload = _invoke(
         capsys,
@@ -10396,7 +9374,11 @@ def test_publish_state_idempotent_retry_reports_no_mutation(
     )
     assert push_code == 0
     summary = _private_text(state_dir, "summary.md", "Ready for owner merge.")
-    body = _private_text(state_dir, "body.md", "Current review synopsis.")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        f"Current review synopsis.\n\n{CANONICAL_GRAPH}",
+    )
     command = [
         "--state-dir",
         str(state_dir),

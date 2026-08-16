@@ -5,6 +5,8 @@ import unicodedata
 from dataclasses import dataclass
 from enum import StrEnum
 
+from ops.maintainer.curation_state import CurationNextAction
+
 
 class ErrorReason(StrEnum):
     INVALID_COMMAND = "invalid-command"
@@ -16,6 +18,12 @@ class ErrorReason(StrEnum):
     REBASE_CONFLICT = "rebase-conflict"
     INTENT_DRIFT = "intent-drift"
     CONTINUATION_REQUIRED = "continuation-required"
+    STALE_BASE = "stale-base"
+    LEASE_CONFLICT = "lease-conflict"
+    CHECKPOINT_CONFLICT = "checkpoint-conflict"
+    LOCAL_RECOVERY_REQUIRED = "local-recovery-required"
+    UNSAFE_REPOSITORY = "unsafe-repository"
+    STATE_MIGRATION_REQUIRED = "state-migration-required"
     VALIDATION_FAILED = "validation-failed"
     VALIDATION_REQUIRED = "validation-required"
     PROPOSAL_CAP = "proposal-cap"
@@ -121,18 +129,29 @@ class MaintainerError(Exception):
     check: ErrorCheck | None = None
     kind: ErrorKind | None = None
     detail: str | None = None
+    retryable: bool = False
+    next_action: CurationNextAction | None = None
 
     def __post_init__(self) -> None:
         _require_enum("reason", self.reason, ErrorReason)
         _require_enum("stage", self.stage, ErrorStage)
         _require_optional_enum("check", self.check, ErrorCheck)
         _require_optional_enum("kind", self.kind, ErrorKind)
+        if type(self.retryable) is not bool:
+            raise TypeError("retryable must be a bool")
+        if self.next_action is not None and not isinstance(
+            self.next_action,
+            CurationNextAction,
+        ):
+            raise TypeError("next_action must be a CurationNextAction instance")
+        if self.next_action is not None and not self.retryable:
+            raise ValueError("next_action requires a retryable error")
         if self.detail is not None:
             validate_safe_detail(self.detail)
         Exception.__init__(self, self.reason.value, self.stage.value)
 
-    def payload(self) -> dict[str, str]:
-        payload = {
+    def payload(self) -> dict[str, object]:
+        payload: dict[str, object] = {
             "status": "error",
             "reason": self.reason.value,
             "stage": self.stage.value,
@@ -143,10 +162,17 @@ class MaintainerError(Exception):
             payload["kind"] = self.kind.value
         if self.detail is not None:
             payload["detail"] = self.detail
+        if self.retryable:
+            payload["retryable"] = True
+        if self.next_action is not None:
+            payload["next_action"] = self.next_action.model_dump(
+                mode="json",
+                exclude_none=True,
+            )
         return payload
 
 
-def error_payload(error: BaseException) -> dict[str, str]:
+def error_payload(error: BaseException) -> dict[str, object]:
     if isinstance(error, MaintainerError):
         return error.payload()
     return {

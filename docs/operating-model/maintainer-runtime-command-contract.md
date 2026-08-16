@@ -45,11 +45,15 @@ not have to derive an invocation.
   "recipes": {
     "inspect_curation": {
       "argv": ["inspect", "curation"],
-      "returns": ["eligible", "terminal_publications", "ci_continuations", "reviewed_continuations", "remediation_continuations", "unresolved_pushes"]
+      "returns": ["eligible", "terminal_publications", "ci_continuations", "generations", "unresolved_pushes"]
     },
     "inspect_discovery": {
       "argv": ["inspect", "discovery"],
       "returns": ["catalog_keys", "open_proposal_count", "can_create_proposal", "unresolved_pushes"]
+    },
+    "migrate_curation_state": {
+      "argv": ["migrate", "curation-state", "--archive-legacy"],
+      "returns": ["migration", "next_action"]
     },
     "lock_acquire_curation": {
       "argv": ["lock", "acquire", "curation"],
@@ -98,15 +102,11 @@ not have to derive an invocation.
     },
     "prepare_curation": {
       "argv": ["prepare", "curation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "prepared"]
+      "returns": ["work_id", "generation"]
     },
-    "prepare_continuation": {
-      "argv": ["prepare", "continuation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "continuation"]
-    },
-    "prepare_continuation_conflict": {
-      "argv": ["prepare", "continuation", "--pr", "${PR}", "--continue-conflict", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "continuation"]
+    "prepare_curation_conflict": {
+      "argv": ["prepare", "curation", "--pr", "${PR}", "--continue-conflict", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation"]
     },
     "prepare_ci_repair": {
       "argv": ["prepare", "ci-repair", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
@@ -120,25 +120,21 @@ not have to derive an invocation.
       "argv": ["invalidate", "ci-continuation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "pr_number", "phase", "availability_reason", "continuation_head", "observed_head"]
     },
-    "checkpoint_remediation": {
-      "argv": ["checkpoint", "remediation", "--pr", "${PR}", "--head", "${HEAD}", "--report", "${REPORT}", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
-      "returns": ["continuation"]
+    "checkpoint_curation_delta": {
+      "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "delta-validated", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation"]
+    },
+    "checkpoint_curation_reviewed": {
+      "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "reviewed", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation"]
     },
     "checkpoint_ci_repair": {
       "argv": ["checkpoint", "ci-repair", "--pr", "${PR}", "--head", "${HEAD}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "repair_head", "repair_ref", "repair_paths"]
     },
     "validate_curation": {
-      "argv": ["validate", "curation", "--pr", "${PR}", "--reviewed-head", "${REVIEWED_HEAD}", "--report", "${REPORT}", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "validation"]
-    },
-    "validate_reviewed": {
-      "argv": ["validate", "reviewed", "--pr", "${PR}", "--reviewed-head", "${REVIEWED_HEAD}", "--report", "${REPORT}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "continuation"]
-    },
-    "validate_reviewed_adopt_existing": {
-      "argv": ["validate", "reviewed", "--pr", "${PR}", "--reviewed-head", "${REVIEWED_HEAD}", "--report", "${REPORT}", "--adopt-existing", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "continuation"]
+      "argv": ["validate", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation", "validation"]
     },
     "validate_proposal": {
       "argv": ["validate", "proposal", "--candidate-key", "${CANDIDATE_KEY}", "--candidate-origin", "${CANDIDATE_ORIGIN}", "--base", "${BASE}", "--head", "${HEAD}", "--run-id", "${RUN_ID}"],
@@ -218,20 +214,12 @@ not have to derive an invocation.
       "lock_heartbeat_curation",
       "lock_release_curation"
     ],
-    "curation_reviewed_continuation_through_prepare": [
+    "curation_generation_through_prepare": [
       "inspect_curation",
       "inspect_discovery",
       "lock_acquire_curation",
       "lock_heartbeat_curation",
-      "prepare_continuation",
-      "lock_heartbeat_curation"
-    ],
-    "curation_remediation_continuation_through_prepare": [
-      "inspect_curation",
-      "inspect_discovery",
-      "lock_acquire_curation",
-      "lock_heartbeat_curation",
-      "prepare_continuation",
+      "prepare_curation",
       "lock_heartbeat_curation"
     ],
     "curation_ordinary_pr_through_prepare": [
@@ -319,7 +307,7 @@ not have to derive an invocation.
     "unconditional_waiting_ci_fallback": false
   },
   "ci_continuation_policy": {
-    "recovery_priority": ["terminal_publication", "push_journal", "post_push_ci_continuation", "reviewed_continuation", "remediation_continuation", "ordinary_pr"],
+    "recovery_priority": ["terminal_publication", "push_journal", "post_push_ci_continuation", "curation_generation", "ordinary_pr"],
     "first_wait_seconds": 1800,
     "repair_active_seconds": 3600,
     "second_wait_seconds": 1800,
@@ -368,6 +356,8 @@ not have to derive an invocation.
 - `${PR}`, heads, report path, work ID, candidate identity, and branch come
   from the current helper inventory or the result of the immediately preceding
   helper capability.
+- `${GENERATION_ID}` is copied exactly from the current curation generation or
+  its helper-returned `next_action`; it is never synthesized from prose.
 - `${BASE_DIR}` is a caller-created detached clean checkout whose `HEAD`
   exactly equals the prepare-time `base_head`.
 - `${TITLE_FILE}`, `${BODY_FILE}`, and `${SUMMARY_FILE}` are basenames returned
@@ -379,17 +369,16 @@ not have to derive an invocation.
 
 | Completed recipe | Only allowed next step |
 | --- | --- |
-| `inspect_curation` | recover one terminal publication first, then one push journal; otherwise select one CI continuation, reviewed continuation, remediation continuation, ordinary curation PR, or bounded no-op in that order |
+| `inspect_curation` | recover one terminal publication first, then one push journal; otherwise select one CI continuation, current curation generation, ordinary curation PR, or bounded no-op in that order |
 | `inspect_discovery` | recover one journal first; otherwise select preferred retry, merged regional completion, active backlog, bounded external official-source scan, or bounded no-op in that order |
+| `migrate_curation_state` | run `inspect_curation`; migration is an owner activation action and never enters a semantic cycle directly |
 | `lock_acquire_*` | copy `run_id`, heartbeat, then run the selected worker capability |
 | `lock_heartbeat_*` | continue the already selected sequence; curation may also return helper-owned cumulative `ci_budget`, but heartbeat grants no new authority |
-| `prepare_curation` | normalize/review the exact returned prepared head |
-| `prepare_continuation*` | obey only the returned continuation kind/result |
+| `prepare_curation*` | obey the returned generation result and its typed `next_action`; normalize/review only the exact returned head |
 | `prepare_ci_repair` | branch on its phase: `repair-active` re-establishes the exact repair worktree for one static test-only repair plus a fresh focused independent review; `repair-reviewed` revalidates and returns the immutable reviewed checkpoint for publication |
 | `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
-| `checkpoint_remediation` | fresh exact-head review, another bounded fix, or safe stop |
+| `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
-| `validate_reviewed*` | final deterministic validation or an allowed reviewed-only handoff |
 | `validate_curation` | `publish_push` for the exact validated work |
 | `validate_proposal` | create publication inputs, then `publish_proposal` |
 | `publication_input_*` | pass that basename only to its selected publication recipe |
@@ -453,17 +442,16 @@ including both bounded CI waits:
   canonical Resulting Graph in the body. An absent, unknown, or mismatched
   continuation stops and releases. Never select fresh work;
 - after recovery, selection priority is exactly `terminal publication -> push
-  journal -> post-push CI continuation -> reviewed continuation -> remediation
-  continuation -> ordinary PR`. A pending CI continuation resumes before
+  journal -> post-push CI continuation -> current curation generation ->
+  ordinary PR`. A pending CI continuation resumes before
   ordinary PR selection;
 - every `prepare ci-repair`, `checkpoint ci-repair`, `publish ci-repair`, and
   `invalidate ci-continuation` request rejects any unresolved terminal
   publication before changing continuation state or a worktree. It also
   rejects any unresolved push journal. Only exact `publish recover` may proceed
   while either recovery authority exists;
-- reviewed and remediation continuations use the same helper command, then
-  branch only on the returned `continuation.kind` and `continuation.result`;
-- an ordinary PR uses `prepare curation`, never `prepare continuation`;
+- current generations and ordinary PRs both use `prepare curation`, then obey
+  only the returned generation result and typed `next_action`;
 - same-run first-wait and second-wait polling uses the already-held lease and
   composes `lock_heartbeat_curation -> inspect_curation ->
   lock_heartbeat_curation` before every branch; it never reacquires. A

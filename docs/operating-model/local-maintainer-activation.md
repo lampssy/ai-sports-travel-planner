@@ -59,10 +59,14 @@ mismatch that cannot be resolved from the concise runtime source set.
    contract while schedules remain paused. Remove candidate- or PR-specific
    migration wording; keep model, working directory, cadence, proposal cap,
    labels, and configured active-state defaults unchanged.
-5. Inspect the exact installed artifacts, then run read-only smoke checks:
+5. Inspect the exact installed artifacts. Confirm there is no active lease,
+   unresolved push journal, active post-push CI continuation, or unresolved
+   terminal publication. Run `migrate curation-state --archive-legacy` once,
+   retain its private archive summary, then run read-only smoke checks:
    - verify `codex login status` without exposing credentials;
    - verify the project-scoped GitHub profile is the active `lampssy` account;
-   - run `inspect curation` and `inspect discovery` against merged code;
+   - run `inspect curation` and `inspect discovery` against merged code after
+     migration and require no `state-migration-required` result;
    - confirm inspection does not create a missing state directory or mutate
      GitHub;
    - verify adversarial PR, backlog, source-page, and finding-ledger text cannot
@@ -81,7 +85,7 @@ mismatch that cannot be resolved from the concise runtime source set.
    disposition rule. On any mismatch, keep both schedules paused as
    contract-mismatch.
 8. Run disabled/manual curation and discovery smoke cycles. Confirm curation can
-   distinguish post-push CI, reviewed, remediation, and ordinary recovery, and
+   distinguish post-push CI, one current generation, and ordinary recovery, and
    discovery uses regional backlog work before external scanning without
    changing GitHub unless the helper authorizes the exact mutation.
 9. Run post-merge AI/LLM reliability, security/privacy,
@@ -117,8 +121,8 @@ The installed skill must:
   fresh selection; recover exactly one matching authority first and escalate
   multiple records;
 - use curation recovery priority `terminal publication -> push journal ->
-  post-push CI continuation -> reviewed continuation -> remediation
-  continuation -> ordinary PR`, never skipping exact private recovery in favor
+  post-push CI continuation -> current curation generation -> ordinary PR`,
+  never skipping exact private recovery in favor
   of a fresh semantic cycle. Terminal-publication recovery wins before
   push-journal recovery, and a pending CI continuation resumes before any
   ordinary PR. A successor enters that continuation through
@@ -145,12 +149,10 @@ The installed skill must:
   chunks, and parse helper JSON only after completion instead of retrying a
   still-running mutation;
 - inspect and choose at most one safe curation PR;
-- prefer an exact resumable reviewed continuation for the selected PR, then an
-  exact resumable remediation continuation, over an automation-memory-only
-  unpublished follow-up; an unresolved push journal still has global priority;
-- treat remediation as recovery authority only. Resume it through the helper,
-  require one fresh bounded independent review, and never infer review,
-  validation, publication, or readiness from its delta checkpoint;
+- prefer the exact current curation generation for the selected PR over an
+  automation-memory-only unpublished follow-up; an unresolved push journal
+  still has global priority. Resume only the helper-returned recipe and never
+  infer review, validation, publication, or readiness from a delta checkpoint;
 - read curation automation memory using `CODEX_HOME` or the `$HOME/.codex`
   fallback, revalidate any unpublished-follow-up PR/head against helper
   inspection, and prioritize the oldest still-exact eligible follow-up before
@@ -231,8 +233,8 @@ The installed skill must:
   every scope assessment; each `regional_followup` must point to an exact
   heading that exists in the exact-head product backlog. The helper checks only
   anchor existence, never backlog meaning, priority, or status;
-- after each remediation, call the helper's `checkpoint remediation` capability
-  once. That single invocation runs bounded catalog/trust validation plus exact
+- after each remediation, call `checkpoint_curation_delta` once. That single
+  invocation runs bounded catalog/trust validation plus exact
   reconciliation and persists the exact-head evidence; reserve the fixed broad
   catalog suite for one final helper validation after review;
 - for that final broad suite, execute only the clean exact-base uv project,
@@ -380,36 +382,34 @@ The installed skill must:
   incomplete review through the bounded inventory-completion phase before
   status-only `blocked/review-incomplete`, and reserve `owner-decision` for a
   real owner/model choice;
-- after every final exact-head independent review, call `validate reviewed`
-  with the PR, reviewed head, and its single curation report before running
-  deterministic validation or requesting manual-check publication;
+- after every final exact-head independent review, call the helper-returned
+  `checkpoint_curation_reviewed` recipe with the exact generation, head,
+  report, and prepare-time base; then call `validate_curation` only when the
+  generation's typed next action authorizes it;
 - verify every final report URL for reachability and semantically recheck all
   changed, graph-critical, and high-impact sources. Initial inventory checks
   relevance and claim support for every source; remediation rechecks only
   changed or claim-affected URLs. Any cache is keyed by exact head, URL, and
   claim context, remains run-local, and is never persisted as helper or
   cross-run authority;
-- resume a checkpoint only through `prepare continuation`: `validation-only`
-  reruns the missing deterministic/finalization gates without semantic review,
-  while `review-required` receives exactly one fresh independent full review
-  before a new `validate reviewed` checkpoint;
-- treat `prepared.base_head` from ordinary preparation or
-  `continuation.base_head` from continuation preparation as the sole
-  comparison-base authority for that work. Before `checkpoint remediation` or
+- resume only through the current generation's helper-returned typed
+  `next_action`. A validation-only generation reruns deterministic/finalization
+  gates without semantic review; a review-required generation receives exactly
+  one fresh independent full review before a reviewed checkpoint;
+- treat the generation's `base_head` from `prepare curation` as the sole
+  comparison-base authority for that work. Before `checkpoint curation` or
   `validate curation`, create a separate detached clean checkout at that exact
   commit, verify its `HEAD`, pass its path as `--base-dir`, and remove only that
   caller-created checkout during cleanup. The current remediation/review
   worktree and current `origin/main` are not valid substitutes;
-- when a replayed reviewed continuation produces a newer remediation checkpoint,
-  preserve the reviewed origin authority, expose the newer remediation instead
-  of its resolving predecessor, and replace that predecessor only after an
-  exact-head fresh review. A legacy pair created before this rule may be adopted
-  only when its recovery run, selected PR head, branch, report, and replay
-  lineage match exactly;
-- when continuation preparation returns `conflict-resolution-required`, edit
+- when a replayed generation produces a newer delta-validated checkpoint,
+  expose that checkpoint as current and require a fresh reviewed checkpoint
+  before final validation; archived legacy pairs are diagnostic only and can
+  never be adopted;
+- when generation preparation returns `conflict-resolution-required`, edit
   only the helper-returned catalog/report/backlog/focused-test paths through
   `snowcast-catalog-curation` in `maintainer-managed` mode, call
-  `prepare continuation --continue-conflict`, and then run exactly one fresh
+  the registered `prepare_curation_conflict` recipe, and then run exactly one fresh
   independent full review; stop on remote drift, a disallowed or unrelated
   path, a repeated conflict, missing checkpoint refs, or unsafe Git state;
 - treat the push journal as the sole recovery authority after the helper
@@ -422,7 +422,7 @@ The installed skill must:
   active residual or repeat, regression, incomplete inventory, incomplete
   review, or unsafe scope remains status-only blocked;
 - before any safe terminal status for an unpublished mechanically valid local
-  head, retain its remediation continuation. A blocked or owner-hold label
+  head, retain its current generation checkpoint. A blocked or owner-hold label
   prevents scheduled resumption but does not invalidate the checkpoint;
 - use `publish outcome` for safe PR-specific terminal conflict, CI, deadline,
   non-convergence, validation, review-incomplete, or owner-decision stops; bind
@@ -662,7 +662,7 @@ For each schedule, confirm:
   repeat, any regression, or unsafe scope expansion stops as non-converging;
 - reaching six cycles or the 210-minute new-work cutoff with a mechanically
   valid, scope-safe, exact reviewed head and remaining findings that are only
-  bounded in-model work runs `validate reviewed` and preserves the head through
+  bounded in-model work preserves the exact reviewed generation head through
   `manual-check`; an unsafe, incomplete, or unreviewed head is not pushed;
 - each remediation runs only the two delta commands, and the reviewed final head
   runs the broad validation plus a fresh all-URL reachability sweep and semantic
@@ -690,14 +690,14 @@ For each schedule, confirm:
 
 1. Pause or disable both schedules before any diagnosis.
 2. Preserve the private state directory, owner record, stale-lock archives,
-   work records, reviewed/remediation continuations, post-push CI
+   work records, curation generations, legacy curation archive, post-push CI
    continuations, terminal-publication intents, push journals, and backup refs.
    Do not edit or delete them.
 3. Inspect both inventories and Codex Triage. Recover an irreversible operation
    only through the merged helper; multiple recovery records require owner
    review.
 4. Inventory every open curation and proposal head plus all private journals,
-   reviewed continuations, remediation continuations, and post-push CI
+   curation generations, and post-push CI
    continuations. The CI inventory must identify every `initial-wait`,
    `repair-active`, `repair-reviewed`, and `second-wait` record plus any
    matching unresolved push journal or terminal-publication intent. Before
@@ -724,8 +724,9 @@ For each schedule, confirm:
    older orchestrator while any active CI continuation remains; complete or
    safely terminalize it with the helper version that created or understands it
    first. Do not downgrade across an unresolved terminal-publication intent.
-   Apply the same rule to an active remediation continuation: recover or
-   explicitly invalidate it with the compatible helper first.
+   Once any generation exists after migration, do not restore the archived
+   legacy pre-push state or an older continuation-based helper. Continue with
+   the generation-aware helper or ship a reviewed forward fix.
 7. Revert the repository helper through normal Git history and a reviewed PR.
    Do not use plain `git push --force` and do not execute the superseded Task 10.
 8. Keep schedules disabled until the reverted or corrected merged version has

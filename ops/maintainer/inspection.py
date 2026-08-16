@@ -16,6 +16,12 @@ from pydantic import (
 
 from app.data.catalog_loader import load_catalog_from_path
 from app.domain.catalog import CatalogSnapshot
+from ops.maintainer.curation_state import (
+    CurationGeneration,
+    CurationGenerationProjection,
+    CurationNextAction,
+    project_generation,
+)
 from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
@@ -30,16 +36,10 @@ from ops.maintainer.publication import trusted_hold_head, trusted_machine_state
 from ops.maintainer.state import (
     CiContinuation,
     CiContinuationPhase,
-    ContinuationStatus,
-    ContinuationValidationStatus,
     PushJournal,
     PushPhase,
-    RemediationContinuation,
-    RemediationContinuationStatus,
-    ReviewedContinuation,
     TerminalPublicationIntent,
     TerminalPublicationPhase,
-    remediation_supersedes_reviewed,
 )
 
 _SELECTION_HOLD_LABELS = frozenset(
@@ -133,8 +133,7 @@ class CurationInventory(_InspectionModel):
     terminal_publications: tuple[TerminalPublicationSummary, ...] = ()
     unresolved_pushes: tuple[PushJournalSummary, ...] = ()
     ci_continuations: tuple[CiContinuationSummary, ...] = ()
-    reviewed_continuations: tuple[ReviewedContinuationSummary, ...] = ()
-    remediation_continuations: tuple[RemediationContinuationSummary, ...] = ()
+    generations: tuple[CurationGenerationSummary, ...] = ()
     eligible: tuple[CurationCandidate, ...] = ()
 
 
@@ -170,35 +169,24 @@ class PushJournalSummary(_InspectionModel):
         return self
 
 
-class ReviewedContinuationSummary(_InspectionModel):
+class CurationGenerationSummary(_InspectionModel):
     pr_number: int = Field(gt=0)
+    generation_number: int = Field(gt=0)
+    generation_id: str = Field(pattern=r"^[0-9a-f]{32}$")
     selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
-    reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     base_head: str = Field(pattern=r"^[0-9a-f]{40}$")
-    report_path: str = Field(
-        pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$"
-    )
-    validation_status: ContinuationValidationStatus
-    resumable: bool
-
-
-class RemediationContinuationSummary(_InspectionModel):
-    pr_number: int = Field(gt=0)
-    selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
-    remediation_head: str = Field(pattern=r"^[0-9a-f]{40}$")
-    base_head: str = Field(pattern=r"^[0-9a-f]{40}$")
-    report_path: str = Field(
-        pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$"
-    )
-    resumable: bool
+    latest_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    stage: str = Field(min_length=1, max_length=32)
+    retryable: bool
     availability_reason: Literal[
         "available",
         "hold-label",
         "head-drift",
         "closed-or-merged",
-        "recovery-authority",
         "invalid-state",
+        "complete",
     ]
+    next_action: CurationNextAction | None = None
 
 
 class ProposalSummary(_InspectionModel):
@@ -245,12 +233,11 @@ def inspect_curation(
     pull_requests: Iterable[PullRequest],
     comments_by_pr: Mapping[int, Sequence[GitHubComment]],
     unresolved_pushes: Sequence[PushJournal] = (),
-    reviewed_continuations: Sequence[ReviewedContinuation] = (),
-    remediation_continuations: Sequence[RemediationContinuation] = (),
+    *,
     ci_continuations: Sequence[CiContinuation] = (),
     terminal_publications: Sequence[TerminalPublicationIntent] = (),
-    *,
     now: datetime | None = None,
+    generations: Sequence[CurationGeneration] = (),
 ) -> CurationInventory:
     publications = _normalize_terminal_publications(terminal_publications)
     if publications:
@@ -292,43 +279,19 @@ def inspect_curation(
     )
     ci_pr_numbers = {item.pr_number for item in active_ci_continuations}
 
-    active_reviewed = tuple(
-        continuation
-        for continuation in reviewed_continuations
-        if continuation.status
-        not in {ContinuationStatus.CONSUMED, ContinuationStatus.INVALIDATED}
-        and continuation.pr_number not in ci_pr_numbers
+    active_generations = (
+        () if active_ci_continuations else _current_generations(generations)
     )
-    active_remediations = tuple(
-        continuation
-        for continuation in remediation_continuations
-        if continuation.status
-        not in {
-            RemediationContinuationStatus.CONSUMED,
-            RemediationContinuationStatus.INVALIDATED,
-        }
-        and continuation.pr_number not in ci_pr_numbers
-    )
-    superseded_reviewed_work_ids = {
-        reviewed.work_id
-        for reviewed in active_reviewed
-        for remediation in active_remediations
-        if remediation_supersedes_reviewed(reviewed, remediation)
-    }
-    preferred_reviewed = tuple(
-        continuation
-        for continuation in active_reviewed
-        if continuation.work_id not in superseded_reviewed_work_ids
-    )
-    suppressed_remediation_prs = {
-        continuation.pr_number
-        for continuation in active_remediations
-        if (
-            (pull_request := pull_requests_by_number.get(continuation.pr_number))
-            is not None
-            and pull_request.head_sha == continuation.selected_head
+    generation_summaries = tuple(
+        _generation_summary(
+            generation,
+            pull_requests_by_number.get(generation.pr_number),
+            comments_by_pr.get(generation.pr_number, ()),
         )
-    }
+        for generation in active_generations
+    )
+    generation_pr_numbers = {item.pr_number for item in active_generations}
+
     eligible = tuple(
         sorted(
             (
@@ -338,48 +301,88 @@ def inspect_curation(
                     pull_request,
                     comments_by_pr.get(pull_request.number, ()),
                 )
-                and pull_request.number not in suppressed_remediation_prs
                 and pull_request.number not in ci_pr_numbers
+                and pull_request.number not in generation_pr_numbers
             ),
             key=lambda pull_request: pull_request.number,
         )
     )
-    summaries = tuple(
-        ReviewedContinuationSummary(
-            pr_number=continuation.pr_number,
-            selected_head=continuation.selected_head,
-            reviewed_head=continuation.reviewed_head,
-            base_head=continuation.sync.base_head,
-            report_path=continuation.report_path,
-            validation_status=continuation.validation_status,
-            resumable=_is_resumable_continuation(
-                continuation,
-                pull_requests_by_number.get(continuation.pr_number),
-                comments_by_pr.get(continuation.pr_number, ()),
-            ),
-        )
-        for continuation in sorted(
-            preferred_reviewed,
-            key=lambda item: item.pr_number,
-        )
-        if continuation.pr_number in pull_requests_by_number
-    )
-    reviewed_pr_numbers = {summary.pr_number for summary in summaries}
-    remediation_summaries = tuple(
-        _remediation_summary(
-            continuation,
-            pull_requests_by_number.get(continuation.pr_number),
-            comments_by_pr.get(continuation.pr_number, ()),
-        )
-        for continuation in sorted(active_remediations, key=lambda item: item.pr_number)
-        if continuation.pr_number not in reviewed_pr_numbers
-    )
     return CurationInventory(
         ci_continuations=ci_summaries,
-        reviewed_continuations=summaries,
-        remediation_continuations=remediation_summaries,
+        generations=generation_summaries,
         eligible=eligible,
     )
+
+
+def _current_generations(
+    generations: Sequence[CurationGeneration],
+) -> tuple[CurationGeneration, ...]:
+    by_pr: dict[int, CurationGeneration] = {}
+    for generation in generations:
+        current = by_pr.get(generation.pr_number)
+        if current is not None and (
+            generation.generation_number == current.generation_number
+            or generation.work_id != current.work_id
+        ):
+            raise ValueError("curation generations contain ambiguous authority")
+        if current is None or generation.generation_number > current.generation_number:
+            by_pr[generation.pr_number] = generation
+    return tuple(by_pr[number] for number in sorted(by_pr))
+
+
+def _generation_summary(
+    generation: CurationGeneration,
+    pull_request: PullRequest | None,
+    comments: Sequence[GitHubComment],
+) -> CurationGenerationSummary:
+    projection = project_generation(generation)
+    availability = _generation_availability(
+        generation,
+        projection,
+        pull_request,
+        comments,
+    )
+    retryable = availability == "available" and projection.next_action is not None
+    return CurationGenerationSummary(
+        pr_number=generation.pr_number,
+        generation_number=generation.generation_number,
+        generation_id=generation.generation_id,
+        selected_head=generation.selected_head,
+        base_head=generation.sync.base_head,
+        latest_head=projection.latest_head,
+        stage=projection.latest_stage,
+        retryable=retryable,
+        availability_reason=availability,
+        next_action=projection.next_action if retryable else None,
+    )
+
+
+def _generation_availability(
+    generation: CurationGeneration,
+    projection: CurationGenerationProjection,
+    pull_request: PullRequest | None,
+    comments: Sequence[GitHubComment],
+) -> Literal[
+    "available",
+    "hold-label",
+    "head-drift",
+    "closed-or-merged",
+    "invalid-state",
+    "complete",
+]:
+    if projection.latest_stage in {"superseded", "invalidated", "consumed"}:
+        return "complete"
+    if pull_request is None or pull_request.lifecycle_state in {"CLOSED", "MERGED"}:
+        return "closed-or-merged"
+    if pull_request.head_sha != generation.selected_head:
+        return "head-drift"
+    if not pull_request.labels.isdisjoint(_SELECTION_HOLD_LABELS):
+        return "hold-label"
+    if not _is_safe_curation_candidate(pull_request, comments):
+        return "invalid-state"
+    if projection.next_action is None:
+        return "complete"
+    return "available"
 
 
 def inspect_discovery(
@@ -733,61 +736,6 @@ def _is_safe_curation_candidate(
         return True
     hold_head = trusted_hold_head(pull_request, comments)
     return hold_head is not None and hold_head != pull_request.head_sha
-
-
-def _is_resumable_continuation(
-    continuation: ReviewedContinuation,
-    pull_request: PullRequest | None,
-    comments: Sequence[GitHubComment],
-) -> bool:
-    return (
-        pull_request is not None
-        and continuation.selected_head == pull_request.head_sha
-        and pull_request.labels.isdisjoint(_SELECTION_HOLD_LABELS)
-        and _is_safe_curation_candidate(pull_request, comments)
-    )
-
-
-def _remediation_availability(
-    continuation: RemediationContinuation,
-    pull_request: PullRequest | None,
-    comments: Sequence[GitHubComment],
-) -> Literal[
-    "available",
-    "hold-label",
-    "head-drift",
-    "closed-or-merged",
-    "recovery-authority",
-    "invalid-state",
-]:
-    if pull_request is None or pull_request.lifecycle_state in {"CLOSED", "MERGED"}:
-        return "closed-or-merged"
-    if pull_request.head_sha != continuation.selected_head:
-        return "head-drift"
-    if not pull_request.labels.isdisjoint(_SELECTION_HOLD_LABELS):
-        return "hold-label"
-    if not _is_safe_curation_candidate(pull_request, comments):
-        return "invalid-state"
-    if continuation.status is RemediationContinuationStatus.AVAILABLE:
-        return "available"
-    return "recovery-authority"
-
-
-def _remediation_summary(
-    continuation: RemediationContinuation,
-    pull_request: PullRequest | None,
-    comments: Sequence[GitHubComment],
-) -> RemediationContinuationSummary:
-    availability = _remediation_availability(continuation, pull_request, comments)
-    return RemediationContinuationSummary(
-        pr_number=continuation.pr_number,
-        selected_head=continuation.selected_head,
-        remediation_head=continuation.remediation_head,
-        base_head=continuation.sync.base_head,
-        report_path=continuation.report_path,
-        resumable=availability in {"available", "recovery-authority"},
-        availability_reason=availability,
-    )
 
 
 def _proposal_summary(
