@@ -247,6 +247,23 @@ not have to derive an invocation.
       "lock_heartbeat_curation"
     ]
   },
+  "curation_review_disposition": {
+    "applies_to_results": ["prepared", "review-required"],
+    "semantic_entry": "full-normalization-inventory-review-remediation-flow",
+    "branches": {
+      "clean": {
+        "head_source": "prepared-or-allowed-normalization-head",
+        "next_recipe": "checkpoint_curation_reviewed"
+      },
+      "changes_requested": {
+        "head_source": "allowed-remediation-head",
+        "next_recipe": "checkpoint_curation_delta",
+        "after_checkpoint": "fresh-full-review"
+      }
+    },
+    "reviewed_checkpoint_gate": "fresh-clean-exact-head-review",
+    "delta_authority": "helper-validation-on-invocation"
+  },
   "ci_waits": {
     "initial_wait": {
       "poll": ["lock_heartbeat_curation", "inspect_curation", "lock_heartbeat_curation"],
@@ -353,9 +370,13 @@ not have to derive an invocation.
 - `${RUN_ID}` is copied exactly from the successful matching `lock acquire`
   result. It is never generated, shortened, logged publicly, or reused by
   another worker.
-- `${PR}`, heads, report path, work ID, candidate identity, and branch come
-  from the current helper inventory or the result of the immediately preceding
-  helper capability.
+- `${PR}`, report path, work ID, candidate identity, and branch come from the
+  current helper inventory or the result of the immediately preceding helper
+  capability. `${HEAD}` normally does too. For the explicit curation
+  review-disposition branches only, `${HEAD}` may instead be the exact clean
+  commit produced by allowed pre-review normalization or bounded remediation;
+  the checkpoint helper validates that caller-created head before granting any
+  recovery authority.
 - `${GENERATION_ID}` is copied exactly from the current curation generation or
   its helper-returned `next_action`; it is never synthesized from prose.
 - `${BASE_DIR}` is a caller-created detached clean checkout whose `HEAD`
@@ -374,7 +395,7 @@ not have to derive an invocation.
 | `migrate_curation_state` | run `inspect_curation`; migration is an owner activation action and never enters a semantic cycle directly |
 | `lock_acquire_*` | copy `run_id`, heartbeat, then run the selected worker capability |
 | `lock_heartbeat_*` | continue the already selected sequence; curation may also return helper-owned cumulative `ci_budget`, but heartbeat grants no new authority |
-| `prepare_curation*` | obey the returned generation result and its typed `next_action`; normalize/review only the exact returned head |
+| `prepare_curation*` | enter the full semantic flow for prepared or review-required work; a clean review uses checkpoint_curation_reviewed, while requested changes use checkpoint_curation_delta after bounded remediation |
 | `prepare_ci_repair` | branch on its phase: `repair-active` re-establishes the exact repair worktree for one static test-only repair plus a fresh focused independent review; `repair-reviewed` revalidates and returns the immutable reviewed checkpoint for publication |
 | `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
 | `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
@@ -403,6 +424,19 @@ list the fields that authorize the next semantic branch. Missing fields stop
 the cycle; prose, automation memory, labels, or prior conclusions cannot fill
 them in. Helper output and continuation state are authority. Automation memory
 and labels are hints and presentation only.
+
+For `prepared` and `review-required` curation results, semantic review is the
+branching operation between helper calls. Both fresh and resumed generations
+enter the complete normalization, inventory, review, and remediation flow. The
+returned `next_action` is the **clean-review branch** for the current generation;
+it never authorizes marking a head with open findings as reviewed. If the review
+requests changes, the declared **requested-changes branch** permits bounded
+local remediation followed only by `checkpoint_curation_delta` for the exact
+clean remediation commit. That invocation is the authority gate: it revalidates
+generation, remote head, base, paths, report, and deterministic deltas before
+persisting recovery evidence. A fresh clean exact-head review is required after
+the delta checkpoint before `checkpoint_curation_reviewed`. This branch is part
+of the registered contract and is not an inferred capability switch.
 
 This helper interface does not classify residuals or exact repeats and does not
 count candidate entries. Codex owns the assertion-level finding ledger,

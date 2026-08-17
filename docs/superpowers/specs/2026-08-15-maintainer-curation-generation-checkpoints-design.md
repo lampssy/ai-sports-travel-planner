@@ -191,12 +191,25 @@ The result includes:
 - result such as `review-required`, `validation-only`,
   `conflict-resolution-required`, or `prepared`;
 - exact allowed conflict paths when applicable; and
-- exact next helper action as a registered recipe ID plus typed substitutions.
+- exact clean-head next helper action as a registered recipe ID plus typed
+  substitutions.
 
 Before synchronization, preparation requires exactly one canonical curation
 report in the selected PR inventory. The prepared event records that path so
 the returned checkpoint action authorizes the report that review may normalize,
 without allowing the caller to choose a different report.
+
+`prepared` and `review-required` generations, whether fresh or resumed, enter
+the same complete normalization, inventory, review, and remediation flow. The
+returned action is the **clean-review branch**: it may be invoked only after a
+fresh clean exact-head review. If review requests changes, the explicit
+**requested-changes branch** permits bounded local remediation followed by the
+registered `checkpoint_curation_delta` recipe for the exact clean remediation
+commit. The checkpoint helper validates the caller-created head, generation,
+base, paths, report, and deterministic deltas before granting recovery
+authority. After that checkpoint, a new fresh clean exact-head review is still
+required before `checkpoint_curation_reviewed`. Codex therefore does not invent
+a capability or mark a request-changes head as reviewed.
 
 ### `checkpoint curation`
 
@@ -496,6 +509,9 @@ and rollback before schedules are re-enabled.
   persisted.
 - `invalid-command` is not used for state or validation conflicts.
 - Inspection exposes one current generation and one next action per PR.
+- Prepared and review-required generations use the full semantic flow; a clean
+  review uses the reviewed checkpoint, while requested changes use the delta
+  checkpoint before a fresh review.
 - Final validation still executes only trusted exact-base tests and hands off
   only an exact reviewed head to the existing push journal.
 - Migration archives only legacy pre-push state and leaves all external

@@ -1460,10 +1460,16 @@ Pre-push curation recovery uses one bounded generation timeline per PR. A
 generation binds the selected remote head, prepare-time base, current local
 head, report, and append-only stage events. Both delta-validated and reviewed
 heads use the same two-phase idempotent `checkpoint curation` capability;
-inspection returns a typed recipe ID and substitutions for the only authorized
-next action. Reviewed authority remains distinct from fully validated authority,
-so ordinary push cannot bypass the final deterministic suite while the existing
-manual-check path can still preserve an explicitly unvalidated reviewed head.
+inspection returns a typed recipe ID and substitutions for the clean-head next
+action. Prepared and review-required generations still enter the complete
+normalization, inventory, review, and remediation flow. A clean review uses the
+reviewed checkpoint; requested changes produce a bounded local commit that must
+pass the delta checkpoint and another fresh review before it can become reviewed
+authority. The helper validates the caller-created remediation head when the
+delta checkpoint is invoked. Reviewed authority remains distinct from fully
+validated authority, so ordinary push cannot bypass the final deterministic
+suite while the existing manual-check path can still preserve an explicitly
+unvalidated reviewed head.
 
 Legacy reviewed/remediation continuations are archived once through the
 lease-free `migrate curation-state --archive-legacy` capability. Migration

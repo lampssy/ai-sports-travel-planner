@@ -25,6 +25,10 @@ CI_REMEDIATION_DESIGN_PATH = (
     REPOSITORY_ROOT / "docs/superpowers/specs/"
     "2026-07-24-maintainer-post-push-ci-remediation-design.md"
 )
+GENERATION_DESIGN_PATH = (
+    REPOSITORY_ROOT / "docs/superpowers/specs/"
+    "2026-08-15-maintainer-curation-generation-checkpoints-design.md"
+)
 ENGINEERING_NOTES_PATH = REPOSITORY_ROOT / "docs/engineering-notes.md"
 CONTRACT_PATTERN = re.compile(
     r"<!-- runtime-command-contract:start -->\s*"
@@ -358,6 +362,51 @@ def test_runtime_contract_splits_curation_and_discovery_inspection_next_steps() 
         "regional completion, active backlog, bounded external official-source "
         "scan, or bounded no-op in that order"
     )
+
+
+def test_runtime_contract_freezes_review_disposition_branches() -> None:
+    contract = _contract()
+
+    assert contract["curation_review_disposition"] == {
+        "applies_to_results": ["prepared", "review-required"],
+        "semantic_entry": "full-normalization-inventory-review-remediation-flow",
+        "branches": {
+            "clean": {
+                "head_source": "prepared-or-allowed-normalization-head",
+                "next_recipe": "checkpoint_curation_reviewed",
+            },
+            "changes_requested": {
+                "head_source": "allowed-remediation-head",
+                "next_recipe": "checkpoint_curation_delta",
+                "after_checkpoint": "fresh-full-review",
+            },
+        },
+        "reviewed_checkpoint_gate": "fresh-clean-exact-head-review",
+        "delta_authority": "helper-validation-on-invocation",
+    }
+    for branch in contract["curation_review_disposition"]["branches"].values():
+        recipe = branch["next_recipe"]
+        parsed = _parse_recipe_sequence([recipe])
+        assert [(item.family, item.command) for item in parsed] == [
+            ("checkpoint", "curation")
+        ]
+
+    assert _allowed_next_steps()["prepare_curation*"] == (
+        "enter the full semantic flow for prepared or review-required work; "
+        "a clean review uses checkpoint_curation_reviewed, while requested "
+        "changes use checkpoint_curation_delta after bounded remediation"
+    )
+
+    sources = {
+        "runtime": CONTRACT_PATH,
+        "activation": ACTIVATION_PATH,
+        "generation_design": GENERATION_DESIGN_PATH,
+    }
+    for name, path in sources.items():
+        normalized = " ".join(path.read_text(encoding="utf-8").split()).lower()
+        assert "clean-review branch" in normalized, name
+        assert "requested-changes branch" in normalized, name
+        assert "fresh clean exact-head review" in normalized, name
 
 
 def test_runtime_contract_documents_conditional_ci_budget_heartbeat_result() -> None:

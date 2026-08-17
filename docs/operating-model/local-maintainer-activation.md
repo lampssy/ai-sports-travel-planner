@@ -151,8 +151,10 @@ The installed skill must:
 - inspect and choose at most one safe curation PR;
 - prefer the exact current curation generation for the selected PR over an
   automation-memory-only unpublished follow-up; an unresolved push journal
-  still has global priority. Resume only the helper-returned recipe and never
-  infer review, validation, publication, or readiness from a delta checkpoint;
+  still has global priority. For prepared or review-required work, treat the
+  helper-returned action as the clean-review branch and use the explicit
+  requested-changes branch only after review finds bounded in-model defects.
+  Never infer validation, publication, or readiness from a delta checkpoint;
 - read curation automation memory using `CODEX_HOME` or the `$HOME/.codex`
   fallback, revalidate any unpublished-follow-up PR/head against helper
   inspection, and prioritize the oldest still-exact eligible follow-up before
@@ -220,7 +222,8 @@ The installed skill must:
 - `publish ci-repair` completes the canonical waiting-CI body, comment, and
   label handoff and marks the repair push journal `PUBLISHED` before
   second-wait inspection can expose the continuation;
-- keep preparation schema-independent, but before initial review run one
+- keep preparation schema-independent, but before the first semantic review of
+  any fresh or resumed prepared/review-required generation run one
   maintainer-managed structural normalization pass when the single report is
   legacy, malformed, graph-less after refresh, incomplete, or non-reconciling;
   use the exact prepared base/current catalog and trust snapshots to rebuild
@@ -237,6 +240,14 @@ The installed skill must:
   invocation runs bounded catalog/trust validation plus exact
   reconciliation and persists the exact-head evidence; reserve the fixed broad
   catalog suite for one final helper validation after review;
+- route review disposition explicitly. A fresh clean exact-head review uses the
+  **clean-review branch** and `checkpoint_curation_reviewed`. A review with
+  actionable findings uses the **requested-changes branch**: perform only the
+  bounded remediation authorized by this activation contract, commit the exact
+  clean local head, call `checkpoint_curation_delta`, and run another fresh full
+  review. The helper validates that caller-created remediation head on
+  invocation, so this branch is registered authority rather than an inferred
+  command;
 - for that final broad suite, execute only the clean exact-base uv project,
   pytest configuration, conftest, and fixed absolute test modules. Supply the
   prepared catalog/trust paths only through the helper-derived data root and a
@@ -382,20 +393,25 @@ The installed skill must:
   incomplete review through the bounded inventory-completion phase before
   status-only `blocked/review-incomplete`, and reserve `owner-decision` for a
   real owner/model choice;
-- after every final exact-head independent review, call the helper-returned
+- after every final clean exact-head independent review, call the helper-returned
   `checkpoint_curation_reviewed` recipe with the exact generation, head,
   report, and prepare-time base; then call `validate_curation` only when the
-  generation's typed next action authorizes it;
+  generation's typed next action authorizes it. Never checkpoint a head as
+  reviewed while findings remain open or required schema reconciliation or
+  rendered-report parity fails;
 - verify every final report URL for reachability and semantically recheck all
   changed, graph-critical, and high-impact sources. Initial inventory checks
   relevance and claim support for every source; remediation rechecks only
   changed or claim-affected URLs. Any cache is keyed by exact head, URL, and
   claim context, remains run-local, and is never persisted as helper or
   cross-run authority;
-- resume only through the current generation's helper-returned typed
-  `next_action`. A validation-only generation reruns deterministic/finalization
-  gates without semantic review; a review-required generation receives exactly
-  one fresh independent full review before a reviewed checkpoint;
+- resume a validation-only generation only through its helper-returned typed
+  `next_action` and deterministic/finalization gates. Every prepared or
+  review-required generation, including resumed work, enters the same complete
+  normalization, inventory, review, and remediation flow as ordinary work. Its
+  returned reviewed-checkpoint action is valid only for the clean-review branch;
+  requested changes use the registered delta-checkpoint branch before another
+  fresh full review;
 - treat the generation's `base_head` from `prepare curation` as the sole
   comparison-base authority for that work. Before `checkpoint curation` or
   `validate curation`, create a separate detached clean checkout at that exact
@@ -572,8 +588,10 @@ For each schedule, confirm:
   continuation, resumes as `review-required`, and survives a safe blocked/hold
   outcome until deliberate label removal;
 - clean movement of `main` replays the one reviewed squash and returns
-  `review-required`; exactly one fresh full review is completed before any new
-  validation or publication;
+  `review-required`; the full semantic flow runs and at least one fresh full
+  review is completed before any new validation or publication. If that review
+  requests changes, the same generation uses the delta-checkpoint remediation
+  branch and another fresh review;
 - an allowlisted replay conflict returns only its bounded paths, survives an
   interrupted attempt by being recreated from immutable refs in a clean
   successor worktree, and reaches `review-required` only after helper-owned
