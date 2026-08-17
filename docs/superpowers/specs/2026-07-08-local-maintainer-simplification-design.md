@@ -518,9 +518,16 @@ prepare -> provisional evidence envelope -> dual inventory
    snapshots before edit; a validation failure stops normalization without
    permitting edits. It then runs catalog validation, exact reconciliation,
    and finding-related focused tests, asserts unchanged catalog/trust object
-   IDs, and commits a diff containing exactly the canonical report path. It is
-   report-only structural normalization: it does not claim semantic resolution,
-   alter the finding ledger, or consume a remediation-cycle slot. Catalog or
+   IDs, and commits a diff containing exactly the canonical JSON report and
+   deterministic Markdown companion. Every evidence item referenced by a
+   boundary gate or identity signal includes the assessed candidate ID in
+   `boundary_target_ids`; evidence reused across candidates includes every such
+   ID. Schema-v3 reconciliation and deterministic Markdown parity must pass
+   before any delta or reviewed checkpoint. Missing boundary metadata or stale
+   Markdown is corrected in the same fixer pass rather than treated as semantic
+   `review-incomplete`. It is report-only structural normalization: it does not
+   claim semantic resolution, alter the finding ledger, or consume a
+   remediation-cycle slot. Catalog or
    trust semantic changes begin only after the dual-review ledger and consume
    ordinary remediation. Codex then builds an exact-head provisional typed evidence
    envelope covering official destination/booking sources, operator maps and
@@ -552,8 +559,9 @@ prepare -> provisional evidence envelope -> dual inventory
    receives only the checklist, exact prepared base/current catalog and trust
    snapshots, the mutation-scope map, and the current report. It researches the
    listed gaps and their immediate official-source neighborhood, updates exactly
-   the canonical report path, requires catalog and trust blobs and object IDs
-   remain identical, and runs catalog validation plus exact reconciliation. It
+   the canonical JSON report and deterministic Markdown companion, requires
+   catalog and trust blobs and object IDs remain identical, and runs catalog
+   validation plus exact reconciliation and Markdown parity. It
    does not consume a remediation cycle, cannot authorize catalog or trust
    remediation, and creates no helper continuation or cross-run authority.
 
@@ -660,10 +668,13 @@ prepare -> provisional evidence envelope -> dual inventory
    one representative. The fix batches every compatible open finding linked to
    those candidates. Each actually addressed finding becomes only
    `claimed-fixed`; an umbrella category or omitted checklist member does not.
-   The helper then runs the two-command delta checkpoint: catalog/trust
-   validation and exact report reconciliation for the clean exact remediation
-   head. Successful evidence is checkpointed once in private continuation state
-   rather than rerun on resume.
+   Before checkpointing, the same fixer pass must leave the canonical JSON
+   report and deterministic Markdown companion in schema-v3 reconciliation and
+   rendering parity, with every boundary-referenced evidence item naming its
+   candidate in `boundary_target_ids`. The helper then runs the two-command
+   delta checkpoint: catalog/trust validation and exact report reconciliation
+   for the clean exact remediation head. Successful evidence is checkpointed
+   once in private continuation state rather than rerun on resume.
 10. A fresh independent bounded Codex review follows every fix. It runs in a new
    reviewer context, receives the ledger only as untrusted history, independently
    reviews the exact current head and full scope, and then classifies prior

@@ -308,4 +308,11 @@ Reconcile a report against a base checkout:
       --base-catalog-path BASE/app/data/catalog.json \
       --current-catalog-path app/data/catalog.json \
       --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json \
-      --current-trust-manifest-path app/data/resort_trust_manifest.json
+      --current-trust-manifest-path app/data/resort_trust_manifest.json \
+      --require-report-schema-version 3 \
+      --product-backlog-path docs/product-backlog.md \
+      --require-markdown-path docs/catalog-curation/REPORT.md
+
+Use `--markdown-output` while curating to regenerate the companion. Use
+`--require-markdown-path` for review and maintainer validation so stale or
+missing Markdown fails without mutating the worktree.

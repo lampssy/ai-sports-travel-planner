@@ -1471,6 +1471,14 @@ validated authority, so ordinary push cannot bypass the final deterministic
 suite while the existing manual-check path can still preserve an explicitly
 unvalidated reviewed head.
 
+Curation report mutations are atomic at the review-artifact boundary: the
+canonical schema-v3 JSON report and its deterministic Markdown companion move
+together before any delta or reviewed checkpoint. Boundary evidence also names
+every assessment candidate explicitly through `boundary_target_ids`; an
+evidence target alone does not establish boundary ownership. These mechanical
+invariants are corrected in the same fixer pass and are not semantic
+`review-incomplete` outcomes.
+
 Legacy reviewed/remediation continuations are archived once through the
 lease-free `migrate curation-state --archive-legacy` capability. Migration
 refuses active leases and unresolved push, CI, or terminal-publication recovery,

@@ -227,19 +227,30 @@ The installed skill must:
   maintainer-managed structural normalization pass when the single report is
   legacy, malformed, graph-less after refresh, incomplete, or non-reconciling;
   use the exact prepared base/current catalog and trust snapshots to rebuild
-  exactly one canonical schema-v3 report. Validate those snapshots before edit
-  and stop without edits if either fails; assert catalog/trust object IDs remain
-  identical and locally commit a diff containing only that report path. Do not
-  claim semantic resolution or consume a remediation cycle; catalog/trust
-  changes begin only after the dual-review ledger as ordinary remediation. A
+  the canonical schema-v3 JSON report and deterministic Markdown companion.
+  Validate those snapshots before edit and stop without edits if either fails;
+  assert catalog/trust object IDs remain identical and locally commit a diff
+  containing only that report pair. For every evidence item referenced by a
+  boundary gate or identity signal, require the assessed candidate ID in
+  `boundary_target_ids`; reused evidence lists every referenced candidate.
+  Run schema-v3 reconciliation and regenerate/compare the Markdown companion
+  before any delta or reviewed checkpoint. Fix missing boundary metadata or
+  stale Markdown in the same fixer pass rather than converting a mechanical
+  report defect into semantic `review-incomplete`. Do not claim semantic
+  resolution or consume a remediation cycle; catalog/trust changes begin only
+  after the dual-review ledger as ordinary remediation. A
   finalized report requires a non-empty evidence envelope and graph impact on
   every scope assessment; each `regional_followup` must point to an exact
   heading that exists in the exact-head product backlog. The helper checks only
   anchor existence, never backlog meaning, priority, or status;
-- after each remediation, call `checkpoint_curation_delta` once. That single
-  invocation runs bounded catalog/trust validation plus exact
-  reconciliation and persists the exact-head evidence; reserve the fixed broad
-  catalog suite for one final helper validation after review;
+- after each remediation, first require the canonical JSON report and
+  deterministic Markdown companion to pass schema-v3 reconciliation and
+  rendering parity, including the `boundary_target_ids` invariant above. Fix a
+  mechanical report failure in the same fixer pass. Then call
+  `checkpoint_curation_delta` once. That single invocation runs bounded
+  catalog/trust validation plus exact reconciliation and persists the
+  exact-head evidence; reserve the fixed broad catalog suite for one final
+  helper validation after review;
 - route review disposition explicitly. A fresh clean exact-head review uses the
   **clean-review branch** and `checkpoint_curation_reviewed`. A review with
   actionable findings uses the **requested-changes branch**: perform only the
@@ -648,9 +659,10 @@ For each schedule, confirm:
   concrete, source-backed, in-model, bounded findings are newly discovered
   continues when cycle and time remain; raw count growth alone does not stop it;
 - an initial incomplete lane returns the structured inventory-completion
-  checklist, changes exactly the canonical report path while catalog/trust blobs
-  and object IDs remain identical, and receives fresh independent source-trust
-  and graph-scope review before any remediation;
+  checklist, changes exactly the canonical JSON report and deterministic
+  Markdown companion while catalog/trust blobs and object IDs remain identical,
+  and receives fresh independent source-trust and graph-scope review before any
+  remediation;
 - an inventory-completion scenario permits at most two passes, requires the
   semantically reconciled unresolved checklist to become strictly smaller after
   each pass, and publishes `blocked/review-incomplete` on no measurable

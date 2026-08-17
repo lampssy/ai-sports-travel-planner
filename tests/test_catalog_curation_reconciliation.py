@@ -1040,6 +1040,98 @@ def test_reconcile_cli_renders_the_canonical_resulting_graph(
     assert '|"access: walk via Example Gondola, 450 m"|' in rendered
 
 
+def test_reconcile_cli_accepts_matching_markdown_companion(
+    tmp_path: Path,
+) -> None:
+    base_paths, current_paths = _relationship_snapshots(tmp_path)
+    report_path = tmp_path / "report-v3.json"
+    markdown_path = tmp_path / "report-v3.md"
+    report_path.write_text(
+        _schema_three_relationship_report().model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+    assert (
+        validate_curation_main(
+            [
+                "reconcile",
+                str(report_path),
+                "--base-catalog-path",
+                str(base_paths[0]),
+                "--current-catalog-path",
+                str(current_paths[0]),
+                "--base-trust-manifest-path",
+                str(base_paths[1]),
+                "--current-trust-manifest-path",
+                str(current_paths[1]),
+                "--require-report-schema-version",
+                "3",
+                "--markdown-output",
+                str(markdown_path),
+            ]
+        )
+        == 0
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "reconcile",
+            str(report_path),
+            "--base-catalog-path",
+            str(base_paths[0]),
+            "--current-catalog-path",
+            str(current_paths[0]),
+            "--base-trust-manifest-path",
+            str(base_paths[1]),
+            "--current-trust-manifest-path",
+            str(current_paths[1]),
+            "--require-report-schema-version",
+            "3",
+            "--require-markdown-path",
+            str(markdown_path),
+        ]
+    )
+
+    assert exit_code == 0
+
+
+def test_reconcile_cli_rejects_stale_markdown_companion(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    base_paths, current_paths = _relationship_snapshots(tmp_path)
+    report_path = tmp_path / "report-v3.json"
+    markdown_path = tmp_path / "report-v3.md"
+    report_path.write_text(
+        _schema_three_relationship_report().model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+    markdown_path.write_text("# Stale report\n", encoding="utf-8")
+
+    exit_code = validate_curation_main(
+        [
+            "reconcile",
+            str(report_path),
+            "--base-catalog-path",
+            str(base_paths[0]),
+            "--current-catalog-path",
+            str(current_paths[0]),
+            "--base-trust-manifest-path",
+            str(base_paths[1]),
+            "--current-trust-manifest-path",
+            str(current_paths[1]),
+            "--require-report-schema-version",
+            "3",
+            "--require-markdown-path",
+            str(markdown_path),
+        ]
+    )
+
+    assert exit_code == 1
+    assert "rendered Markdown does not match canonical report" in (
+        capsys.readouterr().out
+    )
+
+
 def test_typed_cli_requires_backlog_path_for_deferred_report(
     tmp_path: Path,
     capsys,

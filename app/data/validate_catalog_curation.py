@@ -44,6 +44,18 @@ def _add_product_backlog_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_markdown_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--markdown-output", type=Path)
+    parser.add_argument(
+        "--require-markdown-path",
+        type=Path,
+        help=(
+            "Require an existing Markdown companion to exactly match the "
+            "canonical rendered report."
+        ),
+    )
+
+
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Validate a normalized Snowcast catalog curation report."
@@ -52,7 +64,7 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 
     typed_parser = subparsers.add_parser("typed", help="Validate the report only.")
     typed_parser.add_argument("report_path", type=Path)
-    typed_parser.add_argument("--markdown-output", type=Path)
+    _add_markdown_arguments(typed_parser)
     typed_parser.add_argument(
         "--current-catalog-path",
         type=Path,
@@ -78,7 +90,7 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         type=Path,
         required=True,
     )
-    reconcile_parser.add_argument("--markdown-output", type=Path)
+    _add_markdown_arguments(reconcile_parser)
     _add_report_schema_version_argument(reconcile_parser)
     _add_product_backlog_argument(reconcile_parser)
     reconcile_parser.add_argument(
@@ -116,6 +128,24 @@ def _write_markdown_report(
         render_catalog_curation_report_markdown(report, catalog),
         encoding="utf-8",
     )
+
+
+def _validate_markdown_report(
+    report: CatalogCurationReport,
+    markdown_path: Path,
+    catalog: CatalogSnapshot | None,
+) -> None:
+    expected = render_catalog_curation_report_markdown(report, catalog)
+    try:
+        actual = markdown_path.read_text(encoding="utf-8")
+    except OSError as error:
+        raise CatalogValidationError(
+            ["rendered Markdown companion could not be read"]
+        ) from error
+    if actual != expected:
+        raise CatalogValidationError(
+            ["rendered Markdown does not match canonical report"]
+        )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -162,6 +192,12 @@ def main(argv: list[str] | None = None) -> int:
                 report,
                 current_catalog,
                 require=require_resulting_graph,
+            )
+        if args.require_markdown_path is not None:
+            _validate_markdown_report(
+                report,
+                args.require_markdown_path,
+                current_catalog,
             )
         if args.markdown_output is not None:
             _write_markdown_report(report, args.markdown_output, current_catalog)

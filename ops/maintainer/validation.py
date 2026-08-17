@@ -726,6 +726,8 @@ def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:
             TRUST_MANIFEST_PATH,
             "--require-report-schema-version",
             "3",
+            "--require-markdown-path",
+            plan.report_path.removesuffix(".json") + ".md",
             "--skip-product-backlog-validation",
         ),
         (

@@ -619,6 +619,30 @@ def test_passing_stay_market_ownership_requires_official_evidence() -> None:
         )
 
 
+def test_boundary_evidence_names_the_missing_candidate_metadata_field() -> None:
+    report = _destination_boundary_report(
+        gate_names=(
+            "complete_stay_market_scope",
+            "independent_stay_market_ownership",
+            "material_destination_level_separation_value",
+        ),
+        identity_signal="official_stay_market_treatment",
+    )
+    report.evidence[0].boundary_target_ids.clear()
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "example: evidence example-stay-market must include example in "
+            "boundary_target_ids"
+        ),
+    ):
+        validate_catalog_curation_report(
+            report,
+            require_current_destination_policy=True,
+        )
+
+
 def test_current_workflow_requires_retained_destination_boundary_assessment() -> None:
     report = _current_destination_scope_report()
     validate_catalog_curation_report(

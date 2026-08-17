@@ -36,7 +36,9 @@ def test_incomplete_inventory_enters_completion_before_blocking() -> None:
 def test_inventory_completion_cannot_mutate_catalog_or_trust() -> None:
     for path in (ACTIVATION_PATH, DESIGN_PATH):
         contract = _normalized(path)
-        assert "exactly the canonical report path" in contract, path
+        assert "canonical json report and deterministic markdown companion" in (
+            contract
+        ), path
         assert "catalog and trust blobs and object ids remain identical" in contract, (
             path
         )
@@ -131,6 +133,17 @@ def test_stale_rendered_report_is_an_actionable_finding() -> None:
         assert "stale rendered markdown" in contract, path
         assert "actionable_finding" in contract, path
         assert "does not make review incomplete" in contract, path
+
+
+def test_report_mutations_keep_json_and_markdown_in_sync_before_checkpoint() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "canonical json report and deterministic markdown companion" in (
+            contract
+        ), path
+        assert "before any delta or reviewed checkpoint" in contract, path
+        assert "boundary_target_ids" in contract, path
+        assert "same fixer pass" in contract, path
 
 
 def test_strictly_smaller_checklist_requires_the_permitted_second_pass() -> None:
