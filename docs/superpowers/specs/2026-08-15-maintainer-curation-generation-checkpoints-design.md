@@ -193,6 +193,11 @@ The result includes:
 - exact allowed conflict paths when applicable; and
 - exact next helper action as a registered recipe ID plus typed substitutions.
 
+Before synchronization, preparation requires exactly one canonical curation
+report in the selected PR inventory. The prepared event records that path so
+the returned checkpoint action authorizes the report that review may normalize,
+without allowing the caller to choose a different report.
+
 ### `checkpoint curation`
 
 `checkpoint curation` replaces `checkpoint remediation` and

@@ -5035,6 +5035,7 @@ def test_prepare_curation_persists_one_phase_record_for_requested_safe_pr(
             "pr": 42,
             "generation_id": generation.generation_id,
             "head": SHA_B,
+            "report": "docs/catalog-curation/nendaz.json",
             "validation_base": SHA_D,
             "continue_conflict": False,
         },
@@ -5046,6 +5047,52 @@ def test_prepare_curation_persists_one_phase_record_for_requested_safe_pr(
     assert work.prepared_head == SHA_B
     assert work.sync == _sync()
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
+
+
+@pytest.mark.parametrize(
+    "changed_paths",
+    [
+        frozenset({"app/data/catalog.json"}),
+        frozenset(
+            {
+                "app/data/catalog.json",
+                "docs/catalog-curation/nendaz.json",
+                "docs/catalog-curation/other.json",
+            }
+        ),
+    ],
+)
+def test_prepare_curation_requires_one_authorized_report_before_sync(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    changed_paths: frozenset[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "curation")
+    github = FakeGitHub(pull_requests={42: _pull_request(changed_paths=changed_paths)})
+    repository = FakeRepository(github=github)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "invalid-github-state"
+    assert payload["stage"] == "prepare"
+    assert repository.prepare_calls == 0
+    assert StateStore(state_dir).load_work("curation-pr-42") is None
 
 
 def test_prepare_curation_rejects_before_sync_when_another_ci_continuation_is_active(
@@ -5176,6 +5223,7 @@ def test_prepare_curation_replays_same_pr_head_into_new_generation(
             "pr": 42,
             "generation_id": generations[1].generation_id,
             "head": SHA_D,
+            "report": "docs/catalog-curation/nendaz.json",
             "validation_base": SHA_C,
             "continue_conflict": False,
         },
@@ -5183,6 +5231,46 @@ def test_prepare_curation_replays_same_pr_head_into_new_generation(
     assert generations[0].selected_head == generations[1].selected_head == SHA_A
     assert generations[0].sync.base_head != generations[1].sync.base_head
     assert project_generation(generations[0]).latest_stage == "superseded"
+
+
+def test_prepare_curation_restarts_legacy_prepared_generation_with_report(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin = RunLease.acquire(state_dir, "curation", now=NOW)
+    generation_store = CurationGenerationStore(state_dir)
+    reviewed = _curation_generation()
+    legacy_prepared = reviewed.model_copy(update={"events": reviewed.events[:1]})
+    generation_store.start_generation(legacy_prepared, origin)
+    origin.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=FakeGitHub(),
+        repository=FakeRepository(),
+    )
+
+    assert code == 0, payload
+    assert payload["generation"]["generation_number"] == 2
+    assert payload["generation"]["result"] == "prepared"
+    assert payload["generation"]["next_action"]["substitutions"]["report"] == (
+        "docs/catalog-curation/nendaz.json"
+    )
+    generations = generation_store.list_generations("curation-pr-42")
+    assert project_generation(generations[0]).latest_stage == "superseded"
+    assert generations[1].events[0].report_path == "docs/catalog-curation/nendaz.json"
 
 
 def test_prepare_curation_remote_head_change_starts_clean_generation(

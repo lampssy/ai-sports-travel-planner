@@ -118,6 +118,7 @@ from ops.maintainer.validation import (
     immutable_resulting_graph_markdown,
     require_single_curation_report_path,
     revalidate_curation_request,
+    single_curation_report_path,
 )
 
 Worker = Literal["curation", "discovery"]
@@ -377,6 +378,14 @@ def handle_prepare_curation(
         )
     pull_request = dependencies.github.get_pull_request(args.pr)
     _require_exact_curation_candidate(pull_request, dependencies, store)
+    try:
+        single_curation_report_path(pull_request.changed_paths)
+    except ValueError:
+        raise MaintainerError(
+            ErrorReason.INVALID_GITHUB_STATE,
+            ErrorStage.PREPARE,
+            detail="Curation work must contain exactly one canonical report",
+        ) from None
     if (
         store.load_continuation(work_id) is not None
         or store.load_remediation_continuation(work_id) is not None
@@ -679,6 +688,7 @@ def _new_generation(
                 sequence=1,
                 recorded_at=created_at,
                 prepared_head=sync.rebased_head,
+                report_path=single_curation_report_path(pull_request.changed_paths),
             ),
         ),
     )

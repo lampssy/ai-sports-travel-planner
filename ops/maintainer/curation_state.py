@@ -194,6 +194,7 @@ class _GenerationEvent(_StrictModel):
 class GenerationPreparedEvent(_GenerationEvent):
     kind: Literal["generation-prepared"] = "generation-prepared"
     prepared_head: str = Field(pattern=_SHA_PATTERN)
+    report_path: str | None = Field(default=None, pattern=_REPORT_PATTERN)
 
 
 class CheckpointStartedEvent(_GenerationEvent):
@@ -441,7 +442,7 @@ def project_generation(
     reviewed: ReviewedCurationAuthority | None = None
     checkpoint: CurationCheckpointAuthority | None = None
     validated: ValidatedCurationAuthority | None = None
-    latest_report: str | None = None
+    latest_report: str | None = generation.events[0].report_path
     latest_refs: tuple[str, str] | None = None
 
     for event in generation.events[1:]:
@@ -499,7 +500,7 @@ def project_generation(
             ),
         )
     elif latest_stage in {"prepared", CurationCheckpointStage.REVIEWED}:
-        report = reviewed.report_path if reviewed is not None else None
+        report = reviewed.report_path if reviewed is not None else latest_report
         recipe = (
             CurationRecipeId.VALIDATE
             if reviewed is not None
@@ -529,7 +530,11 @@ def project_generation(
             ),
         )
 
-    if latest_refs is None and latest_stage != "prepared":
+    if latest_refs is None and latest_stage in {
+        CurationCheckpointStage.DELTA_VALIDATED,
+        CurationCheckpointStage.REVIEWED,
+        "fully-validated",
+    }:
         raise CurationStateError("generation projection lost checkpoint refs")
     return CurationGenerationProjection(
         generation_id=generation.generation_id,
