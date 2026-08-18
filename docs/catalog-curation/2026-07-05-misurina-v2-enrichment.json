@@ -855,6 +855,15 @@
     {
       "target_type": "ski_area",
       "target_id": "misurina-passo-tre-croci",
+      "field_path": "name",
+      "before": "Misurina - Passo Tre Croci",
+      "after": "Misurina",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
       "field_path": "piste_km_by_difficulty.advanced",
       "before": 0.5,
       "after": 0.7,
@@ -1374,6 +1383,15 @@
     {
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:misurina-misurina--misurina-passo-tre-croci",
+      "field_path": "display_name",
+      "before": "Misurina -> Misurina - Passo Tre Croci",
+      "after": "Misurina -> Misurina",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:misurina-misurina--misurina-passo-tre-croci",
       "field_path": "field_source_refs",
       "before": {
         "access_mode_distance": [
@@ -1410,6 +1428,15 @@
         "relationship normalization: the municipal guide places the Col de Varda chairlift next to Lake Misurina and presents it as the village's downhill access.",
         "access_mode_distance normalization: walk/near/direct and 129 m represent a rounded Haversine point-to-point distance between the named Misurina OSM base node and Col de Varda aerialway station, not a routed walking distance."
       ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:misurina-passo-tre-croci",
+      "field_path": "display_name",
+      "before": "Misurina - Passo Tre Croci",
+      "after": "Misurina",
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -2271,7 +2298,7 @@
       "target_type": "ski_area",
       "target_id": "misurina-passo-tre-croci",
       "field_path": "name",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -3349,7 +3376,7 @@
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:misurina-misurina--misurina-passo-tre-croci",
       "field_path": "display_name",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -3377,7 +3404,7 @@
       "target_type": "trust_manifest",
       "target_id": "ski_areas:misurina-passo-tre-croci",
       "field_path": "display_name",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -4221,7 +4248,7 @@
       "source_title": "Cortina Skiworld member directory",
       "source_value": "Misurina Neve S.r.l.",
       "evidence_summary": "The consortium directory identifies Misurina Neve as a member company.",
-      "normalization_note": null
+      "normalization_note": "The operator identity is normalized to the concise official-facing ski-area name Misurina; Col de Varda and Loita remain component sectors."
     },
     {
       "evidence_id": "E-SCOPE-MEMBER",

@@ -7987,7 +7987,7 @@
         ]
       },
       "misurina-passo-tre-croci": {
-        "display_name": "Misurina - Passo Tre Croci",
+        "display_name": "Misurina",
         "field_statuses": {
           "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "verified_with_adjustment",
@@ -9884,7 +9884,7 @@
         ]
       },
       "misurina-misurina--misurina-passo-tre-croci": {
-        "display_name": "Misurina -> Misurina - Passo Tre Croci",
+        "display_name": "Misurina -> Misurina",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
           "access_mode_distance": "verified_with_adjustment"
