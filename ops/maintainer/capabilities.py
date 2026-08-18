@@ -2617,6 +2617,7 @@ def _complete_ci_repair_push(
         allow_comment_repair=True,
         mutation_guard=mutation_guard,
         validate_mutation=lambda _step, _current: lease.assert_owner(),
+        report_path=waiting.report_path,
     )
     dependencies.tracker.mutation_occurred = (
         dependencies.tracker.mutation_occurred or publication_mutated
@@ -2938,6 +2939,20 @@ def handle_publish_state(
         allow_comment_repair=True,
         mutation_guard=mutation_guard,
         validate_mutation=lambda _step, _current: lease.assert_owner(),
+        report_path=(
+            ci_continuation.report_path
+            if active_ci_wait and ci_continuation is not None
+            else journal.report_path
+            if matching_pushed_journal and journal is not None
+            else work.report_path
+            if work is not None
+            and work.report_path is not None
+            and (
+                work.reviewed_head == args.reviewed_head
+                or work.validated_head == args.reviewed_head
+            )
+            else None
+        ),
     )
     dependencies.tracker.mutation_occurred = (
         dependencies.tracker.mutation_occurred or publication_mutated

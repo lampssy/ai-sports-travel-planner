@@ -785,6 +785,17 @@ def test_per_cycle_sources_use_the_short_runtime_contract() -> None:
         assert "second dispatch rejection" in source
 
 
+def test_curation_pr_synopsis_requires_an_exact_head_rendered_report_link() -> None:
+    contract = " ".join(
+        CONTRACT_PATH.read_text(encoding="utf-8").replace("`", "").split()
+    ).lower()
+
+    assert "full report" in contract
+    assert "rendered markdown report" in contract
+    assert "absolute github blob link" in contract
+    assert "exact published head" in contract
+
+
 def test_eligible_dispatch_rejection_requires_corrected_recipe_before_stop() -> None:
     sources = {
         "contract": " ".join(

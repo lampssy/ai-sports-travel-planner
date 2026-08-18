@@ -6354,6 +6354,10 @@ def test_publish_manual_check_pushes_reviewed_unvalidated_head(
     work = StateStore(state_dir).load_work("curation-pr-42")
     assert journal is not None and journal.phase is PushPhase.PUBLISHED
     assert work is not None and work.phase is WorkPhase.REVIEWED
+    assert (
+        f"https://github.com/lampssy/ai-sports-travel-planner/blob/{SHA_B}/"
+        "docs/catalog-curation/nendaz.md" in github.pull_requests[42].body
+    )
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
 
 
@@ -8026,6 +8030,10 @@ def test_publish_proposal_uses_only_private_state_files_and_finishes_work(
     assert journal is not None
     assert journal.report_path == "docs/catalog-curation/nendaz.json"
     assert journal.resulting_graph_markdown == CANONICAL_GRAPH
+    assert (
+        f"https://github.com/lampssy/ai-sports-travel-planner/blob/{SHA_B}/"
+        "docs/catalog-curation/nendaz.md" in github.pull_requests[71].body
+    )
     _assert_outcome(payload, worker="discovery", mutation=True, run_id=run_id)
 
 
@@ -8258,6 +8266,10 @@ def test_publish_state_ready_adopts_legacy_body_with_explicit_permission(
     assert "Current concise synopsis." in github.pull_requests[42].body
     assert github.pull_requests[42].body.count("snowcast-maintainer-body:start") == 1
     assert github.pull_requests[42].body.count("snowcast-maintainer-body:end") == 1
+    assert (
+        f"https://github.com/lampssy/ai-sports-travel-planner/blob/{SHA_B}/"
+        "docs/catalog-curation/nendaz.md" in github.pull_requests[42].body
+    )
     assert MaintainerState.READY.value in github.pull_requests[42].labels
     machine = trusted_machine_state(github.list_issue_comments(42))
     assert machine is not None and machine.reviewed_head == SHA_B

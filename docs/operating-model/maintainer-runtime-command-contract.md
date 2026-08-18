@@ -524,6 +524,14 @@ and at least every five minutes during Codex work. Release exactly once in a
 `finally` path if and only if acquisition succeeded. `lock-busy` before
 acquisition is a terminal no-op and never triggers release.
 
+Every curation PR synopsis with a managed body must end with a `Full report`
+section containing a clickable link to the rendered Markdown report. The
+primary link is an absolute GitHub blob link bound to the exact published head;
+do not show only a repository path or use a default-branch-relative link. The
+helper appends or refreshes this exact-head link during publication. A link to
+the canonical JSON report may be included as secondary technical context, but
+the rendered Markdown report is the primary owner-review surface.
+
 A successful curation heartbeat always returns base field `worker`. When that
 run owns an active CI continuation it also returns conditional `ci_budget` with
 exactly `first_wait_seconds`, `repair_active_seconds`, and

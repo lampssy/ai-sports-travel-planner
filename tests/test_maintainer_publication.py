@@ -25,6 +25,7 @@ from ops.maintainer.publication import (
     PublicationPlan,
     ci_publication_machine_state,
     create_publication_text,
+    ensure_curation_report_link,
     extract_managed_body,
     outcome_plan,
     parse_machine_state,
@@ -163,6 +164,41 @@ def test_extract_managed_body_round_trips_or_reports_absence() -> None:
 
     assert extract_managed_body(marked) == managed
     assert extract_managed_body("Owner-authored context") is None
+
+
+def test_curation_report_link_is_exact_head_and_idempotent() -> None:
+    body = "## Scope\n\nReviewed catalog changes."
+    expected_url = (
+        "https://github.com/lampssy/ai-sports-travel-planner/blob/"
+        f"{SHA_A}/docs/catalog-curation/nendaz.md"
+    )
+
+    linked = ensure_curation_report_link(
+        body,
+        reviewed_head=SHA_A,
+        report_path="docs/catalog-curation/nendaz.json",
+    )
+
+    assert linked == (
+        f"{body}\n\n## Full report\n\n[Open the full curation report]({expected_url})"
+    )
+    assert (
+        ensure_curation_report_link(
+            linked,
+            reviewed_head=SHA_A,
+            report_path="docs/catalog-curation/nendaz.json",
+        )
+        == linked
+    )
+
+    refreshed = ensure_curation_report_link(
+        linked,
+        reviewed_head=SHA_B,
+        report_path="docs/catalog-curation/nendaz.json",
+    )
+    assert refreshed.count("## Full report") == 1
+    assert f"/blob/{SHA_B}/docs/catalog-curation/nendaz.md" in refreshed
+    assert f"/blob/{SHA_A}/docs/catalog-curation/nendaz.md" not in refreshed
 
 
 @pytest.mark.parametrize(
