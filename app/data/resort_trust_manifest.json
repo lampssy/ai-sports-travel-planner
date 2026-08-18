@@ -1629,32 +1629,18 @@
         },
         "field_source_refs": {
           "identity_location": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://auronzo.info/en/misurina-dolomites/"
           ],
           "coordinates": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://www.openstreetmap.org/node/1427982374"
           ],
-          "price_level": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
-          ]
+          "price_level": []
         },
         "notes": [
-          "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
-          "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
-          "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+          "identity_location normalization: the municipal destination page's dedicated Misurina accommodation market and separate IAT office are normalized to the retained stay-destination identity.",
+          "coordinates normalization: the catalog center is retained as a rounded representation of the named Misurina OSM node.",
+          "The Cortina Skiworld valley product is one regional-network pass available from four separate stay destinations; it does not create a terrain domain.",
+          "Price level remains a product-curated estimate and therefore has no source refs."
         ]
       },
       "pinzolo": {
@@ -4124,29 +4110,15 @@
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://auronzo.info/en/misurina-dolomites/"
           ],
           "coordinates": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://www.openstreetmap.org/node/1427982374"
           ],
           "elevation": [
             "https://auronzo.info/en/misurina-dolomites/"
           ],
-          "lodging_price_quality": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
-          ],
+          "lodging_price_quality": [],
           "base_type": [
             "https://auronzo.info/en/misurina-dolomites/"
           ],
@@ -4156,11 +4128,11 @@
           "local_apres": []
         },
         "notes": [
-          "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
-          "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
-          "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
-          "Source-aware v2 enrichment reviewed official Misurina village material on 2026-07-05."
+          "identity_ownership normalization: the dedicated municipal accommodation section and separate Misurina IAT office are normalized to the retained base ownership.",
+          "coordinates normalization: the rounded catalog coordinates and regional ID refer to OSM node 1427982374.",
+          "base_type normalization: the municipal source's mountain-village description is normalized to village.",
+          "base_character normalization: the source's repeated calm and peaceful setting is normalized to quiet while development style remains unknown.",
+          "Lodging price and quality remain estimates without source refs; local apres remains needs_source."
         ]
       },
       "pinzolo-pinzolo": {
@@ -8031,32 +8003,17 @@
         },
         "field_source_refs": {
           "identity_coordinates": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://skipasscortina.com/EN/s12-misurina-neve-srl",
+            "https://www.openstreetmap.org/node/472590731"
           ],
           "elevation_season": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://www.visitdolomitibellunesi.com/imports/documenti-brochures/firmamento-delle-piste-da-sci-0d5c62a8-8d03-4ac6-aab4-f71d58afd90b/documents-1-trn-9fa8e486-1519-4e9b-b114-346ddd3aa5a4-file.pdf"
           ],
           "terrain_metrics": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://www.visitdolomitibellunesi.com/imports/documenti-brochures/firmamento-delle-piste-da-sci-0d5c62a8-8d03-4ac6-aab4-f71d58afd90b/documents-1-trn-9fa8e486-1519-4e9b-b114-346ddd3aa5a4-file.pdf"
           ],
           "skill_fit": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://www.visitdolomitibellunesi.com/imports/documenti-brochures/firmamento-delle-piste-da-sci-0d5c62a8-8d03-4ac6-aab4-f71d58afd90b/documents-1-trn-9fa8e486-1519-4e9b-b114-346ddd3aa5a4-file.pdf"
           ],
           "snowmaking": [],
           "glacier_terrain": [],
@@ -8067,12 +8024,12 @@
           "official_documents": []
         },
         "notes": [
-          "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
-          "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
-          "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
-          "Source-aware v2 enrichment reviewed official Misurina and Col de Varda material on 2026-07-05.",
-          "Broader Cortina and 3 Zinnen documents were not used to infer child-area facilities or map ownership."
+          "identity_coordinates normalization: Misurina Neve's member page and the Col de Varda OSM station establish the area identity; the retained catalog point is an area representative, not the station coordinate.",
+          "elevation_season normalization: the official 1756-2106 m range and December-to-Easter wording are normalized to elevation endpoints and months 12-4.",
+          "terrain_metrics normalization: the official 7 km and 15/75/10 percent split are normalized to 1.05/5.25/0.70 km; the two published lift types normalize to total_lift_count=2.",
+          "skill_fit normalization: the published difficulty mix supports all three catalog skill labels without converting percentages into run counts.",
+          "The consortium map is useful boundary evidence but covers a wider region, so official_documents remains needs_source for this child area.",
+          "Snowmaking, glacier, park, night-skiing, freeride, ski-day-apres, and child-owned official-document groups remain needs_source with no refs."
         ]
       },
       "pinzolo-ski-area": {
@@ -9934,17 +9891,17 @@
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
+            "https://auronzo.info/en/misurina-dolomites/"
           ],
           "access_mode_distance": [
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
+            "https://auronzo.info/en/misurina-dolomites/",
+            "https://www.openstreetmap.org/node/1427982374",
+            "https://www.openstreetmap.org/node/472590731"
           ]
         },
         "notes": [
-          "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
-          "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
-          "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+          "relationship normalization: the municipal guide places the Col de Varda chairlift next to Lake Misurina and presents it as the village's downhill access.",
+          "access_mode_distance normalization: walk/near/direct and 129 m represent a rounded Haversine point-to-point distance between the named Misurina OSM base node and Col de Varda aerialway station, not a routed walking distance."
         ]
       },
       "pinzolo-pinzolo--pinzolo-ski-area": {
@@ -11463,51 +11420,6 @@
           "Broader Dolomiti Superski and Sellaronda validity remains external context."
         ]
       },
-      "auronzo-cortina-valle-skipass": {
-        "display_name": "Valle Skipass Cortina",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "needs_source",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://auronzo.info/en/lifts-and-slopes/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://monteagudo.it/en/auronzo-misurina-ski-area/",
-            "https://www.openstreetmap.org/relation/47236",
-            "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
-          ],
-          "coverage": [
-            "https://auronzo.info/en/lifts-and-slopes/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://monteagudo.it/en/auronzo-misurina-ski-area/",
-            "https://www.openstreetmap.org/relation/47236",
-            "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
-          ],
-          "prices": [
-            "https://auronzo.info/en/lifts-and-slopes/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://monteagudo.it/en/auronzo-misurina-ski-area/",
-            "https://www.openstreetmap.org/relation/47236",
-            "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
-          ],
-          "pass_accessible_terrain": [
-            "https://auronzo.info/en/lifts-and-slopes/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://monteagudo.it/en/auronzo-misurina-ski-area/",
-            "https://www.openstreetmap.org/relation/47236",
-            "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
-          ]
-        },
-        "notes": [
-          "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
-          "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
-          "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
-        ]
-      },
       "auronzo-monte-agudo-skipass": {
         "display_name": "Auronzo di Cadore - Monte Agudo Skipass",
         "field_statuses": {
@@ -11819,48 +11731,23 @@
         "field_statuses": {
           "identity_scope_availability": "verified_with_adjustment",
           "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
+          "prices": "needs_source",
           "pass_accessible_terrain": "needs_source"
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://cortina.dolomiti.org/en/winter/plan/lifts/",
-            "https://cortinaprosport.com/en/ski/rental.html",
-            "https://skipasscortina.com/EN/page17-cortina-winter-prices",
-            "https://www.openstreetmap.org/node/606939921",
-            "https://www.openstreetmap.org/relation/47235",
-            "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
+            "https://skipasscortina.com/EN/page17-cortina-winter-prices"
           ],
           "coverage": [
-            "https://cortina.dolomiti.org/en/winter/plan/lifts/",
-            "https://cortinaprosport.com/en/ski/rental.html",
-            "https://skipasscortina.com/EN/page17-cortina-winter-prices",
-            "https://www.openstreetmap.org/node/606939921",
-            "https://www.openstreetmap.org/relation/47235",
-            "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
+            "https://skipasscortina.com/EN/page17-cortina-winter-prices"
           ],
-          "prices": [
-            "https://cortina.dolomiti.org/en/winter/plan/lifts/",
-            "https://cortinaprosport.com/en/ski/rental.html",
-            "https://skipasscortina.com/EN/page17-cortina-winter-prices",
-            "https://www.openstreetmap.org/node/606939921",
-            "https://www.openstreetmap.org/relation/47235",
-            "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
-          ],
-          "pass_accessible_terrain": [
-            "https://cortina.dolomiti.org/en/winter/plan/lifts/",
-            "https://cortinaprosport.com/en/ski/rental.html",
-            "https://skipasscortina.com/EN/page17-cortina-winter-prices",
-            "https://www.openstreetmap.org/node/606939921",
-            "https://www.openstreetmap.org/relation/47235",
-            "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
-          ]
+          "prices": [],
+          "pass_accessible_terrain": []
         },
         "notes": [
-          "Full destination recuration replaced the internal sprint-note source with official, open-data, and reviewed-editorial source refs.",
-          "San Vito di Cadore, Auronzo di Cadore, and Misurina are modeled as separate destinations; the 120 km Cortina valley pass scope remains pass context and is not copied onto the Cortina child ski-area terrain metrics.",
-          "Cortina child ski-area elevations, operating months, future season window, and representative pass price are normalized from reviewed ski-area data; child piste/lift totals remain omitted until accepted Cortina-only scope evidence is available.",
-          "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
+          "identity_scope_availability normalization: the consortium's valley-resort ticket presentation is normalized to one canonical Valle Skipass product available from Cortina, San Vito, Auronzo, and Misurina, with Cortina as its sole default.",
+          "coverage normalization: the official four-place valley scope is mapped to the four modeled ski areas; commercial coverage does not create a terrain domain.",
+          "The official page states over 120 km but does not publish an exact current representative price or an exact arithmetic terrain total, so prices and pass_accessible_terrain remain unset and needs_source."
         ]
       },
       "davos-klosters-regional-pass": {
@@ -12296,94 +12183,33 @@
           "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
         ]
       },
-      "misurina-cortina-valle-skipass": {
-        "display_name": "Valle Skipass Cortina",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "needs_source",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
-          ],
-          "coverage": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
-          ],
-          "prices": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
-          ],
-          "pass_accessible_terrain": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
-          ]
-        },
-        "notes": [
-          "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
-          "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
-          "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
-        ]
-      },
       "misurina-passo-tre-croci-skipass": {
-        "display_name": "Misurina - Passo Tre Croci Skipass",
+        "display_name": "Col de Varda - Loita Misurina Skipass",
         "field_statuses": {
           "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
+          "coverage": "verified",
+          "prices": "verified",
           "pass_accessible_terrain": "needs_source"
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://auronzomisurina.it/dev/wp-content/uploads/2024/12/TARIFFE-STAGIONE-INVERNALE-2024-25-Misurina-Neve.pdf",
+            "https://skipasscortina.com/EN/s12-misurina-neve-srl"
           ],
           "coverage": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://auronzomisurina.it/dev/wp-content/uploads/2024/12/TARIFFE-STAGIONE-INVERNALE-2024-25-Misurina-Neve.pdf",
+            "https://skipasscortina.com/EN/s12-misurina-neve-srl"
           ],
           "prices": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+            "https://auronzomisurina.it/dev/wp-content/uploads/2024/12/TARIFFE-STAGIONE-INVERNALE-2024-25-Misurina-Neve.pdf"
           ],
-          "pass_accessible_terrain": [
-            "https://auronzo.info/en/misurina-dolomites/",
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-            "https://www.openstreetmap.org/node/1427982374",
-            "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
-          ]
+          "pass_accessible_terrain": []
         },
         "notes": [
-          "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
-          "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
-          "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+          "identity_scope_availability normalization: the official Col de Varda - Loita Misurina tariff and Misurina Neve member presentation are normalized to the existing local single-area product ID.",
+          "Coverage is limited to the modeled combined Misurina area containing Col de Varda and Loita.",
+          "The EUR 49 adult one-day value is historical Winter 2024/25 high-season evidence and must not be presented as a current tariff.",
+          "No pass-accessible aggregate terrain fact is modeled."
         ]
       },
       "mont-blanc-unlimited": {
@@ -12597,51 +12423,6 @@
           "Pinzolo's local 31 km fact remains child-scoped; the 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
           "The 800-2100 m geometry, country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, and rental lift-distance are estimates.",
           "pinzolo-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
-        ]
-      },
-      "san-vito-cortina-valle-skipass": {
-        "display_name": "Valle Skipass Cortina",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "needs_source",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
-            "https://www.openstreetmap.org/relation/47211",
-            "https://www.skiareasanvito.com/en/rates/",
-            "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
-          ],
-          "coverage": [
-            "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
-            "https://www.openstreetmap.org/relation/47211",
-            "https://www.skiareasanvito.com/en/rates/",
-            "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
-          ],
-          "prices": [
-            "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
-            "https://www.openstreetmap.org/relation/47211",
-            "https://www.skiareasanvito.com/en/rates/",
-            "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
-          ],
-          "pass_accessible_terrain": [
-            "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
-            "https://www.openstreetmap.org/relation/47211",
-            "https://www.skiareasanvito.com/en/rates/",
-            "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
-            "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas"
-          ]
-        },
-        "notes": [
-          "Modeled as a separate destination because San Vito has independent lodging identity, local lift access, a local-only ski pass, and distinct family/value recommendation value.",
-          "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
-          "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
         ]
       },
       "san-vito-ski-area-skipass": {
