@@ -17,6 +17,10 @@ DESIGN_PATH = (
 RUNTIME_CONTRACT_PATH = (
     REPOSITORY_ROOT / "docs/operating-model/maintainer-runtime-command-contract.md"
 )
+SKI_AREA_BOUNDARY_ADR_PATH = (
+    REPOSITORY_ROOT
+    / "docs/architecture/adr/0016-require-evidence-owner-boundaries-for-ski-areas.md"
+)
 
 
 def _normalized(path: Path) -> str:
@@ -213,3 +217,26 @@ def test_activation_requires_installed_skill_transition_parity() -> None:
     assert "mixed unavailable/researchable second-pass rule" in contract
     assert "optional-scalar disposition rule" in contract
     assert "keep both schedules paused as contract-mismatch" in contract
+
+
+def test_operations_ownership_research_covers_official_sources() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH, SKI_AREA_BOUNDARY_ADR_PATH):
+        contract = _normalized(path)
+        assert "operator or consortium member directory" in contract, path
+        assert "candidate-scoped live status or opening presentation" in contract, path
+        assert "separate hostname" in contract, path
+
+
+def test_official_sources_can_jointly_prove_operations_ownership() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH, SKI_AREA_BOUNDARY_ADR_PATH):
+        contract = _normalized(path)
+        assert "jointly establish operations ownership" in contract, path
+        assert "separate company or member page alone" in contract, path
+        assert "supporting evidence only" in contract, path
+
+
+def test_operations_ownership_requires_source_family_exhaustion() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "before evidence_unavailable" in contract, path
+        assert "record the exact source families attempted" in contract, path

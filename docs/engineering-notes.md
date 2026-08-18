@@ -1336,6 +1336,13 @@ parent scope; provider aggregation is corroborating evidence rather than the
 deciding rule. Artificial child areas must not be created merely to manufacture
 a `TerrainDomain`. See ADR 0016.
 
+Operations ownership is reconstructed across the bounded official publication
+neighborhood. An operator or consortium member page can establish candidate
+identity while a regional candidate-scoped status/opening presentation
+establishes current operations; together they can prove the owner category.
+Neither a separate hostname nor a standalone feed is required, while a company
+listing without candidate-scoped operational evidence remains supporting only.
+
 Accommodation and terrain boundaries remain independent. A distinct,
 bookable accommodation market such as Kirchberg may justify its own
 `StayDestination` and bases while sharing the same KitzSki `SkiArea`, provided

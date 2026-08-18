@@ -274,6 +274,16 @@ The installed skill must:
   enumerate every concrete operator presentation and lift-pass candidate, with
   typed assessments and canonical backlog refs for deferred or unresolved pass
   products;
+- for an operations-ownership gap, the evidence envelope and completion pass
+  must inspect the candidate's official publication neighborhood: destination
+  or resort page, operator or consortium member directory and candidate member
+  page, and candidate-scoped live status or opening presentation. An official
+  candidate operator/member page and official current operations presentation
+  may jointly establish operations ownership even when a regional network hosts
+  one source; a separate hostname is not required. A separate company or member
+  page alone remains supporting evidence only. Before `evidence_unavailable`,
+  record the exact source families attempted and why the combined evidence does
+  not establish candidate-scoped operations;
 - when either initial lane is incomplete, consolidate its omissions into one
   run-local inventory-completion checklist before any catalog or trust fix. Each
   entry has `missing_item_id`, `category`, `candidate_keys`,

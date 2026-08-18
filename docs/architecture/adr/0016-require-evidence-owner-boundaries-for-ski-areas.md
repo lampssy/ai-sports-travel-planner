@@ -52,6 +52,18 @@ at least one category must be operations or weather. A disconnected or
 transfer-required complete area may qualify with one owner category because the
 parent cannot accurately represent its direct terrain access.
 
+Operations ownership is an evidence-scope conclusion, not a website-boundary
+test. Before deciding that operations evidence is absent, curation and review
+must inspect the candidate's official publication neighborhood: the destination
+or resort page, the operator or consortium member directory and candidate
+member page, and a candidate-scoped live status or opening presentation. An
+official candidate operator/member page and an official current operations
+presentation may jointly establish operations ownership even when a regional
+network hosts the status page or the sources use different hostnames. A
+separate hostname is not required. A separate company or member page alone,
+without candidate-scoped current operations evidence, remains supporting
+evidence only.
+
 Every current curation report uses schema version 3. Each ski-area candidate
 records complete-versus-sector scope, parent connectivity, operations ownership,
 weather ownership, pass scope, provider consensus, separation value, parent ID,
@@ -75,6 +87,9 @@ newly remediated or published curation work.
 - Connected child areas require stronger evidence than disconnected areas.
 - Curation must review the nearest parent owner scope before adding or retaining
   a ski area.
+- Curation and review must exhaust the bounded official operator/member and
+  candidate-scoped operations source families before treating ownership
+  evidence as unavailable.
 - Reports become slightly larger but make boundary reasoning directly
   reviewable in the checked-in evidence packet linked from the concise PR
   synopsis.

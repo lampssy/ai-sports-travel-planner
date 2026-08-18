@@ -549,6 +549,17 @@ prepare -> provisional evidence envelope -> dual inventory
    when its omission cannot misstate the selected graph; uncertainty that could
    invalidate ownership or an edge follows manual-check, owner-decision, or
    review-incomplete instead of being silently downgraded.
+
+   For an operations-ownership gap, the envelope and any completion pass inspect
+   the full bounded official publication neighborhood: destination or resort
+   page, operator or consortium member directory and candidate member page, and
+   candidate-scoped live status or opening presentation. An official candidate
+   operator/member page and official current operations presentation may jointly
+   establish operations ownership even when a regional network hosts one source;
+   a separate hostname is not required. A separate company or member page alone
+   remains supporting evidence only. Before `evidence_unavailable`, the lanes
+   record the exact source families attempted and why the combined evidence does
+   not establish candidate-scoped operations.
 6. If either initial lane is incomplete, Codex consolidates every omission into
    one run-local inventory-completion checklist before any catalog or trust
    remediation. Each checklist entry contains `missing_item_id`, `category`,
