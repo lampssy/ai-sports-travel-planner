@@ -1946,10 +1946,10 @@
       "regional_data_ids": {
         "osm_node_id": "1427982374"
       },
-      "elevation_m": null,
+      "elevation_m": 1754,
       "base_character": {
         "development_style": "unknown",
-        "local_pace": "unknown"
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -4285,20 +4285,20 @@
     },
     {
       "ski_area_id": "misurina-passo-tre-croci",
-      "name": "Misurina - Passo Tre Croci",
+      "name": "Misurina",
       "latitude": 46.5723,
       "longitude": 12.2705,
-      "base_elevation_m": 1752,
-      "summit_elevation_m": 2114,
+      "base_elevation_m": 1756,
+      "summit_elevation_m": 2106,
       "season_start_month": 12,
-      "season_end_month": 3,
+      "season_end_month": 4,
       "season_windows": [],
-      "total_piste_km": 4.2,
+      "total_piste_km": 7.0,
       "total_lift_count": 2,
       "piste_km_by_difficulty": {
-        "beginner": 0.8,
-        "intermediate": 2.9,
-        "advanced": 0.5
+        "beginner": 1.05,
+        "intermediate": 5.25,
+        "advanced": 0.7
       },
       "supported_skill_levels": [
         "beginner",
@@ -6033,12 +6033,17 @@
       "access_mode": "walk",
       "lift_distance": "near",
       "nearest_lift_name": "Col de Varda Chairlift",
-      "distance_m": 900,
+      "distance_m": 129,
       "duration_minutes": null,
       "is_direct": true,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "stay_base_osm_node_id": "1427982374",
+        "nearest_lift_osm_node_id": "472590731"
+      },
       "source_urls": [
-        "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
+        "https://auronzo.info/en/misurina-dolomites/",
+        "https://www.openstreetmap.org/node/1427982374",
+        "https://www.openstreetmap.org/node/472590731"
       ]
     },
     {
@@ -7058,22 +7063,6 @@
       ]
     },
     {
-      "lift_pass_product_id": "auronzo-cortina-valle-skipass",
-      "name": "Valle Skipass Cortina",
-      "validity_scope": "regional_network",
-      "available_from_stay_destination_ids": [
-        "auronzo-di-cadore"
-      ],
-      "default_for_stay_destination_ids": [],
-      "valid_ski_area_ids": [
-        "auronzo-monte-agudo"
-      ],
-      "terrain_domain_ids": [],
-      "external_validity_summary": "Also valid in Cortina d'Ampezzo, San Vito di Cadore, and Misurina under the Cortina valley pass; shared ticket validity is pass context, not a ski-connected terrain domain.",
-      "pass_accessible_terrain": null,
-      "prices": []
-    },
-    {
       "lift_pass_product_id": "auronzo-monte-agudo-skipass",
       "name": "Auronzo di Cadore - Monte Agudo Skipass",
       "validity_scope": "single_ski_area",
@@ -7296,30 +7285,24 @@
       "name": "Valle Skipass Cortina",
       "validity_scope": "regional_network",
       "available_from_stay_destination_ids": [
-        "cortina-dampezzo"
+        "auronzo-di-cadore",
+        "cortina-dampezzo",
+        "misurina",
+        "san-vito-di-cadore"
       ],
       "default_for_stay_destination_ids": [
         "cortina-dampezzo"
       ],
       "valid_ski_area_ids": [
-        "cortina-dampezzo-ski-area"
+        "auronzo-monte-agudo",
+        "cortina-dampezzo-ski-area",
+        "misurina-passo-tre-croci",
+        "san-vito-di-cadore-ski-area"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": "Also covers San Vito di Cadore, Auronzo di Cadore, and Misurina under the Cortina valley pass; shared ticket validity is not modeled as a terrain domain because these areas are not represented as ski-connected.",
+      "external_validity_summary": "The official Cortina Skiworld valley product covers Cortina d'Ampezzo, San Vito di Cadore, Auronzo di Cadore, and Misurina. Shared commercial coverage does not create a ski-connected terrain domain.",
       "pass_accessible_terrain": null,
-      "prices": [
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 80.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "main season",
-          "source_url": "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
-        }
-      ]
+      "prices": []
     },
     {
       "lift_pass_product_id": "davos-klosters-regional-pass",
@@ -7848,24 +7831,8 @@
       ]
     },
     {
-      "lift_pass_product_id": "misurina-cortina-valle-skipass",
-      "name": "Valle Skipass Cortina",
-      "validity_scope": "regional_network",
-      "available_from_stay_destination_ids": [
-        "misurina"
-      ],
-      "default_for_stay_destination_ids": [],
-      "valid_ski_area_ids": [
-        "misurina-passo-tre-croci"
-      ],
-      "terrain_domain_ids": [],
-      "external_validity_summary": "Also valid in Cortina d'Ampezzo, San Vito di Cadore, and Auronzo di Cadore under the Cortina valley pass; shared ticket validity is pass context, not a ski-connected terrain domain.",
-      "pass_accessible_terrain": null,
-      "prices": []
-    },
-    {
       "lift_pass_product_id": "misurina-passo-tre-croci-skipass",
-      "name": "Misurina - Passo Tre Croci Skipass",
+      "name": "Col de Varda - Loita Misurina Skipass",
       "validity_scope": "single_ski_area",
       "available_from_stay_destination_ids": [
         "misurina"
@@ -7888,8 +7855,8 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "main season",
-          "source_url": "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
+          "season_label": "Winter 2024/25 high season",
+          "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2024/12/TARIFFE-STAGIONE-INVERNALE-2024-25-Misurina-Neve.pdf"
         }
       ]
     },
@@ -8142,22 +8109,6 @@
           "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
         }
       ]
-    },
-    {
-      "lift_pass_product_id": "san-vito-cortina-valle-skipass",
-      "name": "Valle Skipass Cortina",
-      "validity_scope": "regional_network",
-      "available_from_stay_destination_ids": [
-        "san-vito-di-cadore"
-      ],
-      "default_for_stay_destination_ids": [],
-      "valid_ski_area_ids": [
-        "san-vito-di-cadore-ski-area"
-      ],
-      "terrain_domain_ids": [],
-      "external_validity_summary": "Also valid in Cortina d'Ampezzo, Auronzo di Cadore, and Misurina under the Cortina valley pass; shared ticket validity is pass context, not a ski-connected terrain domain.",
-      "pass_accessible_terrain": null,
-      "prices": []
     },
     {
       "lift_pass_product_id": "san-vito-ski-area-skipass",

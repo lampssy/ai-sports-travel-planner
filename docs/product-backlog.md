@@ -170,6 +170,14 @@ Candidate inventory:
 - `lift_pass_product:dolomiti-superski` and
   `lift_pass_product:alta-badia-points-value-card` require the wider area graph
   or explicit partial-area/value-product semantics before catalog creation.
+- Misurina's official product review also identified
+  `lift_pass_product:dolomiti-superski-family`,
+  `lift_pass_product:dolomiti-superski-superdays`,
+  `lift_pass_product:dolomiti-superski-dtl`, and
+  `lift_pass_product:dolomiti-superski-value-card` as regional products or
+  commercial variants. Model them only with complete network coverage and
+  product-specific validity/value semantics; historical and Extra-supplement
+  offers remain context rather than separate durable catalog entities.
 
 Not now:
 
