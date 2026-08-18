@@ -54,7 +54,7 @@
         "valid_ski_area_ids",
         "validity_scope"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "lift_pass_product",
@@ -120,7 +120,7 @@
         "valid_ski_area_ids",
         "validity_scope"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_area",
@@ -134,7 +134,7 @@
         "total_lift_count",
         "total_piste_km"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_area",
@@ -148,7 +148,7 @@
         "total_lift_count",
         "total_piste_km"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_area",
@@ -169,7 +169,7 @@
         "total_lift_count",
         "total_piste_km"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_area_access",
@@ -183,7 +183,7 @@
         "ski_area_id",
         "stay_base_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_area_access",
@@ -197,7 +197,7 @@
         "ski_area_id",
         "stay_base_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_area_access",
@@ -211,7 +211,7 @@
         "ski_area_id",
         "stay_base_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_area_access",
@@ -232,7 +232,7 @@
         "ski_area_id",
         "stay_base_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_region",
@@ -244,7 +244,7 @@
         "parent_ski_region_id",
         "ski_region_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_region",
@@ -256,7 +256,7 @@
         "parent_ski_region_id",
         "ski_region_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_region",
@@ -268,7 +268,7 @@
         "parent_ski_region_id",
         "ski_region_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_region",
@@ -280,7 +280,7 @@
         "parent_ski_region_id",
         "ski_region_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_base",
@@ -292,7 +292,7 @@
         "stay_base_id",
         "stay_destination_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_base",
@@ -304,7 +304,7 @@
         "stay_base_id",
         "stay_destination_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_base",
@@ -316,7 +316,7 @@
         "stay_base_id",
         "stay_destination_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_base",
@@ -335,7 +335,7 @@
         "stay_base_id",
         "stay_destination_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_destination",
@@ -346,7 +346,7 @@
         "stay_destination_id",
         "trip_market_region_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_destination",
@@ -357,7 +357,7 @@
         "stay_destination_id",
         "trip_market_region_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_destination",
@@ -375,7 +375,7 @@
         "stay_destination_id",
         "trip_market_region_id"
       ],
-      "resulting_graph_role": "linked_dependency"
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "trust_manifest",

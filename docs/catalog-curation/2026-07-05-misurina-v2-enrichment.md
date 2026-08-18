@@ -62,34 +62,34 @@ flowchart LR
 | Target | Scope | Graph Role | Required Fields |
 | --- | --- | --- | --- |
 | `lift_pass_product:auronzo-cortina-valle-skipass` | `narrow` | `focus` | `available_from_stay_destination_ids`, `default_for_stay_destination_ids`, `external_validity_summary`, `lift_pass_product_id`, `name`, `prices`, `terrain_domain_ids`, `valid_ski_area_ids`, `validity_scope`, `validity_windows` |
-| `lift_pass_product:auronzo-monte-agudo-skipass` | `narrow` | `linked_dependency` | `available_from_stay_destination_ids`, `default_for_stay_destination_ids`, `lift_pass_product_id`, `name`, `prices`, `terrain_domain_ids`, `valid_ski_area_ids`, `validity_scope` |
+| `lift_pass_product:auronzo-monte-agudo-skipass` | `narrow` | `focus` | `available_from_stay_destination_ids`, `default_for_stay_destination_ids`, `lift_pass_product_id`, `name`, `prices`, `terrain_domain_ids`, `valid_ski_area_ids`, `validity_scope` |
 | `lift_pass_product:cortina-valle-skipass` | `full` | `focus` | all canonical fields |
 | `lift_pass_product:misurina-cortina-valle-skipass` | `narrow` | `focus` | `available_from_stay_destination_ids`, `default_for_stay_destination_ids`, `external_validity_summary`, `lift_pass_product_id`, `name`, `prices`, `terrain_domain_ids`, `valid_ski_area_ids`, `validity_scope`, `validity_windows` |
 | `lift_pass_product:misurina-passo-tre-croci-skipass` | `full` | `focus` | all canonical fields |
 | `lift_pass_product:san-vito-cortina-valle-skipass` | `narrow` | `focus` | `available_from_stay_destination_ids`, `default_for_stay_destination_ids`, `external_validity_summary`, `lift_pass_product_id`, `name`, `prices`, `terrain_domain_ids`, `valid_ski_area_ids`, `validity_scope`, `validity_windows` |
-| `lift_pass_product:san-vito-ski-area-skipass` | `narrow` | `linked_dependency` | `available_from_stay_destination_ids`, `default_for_stay_destination_ids`, `lift_pass_product_id`, `name`, `prices`, `terrain_domain_ids`, `valid_ski_area_ids`, `validity_scope` |
-| `ski_area:auronzo-monte-agudo` | `narrow` | `linked_dependency` | `base_elevation_m`, `name`, `ski_area_id`, `summit_elevation_m`, `total_lift_count`, `total_piste_km` |
-| `ski_area:cortina-dampezzo-ski-area` | `narrow` | `linked_dependency` | `base_elevation_m`, `name`, `ski_area_id`, `summit_elevation_m`, `total_lift_count`, `total_piste_km` |
+| `lift_pass_product:san-vito-ski-area-skipass` | `narrow` | `focus` | `available_from_stay_destination_ids`, `default_for_stay_destination_ids`, `lift_pass_product_id`, `name`, `prices`, `terrain_domain_ids`, `valid_ski_area_ids`, `validity_scope` |
+| `ski_area:auronzo-monte-agudo` | `narrow` | `focus` | `base_elevation_m`, `name`, `ski_area_id`, `summit_elevation_m`, `total_lift_count`, `total_piste_km` |
+| `ski_area:cortina-dampezzo-ski-area` | `narrow` | `focus` | `base_elevation_m`, `name`, `ski_area_id`, `summit_elevation_m`, `total_lift_count`, `total_piste_km` |
 | `ski_area:misurina-passo-tre-croci` | `full` | `focus` | all canonical fields |
-| `ski_area:san-vito-di-cadore-ski-area` | `narrow` | `linked_dependency` | `base_elevation_m`, `name`, `ski_area_id`, `summit_elevation_m`, `total_lift_count`, `total_piste_km` |
-| `ski_area_access:auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo` | `narrow` | `linked_dependency` | `access_mode`, `distance_m`, `is_direct`, `ski_area_access_id`, `ski_area_id`, `stay_base_id` |
-| `ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo` | `narrow` | `linked_dependency` | `access_mode`, `distance_m`, `is_direct`, `ski_area_access_id`, `ski_area_id`, `stay_base_id` |
-| `ski_area_access:cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area` | `narrow` | `linked_dependency` | `access_mode`, `distance_m`, `is_direct`, `ski_area_access_id`, `ski_area_id`, `stay_base_id` |
+| `ski_area:san-vito-di-cadore-ski-area` | `narrow` | `focus` | `base_elevation_m`, `name`, `ski_area_id`, `summit_elevation_m`, `total_lift_count`, `total_piste_km` |
+| `ski_area_access:auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo` | `narrow` | `focus` | `access_mode`, `distance_m`, `is_direct`, `ski_area_access_id`, `ski_area_id`, `stay_base_id` |
+| `ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo` | `narrow` | `focus` | `access_mode`, `distance_m`, `is_direct`, `ski_area_access_id`, `ski_area_id`, `stay_base_id` |
+| `ski_area_access:cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area` | `narrow` | `focus` | `access_mode`, `distance_m`, `is_direct`, `ski_area_access_id`, `ski_area_id`, `stay_base_id` |
 | `ski_area_access:misurina-misurina--misurina-passo-tre-croci` | `full` | `focus` | all canonical fields |
-| `ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area` | `narrow` | `linked_dependency` | `access_mode`, `distance_m`, `is_direct`, `ski_area_access_id`, `ski_area_id`, `stay_base_id` |
-| `ski_region:auronzo-di-cadore` | `narrow` | `linked_dependency` | `grouping_policy`, `name`, `parent_ski_region_id`, `ski_region_id` |
-| `ski_region:cortina-dampezzo` | `narrow` | `linked_dependency` | `grouping_policy`, `name`, `parent_ski_region_id`, `ski_region_id` |
-| `ski_region:misurina` | `narrow` | `linked_dependency` | `grouping_policy`, `name`, `parent_ski_region_id`, `ski_region_id` |
-| `ski_region:san-vito-di-cadore` | `narrow` | `linked_dependency` | `grouping_policy`, `name`, `parent_ski_region_id`, `ski_region_id` |
-| `stay_base:auronzo-di-cadore-auronzo-di-cadore` | `narrow` | `linked_dependency` | `elevation_m`, `name`, `stay_base_id`, `stay_destination_id` |
-| `stay_base:auronzo-di-cadore-taiarezze` | `narrow` | `linked_dependency` | `elevation_m`, `name`, `stay_base_id`, `stay_destination_id` |
-| `stay_base:cortina-dampezzo-cortina-dampezzo` | `narrow` | `linked_dependency` | `elevation_m`, `name`, `stay_base_id`, `stay_destination_id` |
+| `ski_area_access:san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area` | `narrow` | `focus` | `access_mode`, `distance_m`, `is_direct`, `ski_area_access_id`, `ski_area_id`, `stay_base_id` |
+| `ski_region:auronzo-di-cadore` | `narrow` | `focus` | `grouping_policy`, `name`, `parent_ski_region_id`, `ski_region_id` |
+| `ski_region:cortina-dampezzo` | `narrow` | `focus` | `grouping_policy`, `name`, `parent_ski_region_id`, `ski_region_id` |
+| `ski_region:misurina` | `narrow` | `focus` | `grouping_policy`, `name`, `parent_ski_region_id`, `ski_region_id` |
+| `ski_region:san-vito-di-cadore` | `narrow` | `focus` | `grouping_policy`, `name`, `parent_ski_region_id`, `ski_region_id` |
+| `stay_base:auronzo-di-cadore-auronzo-di-cadore` | `narrow` | `focus` | `elevation_m`, `name`, `stay_base_id`, `stay_destination_id` |
+| `stay_base:auronzo-di-cadore-taiarezze` | `narrow` | `focus` | `elevation_m`, `name`, `stay_base_id`, `stay_destination_id` |
+| `stay_base:cortina-dampezzo-cortina-dampezzo` | `narrow` | `focus` | `elevation_m`, `name`, `stay_base_id`, `stay_destination_id` |
 | `stay_base:misurina-misurina` | `full` | `focus` | all canonical fields |
-| `stay_base:san-vito-di-cadore-san-vito-di-cadore` | `narrow` | `linked_dependency` | `elevation_m`, `name`, `stay_base_id`, `stay_destination_id` |
-| `stay_destination:auronzo-di-cadore` | `narrow` | `linked_dependency` | `name`, `stay_destination_id`, `trip_market_region_id` |
-| `stay_destination:cortina-dampezzo` | `narrow` | `linked_dependency` | `name`, `stay_destination_id`, `trip_market_region_id` |
+| `stay_base:san-vito-di-cadore-san-vito-di-cadore` | `narrow` | `focus` | `elevation_m`, `name`, `stay_base_id`, `stay_destination_id` |
+| `stay_destination:auronzo-di-cadore` | `narrow` | `focus` | `name`, `stay_destination_id`, `trip_market_region_id` |
+| `stay_destination:cortina-dampezzo` | `narrow` | `focus` | `name`, `stay_destination_id`, `trip_market_region_id` |
 | `stay_destination:misurina` | `full` | `focus` | all canonical fields |
-| `stay_destination:san-vito-di-cadore` | `narrow` | `linked_dependency` | `name`, `stay_destination_id`, `trip_market_region_id` |
+| `stay_destination:san-vito-di-cadore` | `narrow` | `focus` | `name`, `stay_destination_id`, `trip_market_region_id` |
 | `trust_manifest:lift_pass_products:auronzo-cortina-valle-skipass` | `narrow` | `focus` | `display_name`, `field_source_refs`, `field_statuses`, `notes` |
 | `trust_manifest:lift_pass_products:cortina-valle-skipass` | `full` | `focus` | all canonical fields |
 | `trust_manifest:lift_pass_products:misurina-cortina-valle-skipass` | `narrow` | `focus` | `display_name`, `field_source_refs`, `field_statuses`, `notes` |
