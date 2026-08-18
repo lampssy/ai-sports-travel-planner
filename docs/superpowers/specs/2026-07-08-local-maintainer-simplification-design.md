@@ -1189,6 +1189,12 @@ mergeability, and exact-head review evidence. This orchestration deadline is
 independent of the one-hour stale-lock threshold because active work refreshes
 the lease at least every five minutes.
 
+The runtime command prefix omits explicit state and GitHub configuration paths.
+The CLI's tested defaults resolve the owner-private Snowcast state directory and
+project-scoped GitHub profile once at process startup. Normal cycles must not
+reconstruct those paths from run-local orchestration context; explicit directory
+flags remain available only for isolated tests and owner diagnostics.
+
 The state directory remains owner-private and rejects symlinks and unsafe file
 types. Atomic replacement is retained. The separate private token,
 worker-credential files, and their cross-validation are removed because they do

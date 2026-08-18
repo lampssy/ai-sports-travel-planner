@@ -103,6 +103,10 @@ The installed skill must:
   `docs/operating-model/maintainer-runtime-command-contract.md`; never invent a
   family or option, translate semantic “lease” wording into argv, inspect source
   to discover a command, or call `--help` during a cycle;
+- use the path-free registered command prefix verbatim. The CLI supplies the
+  private Snowcast state directory and project-scoped GitHub directory through
+  its tested defaults. Never append `--state-dir` or `--gh-config-dir`, derive
+  them from run-local context, or reconstruct a home path during a normal cycle;
 - classify helper `invalid-command` at `dispatch` as
   `orchestration-command-invalid`; after a completed structured dispatch
   rejection with `outcome.mutation_occurred=false`, the orchestrator must reload

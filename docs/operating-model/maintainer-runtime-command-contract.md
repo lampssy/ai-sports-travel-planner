@@ -18,9 +18,13 @@ If a required operation has no recipe, stop before that operation with
 
 ## Fixed Invocation
 
-Execute every recipe by appending its `argv` to `command_prefix`. Keep the state
-and project-scoped GitHub directories fixed for the whole run. A helper-created
-publication input is represented only by its returned direct-child basename.
+Execute every recipe by appending its `argv` to `command_prefix`. The registered
+prefix deliberately omits `--state-dir` and `--gh-config-dir`: the CLI owns the
+fixed Snowcast defaults for both directories. During a maintainer cycle, never
+append those options, rebuild them from run-local context, or substitute a home
+directory. Explicit directory options remain available only for isolated tests
+and owner-run diagnostics outside a normal cycle. A helper-created publication
+input is represented only by its returned direct-child basename.
 
 The JSON block is machine-checked against the real CLI parser. It is deliberately
 repetitive where worker identity affects lease ownership so an orchestrator does
@@ -36,11 +40,7 @@ not have to derive an invocation.
     "--no-config",
     "python",
     "-m",
-    "ops.maintainer.cli",
-    "--state-dir",
-    "${STATE_DIR}",
-    "--gh-config-dir",
-    "${GH_CONFIG_DIR}"
+    "ops.maintainer.cli"
   ],
   "recipes": {
     "inspect_curation": {
@@ -365,8 +365,11 @@ not have to derive an invocation.
 
 ## Placeholder Rules
 
-- `${STATE_DIR}` is `$HOME/.local/state/snowcast-maintainer`.
-- `${GH_CONFIG_DIR}` is `$HOME/.config/gh-lampssy-snowcast`.
+- The CLI default state directory is
+  `$HOME/.local/state/snowcast-maintainer`, and its default project-scoped
+  GitHub directory is `$HOME/.config/gh-lampssy-snowcast`. They are not runtime
+  placeholders and must not be reconstructed or appended to the registered
+  prefix during a normal cycle.
 - `${RUN_ID}` is copied exactly from the successful matching `lock acquire`
   result. It is never generated, shortened, logged publicly, or reused by
   another worker.

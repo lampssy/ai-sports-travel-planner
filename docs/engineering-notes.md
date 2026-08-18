@@ -832,6 +832,13 @@ The malformed argv is never repeated, and uncertainty, missing or positive
 mutation status, recipe ambiguity, capability switching, a non-dispatch error,
 or a second dispatch rejection still stops the cycle.
 
+The registered helper prefix intentionally contains no state or GitHub-profile
+path arguments. `ops.maintainer.cli` owns the project defaults, so each tool cell
+appends only the registered recipe argv. This prevents a later heartbeat or
+publication command from silently switching helper state because a run-local
+home/path field was absent or malformed. Explicit directory flags remain useful
+for isolated tests and owner diagnostics outside normal cycles.
+
 Incoming curation reports are review input, not preparation authority.
 Preparation validates the resulting diff rather than freezing the incoming
 blob IDs, path set, or catalog targets. Catalog data, non-control-plane

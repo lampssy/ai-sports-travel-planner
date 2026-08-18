@@ -119,10 +119,6 @@ def test_runtime_contract_documents_every_cli_route_with_parseable_argv() -> Non
         "python",
         "-m",
         "ops.maintainer.cli",
-        "--state-dir",
-        "${STATE_DIR}",
-        "--gh-config-dir",
-        "${GH_CONFIG_DIR}",
     ]
     recipes = contract["recipes"]
     assert isinstance(recipes, dict)
@@ -153,6 +149,13 @@ def test_runtime_contract_documents_every_cli_route_with_parseable_argv() -> Non
         ("lock", "release"),
     }
     assert documented_routes == expected_routes
+
+
+def test_registered_prefix_relies_on_project_cli_directory_defaults() -> None:
+    parsed = _parser().parse_args(["inspect", "curation"])
+
+    assert parsed.state_dir == Path.home() / ".local/state/snowcast-maintainer"
+    assert parsed.gh_config_dir == Path.home() / ".config/gh-lampssy-snowcast"
 
 
 def test_runtime_contract_freezes_the_critical_sequences() -> None:
