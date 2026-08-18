@@ -1,4 +1,5 @@
 {
+  "report_schema_version": 3,
   "title": "Misurina Catalog V2 Fact Enrichment",
   "summary": "Reviews Misurina-Passo Tre Croci and the Misurina stay base against official municipal tourism sources. Supported elevation and quiet village character are added while regional ski documents are not projected onto the child area.",
   "changed_entities": [
@@ -8,10 +9,19 @@
   ],
   "reviewed_targets": [
     {
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
       "target_type": "ski_area",
       "target_id": "misurina-passo-tre-croci",
       "scope": "narrow",
       "required_field_paths": [
+        "name",
         "snowmaking.availability",
         "snowmaking.coverage_pct",
         "snowmaking.coverage_basis",
@@ -30,6 +40,33 @@
         "ski_day_apres_profile.availability",
         "ski_day_apres_profile.intensity",
         "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "misurina-misurina--misurina-passo-tre-croci",
+      "scope": "narrow",
+      "required_field_paths": [
+        "nearest_lift_name"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "prices"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "valid_ski_area_ids",
+        "external_validity_summary"
       ]
     },
     {
@@ -220,6 +257,20 @@
   ],
   "field_coverage": [
     {
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official municipal destination page presents Misurina as a named mountain village and accommodation destination."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official operating page identifies the Misurina Col de Varda terrain; the catalog retains its established Misurina-Passo Tre Croci normalized name."
+    },
+    {
       "target_type": "ski_area",
       "target_id": "misurina-passo-tre-croci",
       "field_path": "snowmaking.availability",
@@ -346,6 +397,48 @@
       "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
     },
     {
+      "target_type": "ski_area_access",
+      "target_id": "misurina-misurina--misurina-passo-tre-croci",
+      "field_path": "nearest_lift_name",
+      "status": "reviewed-no-change",
+      "notes": "The official destination page places the Col de Varda chairlift next to Lake Misurina."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "The existing local product remains represented for inventory review; its exact official tariff identity is unresolved."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "field_path": "prices",
+      "status": "unresolved",
+      "notes": "The stored EUR 49 adult daily value is a reviewed-editorial proxy and requires exact current official product/tariff review."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "The regional Valle Skipass product is retained in the selected Misurina graph and owns no changes in this report."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "unresolved",
+      "notes": "Misurina coverage is retained while the exact wider Cortina pass coverage remains subject to the initial dual review."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "field_path": "external_validity_summary",
+      "status": "unresolved",
+      "notes": "The cross-destination summary is pass-only context; its exact current regional product scope remains subject to the initial dual review."
+    },
+    {
       "target_type": "stay_base",
       "target_id": "misurina-misurina",
       "field_path": "elevation_m",
@@ -449,10 +542,398 @@
       "source_value": 1754,
       "evidence_summary": "The official guide gives Misurina at 1,754 m.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "v3-scope-001-misurina-destination",
+      "boundary_target_ids": [
+        "misurina"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/misurina-dolomites/",
+      "source_title": "Municipality of Auronzo official Misurina destination guide",
+      "source_value": "Misurina",
+      "evidence_summary": "The official municipal destination page treats Misurina as a mountain village, identifies its lake locality, explains independent arrival routes, and links hotels and accommodations.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v3-scope-002-misurina-operator",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/impianti-e-piste/",
+      "source_title": "Municipality of Auronzo current lifts and slopes page",
+      "source_value": "Misurina - Col de Varda",
+      "evidence_summary": "The current municipal operations page separately exposes the Auronzo and Misurina lift and piste sections and identifies Col de Varda as the Misurina downhill terrain.",
+      "normalization_note": "The catalog retains the established Misurina-Passo Tre Croci normalized ski-area label while the source names the principal Col de Varda terrain."
+    },
+    {
+      "evidence_id": "v3-scope-003-misurina-access",
+      "boundary_target_ids": [
+        "misurina"
+      ],
+      "target_type": "ski_area_access",
+      "target_id": "misurina-misurina--misurina-passo-tre-croci",
+      "field_path": "nearest_lift_name",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/misurina-dolomites/",
+      "source_title": "Municipality of Auronzo official Misurina destination guide",
+      "source_value": "Col de Varda chairlift",
+      "evidence_summary": "The official guide states that the Col de Varda chairlift is next to Lake Misurina, supporting a direct local relationship while not independently proving the stored 900 metre distance.",
+      "normalization_note": "Capitalization is normalized in the catalog lift name."
+    },
+    {
+      "evidence_id": "v3-scope-004-misurina-local-pass-proxy",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "field_path": "prices",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
+      "source_title": "Skiresort.info Misurina-Passo Tre Croci profile",
+      "source_value": "EUR 49 adult daily proxy",
+      "evidence_summary": "The reviewed-editorial profile supplies the stored representative adult day-price proxy for the named Misurina-Passo Tre Croci scope.",
+      "normalization_note": "This remains a proxy pending exact official product and current-season tariff evidence."
+    },
+    {
+      "evidence_id": "v3-scope-005-cortina-valle-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-cortina-valle-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/EN/page17-cortina-winter-prices",
+      "source_title": "Cortina Skiworld official winter prices",
+      "source_value": "Valle Skipass Cortina",
+      "evidence_summary": "The official Cortina tariff page is the bounded source for the named regional Valle Skipass product and its current tariff context; it does not by itself establish the complete wider coverage graph.",
+      "normalization_note": "The published product name is normalized to the catalog identifier."
+    },
+    {
+      "evidence_id": "v3-scope-006-misurina-regional-tourism",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area",
+      "source_title": "Dolomiti Bellunesi official Auronzo-Misurina ski-area page",
+      "source_value": "Auronzo-Misurina ski area",
+      "evidence_summary": "The regional official tourism page corroborates the broader Auronzo-Misurina presentation but does not override the modeled child-area ownership boundary.",
+      "normalization_note": "The broader regional label is retained as scope context rather than copied into the child-area name."
     }
   ],
-  "destination_boundary_assessments": [],
-  "boundary_decision_targets": [],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "misurina",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "pass",
+          "notes": "The official destination page presents Misurina itself as the place to stay and links the locality's hotels and accommodations.",
+          "evidence_refs": [
+            "v3-scope-001-misurina-destination"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "pass",
+          "notes": "The municipal destination service maintains a dedicated Misurina page and accommodation collection within the Auronzo destination system.",
+          "evidence_refs": [
+            "v3-scope-001-misurina-destination"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "pass",
+          "notes": "The high-altitude lake village has distinct stay context, access routes, and local downhill access compared with Auronzo town.",
+          "evidence_refs": [
+            "v3-scope-001-misurina-destination",
+            "v3-scope-003-misurina-access"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_stay_market_treatment",
+          "status": "pass",
+          "notes": "The official page explicitly presents Misurina as a mountain village with its own accommodation links.",
+          "evidence_refs": [
+            "v3-scope-001-misurina-destination"
+          ]
+        }
+      ],
+      "failure_route": null
+    }
+  ],
+  "entity_scope_assessments": [
+    {
+      "candidate_id": "misurina",
+      "candidate_name": "Misurina",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v3-scope-001-misurina-destination",
+        "v3-scope-003-misurina-access"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "misurina"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing destination is retained for the dedicated high-altitude village stay market and direct Col de Varda access; the initial dual review must independently verify this boundary.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "misurina-misurina",
+      "candidate_name": "Misurina stay base",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-001-misurina-misurina-base-character-local-pace",
+        "v2-enrichment-002-misurina-misurina-elevation-m",
+        "v3-scope-001-misurina-destination"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "misurina-misurina"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The named village/lake accommodation base remains represented inside the Misurina destination.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "misurina-passo-tre-croci",
+      "candidate_name": "Misurina - Passo Tre Croci",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_status_or_schedule",
+        "child_scoped_terrain_metrics",
+        "full_local_pass",
+        "disconnected_terrain",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v3-scope-002-misurina-operator",
+        "v3-scope-003-misurina-access",
+        "v3-scope-004-misurina-local-pass-proxy",
+        "v3-scope-006-misurina-regional-tourism"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "misurina-passo-tre-croci"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing transfer-required Misurina downhill area is retained structurally; independent operations, weather, pass, and complete-terrain claims remain subject to the initial dual review.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "auronzo-monte-agudo",
+        "terrain_scope": "complete",
+        "connectivity_to_parent": "transfer_required",
+        "operational_scope": "independent",
+        "weather_scope": "unknown",
+        "pass_scope": "full_local",
+        "provider_consensus": "mixed",
+        "separation_value": "material",
+        "evidence_refs": [
+          "v3-scope-002-misurina-operator",
+          "v3-scope-003-misurina-access",
+          "v3-scope-004-misurina-local-pass-proxy",
+          "v3-scope-006-misurina-regional-tourism"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "misurina-misurina--misurina-passo-tre-croci",
+      "candidate_name": "Misurina to Col de Varda access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v3-scope-003-misurina-access"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "misurina-misurina--misurina-passo-tre-croci"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The direct base-to-area relationship is retained, while the stored walk mode and 900 metre distance require exact provenance review.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "misurina-passo-tre-croci-skipass",
+      "candidate_name": "Misurina - Passo Tre Croci local pass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity",
+        "full_local_pass"
+      ],
+      "evidence_refs": [
+        "v3-scope-004-misurina-local-pass-proxy"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "misurina-passo-tre-croci-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing local pass remains represented for review, but its exact official product identity and tariff are not established by the current proxy.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "misurina-cortina-valle-skipass",
+      "candidate_name": "Valle Skipass Cortina from Misurina",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "v3-scope-005-cortina-valle-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "misurina-cortina-valle-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing Misurina-scoped regional product remains in the current resulting graph; its exact wider coverage is subject to the initial dual review and this report owns no changes to it.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "cortina-valle-external-destinations",
+      "candidate_name": "Cortina, San Vito, and Auronzo pass context",
+      "candidate_kind": "stay_destination",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "v3-scope-005-cortina-valle-pass"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "The named destinations are retained only as external pass-validity context and are not included in the Misurina resulting graph.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "misurina-valle-terrain-domain",
+      "candidate_name": "Misurina-Cortina valley terrain domain",
+      "candidate_kind": "terrain_domain",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_product_identity",
+        "disconnected_terrain"
+      ],
+      "evidence_refs": [
+        "v3-scope-005-cortina-valle-pass"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "Shared pass validity does not establish ski-connected terrain, so no terrain domain is added to the selected graph.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    }
+  ],
+  "review_evidence_envelope": [
+    {
+      "family_id": "misurina-destination-booking",
+      "source_kind": "destination_booking",
+      "source_urls": [
+        "https://auronzo.info/en/misurina-dolomites/"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base"
+      ]
+    },
+    {
+      "family_id": "misurina-operator-status",
+      "source_kind": "ski_area_operator",
+      "source_urls": [
+        "https://auronzo.info/impianti-e-piste/",
+        "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+      ],
+      "candidate_kinds": [
+        "ski_area"
+      ]
+    },
+    {
+      "family_id": "misurina-access",
+      "source_kind": "access_transport",
+      "source_urls": [
+        "https://auronzo.info/en/misurina-dolomites/"
+      ],
+      "candidate_kinds": [
+        "ski_area_access"
+      ]
+    },
+    {
+      "family_id": "misurina-local-pass-proxy",
+      "source_kind": "pass_tariff",
+      "source_urls": [
+        "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
+      ],
+      "candidate_kinds": [
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "misurina-cortina-pass",
+      "source_kind": "pass_tariff",
+      "source_urls": [
+        "https://skipasscortina.com/EN/page17-cortina-winter-prices"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "terrain_domain",
+        "lift_pass_product"
+      ]
+    }
+  ],
+  "resulting_graph": {
+    "focus_stay_destination_ids": [
+      "misurina"
+    ]
+  },
+  "boundary_decision_targets": [
+    "misurina"
+  ],
   "weather_request_geometry_targets": [],
   "weather_request_geometry_assessments": [],
   "validation_commands": [],
