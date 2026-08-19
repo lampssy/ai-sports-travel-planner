@@ -412,7 +412,11 @@ The installed skill must:
   continue. The first and second consecutive exact repeats may receive
   materially different bounded fixes while time and cycles remain; the third
   consecutive exact repeat stops. Regression or unsafe scope expansion still
-  stops immediately. No candidate-entry count or percentage decides
+  stops immediately. Once an assertion is `verified-resolved`, retain it as
+  closed history and omit it from subsequent fixer input. If that exact
+  assertion and acceptance criterion fails again on a descendant head, classify
+  it as `regressed`; do not reopen it as `repeated` and do not increment its
+  repeat streak. No candidate-entry count or percentage decides
   convergence. The repeat streak is run-local untrusted semantic context, not
   helper or automation-memory authority. A terminal blocked label prevents
   scheduled retry; deliberate owner removal starts a newly bounded attempt.

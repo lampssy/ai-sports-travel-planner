@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Literal
 
 import pytest
@@ -14,6 +15,7 @@ from app.data.catalog_curation import (
     render_catalog_resulting_graph_markdown,
 )
 from app.data.catalog_curation_reconciliation import (
+    _derived_weather_geometry,
     reconcile_catalog_curation_report,
 )
 from app.data.validate_catalog_curation import main as validate_curation_main
@@ -22,6 +24,44 @@ from app.domain.catalog_trust import FIELD_GROUPS
 from tests.test_catalog_models import minimal_catalog_payload
 
 pytestmark = pytest.mark.db_free
+
+
+def test_weather_geometry_derivation_includes_new_ski_areas() -> None:
+    base_catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+    current_payload = minimal_catalog_payload()
+    new_area = dict(current_payload["ski_areas"][0])
+    new_area.update(
+        {
+            "ski_area_id": "new-area",
+            "name": "New Area",
+            "weather_sampling_status": "deferred",
+        }
+    )
+    current_payload["ski_areas"].append(new_area)
+    new_access = dict(current_payload["ski_area_access"][0])
+    new_access.update(
+        {
+            "ski_area_access_id": "example-village--new-area",
+            "ski_area_id": "new-area",
+        }
+    )
+    current_payload["ski_area_access"].append(new_access)
+    current_payload["lift_pass_products"][0]["valid_ski_area_ids"].append("new-area")
+    current_payload["lift_pass_products"][0]["validity_scope"] = "local_multi_area"
+    current_catalog = CatalogSnapshot.model_validate(current_payload)
+
+    derived = _derived_weather_geometry(
+        SimpleNamespace(
+            ski_areas={area.ski_area_id: area for area in base_catalog.ski_areas}
+        ),
+        SimpleNamespace(
+            ski_areas={area.ski_area_id: area for area in current_catalog.ski_areas}
+        ),
+    )
+
+    before, after = derived["new-area"]
+    assert before is None
+    assert after.weather_sampling_status == "deferred"
 
 
 def _trust_payload(catalog_payload: dict) -> dict:

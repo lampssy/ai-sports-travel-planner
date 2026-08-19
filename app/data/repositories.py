@@ -205,6 +205,7 @@ class ResortConditionsRepository:
                 JOIN ski_areas
                   ON ski_areas.ski_area_id = resort_conditions.ski_area_id
                 WHERE ski_areas.is_active = TRUE
+                  AND ski_areas.weather_sampling_status = 'active'
                 ORDER BY resort_conditions.resort_name
                 """
             ).fetchall()
@@ -229,6 +230,7 @@ class ResortConditionsRepository:
                   ON ski_areas.ski_area_id = resort_conditions.ski_area_id
                 WHERE resort_name = %s
                   AND ski_areas.is_active = TRUE
+                  AND ski_areas.weather_sampling_status = 'active'
                 """,
                 (resort_name,),
             ).fetchone()
@@ -249,6 +251,7 @@ class ResortConditionsRepository:
                   ON ski_areas.ski_area_id = resort_conditions.ski_area_id
                 WHERE resort_conditions.ski_area_id = %s
                   AND ski_areas.is_active = TRUE
+                  AND ski_areas.weather_sampling_status = 'active'
                 """,
                 (ski_area_id,),
             ).fetchone()

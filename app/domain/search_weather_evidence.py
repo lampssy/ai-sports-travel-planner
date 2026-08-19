@@ -205,6 +205,7 @@ class SearchWeatherEvidenceUnavailableResponse(SearchWeatherEvidenceResponseBase
     unavailable_reason: Literal[
         "travel_window_missing",
         "historical_evidence_unavailable",
+        "weather_sampling_deferred",
     ]
     limitations: tuple[str, ...] = Field(min_length=1, max_length=5)
 

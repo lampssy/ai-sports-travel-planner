@@ -29,6 +29,7 @@ def _ski_area(
     return SkiArea(
         ski_area_id=ski_area_id,
         name=ski_area_id,
+        weather_sampling_status="active",
         latitude=46.9,
         longitude=11.0,
         base_elevation_m=1700,

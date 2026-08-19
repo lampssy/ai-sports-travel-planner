@@ -15,7 +15,11 @@ from typing import Literal
 
 import pytest
 
-from app.data.catalog_curation import CANONICAL_FIELD_PATHS, CatalogCurationReport
+from app.data.catalog_curation import (
+    CANONICAL_FIELD_PATHS,
+    CatalogCurationReport,
+    catalog_weather_request_geometry,
+)
 from app.domain.catalog import CatalogSnapshot
 from app.domain.catalog_trust import FIELD_GROUPS
 from ops.maintainer.errors import (
@@ -1351,6 +1355,7 @@ def _regional_catalog_pair(
             {
                 "ski_area_id": "sample-local-area",
                 "name": "Sample Local Area",
+                "weather_sampling_status": "active",
                 "latitude": 47.26,
                 "longitude": 13.56,
                 "base_elevation_m": 1100,
@@ -1364,6 +1369,7 @@ def _regional_catalog_pair(
             {
                 "ski_area_id": "sample-linked-area",
                 "name": "Sample Linked Area",
+                "weather_sampling_status": "active",
                 "latitude": 47.28,
                 "longitude": 13.6,
                 "base_elevation_m": 1250,
@@ -1582,6 +1588,31 @@ def _regional_report_payload(
             "evidence_summary": "Records one examined adjacent stay market.",
         },
     ]
+    added_ski_areas = tuple(
+        area
+        for area in catalog.ski_areas
+        if f"ski_area:{area.ski_area_id}" in added_keys
+    )
+    for area in added_ski_areas:
+        evidence.append(
+            {
+                "evidence_id": f"{area.ski_area_id}-weather-geometry",
+                "target_type": "ski_area",
+                "target_id": area.ski_area_id,
+                "field_path": "latitude",
+                "source_type": "official",
+                "source_url": REGIONAL_SOURCE_URLS["ski_area"],
+                "source_title": "Official Sample Valley terrain map",
+                "source_value": "complete terrain footprint and lift-served range",
+                "evidence_summary": (
+                    "Supports the representative terrain medoid and elevation range."
+                ),
+                "normalization_note": (
+                    "The reported latitude is the derived medoid of the cited "
+                    "terrain footprint."
+                ),
+            }
+        )
     if "terrain_domain:sample-connected-domain" in added_keys:
         evidence.append(
             {
@@ -1755,6 +1786,22 @@ def _regional_report_payload(
             }
         ],
         "boundary_decision_targets": ["sample-valley"],
+        "weather_request_geometry_targets": [
+            area.ski_area_id for area in added_ski_areas
+        ],
+        "weather_request_geometry_assessments": [
+            {
+                "ski_area_id": area.ski_area_id,
+                "before": None,
+                "after": catalog_weather_request_geometry(area).model_dump(mode="json"),
+                "coordinate_derivation_method": "official_terrain_medoid",
+                "elevation_derivation_method": "official_lift_served_range",
+                "geometry_completeness": "complete",
+                "derivation_status": "verified",
+                "evidence_refs": [f"{area.ski_area_id}-weather-geometry"],
+            }
+            for area in added_ski_areas
+        ],
         "ranking_impact_summary": (
             "Sample Valley becomes a rankable stay market with two bases, two "
             "ski-area weather owners, three access edges, and two pass choices."

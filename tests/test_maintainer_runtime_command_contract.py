@@ -843,6 +843,8 @@ def test_convergence_contract_tolerates_residuals_and_two_exact_repeats() -> Non
 
     assert "finding-family counts" in sources["activation"]
     assert "maximum exact-repeat streak" in sources["activation"]
+    assert "retain it as closed history" in sources["activation"]
+    assert "classify it as `regressed`" in sources["activation"]
     assert (
         "never present candidate-entry count as the issue count"
         in sources["activation"]

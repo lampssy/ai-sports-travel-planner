@@ -1025,6 +1025,7 @@ def test_refresh_conditions_records_age_for_skipped_fresh_rows(monkeypatch):
                     SimpleNamespace(
                         ski_area_id="test-ski-area",
                         name="Test Ski Area",
+                        weather_sampling_status="active",
                     ),
                 ),
                 stay_bases=(),

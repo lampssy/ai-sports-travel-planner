@@ -758,6 +758,35 @@ test("asks for travel dates without presenting unavailable weather evidence or a
   expect(screen.queryByText(/weather evidence is unavailable/i)).toBeNull();
 });
 
+test("shows deferred weather sampling without a retry action", async () => {
+  render(
+    <SnowEvidence
+      intent={monthIntent}
+      skiAreaId="tignes-ski-area"
+      skiAreaName="Tignes"
+      loadEvidence={vi.fn().mockResolvedValue({
+        weather_evidence_version: "search-weather-evidence-v1",
+        status: "unavailable",
+        ski_area_id: "tignes-ski-area",
+        evaluated_at: "2026-07-16T12:00:00Z",
+        cache_valid_until: "2026-07-16T12:05:00Z",
+        unavailable_reason: "weather_sampling_deferred",
+        limitations: ["Weather evidence is under review for this ski area."],
+      })}
+    />,
+  );
+
+  expect(
+    await screen.findByRole("heading", { name: "Weather evidence under review" }),
+  ).toBeVisible();
+  expect(
+    screen.getByText(
+      "Weather evidence will appear after the data setup for this ski area is reviewed.",
+    ),
+  ).toBeVisible();
+  expect(screen.queryByRole("button", { name: /check again|retry/i })).toBeNull();
+});
+
 test("scopes a pending retry to its weather context when the cached target retries independently", async () => {
   const user = userEvent.setup();
   const unavailable = (skiAreaId: string) => ({

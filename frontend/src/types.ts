@@ -344,7 +344,8 @@ export interface SearchWeatherEvidenceUnavailableResponse
   status: "unavailable";
   unavailable_reason:
     | "travel_window_missing"
-    | "historical_evidence_unavailable";
+    | "historical_evidence_unavailable"
+    | "weather_sampling_deferred";
   limitations: string[];
 }
 

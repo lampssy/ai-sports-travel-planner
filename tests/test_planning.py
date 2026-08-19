@@ -12,6 +12,7 @@ def _ski_area() -> SkiArea:
     return SkiArea(
         ski_area_id="test-ski-area",
         name="Test Ski Area",
+        weather_sampling_status="active",
         latitude=46.9,
         longitude=11.0,
         base_elevation_m=1700,
@@ -89,6 +90,7 @@ def test_exact_date_planning_uses_season_windows_before_month_fallback() -> None
     resort = SkiArea(
         ski_area_id="test-glacier",
         name="Test Glacier",
+        weather_sampling_status="active",
         latitude=46.9,
         longitude=11.0,
         base_elevation_m=1700,
@@ -125,6 +127,7 @@ def test_exact_date_planning_accepts_trip_inside_known_area_window() -> None:
     resort = SkiArea(
         ski_area_id="test-glacier",
         name="Test Glacier",
+        weather_sampling_status="active",
         latitude=46.9,
         longitude=11.0,
         base_elevation_m=1700,
@@ -155,6 +158,7 @@ def test_exact_date_planning_falls_back_to_months_for_unknown_future_season() ->
     resort = SkiArea(
         ski_area_id="test-glacier",
         name="Test Glacier",
+        weather_sampling_status="active",
         latitude=46.9,
         longitude=11.0,
         base_elevation_m=1700,

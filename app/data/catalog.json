@@ -2801,6 +2801,7 @@
     {
       "ski_area_id": "alta-badia-ski-area",
       "name": "Alta Badia",
+      "weather_sampling_status": "active",
       "latitude": 46.5536,
       "longitude": 11.8997,
       "base_elevation_m": 1324,
@@ -2856,6 +2857,7 @@
     {
       "ski_area_id": "auronzo-monte-agudo",
       "name": "Auronzo di Cadore - Monte Agudo",
+      "weather_sampling_status": "active",
       "latitude": 46.545,
       "longitude": 12.42,
       "base_elevation_m": 856,
@@ -2908,6 +2910,7 @@
     {
       "ski_area_id": "balme-le-tour-vallorcine",
       "name": "Balme - Le Tour - Vallorcine",
+      "weather_sampling_status": "active",
       "latitude": 46.0038,
       "longitude": 6.9471,
       "base_elevation_m": 1453,
@@ -2956,6 +2959,7 @@
     {
       "ski_area_id": "brevent-flegere",
       "name": "Brevent-Flegere",
+      "weather_sampling_status": "active",
       "latitude": 45.9479,
       "longitude": 6.8686,
       "base_elevation_m": 1035,
@@ -3004,6 +3008,7 @@
     {
       "ski_area_id": "cervinia-ski-area",
       "name": "Cervinia",
+      "weather_sampling_status": "active",
       "latitude": 45.9367,
       "longitude": 7.6297,
       "base_elevation_m": 2050,
@@ -3059,6 +3064,7 @@
     {
       "ski_area_id": "cortina-dampezzo-ski-area",
       "name": "Cortina d'Ampezzo",
+      "weather_sampling_status": "active",
       "latitude": 46.5405,
       "longitude": 12.1357,
       "base_elevation_m": 1217,
@@ -3113,6 +3119,7 @@
     {
       "ski_area_id": "jakobshorn",
       "name": "Jakobshorn",
+      "weather_sampling_status": "active",
       "latitude": 46.772399,
       "longitude": 9.8493406,
       "base_elevation_m": 1560,
@@ -3174,6 +3181,7 @@
     {
       "ski_area_id": "madrisa",
       "name": "Madrisa",
+      "weather_sampling_status": "active",
       "latitude": 46.9097225,
       "longitude": 9.8774507,
       "base_elevation_m": 1887,
@@ -3232,6 +3240,7 @@
     {
       "ski_area_id": "parsenn-gotschna",
       "name": "Parsenn / Gotschna",
+      "weather_sampling_status": "active",
       "latitude": 46.842102,
       "longitude": 9.8353422,
       "base_elevation_m": 1560,
@@ -3293,6 +3302,7 @@
     {
       "ski_area_id": "pischa",
       "name": "Pischa",
+      "weather_sampling_status": "active",
       "latitude": 46.805988,
       "longitude": 9.9084508,
       "base_elevation_m": 1799,
@@ -3352,6 +3362,7 @@
     {
       "ski_area_id": "rinerhorn",
       "name": "Rinerhorn",
+      "weather_sampling_status": "active",
       "latitude": 46.741226,
       "longitude": 9.7980089,
       "base_elevation_m": 1457,
@@ -3413,6 +3424,7 @@
     {
       "ski_area_id": "schatzalp-strela",
       "name": "Schatzalp / Strela",
+      "weather_sampling_status": "active",
       "latitude": 46.8013896,
       "longitude": 9.8149673,
       "base_elevation_m": 1861,
@@ -3476,6 +3488,7 @@
     {
       "ski_area_id": "folgarida-marilleva-ski-area",
       "name": "Folgarida-Marilleva",
+      "weather_sampling_status": "active",
       "latitude": 46.3030712,
       "longitude": 10.8656079,
       "base_elevation_m": 1300,
@@ -3524,6 +3537,7 @@
     {
       "ski_area_id": "grands-montets",
       "name": "Grands Montets",
+      "weather_sampling_status": "active",
       "latitude": 45.948,
       "longitude": 6.9597,
       "base_elevation_m": 1235,
@@ -3572,6 +3586,7 @@
     {
       "ski_area_id": "grindelwald-first-ski-area",
       "name": "Grindelwald-First",
+      "weather_sampling_status": "active",
       "latitude": 46.6250229,
       "longitude": 8.0417827,
       "base_elevation_m": 1034,
@@ -3630,6 +3645,7 @@
     {
       "ski_area_id": "grindelwald-wengen-ski-area",
       "name": "Grindelwald-Wengen",
+      "weather_sampling_status": "active",
       "latitude": 46.6242,
       "longitude": 8.0414,
       "base_elevation_m": 1034,
@@ -3688,6 +3704,7 @@
     {
       "ski_area_id": "hintertux-glacier",
       "name": "Hintertux Glacier",
+      "weather_sampling_status": "active",
       "latitude": 47.0824,
       "longitude": 11.6917,
       "base_elevation_m": 1500,
@@ -3749,6 +3766,7 @@
     {
       "ski_area_id": "ischgl-ski-area",
       "name": "Ischgl",
+      "weather_sampling_status": "active",
       "latitude": 47.0117,
       "longitude": 10.29,
       "base_elevation_m": 1377,
@@ -3806,6 +3824,7 @@
     {
       "ski_area_id": "kitzbuhel-ski-area",
       "name": "KitzSki",
+      "weather_sampling_status": "active",
       "latitude": 47.4464,
       "longitude": 12.392,
       "base_elevation_m": 800,
@@ -3861,6 +3880,7 @@
     {
       "ski_area_id": "kitzsteinhorn",
       "name": "Kitzsteinhorn",
+      "weather_sampling_status": "active",
       "latitude": 47.1975,
       "longitude": 12.7243,
       "base_elevation_m": 768,
@@ -3909,6 +3929,7 @@
     {
       "ski_area_id": "la-plagne-ski-area",
       "name": "La Plagne",
+      "weather_sampling_status": "active",
       "latitude": 45.5067,
       "longitude": 6.6778,
       "base_elevation_m": 1250,
@@ -3966,6 +3987,7 @@
     {
       "ski_area_id": "laax-ski-area",
       "name": "Laax",
+      "weather_sampling_status": "active",
       "latitude": 46.8351,
       "longitude": 9.2583,
       "base_elevation_m": 1100,
@@ -4023,6 +4045,7 @@
     {
       "ski_area_id": "les-arcs-ski-area",
       "name": "Les Arcs",
+      "weather_sampling_status": "active",
       "latitude": 45.5721,
       "longitude": 6.8246,
       "base_elevation_m": 1200,
@@ -4079,6 +4102,7 @@
     {
       "ski_area_id": "les-houches-saint-gervais",
       "name": "Les Houches - Saint-Gervais",
+      "weather_sampling_status": "active",
       "latitude": 45.8945,
       "longitude": 6.7824,
       "base_elevation_m": 1000,
@@ -4127,6 +4151,7 @@
     {
       "ski_area_id": "livigno-ski-area",
       "name": "Livigno",
+      "weather_sampling_status": "active",
       "latitude": 46.5386,
       "longitude": 10.1367,
       "base_elevation_m": 1816,
@@ -4181,6 +4206,7 @@
     {
       "ski_area_id": "madonna-di-campiglio-ski-area",
       "name": "Madonna di Campiglio",
+      "weather_sampling_status": "active",
       "latitude": 46.2267,
       "longitude": 10.8268,
       "base_elevation_m": 1550,
@@ -4229,6 +4255,7 @@
     {
       "ski_area_id": "maiskogel",
       "name": "Maiskogel",
+      "weather_sampling_status": "active",
       "latitude": 47.2711,
       "longitude": 12.759,
       "base_elevation_m": 768,
@@ -4277,6 +4304,7 @@
     {
       "ski_area_id": "mayrhofen-ski-area",
       "name": "Mayrhofen",
+      "weather_sampling_status": "active",
       "latitude": 47.1667,
       "longitude": 11.8667,
       "base_elevation_m": 630,
@@ -4336,6 +4364,7 @@
     {
       "ski_area_id": "misurina-passo-tre-croci",
       "name": "Misurina",
+      "weather_sampling_status": "active",
       "latitude": 46.5723,
       "longitude": 12.2705,
       "base_elevation_m": 1756,
@@ -4388,6 +4417,7 @@
     {
       "ski_area_id": "pinzolo-ski-area",
       "name": "Pinzolo",
+      "weather_sampling_status": "active",
       "latitude": 46.1617322,
       "longitude": 10.7650043,
       "base_elevation_m": 800,
@@ -4436,6 +4466,7 @@
     {
       "ski_area_id": "saalbach-hinterglemm-ski-area",
       "name": "Saalbach Hinterglemm",
+      "weather_sampling_status": "active",
       "latitude": 47.3921,
       "longitude": 12.6375,
       "base_elevation_m": 1003,
@@ -4483,6 +4514,7 @@
     {
       "ski_area_id": "san-vito-di-cadore-ski-area",
       "name": "San Vito di Cadore",
+      "weather_sampling_status": "active",
       "latitude": 46.459,
       "longitude": 12.2057,
       "base_elevation_m": 1048,
@@ -4537,6 +4569,7 @@
     {
       "ski_area_id": "schmittenhoehe",
       "name": "Schmittenhoehe",
+      "weather_sampling_status": "active",
       "latitude": 47.3237,
       "longitude": 12.7884,
       "base_elevation_m": 757,
@@ -4589,6 +4622,7 @@
     {
       "ski_area_id": "solden-ski-area",
       "name": "Sölden",
+      "weather_sampling_status": "active",
       "latitude": 46.9694,
       "longitude": 11.0075,
       "base_elevation_m": 1350,
@@ -4658,6 +4692,7 @@
     {
       "ski_area_id": "st-anton-am-arlberg-ski-area",
       "name": "St Anton am Arlberg",
+      "weather_sampling_status": "active",
       "latitude": 47.1275,
       "longitude": 10.2643,
       "base_elevation_m": 1304,
@@ -4714,6 +4749,7 @@
     {
       "ski_area_id": "st-moritz-ski-area",
       "name": "Corviglia / Piz Nair",
+      "weather_sampling_status": "active",
       "latitude": 46.4908,
       "longitude": 9.8355,
       "base_elevation_m": 1730,
@@ -4776,6 +4812,7 @@
     {
       "ski_area_id": "stubai-glacier-ski-area",
       "name": "Stubai Glacier",
+      "weather_sampling_status": "active",
       "latitude": 46.9906,
       "longitude": 11.1536,
       "base_elevation_m": 1750,
@@ -4838,6 +4875,7 @@
     {
       "ski_area_id": "tignes-ski-area",
       "name": "Tignes",
+      "weather_sampling_status": "active",
       "latitude": 45.4696,
       "longitude": 6.9055,
       "base_elevation_m": 1550,
@@ -4893,6 +4931,7 @@
     {
       "ski_area_id": "val-disere-ski-area",
       "name": "Val d'Isere",
+      "weather_sampling_status": "active",
       "latitude": 45.4484,
       "longitude": 6.9804,
       "base_elevation_m": 1850,
@@ -4948,6 +4987,7 @@
     {
       "ski_area_id": "val-gardena-ski-area",
       "name": "Val Gardena",
+      "weather_sampling_status": "active",
       "latitude": 46.5544,
       "longitude": 11.7598,
       "base_elevation_m": 1236,
@@ -5005,6 +5045,7 @@
     {
       "ski_area_id": "verbier-ski-area",
       "name": "Verbier sector",
+      "weather_sampling_status": "active",
       "latitude": 46.0964,
       "longitude": 7.2283,
       "base_elevation_m": 1500,
@@ -5053,6 +5094,7 @@
     {
       "ski_area_id": "zermatt-ski-area",
       "name": "Zermatt",
+      "weather_sampling_status": "active",
       "latitude": 46.0207,
       "longitude": 7.7491,
       "base_elevation_m": 1620,
@@ -5108,6 +5150,7 @@
     {
       "ski_area_id": "valtournenche-ski-area",
       "name": "Valtournenche",
+      "weather_sampling_status": "active",
       "latitude": 45.877,
       "longitude": 7.6228,
       "base_elevation_m": 1524,
@@ -5159,6 +5202,7 @@
     {
       "ski_area_id": "lagazuoi-ski-area",
       "name": "Lagazuoi",
+      "weather_sampling_status": "active",
       "latitude": 46.5191116,
       "longitude": 12.008447,
       "base_elevation_m": 2105,

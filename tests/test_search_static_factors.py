@@ -127,6 +127,7 @@ def _candidate() -> StaticFactorCandidate:
     area = SkiArea(
         ski_area_id="area",
         name="Area",
+        weather_sampling_status="active",
         latitude=45,
         longitude=6,
         base_elevation_m=1200,

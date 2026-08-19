@@ -36,6 +36,7 @@ SkiAreaAccessMode = Literal[
     "mixed",
     "unknown",
 ]
+WeatherSamplingStatus = Literal["active", "deferred"]
 TerrainMetricScope = Literal["aggregate", "pass_accessible"]
 AvailabilityStatus = Literal["available", "unavailable", "unknown"]
 SnowmakingCoverageBasis = Literal[
@@ -300,6 +301,7 @@ class StayBase(_CatalogModel):
 class SkiArea(_CatalogModel):
     ski_area_id: CatalogId
     name: str
+    weather_sampling_status: WeatherSamplingStatus
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     base_elevation_m: int = Field(ge=0)

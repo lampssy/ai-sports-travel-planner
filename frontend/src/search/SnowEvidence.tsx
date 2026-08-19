@@ -554,6 +554,13 @@ export function SnowEvidence({
               title="Add travel dates to assess weather"
               message="Choose travel dates to see weather conditions for this ski area."
             />
+          ) : visibleState.response.unavailable_reason ===
+            "weather_sampling_deferred" ? (
+            <AsyncState
+              state="empty"
+              title="Weather evidence under review"
+              message="Weather evidence will appear after the data setup for this ski area is reviewed."
+            />
           ) : (
             <AsyncState
               state="error"

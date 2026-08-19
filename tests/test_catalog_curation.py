@@ -17,6 +17,7 @@ from app.data.catalog_curation import (
     CatalogResultingGraph,
     CatalogReviewedTarget,
     CatalogValidationError,
+    CatalogWeatherRequestGeometry,
     catalog_weather_request_geometry,
     load_catalog_curation_report,
     render_catalog_curation_report_markdown,
@@ -336,6 +337,7 @@ def test_canonical_paths_cover_only_normalized_catalog_entities() -> None:
         "local_apres_profile.season_label",
     } <= CANONICAL_FIELD_PATHS["stay_base"]
     assert {
+        "weather_sampling_status",
         "snowmaking.availability",
         "snowmaking.coverage_pct",
         "snowmaking.coverage_basis",
@@ -1208,7 +1210,12 @@ def test_add_entity_requires_a_matching_identity_change() -> None:
     payload = _scope_report_payload(
         candidate_kind="ski_area",
         disposition="add_entity",
-        signals=["official_independent_identity"],
+        signals=[
+            "official_independent_identity",
+            "separate_operator",
+            "independent_weather_presentation",
+            "full_local_pass",
+        ],
         target_type="ski_area",
         target_id="independent-area",
     )
@@ -1759,6 +1766,184 @@ def test_weather_geometry_uses_normalized_ski_area() -> None:
     assert geometry.base_elevation_m == 1200
     assert geometry.mid_elevation_m == 1800
     assert geometry.upper_elevation_m == 2280
+    assert geometry.weather_sampling_status == "active"
+
+
+def test_weather_geometry_rejects_out_of_order_elevation_bands() -> None:
+    with pytest.raises(ValidationError):
+        CatalogWeatherRequestGeometry(
+            weather_sampling_status="active",
+            latitude=45.0,
+            longitude=6.0,
+            base_elevation_m=1800,
+            mid_elevation_m=1600,
+            upper_elevation_m=2200,
+        )
+
+
+def test_active_weather_geometry_requires_reproducible_derivation_metadata() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="represented",
+        signals=[
+            "official_independent_identity",
+            "separate_operator",
+            "independent_weather_presentation",
+            "full_local_pass",
+        ],
+        target_type="ski_area",
+        target_id="example-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0].update(
+        {
+            "candidate_id": "example-area",
+            "evidence_refs": ["example-scope", "example-weather-geometry"],
+            "ski_area_boundary": _ski_area_boundary_payload(
+                operational_scope="independent",
+                weather_scope="independent",
+                pass_scope="full_local",
+                evidence_refs=["example-scope", "example-weather-geometry"],
+            ),
+        }
+    )
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "example-area",
+            "scope": "narrow",
+            "required_field_paths": ["latitude"],
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "example-area",
+            "field_path": "latitude",
+            "status": "reviewed-no-change",
+        }
+    )
+    payload["evidence"].append(
+        {
+            "evidence_id": "example-weather-geometry",
+            "target_type": "ski_area",
+            "target_id": "example-area",
+            "field_path": "latitude",
+            "source_type": "official",
+            "source_url": "https://example.com/trail-map",
+            "source_title": "Official trail map",
+            "source_value": "complete terrain footprint",
+            "evidence_summary": "Supports the reviewed terrain geometry.",
+        }
+    )
+    payload["weather_request_geometry_targets"] = ["example-area"]
+    payload["weather_request_geometry_assessments"] = [
+        {
+            "ski_area_id": "example-area",
+            "before": None,
+            "after": {
+                "weather_sampling_status": "active",
+                "latitude": 45.01,
+                "longitude": 6.01,
+                "base_elevation_m": 1200,
+                "mid_elevation_m": 1800,
+                "upper_elevation_m": 2280,
+            },
+            "coordinate_derivation_method": "official_terrain_medoid",
+            "elevation_derivation_method": "official_lift_served_range",
+            "geometry_completeness": "complete",
+            "derivation_status": "verified",
+            "evidence_refs": ["example-weather-geometry"],
+        }
+    ]
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_curation_report(report)
+
+    assessment = report.weather_request_geometry_assessments[0]
+    assert assessment.coordinate_derivation_method == "official_terrain_medoid"
+    assert assessment.elevation_derivation_method == "official_lift_served_range"
+
+    payload["weather_request_geometry_assessments"][0].update(
+        {
+            "coordinate_derivation_method": "preserved_existing",
+            "elevation_derivation_method": "preserved_existing",
+            "derivation_status": "verified_with_adjustment",
+        }
+    )
+    validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+
+def test_deferred_weather_geometry_requires_activation_prerequisite() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="represented",
+        signals=[
+            "official_independent_identity",
+            "separate_operator",
+            "independent_weather_presentation",
+            "full_local_pass",
+        ],
+        target_type="ski_area",
+        target_id="example-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0].update(
+        {
+            "candidate_id": "example-area",
+            "ski_area_boundary": _ski_area_boundary_payload(
+                operational_scope="independent",
+                weather_scope="independent",
+                pass_scope="full_local",
+            ),
+        }
+    )
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "example-area",
+            "scope": "narrow",
+            "required_field_paths": ["weather_sampling_status"],
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "example-area",
+            "field_path": "weather_sampling_status",
+            "status": "reviewed-no-change",
+        }
+    )
+    payload["weather_request_geometry_targets"] = ["example-area"]
+    payload["weather_request_geometry_assessments"] = [
+        {
+            "ski_area_id": "example-area",
+            "before": None,
+            "after": {
+                "weather_sampling_status": "deferred",
+                "latitude": 45.01,
+                "longitude": 6.01,
+                "base_elevation_m": 1200,
+                "mid_elevation_m": 1800,
+                "upper_elevation_m": 2280,
+            },
+            "geometry_completeness": "unavailable",
+            "derivation_status": "deferred",
+            "evidence_refs": [],
+        }
+    ]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="deferred weather sampling requires activation_prerequisite",
+    ):
+        validate_catalog_curation_report(report)
+
+    payload["weather_request_geometry_assessments"][0]["activation_prerequisite"] = (
+        "Source a reproducible in-terrain sampling point and elevation range."
+    )
+    validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
 
 
 def test_catalog_policy_checks_normalized_access_and_terrain_metrics() -> None:

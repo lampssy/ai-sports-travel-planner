@@ -297,10 +297,17 @@ def _validate_full_access_mode_resolution(
 def _derived_weather_geometry(
     base: _CatalogSnapshot,
     current: _CatalogSnapshot,
-) -> dict[str, tuple[CatalogWeatherRequestGeometry, CatalogWeatherRequestGeometry]]:
+) -> dict[
+    str,
+    tuple[CatalogWeatherRequestGeometry | None, CatalogWeatherRequestGeometry],
+]:
     derived = {}
-    for ski_area_id in sorted(set(base.ski_areas) & set(current.ski_areas)):
-        before = catalog_weather_request_geometry(base.ski_areas[ski_area_id])
+    for ski_area_id in sorted(current.ski_areas):
+        before = (
+            catalog_weather_request_geometry(base.ski_areas[ski_area_id])
+            if ski_area_id in base.ski_areas
+            else None
+        )
         after = catalog_weather_request_geometry(current.ski_areas[ski_area_id])
         if before != after:
             derived[ski_area_id] = before, after

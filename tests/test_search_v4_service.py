@@ -2769,6 +2769,48 @@ def test_one_area_dossier_rejects_unknown_area_before_repository_access() -> Non
     assert forecast.calls == []
 
 
+def test_one_area_dossier_does_not_serve_deferred_weather_evidence() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    ski_area = snapshot.ski_areas[0]
+    snapshot = snapshot.model_copy(
+        update={
+            "ski_areas": tuple(
+                item.model_copy(update={"weather_sampling_status": "deferred"})
+                if item.ski_area_id == ski_area.ski_area_id
+                else item
+                for item in snapshot.ski_areas
+            )
+        }
+    )
+    climatology = _ClimatologyRepository(
+        (
+            _climatology_row(
+                ski_area_id=ski_area.ski_area_id,
+                day=date(2027, 1, 2),
+                snow_depth_cm_p50=70,
+            ),
+        )
+    )
+    forecast = _ForecastRepository()
+
+    result = get_search_weather_evidence(
+        intent=SearchIntent(
+            constraints=SearchConstraints(travel_window=TravelWindow(month=1)),
+        ),
+        ski_area_id=ski_area.ski_area_id,
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=climatology,
+        forecast_repository=forecast,
+        reference_time=datetime(2027, 1, 1, 12, tzinfo=UTC),
+    )
+
+    assert result.status == "unavailable"
+    assert result.unavailable_reason == "weather_sampling_deferred"
+    assert climatology.calls == []
+    assert forecast.calls == []
+
+
 def test_one_area_dossier_forecast_validity_uses_earliest_selected_run_expiry() -> None:
     snapshot, manifest = _catalog_and_trust()
     ski_area_id = snapshot.ski_areas[0].ski_area_id
@@ -2951,6 +2993,39 @@ def test_month_search_keeps_grouped_response_compact_without_loading_forecasts()
     )
     assert len(climatology.calls) == 1
     assert forecast.calls == []
+
+
+def test_search_does_not_preload_weather_for_deferred_ski_areas() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    deferred_area_id = _country_area_ids(snapshot, "France")[0]
+    snapshot = snapshot.model_copy(
+        update={
+            "ski_areas": tuple(
+                item.model_copy(update={"weather_sampling_status": "deferred"})
+                if item.ski_area_id == deferred_area_id
+                else item
+                for item in snapshot.ski_areas
+            )
+        }
+    )
+    climatology = _ClimatologyRepository()
+
+    result = search_trip_configurations(
+        intent=SearchIntent(
+            constraints=SearchConstraints(
+                location=LocationScope(country="France"),
+                travel_window=TravelWindow(month=1),
+            )
+        ),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=climatology,
+        forecast_repository=_ForecastRepository(),
+        include_refinements=False,
+    )
+
+    assert result.results
+    assert deferred_area_id not in climatology.calls[0]["ski_area_ids"]
 
 
 def test_exact_date_search_does_not_map_weather_evidence_without_changing_ranking(

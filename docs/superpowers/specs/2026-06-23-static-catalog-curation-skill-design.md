@@ -175,6 +175,14 @@ separately. Normal catalog bootstrap retires removed ski areas rather than
 deleting them; `reset_database()` is a separate explicit destructive operator
 action and is never implied by catalog reshaping.
 
+Catalog topology does not automatically activate weather sampling. Every ski
+area carries `weather_sampling_status=active|deferred`. Automated weather jobs
+and product weather-evidence reads select only active areas. A new ski area and
+any retained area whose coordinate, lift-served elevation bounds, or sampling
+status changes require the typed schema-v3 weather geometry assessment defined
+by ADR 0021. Deferred assessments name the concrete evidence required for
+activation.
+
 ## Skill Workflow
 
 The new Snowcast skill should guide Codex through this sequence:
@@ -317,6 +325,7 @@ Continue validating catalog shape and expand typed coverage where useful:
 - stable nonblank IDs;
 - unique destination, ski-area, and stay-base IDs;
 - plausible coordinates and elevations;
+- typed weather sampling status and source-backed geometry derivation metadata;
 - valid season months and season windows;
 - valid lift-pass price objects;
 - valid lift-pass products with explicit validity scope;

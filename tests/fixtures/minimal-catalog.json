@@ -34,6 +34,7 @@
     {
       "ski_area_id": "example-area",
       "name": "Example Area",
+      "weather_sampling_status": "active",
       "latitude": 45.01,
       "longitude": 6.01,
       "base_elevation_m": 1200,

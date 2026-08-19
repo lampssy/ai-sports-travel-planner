@@ -230,7 +230,7 @@ def _upsert_ski_areas_preserving_ids(
         connection.execute(
             """
             INSERT INTO ski_areas (
-                ski_area_id, name, latitude, longitude,
+                ski_area_id, name, weather_sampling_status, latitude, longitude,
                 base_elevation_m, summit_elevation_m, season_start_month,
                 season_end_month, season_windows_json, total_piste_km,
                 total_lift_count, piste_km_by_difficulty_json,
@@ -240,10 +240,11 @@ def _upsert_ski_areas_preserving_ids(
                 ski_day_apres_profile_json, is_active
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s, TRUE
+                %s, %s, %s, %s, %s, %s, %s, %s, TRUE
             )
             ON CONFLICT (ski_area_id) DO UPDATE SET
                 name = excluded.name,
+                weather_sampling_status = excluded.weather_sampling_status,
                 latitude = excluded.latitude,
                 longitude = excluded.longitude,
                 base_elevation_m = excluded.base_elevation_m,
@@ -270,6 +271,7 @@ def _upsert_ski_areas_preserving_ids(
             (
                 ski_area.ski_area_id,
                 ski_area.name,
+                ski_area.weather_sampling_status,
                 ski_area.latitude,
                 ski_area.longitude,
                 ski_area.base_elevation_m,

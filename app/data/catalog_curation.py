@@ -299,6 +299,7 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
             {
                 "ski_area_id",
                 "name",
+                "weather_sampling_status",
                 "latitude",
                 "longitude",
                 "base_elevation_m",
@@ -904,17 +905,66 @@ class CatalogEntityScopeAssessment(CatalogCurationContractModel):
 
 
 class CatalogWeatherRequestGeometry(CatalogCurationContractModel):
-    latitude: float
-    longitude: float
-    base_elevation_m: int
-    mid_elevation_m: int
-    upper_elevation_m: int
+    weather_sampling_status: Literal["active", "deferred"] = "active"
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    base_elevation_m: int = Field(ge=0)
+    mid_elevation_m: int = Field(ge=0)
+    upper_elevation_m: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_elevation_order(self) -> CatalogWeatherRequestGeometry:
+        if not (
+            self.base_elevation_m <= self.mid_elevation_m <= self.upper_elevation_m
+        ):
+            raise ValueError(
+                "weather elevation bands must satisfy base <= mid <= upper"
+            )
+        return self
 
 
 class CatalogWeatherRequestGeometryAssessment(CatalogCurationContractModel):
     ski_area_id: str = Field(min_length=1)
-    before: CatalogWeatherRequestGeometry
+    before: CatalogWeatherRequestGeometry | None
     after: CatalogWeatherRequestGeometry
+    coordinate_derivation_method: (
+        Literal[
+            "official_terrain_medoid",
+            "osm_terrain_medoid",
+            "official_central_on_mountain_point",
+            "structured_lift_inventory_medoid",
+            "preserved_existing",
+        ]
+        | None
+    ) = None
+    elevation_derivation_method: (
+        Literal[
+            "official_lift_served_range",
+            "official_lift_inventory_range",
+            "open_data_lift_inventory_range",
+            "specialist_conflict_tiebreak",
+            "preserved_existing",
+        ]
+        | None
+    ) = None
+    geometry_completeness: (
+        Literal["complete", "sufficient", "partial", "unavailable"] | None
+    ) = None
+    derivation_status: (
+        Literal["verified", "verified_with_adjustment", "deferred"] | None
+    ) = None
+    evidence_refs: list[str] = Field(default_factory=list)
+    activation_prerequisite: str | None = None
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
+        return _validate_string_list(values, "weather geometry evidence_refs")
+
+    @field_validator("activation_prerequisite")
+    @classmethod
+    def validate_activation_prerequisite(cls, value: str | None) -> str | None:
+        return _validate_optional_non_blank_string(value, "activation_prerequisite")
 
     @property
     def material_change(self) -> bool:
@@ -937,6 +987,7 @@ def catalog_weather_request_geometry(
         point.band: point.elevation_m for point in weather_elevation_points(ski_area)
     }
     return CatalogWeatherRequestGeometry(
+        weather_sampling_status=ski_area.weather_sampling_status,
         latitude=ski_area.latitude,
         longitude=ski_area.longitude,
         base_elevation_m=elevation_by_band["base"],
@@ -1155,7 +1206,12 @@ def validate_catalog_curation_report(
         issues,
         require_current_destination_policy=require_current_destination_policy,
     )
-    _validate_geometry_assessments(report, reviewed_by_key, issues)
+    _validate_geometry_assessments(
+        report,
+        reviewed_by_key,
+        evidence_by_id,
+        issues,
+    )
     _validate_entity_scope_assessments(
         report,
         reviewed_by_key,
@@ -1181,12 +1237,18 @@ def validate_catalog_curation_report(
         for assessment in report.entity_scope_assessments
         for evidence_id in assessment.evidence_refs
     }
+    geometry_evidence_ids = {
+        evidence_id
+        for assessment in report.weather_request_geometry_assessments
+        for evidence_id in assessment.evidence_refs
+    }
     for evidence in report.evidence:
         if (
             evidence.target_key not in changes_by_key
             and evidence.target_key not in unresolved_keys
             and evidence.evidence_id not in boundary_evidence_ids
             and evidence.evidence_id not in scope_evidence_ids
+            and evidence.evidence_id not in geometry_evidence_ids
         ):
             issues.append(
                 f"{evidence.target_type}:{evidence.target_id} "
@@ -1629,6 +1691,7 @@ def _validate_boundary_assessments(
 def _validate_geometry_assessments(
     report: CatalogCurationReport,
     reviewed_by_key: Mapping[tuple[str, str], CatalogReviewedTarget],
+    evidence_by_id: Mapping[str, CatalogEvidenceItem],
     issues: list[str],
 ) -> None:
     declared = set(report.weather_request_geometry_targets)
@@ -1647,6 +1710,119 @@ def _validate_geometry_assessments(
             issues.append(f"{ski_area_id}: missing weather request geometry assessment")
     for ski_area_id in sorted(set(assessments) - declared):
         issues.append(f"{ski_area_id}: undeclared weather request geometry assessment")
+    for assessment in report.weather_request_geometry_assessments:
+        if report.report_schema_version < 3:
+            continue
+        _validate_weather_geometry_derivation(
+            assessment,
+            evidence_by_id,
+            issues,
+        )
+
+
+def _validate_weather_geometry_derivation(
+    assessment: CatalogWeatherRequestGeometryAssessment,
+    evidence_by_id: Mapping[str, CatalogEvidenceItem],
+    issues: list[str],
+) -> None:
+    ski_area_id = assessment.ski_area_id
+    missing_evidence = set(assessment.evidence_refs) - set(evidence_by_id)
+    for evidence_id in sorted(missing_evidence):
+        issues.append(f"{ski_area_id}: unknown weather geometry evidence {evidence_id}")
+    for evidence_id in assessment.evidence_refs:
+        evidence = evidence_by_id.get(evidence_id)
+        if evidence is not None and evidence.target_key[:2] != (
+            "ski_area",
+            ski_area_id,
+        ):
+            issues.append(
+                f"{ski_area_id}: weather geometry evidence {evidence_id} "
+                "must target the assessed ski area"
+            )
+
+    if assessment.geometry_completeness is None:
+        issues.append(f"{ski_area_id}: weather geometry requires geometry_completeness")
+    if assessment.derivation_status is None:
+        issues.append(f"{ski_area_id}: weather geometry requires derivation_status")
+
+    if assessment.after.weather_sampling_status == "deferred":
+        if assessment.derivation_status != "deferred":
+            issues.append(
+                f"{ski_area_id}: deferred weather sampling requires "
+                "derivation_status=deferred"
+            )
+        if not assessment.activation_prerequisite:
+            issues.append(
+                f"{ski_area_id}: deferred weather sampling requires "
+                "activation_prerequisite"
+            )
+        return
+
+    if assessment.activation_prerequisite is not None:
+        issues.append(
+            f"{ski_area_id}: active weather sampling cannot retain an "
+            "activation_prerequisite"
+        )
+    if assessment.coordinate_derivation_method is None:
+        issues.append(
+            f"{ski_area_id}: active weather sampling requires "
+            "coordinate_derivation_method"
+        )
+    if assessment.elevation_derivation_method is None:
+        issues.append(
+            f"{ski_area_id}: active weather sampling requires "
+            "elevation_derivation_method"
+        )
+    if not assessment.evidence_refs:
+        issues.append(
+            f"{ski_area_id}: active weather sampling requires source evidence"
+        )
+
+    coordinate_method = assessment.coordinate_derivation_method
+    completeness = assessment.geometry_completeness
+    if coordinate_method == "official_terrain_medoid" and completeness != "complete":
+        issues.append(
+            f"{ski_area_id}: official terrain medoid requires complete geometry"
+        )
+    if coordinate_method == "osm_terrain_medoid" and completeness not in {
+        "complete",
+        "sufficient",
+    }:
+        issues.append(
+            f"{ski_area_id}: OSM terrain medoid requires complete or sufficient "
+            "geometry"
+        )
+    if (
+        coordinate_method == "structured_lift_inventory_medoid"
+        and completeness != "complete"
+    ):
+        issues.append(
+            f"{ski_area_id}: structured lift inventory medoid requires complete "
+            "geometry"
+        )
+
+    adjusted_methods = {
+        "osm_terrain_medoid",
+        "official_central_on_mountain_point",
+        "structured_lift_inventory_medoid",
+        "open_data_lift_inventory_range",
+        "specialist_conflict_tiebreak",
+    }
+    methods = {
+        assessment.coordinate_derivation_method,
+        assessment.elevation_derivation_method,
+    }
+    expected_status = (
+        "verified_with_adjustment" if methods & adjusted_methods else "verified"
+    )
+    allowed_statuses = {expected_status, None}
+    if "preserved_existing" in methods:
+        allowed_statuses.add("verified_with_adjustment")
+    if assessment.derivation_status not in allowed_statuses:
+        issues.append(
+            f"{ski_area_id}: derivation_status must be {expected_status} for the "
+            "selected methods"
+        )
 
 
 def _markdown_cell(value: str) -> str:
@@ -2310,10 +2486,23 @@ def render_catalog_curation_report_markdown(
     if report.weather_request_geometry_assessments:
         lines.extend(["", "## Weather Request Geometry", ""])
         for assessment in report.weather_request_geometry_assessments:
+            coordinate_method = assessment.coordinate_derivation_method or "unresolved"
+            elevation_method = assessment.elevation_derivation_method or "unresolved"
+            geometry_completeness = assessment.geometry_completeness or "unresolved"
             lines.append(
                 f"- {_code_cell(assessment.ski_area_id)}: "
-                f"{'material change' if assessment.material_change else 'unchanged'}"
+                f"{_code_cell(assessment.after.weather_sampling_status)}; "
+                f"{'material change' if assessment.material_change else 'unchanged'}; "
+                f"coordinate={_code_cell(coordinate_method)}; "
+                f"elevation={_code_cell(elevation_method)}; "
+                f"geometry={_code_cell(geometry_completeness)}; "
+                f"derivation={_code_cell(assessment.derivation_status or 'unresolved')}"
             )
+            if assessment.activation_prerequisite:
+                lines.append(
+                    f"  - Activation prerequisite: "
+                    f"{_markdown_cell(assessment.activation_prerequisite)}"
+                )
     if report.ranking_impact_summary:
         lines.extend(["", "## Ranking Impact", "", report.ranking_impact_summary])
     if report.validation_commands:

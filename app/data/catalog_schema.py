@@ -99,6 +99,8 @@ def _expand_legacy_catalog_tables(
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
         ALTER TABLE ski_areas
+        ADD COLUMN IF NOT EXISTS weather_sampling_status
+            TEXT NOT NULL DEFAULT 'active',
         ADD COLUMN IF NOT EXISTS supported_skill_levels_json
             TEXT NOT NULL DEFAULT '[]',
         ADD COLUMN IF NOT EXISTS snowmaking_json TEXT NOT NULL DEFAULT
@@ -127,6 +129,23 @@ def _expand_legacy_catalog_tables(
 
         ALTER TABLE stay_bases
         DROP COLUMN IF EXISTS atmosphere_tags_json;
+        """
+    )
+    connection.execute(
+        """
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = 'ski_areas_weather_sampling_status_check'
+              AND conrelid = 'ski_areas'::regclass
+          ) THEN
+            ALTER TABLE ski_areas
+            ADD CONSTRAINT ski_areas_weather_sampling_status_check
+            CHECK (weather_sampling_status IN ('active', 'deferred'));
+          END IF;
+        END $$;
         """
     )
     connection.execute(

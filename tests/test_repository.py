@@ -535,6 +535,26 @@ def test_conditions_repository_returns_none_before_refresh() -> None:
     assert conditions is None
 
 
+def test_conditions_repository_does_not_serve_deferred_ski_area() -> None:
+    repository = ResortConditionsRepository()
+    repository.upsert_conditions(
+        entity_id="tignes-ski-area",
+        entity_name="Tignes",
+        conditions=_resort_conditions("Tignes", conditions_score=0.91),
+    )
+    with connect() as connection:
+        connection.execute(
+            """
+            UPDATE ski_areas
+            SET weather_sampling_status = 'deferred'
+            WHERE ski_area_id = 'tignes-ski-area'
+            """
+        )
+
+    assert repository.list_conditions() == {}
+    assert repository.get_conditions_for_ski_area("tignes-ski-area") is None
+
+
 def test_conditions_repository_cache_expires_across_repository_instances() -> None:
     now = datetime(2026, 1, 15, tzinfo=UTC)
     reader = ResortConditionsRepository(

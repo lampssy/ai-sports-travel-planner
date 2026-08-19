@@ -25,6 +25,7 @@ def select_active_ski_areas(
     ski_area_ids: tuple[str, ...] = (),
     stay_destination_ids: tuple[str, ...] = (),
 ) -> tuple[SkiArea, ...]:
+    """Resolve catalog targets that are eligible for automated weather work."""
     areas_by_id = {area.ski_area_id: area for area in snapshot.ski_areas}
     base_ids_by_destination: dict[str, set[str]] = defaultdict(set)
     for stay_base in snapshot.stay_bases:
@@ -47,13 +48,28 @@ def select_active_ski_areas(
             f"stay_destinations={sorted(unknown_destination_ids)}"
         )
 
+    deferred_explicit_ids = {
+        area_id
+        for area_id in ski_area_ids
+        if areas_by_id[area_id].weather_sampling_status == "deferred"
+    }
+    if deferred_explicit_ids:
+        raise ValueError(
+            "weather sampling is deferred for ski areas: "
+            f"{sorted(deferred_explicit_ids)}"
+        )
+
     selected_ids = set(ski_area_ids)
     for destination_id in stay_destination_ids:
         for stay_base_id in base_ids_by_destination[destination_id]:
             selected_ids.update(area_ids_by_base[stay_base_id])
     if not ski_area_ids and not stay_destination_ids:
         selected_ids.update(areas_by_id)
-    return tuple(areas_by_id[area_id] for area_id in sorted(selected_ids))
+    return tuple(
+        areas_by_id[area_id]
+        for area_id in sorted(selected_ids)
+        if areas_by_id[area_id].weather_sampling_status == "active"
+    )
 
 
 class CatalogRepository:
@@ -176,7 +192,8 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
         ).fetchall()
         ski_area_rows = connection.execute(
             """
-            SELECT ski_area_id, name, latitude, longitude,
+            SELECT ski_area_id, name, weather_sampling_status,
+                   latitude, longitude,
                    base_elevation_m, summit_elevation_m,
                    season_start_month, season_end_month,
                    season_windows_json, total_piste_km,
@@ -440,6 +457,7 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                     {
                         "ski_area_id": row["ski_area_id"],
                         "name": row["name"],
+                        "weather_sampling_status": row["weather_sampling_status"],
                         "latitude": row["latitude"],
                         "longitude": row["longitude"],
                         "base_elevation_m": row["base_elevation_m"],

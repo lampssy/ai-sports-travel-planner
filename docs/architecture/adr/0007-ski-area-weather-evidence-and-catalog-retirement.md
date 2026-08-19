@@ -12,6 +12,7 @@ Related specs:
 
 Related ADRs:
 - `docs/architecture/adr/0009-normalized-trip-market-catalog.md`
+- `docs/architecture/adr/0021-gate-ski-area-weather-sampling.md`
 
 Related docs:
 - `docs/domain-language.md`

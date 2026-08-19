@@ -56,6 +56,22 @@ lookup: they are keyed by `ski_area_id`. A stored ski-area name is display
 metadata only, so renamed or replacement ski-area IDs do not collide on a reused
 public label.
 
+Each ski area also has a weather sampling status. `active` means automated
+refresh, archive backfill/completion, and climatology rebuild may use its
+reviewed request geometry. `deferred` keeps the ski area in the catalog graph
+but excludes it from those jobs, product weather-evidence reads, and expected
+weather-coverage counts. Changing status preserves any existing weather rows
+under the same durable ID for audit and later reactivation.
+
+The request coordinate represents the complete modeled lift-served terrain,
+preferably its official-geometry medoid. Complete/corroborated OSM geometry, an
+exact official central on-mountain point, or a complete structured lift
+inventory are progressively weaker reviewed fallbacks. Village centres, map
+viewports, isolated endpoints, and bounding-box midpoints are not accepted
+weather coordinates. Base and summit elevations are the area-wide lift-served
+bounds; the mid and upper request bands remain derived from that range. See ADR
+0021 for the complete source hierarchy and deferral contract.
+
 ### Raw Archive
 
 `raw_weather_history` stores daily archive weather observations per ski area and

@@ -49,6 +49,7 @@ def minimal_catalog_payload() -> dict[str, Any]:
             {
                 "ski_area_id": "example-area",
                 "name": "Example Area",
+                "weather_sampling_status": "active",
                 "latitude": 45.01,
                 "longitude": 6.01,
                 "base_elevation_m": 1200,
@@ -92,6 +93,31 @@ def test_lift_pass_validity_windows_default_to_no_separate_constraint() -> None:
     snapshot = CatalogSnapshot.model_validate(minimal_catalog_payload())
 
     assert snapshot.lift_pass_products[0].validity_windows == ()
+
+
+def test_ski_area_uses_typed_weather_sampling_status() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_areas"][0]["weather_sampling_status"] = "deferred"
+
+    ski_area = CatalogSnapshot.model_validate(payload).ski_areas[0]
+
+    assert ski_area.weather_sampling_status == "deferred"
+
+
+def test_ski_area_rejects_unknown_weather_sampling_status() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_areas"][0]["weather_sampling_status"] = "pending"
+
+    with pytest.raises(ValidationError):
+        CatalogSnapshot.model_validate(payload)
+
+
+def test_ski_area_requires_explicit_weather_sampling_status() -> None:
+    payload = minimal_catalog_payload()
+    del payload["ski_areas"][0]["weather_sampling_status"]
+
+    with pytest.raises(ValidationError):
+        CatalogSnapshot.model_validate(payload)
 
 
 def test_lift_pass_validity_windows_use_typed_complete_date_ranges() -> None:
@@ -608,6 +634,7 @@ def test_catalog_rejects_inaccessible_ski_area() -> None:
         {
             "ski_area_id": "inaccessible-area",
             "name": "Inaccessible Area",
+            "weather_sampling_status": "active",
             "latitude": 45.02,
             "longitude": 6.02,
             "base_elevation_m": 1300,

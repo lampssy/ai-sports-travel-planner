@@ -12,7 +12,7 @@ from typing import Any, Literal
 from pydantic import ValidationError
 
 from app.data.catalog_loader import CATALOG_PATH
-from app.data.catalog_repository import CatalogRepository
+from app.data.catalog_repository import CatalogRepository, select_active_ski_areas
 from app.data.database import bootstrap_database, resolve_database_url
 from app.data.repositories import (
     RawWeatherHistoryRepository,
@@ -1074,7 +1074,8 @@ def run_data_quality_audit(
     climatology_repository = SnowClimatologyRepository(effective_database_url)
     snapshot = CatalogRepository(effective_database_url).get_snapshot()
     ski_area_names = {
-        ski_area.ski_area_id: ski_area.name for ski_area in snapshot.ski_areas
+        ski_area.ski_area_id: ski_area.name
+        for ski_area in select_active_ski_areas(snapshot)
     }
     ski_area_ids = tuple(sorted(ski_area_names))
     warnings: list[str] = []

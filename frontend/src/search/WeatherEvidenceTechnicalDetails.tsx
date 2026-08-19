@@ -183,7 +183,9 @@ export function WeatherEvidenceTechnicalDetails({
         <p>
           {response.unavailable_reason === "travel_window_missing"
             ? "Travel dates are needed before source rows or daily values can be assessed."
-            : "No source rows or daily values are available for this trip window."}
+            : response.unavailable_reason === "weather_sampling_deferred"
+              ? "Stored source rows are not served until the ski area's sampling location and elevation range are verified."
+              : "No source rows or daily values are available for this trip window."}
         </p>
       </section>
     );

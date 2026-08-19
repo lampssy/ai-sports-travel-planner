@@ -86,6 +86,8 @@ Primary concepts:
 - trip-window snowpack outlook
 - archive weather history
 - climatological snow reliability
+- weather sampling status
+- weather request geometry
 - freshness
 - disruption signal
 
@@ -97,6 +99,10 @@ Boundaries:
 - Does not claim official lift-operation status unless a future official status
   provider explicitly supports that provenance.
 - Keeps forecast evidence separate from archive evidence.
+- Samples only ski areas whose reviewed weather request geometry is `active`;
+  `deferred` ski areas remain catalog entities but are excluded from automated
+  weather refresh, backfill, completion, climatology rebuild, and product
+  weather-evidence reads.
 - Does not equate modeled snow depth with ski-area snow cover, open pistes, or
   lift operations.
 

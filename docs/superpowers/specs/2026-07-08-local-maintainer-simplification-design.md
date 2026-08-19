@@ -699,8 +699,12 @@ prepare -> provisional evidence envelope -> dual inventory
    the streak when the semantic assertion is equivalent. A candidate absent
    from the complete initial candidate/source inventory still counts as scope
    expansion, but a different bounded assertion about a known candidate is not
-   automatically repeated. The parent, not the reviewer, owns final
-   classification and repeat-streak updates. Missing or
+   automatically repeated. Once an assertion is `verified-resolved`, retain it
+   as closed history and omit it from later fixer input. If the same assertion
+   and acceptance criterion fails again on a descendant head, classify it as
+   `regressed`; do not reopen it as `repeated` or increment its repeat streak.
+   The parent, not the reviewer, owns final classification and repeat-streak
+   updates. Missing or
    incomplete output requests status-only `blocked/review-incomplete` when
    safe, never `manual-check` or readiness. A boundary finding requests
    `owner-decision` only after focused adjudication confirms

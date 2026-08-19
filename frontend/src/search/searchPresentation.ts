@@ -984,6 +984,17 @@ export function weatherEvidencePresentation(
           response.limitations[0] ?? "Add travel dates to assess weather conditions.",
       };
     }
+    if (response.unavailable_reason === "weather_sampling_deferred") {
+      return {
+        sourceType: "Weather evidence under review",
+        sourceCurrency: "Weather data is not ready to use yet.",
+        coverage: "Stored weather data is not used until the review is complete.",
+        expectedConditions: "Unavailable until the review is complete.",
+        mainLimitation:
+          response.limitations[0] ??
+          "Weather evidence is under review for this ski area.",
+      };
+    }
     return {
       sourceType: "Historical weather evidence unavailable",
       sourceCurrency: "Not available for this assessment.",

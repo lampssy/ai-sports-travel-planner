@@ -366,6 +366,42 @@ def test_select_active_ski_areas_without_targets_selects_every_area() -> None:
     )
 
 
+def test_select_active_ski_areas_skips_deferred_weather_sampling() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_areas"][0]["weather_sampling_status"] = "deferred"
+    snapshot = CatalogSnapshot.model_validate(payload)
+
+    selected = catalog_repository.select_active_ski_areas(snapshot)
+
+    assert selected == ()
+
+
+def test_select_active_ski_areas_rejects_explicit_deferred_area() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_areas"][0]["weather_sampling_status"] = "deferred"
+    snapshot = CatalogSnapshot.model_validate(payload)
+
+    with pytest.raises(
+        ValueError,
+        match=r"weather sampling is deferred for ski areas: \['example-area'\]",
+    ):
+        catalog_repository.select_active_ski_areas(
+            snapshot,
+            ski_area_ids=("example-area",),
+        )
+
+
+def test_catalog_repository_round_trips_weather_sampling_status() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_areas"][0]["weather_sampling_status"] = "deferred"
+    snapshot = CatalogSnapshot.model_validate(payload)
+    sync_catalog_snapshot(snapshot)
+
+    loaded = CatalogRepository().get_snapshot()
+
+    assert loaded.ski_areas[0].weather_sampling_status == "deferred"
+
+
 def test_select_active_ski_areas_rejects_unknown_targets() -> None:
     with pytest.raises(
         ValueError,

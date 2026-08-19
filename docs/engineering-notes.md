@@ -1479,6 +1479,17 @@ accessible data table. A failed chart chunk falls back to a compact table of the
 same values. The browser must not interpolate observations or derive new
 weather claims.
 
+## Ski-Area Weather Sampling Eligibility
+
+Catalog identity and weather readiness are intentionally separate. A ski area
+can remain in the normalized graph with `weather_sampling_status=deferred`, but
+the shared weather target selector excludes it from refresh, archive completion,
+backfill, climatology rebuild, product weather reads, and expected coverage.
+Existing evidence is preserved under the durable ski-area ID for audit and later
+reactivation. ADR 0021 owns the accepted terrain medoid and area-wide lift-served
+elevation hierarchy plus the typed curation
+assessment required to activate a new or changed geometry.
+
 ## Maintainer Pre-Push Curation Authority
 
 Pre-push curation recovery uses one bounded generation timeline per PR. A

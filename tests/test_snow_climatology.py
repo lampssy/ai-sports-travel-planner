@@ -15,6 +15,7 @@ def _ski_area() -> SkiArea:
     return SkiArea(
         ski_area_id="tignes-ski-area",
         name="Tignes",
+        weather_sampling_status="active",
         latitude=45.47,
         longitude=6.9,
         base_elevation_m=1550,

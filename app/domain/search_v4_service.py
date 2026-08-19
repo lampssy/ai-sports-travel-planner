@@ -561,11 +561,24 @@ def get_search_weather_evidence(
     snapshot = catalog_snapshot or CatalogRepository().get_snapshot()
     manifest = trust_manifest or _load_trust_manifest(DEFAULT_TRUST_MANIFEST_PATH)
     manifest.validate_against_catalog(snapshot)
-    if ski_area_id not in {area.ski_area_id for area in snapshot.ski_areas}:
+    ski_area = next(
+        (area for area in snapshot.ski_areas if area.ski_area_id == ski_area_id),
+        None,
+    )
+    if ski_area is None:
         raise UnknownSearchWeatherAreaError(ski_area_id)
 
     evaluated_at = search_reference_time
     cache_valid_until = evaluated_at + timedelta(minutes=5)
+    if ski_area.weather_sampling_status == "deferred":
+        return SearchWeatherEvidenceUnavailableResponse(
+            weather_evidence_version="search-weather-evidence-v1",
+            ski_area_id=ski_area_id,
+            evaluated_at=evaluated_at.isoformat(),
+            cache_valid_until=cache_valid_until.isoformat(),
+            unavailable_reason="weather_sampling_deferred",
+            limitations=("Weather evidence is under review for this ski area.",),
+        )
     window = intent.constraints.travel_window
     if window is None:
         return SearchWeatherEvidenceUnavailableResponse(
@@ -969,7 +982,13 @@ def _evaluate_search(
     )
 
     area_ids = tuple(
-        sorted({record.ski_area.ski_area_id for record in eligible_records})
+        sorted(
+            {
+                record.ski_area.ski_area_id
+                for record in eligible_records
+                if record.ski_area.weather_sampling_status == "active"
+            }
+        )
     )
     with search_phase(phase="weather_preload", intent=intent):
         climate_by_area, forecast_by_area, stale_run_ids = _load_weather_evidence(

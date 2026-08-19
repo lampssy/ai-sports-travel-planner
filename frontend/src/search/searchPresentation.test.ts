@@ -1688,6 +1688,26 @@ describe("weather evidence presentation", () => {
       mainLimitation: "A travel month or exact travel dates are required.",
     });
   });
+
+  test("presents deferred sampling as an under-review state", () => {
+    const presentation = weatherEvidencePresentation({
+      weather_evidence_version: "search-weather-evidence-v1",
+      status: "unavailable",
+      ski_area_id: "area-weather",
+      evaluated_at: "2026-07-16T12:02:00Z",
+      cache_valid_until: "2026-07-16T13:00:00Z",
+      unavailable_reason: "weather_sampling_deferred",
+      limitations: ["Weather evidence is under review for this ski area."],
+    });
+
+    expect(presentation).toEqual({
+      sourceType: "Weather evidence under review",
+      sourceCurrency: "Weather data is not ready to use yet.",
+      coverage: "Stored weather data is not used until the review is complete.",
+      expectedConditions: "Unavailable until the review is complete.",
+      mainLimitation: "Weather evidence is under review for this ski area.",
+    });
+  });
 });
 
 describe("refinement preview copy", () => {
