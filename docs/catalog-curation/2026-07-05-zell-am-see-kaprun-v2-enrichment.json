@@ -3357,6 +3357,112 @@
       "normalization_note": "Used as aggregate-only evidence for the unresolved local boundary and deferred member graph."
     },
     {
+      "evidence_id": "inventory-skicircus-operator-directory-saalbach-hinterglemm",
+      "boundary_target_ids": [
+        "saalbach-hinterglemm-ski-area"
+      ],
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/de/service/kontakt/kontakt-bergbahnen",
+      "source_title": "Skicircus official cable-car company directory",
+      "source_value": [
+        "Saalbacher Bergbahnen GmbH",
+        "Hinterglemmer Bergbahnen GmbH",
+        "BBSH Bergbahnen Saalbach-Hinterglemm GmbH"
+      ],
+      "evidence_summary": "The official Skicircus directory names the three Saalbach/Hinterglemm lift companies and publishes individual company records with their operating leadership and contact details.",
+      "normalization_note": "Company identity is combined with the candidate-scoped operating schedule below; it does not by itself establish the complete terrain or weather boundary."
+    },
+    {
+      "evidence_id": "inventory-saalbach-hinterglemm-current-operations",
+      "boundary_target_ids": [
+        "saalbach-hinterglemm-ski-area"
+      ],
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/en/winter/ski-resort/operating-hours",
+      "source_title": "Saalbach Hinterglemm official operating hours and lift data",
+      "source_value": [
+        "Saalbach and Hinterglemm lift-company contacts",
+        "Zones A-D and G-I lift schedules"
+      ],
+      "evidence_summary": "The official current-season operating presentation enumerates the Saalbach/Hinterglemm lift zones and schedules while the companion lift-company directory identifies the responsible local operators.",
+      "normalization_note": "Together with the operator directory this supports an independent operations-owner category, while the complete connected-terrain and weather-owner boundaries remain unresolved."
+    },
+    {
+      "evidence_id": "inventory-skicircus-operator-directory-leogang",
+      "boundary_target_ids": [
+        "leogang-ski-area"
+      ],
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/de/service/kontakt/kontakt-bergbahnen",
+      "source_title": "Skicircus official cable-car company directory",
+      "source_value": "Leoganger Bergbahnen GmbH",
+      "evidence_summary": "The official Skicircus directory names Leoganger Bergbahnen GmbH and publishes its candidate member record, including operating leadership and contact details.",
+      "normalization_note": "Company identity is combined with the candidate-scoped operating schedule below; it does not by itself establish the complete terrain or weather boundary."
+    },
+    {
+      "evidence_id": "inventory-leogang-current-operations",
+      "boundary_target_ids": [
+        "leogang-ski-area"
+      ],
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.saalfelden-leogang.com/Winter-operating-hours",
+      "source_title": "Leoganger Bergbahnen winter operating hours",
+      "source_value": [
+        "Zone L - Leogang",
+        "Asitzbahn",
+        "Steinbergbahn",
+        "Leogang local lift schedule"
+      ],
+      "evidence_summary": "The official Leogang destination presentation publishes candidate-scoped winter dates and a complete Zone L lift schedule for the Leoganger Bergbahnen operating neighborhood.",
+      "normalization_note": "Together with the operator directory this supports an independent operations-owner category, while connected-terrain completeness and the second owner category remain for the consolidated graph proposal."
+    },
+    {
+      "evidence_id": "inventory-skicircus-operator-directory-fieberbrunn",
+      "boundary_target_ids": [
+        "fieberbrunn-ski-area"
+      ],
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/de/service/kontakt/kontakt-bergbahnen",
+      "source_title": "Skicircus official cable-car company directory",
+      "source_value": "Bergbahnen Fieberbrunn GmbH",
+      "evidence_summary": "The official Skicircus directory names Bergbahnen Fieberbrunn GmbH and publishes its candidate member record, including operating leadership and contact details.",
+      "normalization_note": "Company identity is combined with the candidate-scoped operating schedule below; it does not by itself establish the complete terrain or weather boundary."
+    },
+    {
+      "evidence_id": "inventory-fieberbrunn-current-operations",
+      "boundary_target_ids": [
+        "fieberbrunn-ski-area"
+      ],
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.fieberbrunn.com/en/winter/ski-area/operating-hours",
+      "source_title": "Bergbahnen Fieberbrunn official operating hours",
+      "source_value": [
+        "Bergbahnen Fieberbrunn GmbH",
+        "Zones E and F lift schedules",
+        "F1 and F2 Streuboden candidate opening times"
+      ],
+      "evidence_summary": "The official Fieberbrunn presentation names Bergbahnen Fieberbrunn GmbH and publishes candidate-scoped current-season lift schedules for the local operating zones.",
+      "normalization_note": "Together with the operator directory this supports an independent operations-owner category, while connected-terrain completeness and the second owner category remain for the consolidated graph proposal."
+    },
+    {
       "evidence_id": "scope-saalbach-access",
       "boundary_target_ids": [],
       "target_type": "ski_area_access",
@@ -3490,6 +3596,21 @@
       ],
       "evidence_summary": "The official annual-ticket page identifies two annual ALPIN CARD products and SuperSkiCard Premium; it does not substantiate Epic Pass.",
       "normalization_note": "The three named products remain separately inventoried pending the bounded regional pass handoff."
+    },
+    {
+      "evidence_id": "inventory-kaprun-local-and-superskicard-tariffs",
+      "boundary_target_ids": [
+        "lechnerberg"
+      ],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-alpin-card",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/tickets-prices/ski-board",
+      "source_title": "Kitzsteinhorn official ski-pass tariffs",
+      "source_value": "Ski ALPIN CARD",
+      "evidence_summary": "The official 2026/27 tariff separately presents the Maiskogel day pass, consecutive-day SuperSkiCard products, the non-consecutive SuperSkiCard 10-day flexible ticket, and Lechnerberg single- and 10-ride entitlements.",
+      "normalization_note": "Each tariff presentation remains separately inventoried; the Maiskogel and Lechnerberg products depend on the deferred Lechnerberg node, while the SuperSkiCard products require complete regional-network coverage modeling."
     },
     {
       "evidence_id": "remediation-lift-pass-product-kitzsteinhorn-local-ski-pass-available-from-stay-destination-ids",
@@ -3975,8 +4096,8 @@
     "Lechnerberg is a confirmed separate beginner area and central-Kaprun access candidate, but it remains deferred because exact required elevation and season fields are unpublished under the current SkiArea contract.",
     "Kaprun and Zell am See base elevations remain unset because the former exact document is unavailable and the latter source is only a regional valley proxy.",
     "The broad Ski ALPIN CARD map is not treated as an exact Kitzsteinhorn-Maiskogel domain-owned document.",
-    "The retained Saalbach-Hinterglemm ski-area node is only a bounded local slice; complete terrain and operations ownership remains unresolved with the Leogang, Fieberbrunn and connected-domain handoff.",
-    "365 Action, 365 Classic and SuperSkiCard Premium are concrete products deferred to the bounded Kaprun pass-extension backlog rather than classified as generic external context."
+    "The operator directory and candidate-scoped lift schedules establish independent operations-owner categories for Saalbach/Hinterglemm, Leogang and Fieberbrunn; complete connected-terrain boundaries, weather ownership and the remaining connected-domain graph stay unresolved in the consolidated handoff.",
+    "The tariff now explicitly inventories Maiskogel Day Pass, consecutive-day SuperSkiCard, SuperSkiCard 10-Day Flexible, and the two Lechnerberg ride entitlements, but this report-only pass cannot add their required deferred assessments because the canonical Zell/Kaprun backlog item lacks their exact candidate markers; ordinary remediation must add those markers before typed deferral."
   ],
   "report_schema_version": 3,
   "entity_scope_assessments": [
@@ -4376,26 +4497,32 @@
       "candidate_kind": "ski_area",
       "disposition": "unresolved",
       "signals": [
+        "independent_status_or_schedule",
+        "separate_operator",
         "ski_connected_terrain",
         "official_product_identity"
       ],
       "evidence_refs": [
+        "inventory-saalbach-hinterglemm-current-operations",
+        "inventory-skicircus-operator-directory-saalbach-hinterglemm",
         "scope-saalbach-area",
         "scope-saalbach-live"
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
-      "rationale": "The retained catalog node is a bounded local slice, but the reviewed sources own the complete connected Skicircus aggregate and do not establish a separate complete Saalbach-Hinterglemm terrain or operations boundary.",
+      "rationale": "The lift-company directory and candidate-scoped schedules establish a distinct Saalbach/Hinterglemm operations-owner category. The retained catalog node remains unresolved because the reviewed sources do not yet establish its complete connected-terrain boundary or a second owner category independently of the whole Skicircus.",
       "ski_area_boundary": {
         "parent_ski_area_id": null,
         "terrain_scope": "unresolved",
         "connectivity_to_parent": "not_applicable",
-        "operational_scope": "unknown",
+        "operational_scope": "independent",
         "weather_scope": "unknown",
         "pass_scope": "shared_only",
         "provider_consensus": "mixed",
         "separation_value": "unresolved",
         "evidence_refs": [
+          "inventory-saalbach-hinterglemm-current-operations",
+          "inventory-skicircus-operator-directory-saalbach-hinterglemm",
           "scope-saalbach-area",
           "scope-saalbach-live"
         ]
@@ -4465,6 +4592,7 @@
         "inventory-lechnerberg-official-presentation",
         "inventory-kaprun-operator-portfolio",
         "inventory-kaprun-area-map-and-status",
+        "inventory-kaprun-local-and-superskicard-tariffs",
         "inventory-kaprun-weather-presentation"
       ],
       "target_refs": [],
@@ -4483,6 +4611,7 @@
           "inventory-lechnerberg-official-presentation",
           "inventory-kaprun-operator-portfolio",
           "inventory-kaprun-area-map-and-status",
+          "inventory-kaprun-local-and-superskicard-tariffs",
           "inventory-kaprun-weather-presentation"
         ]
       },
@@ -4687,26 +4816,32 @@
       "candidate_kind": "ski_area",
       "disposition": "deferred",
       "signals": [
+        "independent_status_or_schedule",
         "official_independent_identity",
+        "separate_operator",
         "ski_connected_terrain"
       ],
       "evidence_refs": [
+        "inventory-leogang-current-operations",
+        "inventory-skicircus-operator-directory-leogang",
         "scope-saalbach-area",
         "scope-saalbach-live"
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
-      "rationale": "The aggregate Skicircus sources establish membership and connected regional scope only; exact local stay, terrain, operations, weather and access ownership remains in the consolidated typed backlog handoff.",
+      "rationale": "The official directory names Leoganger Bergbahnen and the candidate-scoped Zone L schedule establishes an independent operations-owner category. Connected-terrain completeness, weather ownership and the second owner category remain in the consolidated Skicircus proposal.",
       "ski_area_boundary": {
         "parent_ski_area_id": "saalbach-hinterglemm-ski-area",
         "terrain_scope": "unresolved",
         "connectivity_to_parent": "connected",
-        "operational_scope": "unknown",
+        "operational_scope": "independent",
         "weather_scope": "unknown",
         "pass_scope": "shared_only",
         "provider_consensus": "mixed",
         "separation_value": "unresolved",
         "evidence_refs": [
+          "inventory-leogang-current-operations",
+          "inventory-skicircus-operator-directory-leogang",
           "scope-saalbach-area",
           "scope-saalbach-live"
         ]
@@ -4772,26 +4907,32 @@
       "candidate_kind": "ski_area",
       "disposition": "deferred",
       "signals": [
+        "independent_status_or_schedule",
         "official_independent_identity",
+        "separate_operator",
         "ski_connected_terrain"
       ],
       "evidence_refs": [
+        "inventory-fieberbrunn-current-operations",
+        "inventory-skicircus-operator-directory-fieberbrunn",
         "scope-saalbach-area",
         "scope-saalbach-live"
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
-      "rationale": "The aggregate Skicircus sources establish membership and connected regional scope only; exact local stay, terrain, operations, weather and access ownership remains in the consolidated typed backlog handoff.",
+      "rationale": "The official directory names Bergbahnen Fieberbrunn and the candidate-scoped Zones E/F schedule establishes an independent operations-owner category. Connected-terrain completeness, weather ownership and the second owner category remain in the consolidated Skicircus proposal.",
       "ski_area_boundary": {
         "parent_ski_area_id": "saalbach-hinterglemm-ski-area",
         "terrain_scope": "unresolved",
         "connectivity_to_parent": "connected",
-        "operational_scope": "unknown",
+        "operational_scope": "independent",
         "weather_scope": "unknown",
         "pass_scope": "shared_only",
         "provider_consensus": "mixed",
         "separation_value": "unresolved",
         "evidence_refs": [
+          "inventory-fieberbrunn-current-operations",
+          "inventory-skicircus-operator-directory-fieberbrunn",
           "scope-saalbach-area",
           "scope-saalbach-live"
         ]
@@ -4958,8 +5099,12 @@
       "family_id": "saalbach-operator-and-live-status",
       "source_kind": "ski_area_operator",
       "source_urls": [
+        "https://www.fieberbrunn.com/en/winter/ski-area/operating-hours",
+        "https://www.saalbach.com/de/service/kontakt/kontakt-bergbahnen",
         "https://www.saalbach.com/en/winter/ski-resort",
-        "https://www.saalbach.com/en/winter/ski-resort/current-lift-operation"
+        "https://www.saalbach.com/en/winter/ski-resort/current-lift-operation",
+        "https://www.saalbach.com/en/winter/ski-resort/operating-hours",
+        "https://www.saalfelden-leogang.com/Winter-operating-hours"
       ],
       "candidate_kinds": [
         "ski_area"
