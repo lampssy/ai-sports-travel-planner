@@ -17,6 +17,10 @@ DESIGN_PATH = (
 RUNTIME_CONTRACT_PATH = (
     REPOSITORY_ROOT / "docs/operating-model/maintainer-runtime-command-contract.md"
 )
+SKI_AREA_BOUNDARY_ADR_PATH = (
+    REPOSITORY_ROOT
+    / "docs/architecture/adr/0016-require-evidence-owner-boundaries-for-ski-areas.md"
+)
 
 
 def _normalized(path: Path) -> str:
@@ -36,7 +40,9 @@ def test_incomplete_inventory_enters_completion_before_blocking() -> None:
 def test_inventory_completion_cannot_mutate_catalog_or_trust() -> None:
     for path in (ACTIVATION_PATH, DESIGN_PATH):
         contract = _normalized(path)
-        assert "exactly the canonical report path" in contract, path
+        assert "canonical json report and deterministic markdown companion" in (
+            contract
+        ), path
         assert "catalog and trust blobs and object ids remain identical" in contract, (
             path
         )
@@ -101,6 +107,47 @@ def test_actionable_findings_and_deferrals_leave_the_missing_checklist() -> None
             "focused-test change"
         ) in contract, path
         assert "does not by itself make review incomplete" in contract, path
+
+
+def test_optional_scalar_evidence_gaps_are_actionable_not_review_incomplete() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "optional scalar fact" in contract, path
+        assert "must be actionable_finding" in contract, path
+        assert "retain it as a clearly labeled proxy" in contract, path
+        assert "verified_with_adjustment" in contract, path
+        assert "remove or clear the unsupported value" in contract, path
+        assert "must not be evidence_unavailable" in contract, path
+        assert "does not block evidence-envelope freeze" in contract, path
+
+
+def test_evidence_unavailable_is_reserved_for_graph_critical_unknowns() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert (
+            "graph-critical identity, ownership, access, or pass-validity fact"
+            in contract
+        ), path
+        assert "no graph-safe conservative representation" in contract, path
+
+
+def test_stale_rendered_report_is_an_actionable_finding() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "stale rendered markdown" in contract, path
+        assert "actionable_finding" in contract, path
+        assert "does not make review incomplete" in contract, path
+
+
+def test_report_mutations_keep_json_and_markdown_in_sync_before_checkpoint() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "canonical json report and deterministic markdown companion" in (
+            contract
+        ), path
+        assert "before any delta or reviewed checkpoint" in contract, path
+        assert "boundary_target_ids" in contract, path
+        assert "same fixer pass" in contract, path
 
 
 def test_strictly_smaller_checklist_requires_the_permitted_second_pass() -> None:
@@ -168,4 +215,28 @@ def test_activation_requires_installed_skill_transition_parity() -> None:
     assert "graph-impact deferral transition" in contract
     assert "lane-conflict aggregation rule" in contract
     assert "mixed unavailable/researchable second-pass rule" in contract
+    assert "optional-scalar disposition rule" in contract
     assert "keep both schedules paused as contract-mismatch" in contract
+
+
+def test_operations_ownership_research_covers_official_sources() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH, SKI_AREA_BOUNDARY_ADR_PATH):
+        contract = _normalized(path)
+        assert "operator or consortium member directory" in contract, path
+        assert "candidate-scoped live status or opening presentation" in contract, path
+        assert "separate hostname" in contract, path
+
+
+def test_official_sources_can_jointly_prove_operations_ownership() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH, SKI_AREA_BOUNDARY_ADR_PATH):
+        contract = _normalized(path)
+        assert "jointly establish operations ownership" in contract, path
+        assert "separate company or member page alone" in contract, path
+        assert "supporting evidence only" in contract, path
+
+
+def test_operations_ownership_requires_source_family_exhaustion() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "before evidence_unavailable" in contract, path
+        assert "record the exact source families attempted" in contract, path

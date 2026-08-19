@@ -9,6 +9,8 @@ from pydantic import ValidationError
 from app.domain.catalog import CatalogSnapshot
 from app.domain.models import LiftPassPrice, PisteKmByDifficulty, SeasonWindow
 
+pytestmark = pytest.mark.db_free
+
 
 def minimal_catalog_payload() -> dict[str, Any]:
     return {

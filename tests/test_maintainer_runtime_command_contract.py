@@ -25,6 +25,10 @@ CI_REMEDIATION_DESIGN_PATH = (
     REPOSITORY_ROOT / "docs/superpowers/specs/"
     "2026-07-24-maintainer-post-push-ci-remediation-design.md"
 )
+GENERATION_DESIGN_PATH = (
+    REPOSITORY_ROOT / "docs/superpowers/specs/"
+    "2026-08-15-maintainer-curation-generation-checkpoints-design.md"
+)
 ENGINEERING_NOTES_PATH = REPOSITORY_ROOT / "docs/engineering-notes.md"
 CONTRACT_PATTERN = re.compile(
     r"<!-- runtime-command-contract:start -->\s*"
@@ -40,6 +44,7 @@ PLACEHOLDERS = {
     "${CANDIDATE_KEY}": "stay_destination:example",
     "${CANDIDATE_ORIGIN}": "backlog",
     "${EXPECTED_HEAD}": "a" * 40,
+    "${GENERATION_ID}": "f" * 32,
     "${HEAD}": "b" * 40,
     "${OUTCOME_REASON}": "non-converging",
     "${OUTCOME_STATE}": "maintainer:blocked",
@@ -114,10 +119,6 @@ def test_runtime_contract_documents_every_cli_route_with_parseable_argv() -> Non
         "python",
         "-m",
         "ops.maintainer.cli",
-        "--state-dir",
-        "${STATE_DIR}",
-        "--gh-config-dir",
-        "${GH_CONFIG_DIR}",
     ]
     recipes = contract["recipes"]
     assert isinstance(recipes, dict)
@@ -148,6 +149,13 @@ def test_runtime_contract_documents_every_cli_route_with_parseable_argv() -> Non
         ("lock", "release"),
     }
     assert documented_routes == expected_routes
+
+
+def test_registered_prefix_relies_on_project_cli_directory_defaults() -> None:
+    parsed = _parser().parse_args(["inspect", "curation"])
+
+    assert parsed.state_dir == Path.home() / ".local/state/snowcast-maintainer"
+    assert parsed.gh_config_dir == Path.home() / ".config/gh-lampssy-snowcast"
 
 
 def test_runtime_contract_freezes_the_critical_sequences() -> None:
@@ -181,20 +189,12 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
             "lock_heartbeat_curation",
             "lock_release_curation",
         ],
-        "curation_reviewed_continuation_through_prepare": [
+        "curation_generation_through_prepare": [
             "inspect_curation",
             "inspect_discovery",
             "lock_acquire_curation",
             "lock_heartbeat_curation",
-            "prepare_continuation",
-            "lock_heartbeat_curation",
-        ],
-        "curation_remediation_continuation_through_prepare": [
-            "inspect_curation",
-            "inspect_discovery",
-            "lock_acquire_curation",
-            "lock_heartbeat_curation",
-            "prepare_continuation",
+            "prepare_curation",
             "lock_heartbeat_curation",
         ],
         "curation_ordinary_pr_through_prepare": [
@@ -357,15 +357,59 @@ def test_runtime_contract_splits_curation_and_discovery_inspection_next_steps() 
     assert "inspect_*" not in rows
     assert rows["inspect_curation"] == (
         "recover one terminal publication first, then one push journal; "
-        "otherwise select one CI continuation, reviewed continuation, "
-        "remediation continuation, ordinary curation PR, or bounded no-op "
-        "in that order"
+        "otherwise select one CI continuation, current curation generation, "
+        "ordinary curation PR, or bounded no-op in that order"
     )
     assert rows["inspect_discovery"] == (
         "recover one journal first; otherwise select preferred retry, merged "
         "regional completion, active backlog, bounded external official-source "
         "scan, or bounded no-op in that order"
     )
+
+
+def test_runtime_contract_freezes_review_disposition_branches() -> None:
+    contract = _contract()
+
+    assert contract["curation_review_disposition"] == {
+        "applies_to_results": ["prepared", "review-required"],
+        "semantic_entry": "full-normalization-inventory-review-remediation-flow",
+        "branches": {
+            "clean": {
+                "head_source": "prepared-or-allowed-normalization-head",
+                "next_recipe": "checkpoint_curation_reviewed",
+            },
+            "changes_requested": {
+                "head_source": "allowed-remediation-head",
+                "next_recipe": "checkpoint_curation_delta",
+                "after_checkpoint": "fresh-full-review",
+            },
+        },
+        "reviewed_checkpoint_gate": "fresh-clean-exact-head-review",
+        "delta_authority": "helper-validation-on-invocation",
+    }
+    for branch in contract["curation_review_disposition"]["branches"].values():
+        recipe = branch["next_recipe"]
+        parsed = _parse_recipe_sequence([recipe])
+        assert [(item.family, item.command) for item in parsed] == [
+            ("checkpoint", "curation")
+        ]
+
+    assert _allowed_next_steps()["prepare_curation*"] == (
+        "enter the full semantic flow for prepared or review-required work; "
+        "a clean review uses checkpoint_curation_reviewed, while requested "
+        "changes use checkpoint_curation_delta after bounded remediation"
+    )
+
+    sources = {
+        "runtime": CONTRACT_PATH,
+        "activation": ACTIVATION_PATH,
+        "generation_design": GENERATION_DESIGN_PATH,
+    }
+    for name, path in sources.items():
+        normalized = " ".join(path.read_text(encoding="utf-8").split()).lower()
+        assert "clean-review branch" in normalized, name
+        assert "requested-changes branch" in normalized, name
+        assert "fresh clean exact-head review" in normalized, name
 
 
 def test_runtime_contract_documents_conditional_ci_budget_heartbeat_result() -> None:
@@ -410,8 +454,7 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
         "eligible",
         "terminal_publications",
         "ci_continuations",
-        "reviewed_continuations",
-        "remediation_continuations",
+        "generations",
         "unresolved_pushes",
     ]
     assert recipes["publish_recover"] == {
@@ -504,8 +547,7 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
             "terminal_publication",
             "push_journal",
             "post_push_ci_continuation",
-            "reviewed_continuation",
-            "remediation_continuation",
+            "curation_generation",
             "ordinary_pr",
         ],
         "first_wait_seconds": 1800,
@@ -530,6 +572,76 @@ def test_runtime_contract_freezes_post_push_ci_repair_policy() -> None:
         ),
         "terminal_publication_recovery": "idempotent-exact-authority-only",
     }
+
+
+def test_validated_push_recovery_branches_on_live_ci_state() -> None:
+    contract = _contract()
+
+    assert contract["curation_validated_push_recovery"] == {
+        "authority": "live-exact-pr-facts-after-publish-recover",
+        "branches": {
+            "success_mergeable": {
+                "substitutions": {"${STATE}": "maintainer:ready"},
+                "sequence": [
+                    "publication_input_summary",
+                    "lock_heartbeat_curation",
+                    "publication_input_body",
+                    "lock_heartbeat_curation",
+                    "publish_state_adopt_body",
+                    "lock_heartbeat_curation",
+                    "inspect_curation",
+                    "lock_heartbeat_curation",
+                    "lock_release_curation",
+                ],
+            },
+            "pending": {
+                "substitutions": {"${STATE}": "maintainer:waiting-ci"},
+                "sequence": [
+                    "publication_input_summary",
+                    "lock_heartbeat_curation",
+                    "publication_input_body",
+                    "lock_heartbeat_curation",
+                    "publish_state_adopt_body",
+                    "lock_heartbeat_curation",
+                ],
+            },
+            "failure_or_cancelled": {
+                "action": "stop-without-lifecycle-guess",
+            },
+            "unknown_or_nonmergeable": {
+                "action": "stop-without-lifecycle-guess",
+            },
+        },
+        "unconditional_waiting_ci_fallback": False,
+    }
+
+    branches = contract["curation_validated_push_recovery"]["branches"]
+    assert branches["success_mergeable"]["substitutions"] == {
+        "${STATE}": "maintainer:ready"
+    }
+    assert branches["pending"]["substitutions"] == {"${STATE}": "maintainer:waiting-ci"}
+    for branch_name in ("success_mergeable", "pending"):
+        branch = branches[branch_name]
+        parsed = _parse_recipe_sequence(
+            branch["sequence"],
+            substitutions=branch["substitutions"],
+        )
+        publication = next(item for item in parsed if item.family == "publish")
+        assert (publication.command, publication.state) == (
+            "state",
+            branch["substitutions"]["${STATE}"],
+        )
+
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+    }
+    for name, text in sources.items():
+        normalized = " ".join(text.split()).lower()
+        assert (
+            "never request `maintainer:waiting-ci` when checks are already successful"
+            in normalized
+        ), name
 
 
 def test_runtime_sources_freeze_terminal_publication_recovery() -> None:
@@ -610,7 +722,7 @@ def test_checked_in_sources_freeze_the_post_push_ci_runtime_contract() -> None:
         text = normalized[name]
         assert (
             "terminal publication -> push journal -> post-push ci continuation "
-            "-> reviewed continuation -> remediation continuation -> ordinary pr"
+            "-> current curation generation -> ordinary pr"
         ) in text, name
         assert "automation memory and labels" in text, name
         assert "read-only" in text and "untrusted" in text, name
@@ -671,6 +783,17 @@ def test_per_cycle_sources_use_the_short_runtime_contract() -> None:
     for source in (normalized_activation, normalized_design):
         assert "must execute exactly one corrected attempt" in source
         assert "second dispatch rejection" in source
+
+
+def test_curation_pr_synopsis_requires_an_exact_head_rendered_report_link() -> None:
+    contract = " ".join(
+        CONTRACT_PATH.read_text(encoding="utf-8").replace("`", "").split()
+    ).lower()
+
+    assert "full report" in contract
+    assert "rendered markdown report" in contract
+    assert "absolute github blob link" in contract
+    assert "exact published head" in contract
 
 
 def test_eligible_dispatch_rejection_requires_corrected_recipe_before_stop() -> None:

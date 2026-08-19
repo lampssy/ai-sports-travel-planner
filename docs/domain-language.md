@@ -351,6 +351,12 @@ recognizable sector that fails these gates is `not_separate`; it may become a
 future ski sub-area if product needs justify that layer. Provider boundaries
 corroborate this assessment but do not determine it.
 
+Operations ownership describes the scope of official evidence, not ownership
+of a dedicated website. A candidate-scoped official operator/member page and a
+candidate-scoped current status or opening presentation can jointly prove that
+scope even when a regional network publishes the live feed. Company identity
+without current candidate-scoped operations remains only a discovery signal.
+
 **Piste difficulty profile**
 
 A ski-area breakdown normalized into beginner, intermediate, and advanced

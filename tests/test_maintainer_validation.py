@@ -480,6 +480,8 @@ def test_validate_curation_runs_fixed_commands_for_one_exact_head(
     assert "app.data.validate_catalog_curation" in commands[1]
     schema_flag = commands[1].index("--require-report-schema-version")
     assert commands[1][schema_flag + 1] == "3"
+    markdown_flag = commands[1].index("--require-markdown-path")
+    assert commands[1][markdown_flag + 1] == REPORT_PATH.removesuffix(".json") + ".md"
     assert "--skip-product-backlog-validation" in commands[1]
     assert "--product-backlog-path" not in commands[1]
     broad_command = commands[2]

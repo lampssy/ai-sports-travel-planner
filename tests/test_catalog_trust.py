@@ -27,6 +27,8 @@ from tests.test_catalog_models import (
     minimal_catalog_payload,
 )
 
+pytestmark = pytest.mark.db_free
+
 EXPECTED_FIELD_GROUPS = {
     "ski_regions": ("identity", "membership_context"),
     "stay_destinations": (

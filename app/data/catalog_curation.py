@@ -1613,7 +1613,8 @@ def _validate_boundary_assessments(
                 if assessment.candidate_id not in evidence.boundary_target_ids:
                     issues.append(
                         f"{assessment.candidate_id}: evidence {evidence.evidence_id} "
-                        "does not declare boundary ownership"
+                        f"must include {assessment.candidate_id} in "
+                        "boundary_target_ids"
                     )
             if item.status == "pass" and not any(
                 evidence.source_type in VERIFICATION_SOURCE_TYPES

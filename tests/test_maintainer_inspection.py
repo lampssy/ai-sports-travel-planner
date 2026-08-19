@@ -7,6 +7,14 @@ from pathlib import Path
 import pytest
 
 from ops.maintainer import SUMMARY_MARKER
+from ops.maintainer.curation_state import (
+    CheckpointCompletedEvent,
+    CheckpointStartedEvent,
+    CurationCheckpointStage,
+    CurationGeneration,
+    GenerationPreparedEvent,
+    checkpoint_transaction_id,
+)
 from ops.maintainer.errors import ErrorReason, MaintainerError
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.github import GitHubComment
@@ -31,16 +39,10 @@ from ops.maintainer.publication import (
 from ops.maintainer.state import (
     CiContinuation,
     CiContinuationPhase,
-    ContinuationStatus,
-    ContinuationValidationStatus,
     PushJournal,
     PushPhase,
-    RemediationContinuation,
-    RemediationContinuationStatus,
-    ReviewedContinuation,
     TerminalPublicationIntent,
     TerminalPublicationPhase,
-    remediation_supersedes_reviewed,
 )
 
 pytestmark = pytest.mark.db_free
@@ -48,7 +50,9 @@ pytestmark = pytest.mark.db_free
 SHA_A = "a" * 40
 SHA_B = "b" * 40
 SHA_C = "c" * 40
+SHA_D = "d" * 40
 NOW = datetime(2026, 7, 8, 10, tzinfo=UTC)
+GENERATION_ID = "1" * 32
 
 
 def _pull_request(number: int = 42, **overrides: object) -> PullRequest:
@@ -131,82 +135,67 @@ def _journal(
     )
 
 
-def _continuation(
-    *,
-    pr_number: int = 42,
-    selected_head: str = SHA_A,
-    reviewed_head: str = SHA_B,
-    validation_status: ContinuationValidationStatus = (
-        ContinuationValidationStatus.FAILED
-    ),
-) -> ReviewedContinuation:
+def _generation(pr_number: int = 42) -> CurationGeneration:
+    report = f"docs/catalog-curation/pr-{pr_number}.json"
+    transaction_id = checkpoint_transaction_id(
+        GENERATION_ID,
+        CurationCheckpointStage.REVIEWED,
+        SHA_B,
+        report,
+        SHA_C,
+    )
+    checkpoint_ref = (
+        f"refs/snowcast-maintainer/curation/pr-{pr_number}/{GENERATION_ID}/"
+        f"{transaction_id}/checkpoint"
+    )
+    squash_ref = (
+        f"refs/snowcast-maintainer/curation/pr-{pr_number}/{GENERATION_ID}/"
+        f"{transaction_id}/replay"
+    )
     sync = GuardedSyncResult(
         target_branch=f"codex/catalog-{pr_number}",
-        original_head=selected_head,
-        rebased_head=SHA_C,
+        original_head=SHA_A,
+        rebased_head=SHA_D,
         backup_ref=f"refs/maintainer-backups/pr-{pr_number}",
         prepared_ref=f"refs/maintainer-prepared/pr-{pr_number}",
         base_head=SHA_C,
         merge_base=SHA_C,
     )
-    return ReviewedContinuation(
+    return CurationGeneration(
+        schema_version=2,
         work_id=f"curation-pr-{pr_number}",
-        origin_run_id="1" * 32,
-        recovery_run_id="2" * 32,
-        updated_at=datetime(2026, 7, 8, 10, tzinfo=UTC),
         pr_number=pr_number,
-        selected_head=selected_head,
-        reviewed_head=reviewed_head,
-        report_path=f"docs/catalog-curation/pr-{pr_number}.json",
+        generation_number=1,
+        generation_id=GENERATION_ID,
+        created_at=NOW,
+        selected_head=SHA_A,
+        target_branch=sync.target_branch,
         sync=sync,
-        reviewed_ref=(
-            f"refs/snowcast-maintainer/reviewed/pr-{pr_number}/"
-            f"{selected_head[:12]}-{reviewed_head[:12]}"
+        events=(
+            GenerationPreparedEvent(
+                sequence=1,
+                recorded_at=NOW,
+                prepared_head=SHA_D,
+            ),
+            CheckpointStartedEvent(
+                sequence=2,
+                recorded_at=NOW + timedelta(seconds=1),
+                transaction_id=transaction_id,
+                stage=CurationCheckpointStage.REVIEWED,
+                head=SHA_B,
+                report_path=report,
+                validation_base=SHA_C,
+                expected_checkpoint_ref=checkpoint_ref,
+                expected_squash_ref=squash_ref,
+            ),
+            CheckpointCompletedEvent(
+                sequence=3,
+                recorded_at=NOW + timedelta(seconds=2),
+                transaction_id=transaction_id,
+                checkpoint_ref=checkpoint_ref,
+                squash_ref=squash_ref,
+            ),
         ),
-        squash_ref=(
-            f"refs/snowcast-maintainer/continuations/pr-{pr_number}/"
-            f"{SHA_C[:12]}-{reviewed_head[:12]}"
-        ),
-        status=ContinuationStatus.AVAILABLE,
-        validation_status=validation_status,
-    )
-
-
-def _remediation(
-    *,
-    pr_number: int = 42,
-    selected_head: str = SHA_A,
-    remediation_head: str = SHA_B,
-) -> RemediationContinuation:
-    return RemediationContinuation(
-        work_id=f"curation-pr-{pr_number}",
-        origin_run_id="1" * 32,
-        recovery_run_id="2" * 32,
-        updated_at=datetime(2026, 7, 8, 10, tzinfo=UTC),
-        pr_number=pr_number,
-        selected_head=selected_head,
-        remediation_head=remediation_head,
-        report_path=f"docs/catalog-curation/pr-{pr_number}.json",
-        sync=GuardedSyncResult(
-            target_branch=f"codex/catalog-{pr_number}",
-            original_head=selected_head,
-            rebased_head=SHA_C,
-            backup_ref=f"refs/maintainer-backups/pr-{pr_number}",
-            prepared_ref=f"refs/maintainer-prepared/pr-{pr_number}",
-            base_head=SHA_C,
-            merge_base=SHA_C,
-        ),
-        allowed_paths=frozenset({"app/data/catalog.json"}),
-        remediation_ref=(
-            f"refs/snowcast-maintainer/remediation/pr-{pr_number}/"
-            f"{selected_head[:12]}-{remediation_head[:12]}"
-        ),
-        squash_ref=(
-            f"refs/snowcast-maintainer/remediation-continuations/pr-{pr_number}/"
-            f"{SHA_C[:12]}-{remediation_head[:12]}"
-        ),
-        completed_stage="delta-validated",
-        status=RemediationContinuationStatus.AVAILABLE,
     )
 
 
@@ -277,10 +266,8 @@ def test_terminal_publication_is_the_only_recovery_authority() -> None:
         (_pull_request(head_sha=SHA_B), _pull_request(43)),
         {},
         (_journal(),),
-        (_continuation(selected_head=SHA_B),),
-        (_remediation(selected_head=SHA_B),),
-        (_ci_continuation(),),
-        (intent,),
+        ci_continuations=(_ci_continuation(),),
+        terminal_publications=(intent,),
         now=NOW,
     )
 
@@ -302,8 +289,6 @@ def test_terminal_publication_is_the_only_recovery_authority() -> None:
     )
     assert inventory.unresolved_pushes == ()
     assert inventory.ci_continuations == ()
-    assert inventory.reviewed_continuations == ()
-    assert inventory.remediation_continuations == ()
     assert inventory.eligible == ()
 
 
@@ -326,10 +311,7 @@ def test_ci_continuation_summary_is_safe_live_and_first_recovery_authority() -> 
     inventory = inspect_curation(
         (matching, _pull_request(43)),
         {},
-        (),
-        (_continuation(selected_head=SHA_B),),
-        (_remediation(selected_head=SHA_B),),
-        (ci_continuation,),
+        ci_continuations=(ci_continuation,),
         now=NOW,
     )
 
@@ -357,8 +339,6 @@ def test_ci_continuation_summary_is_safe_live_and_first_recovery_authority() -> 
         "resumable": True,
         "availability_reason": "available",
     }
-    assert inventory.reviewed_continuations == ()
-    assert inventory.remediation_continuations == ()
     assert [candidate.number for candidate in inventory.eligible] == [43]
     serialized = json.dumps(inventory.model_dump(mode="json"))
     for private_value in (
@@ -376,16 +356,12 @@ def test_ci_continuation_recovery_priority_yields_only_to_unresolved_journal() -
         (_pull_request(head_sha=SHA_B),),
         {},
         (_journal(),),
-        (_continuation(selected_head=SHA_B),),
-        (_remediation(selected_head=SHA_B),),
-        (_ci_continuation(),),
+        ci_continuations=(_ci_continuation(),),
         now=NOW,
     )
 
     assert len(inventory.unresolved_pushes) == 1
     assert inventory.ci_continuations == ()
-    assert inventory.reviewed_continuations == ()
-    assert inventory.remediation_continuations == ()
     assert inventory.eligible == ()
 
 
@@ -414,17 +390,12 @@ def test_ci_continuation_exposes_non_resumable_live_invalidated_reason(
     inventory = inspect_curation(
         (pull_request,),
         {},
-        (),
-        (),
-        (),
-        (_ci_continuation(),),
+        ci_continuations=(_ci_continuation(),),
         now=NOW,
     )
 
     assert inventory.ci_continuations[0].resumable is False
     assert inventory.ci_continuations[0].availability_reason == reason
-    assert inventory.reviewed_continuations == ()
-    assert inventory.remediation_continuations == ()
     assert inventory.eligible == ()
 
 
@@ -442,10 +413,7 @@ def test_ci_continuation_authority_is_independent_of_labels(
     inventory = inspect_curation(
         (_pull_request(head_sha=SHA_B, labels=labels),),
         {},
-        (),
-        (),
-        (),
-        (_ci_continuation(),),
+        ci_continuations=(_ci_continuation(),),
         now=NOW,
     )
 
@@ -479,10 +447,7 @@ def test_ci_continuation_conflicting_routing_labels_are_visible_but_invalid(
     inventory = inspect_curation(
         (_pull_request(head_sha=SHA_B, labels=labels),),
         {},
-        (),
-        (),
-        (),
-        (_ci_continuation(),),
+        ci_continuations=(_ci_continuation(),),
         now=NOW,
     )
 
@@ -576,10 +541,7 @@ def test_ci_continuation_inspection_availability_is_phase_aware(
     inventory = inspect_curation(
         (pull_request,),
         {},
-        (),
-        (),
-        (),
-        (continuation,),
+        ci_continuations=(continuation,),
         now=NOW,
     )
 
@@ -673,300 +635,70 @@ def test_inspect_discovery_conflicting_routing_labels_fail_closed(
     assert inventory.can_create_proposal is False
 
 
-def test_curation_inventory_exposes_only_safe_continuation_summary() -> None:
-    continuation = _continuation()
-    pull_request = _pull_request()
+def test_curation_inventory_exposes_current_generation_and_suppresses_eligibility() -> (
+    None
+):
+    generation = _generation()
 
     inventory = inspect_curation(
-        (pull_request, _pull_request(43)),
+        (_pull_request(), _pull_request(43)),
         {},
-        (),
-        (continuation,),
+        generations=(generation,),
     )
 
-    assert inventory.reviewed_continuations[0].model_dump(mode="json") == {
+    assert inventory.generations[0].model_dump(mode="json", exclude_none=True) == {
         "pr_number": 42,
+        "generation_number": 1,
+        "generation_id": GENERATION_ID,
         "selected_head": SHA_A,
-        "reviewed_head": SHA_B,
         "base_head": SHA_C,
-        "report_path": "docs/catalog-curation/pr-42.json",
-        "validation_status": "failed",
-        "resumable": True,
+        "latest_head": SHA_B,
+        "stage": "reviewed",
+        "retryable": True,
+        "availability_reason": "available",
+        "next_action": {
+            "recipe_id": "validate_curation",
+            "substitutions": {
+                "pr": 42,
+                "generation_id": GENERATION_ID,
+                "head": SHA_B,
+                "report": "docs/catalog-curation/pr-42.json",
+                "validation_base": SHA_C,
+                "continue_conflict": False,
+            },
+        },
     }
-    assert [candidate.number for candidate in inventory.eligible] == [42, 43]
-    serialized = json.dumps(inventory.model_dump(mode="json"))
-    assert continuation.origin_run_id not in serialized
-    assert continuation.reviewed_ref not in serialized
+    assert [candidate.number for candidate in inventory.eligible] == [43]
 
 
-def test_curation_continuation_stays_visible_but_paused_and_yields_to_journal() -> None:
-    continuation = _continuation()
-    pull_request = _pull_request(
-        labels=frozenset({"lane:catalog-curation", "maintainer:blocked"})
-    )
+def test_external_recovery_authority_hides_curation_generation() -> None:
+    generation = _generation()
+    pull_request = _pull_request()
 
-    paused = inspect_curation((pull_request,), {}, (), (continuation,))
-    recovery = inspect_curation(
+    push_recovery = inspect_curation(
         (pull_request,),
         {},
         (_journal(),),
-        (continuation,),
+        generations=(generation,),
     )
-
-    assert paused.eligible == ()
-    assert paused.reviewed_continuations[0].resumable is False
-    assert recovery.reviewed_continuations == ()
-    assert len(recovery.unresolved_pushes) == 1
-
-
-def test_curation_inventory_summarizes_remediation_after_reviewed() -> None:
-    remediation = _remediation()
-    pull_request = _pull_request()
-
-    inventory = inspect_curation(
+    ci_recovery = inspect_curation(
         (pull_request,),
         {},
-        (),
-        (),
-        (remediation,),
+        ci_continuations=(_ci_continuation(),),
+        generations=(generation,),
+        now=NOW,
     )
-    paused = inspect_curation(
-        (
-            _pull_request(
-                labels=frozenset({"lane:catalog-curation", "maintainer:blocked"})
-            ),
-        ),
-        {},
-        (),
-        (),
-        (remediation,),
-    )
-    preferred = inspect_curation(
+    terminal_recovery = inspect_curation(
         (pull_request,),
         {},
-        (),
-        (_continuation(),),
-        (remediation,),
+        terminal_publications=(_terminal_publication_intent(),),
+        generations=(generation,),
+        now=NOW,
     )
 
-    assert inventory.remediation_continuations[0].model_dump(mode="json") == {
-        "pr_number": 42,
-        "selected_head": SHA_A,
-        "remediation_head": SHA_B,
-        "base_head": SHA_C,
-        "report_path": "docs/catalog-curation/pr-42.json",
-        "resumable": True,
-        "availability_reason": "available",
-    }
-    assert inventory.eligible == ()
-    assert paused.remediation_continuations[0].resumable is False
-    assert paused.remediation_continuations[0].availability_reason == "hold-label"
-    assert preferred.remediation_continuations == ()
-
-
-def test_newer_matching_remediation_supersedes_older_reviewed_summary() -> None:
-    reviewed = _continuation(reviewed_head=SHA_B).model_copy(
-        update={
-            "recovery_run_id": "3" * 32,
-            "status": ContinuationStatus.RESOLVING,
-        }
-    )
-    remediation = _remediation(remediation_head=SHA_C).model_copy(
-        update={
-            "origin_run_id": "3" * 32,
-            "recovery_run_id": "3" * 32,
-            "updated_at": reviewed.updated_at + timedelta(minutes=1),
-            "sync": reviewed.sync.model_copy(
-                update={"base_head": SHA_B, "merge_base": SHA_B}
-            ),
-            "squash_ref": (
-                "refs/snowcast-maintainer/remediation-continuations/pr-42/"
-                f"{SHA_B[:12]}-{SHA_C[:12]}"
-            ),
-        }
-    )
-
-    inventory = inspect_curation(
-        (_pull_request(),),
-        {},
-        (),
-        (reviewed,),
-        (remediation,),
-    )
-
-    assert inventory.reviewed_continuations == ()
-    assert [item.remediation_head for item in inventory.remediation_continuations] == [
-        SHA_C
-    ]
-    assert inventory.remediation_continuations[0].resumable is True
-
-
-def test_remediation_does_not_supersede_without_exact_replay_lineage() -> None:
-    reviewed = _continuation(reviewed_head=SHA_B).model_copy(
-        update={
-            "recovery_run_id": "3" * 32,
-            "status": ContinuationStatus.RESOLVING,
-        }
-    )
-    remediation = _remediation(remediation_head=SHA_C).model_copy(
-        update={
-            "origin_run_id": "3" * 32,
-            "recovery_run_id": "3" * 32,
-            "updated_at": reviewed.updated_at + timedelta(minutes=1),
-        }
-    )
-    mismatches = (
-        (
-            reviewed.model_copy(update={"status": ContinuationStatus.AVAILABLE}),
-            remediation,
-        ),
-        (
-            reviewed,
-            remediation.model_copy(update={"updated_at": reviewed.updated_at}),
-        ),
-        (
-            reviewed,
-            remediation.model_copy(
-                update={"report_path": "docs/catalog-curation/other.json"}
-            ),
-        ),
-        (
-            reviewed,
-            remediation.model_copy(
-                update={
-                    "sync": remediation.sync.model_copy(
-                        update={"target_branch": "codex/catalog-other"}
-                    )
-                }
-            ),
-        ),
-        (
-            reviewed,
-            remediation.model_copy(update={"remediation_head": reviewed.reviewed_head}),
-        ),
-        (
-            reviewed,
-            remediation.model_copy(
-                update={
-                    "origin_run_id": "4" * 32,
-                    "recovery_run_id": "4" * 32,
-                }
-            ),
-        ),
-    )
-
-    assert all(
-        not remediation_supersedes_reviewed(old_reviewed, newer_remediation)
-        for old_reviewed, newer_remediation in mismatches
-    )
-
-
-def test_unresolved_curation_journal_exposes_only_safe_summary() -> None:
-    remediation = _remediation()
-    continuation = _continuation()
-    journal = PushJournal.model_validate(
-        {
-            **_journal().model_dump(),
-            "report_path": "docs/catalog-curation/private-report.json",
-            "resulting_graph_markdown": "private canonical graph",
-        }
-    )
-
-    inventory = inspect_curation(
-        (_pull_request(),),
-        {},
-        (journal,),
-        (continuation,),
-        (remediation,),
-    )
-
-    assert inventory.reviewed_continuations == ()
-    assert inventory.remediation_continuations == ()
-    serialized = json.dumps(inventory.model_dump(mode="json"))
-    assert inventory.unresolved_pushes[0].model_dump(mode="json") == {
-        "worker": "curation",
-        "work_id": "curation-pr-42",
-        "pr_number": 42,
-        "candidate_key": None,
-        "candidate_origin": None,
-        "phase": "authorized",
-        "expected_remote_head": SHA_A,
-        "new_head": SHA_B,
-    }
-    for private_value in (
-        journal.origin_run_id,
-        journal.recovery_run_id,
-        journal.branch,
-        journal.report_path,
-        journal.resulting_graph_markdown,
-        continuation.reviewed_ref,
-        remediation.remediation_ref,
-    ):
-        assert private_value not in serialized
-
-
-def test_remediation_availability_reports_head_drift_closed_and_recovery_state() -> (
-    None
-):
-    remediation = _remediation()
-
-    drifted = inspect_curation(
-        (_pull_request(head_sha=SHA_C),), {}, (), (), (remediation,)
-    )
-    closed = inspect_curation(
-        (_pull_request(lifecycle_state="CLOSED"),), {}, (), (), (remediation,)
-    )
-    resolving = inspect_curation(
-        (_pull_request(),),
-        {},
-        (),
-        (),
-        (
-            remediation.model_copy(
-                update={"status": RemediationContinuationStatus.RESOLVING}
-            ),
-        ),
-    )
-
-    assert drifted.remediation_continuations[0].availability_reason == "head-drift"
-    assert [candidate.number for candidate in drifted.eligible] == [42]
-    assert closed.remediation_continuations[0].availability_reason == "closed-or-merged"
-    assert (
-        resolving.remediation_continuations[0].availability_reason
-        == "recovery-authority"
-    )
-    assert resolving.remediation_continuations[0].resumable is True
-    assert resolving.eligible == ()
-
-
-def test_resolving_remediation_still_respects_hold_and_candidate_safety() -> None:
-    resolving = _remediation().model_copy(
-        update={"status": RemediationContinuationStatus.RESOLVING}
-    )
-
-    held = inspect_curation(
-        (
-            _pull_request(
-                labels=frozenset({"lane:catalog-curation", "maintainer:blocked"})
-            ),
-        ),
-        {},
-        (),
-        (),
-        (resolving,),
-    )
-    unsafe = inspect_curation(
-        (_pull_request(is_cross_repository=True),),
-        {},
-        (),
-        (),
-        (resolving,),
-    )
-
-    assert held.remediation_continuations[0].availability_reason == "hold-label"
-    assert held.remediation_continuations[0].resumable is False
-    assert unsafe.remediation_continuations[0].availability_reason == "invalid-state"
-    assert unsafe.remediation_continuations[0].resumable is False
+    assert push_recovery.generations == ()
+    assert ci_recovery.generations == ()
+    assert terminal_recovery.generations == ()
 
 
 def test_curation_inventory_filters_objective_scope_and_orders_by_number() -> None:

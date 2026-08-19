@@ -12,7 +12,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
+from ops.maintainer import BODY_END, BODY_START, REPOSITORY, SUMMARY_MARKER
 from ops.maintainer.errors import ErrorKind, ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import (
@@ -83,6 +83,17 @@ _PUBLICATION_TEXT_LIMITS = {
 }
 
 _PUBLICATION_INPUT_CREATE_ATTEMPTS = 8
+_CURATION_REPORT_PATH = re.compile(
+    r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$"
+)
+_GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
+_GENERATED_REPORT_LINK = re.compile(
+    r"(?:\n\n)?## Full report\n\n"
+    r"\[Open the full curation report\]"
+    r"\(https://github\.com/lampssy/ai-sports-travel-planner/blob/"
+    r"[0-9a-f]{40}/docs/catalog-curation/"
+    r"[A-Za-z0-9][A-Za-z0-9._-]*\.md\)$"
+)
 
 
 class PublicationInputError(RuntimeError):
@@ -271,6 +282,29 @@ def extract_managed_body(current: str) -> str | None:
     if managed.endswith("\n"):
         managed = managed[:-1]
     return managed
+
+
+def ensure_curation_report_link(
+    managed_body: str,
+    *,
+    reviewed_head: str,
+    report_path: str,
+) -> str:
+    """Append or refresh the exact-head link to the rendered curation report."""
+    if (
+        type(managed_body) is not str
+        or not _GIT_SHA.fullmatch(reviewed_head)
+        or not _CURATION_REPORT_PATH.fullmatch(report_path)
+    ):
+        raise PublicationInputError("curation report link input is unsafe")
+    rendered_path = f"{report_path.removesuffix('.json')}.md"
+    report_url = f"https://github.com/{REPOSITORY}/blob/{reviewed_head}/{rendered_path}"
+    markdown_link = f"[Open the full curation report]({report_url})"
+    generated_block = f"## Full report\n\n{markdown_link}"
+    if managed_body.endswith(generated_block):
+        return managed_body
+    body_without_generated_link = _GENERATED_REPORT_LINK.sub("", managed_body).rstrip()
+    return f"{body_without_generated_link}\n\n{generated_block}"
 
 
 def _managed_block(managed: str) -> str:
@@ -1002,6 +1036,7 @@ def publish_state(
     mutation_guard: Callable[[], AbstractContextManager[None]] | None = None,
     validate_mutation: Callable[[str, PullRequest], None] | None = None,
     step_hook: Callable[[str], None] | None = None,
+    report_path: str | None = None,
 ) -> bool:
     """Publish one exact-head state with a fresh PR read before every mutation."""
     if type(pull_request) is not PullRequest or type(plan) is not PublicationPlan:
@@ -1030,6 +1065,18 @@ def publish_state(
         raise _publication_error(
             ErrorReason.PUBLICATION_INPUT,
             "Managed body adoption requires managed body text",
+        )
+    if report_path is not None and managed_body is not None:
+        reviewed_head = plan.machine_state.reviewed_head
+        if reviewed_head is None:
+            raise _publication_error(
+                ErrorReason.PUBLICATION_INPUT,
+                "Curation report links require a reviewed head",
+            )
+        managed_body = ensure_curation_report_link(
+            managed_body,
+            reviewed_head=reviewed_head,
+            report_path=report_path,
         )
     desired_comment = _render_summary(summary, plan.machine_state)
     mutated = False
@@ -1460,6 +1507,7 @@ def publish_discovery_proposal(
             mutation_guard=lambda: store.guard_push_mutation(journal, lease),
             validate_mutation=validate_proposal_mutation,
             step_hook=step_hook,
+            report_path=validation.report_path,
         )
         journal = journal.model_copy(update={"phase": PushPhase.PUBLISHED})
         store.save_push(journal, lease)

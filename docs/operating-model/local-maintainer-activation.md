@@ -59,10 +59,14 @@ mismatch that cannot be resolved from the concise runtime source set.
    contract while schedules remain paused. Remove candidate- or PR-specific
    migration wording; keep model, working directory, cadence, proposal cap,
    labels, and configured active-state defaults unchanged.
-5. Inspect the exact installed artifacts, then run read-only smoke checks:
+5. Inspect the exact installed artifacts. Confirm there is no active lease,
+   unresolved push journal, active post-push CI continuation, or unresolved
+   terminal publication. Run `migrate curation-state --archive-legacy` once,
+   retain its private archive summary, then run read-only smoke checks:
    - verify `codex login status` without exposing credentials;
    - verify the project-scoped GitHub profile is the active `lampssy` account;
-   - run `inspect curation` and `inspect discovery` against merged code;
+   - run `inspect curation` and `inspect discovery` against merged code after
+     migration and require no `state-migration-required` result;
    - confirm inspection does not create a missing state directory or mutate
      GitHub;
    - verify adversarial PR, backlog, source-page, and finding-ledger text cannot
@@ -76,11 +80,12 @@ mismatch that cannot be resolved from the concise runtime source set.
    profile, and that no credential content is embedded. Compare the installed
    maintainer, catalog-curation, and catalog-review skills with the merged
    inventory decision table. Require all five inventory outcomes, the graph-
-   impact deferral transition, the lane-conflict aggregation rule, and the mixed
-   unavailable/researchable second-pass rule. On any mismatch, keep both
-   schedules paused as contract-mismatch.
+   impact deferral transition, the lane-conflict aggregation rule, the mixed
+   unavailable/researchable second-pass rule, and the optional-scalar
+   disposition rule. On any mismatch, keep both schedules paused as
+   contract-mismatch.
 8. Run disabled/manual curation and discovery smoke cycles. Confirm curation can
-   distinguish post-push CI, reviewed, remediation, and ordinary recovery, and
+   distinguish post-push CI, one current generation, and ordinary recovery, and
    discovery uses regional backlog work before external scanning without
    changing GitHub unless the helper authorizes the exact mutation.
 9. Run post-merge AI/LLM reliability, security/privacy,
@@ -98,6 +103,10 @@ The installed skill must:
   `docs/operating-model/maintainer-runtime-command-contract.md`; never invent a
   family or option, translate semantic “lease” wording into argv, inspect source
   to discover a command, or call `--help` during a cycle;
+- use the path-free registered command prefix verbatim. The CLI supplies the
+  private Snowcast state directory and project-scoped GitHub directory through
+  its tested defaults. Never append `--state-dir` or `--gh-config-dir`, derive
+  them from run-local context, or reconstruct a home path during a normal cycle;
 - classify helper `invalid-command` at `dispatch` as
   `orchestration-command-invalid`; after a completed structured dispatch
   rejection with `outcome.mutation_occurred=false`, the orchestrator must reload
@@ -116,8 +125,8 @@ The installed skill must:
   fresh selection; recover exactly one matching authority first and escalate
   multiple records;
 - use curation recovery priority `terminal publication -> push journal ->
-  post-push CI continuation -> reviewed continuation -> remediation
-  continuation -> ordinary PR`, never skipping exact private recovery in favor
+  post-push CI continuation -> current curation generation -> ordinary PR`,
+  never skipping exact private recovery in favor
   of a fresh semantic cycle. Terminal-publication recovery wins before
   push-journal recovery, and a pending CI continuation resumes before any
   ordinary PR. A successor enters that continuation through
@@ -129,20 +138,27 @@ The installed skill must:
   intent or push journal exists. Exact recovery through `publish recover` is
   the only capability allowed to cross that boundary;
 - consume the helper's curation recovery continuation before choosing a state:
-  `validated` may use current CI/readiness facts, `absent` must never request
-  waiting-CI or ready and instead publishes the honest reviewed-only pause,
-  while `unknown` stops without guessing or probing lifecycle capabilities;
+  `validated` requires a fresh read-only exact-PR fact check after
+  `publish recover`. Publish `maintainer:ready` directly when checks are
+  successful and the exact head is mergeable; publish `maintainer:waiting-ci`
+  only when checks are pending, then enter the initial wait. Failed, cancelled,
+  or unknown checks and non-mergeability stop without guessing; failure repair
+  requires an existing helper-owned post-push CI continuation. Never request
+  `maintainer:waiting-ci` when checks are already successful. `absent` must
+  never request waiting-CI or ready and instead publishes the honest
+  reviewed-only pause, while `unknown` stops without guessing or probing
+  lifecycle capabilities;
 - resume any yielded orchestration cell, then poll every long-running helper
   command's underlying session through process exit, accumulate all output
   chunks, and parse helper JSON only after completion instead of retrying a
   still-running mutation;
 - inspect and choose at most one safe curation PR;
-- prefer an exact resumable reviewed continuation for the selected PR, then an
-  exact resumable remediation continuation, over an automation-memory-only
-  unpublished follow-up; an unresolved push journal still has global priority;
-- treat remediation as recovery authority only. Resume it through the helper,
-  require one fresh bounded independent review, and never infer review,
-  validation, publication, or readiness from its delta checkpoint;
+- prefer the exact current curation generation for the selected PR over an
+  automation-memory-only unpublished follow-up; an unresolved push journal
+  still has global priority. For prepared or review-required work, treat the
+  helper-returned action as the clean-review branch and use the explicit
+  requested-changes branch only after review finds bounded in-model defects.
+  Never infer validation, publication, or readiness from a delta checkpoint;
 - read curation automation memory using `CODEX_HOME` or the `$HOME/.codex`
   fallback, revalidate any unpublished-follow-up PR/head against helper
   inspection, and prioritize the oldest still-exact eligible follow-up before
@@ -210,23 +226,43 @@ The installed skill must:
 - `publish ci-repair` completes the canonical waiting-CI body, comment, and
   label handoff and marks the repair push journal `PUBLISHED` before
   second-wait inspection can expose the continuation;
-- keep preparation schema-independent, but before initial review run one
+- keep preparation schema-independent, but before the first semantic review of
+  any fresh or resumed prepared/review-required generation run one
   maintainer-managed structural normalization pass when the single report is
   legacy, malformed, graph-less after refresh, incomplete, or non-reconciling;
   use the exact prepared base/current catalog and trust snapshots to rebuild
-  exactly one canonical schema-v3 report. Validate those snapshots before edit
-  and stop without edits if either fails; assert catalog/trust object IDs remain
-  identical and locally commit a diff containing only that report path. Do not
-  claim semantic resolution or consume a remediation cycle; catalog/trust
-  changes begin only after the dual-review ledger as ordinary remediation. A
+  the canonical schema-v3 JSON report and deterministic Markdown companion.
+  Validate those snapshots before edit and stop without edits if either fails;
+  assert catalog/trust object IDs remain identical and locally commit a diff
+  containing only that report pair. For every evidence item referenced by a
+  boundary gate or identity signal, require the assessed candidate ID in
+  `boundary_target_ids`; reused evidence lists every referenced candidate.
+  Run schema-v3 reconciliation and regenerate/compare the Markdown companion
+  before any delta or reviewed checkpoint. Fix missing boundary metadata or
+  stale Markdown in the same fixer pass rather than converting a mechanical
+  report defect into semantic `review-incomplete`. Do not claim semantic
+  resolution or consume a remediation cycle; catalog/trust changes begin only
+  after the dual-review ledger as ordinary remediation. A
   finalized report requires a non-empty evidence envelope and graph impact on
   every scope assessment; each `regional_followup` must point to an exact
   heading that exists in the exact-head product backlog. The helper checks only
   anchor existence, never backlog meaning, priority, or status;
-- after each remediation, call the helper's `checkpoint remediation` capability
-  once. That single invocation runs bounded catalog/trust validation plus exact
-  reconciliation and persists the exact-head evidence; reserve the fixed broad
-  catalog suite for one final helper validation after review;
+- after each remediation, first require the canonical JSON report and
+  deterministic Markdown companion to pass schema-v3 reconciliation and
+  rendering parity, including the `boundary_target_ids` invariant above. Fix a
+  mechanical report failure in the same fixer pass. Then call
+  `checkpoint_curation_delta` once. That single invocation runs bounded
+  catalog/trust validation plus exact reconciliation and persists the
+  exact-head evidence; reserve the fixed broad catalog suite for one final
+  helper validation after review;
+- route review disposition explicitly. A fresh clean exact-head review uses the
+  **clean-review branch** and `checkpoint_curation_reviewed`. A review with
+  actionable findings uses the **requested-changes branch**: perform only the
+  bounded remediation authorized by this activation contract, commit the exact
+  clean local head, call `checkpoint_curation_delta`, and run another fresh full
+  review. The helper validates that caller-created remediation head on
+  invocation, so this branch is registered authority rather than an inferred
+  command;
 - for that final broad suite, execute only the clean exact-base uv project,
   pytest configuration, conftest, and fixed absolute test modules. Supply the
   prepared catalog/trust paths only through the helper-derived data root and a
@@ -242,6 +278,28 @@ The installed skill must:
   enumerate every concrete operator presentation and lift-pass candidate, with
   typed assessments and canonical backlog refs for deferred or unresolved pass
   products;
+- for every catalog entity absent from the exact base, apply the new-entity
+  completeness gate before freezing the evidence envelope. Enumerate every
+  canonical field and required graph relationship, then perform a bounded
+  field-specific source search. Foundational identity and graph facts must be
+  populated when suitable authoritative or structured evidence is discoverable;
+  fit and precision facts may remain unresolved when a value would create false
+  precision. Every unresolved row must name the source families or direct URLs
+  attempted, explain their insufficiency, and state what would resolve the
+  field. Absence from the provisional or frozen envelope is not itself a valid
+  unresolved reason. A new active stay base also requires at least one reviewed
+  applicable ski-area access assessment; exact distance remains optional without
+  defensible base-point and lift-endpoint geometry;
+- for an operations-ownership gap, the evidence envelope and completion pass
+  must inspect the candidate's official publication neighborhood: destination
+  or resort page, operator or consortium member directory and candidate member
+  page, and candidate-scoped live status or opening presentation. An official
+  candidate operator/member page and official current operations presentation
+  may jointly establish operations ownership even when a regional network hosts
+  one source; a separate hostname is not required. A separate company or member
+  page alone remains supporting evidence only. Before `evidence_unavailable`,
+  record the exact source families attempted and why the combined evidence does
+  not establish candidate-scoped operations;
 - when either initial lane is incomplete, consolidate its omissions into one
   run-local inventory-completion checklist before any catalog or trust fix. Each
   entry has `missing_item_id`, `category`, `candidate_keys`,
@@ -266,6 +324,19 @@ The installed skill must:
   | `actionable_finding` | Candidate and evidence are known well enough to state one exact defect and acceptance criterion. | Remove from the missing-inventory checklist. | Promote it to the finding ledger. |
   | `defensible_deferred` | Direct evidence supports a typed deferral with its concrete prerequisite and canonical backlog reference. | Remove from the missing-inventory checklist. | Apply the graph-impact rule below. |
   | `evidence_unavailable` | The exact required evidence cannot currently be obtained and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
+
+  For inventory outcomes, an optional scalar fact such as a representative
+  price, count, or descriptive attribute must be `actionable_finding` when the
+  candidate and available evidence support a safe conservative remediation.
+  The acceptance criterion may replace it with exact evidence, retain it as a
+  clearly labeled proxy with `verified_with_adjustment` trust and an explicit
+  limitation caveat, downgrade its trust, or remove or clear the unsupported
+  value. Such an item must not be `evidence_unavailable` and does not block
+  evidence-envelope freeze. Reserve `evidence_unavailable` for a graph-critical
+  identity, ownership, access, or pass-validity fact when no graph-safe
+  conservative representation or defensible typed deferral is possible. Stale
+  rendered Markdown is likewise an `actionable_finding`: regenerate it during
+  ordinary remediation; it does not make review incomplete.
 
   A regional-followup defensible deferral requires no remediation finding
   because omitting it leaves the selected graph correct. A graph-blocking
@@ -359,36 +430,39 @@ The installed skill must:
   incomplete review through the bounded inventory-completion phase before
   status-only `blocked/review-incomplete`, and reserve `owner-decision` for a
   real owner/model choice;
-- after every final exact-head independent review, call `validate reviewed`
-  with the PR, reviewed head, and its single curation report before running
-  deterministic validation or requesting manual-check publication;
+- after every final clean exact-head independent review, call the helper-returned
+  `checkpoint_curation_reviewed` recipe with the exact generation, head,
+  report, and prepare-time base; then call `validate_curation` only when the
+  generation's typed next action authorizes it. Never checkpoint a head as
+  reviewed while findings remain open or required schema reconciliation or
+  rendered-report parity fails;
 - verify every final report URL for reachability and semantically recheck all
   changed, graph-critical, and high-impact sources. Initial inventory checks
   relevance and claim support for every source; remediation rechecks only
   changed or claim-affected URLs. Any cache is keyed by exact head, URL, and
   claim context, remains run-local, and is never persisted as helper or
   cross-run authority;
-- resume a checkpoint only through `prepare continuation`: `validation-only`
-  reruns the missing deterministic/finalization gates without semantic review,
-  while `review-required` receives exactly one fresh independent full review
-  before a new `validate reviewed` checkpoint;
-- treat `prepared.base_head` from ordinary preparation or
-  `continuation.base_head` from continuation preparation as the sole
-  comparison-base authority for that work. Before `checkpoint remediation` or
+- resume a validation-only generation only through its helper-returned typed
+  `next_action` and deterministic/finalization gates. Every prepared or
+  review-required generation, including resumed work, enters the same complete
+  normalization, inventory, review, and remediation flow as ordinary work. Its
+  returned reviewed-checkpoint action is valid only for the clean-review branch;
+  requested changes use the registered delta-checkpoint branch before another
+  fresh full review;
+- treat the generation's `base_head` from `prepare curation` as the sole
+  comparison-base authority for that work. Before `checkpoint curation` or
   `validate curation`, create a separate detached clean checkout at that exact
   commit, verify its `HEAD`, pass its path as `--base-dir`, and remove only that
   caller-created checkout during cleanup. The current remediation/review
   worktree and current `origin/main` are not valid substitutes;
-- when a replayed reviewed continuation produces a newer remediation checkpoint,
-  preserve the reviewed origin authority, expose the newer remediation instead
-  of its resolving predecessor, and replace that predecessor only after an
-  exact-head fresh review. A legacy pair created before this rule may be adopted
-  only when its recovery run, selected PR head, branch, report, and replay
-  lineage match exactly;
-- when continuation preparation returns `conflict-resolution-required`, edit
+- when a replayed generation produces a newer delta-validated checkpoint,
+  expose that checkpoint as current and require a fresh reviewed checkpoint
+  before final validation; archived legacy pairs are diagnostic only and can
+  never be adopted;
+- when generation preparation returns `conflict-resolution-required`, edit
   only the helper-returned catalog/report/backlog/focused-test paths through
   `snowcast-catalog-curation` in `maintainer-managed` mode, call
-  `prepare continuation --continue-conflict`, and then run exactly one fresh
+  the registered `prepare_curation_conflict` recipe, and then run exactly one fresh
   independent full review; stop on remote drift, a disallowed or unrelated
   path, a repeated conflict, missing checkpoint refs, or unsafe Git state;
 - treat the push journal as the sole recovery authority after the helper
@@ -401,7 +475,7 @@ The installed skill must:
   active residual or repeat, regression, incomplete inventory, incomplete
   review, or unsafe scope remains status-only blocked;
 - before any safe terminal status for an unpublished mechanically valid local
-  head, retain its remediation continuation. A blocked or owner-hold label
+  head, retain its current generation checkpoint. A blocked or owner-hold label
   prevents scheduled resumption but does not invalidate the checkpoint;
 - use `publish outcome` for safe PR-specific terminal conflict, CI, deadline,
   non-convergence, validation, review-incomplete, or owner-decision stops; bind
@@ -551,8 +625,10 @@ For each schedule, confirm:
   continuation, resumes as `review-required`, and survives a safe blocked/hold
   outcome until deliberate label removal;
 - clean movement of `main` replays the one reviewed squash and returns
-  `review-required`; exactly one fresh full review is completed before any new
-  validation or publication;
+  `review-required`; the full semantic flow runs and at least one fresh full
+  review is completed before any new validation or publication. If that review
+  requests changes, the same generation uses the delta-checkpoint remediation
+  branch and another fresh review;
 - an allowlisted replay conflict returns only its bounded paths, survives an
   interrupted attempt by being recreated from immutable refs in a clean
   successor worktree, and reaches `review-required` only after helper-owned
@@ -609,9 +685,10 @@ For each schedule, confirm:
   concrete, source-backed, in-model, bounded findings are newly discovered
   continues when cycle and time remain; raw count growth alone does not stop it;
 - an initial incomplete lane returns the structured inventory-completion
-  checklist, changes exactly the canonical report path while catalog/trust blobs
-  and object IDs remain identical, and receives fresh independent source-trust
-  and graph-scope review before any remediation;
+  checklist, changes exactly the canonical JSON report and deterministic
+  Markdown companion while catalog/trust blobs and object IDs remain identical,
+  and receives fresh independent source-trust and graph-scope review before any
+  remediation;
 - an inventory-completion scenario permits at most two passes, requires the
   semantically reconciled unresolved checklist to become strictly smaller after
   each pass, and publishes `blocked/review-incomplete` on no measurable
@@ -641,7 +718,7 @@ For each schedule, confirm:
   repeat, any regression, or unsafe scope expansion stops as non-converging;
 - reaching six cycles or the 210-minute new-work cutoff with a mechanically
   valid, scope-safe, exact reviewed head and remaining findings that are only
-  bounded in-model work runs `validate reviewed` and preserves the head through
+  bounded in-model work preserves the exact reviewed generation head through
   `manual-check`; an unsafe, incomplete, or unreviewed head is not pushed;
 - each remediation runs only the two delta commands, and the reviewed final head
   runs the broad validation plus a fresh all-URL reachability sweep and semantic
@@ -657,9 +734,9 @@ For each schedule, confirm:
   fewer/lower/narrower and non-narrowing-count convergence rule;
 - activation rejects an installed maintainer, catalog-curation, or catalog-
   review skill that lacks all five inventory outcomes, the graph-impact deferral
-  transition, the lane-conflict aggregation rule, or the mixed unavailable/
-  researchable second-pass rule, and keeps both schedules paused as contract-
-  mismatch;
+  transition, the lane-conflict aggregation rule, the mixed unavailable/
+  researchable second-pass rule, or the optional-scalar disposition rule, and
+  keeps both schedules paused as contract-mismatch;
 - a legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
   report is normalized before initial dual review, without consuming a
   remediation slot, while canonical intent still rejects it until that commit;
@@ -669,14 +746,14 @@ For each schedule, confirm:
 
 1. Pause or disable both schedules before any diagnosis.
 2. Preserve the private state directory, owner record, stale-lock archives,
-   work records, reviewed/remediation continuations, post-push CI
+   work records, curation generations, legacy curation archive, post-push CI
    continuations, terminal-publication intents, push journals, and backup refs.
    Do not edit or delete them.
 3. Inspect both inventories and Codex Triage. Recover an irreversible operation
    only through the merged helper; multiple recovery records require owner
    review.
 4. Inventory every open curation and proposal head plus all private journals,
-   reviewed continuations, remediation continuations, and post-push CI
+   curation generations, and post-push CI
    continuations. The CI inventory must identify every `initial-wait`,
    `repair-active`, `repair-reviewed`, and `second-wait` record plus any
    matching unresolved push journal or terminal-publication intent. Before
@@ -703,8 +780,9 @@ For each schedule, confirm:
    older orchestrator while any active CI continuation remains; complete or
    safely terminalize it with the helper version that created or understands it
    first. Do not downgrade across an unresolved terminal-publication intent.
-   Apply the same rule to an active remediation continuation: recover or
-   explicitly invalidate it with the compatible helper first.
+   Once any generation exists after migration, do not restore the archived
+   legacy pre-push state or an older continuation-based helper. Continue with
+   the generation-aware helper or ship a reviewed forward fix.
 7. Revert the repository helper through normal Git history and a reviewed PR.
    Do not use plain `git push --force` and do not execute the superseded Task 10.
 8. Keep schedules disabled until the reverted or corrected merged version has

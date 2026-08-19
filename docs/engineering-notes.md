@@ -41,6 +41,10 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   deferred, or blocked by concretely unavailable evidence. Actionable catalog,
   trust, backlog, rendered-report, and focused-test defects move into ordinary
   remediation rather than keeping the review incomplete.
+- Missing exact evidence for an optional scalar fact is actionable whenever the
+  value can be safely qualified as a proxy, downgraded, or removed. Unavailable
+  evidence blocks inventory only for graph-critical identity, ownership,
+  access, or pass-validity facts with no conservative graph-safe disposition.
 - A graph-blocking deferral closes the knowledge gap but creates a graph-safety
   finding; only a regional follow-up can defer without remediation. Conflicting
   lane outcomes remain missing until a focused exact-head reconciliation.
@@ -806,6 +810,17 @@ reconciliation; the parent maintainer retains lease, branch, commit, validation,
 and publication authority. This avoids weakening worktree isolation or giving a
 sub-skill a second GitHub mutation path.
 
+New catalog entities use a stronger completeness gate than ordinary unchanged
+entities. Every applicable canonical field and required graph relationship gets
+a bounded field-specific source search before the evidence envelope is frozen.
+Foundational identity and graph facts are populated whenever suitable evidence
+is discoverable; descriptive or precision fields may remain unresolved rather
+than introduce weak inference or false precision. An unresolved row records the
+sources attempted, why they were insufficient, and what would resolve it;
+absence from the initial evidence packet is never sufficient by itself. This
+keeps the typed coverage matrix as evidence of actual review rather than a
+mechanical list of omissions.
+
 The helper exposes four capability groups: inspect, prepare, validate, and
 publish. `ops/maintainer/cli.py` is only the JSON parser and dependency
 composition boundary; `ops/maintainer/capabilities.py` dispatches the explicit
@@ -827,6 +842,13 @@ contract is reloaded, provided the structured outcome also reports no mutation.
 The malformed argv is never repeated, and uncertainty, missing or positive
 mutation status, recipe ambiguity, capability switching, a non-dispatch error,
 or a second dispatch rejection still stops the cycle.
+
+The registered helper prefix intentionally contains no state or GitHub-profile
+path arguments. `ops.maintainer.cli` owns the project defaults, so each tool cell
+appends only the registered recipe argv. This prevents a later heartbeat or
+publication command from silently switching helper state because a run-local
+home/path field was absent or malformed. Explicit directory flags remain useful
+for isolated tests and owner diagnostics outside normal cycles.
 
 Incoming curation reports are review input, not preparation authority.
 Preparation validates the resulting diff rather than freezing the incoming
@@ -1332,6 +1354,13 @@ parent scope; provider aggregation is corroborating evidence rather than the
 deciding rule. Artificial child areas must not be created merely to manufacture
 a `TerrainDomain`. See ADR 0016.
 
+Operations ownership is reconstructed across the bounded official publication
+neighborhood. An operator or consortium member page can establish candidate
+identity while a regional candidate-scoped status/opening presentation
+establishes current operations; together they can prove the owner category.
+Neither a separate hostname nor a standalone feed is required, while a company
+listing without candidate-scoped operational evidence remains supporting only.
+
 Accommodation and terrain boundaries remain independent. A distinct,
 bookable accommodation market such as Kirchberg may justify its own
 `StayDestination` and bases while sharing the same KitzSki `SkiArea`, provided
@@ -1449,6 +1478,39 @@ module over typed API rows, preserves null gaps, and pairs every chart with an
 accessible data table. A failed chart chunk falls back to a compact table of the
 same values. The browser must not interpolate observations or derive new
 weather claims.
+
+## Maintainer Pre-Push Curation Authority
+
+Pre-push curation recovery uses one bounded generation timeline per PR. A
+generation binds the selected remote head, prepare-time base, current local
+head, report, and append-only stage events. Both delta-validated and reviewed
+heads use the same two-phase idempotent `checkpoint curation` capability;
+inspection returns a typed recipe ID and substitutions for the clean-head next
+action. Prepared and review-required generations still enter the complete
+normalization, inventory, review, and remediation flow. A clean review uses the
+reviewed checkpoint; requested changes produce a bounded local commit that must
+pass the delta checkpoint and another fresh review before it can become reviewed
+authority. The helper validates the caller-created remediation head when the
+delta checkpoint is invoked. Reviewed authority remains distinct from fully
+validated authority, so ordinary push cannot bypass the final deterministic
+suite while the existing manual-check path can still preserve an explicitly
+unvalidated reviewed head.
+
+Curation report mutations are atomic at the review-artifact boundary: the
+canonical schema-v3 JSON report and its deterministic Markdown companion move
+together before any delta or reviewed checkpoint. Boundary evidence also names
+every assessment candidate explicitly through `boundary_target_ids`; an
+evidence target alone does not establish boundary ownership. These mechanical
+invariants are corrected in the same fixer pass and are not semantic
+`review-incomplete` outcomes.
+
+Legacy reviewed/remediation continuations are archived once through the
+lease-free `migrate curation-state --archive-legacy` capability. Migration
+refuses active leases and unresolved push, CI, or terminal-publication recovery,
+leaves discovery and external-mutation state unchanged, and writes the
+generation-v2 format marker last. Once a generation exists, the archived
+pre-push state cannot be restored as authority. Push journals, post-push CI
+continuations, and terminal-publication recovery remain unchanged by ADR 0020.
 
 ## Concepts Clarified
 

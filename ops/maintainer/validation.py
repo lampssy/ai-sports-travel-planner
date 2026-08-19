@@ -6,7 +6,7 @@ import re
 import signal
 import subprocess
 import time
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Literal, Protocol, Self
@@ -676,15 +676,19 @@ def require_single_curation_report_path(
 ) -> None:
     if _REPORT_PATH.fullmatch(report_path) is None:
         raise ValueError("curation report path is invalid")
+    if single_curation_report_path(snapshot.changed_paths) != report_path:
+        raise ValueError("curation report path is not the single changed report")
+
+
+def single_curation_report_path(changed_paths: Iterable[str]) -> str:
     report_paths = tuple(
         sorted(
-            path
-            for path in snapshot.changed_paths
-            if _REPORT_PATH.fullmatch(path) is not None
+            path for path in changed_paths if _REPORT_PATH.fullmatch(path) is not None
         )
     )
-    if report_paths != (report_path,):
-        raise ValueError("curation report path is not the single changed report")
+    if len(report_paths) != 1:
+        raise ValueError("curation work must contain one report")
+    return report_paths[0]
 
 
 def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:
@@ -722,6 +726,8 @@ def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:
             TRUST_MANIFEST_PATH,
             "--require-report-schema-version",
             "3",
+            "--require-markdown-path",
+            plan.report_path.removesuffix(".json") + ".md",
             "--skip-product-backlog-validation",
         ),
         (

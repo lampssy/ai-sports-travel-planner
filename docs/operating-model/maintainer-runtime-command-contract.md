@@ -18,9 +18,13 @@ If a required operation has no recipe, stop before that operation with
 
 ## Fixed Invocation
 
-Execute every recipe by appending its `argv` to `command_prefix`. Keep the state
-and project-scoped GitHub directories fixed for the whole run. A helper-created
-publication input is represented only by its returned direct-child basename.
+Execute every recipe by appending its `argv` to `command_prefix`. The registered
+prefix deliberately omits `--state-dir` and `--gh-config-dir`: the CLI owns the
+fixed Snowcast defaults for both directories. During a maintainer cycle, never
+append those options, rebuild them from run-local context, or substitute a home
+directory. Explicit directory options remain available only for isolated tests
+and owner-run diagnostics outside a normal cycle. A helper-created publication
+input is represented only by its returned direct-child basename.
 
 The JSON block is machine-checked against the real CLI parser. It is deliberately
 repetitive where worker identity affects lease ownership so an orchestrator does
@@ -36,20 +40,20 @@ not have to derive an invocation.
     "--no-config",
     "python",
     "-m",
-    "ops.maintainer.cli",
-    "--state-dir",
-    "${STATE_DIR}",
-    "--gh-config-dir",
-    "${GH_CONFIG_DIR}"
+    "ops.maintainer.cli"
   ],
   "recipes": {
     "inspect_curation": {
       "argv": ["inspect", "curation"],
-      "returns": ["eligible", "terminal_publications", "ci_continuations", "reviewed_continuations", "remediation_continuations", "unresolved_pushes"]
+      "returns": ["eligible", "terminal_publications", "ci_continuations", "generations", "unresolved_pushes"]
     },
     "inspect_discovery": {
       "argv": ["inspect", "discovery"],
       "returns": ["catalog_keys", "open_proposal_count", "can_create_proposal", "unresolved_pushes"]
+    },
+    "migrate_curation_state": {
+      "argv": ["migrate", "curation-state", "--archive-legacy"],
+      "returns": ["migration", "next_action"]
     },
     "lock_acquire_curation": {
       "argv": ["lock", "acquire", "curation"],
@@ -98,15 +102,11 @@ not have to derive an invocation.
     },
     "prepare_curation": {
       "argv": ["prepare", "curation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "prepared"]
+      "returns": ["work_id", "generation"]
     },
-    "prepare_continuation": {
-      "argv": ["prepare", "continuation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "continuation"]
-    },
-    "prepare_continuation_conflict": {
-      "argv": ["prepare", "continuation", "--pr", "${PR}", "--continue-conflict", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "continuation"]
+    "prepare_curation_conflict": {
+      "argv": ["prepare", "curation", "--pr", "${PR}", "--continue-conflict", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation"]
     },
     "prepare_ci_repair": {
       "argv": ["prepare", "ci-repair", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
@@ -120,25 +120,21 @@ not have to derive an invocation.
       "argv": ["invalidate", "ci-continuation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "pr_number", "phase", "availability_reason", "continuation_head", "observed_head"]
     },
-    "checkpoint_remediation": {
-      "argv": ["checkpoint", "remediation", "--pr", "${PR}", "--head", "${HEAD}", "--report", "${REPORT}", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
-      "returns": ["continuation"]
+    "checkpoint_curation_delta": {
+      "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "delta-validated", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation"]
+    },
+    "checkpoint_curation_reviewed": {
+      "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "reviewed", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation"]
     },
     "checkpoint_ci_repair": {
       "argv": ["checkpoint", "ci-repair", "--pr", "${PR}", "--head", "${HEAD}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "repair_head", "repair_ref", "repair_paths"]
     },
     "validate_curation": {
-      "argv": ["validate", "curation", "--pr", "${PR}", "--reviewed-head", "${REVIEWED_HEAD}", "--report", "${REPORT}", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "validation"]
-    },
-    "validate_reviewed": {
-      "argv": ["validate", "reviewed", "--pr", "${PR}", "--reviewed-head", "${REVIEWED_HEAD}", "--report", "${REPORT}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "continuation"]
-    },
-    "validate_reviewed_adopt_existing": {
-      "argv": ["validate", "reviewed", "--pr", "${PR}", "--reviewed-head", "${REVIEWED_HEAD}", "--report", "${REPORT}", "--adopt-existing", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "continuation"]
+      "argv": ["validate", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation", "validation"]
     },
     "validate_proposal": {
       "argv": ["validate", "proposal", "--candidate-key", "${CANDIDATE_KEY}", "--candidate-origin", "${CANDIDATE_ORIGIN}", "--base", "${BASE}", "--head", "${HEAD}", "--run-id", "${RUN_ID}"],
@@ -218,20 +214,12 @@ not have to derive an invocation.
       "lock_heartbeat_curation",
       "lock_release_curation"
     ],
-    "curation_reviewed_continuation_through_prepare": [
+    "curation_generation_through_prepare": [
       "inspect_curation",
       "inspect_discovery",
       "lock_acquire_curation",
       "lock_heartbeat_curation",
-      "prepare_continuation",
-      "lock_heartbeat_curation"
-    ],
-    "curation_remediation_continuation_through_prepare": [
-      "inspect_curation",
-      "inspect_discovery",
-      "lock_acquire_curation",
-      "lock_heartbeat_curation",
-      "prepare_continuation",
+      "prepare_curation",
       "lock_heartbeat_curation"
     ],
     "curation_ordinary_pr_through_prepare": [
@@ -258,6 +246,23 @@ not have to derive an invocation.
       "inspect_curation",
       "lock_heartbeat_curation"
     ]
+  },
+  "curation_review_disposition": {
+    "applies_to_results": ["prepared", "review-required"],
+    "semantic_entry": "full-normalization-inventory-review-remediation-flow",
+    "branches": {
+      "clean": {
+        "head_source": "prepared-or-allowed-normalization-head",
+        "next_recipe": "checkpoint_curation_reviewed"
+      },
+      "changes_requested": {
+        "head_source": "allowed-remediation-head",
+        "next_recipe": "checkpoint_curation_delta",
+        "after_checkpoint": "fresh-full-review"
+      }
+    },
+    "reviewed_checkpoint_gate": "fresh-clean-exact-head-review",
+    "delta_authority": "helper-validation-on-invocation"
   },
   "ci_waits": {
     "initial_wait": {
@@ -298,8 +303,28 @@ not have to derive an invocation.
       }
     }
   },
+  "curation_validated_push_recovery": {
+    "authority": "live-exact-pr-facts-after-publish-recover",
+    "branches": {
+      "success_mergeable": {
+        "substitutions": {"${STATE}": "maintainer:ready"},
+        "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publication_input_body", "lock_heartbeat_curation", "publish_state_adopt_body", "lock_heartbeat_curation", "inspect_curation", "lock_heartbeat_curation", "lock_release_curation"]
+      },
+      "pending": {
+        "substitutions": {"${STATE}": "maintainer:waiting-ci"},
+        "sequence": ["publication_input_summary", "lock_heartbeat_curation", "publication_input_body", "lock_heartbeat_curation", "publish_state_adopt_body", "lock_heartbeat_curation"]
+      },
+      "failure_or_cancelled": {
+        "action": "stop-without-lifecycle-guess"
+      },
+      "unknown_or_nonmergeable": {
+        "action": "stop-without-lifecycle-guess"
+      }
+    },
+    "unconditional_waiting_ci_fallback": false
+  },
   "ci_continuation_policy": {
-    "recovery_priority": ["terminal_publication", "push_journal", "post_push_ci_continuation", "reviewed_continuation", "remediation_continuation", "ordinary_pr"],
+    "recovery_priority": ["terminal_publication", "push_journal", "post_push_ci_continuation", "curation_generation", "ordinary_pr"],
     "first_wait_seconds": 1800,
     "repair_active_seconds": 3600,
     "second_wait_seconds": 1800,
@@ -340,14 +365,23 @@ not have to derive an invocation.
 
 ## Placeholder Rules
 
-- `${STATE_DIR}` is `$HOME/.local/state/snowcast-maintainer`.
-- `${GH_CONFIG_DIR}` is `$HOME/.config/gh-lampssy-snowcast`.
+- The CLI default state directory is
+  `$HOME/.local/state/snowcast-maintainer`, and its default project-scoped
+  GitHub directory is `$HOME/.config/gh-lampssy-snowcast`. They are not runtime
+  placeholders and must not be reconstructed or appended to the registered
+  prefix during a normal cycle.
 - `${RUN_ID}` is copied exactly from the successful matching `lock acquire`
   result. It is never generated, shortened, logged publicly, or reused by
   another worker.
-- `${PR}`, heads, report path, work ID, candidate identity, and branch come
-  from the current helper inventory or the result of the immediately preceding
-  helper capability.
+- `${PR}`, report path, work ID, candidate identity, and branch come from the
+  current helper inventory or the result of the immediately preceding helper
+  capability. `${HEAD}` normally does too. For the explicit curation
+  review-disposition branches only, `${HEAD}` may instead be the exact clean
+  commit produced by allowed pre-review normalization or bounded remediation;
+  the checkpoint helper validates that caller-created head before granting any
+  recovery authority.
+- `${GENERATION_ID}` is copied exactly from the current curation generation or
+  its helper-returned `next_action`; it is never synthesized from prose.
 - `${BASE_DIR}` is a caller-created detached clean checkout whose `HEAD`
   exactly equals the prepare-time `base_head`.
 - `${TITLE_FILE}`, `${BODY_FILE}`, and `${SUMMARY_FILE}` are basenames returned
@@ -359,17 +393,16 @@ not have to derive an invocation.
 
 | Completed recipe | Only allowed next step |
 | --- | --- |
-| `inspect_curation` | recover one terminal publication first, then one push journal; otherwise select one CI continuation, reviewed continuation, remediation continuation, ordinary curation PR, or bounded no-op in that order |
+| `inspect_curation` | recover one terminal publication first, then one push journal; otherwise select one CI continuation, current curation generation, ordinary curation PR, or bounded no-op in that order |
 | `inspect_discovery` | recover one journal first; otherwise select preferred retry, merged regional completion, active backlog, bounded external official-source scan, or bounded no-op in that order |
+| `migrate_curation_state` | run `inspect_curation`; migration is an owner activation action and never enters a semantic cycle directly |
 | `lock_acquire_*` | copy `run_id`, heartbeat, then run the selected worker capability |
 | `lock_heartbeat_*` | continue the already selected sequence; curation may also return helper-owned cumulative `ci_budget`, but heartbeat grants no new authority |
-| `prepare_curation` | normalize/review the exact returned prepared head |
-| `prepare_continuation*` | obey only the returned continuation kind/result |
+| `prepare_curation*` | enter the full semantic flow for prepared or review-required work; a clean review uses checkpoint_curation_reviewed, while requested changes use checkpoint_curation_delta after bounded remediation |
 | `prepare_ci_repair` | branch on its phase: `repair-active` re-establishes the exact repair worktree for one static test-only repair plus a fresh focused independent review; `repair-reviewed` revalidates and returns the immutable reviewed checkpoint for publication |
 | `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
-| `checkpoint_remediation` | fresh exact-head review, another bounded fix, or safe stop |
+| `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
-| `validate_reviewed*` | final deterministic validation or an allowed reviewed-only handoff |
 | `validate_curation` | `publish_push` for the exact validated work |
 | `validate_proposal` | create publication inputs, then `publish_proposal` |
 | `publication_input_*` | pass that basename only to its selected publication recipe |
@@ -395,6 +428,19 @@ the cycle; prose, automation memory, labels, or prior conclusions cannot fill
 them in. Helper output and continuation state are authority. Automation memory
 and labels are hints and presentation only.
 
+For `prepared` and `review-required` curation results, semantic review is the
+branching operation between helper calls. Both fresh and resumed generations
+enter the complete normalization, inventory, review, and remediation flow. The
+returned `next_action` is the **clean-review branch** for the current generation;
+it never authorizes marking a head with open findings as reviewed. If the review
+requests changes, the declared **requested-changes branch** permits bounded
+local remediation followed only by `checkpoint_curation_delta` for the exact
+clean remediation commit. That invocation is the authority gate: it revalidates
+generation, remote head, base, paths, report, and deterministic deltas before
+persisting recovery evidence. A fresh clean exact-head review is required after
+the delta checkpoint before `checkpoint_curation_reviewed`. This branch is part
+of the registered contract and is not an inferred capability switch.
+
 This helper interface does not classify residuals or exact repeats and does not
 count candidate entries. Codex owns the assertion-level finding ledger,
 candidate inventory, repeat streak, and convergence decision; the helper only
@@ -417,7 +463,15 @@ including both bounded CI waits:
   completes the exact matching continuation as `blocked`. Repair cannot resume
   while that intent is unresolved;
 - after push-journal `publish recover`, branch only on its returned curation
-  `continuation`. For `validation_status=absent`, inspect only
+  `continuation`. For `validation_status=validated`, fetch current live facts
+  for the exact PR and recovered head before creating publication inputs. When
+  checks are successful and the PR is mergeable, publish
+  `maintainer:ready` directly. When checks are pending, publish
+  `maintainer:waiting-ci` and enter the initial wait. Failed, cancelled, or
+  unknown checks and non-mergeability stop without guessing; failure repair
+  requires an existing helper-owned post-push CI continuation. Never request
+  `maintainer:waiting-ci` when checks are already successful.
+  For `validation_status=absent`, inspect only
   the exact reviewed report: an explicit unresolved owner/model choice uses the
   `curation_recovery_absent_owner_decision_after_recover` suffix with
   `${STATE}=maintainer:owner-decision`; otherwise use the
@@ -425,17 +479,16 @@ including both bounded CI waits:
   canonical Resulting Graph in the body. An absent, unknown, or mismatched
   continuation stops and releases. Never select fresh work;
 - after recovery, selection priority is exactly `terminal publication -> push
-  journal -> post-push CI continuation -> reviewed continuation -> remediation
-  continuation -> ordinary PR`. A pending CI continuation resumes before
+  journal -> post-push CI continuation -> current curation generation ->
+  ordinary PR`. A pending CI continuation resumes before
   ordinary PR selection;
 - every `prepare ci-repair`, `checkpoint ci-repair`, `publish ci-repair`, and
   `invalidate ci-continuation` request rejects any unresolved terminal
   publication before changing continuation state or a worktree. It also
   rejects any unresolved push journal. Only exact `publish recover` may proceed
   while either recovery authority exists;
-- reviewed and remediation continuations use the same helper command, then
-  branch only on the returned `continuation.kind` and `continuation.result`;
-- an ordinary PR uses `prepare curation`, never `prepare continuation`;
+- current generations and ordinary PRs both use `prepare curation`, then obey
+  only the returned generation result and typed `next_action`;
 - same-run first-wait and second-wait polling uses the already-held lease and
   composes `lock_heartbeat_curation -> inspect_curation ->
   lock_heartbeat_curation` before every branch; it never reacquires. A
@@ -470,6 +523,14 @@ After every successful acquisition, heartbeat before and after each capability
 and at least every five minutes during Codex work. Release exactly once in a
 `finally` path if and only if acquisition succeeded. `lock-busy` before
 acquisition is a terminal no-op and never triggers release.
+
+Every curation PR synopsis with a managed body must end with a `Full report`
+section containing a clickable link to the rendered Markdown report. The
+primary link is an absolute GitHub blob link bound to the exact published head;
+do not show only a repository path or use a default-branch-relative link. The
+helper appends or refreshes this exact-head link during publication. A link to
+the canonical JSON report may be included as secondary technical context, but
+the rendered Markdown report is the primary owner-review surface.
 
 A successful curation heartbeat always returns base field `worker`. When that
 run owns an active CI continuation it also returns conditional `ci_budget` with

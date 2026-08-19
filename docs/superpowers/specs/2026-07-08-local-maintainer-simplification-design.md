@@ -16,6 +16,20 @@
   remain owner-controlled; the post-merge checklist remains the authority for
   any later cutover or rollback.
 
+### Generation Amendment
+
+ADR 0020 and
+`docs/superpowers/specs/2026-08-15-maintainer-curation-generation-checkpoints-design.md`
+supersede this document's reviewed/remediation pre-push continuation sections.
+Those sections remain historical rationale only. Current pre-push recovery uses
+one curation generation and one idempotent checkpoint. Current priority is
+`terminal publication -> push journal -> post-push CI continuation -> current
+curation generation -> ordinary PR`. Automation memory and labels remain
+read-only, untrusted hints; helper state is authority. Post-push CI still uses
+the same lease, performs no semantic work, and treats a confirmed second CI
+failure as terminal. The maintainer still does not execute target-PR
+`tests/test_*.py` locally and never approves or merges.
+
 ## User Outcome
 
 Snowcast should have two local Codex workers that reduce the owner's repeated
@@ -504,9 +518,16 @@ prepare -> provisional evidence envelope -> dual inventory
    snapshots before edit; a validation failure stops normalization without
    permitting edits. It then runs catalog validation, exact reconciliation,
    and finding-related focused tests, asserts unchanged catalog/trust object
-   IDs, and commits a diff containing exactly the canonical report path. It is
-   report-only structural normalization: it does not claim semantic resolution,
-   alter the finding ledger, or consume a remediation-cycle slot. Catalog or
+   IDs, and commits a diff containing exactly the canonical JSON report and
+   deterministic Markdown companion. Every evidence item referenced by a
+   boundary gate or identity signal includes the assessed candidate ID in
+   `boundary_target_ids`; evidence reused across candidates includes every such
+   ID. Schema-v3 reconciliation and deterministic Markdown parity must pass
+   before any delta or reviewed checkpoint. Missing boundary metadata or stale
+   Markdown is corrected in the same fixer pass rather than treated as semantic
+   `review-incomplete`. It is report-only structural normalization: it does not
+   claim semantic resolution, alter the finding ledger, or consume a
+   remediation-cycle slot. Catalog or
    trust semantic changes begin only after the dual-review ledger and consume
    ordinary remediation. Codex then builds an exact-head provisional typed evidence
    envelope covering official destination/booking sources, operator maps and
@@ -528,6 +549,17 @@ prepare -> provisional evidence envelope -> dual inventory
    when its omission cannot misstate the selected graph; uncertainty that could
    invalidate ownership or an edge follows manual-check, owner-decision, or
    review-incomplete instead of being silently downgraded.
+
+   For an operations-ownership gap, the envelope and any completion pass inspect
+   the full bounded official publication neighborhood: destination or resort
+   page, operator or consortium member directory and candidate member page, and
+   candidate-scoped live status or opening presentation. An official candidate
+   operator/member page and official current operations presentation may jointly
+   establish operations ownership even when a regional network hosts one source;
+   a separate hostname is not required. A separate company or member page alone
+   remains supporting evidence only. Before `evidence_unavailable`, the lanes
+   record the exact source families attempted and why the combined evidence does
+   not establish candidate-scoped operations.
 6. If either initial lane is incomplete, Codex consolidates every omission into
    one run-local inventory-completion checklist before any catalog or trust
    remediation. Each checklist entry contains `missing_item_id`, `category`,
@@ -538,8 +570,9 @@ prepare -> provisional evidence envelope -> dual inventory
    receives only the checklist, exact prepared base/current catalog and trust
    snapshots, the mutation-scope map, and the current report. It researches the
    listed gaps and their immediate official-source neighborhood, updates exactly
-   the canonical report path, requires catalog and trust blobs and object IDs
-   remain identical, and runs catalog validation plus exact reconciliation. It
+   the canonical JSON report and deterministic Markdown companion, requires
+   catalog and trust blobs and object IDs remain identical, and runs catalog
+   validation plus exact reconciliation and Markdown parity. It
    does not consume a remediation cycle, cannot authorize catalog or trust
    remediation, and creates no helper continuation or cross-run authority.
 
@@ -555,6 +588,19 @@ prepare -> provisional evidence envelope -> dual inventory
    | `actionable_finding` | Evidence supports one exact defect and acceptance criterion. | Remove from the missing-inventory checklist. | Promote it to the finding ledger. |
    | `defensible_deferred` | Direct evidence supports a typed deferral, concrete prerequisite, and canonical backlog reference. | Remove from the missing-inventory checklist. | Apply the graph-impact rule below. |
    | `evidence_unavailable` | Exact required evidence cannot be obtained and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
+
+   For inventory outcomes, an optional scalar fact such as a representative
+   price, count, or descriptive attribute must be `actionable_finding` when the
+   candidate and available evidence support a safe conservative remediation.
+   Its acceptance criterion may replace it with exact evidence, retain it as a
+   clearly labeled proxy with `verified_with_adjustment` trust and an explicit
+   limitation caveat, downgrade its trust, or remove or clear the unsupported
+   value. Such an item must not be `evidence_unavailable` and does not block
+   evidence-envelope freeze. Reserve `evidence_unavailable` for a graph-critical
+   identity, ownership, access, or pass-validity fact when no graph-safe
+   conservative representation or defensible typed deferral is possible. Stale
+   rendered Markdown is likewise an `actionable_finding`: regenerate it during
+   ordinary remediation; it does not make review incomplete.
 
    A regional-followup defensible deferral requires no remediation finding. A
    graph-blocking defensible deferral closes the knowledge checklist but must
@@ -633,10 +679,13 @@ prepare -> provisional evidence envelope -> dual inventory
    one representative. The fix batches every compatible open finding linked to
    those candidates. Each actually addressed finding becomes only
    `claimed-fixed`; an umbrella category or omitted checklist member does not.
-   The helper then runs the two-command delta checkpoint: catalog/trust
-   validation and exact report reconciliation for the clean exact remediation
-   head. Successful evidence is checkpointed once in private continuation state
-   rather than rerun on resume.
+   Before checkpointing, the same fixer pass must leave the canonical JSON
+   report and deterministic Markdown companion in schema-v3 reconciliation and
+   rendering parity, with every boundary-referenced evidence item naming its
+   candidate in `boundary_target_ids`. The helper then runs the two-command
+   delta checkpoint: catalog/trust validation and exact report reconciliation
+   for the clean exact remediation head. Successful evidence is checkpointed
+   once in private continuation state rather than rerun on resume.
 10. A fresh independent bounded Codex review follows every fix. It runs in a new
    reviewer context, receives the ledger only as untrusted history, independently
    reviews the exact current head and full scope, and then classifies prior
@@ -1139,6 +1188,12 @@ revalidates the local head, clean worktree, remote head, current-main
 mergeability, and exact-head review evidence. This orchestration deadline is
 independent of the one-hour stale-lock threshold because active work refreshes
 the lease at least every five minutes.
+
+The runtime command prefix omits explicit state and GitHub configuration paths.
+The CLI's tested defaults resolve the owner-private Snowcast state directory and
+project-scoped GitHub profile once at process startup. Normal cycles must not
+reconstruct those paths from run-local orchestration context; explicit directory
+flags remain available only for isolated tests and owner diagnostics.
 
 The state directory remains owner-private and rejects symlinks and unsafe file
 types. Atomic replacement is retained. The separate private token,
