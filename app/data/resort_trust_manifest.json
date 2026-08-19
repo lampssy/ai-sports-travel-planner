@@ -2838,11 +2838,11 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -2861,7 +2861,9 @@
             "https://www.openstreetmap.org/relation/47235",
             "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://cortina.dolomiti.org/wp-content/uploads/2024/09/Cortina-Official-Guide_EN.pdf"
+          ],
           "lodging_price_quality": [
             "https://cortina.dolomiti.org/en/winter/plan/lifts/",
             "https://cortinaprosport.com/en/ski/rental.html",
@@ -2870,15 +2872,23 @@
             "https://www.openstreetmap.org/relation/47235",
             "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://cortina.dolomiti.org/en/winter/discover/territory/"
+          ],
+          "base_character": [
+            "https://cortina.dolomiti.org/en/winter/alpine-lifestyle/",
+            "https://cortina.dolomiti.org/en/winter/discover/territory/"
+          ],
+          "local_apres": [
+            "https://cortina.dolomiti.org/en/winter/alpine-lifestyle/"
+          ]
         },
         "notes": [
           "Full destination recuration replaced the internal sprint-note source with official, open-data, and reviewed-editorial source refs.",
           "San Vito di Cadore, Auronzo di Cadore, and Misurina are modeled as separate destinations; the 120 km Cortina valley pass scope remains pass context and is not copied onto the Cortina child ski-area terrain metrics.",
           "Cortina child ski-area elevations, operating months, future season window, and representative pass price are normalized from reviewed ski-area data; child piste/lift totals remain omitted until accepted Cortina-only scope evidence is available.",
-          "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
+          "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy.",
+          "Source-aware v2 enrichment reviewed official Cortina town, history, and lifestyle material on 2026-07-05."
         ]
       },
       "davos-dorf": {
@@ -9309,17 +9319,20 @@
         },
         "field_source_refs": {
           "relationship": [
-            "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+            "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+            "https://skipasscortina.com/EN/news208-preolympic-mobility"
           ],
           "access_mode_distance": [
-            "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+            "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+            "https://skipasscortina.com/EN/news208-preolympic-mobility"
           ]
         },
         "notes": [
           "Full destination recuration replaced the internal sprint-note source with official, open-data, and reviewed-editorial source refs.",
           "San Vito di Cadore, Auronzo di Cadore, and Misurina are modeled as separate destinations; the 120 km Cortina valley pass scope remains pass context and is not copied onto the Cortina child ski-area terrain metrics.",
           "Cortina child ski-area elevations, operating months, future season window, and representative pass price are normalized from reviewed ski-area data; child piste/lift totals remain omitted until accepted Cortina-only scope evidence is available.",
-          "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
+          "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy.",
+          "The umbrella access is conservatively modeled as a non-direct ski-bus transfer to Funivia Faloria; the official mobility notice supports the mode and stop but not an exact distance or duration."
         ]
       },
       "davos-dorf--parsenn-gotschna": {
@@ -11876,15 +11889,16 @@
           "identity_scope_availability": [
             "https://skipasscortina.com/EN/page17-cortina-winter-prices"
           ],
-          "coverage": [
-            "https://skipasscortina.com/EN/page17-cortina-winter-prices"
+      "coverage": [
+        "https://skipasscortina.com/EN/page17-cortina-winter-prices",
+        "https://skipasscortina.com/EN/page8-the-consortium"
           ],
           "prices": [],
           "pass_accessible_terrain": []
         },
         "notes": [
           "identity_scope_availability normalization: the consortium's valley-resort ticket presentation is normalized to one canonical Valle Skipass product available from Cortina, San Vito, Auronzo, and Misurina, with Cortina as its sole default.",
-          "coverage normalization: the official four-place valley scope is mapped to the four modeled ski areas; commercial coverage does not create a terrain domain.",
+      "coverage normalization: the official four-place valley scope and five-area consortium presentation map to five modeled ski-area nodes, including the existing Lagazuoi owner alongside the retained Cortina umbrella; commercial coverage does not create a terrain domain.",
           "The official page states over 120 km but does not publish an exact current representative price or an exact arithmetic terrain total, so prices and pass_accessible_terrain remain unset and needs_source."
         ]
       },
