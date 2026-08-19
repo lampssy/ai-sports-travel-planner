@@ -179,6 +179,96 @@
         "name"
       ],
       "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:cortina-valle-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "notes"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_id",
+        "name"
+      ],
+      "resulting_graph_role": "linked_dependency"
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_id",
+        "name"
+      ],
+      "resulting_graph_role": "linked_dependency"
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "name"
+      ],
+      "resulting_graph_role": "linked_dependency"
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "name"
+      ],
+      "resulting_graph_role": "linked_dependency"
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "name"
+      ],
+      "resulting_graph_role": "linked_dependency"
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_base_id",
+        "name"
+      ],
+      "resulting_graph_role": "linked_dependency"
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_base_id",
+        "name"
+      ],
+      "resulting_graph_role": "linked_dependency"
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_base_id",
+        "name"
+      ],
+      "resulting_graph_role": "linked_dependency"
     }
   ],
   "changes": [
@@ -461,6 +551,51 @@
         "https://skipasscortina.com/EN/news208-preolympic-mobility"
       ],
       "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:cortina-valle-skipass",
+      "field_path": "field_source_refs",
+      "before": {
+        "identity_scope_availability": [
+          "https://skipasscortina.com/EN/page17-cortina-winter-prices"
+        ],
+        "coverage": [
+          "https://skipasscortina.com/EN/page17-cortina-winter-prices"
+        ],
+        "prices": [],
+        "pass_accessible_terrain": []
+      },
+      "after": {
+        "identity_scope_availability": [
+          "https://skipasscortina.com/EN/page17-cortina-winter-prices"
+        ],
+        "coverage": [
+          "https://skipasscortina.com/EN/page17-cortina-winter-prices",
+          "https://skipasscortina.com/EN/page8-the-consortium"
+        ],
+        "prices": [],
+        "pass_accessible_terrain": []
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:cortina-valle-skipass",
+      "field_path": "notes",
+      "before": [
+        "identity_scope_availability normalization: the consortium's valley-resort ticket presentation is normalized to one canonical Valle Skipass product available from Cortina, San Vito, Auronzo, and Misurina, with Cortina as its sole default.",
+        "coverage normalization: the official four-place valley scope is mapped to the four modeled ski areas; commercial coverage does not create a terrain domain.",
+        "The official page states over 120 km but does not publish an exact current representative price or an exact arithmetic terrain total, so prices and pass_accessible_terrain remain unset and needs_source."
+      ],
+      "after": [
+        "identity_scope_availability normalization: the consortium's valley-resort ticket presentation is normalized to one canonical Valle Skipass product available from Cortina, San Vito, Auronzo, and Misurina, with Cortina as its sole default.",
+        "coverage normalization: the official four-place valley scope and five-area consortium presentation map to five modeled ski-area nodes, including the existing Lagazuoi owner alongside the retained Cortina umbrella; commercial coverage does not create a terrain domain.",
+        "The official page states over 120 km but does not publish an exact current representative price or an exact arithmetic terrain total, so prices and pass_accessible_terrain remain unset and needs_source."
+      ],
+      "trust_status": "estimated",
       "ranking_relevant": false
     }
   ],
@@ -1010,6 +1145,132 @@
       "field_path": "name",
       "status": "reviewed-no-change",
       "notes": "Reviewed as bounded-linked valley-pass context only."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:cortina-valle-skipass",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Coverage trust now cites both the direct tariff page and the exact five-area consortium presentation."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:cortina-valle-skipass",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Coverage normalization now describes five modeled ski-area nodes including existing Lagazuoi."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as a distinct bounded-linked local product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as a distinct bounded-linked local product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as a distinct bounded-linked local product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as a distinct bounded-linked local product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as a distinct bounded-linked local product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as a distinct bounded-linked local product."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as bounded-linked valley-pass context."
     }
   ],
   "evidence": [
@@ -1513,30 +1774,108 @@
       "normalization_note": "This inventory does not reopen the already curated San Vito graph."
     },
     {
-      "evidence_id": "linked-auronzo-concrete-graph",
+      "evidence_id": "linked-auronzo-town-base",
       "boundary_target_ids": [],
-      "target_type": "stay_destination",
-      "target_id": "auronzo-di-cadore",
-      "field_path": "stay_destination_id",
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "stay_base_id",
       "source_type": "official",
-      "source_url": "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-      "source_title": "Auronzo official winter skiing presentation",
-      "source_value": "auronzo-di-cadore",
-      "evidence_summary": "The official destination source supports the modeled Auronzo town and Taiarezze bases, Monte Agudo ski-area, access, and local-pass neighborhood as bounded-linked context.",
-      "normalization_note": "This inventory does not reopen the already curated Auronzo graph."
+      "source_url": "https://auronzo.info/en/holidays/",
+      "source_title": "Auronzo official holiday and stay-market presentation",
+      "source_value": "auronzo-di-cadore-auronzo-di-cadore",
+      "evidence_summary": "The official destination source supports Auronzo di Cadore and its town stay market as bounded-linked context.",
+      "normalization_note": null
     },
     {
-      "evidence_id": "linked-misurina-concrete-graph",
+      "evidence_id": "linked-auronzo-taiarezze-access",
       "boundary_target_ids": [],
-      "target_type": "stay_destination",
-      "target_id": "misurina",
-      "field_path": "stay_destination_id",
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+      "source_title": "Auronzo official Taiarezze winter presentation",
+      "source_value": "auronzo-di-cadore-taiarezze",
+      "evidence_summary": "The official winter page identifies Taiarezze as the local Monte Agudo ski gateway and supports the bounded base and qualitative access presentation.",
+      "normalization_note": "No Cortina mutation is inferred from this linked context."
+    },
+    {
+      "evidence_id": "linked-auronzo-monte-agudo-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+      "source_title": "Monte Agudo official ski-area presentation",
+      "source_value": "auronzo-monte-agudo",
+      "evidence_summary": "The operator directly presents the Monte Agudo ski area serving Auronzo.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "linked-auronzo-local-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://monteagudo.it/en/opening-and-prices/",
+      "source_title": "Monte Agudo official opening and prices",
+      "source_value": "auronzo-monte-agudo-skipass",
+      "evidence_summary": "The operator publishes a local Monte Agudo ticket and tariff presentation distinct from the multi-destination Valle product.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "linked-misurina-destination-base",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/misurina-dolomites/",
+      "source_title": "Auronzo-Misurina official Misurina destination presentation",
+      "source_value": "misurina-misurina",
+      "evidence_summary": "The official destination source independently presents Misurina and its stay context.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "linked-misurina-area-access",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "ski_area_id",
       "source_type": "official",
       "source_url": "https://skipasscortina.com/EN/s12-misurina-neve-srl",
-      "source_title": "Misurina Neve consortium member presentation",
-      "source_value": "misurina",
-      "evidence_summary": "The official operator source supports the modeled Misurina base, Passo Tre Croci ski-area, access, and local-pass neighborhood as bounded-linked context.",
-      "normalization_note": "This inventory does not reopen the already curated Misurina graph."
+      "source_title": "Misurina Neve official operator presentation",
+      "source_value": "misurina-passo-tre-croci",
+      "evidence_summary": "The consortium member page establishes the Misurina operator and local ski-area relationship used for the bounded-linked area and access dispositions.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "linked-misurina-local-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2024/12/TARIFFE-STAGIONE-INVERNALE-2024-25-Misurina-Neve.pdf",
+      "source_title": "Misurina Neve official local tariff",
+      "source_value": "misurina-passo-tre-croci-skipass",
+      "evidence_summary": "The operator tariff establishes a local Misurina product distinct from the multi-destination Valle product.",
+      "normalization_note": "The dated tariff supports product identity, not a current representative price."
+    },
+    {
+      "evidence_id": "linked-san-vito-local-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "san-vito-ski-area-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.skiareasanvito.com/en/rates/",
+      "source_title": "San Vito official local rates",
+      "source_value": "san-vito-ski-area-skipass",
+      "evidence_summary": "The operator tariff establishes a San Vito local product distinct from the multi-destination Valle product.",
+      "normalization_note": null
     }
   ],
   "destination_boundary_assessments": [
@@ -1599,10 +1938,12 @@
     "The Valle Skipass remains represented, but exact child ski-area and connected-domain coverage awaits the owner-gated graph migration.",
     "Pocol and its direct access are deferred behind the Tofane owner decision rather than added as an incomplete graph.",
     "The bounded inventory pass found official Zuel and Passo Falzarego lodging presentations but not complete stay-base fields or independently supported child-area access geometry, so both remain explicit regional follow-ups.",
-    "The current tariff inventory exposes Olympic-season variants and resort-local ticket sales, but does not prove that three existing local-pass IDs are duplicate destination-scoped copies of the single Valle Skipass product.",
+    "The three existing local-pass IDs are distinct single-area products; they remain bounded-linked context alongside the single multi-destination Valle Skipass.",
     "Current consortium evidence establishes named operator and Cortina Skiworld presentations; candidate-scoped Faloria and Freccia weather sources now exist, while weather ownership for ISTA, Averau, Col Gallina, and Lagazuoi and the durable umbrella-versus-child mapping remain unresolved after the bounded official-source search.",
     "Two official Pocol lodging records establish locality addresses, 148 rooms, 310 beds, substantial services, and qualitative ski-in/ski-out or direct-slope access; no source in the bounded search supplies a canonical locality centroid, locality elevation, deterministic base-character policy, exact child lift endpoint, or reproducible route calculation.",
-    "The official current map and mobility notice establish qualitative Cortina access by lift, ski bus, and on-ski connections, but exact town and child endpoint coordinates, distances, durations, and directness calculations remain unavailable and must not be inferred."
+    "The official current map and mobility notice establish qualitative Cortina access by lift, ski bus, and on-ski connections, but exact town and child endpoint coordinates, distances, durations, and directness calculations remain unavailable and must not be inferred.",
+    "The schema-required Resulting Graph focus list includes every destination from which the changed Valle product is available; San Vito, Auronzo, and Misurina remain explicitly typed as bounded external-pass context and are outside the Cortina mutation owner.",
+    "The existing Lagazuoi target remains a linked dependency because the current catalog also connects it to the Alta Badia pass; marking it focus would incorrectly import six Alta Badia destinations into this Cortina closure."
   ],
   "report_schema_version": 3,
   "entity_scope_assessments": [
@@ -1710,15 +2051,17 @@
       "ski_area_boundary": {
         "parent_ski_area_id": "cortina-dampezzo-ski-area",
         "terrain_scope": "complete",
-        "connectivity_to_parent": "unknown",
-        "operational_scope": "unknown",
-        "weather_scope": "unknown",
-        "pass_scope": "unknown",
+        "connectivity_to_parent": "transfer_required",
+        "operational_scope": "independent",
+        "weather_scope": "independent",
+        "pass_scope": "shared_only",
         "provider_consensus": "separate",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "v2-scope-002-cortina-area-inventory",
-          "v2-scope-003-cortina-operator-inventory"
+          "inventory-cortina-faloria-member",
+          "inventory-cortina-faloria-weather",
+          "inventory-cortina-current-lift-groups",
+          "v2-scope-002-cortina-area-inventory"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -1748,15 +2091,17 @@
       "ski_area_boundary": {
         "parent_ski_area_id": "cortina-dampezzo-ski-area",
         "terrain_scope": "complete",
-        "connectivity_to_parent": "unknown",
-        "operational_scope": "unknown",
-        "weather_scope": "unknown",
-        "pass_scope": "unknown",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "mixed",
+        "weather_scope": "mixed",
+        "pass_scope": "shared_only",
         "provider_consensus": "separate",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "v2-scope-002-cortina-area-inventory",
-          "v2-scope-003-cortina-operator-inventory"
+          "inventory-cortina-ista-member",
+          "inventory-cortina-freccia-operations-weather",
+          "inventory-cortina-current-lift-groups",
+          "v2-scope-002-cortina-area-inventory"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -1787,15 +2132,17 @@
       "ski_area_boundary": {
         "parent_ski_area_id": "cortina-dampezzo-ski-area",
         "terrain_scope": "complete",
-        "connectivity_to_parent": "unknown",
-        "operational_scope": "unknown",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "mixed",
         "weather_scope": "unknown",
-        "pass_scope": "unknown",
+        "pass_scope": "shared_only",
         "provider_consensus": "separate",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "v2-scope-002-cortina-area-inventory",
-          "v2-scope-003-cortina-operator-inventory"
+          "inventory-cortina-averau-operations",
+          "inventory-cortina-lagazuoi-member",
+          "inventory-cortina-current-lift-groups",
+          "v2-scope-002-cortina-area-inventory"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -1821,14 +2168,14 @@
       "ski_area_boundary": {
         "parent_ski_area_id": "cortina-tofane",
         "terrain_scope": "sector",
-        "connectivity_to_parent": "unknown",
-        "operational_scope": "unknown",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "independent",
         "weather_scope": "unknown",
-        "pass_scope": "unknown",
+        "pass_scope": "shared_only",
         "provider_consensus": "unknown",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "v2-scope-003-cortina-operator-inventory"
+          "inventory-cortina-ista-member"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -1854,14 +2201,14 @@
       "ski_area_boundary": {
         "parent_ski_area_id": "cortina-tofane",
         "terrain_scope": "sector",
-        "connectivity_to_parent": "unknown",
-        "operational_scope": "unknown",
-        "weather_scope": "unknown",
-        "pass_scope": "unknown",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "independent",
+        "weather_scope": "independent",
+        "pass_scope": "shared_only",
         "provider_consensus": "unknown",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "v2-scope-003-cortina-operator-inventory"
+          "inventory-cortina-freccia-operations-weather"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -1888,14 +2235,15 @@
       "ski_area_boundary": {
         "parent_ski_area_id": "cortina-5-torri-lagazuoi",
         "terrain_scope": "sector",
-        "connectivity_to_parent": "unknown",
-        "operational_scope": "unknown",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "independent",
         "weather_scope": "unknown",
-        "pass_scope": "unknown",
+        "pass_scope": "shared_only",
         "provider_consensus": "unknown",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "v2-scope-003-cortina-operator-inventory"
+          "inventory-cortina-averau-operations",
+          "inventory-cortina-current-lift-groups"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -1906,29 +2254,30 @@
       "candidate_kind": "ski_area",
       "disposition": "unresolved",
       "signals": [
-        "separate_operator",
         "official_map_sector"
       ],
       "evidence_refs": [
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
         "inventory-cortina-current-lift-groups",
-        "v2-scope-003-cortina-operator-inventory"
+        "v2-scope-003-cortina-operator-inventory",
+        "v2-scope-004-cortina-map-connectivity"
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix.",
+      "rationale": "Col Gallina is directly visible in the current lift and map presentations, but no candidate-specific operator or weather source was found in the consortium directory, member pages, grouped live status, or operator-site neighborhood; it remains evidence-bounded unresolved.",
       "ski_area_boundary": {
         "parent_ski_area_id": "cortina-5-torri-lagazuoi",
         "terrain_scope": "sector",
-        "connectivity_to_parent": "unknown",
+        "connectivity_to_parent": "connected",
         "operational_scope": "unknown",
         "weather_scope": "unknown",
-        "pass_scope": "unknown",
+        "pass_scope": "shared_only",
         "provider_consensus": "unknown",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "v2-scope-003-cortina-operator-inventory"
+          "inventory-cortina-current-lift-groups",
+          "v2-scope-004-cortina-map-connectivity"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -1962,7 +2311,6 @@
         "provider_consensus": "separate",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "inventory-cortina-consortium-members",
           "inventory-cortina-lagazuoi-member",
           "inventory-cortina-current-lift-groups"
         ]
@@ -2183,19 +2531,20 @@
       "graph_impact": "graph_blocking"
     },
     {
-      "candidate_id": "auronzo-misurina-valle-skipass-context",
-      "candidate_name": "Auronzo-Misurina Valle Skipass destination context",
+      "candidate_id": "auronzo-di-cadore",
+      "candidate_name": "Auronzo di Cadore Valle Skipass destination context",
       "candidate_kind": "stay_destination",
       "disposition": "external_pass_context",
       "signals": [
         "official_independent_identity"
       ],
       "evidence_refs": [
+        "linked-auronzo-town-base",
         "v2-scope-008-valle-skipass-linked-catalog"
       ],
       "target_refs": [],
       "backlog_ref": null,
-      "rationale": "The official combined Auronzo-Misurina coverage label maps to the existing separate Auronzo di Cadore and Misurina destinations; this inventory neither merges nor redefines them.",
+      "rationale": "Auronzo di Cadore remains a distinct bounded-linked destination in the single Valle product; its concrete graph is supported by candidate-exact records and is not reopened here.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -2490,7 +2839,7 @@
         "official_product_identity"
       ],
       "evidence_refs": [
-        "inventory-cortina-current-pass-family"
+        "linked-san-vito-local-pass"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2507,7 +2856,7 @@
         "official_product_identity"
       ],
       "evidence_refs": [
-        "inventory-cortina-current-pass-family"
+        "linked-auronzo-local-pass"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2524,7 +2873,7 @@
         "official_product_identity"
       ],
       "evidence_refs": [
-        "inventory-cortina-current-pass-family"
+        "linked-misurina-local-pass"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2541,7 +2890,7 @@
         "independent_stay_market"
       ],
       "evidence_refs": [
-        "linked-auronzo-concrete-graph"
+        "linked-auronzo-town-base"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2558,7 +2907,7 @@
         "independent_stay_market"
       ],
       "evidence_refs": [
-        "linked-auronzo-concrete-graph"
+        "linked-auronzo-taiarezze-access"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2575,7 +2924,8 @@
         "distinct_access"
       ],
       "evidence_refs": [
-        "linked-auronzo-concrete-graph"
+        "linked-auronzo-taiarezze-access",
+        "linked-auronzo-monte-agudo-area"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2592,7 +2942,8 @@
         "distinct_access"
       ],
       "evidence_refs": [
-        "linked-auronzo-concrete-graph"
+        "linked-auronzo-taiarezze-access",
+        "linked-auronzo-monte-agudo-area"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2609,7 +2960,7 @@
         "official_independent_identity"
       ],
       "evidence_refs": [
-        "linked-auronzo-concrete-graph"
+        "linked-auronzo-monte-agudo-area"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2624,7 +2975,7 @@
         "provider_consensus": "unknown",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "linked-auronzo-concrete-graph"
+          "linked-auronzo-monte-agudo-area"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -2638,7 +2989,7 @@
         "independent_stay_market"
       ],
       "evidence_refs": [
-        "linked-misurina-concrete-graph"
+        "linked-misurina-destination-base"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2655,7 +3006,7 @@
         "distinct_access"
       ],
       "evidence_refs": [
-        "linked-misurina-concrete-graph"
+        "linked-misurina-area-access"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2672,7 +3023,7 @@
         "official_independent_identity"
       ],
       "evidence_refs": [
-        "linked-misurina-concrete-graph"
+        "linked-misurina-area-access"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -2687,7 +3038,7 @@
         "provider_consensus": "unknown",
         "separation_value": "unresolved",
         "evidence_refs": [
-          "linked-misurina-concrete-graph"
+          "linked-misurina-area-access"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -2753,6 +3104,24 @@
           "linked-san-vito-concrete-graph"
         ]
       },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "misurina",
+      "candidate_name": "Misurina Valle Skipass destination context",
+      "candidate_kind": "stay_destination",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "linked-misurina-destination-base",
+        "v2-scope-008-valle-skipass-linked-catalog"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "Misurina remains a distinct bounded-linked destination in the single Valle product; its concrete graph is supported by candidate-exact records and is not reopened here.",
+      "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     }
   ],
@@ -2830,8 +3199,14 @@
       "source_kind": "ski_area_operator",
       "source_urls": [
         "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+        "https://www.skiareasanvito.com/en/rates/",
+        "https://auronzo.info/en/holidays/",
         "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-        "https://skipasscortina.com/EN/s12-misurina-neve-srl"
+        "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+        "https://monteagudo.it/en/opening-and-prices/",
+        "https://auronzo.info/en/misurina-dolomites/",
+        "https://skipasscortina.com/EN/s12-misurina-neve-srl",
+        "https://auronzomisurina.it/dev/wp-content/uploads/2024/12/TARIFFE-STAGIONE-INVERNALE-2024-25-Misurina-Neve.pdf"
       ],
       "candidate_kinds": [
         "stay_destination",

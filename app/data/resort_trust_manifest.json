@@ -11889,15 +11889,16 @@
           "identity_scope_availability": [
             "https://skipasscortina.com/EN/page17-cortina-winter-prices"
           ],
-          "coverage": [
-            "https://skipasscortina.com/EN/page17-cortina-winter-prices"
+      "coverage": [
+        "https://skipasscortina.com/EN/page17-cortina-winter-prices",
+        "https://skipasscortina.com/EN/page8-the-consortium"
           ],
           "prices": [],
           "pass_accessible_terrain": []
         },
         "notes": [
           "identity_scope_availability normalization: the consortium's valley-resort ticket presentation is normalized to one canonical Valle Skipass product available from Cortina, San Vito, Auronzo, and Misurina, with Cortina as its sole default.",
-          "coverage normalization: the official four-place valley scope is mapped to the four modeled ski areas; commercial coverage does not create a terrain domain.",
+      "coverage normalization: the official four-place valley scope and five-area consortium presentation map to five modeled ski-area nodes, including the existing Lagazuoi owner alongside the retained Cortina umbrella; commercial coverage does not create a terrain domain.",
           "The official page states over 120 km but does not publish an exact current representative price or an exact arithmetic terrain total, so prices and pass_accessible_terrain remain unset and needs_source."
         ]
       },
