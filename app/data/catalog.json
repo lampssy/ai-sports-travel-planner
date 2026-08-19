@@ -2479,18 +2479,20 @@
       "price_min": 210.0,
       "price_max": 290.0,
       "quality": "premium",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 46.5590697,
+      "longitude": 11.7154906,
       "base_type": "village",
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "regional_data_ids": {
+        "osm_relation_id": "47244"
+      },
+      "elevation_m": 1428,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "low_key",
         "season_label": null
       }
     },
@@ -2502,18 +2504,20 @@
       "price_min": 210.0,
       "price_max": 290.0,
       "quality": "premium",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 46.5551877,
+      "longitude": 11.7600992,
       "base_type": "village",
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "regional_data_ids": {
+        "osm_relation_id": "47242"
+      },
+      "elevation_m": 1563,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -6457,12 +6461,17 @@
       "ski_area_id": "val-gardena-ski-area",
       "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": "Col Raiser / Saslong",
-      "distance_m": null,
+      "nearest_lift_name": "Monte Pana",
+      "distance_m": 663,
       "duration_minutes": null,
       "is_direct": true,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "355184871",
+        "stay_base_osm_relation_id": "47244"
+      },
       "source_urls": [
+        "https://www.openstreetmap.org/node/355184871",
+        "https://www.openstreetmap.org/relation/47244",
         "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
         "https://www.valgardena.it/en/s-cristina/"
       ]
@@ -6473,12 +6482,17 @@
       "ski_area_id": "val-gardena-ski-area",
       "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": "Ciampinoi / Dantercepies",
-      "distance_m": null,
+      "nearest_lift_name": "Ciampinoi",
+      "distance_m": 243,
       "duration_minutes": null,
       "is_direct": true,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "520626402",
+        "stay_base_osm_relation_id": "47242"
+      },
       "source_urls": [
+        "https://www.openstreetmap.org/node/520626402",
+        "https://www.openstreetmap.org/relation/47242",
         "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
         "https://www.valgardena.it/en/selva-val-gardena/"
       ]
