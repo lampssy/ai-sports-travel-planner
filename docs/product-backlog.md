@@ -445,6 +445,9 @@ Why it matters:
 
 Candidate inventory:
 
+- `ski_area:saalbach-hinterglemm-ski-area` — retained legacy local slice whose
+  exact terrain and operations boundary must be resolved before connected-domain
+  ownership is reassigned.
 - `stay_destination:leogang` and `stay_base:leogang-leogang` — independent
   accommodation market with direct Leoganger Bergbahnen access.
 - `ski_area:leogang-ski-area` and
@@ -477,6 +480,52 @@ Discovery progression:
 - Close this item after the complete connected-domain proposal is accepted and
   merged; do not split out lodging-only nodes that would leave the graph
   misleading.
+
+### Zell Am See-Kaprun Linked Area And Pass Extensions
+
+Status: candidate
+Area: Data Trust
+Source: Zell am See-Kaprun catalog review; PR #40
+
+Next bounded slice:
+
+- Resolve the deferred Lechnerberg geometry contract and then add its complete
+  two-lift beginner-area node, central-Kaprun access edge, and exact Ski ALPIN
+  CARD coverage together.
+- Model `lift_pass_product:365-action-alpin-card`,
+  `lift_pass_product:365-classic-alpin-card`, and
+  `lift_pass_product:superskicard-premium` as complete dated products with
+  exact coverage, tariff, and availability ownership.
+
+Why it matters:
+
+- `ski_area:lechnerberg` and
+  `ski_area_access:zell-am-see-kaprun-kaprun--lechnerberg` are confirmed
+  separate candidates that must land together after the geometry prerequisite.
+- Official sources establish Lechnerberg as a separately operated,
+  transfer-required beginner area, but the current `SkiArea` contract requires
+  populated elevation and month fields that the bounded area-owned sources do
+  not publish. Retaining guessed values would create false weather precision.
+- The three named annual or wider-network products have concrete identities and
+  tariffs. They should not be collapsed into Ski ALPIN CARD or treated as
+  generic external context.
+
+Prerequisites:
+
+- Decide and implement how deferred ski areas represent unresolved elevation
+  and season precision without activating weather sampling; include the
+  historical-weather, migration, and rollback handoff if the contract changes.
+- Re-run exact owner-scoped geometry review before adding Lechnerberg and keep
+  access distance/duration unresolved unless reproducible endpoints exist.
+- Curate each pass as a complete product rather than adding identity-only
+  placeholders; keep pass recommendation behavior outside this catalog slice.
+
+Not now:
+
+- Do not restore estimated Lechnerberg elevation or season values merely to
+  satisfy required catalog fields.
+- Do not infer that annual products share Ski ALPIN CARD coverage or defaults
+  without their exact product terms.
 
 ### St Anton And Ski Arlberg Extension
 
