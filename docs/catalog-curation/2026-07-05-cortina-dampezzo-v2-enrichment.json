@@ -269,6 +269,24 @@
         "name"
       ],
       "resulting_graph_role": "linked_dependency"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id"
+      ],
+      "resulting_graph_role": "linked_dependency"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id"
+      ],
+      "resulting_graph_role": "linked_dependency"
     }
   ],
   "changes": [
@@ -1271,6 +1289,20 @@
       "field_path": "name",
       "status": "reviewed-no-change",
       "notes": "Reviewed as bounded-linked valley-pass context."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as a qualitative bounded-linked town-to-area relationship without exact geometry."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed as the bounded-linked Taiarezze-to-Monte-Agudo access relationship."
     }
   ],
   "evidence": [
@@ -1802,15 +1834,28 @@
     {
       "evidence_id": "linked-auronzo-taiarezze-access",
       "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "auronzo-di-cadore-taiarezze",
-      "field_path": "stay_base_id",
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "ski_area_access_id",
       "source_type": "official",
       "source_url": "https://monteagudo.it/en/auronzo-misurina-ski-area/",
-      "source_title": "Monte Agudo official Taiarezze ski-area presentation",
-      "source_value": "auronzo-di-cadore-taiarezze",
-      "evidence_summary": "The official operator page identifies Taiarezze as the Monte Agudo ski gateway and supports the bounded base and qualitative access presentation.",
+      "source_title": "Monte Agudo official Taiarezze access presentation",
+      "source_value": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "evidence_summary": "The official operator page identifies the Taiarezze-Malon chairlift and piste, supporting the existing qualitative Taiarezze-to-Monte-Agudo access relationship.",
       "normalization_note": "No Cortina mutation is inferred from this linked context."
+    },
+    {
+      "evidence_id": "linked-auronzo-town-monte-agudo-access",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+      "source_title": "Monte Agudo official Auronzo ski-area presentation",
+      "source_value": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "evidence_summary": "The official operator presents Monte Agudo as Auronzo's ski area, supporting the existing qualitative town-to-area relationship without asserting exact geometry.",
+      "normalization_note": "No exact distance or direct-access geometry is inferred from this source."
     },
     {
       "evidence_id": "linked-auronzo-monte-agudo-area",
@@ -2937,7 +2982,7 @@
         "distinct_access"
       ],
       "evidence_refs": [
-        "linked-auronzo-taiarezze-access",
+        "linked-auronzo-town-monte-agudo-access",
         "linked-auronzo-monte-agudo-area"
       ],
       "target_refs": [],
