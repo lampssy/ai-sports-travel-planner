@@ -1,6 +1,6 @@
 {
   "title": "Zell am See-Kaprun Catalog V2 Fact Enrichment",
-  "summary": "Corrects Kitzsteinhorn and Maiskogel lift-served elevation ranges while deferring unsupported weather coordinates, represents exact Kitzsteinhorn summer/fall tariff bands, and keeps the unresolved Saalbach owner graph-blocking.",
+  "summary": "Corrects Kitzsteinhorn and Maiskogel lift-served elevation ranges while deferring unsupported weather coordinates, represents exact Kitzsteinhorn summer/fall tariff bands, and renders the deterministic unchanged Ski ALPIN CARD dependency closure that includes Saalbach while retaining its unresolved ski-area owner boundary as regional follow-up.",
   "changed_entities": [
     "lift_pass_product:kitzsteinhorn-local-ski-pass",
     "ski_area:kitzsteinhorn",
@@ -4194,7 +4194,7 @@
     "Lechnerberg is a confirmed separate beginner area and central-Kaprun access candidate, but it remains deferred because exact required elevation and season fields are unpublished under the current SkiArea contract.",
     "Kaprun and Zell am See base elevations remain unset because the former exact document is unavailable and the latter source is only a regional valley proxy.",
     "The broad Ski ALPIN CARD map is not treated as an exact Kitzsteinhorn-Maiskogel domain-owned document.",
-    "The operator directory and candidate-scoped lift schedules establish independent operations-owner categories for Saalbach/Hinterglemm, Leogang and Fieberbrunn; complete connected-terrain boundaries, weather ownership and the remaining connected-domain graph stay unresolved in the consolidated handoff. This unchanged pre-existing debt is a linked regional follow-up rather than part of the selected resulting graph.",
+    "The operator directory and candidate-scoped lift schedules establish independent operations-owner categories for Saalbach/Hinterglemm, Leogang and Fieberbrunn; complete connected-terrain boundaries, weather ownership and the remaining connected-domain graph stay unresolved. The deterministic resulting graph includes the unchanged Saalbach destination, bases, access edges and ski-area node through the unchanged Ski ALPIN CARD pass/dependency closure. That rendering is catalog topology, not independent owner-boundary verification, so the Saalbach ski-area boundary and wider Skicircus work remain the consolidated regional follow-up.",
     "Maiskogel Day Pass, consecutive-day SuperSkiCard, SuperSkiCard 10-Day Flexible, and the two Lechnerberg ride entitlements are preserved as typed deferred regional follow-ups under the consolidated Zell am See-Kaprun backlog item."
   ],
   "report_schema_version": 3,
@@ -4300,7 +4300,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official candidate-scoped status, weather, glacier, and terrain presentations preserve Kitzsteinhorn as the primary complete glacier ski-area owner.",
+      "rationale": "Official candidate-scoped glacier and terrain presentations establish complete-area scope; the current-status feed, Kitzsteinhorn-specific weather presentation, and Kitzsteinhorn-only summer/fall tariffs establish independent operations, independent weather, and full-local-pass ownership. Those independently owned operational, weather, seasonal, and pass semantics provide material separation value within the connected Kaprun terrain.",
       "ski_area_boundary": {
         "parent_ski_area_id": null,
         "terrain_scope": "complete",
@@ -4616,7 +4616,7 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
-      "rationale": "The lift-company directory and candidate-scoped schedules establish a distinct Saalbach/Hinterglemm operations-owner category. The retained catalog node remains unresolved because the reviewed sources do not yet establish its complete connected-terrain boundary or a second owner category independently of the whole Skicircus. The exact base-to-head diff does not change this pre-existing node or its relationships, so the unresolved owner boundary is retained as regional follow-up rather than claimed as part of the selected resulting graph.",
+      "rationale": "The lift-company directory and candidate-scoped schedules establish a distinct Saalbach/Hinterglemm operations-owner category. The retained catalog node remains unresolved because the reviewed sources do not yet establish its complete connected-terrain boundary or a second owner category independently of the whole Skicircus. The exact base-to-head diff does not change this pre-existing node or its relationships, so deterministic resulting-graph closure includes it through the unchanged Ski ALPIN CARD pass dependency; that topology is not independent boundary verification, and the ski-area assessment remains unresolved regional follow-up.",
       "ski_area_boundary": {
         "parent_ski_area_id": null,
         "terrain_scope": "unresolved",
