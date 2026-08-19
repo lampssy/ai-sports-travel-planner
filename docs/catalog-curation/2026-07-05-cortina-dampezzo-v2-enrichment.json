@@ -1162,6 +1162,95 @@
       },
       "evidence_summary": "Official tourism states that the Valle Skipass covers the full Cortina area, San Vito di Cadore, and Auronzo-Misurina.",
       "normalization_note": "The official combined Auronzo-Misurina label maps to the existing separate Auronzo di Cadore and Misurina destinations; the single commercial product is represented by destination-scoped catalog entries."
+    },
+    {
+      "evidence_id": "inventory-cortina-consortium-members",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/EN/companies.php",
+      "source_title": "Cortina Skiworld consortium members",
+      "source_value": [
+        "Lagazuoi S.p.A.",
+        "Faloria S.p.A.",
+        "Impianti Averau S.r.l.",
+        "ISTA S.p.A.",
+        "Tofana S.r.l."
+      ],
+      "evidence_summary": "The current consortium directory identifies the five Cortina lift-company presentations and distinguishes them from the San Vito, Auronzo, and Misurina members.",
+      "normalization_note": "Company membership closes the operator-name inventory but does not by itself resolve weather ownership or durable ski-area boundaries."
+    },
+    {
+      "evidence_id": "inventory-cortina-consortium-scope",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/EN/page8-the-consortium",
+      "source_title": "Cortina Skiworld consortium scope",
+      "source_value": {
+        "brand": "Cortina Skiworld",
+        "companies": 8,
+        "ski_areas": [
+          "Faloria-Cristallo",
+          "Tofana-5 Torri-Lagazuoi",
+          "San Vito di Cadore",
+          "Auronzo",
+          "Misurina"
+        ]
+      },
+      "evidence_summary": "The consortium presents Cortina Skiworld as an eight-company brand spanning five ski areas and four destination markets.",
+      "normalization_note": "Cortina Skiworld is inventoried as a consortium presentation rather than a new catalog ski-area owner."
+    },
+    {
+      "evidence_id": "inventory-cortina-averau-operations",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/EN/s10-impianti-averau-srl",
+      "source_title": "Impianti Averau consortium member presentation",
+      "source_value": {
+        "operator": "Impianti Averau S.r.l.",
+        "area": "5 Torri-Giau",
+        "lift_count": 4,
+        "connections": [
+          "Falzarego-Lagazuoi",
+          "Val Badia"
+        ]
+      },
+      "evidence_summary": "The member page assigns four 5 Torri-Giau lifts to Impianti Averau and describes the Potor and Croda Negra connections toward Falzarego-Lagazuoi and Val Badia.",
+      "normalization_note": "This establishes current operator and connectivity signals, not a complete weather-owner decision."
+    },
+    {
+      "evidence_id": "inventory-cortina-current-pass-family",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "cortina-valle-skipass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/EN/page17-winter-prices",
+      "source_title": "Cortina Skiworld 2025/26 winter prices",
+      "source_value": "cortina-valle-skipass",
+      "evidence_summary": "The current tariff page identifies the 2025/26 valley-resort scope, Olympic-season pass variants, and points of sale, including selected exact prices and upgrade combinations.",
+      "normalization_note": "Variants are inventory candidates; the page does not justify duplicating the single valley product per destination."
+    },
+    {
+      "evidence_id": "inventory-cortina-accommodation-neighborhood",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://cortina.dolomiti.org/en/winter/plan/accommodation/?filtro=hotel-en",
+      "source_title": "Cortina official accommodation collection",
+      "source_value": "cortina-dampezzo",
+      "evidence_summary": "The official accommodation collection exposes lodging presentations in Pocol and Zuel and describes Ciasa Vervei in the Passo Falzarego area overlooking the Pocol-Socrepes slopes.",
+      "normalization_note": "These are candidate stay-base signals only; complete base fields and approved child-area access edges remain deferred to the owner-completion backlog."
     }
   ],
   "destination_boundary_assessments": [
@@ -1222,7 +1311,10 @@
     "Owner decision required: preserve the retained cortina-dampezzo-ski-area weather identity or replace it with reviewed child owners; no re-key, weather migration, or backfill is implemented here.",
     "The official 2025/26 map and aggregate snowmaking material span unresolved Cortina scopes, so the ski-area map, snowmaking, and ski-day apres fields remain unknown with needs_source trust.",
     "The Valle Skipass remains represented, but exact child ski-area and connected-domain coverage awaits the owner-gated graph migration.",
-    "Pocol and its direct access are deferred behind the Tofane owner decision rather than added as an incomplete graph."
+    "Pocol and its direct access are deferred behind the Tofane owner decision rather than added as an incomplete graph.",
+    "The bounded inventory pass found official Zuel and Passo Falzarego lodging presentations but not complete stay-base fields or independently supported child-area access geometry, so both remain explicit regional follow-ups.",
+    "The current tariff inventory exposes Olympic-season variants and resort-local ticket sales, but does not prove that three existing local-pass IDs are duplicate destination-scoped copies of the single Valle Skipass product.",
+    "Current consortium evidence establishes named operator and Cortina Skiworld presentations; weather ownership and the durable umbrella-versus-child mapping remain unresolved."
   ],
   "report_schema_version": 3,
   "entity_scope_assessments": [
@@ -1282,6 +1374,8 @@
         "child_scoped_terrain_metrics"
       ],
       "evidence_refs": [
+        "inventory-cortina-consortium-members",
+        "inventory-cortina-consortium-scope",
         "v2-scope-002-cortina-area-inventory"
       ],
       "target_refs": [],
@@ -1313,6 +1407,9 @@
         "child_scoped_terrain_metrics"
       ],
       "evidence_refs": [
+        "inventory-cortina-averau-operations",
+        "inventory-cortina-consortium-members",
+        "inventory-cortina-consortium-scope",
         "v2-scope-002-cortina-area-inventory",
         "v2-scope-003-cortina-operator-inventory"
       ],
@@ -1346,6 +1443,9 @@
         "child_scoped_terrain_metrics"
       ],
       "evidence_refs": [
+        "inventory-cortina-averau-operations",
+        "inventory-cortina-consortium-members",
+        "inventory-cortina-consortium-scope",
         "v2-scope-002-cortina-area-inventory",
         "v2-scope-003-cortina-operator-inventory"
       ],
@@ -1380,6 +1480,9 @@
         "ski_connected_terrain"
       ],
       "evidence_refs": [
+        "inventory-cortina-averau-operations",
+        "inventory-cortina-consortium-members",
+        "inventory-cortina-consortium-scope",
         "v2-scope-002-cortina-area-inventory",
         "v2-scope-003-cortina-operator-inventory"
       ],
@@ -1412,6 +1515,9 @@
         "official_map_sector"
       ],
       "evidence_refs": [
+        "inventory-cortina-averau-operations",
+        "inventory-cortina-consortium-members",
+        "inventory-cortina-consortium-scope",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1442,6 +1548,9 @@
         "official_map_sector"
       ],
       "evidence_refs": [
+        "inventory-cortina-averau-operations",
+        "inventory-cortina-consortium-members",
+        "inventory-cortina-consortium-scope",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1472,6 +1581,9 @@
         "official_map_sector"
       ],
       "evidence_refs": [
+        "inventory-cortina-averau-operations",
+        "inventory-cortina-consortium-members",
+        "inventory-cortina-consortium-scope",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1502,6 +1614,9 @@
         "official_map_sector"
       ],
       "evidence_refs": [
+        "inventory-cortina-averau-operations",
+        "inventory-cortina-consortium-members",
+        "inventory-cortina-consortium-scope",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1532,6 +1647,9 @@
         "official_map_sector"
       ],
       "evidence_refs": [
+        "inventory-cortina-averau-operations",
+        "inventory-cortina-consortium-members",
+        "inventory-cortina-consortium-scope",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1634,6 +1752,7 @@
         "distinct_access"
       ],
       "evidence_refs": [
+        "inventory-cortina-accommodation-neighborhood",
         "v2-scope-007-pocol-lodging-access"
       ],
       "target_refs": [],
@@ -1688,6 +1807,7 @@
         "full_local_pass"
       ],
       "evidence_refs": [
+        "inventory-cortina-current-pass-family",
         "v2-scope-005-cortina-pass-products",
         "v2-scope-008-valle-skipass-linked-catalog"
       ],
@@ -1863,7 +1983,8 @@
         "https://cortina.dolomiti.org/en/winter/discover/territory/",
         "https://cortina.dolomiti.org/en/winter/alpine-lifestyle/",
         "https://cortina.dolomiti.org/wp-content/uploads/2024/09/Cortina-Official-Guide_EN.pdf",
-        "https://cortina.dolomiti.org/en/dove-dormire/hotel-villa-argentina-en/"
+        "https://cortina.dolomiti.org/en/dove-dormire/hotel-villa-argentina-en/",
+        "https://cortina.dolomiti.org/en/winter/plan/accommodation/?filtro=hotel-en"
       ],
       "candidate_kinds": [
         "stay_destination",
@@ -1876,7 +1997,10 @@
       "source_urls": [
         "https://cortina.dolomiti.org/en/winter/what-to-do/activities/skiing-and-snowboarding/",
         "https://cortina.dolomiti.org/en/categorie-altri-servizi/impianti-di-risalita-en/",
-        "https://cortina.dolomiti.org/wp-content/uploads/2025/12/Cortina_Skimap_2025-2026_web.pdf"
+        "https://cortina.dolomiti.org/wp-content/uploads/2025/12/Cortina_Skimap_2025-2026_web.pdf",
+        "https://skipasscortina.com/EN/companies.php",
+        "https://skipasscortina.com/EN/page8-the-consortium",
+        "https://skipasscortina.com/EN/s10-impianti-averau-srl"
       ],
       "candidate_kinds": [
         "ski_area",
@@ -1887,7 +2011,8 @@
       "family_id": "cortina-pass-products",
       "source_kind": "pass_tariff",
       "source_urls": [
-        "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+        "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+        "https://skipasscortina.com/EN/page17-winter-prices"
       ],
       "candidate_kinds": [
         "stay_destination",
@@ -1900,7 +2025,9 @@
       "source_kind": "access_transport",
       "source_urls": [
         "https://cortina.dolomiti.org/en/winter/plan/lifts/",
-        "https://cortina.dolomiti.org/en/dove-dormire/hotel-villa-argentina-en/"
+        "https://cortina.dolomiti.org/en/dove-dormire/hotel-villa-argentina-en/",
+        "https://cortina.dolomiti.org/wp-content/uploads/2025/12/Cortina_Skimap_2025-2026_web.pdf",
+        "https://cortina.dolomiti.org/en/winter/plan/accommodation/?filtro=hotel-en"
       ],
       "candidate_kinds": [
         "stay_base",
