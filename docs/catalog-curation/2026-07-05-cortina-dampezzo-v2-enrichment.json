@@ -16,7 +16,8 @@
         "grouping_policy",
         "parent_ski_region_id",
         "source_urls"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_destination",
@@ -32,7 +33,8 @@
         "longitude",
         "trip_market_region_id",
         "regional_data_ids"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_base",
@@ -49,7 +51,8 @@
         "local_apres_profile.availability",
         "local_apres_profile.intensity",
         "local_apres_profile.season_label"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_area",
@@ -76,7 +79,8 @@
         "ski_day_apres_profile.availability",
         "ski_day_apres_profile.intensity",
         "ski_day_apres_profile.season_label"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "ski_area_access",
@@ -94,7 +98,8 @@
         "is_direct",
         "regional_data_ids",
         "source_urls"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "lift_pass_product",
@@ -111,7 +116,8 @@
         "external_validity_summary",
         "pass_accessible_terrain",
         "prices"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "trust_manifest",
@@ -121,7 +127,8 @@
         "field_source_refs",
         "field_statuses",
         "notes"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_destination",
@@ -130,7 +137,8 @@
       "required_field_paths": [
         "stay_destination_id",
         "name"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_destination",
@@ -139,7 +147,8 @@
       "required_field_paths": [
         "stay_destination_id",
         "name"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_destination",
@@ -148,7 +157,8 @@
       "required_field_paths": [
         "stay_destination_id",
         "name"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "lift_pass_product",
@@ -159,7 +169,8 @@
         "name",
         "available_from_stay_destination_ids",
         "external_validity_summary"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "lift_pass_product",
@@ -170,7 +181,8 @@
         "name",
         "available_from_stay_destination_ids",
         "external_validity_summary"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "lift_pass_product",
@@ -181,7 +193,8 @@
         "name",
         "available_from_stay_destination_ids",
         "external_validity_summary"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     }
   ],
   "changes": [
@@ -1024,7 +1037,9 @@
     },
     {
       "evidence_id": "v2-scope-001-cortina-destination",
-      "boundary_target_ids": [],
+      "boundary_target_ids": [
+        "cortina-dampezzo"
+      ],
       "target_type": "stay_destination",
       "target_id": "cortina-dampezzo",
       "field_path": "name",
@@ -1149,8 +1164,51 @@
       "normalization_note": "The official combined Auronzo-Misurina label maps to the existing separate Auronzo di Cadore and Misurina destinations; the single commercial product is represented by destination-scoped catalog entries."
     }
   ],
-  "destination_boundary_assessments": [],
-  "boundary_decision_targets": [],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "cortina-dampezzo",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "pass",
+          "notes": "The retained Cortina town destination is presented as a coherent multi-night visitor and accommodation market.",
+          "evidence_refs": [
+            "v2-scope-001-cortina-destination"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "pass",
+          "notes": "Official destination treatment supports the retained accommodation-market owner.",
+          "evidence_refs": [
+            "v2-scope-001-cortina-destination"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "pass",
+          "notes": "The retained Cortina market remains the selected trip destination and owns distinct stay context.",
+          "evidence_refs": [
+            "v2-scope-001-cortina-destination"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_stay_market_treatment",
+          "status": "pass",
+          "notes": "Official Cortina tourism treats the town as the visitor destination.",
+          "evidence_refs": [
+            "v2-scope-001-cortina-destination"
+          ]
+        }
+      ],
+      "failure_route": null
+    }
+  ],
+  "boundary_decision_targets": [
+    "cortina-dampezzo"
+  ],
   "weather_request_geometry_targets": [],
   "weather_request_geometry_assessments": [],
   "validation_commands": [
@@ -1166,10 +1224,10 @@
     "The Valle Skipass remains represented, but exact child ski-area and connected-domain coverage awaits the owner-gated graph migration.",
     "Pocol and its direct access are deferred behind the Tofane owner decision rather than added as an incomplete graph."
   ],
-  "report_schema_version": 2,
+  "report_schema_version": 3,
   "entity_scope_assessments": [
     {
-      "candidate_id": "cortina-dampezzo-region",
+      "candidate_id": "cortina-dampezzo",
       "candidate_name": "Cortina d'Ampezzo trip market",
       "candidate_kind": "stay_destination",
       "disposition": "represented",
@@ -1187,7 +1245,9 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official tourism supports the existing destination market; no destination boundary change is proposed."
+      "rationale": "Official tourism supports the existing destination market; no destination boundary change is proposed.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-dampezzo-base",
@@ -1208,7 +1268,9 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The existing town base remains represented and its independently supported fact changes are preserved."
+      "rationale": "The existing town base remains represented and its independently supported fact changes are preserved.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-dampezzo-ski-area",
@@ -1224,7 +1286,21 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "The retained ID is unchanged, but official child scopes prevent claiming that its weather and feature-fact ownership is settled."
+      "rationale": "The retained ID is unchanged, but official child scopes prevent claiming that its weather and feature-fact ownership is settled.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "unresolved",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "mixed",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-scope-002-cortina-area-inventory"
+        ]
+      },
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-faloria-cristallo",
@@ -1242,7 +1318,22 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Official area and operator evidence is strong, but stable weather ownership and migration remain owner decisions."
+      "rationale": "Official area and operator evidence is strong, but stable weather ownership and migration remain owner decisions.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "cortina-dampezzo-ski-area",
+        "terrain_scope": "complete",
+        "connectivity_to_parent": "unknown",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "separate",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-scope-002-cortina-area-inventory",
+          "v2-scope-003-cortina-operator-inventory"
+        ]
+      },
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-tofane",
@@ -1260,7 +1351,22 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Official area evidence spans Ista and Freccia nel Cielo; the durable owner boundary must be decided."
+      "rationale": "Official area evidence spans Ista and Freccia nel Cielo; the durable owner boundary must be decided.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "cortina-dampezzo-ski-area",
+        "terrain_scope": "complete",
+        "connectivity_to_parent": "unknown",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "separate",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-scope-002-cortina-area-inventory",
+          "v2-scope-003-cortina-operator-inventory"
+        ]
+      },
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-5-torri-lagazuoi",
@@ -1279,7 +1385,22 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Official area evidence spans multiple operator sectors; stable owner and weather scope remain unresolved."
+      "rationale": "Official area evidence spans multiple operator sectors; stable owner and weather scope remain unresolved.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "cortina-dampezzo-ski-area",
+        "terrain_scope": "complete",
+        "connectivity_to_parent": "unknown",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "separate",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-scope-002-cortina-area-inventory",
+          "v2-scope-003-cortina-operator-inventory"
+        ]
+      },
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-tofane-ista",
@@ -1295,7 +1416,21 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix."
+      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "cortina-tofane",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "unknown",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-scope-003-cortina-operator-inventory"
+        ]
+      },
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-tofane-freccia-nel-cielo",
@@ -1311,7 +1446,21 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix."
+      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "cortina-tofane",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "unknown",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-scope-003-cortina-operator-inventory"
+        ]
+      },
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-5-torri-averau-giau",
@@ -1327,7 +1476,21 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix."
+      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "cortina-5-torri-lagazuoi",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "unknown",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-scope-003-cortina-operator-inventory"
+        ]
+      },
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-col-gallina",
@@ -1343,7 +1506,21 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix."
+      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "cortina-5-torri-lagazuoi",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "unknown",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-scope-003-cortina-operator-inventory"
+        ]
+      },
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-lagazuoi",
@@ -1359,7 +1536,21 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix."
+      "rationale": "The operator signal requires review inside the three-area model and cannot be collapsed or promoted in this fix.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "cortina-5-torri-lagazuoi",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "unknown",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-scope-003-cortina-operator-inventory"
+        ]
+      },
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area",
@@ -1375,7 +1566,9 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Exact access edges depend on the approved ski-area owners and reviewed mode/distance evidence."
+      "rationale": "Exact access edges depend on the approved ski-area owners and reviewed mode/distance evidence.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-dampezzo-cortina-dampezzo--cortina-faloria-cristallo",
@@ -1391,7 +1584,9 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Exact access edges depend on the approved ski-area owners and reviewed mode/distance evidence."
+      "rationale": "Exact access edges depend on the approved ski-area owners and reviewed mode/distance evidence.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-dampezzo-cortina-dampezzo--cortina-tofane",
@@ -1407,7 +1602,9 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Exact access edges depend on the approved ski-area owners and reviewed mode/distance evidence."
+      "rationale": "Exact access edges depend on the approved ski-area owners and reviewed mode/distance evidence.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-dampezzo-cortina-dampezzo--cortina-5-torri-lagazuoi",
@@ -1423,7 +1620,9 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Exact access edges depend on the approved ski-area owners and reviewed mode/distance evidence."
+      "rationale": "Exact access edges depend on the approved ski-area owners and reviewed mode/distance evidence.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-dampezzo-pocol",
@@ -1439,7 +1638,9 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Pocol has source-backed lodging and slope access, but adding it before Tofane ownership is settled would create an incomplete graph."
+      "rationale": "Pocol has source-backed lodging and slope access, but adding it before Tofane ownership is settled would create an incomplete graph.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
     },
     {
       "candidate_id": "cortina-dampezzo-pocol--cortina-tofane",
@@ -1455,7 +1656,9 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "The source establishes direct slope access, but the target owner does not yet exist."
+      "rationale": "The source establishes direct slope access, but the target owner does not yet exist.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
     },
     {
       "candidate_id": "cortina-tofane-5-torri-lagazuoi",
@@ -1471,7 +1674,9 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "The map supports a Skyline-linked connected subset, but domain membership must follow approved child owners and exclude ski-bus-only Faloria."
+      "rationale": "The map supports a Skyline-linked connected subset, but domain membership must follow approved child owners and exclude ski-bus-only Faloria.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-valle-skipass-scope",
@@ -1493,7 +1698,9 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The existing product represents the published valley pass; child and domain coverage remains unresolved."
+      "rationale": "The existing product represents the published valley pass; child and domain coverage remains unresolved.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "dolomiti-superski-cortina-context",
@@ -1508,7 +1715,9 @@
       ],
       "target_refs": [],
       "backlog_ref": null,
-      "rationale": "The wider 12-valley product is relevant network context and is not added as a Cortina-local product in this fix."
+      "rationale": "The wider 12-valley product is relevant network context and is not added as a Cortina-local product in this fix.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "cortina-dampezzo-pocol--cortina-5-torri-lagazuoi",
@@ -1524,13 +1733,15 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#cortina-d-ampezzo-catalog-owner-completion",
-      "rationale": "Official accommodation evidence establishes direct slope access from Pocol to Cinque Torri, but the target owner does not yet exist."
+      "rationale": "Official accommodation evidence establishes direct slope access from Pocol to Cinque Torri, but the target owner does not yet exist.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
     },
     {
       "candidate_id": "san-vito-di-cadore",
       "candidate_name": "San Vito di Cadore Valle Skipass destination context",
       "candidate_kind": "stay_destination",
-      "disposition": "represented",
+      "disposition": "external_pass_context",
       "signals": [
         "official_independent_identity"
       ],
@@ -1544,13 +1755,15 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The official Valle Skipass scope explicitly names San Vito di Cadore, matching the existing modeled destination; this linked inventory does not revisit its boundary."
+      "rationale": "The official Valle Skipass scope explicitly names San Vito di Cadore, matching the existing modeled destination; this linked inventory does not revisit its boundary.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "auronzo-misurina-valle-skipass-context",
       "candidate_name": "Auronzo-Misurina Valle Skipass destination context",
       "candidate_kind": "stay_destination",
-      "disposition": "represented",
+      "disposition": "external_pass_context",
       "signals": [
         "official_independent_identity"
       ],
@@ -1568,7 +1781,9 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The official combined Auronzo-Misurina coverage label maps to the existing separate Auronzo di Cadore and Misurina destinations; this inventory neither merges nor redefines them."
+      "rationale": "The official combined Auronzo-Misurina coverage label maps to the existing separate Auronzo di Cadore and Misurina destinations; this inventory neither merges nor redefines them.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "san-vito-cortina-valle-skipass",
@@ -1589,7 +1804,9 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The official Valle Skipass validity includes San Vito di Cadore; the existing destination-scoped catalog entry represents that commercial coverage without implying ski connectivity."
+      "rationale": "The official Valle Skipass validity includes San Vito di Cadore; the existing destination-scoped catalog entry represents that commercial coverage without implying ski connectivity.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "auronzo-cortina-valle-skipass",
@@ -1610,7 +1827,9 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The official Valle Skipass validity includes Auronzo di Cadore; the existing destination-scoped catalog entry represents that commercial coverage without implying ski connectivity."
+      "rationale": "The official Valle Skipass validity includes Auronzo di Cadore; the existing destination-scoped catalog entry represents that commercial coverage without implying ski connectivity.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "misurina-cortina-valle-skipass",
@@ -1631,7 +1850,70 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The official Valle Skipass validity includes Misurina; the existing destination-scoped catalog entry represents that commercial coverage without implying ski connectivity."
+      "rationale": "The official Valle Skipass validity includes Misurina; the existing destination-scoped catalog entry represents that commercial coverage without implying ski connectivity.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     }
-  ]
+  ],
+  "review_evidence_envelope": [
+    {
+      "family_id": "cortina-destination-and-booking",
+      "source_kind": "destination_booking",
+      "source_urls": [
+        "https://cortina.dolomiti.org/en/winter/discover/territory/",
+        "https://cortina.dolomiti.org/en/winter/alpine-lifestyle/",
+        "https://cortina.dolomiti.org/wp-content/uploads/2024/09/Cortina-Official-Guide_EN.pdf",
+        "https://cortina.dolomiti.org/en/dove-dormire/hotel-villa-argentina-en/"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base"
+      ]
+    },
+    {
+      "family_id": "cortina-area-operator-and-map",
+      "source_kind": "ski_area_operator",
+      "source_urls": [
+        "https://cortina.dolomiti.org/en/winter/what-to-do/activities/skiing-and-snowboarding/",
+        "https://cortina.dolomiti.org/en/categorie-altri-servizi/impianti-di-risalita-en/",
+        "https://cortina.dolomiti.org/wp-content/uploads/2025/12/Cortina_Skimap_2025-2026_web.pdf"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "terrain_domain"
+      ]
+    },
+    {
+      "family_id": "cortina-pass-products",
+      "source_kind": "pass_tariff",
+      "source_urls": [
+        "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "ski_area",
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "cortina-access-presentations",
+      "source_kind": "access_transport",
+      "source_urls": [
+        "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+        "https://cortina.dolomiti.org/en/dove-dormire/hotel-villa-argentina-en/"
+      ],
+      "candidate_kinds": [
+        "stay_base",
+        "ski_area_access"
+      ]
+    }
+  ],
+  "resulting_graph": {
+    "focus_stay_destination_ids": [
+      "auronzo-di-cadore",
+      "cortina-dampezzo",
+      "misurina",
+      "san-vito-di-cadore"
+    ]
+  }
 }
