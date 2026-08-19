@@ -813,6 +813,9 @@ Candidate inventory:
   `ski_area:cortina-col-gallina`, and `ski_area:cortina-lagazuoi` — resolve
   whether the finer operator presentations remain inside the three reviewed
   area owners or merit still narrower operational/weather identities.
+- `ski_area:lagazuoi-ski-area` — reconcile the already modeled Lagazuoi owner
+  with the Cortina candidate inventory, valley-pass coverage, and connected
+  terrain instead of creating a second synthetic owner.
 - `ski_area_access:cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area`
   — retain or retire the current umbrella edge consistently with the owner
   decision.
@@ -826,6 +829,13 @@ Candidate inventory:
   `ski_area_access:cortina-dampezzo-pocol--cortina-5-torri-lagazuoi` — assess
   Pocol's source-backed lodging and direct slope access as a separate base
   after the Tofane and 5 Torri-Lagazuoi owners are settled.
+- `stay_base:cortina-dampezzo-zuel` and
+  `stay_base:cortina-dampezzo-passo-falzarego` — preserve the official lodging
+  locality signals for a regional follow-up without inventing incomplete base
+  fields or child-area access geometry.
+- `ski_area_access:cortina-dampezzo-cortina-dampezzo--lagazuoi-ski-area` —
+  assess the qualitative town-to-Lagazuoi ski-bus relationship after exact
+  endpoints and the connected-domain owner are reviewed.
 - `terrain_domain:cortina-tofane-5-torri-lagazuoi` — assess the Skyline-linked
   connected terrain and whole-domain map without pulling ski-bus-only Faloria
   into the domain.

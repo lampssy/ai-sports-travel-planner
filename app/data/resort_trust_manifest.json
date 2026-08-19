@@ -9319,17 +9319,20 @@
         },
         "field_source_refs": {
           "relationship": [
-            "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+            "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+            "https://skipasscortina.com/EN/news208-preolympic-mobility"
           ],
           "access_mode_distance": [
-            "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+            "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+            "https://skipasscortina.com/EN/news208-preolympic-mobility"
           ]
         },
         "notes": [
           "Full destination recuration replaced the internal sprint-note source with official, open-data, and reviewed-editorial source refs.",
           "San Vito di Cadore, Auronzo di Cadore, and Misurina are modeled as separate destinations; the 120 km Cortina valley pass scope remains pass context and is not copied onto the Cortina child ski-area terrain metrics.",
           "Cortina child ski-area elevations, operating months, future season window, and representative pass price are normalized from reviewed ski-area data; child piste/lift totals remain omitted until accepted Cortina-only scope evidence is available.",
-          "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
+          "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy.",
+          "The umbrella access is conservatively modeled as a non-direct ski-bus transfer to Funivia Faloria; the official mobility notice supports the mode and stop but not an exact distance or duration."
         ]
       },
       "davos-dorf--parsenn-gotschna": {
