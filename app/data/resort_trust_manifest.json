@@ -5137,10 +5137,10 @@
         "field_statuses": {
           "identity_ownership": "verified",
           "coordinates": "verified",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -5164,7 +5164,9 @@
             "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
             "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.val-gardena.com/en/ortisei-val-gardena-dolomites/"
+          ],
           "lodging_price_quality": [
             "https://www.dolomitisuperski.com/en/live-info/open-slopes",
             "https://www.everestski.com/en/service.html",
@@ -5175,14 +5177,101 @@
             "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
             "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
           ],
-          "base_type": [],
-          "base_character": [],
+          "base_type": [
+            "https://www.valgardena.it/en/ortisei/"
+          ],
+          "base_character": [
+            "https://www.valgardena.it/en/ortisei/"
+          ],
           "local_apres": []
         },
         "notes": [
           "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
           "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
-          "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+          "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+          "Source-aware v2 enrichment reviewed official Ortisei village material on 2026-07-05."
+        ]
+      },
+      "val-gardena-santa-cristina": {
+        "display_name": "S. Cristina",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.valgardena.it/booking/",
+            "https://www.valgardena.it/en/s-cristina/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/47244"
+          ],
+          "elevation": [
+            "https://www.valgardena.it/en/history-geography/"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.valgardena.it/en/s-cristina/"
+          ],
+          "base_character": [
+            "https://www.valgardena.it/en/s-cristina/"
+          ],
+          "local_apres": [
+            "https://www.valgardena.it/en/holiday_guide/70/",
+            "https://www.valgardena.it/en/s-cristina/"
+          ]
+        },
+        "notes": [
+          "The official shared Val Gardena booking market and village page establish S. Cristina as one sibling accommodation base.",
+          "The official geography page establishes the 1,428 m village-centre elevation; the OSM municipality relation supplies the representative catalog point.",
+          "Official quiet-village and tradition wording normalizes to traditional development and quiet pace; the official local bar directory supports available, low-key apres rather than a broad party scene.",
+          "The inherited valley-level lodging range and quality remain estimates."
+        ]
+      },
+      "val-gardena-selva": {
+        "display_name": "Selva Val Gardena",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.valgardena.it/booking/",
+            "https://www.valgardena.it/en/selva-val-gardena/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/47242"
+          ],
+          "elevation": [
+            "https://www.valgardena.it/en/history-geography/"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.valgardena.it/en/selva-val-gardena/"
+          ],
+          "base_character": [
+            "https://www.valgardena.it/en/selva-val-gardena/"
+          ],
+          "local_apres": [
+            "https://www.valgardena.it/en/holiday_guide/56/",
+            "https://www.valgardena.it/en/selva-val-gardena/"
+          ]
+        },
+        "notes": [
+          "The official shared Val Gardena booking market and village page establish Selva as one sibling accommodation base.",
+          "The official geography page establishes the 1,563 m village-centre elevation; the OSM municipality relation supplies the representative catalog point.",
+          "Official modern-meets-bucolic and tourism-led wording normalizes to mixed development and lively pace; recurring official DJ, live-music, and venue listings support available, lively local apres.",
+          "The inherited valley-level lodging range and quality remain estimates."
         ]
       },
       "verbier-verbier": {
@@ -8727,15 +8816,15 @@
         "field_statuses": {
           "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "verified_with_adjustment",
-          "terrain_metrics": "verified_with_adjustment",
+          "terrain_metrics": "needs_source",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified_with_adjustment",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -8758,16 +8847,7 @@
             "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
             "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
           ],
-          "terrain_metrics": [
-            "https://www.dolomitisuperski.com/en/live-info/open-slopes",
-            "https://www.everestski.com/en/service.html",
-            "https://www.openstreetmap.org/node/411679826",
-            "https://www.openstreetmap.org/relation/47265",
-            "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
-            "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
-            "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
-            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
-          ],
+          "terrain_metrics": [],
           "skill_fit": [
             "https://www.dolomitisuperski.com/en/live-info/open-slopes",
             "https://www.everestski.com/en/service.html",
@@ -8778,18 +8858,28 @@
             "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
             "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
           ],
-          "snowmaking": [],
+          "snowmaking": [
+            "https://www.valgardena.it/en/news-val-gardena/detail/new-slopes-lifts-in-val-gardena/"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.valgardena.it/it/vacanze-invernali-dolomiti/freestyle-snowparks/"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://www.valgardena.it/it/vacanze-invernali-dolomiti/baite-apres-ski/"
+          ],
+          "official_documents": [
+            "https://www.dolomitisuperski.com/en/live-info/ski-map"
+          ]
         },
         "notes": [
-          "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
-          "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
-          "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+          "Val Gardena remains the selected weather and access owner, but combined Val Gardena/Seiser Alm terrain metrics are not attributed to this ski-area record.",
+          "The official 181 km and 79-lift totals are retained only as pass-accessible aggregate terrain on the shared pass product.",
+          "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+          "Source-aware v2 enrichment reviewed official Val Gardena and Dolomiti Superski material on 2026-07-05.",
+          "The dedicated count includes Snowpark Sassolungo, Snowpark Monte Pana, and Snowpark Furdenan; Funpark Sassolungo and funslopes are excluded."
         ]
       },
       "verbier-ski-area": {
@@ -10358,17 +10448,65 @@
         "field_source_refs": {
           "relationship": [
             "https://www.openstreetmap.org/node/411679826",
-            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+            "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
           ],
           "access_mode_distance": [
             "https://www.openstreetmap.org/node/411679826",
-            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+            "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
           ]
         },
         "notes": [
           "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
           "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
           "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+        ]
+      },
+      "val-gardena-santa-cristina--val-gardena-ski-area": {
+        "display_name": "S. Cristina -> Val Gardena",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+            "https://www.valgardena.it/en/s-cristina/"
+          ],
+          "access_mode_distance": [
+            "https://www.openstreetmap.org/node/355184871",
+            "https://www.openstreetmap.org/relation/47244",
+            "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+            "https://www.valgardena.it/en/s-cristina/"
+          ]
+        },
+        "notes": [
+          "The official village page and winter map establish direct village access to Monte Pana, Col Raiser, and Saslong within the retained Val Gardena area.",
+          "The 663 m straight-line distance is calculated from the OSM S. Cristina municipality-relation representative point to the exact Monte Pana valley-station node; it is representative village-centre access, not an accommodation route distance."
+        ]
+      },
+      "val-gardena-selva--val-gardena-ski-area": {
+        "display_name": "Selva Val Gardena -> Val Gardena",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+            "https://www.valgardena.it/en/selva-val-gardena/"
+          ],
+          "access_mode_distance": [
+            "https://www.openstreetmap.org/node/520626402",
+            "https://www.openstreetmap.org/relation/47242",
+            "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+            "https://www.valgardena.it/en/selva-val-gardena/"
+          ]
+        },
+        "notes": [
+          "The official village page and winter map establish direct village access to Ciampinoi and Dantercepies within the retained Val Gardena area.",
+          "The 243 m straight-line distance is calculated from the OSM Selva municipality-relation representative point to the exact Ciampinoi valley-station node; it is representative village-centre access, not an accommodation route distance."
         ]
       },
       "verbier-verbier--verbier-ski-area": {
@@ -12873,7 +13011,7 @@
           "identity_scope_availability": "verified_with_adjustment",
           "coverage": "verified_with_adjustment",
           "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
+          "pass_accessible_terrain": "verified"
         },
         "field_source_refs": {
           "identity_scope_availability": [
@@ -12897,30 +13035,21 @@
             "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
           ],
           "prices": [
-            "https://www.dolomitisuperski.com/en/live-info/open-slopes",
-            "https://www.everestski.com/en/service.html",
-            "https://www.openstreetmap.org/node/411679826",
-            "https://www.openstreetmap.org/relation/47265",
             "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
-            "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
-            "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
-            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/skipass-eshop/"
           ],
           "pass_accessible_terrain": [
-            "https://www.dolomitisuperski.com/en/live-info/open-slopes",
-            "https://www.everestski.com/en/service.html",
-            "https://www.openstreetmap.org/node/411679826",
-            "https://www.openstreetmap.org/relation/47265",
-            "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
-            "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
-            "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
-            "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+            "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html"
           ]
         },
         "notes": [
-          "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
-          "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
-          "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+          "The shared product is modeled as local multi-area coverage: Val Gardena is the modeled ski area and Seiser Alm remains explicit unmodeled external validity.",
+          "The official shared 181 km and 79-lift totals belong to pass-accessible terrain and are not copied onto the narrower Val Gardena ski-area owner.",
+          "The complete Seiser Alm stay, access, operations/weather, and terrain graph remains a consolidated regional follow-up.",
+          "The retained EUR 80 price is a fixed adult one-day proxy labeled only as main season and sourced from Skiresort.info, not an exact-product official tariff.",
+          "On 2026-08-13, the official Val Gardena/Seiser Alm product page identified the shared pass and linked its real-time price calculator; the official e-shop wrapper was reachable, but the embedded Dolomiti Superski calculator returned HTTP 403, so no exact official amount could be reproduced.",
+          "The proxy is retained only as the existing representative one-day adult EUR comparison. Its exact season year and applicable date band are unknown, and the live Skiresort.info landing page did not reproduce the stored amount."
         ]
       },
       "zermatt-international-ski-pass": {

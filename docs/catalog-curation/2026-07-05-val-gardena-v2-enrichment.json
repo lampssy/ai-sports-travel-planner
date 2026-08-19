@@ -1,0 +1,4583 @@
+{
+  "report_schema_version": 3,
+  "title": "Val Gardena Catalog Graph Remediation",
+  "summary": "Completes the three-village Val Gardena stay-base and access graph, fills representative geography and source-backed village-fit fields for S. Cristina and Selva, clips combined Seiser Alm terrain from the selected ski-area owner, and preserves shared metrics on the pass.",
+  "changed_entities": [
+    "lift_pass_product:val-gardena-seiser-alm-skipass",
+    "ski_area:val-gardena-ski-area",
+    "ski_area_access:val-gardena-ortisei--val-gardena-ski-area",
+    "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+    "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+    "stay_base:val-gardena-ortisei",
+    "stay_base:val-gardena-santa-cristina",
+    "stay_base:val-gardena-selva",
+    "trust_manifest:lift_pass_products:val-gardena-seiser-alm-skipass",
+    "trust_manifest:ski_area_access:val-gardena-ortisei--val-gardena-ski-area",
+    "trust_manifest:ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+    "trust_manifest:ski_area_access:val-gardena-selva--val-gardena-ski-area",
+    "trust_manifest:ski_areas:val-gardena-ski-area",
+    "trust_manifest:stay_bases:val-gardena-ortisei",
+    "trust_manifest:stay_bases:val-gardena-santa-cristina",
+    "trust_manifest:stay_bases:val-gardena-selva"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "glacier_terrain.availability",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "official_trail_map.season_label",
+        "official_trail_map.url",
+        "piste_km_by_difficulty.advanced",
+        "piste_km_by_difficulty.beginner",
+        "piste_km_by_difficulty.intermediate",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "snowmaking.availability",
+        "snowmaking.coverage_basis",
+        "snowmaking.coverage_pct",
+        "snowmaking.season_label",
+        "total_lift_count",
+        "total_piste_km"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "ortisei",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "santa-cristina",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "selva-val-gardena",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id"
+      ]
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-santa-cristina",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-selva",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-ortisei--val-gardena-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:val-gardena-seiser-alm-skipass",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "Also valid across the unmodeled Seiser Alm ski area; its complete stay, access, operations/weather, and terrain graph is deferred.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "pass_accessible_terrain",
+      "before": null,
+      "after": {
+        "metric_scope": "pass_accessible",
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html"
+        ],
+        "total_lift_count": 79,
+        "total_piste_km": 181.0
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "validity_scope",
+      "before": "single_ski_area",
+      "after": "local_multi_area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.dolomitisuperski.com/en/live-info/ski-map",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "before": 21.0,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "before": 52.0,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "before": 108.0,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 3,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "total_lift_count",
+      "before": 79,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "total_piste_km",
+      "before": 181.0,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "source_urls",
+      "before": [
+        "https://www.openstreetmap.org/node/411679826",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+      ],
+      "after": [
+        "https://www.openstreetmap.org/node/411679826",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 663,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "is_direct",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "near",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Monte Pana",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "nearest_lift_osm_node_id": "355184871",
+        "stay_base_osm_relation_id": "47244"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "before": null,
+      "after": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "val-gardena-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.openstreetmap.org/node/355184871",
+        "https://www.openstreetmap.org/relation/47244",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/s-cristina/"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "val-gardena-santa-cristina",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 243,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "is_direct",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "near",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Ciampinoi",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "nearest_lift_osm_node_id": "520626402",
+        "stay_base_osm_relation_id": "47242"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "before": null,
+      "after": "val-gardena-selva--val-gardena-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "val-gardena-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.openstreetmap.org/node/520626402",
+        "https://www.openstreetmap.org/relation/47242",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/selva-val-gardena/"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "val-gardena-selva",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_type",
+      "before": "town",
+      "after": "village",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1236,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "base_character.development_style",
+      "before": null,
+      "after": "traditional",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "base_character.local_pace",
+      "before": null,
+      "after": "quiet",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1428,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.5590697,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "local_apres_profile.availability",
+      "before": null,
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "low_key",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "longitude",
+      "before": null,
+      "after": 11.7154906,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "name",
+      "before": null,
+      "after": "S. Cristina",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "price_max",
+      "before": null,
+      "after": 290.0,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "price_min",
+      "before": null,
+      "after": 210.0,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "price_range",
+      "before": null,
+      "after": "EUR 210-290",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "quality",
+      "before": null,
+      "after": "premium",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "osm_relation_id": "47244"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "val-gardena-santa-cristina",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "stay_destination_id",
+      "before": null,
+      "after": "val-gardena",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "base_character.development_style",
+      "before": null,
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "base_character.local_pace",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1563,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.5551877,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "local_apres_profile.availability",
+      "before": null,
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "longitude",
+      "before": null,
+      "after": 11.7600992,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "name",
+      "before": null,
+      "after": "Selva Val Gardena",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "price_max",
+      "before": null,
+      "after": 290.0,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "price_min",
+      "before": null,
+      "after": 210.0,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "price_range",
+      "before": null,
+      "after": "EUR 210-290",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "quality",
+      "before": null,
+      "after": "premium",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "osm_relation_id": "47242"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "val-gardena-selva",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "stay_destination_id",
+      "before": null,
+      "after": "val-gardena",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:val-gardena-seiser-alm-skipass",
+      "field_path": "field_source_refs",
+      "before": {
+        "coverage": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "identity_scope_availability": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "pass_accessible_terrain": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "prices": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ]
+      },
+      "after": {
+        "coverage": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "identity_scope_availability": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "pass_accessible_terrain": [
+          "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html"
+        ],
+        "prices": [
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/skipass-eshop/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:val-gardena-seiser-alm-skipass",
+      "field_path": "field_statuses",
+      "before": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "verified_with_adjustment"
+      },
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "verified",
+        "prices": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:val-gardena-seiser-alm-skipass",
+      "field_path": "notes",
+      "before": [
+        "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
+        "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "The shared product is modeled as local multi-area coverage: Val Gardena is the modeled ski area and Seiser Alm remains explicit unmodeled external validity.",
+        "The official shared 181 km and 79-lift totals belong to pass-accessible terrain and are not copied onto the narrower Val Gardena ski-area owner.",
+        "The complete Seiser Alm stay, access, operations/weather, and terrain graph remains a consolidated regional follow-up.",
+        "The retained EUR 80 price is a fixed adult one-day proxy labeled only as main season and sourced from Skiresort.info, not an exact-product official tariff.",
+        "On 2026-08-13, the official Val Gardena/Seiser Alm product page identified the shared pass and linked its real-time price calculator; the official e-shop wrapper was reachable, but the embedded Dolomiti Superski calculator returned HTTP 403, so no exact official amount could be reproduced.",
+        "The proxy is retained only as the existing representative one-day adult EUR comparison. Its exact season year and applicable date band are unknown, and the live Skiresort.info landing page did not reproduce the stored amount."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "access_mode_distance": [
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+        ],
+        "relationship": [
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+        ]
+      },
+      "after": {
+        "access_mode_distance": [
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
+        ],
+        "relationship": [
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "S. Cristina -> Val Gardena",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "relationship": [
+          "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+          "https://www.valgardena.it/en/s-cristina/"
+        ],
+        "access_mode_distance": [
+          "https://www.openstreetmap.org/node/355184871",
+          "https://www.openstreetmap.org/relation/47244",
+          "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+          "https://www.valgardena.it/en/s-cristina/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The official village page and winter map establish direct village access to Monte Pana, Col Raiser, and Saslong within the retained Val Gardena area.",
+        "The 663 m straight-line distance is calculated from the OSM S. Cristina municipality-relation representative point to the exact Monte Pana valley-station node; it is representative village-centre access, not an accommodation route distance."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Selva Val Gardena -> Val Gardena",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "relationship": [
+          "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+          "https://www.valgardena.it/en/selva-val-gardena/"
+        ],
+        "access_mode_distance": [
+          "https://www.openstreetmap.org/node/520626402",
+          "https://www.openstreetmap.org/relation/47242",
+          "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+          "https://www.valgardena.it/en/selva-val-gardena/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The official village page and winter map establish direct village access to Ciampinoi and Dantercepies within the retained Val Gardena area.",
+        "The 243 m straight-line distance is calculated from the OSM Selva municipality-relation representative point to the exact Ciampinoi valley-station node; it is representative village-centre access, not an accommodation route distance."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [
+          "https://www.dolomitisuperski.com/en/live-info/ski-map"
+        ],
+        "ski_day_apres": [
+          "https://www.valgardena.it/it/vacanze-invernali-dolomiti/baite-apres-ski/"
+        ],
+        "skill_fit": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "snow_park": [
+          "https://www.valgardena.it/it/vacanze-invernali-dolomiti/freestyle-snowparks/"
+        ],
+        "snowmaking": [
+          "https://www.valgardena.it/en/news-val-gardena/detail/new-slopes-lifts-in-val-gardena/"
+        ],
+        "terrain_metrics": []
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "estimated",
+        "snow_park": "verified_with_adjustment",
+        "snowmaking": "verified",
+        "terrain_metrics": "needs_source"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
+        "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Val Gardena remains the selected weather and access owner, but combined Val Gardena/Seiser Alm terrain metrics are not attributed to this ski-area record.",
+        "The official 181 km and 79-lift totals are retained only as pass-accessible aggregate terrain on the shared pass product.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+        "Source-aware v2 enrichment reviewed official Val Gardena and Dolomiti Superski material on 2026-07-05.",
+        "The dedicated count includes Snowpark Sassolungo, Snowpark Monte Pana, and Snowpark Furdenan; Funpark Sassolungo and funslopes are excluded."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.valgardena.it/en/ortisei/"
+        ],
+        "base_type": [
+          "https://www.valgardena.it/en/ortisei/"
+        ],
+        "coordinates": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "elevation": [
+          "https://www.val-gardena.com/en/ortisei-val-gardena-dolomites/"
+        ],
+        "identity_ownership": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified_with_adjustment",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "notes",
+      "before": [
+        "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
+        "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
+        "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+        "Source-aware v2 enrichment reviewed official Ortisei village material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-santa-cristina",
+      "field_path": "display_name",
+      "before": null,
+      "after": "S. Cristina",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-santa-cristina",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "identity_ownership": [
+          "https://www.valgardena.it/booking/",
+          "https://www.valgardena.it/en/s-cristina/"
+        ],
+        "coordinates": [
+          "https://www.openstreetmap.org/relation/47244"
+        ],
+        "elevation": [
+          "https://www.valgardena.it/en/history-geography/"
+        ],
+        "lodging_price_quality": [],
+        "base_type": [
+          "https://www.valgardena.it/en/s-cristina/"
+        ],
+        "base_character": [
+          "https://www.valgardena.it/en/s-cristina/"
+        ],
+        "local_apres": [
+          "https://www.valgardena.it/en/holiday_guide/70/",
+          "https://www.valgardena.it/en/s-cristina/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-santa-cristina",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "identity_ownership": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "lodging_price_quality": "estimated",
+        "base_type": "verified",
+        "base_character": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-santa-cristina",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The official shared Val Gardena booking market and village page establish S. Cristina as one sibling accommodation base.",
+        "The official geography page establishes the 1,428 m village-centre elevation; the OSM municipality relation supplies the representative catalog point.",
+        "Official quiet-village and tradition wording normalizes to traditional development and quiet pace; the official local bar directory supports available, low-key apres rather than a broad party scene.",
+        "The inherited valley-level lodging range and quality remain estimates."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-selva",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Selva Val Gardena",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-selva",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "identity_ownership": [
+          "https://www.valgardena.it/booking/",
+          "https://www.valgardena.it/en/selva-val-gardena/"
+        ],
+        "coordinates": [
+          "https://www.openstreetmap.org/relation/47242"
+        ],
+        "elevation": [
+          "https://www.valgardena.it/en/history-geography/"
+        ],
+        "lodging_price_quality": [],
+        "base_type": [
+          "https://www.valgardena.it/en/selva-val-gardena/"
+        ],
+        "base_character": [
+          "https://www.valgardena.it/en/selva-val-gardena/"
+        ],
+        "local_apres": [
+          "https://www.valgardena.it/en/holiday_guide/56/",
+          "https://www.valgardena.it/en/selva-val-gardena/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-selva",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "identity_ownership": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "lodging_price_quality": "estimated",
+        "base_type": "verified",
+        "base_character": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-selva",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The official shared Val Gardena booking market and village page establish Selva as one sibling accommodation base.",
+        "The official geography page establishes the 1,563 m village-centre elevation; the OSM municipality relation supplies the representative catalog point.",
+        "Official modern-meets-bucolic and tourism-led wording normalizes to mixed development and lively pace; recurring official DJ, live-music, and venue listings support available, lively local apres.",
+        "The inherited valley-level lodging range and quality remain estimates."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "local_apres_profile.availability",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "local_apres_profile.intensity",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "local_apres_profile.season_label",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "ortisei",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "santa-cristina",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "selva-val-gardena",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "distance_m",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "duration_minutes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "local_apres_profile.season_label",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "price_max",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "price_min",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "price_range",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "quality",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "stay_destination_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "local_apres_profile.season_label",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "price_max",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "price_min",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "price_range",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "quality",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "stay_destination_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "distance_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "duration_minutes",
+      "status": "reviewed-no-change",
+      "notes": "No route duration is stored because actual walking time depends on the selected accommodation and street route; the representative straight-line distance is stored separately."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "is_direct",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "distance_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "duration_minutes",
+      "status": "reviewed-no-change",
+      "notes": "No route duration is stored because actual walking time depends on the selected accommodation and street route; the representative straight-line distance is stored separately."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "is_direct",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "external_validity_summary",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "pass_accessible_terrain",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "prices",
+      "status": "reviewed-no-change",
+      "notes": "Retained as an adult one-day EUR 80 main-season proxy from Skiresort.info. The official exact-product page links a real-time calculator, but its embedded Dolomiti Superski tariff returned HTTP 403 on 2026-08-13; the exact official amount, season year, and applicable date band could not be reproduced, and the live proxy landing page did not reproduce the stored amount."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "terrain_domain_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "validity_windows",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-santa-cristina",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-santa-cristina",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-santa-cristina",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-santa-cristina",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-selva",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-selva",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-selva",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-selva",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "field_statuses",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "notes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:val-gardena-selva--val-gardena-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:val-gardena-seiser-alm-skipass",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:val-gardena-seiser-alm-skipass",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:val-gardena-seiser-alm-skipass",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:val-gardena-seiser-alm-skipass",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-val-gardena-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.dolomitisuperski.com/en/live-info/ski-map",
+      "source_title": "Dolomiti Superski official ski-map directory",
+      "source_value": "https://www.dolomitisuperski.com/en/live-info/ski-map",
+      "evidence_summary": "The official map directory provides the Gröden/Seiser Alm ski map covering the modeled Val Gardena area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-val-gardena-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/it/vacanze-invernali-dolomiti/baite-apres-ski/",
+      "source_title": "Val Gardena official huts and après-ski guide",
+      "source_value": "available",
+      "evidence_summary": "Official tourism documents 65 piste-side huts and an explicit afternoon and evening après offer.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-003-val-gardena-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/it/vacanze-invernali-dolomiti/baite-apres-ski/",
+      "source_title": "Val Gardena official huts and après-ski guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide describes social afternoons and evenings with drinks, music, many cafes, bars, and pubs for celebrating after skiing.",
+      "normalization_note": "The extensive venue inventory and explicit celebration positioning are mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-004-val-gardena-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/it/vacanze-invernali-dolomiti/freestyle-snowparks/",
+      "source_title": "Val Gardena official snowparks and funslopes guide",
+      "source_value": "available",
+      "evidence_summary": "The official guide documents Snowpark Sassolungo-Val Gardena.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-005-val-gardena-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/it/vacanze-invernali-dolomiti/freestyle-snowparks/",
+      "source_title": "Val Gardena official snowparks and funslopes guide",
+      "source_value": 3,
+      "evidence_summary": "The official complete page names three dedicated snowparks: Snowpark Sassolungo, Snowpark Monte Pana, and Snowpark Furdenan.",
+      "normalization_note": "Funpark Sassolungo, funslopes, boardercross, and family zones are excluded from the dedicated snowpark count."
+    },
+    {
+      "evidence_id": "v2-enrichment-006-val-gardena-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/news-val-gardena/detail/new-slopes-lifts-in-val-gardena/",
+      "source_title": "Val Gardena official 2025/26 lift and snowmaking update",
+      "source_value": "available",
+      "evidence_summary": "The official 2025/26 update documents optimization and expansion of Val Gardena snowmaking infrastructure and water storage.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-val-gardena-ortisei-base-character-development-style",
+      "boundary_target_ids": [
+        "ortisei"
+      ],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/ortisei/",
+      "source_title": "Val Gardena official Ortisei village guide",
+      "source_value": "mixed",
+      "evidence_summary": "Ortisei combines traditional hotels, turn-of-the-century residences, historic churches, farms, and woodcarving heritage with boutiques, a pedestrian shopping street, and mature tourism infrastructure.",
+      "normalization_note": "The documented traditional fabric and modern tourism centre are mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-008-val-gardena-ortisei-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/ortisei/",
+      "source_title": "Val Gardena official Ortisei village guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide explicitly calls the pedestrian zone lively and highlights countless cafes, boutiques, events, and year-round visitor activity.",
+      "normalization_note": "The explicit lively centre and broad activity offer are mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-009-val-gardena-ortisei-base-type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/ortisei/",
+      "source_title": "Val Gardena official Ortisei village guide",
+      "source_value": "village",
+      "evidence_summary": "Official tourism consistently presents Ortisei as a village.",
+      "normalization_note": "The prior town label is corrected to the source-backed village type."
+    },
+    {
+      "evidence_id": "v2-enrichment-010-val-gardena-ortisei-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.val-gardena.com/en/ortisei-val-gardena-dolomites/",
+      "source_title": "Val Gardena official Ortisei guide",
+      "source_value": 1236,
+      "evidence_summary": "The live Ortisei guide gives the village centre elevation as 1,236 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-val-gardena-local-pass",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+      "source_title": "Val Gardena official ski-pass guide",
+      "source_value": "Val Gardena/Seiser Alm Ski Pass",
+      "evidence_summary": "The official destination pass guide identifies the local Val Gardena/Seiser Alm ski-pass scope used by the current catalog graph.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-val-gardena-ortisei-access",
+      "boundary_target_ids": [
+        "ortisei"
+      ],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/",
+      "source_title": "Val Gardena official daily ski trips",
+      "source_value": "Ortisei",
+      "evidence_summary": "The official route page and mapped lift graph establish Ortisei access through Seceda into the retained Val Gardena ski area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-unified-booking",
+      "boundary_target_ids": [
+        "val-gardena",
+        "ortisei",
+        "santa-cristina",
+        "selva-val-gardena"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/booking/",
+      "source_title": "Dolomites Val Gardena official accommodation booking collection",
+      "source_value": "Val Gardena",
+      "evidence_summary": "The official destination booking collection presents more than 950 accommodations across Ortisei, S. Cristina, and Selva under one Val Gardena directBooking market.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-three-villages",
+      "boundary_target_ids": [
+        "val-gardena",
+        "ortisei",
+        "santa-cristina",
+        "selva-val-gardena"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/",
+      "source_title": "Dolomites Val Gardena official destination home",
+      "source_value": "Ortisei, S. Cristina, and Selva Val Gardena",
+      "evidence_summary": "The official destination presents Ortisei, S. Cristina, and Selva as the three villages of the Val Gardena valley, each with distinct visitor character inside the shared destination presentation.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-santa-cristina-market",
+      "boundary_target_ids": [
+        "santa-cristina"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "santa-cristina",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Dolomites Val Gardena official S. Cristina guide",
+      "source_value": "S. Cristina",
+      "evidence_summary": "The official village page provides a dedicated accommodation-booking entry and describes S. Cristina as a direct Dolomiti Superski and Sellaronda starting point.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-selva-market",
+      "boundary_target_ids": [
+        "selva-val-gardena"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "selva-val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Dolomites Val Gardena official Selva guide",
+      "source_value": "Selva Val Gardena",
+      "evidence_summary": "The official village page provides a dedicated accommodation-booking entry and identifies Selva as a tourism-led village and Sellaronda access point.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-core-winter-map",
+      "boundary_target_ids": [
+        "santa-cristina",
+        "selva-val-gardena"
+      ],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+      "source_title": "Val Gardena and Seiser Alm official winter ski map",
+      "source_value": "Val Gardena and Seiser Alm lift graph",
+      "evidence_summary": "The official map names the principal lift presentations and village gateways, including Ortisei-Seceda and Ortisei-Alpe di Siusi, S. Cristina-Col Raiser, Monte Pana and Saslong, and Selva-Ciampinoi, Dantercepies, Plan de Gralba, Piz Sella and Piz Seteur.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-ronda-access",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/",
+      "source_title": "Dolomites Val Gardena official daily ski trips",
+      "source_value": "Val Gardena Ronda village access sequence",
+      "evidence_summary": "The official Val Gardena Ronda routes enumerate Ortisei access through Alpe di Siusi and Seceda, S. Cristina access through Col Raiser and Monte Pana, and Selva access through Dantercepies, Ciampinoi and Piz Sella, while explicitly identifying the Saltria-Monte Pana ski-bus transfer.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-seceda-owner",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.seceda.it/en/winter",
+      "source_title": "Seceda Cableways official winter presentation",
+      "source_value": "Seceda-Col Raiser-Rasciesa skiing consortium",
+      "evidence_summary": "The official operator presents Seceda-Col Raiser-Rasciesa as one connected consortium with 25 km of pistes, shared grooming and snowmaking, and descents to Ortisei and S. Cristina.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-dantercepies-owner-pass",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.dantercepies.it/en/opening-times-and-prices-winter.asp",
+      "source_title": "Dantercepies official winter lifts and tariffs",
+      "source_value": "Dantercepies lift group and three-hour ticket",
+      "evidence_summary": "The operator lists Dantercepies, Cir, Val, Costabella, Risaccia and Panorama under one lift presentation and sells a three-hour ticket valid across those lifts; the page does not establish an independent full-local-pass or weather owner.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-plan-de-gralba-lodging",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/accommodation/base/hotel/selva-di-val-gardena/hotel-plan-de-gralba-das-berghotel/020CA1C27CA15BF9AA254F1D179ABCE0/",
+      "source_title": "Dolomites Val Gardena official Plan de Gralba accommodation record",
+      "source_value": "Plan de Gralba accommodation under Selva di Val Gardena",
+      "evidence_summary": "The official booking system contains bookable lodging at Plan de Gralba and assigns its postal and booking market to Selva di Val Gardena, while the winter map presents Plan de Gralba as a direct lift gateway.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-monte-pana-lodging",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/accommodation/base/hotel/s-cristina-val-gardena/monte-pana-dolomites-hotel/C0DF926F76D911D18F2900A02427D15E/",
+      "source_title": "Dolomites Val Gardena official Monte Pana accommodation record",
+      "source_value": "Monte Pana accommodation under S. Cristina",
+      "evidence_summary": "The official booking system contains a 130-bed hotel at Monte Pana and assigns it to S. Cristina, supporting an accommodation-sector candidate but not an independently managed stay market.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-seiser-alm-pass-graph",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html",
+      "source_title": "Dolomites Region Seiser Alm official ski-pass guide",
+      "source_value": "Seiser Alm and Val Gardena shared pass graph",
+      "evidence_summary": "The official Seiser Alm source distinguishes a 22-lift, 62-km Seiser Alm ski area inside a shared 79-lift, 181-km Seiser Alm/Val Gardena pass area and states that separate area-only passes are no longer sold.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-vg-seiser-alm-stay-market",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "val-gardena",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.seiseralm.it/en/plan-your-holiday/search-book/all-accommodations.html",
+      "source_title": "Dolomites Region Seiser Alm official accommodation collection",
+      "source_value": "Dolomites Region Seiser Alm accommodation market",
+      "evidence_summary": "The official Seiser Alm booking collection owns a separate accommodation market spanning named villages and the high plateau, establishing that a complete linked stay graph extends beyond Val Gardena and cannot be inferred from the shared pass alone.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "remediation-vg-santa-base-id",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Dolomites Val Gardena official S. Cristina guide",
+      "source_value": "val-gardena-santa-cristina",
+      "evidence_summary": "The official shared destination presents S. Cristina as one of the three Val Gardena villages with its own accommodation entry.",
+      "normalization_note": "The official village identity is normalized to the stable sibling StayBase ID."
+    },
+    {
+      "evidence_id": "remediation-vg-selva-base-id",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Dolomites Val Gardena official Selva guide",
+      "source_value": "val-gardena-selva",
+      "evidence_summary": "The official shared destination presents Selva as one of the three Val Gardena villages with its own accommodation entry.",
+      "normalization_note": "The official village identity is normalized to the stable sibling StayBase ID."
+    },
+    {
+      "evidence_id": "remediation-vg-santa-access",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Dolomites Val Gardena official S. Cristina guide",
+      "source_value": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "evidence_summary": "The official village page and winter map establish direct S. Cristina access through Monte Pana, Col Raiser, and Saslong.",
+      "normalization_note": "The village gateways normalize to one explicit edge to the retained Val Gardena area."
+    },
+    {
+      "evidence_id": "remediation-vg-selva-access",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Dolomites Val Gardena official Selva guide",
+      "source_value": "val-gardena-selva--val-gardena-ski-area",
+      "evidence_summary": "The official village page and winter map establish direct Selva access through Ciampinoi and Dantercepies.",
+      "normalization_note": "The village gateways normalize to one explicit edge to the retained Val Gardena area."
+    },
+    {
+      "evidence_id": "remediation-vg-ortisei-access-urls",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/",
+      "source_title": "Val Gardena official daily ski trips",
+      "source_value": [
+        "https://www.openstreetmap.org/node/411679826",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
+      ],
+      "evidence_summary": "The live route page replaces the retired generic ski-holiday URL while the official map and OSM lift node preserve direct relationship and geometry provenance.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "remediation-vg-pass-official-tariff-search",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/skipass-eshop/",
+      "source_title": "Val Gardena official ski-pass price calculator and e-shop",
+      "source_value": "Exact-product real-time calculator linked; amount unavailable to the review client",
+      "evidence_summary": "The official wrapper names the Val Gardena/Alpe di Siusi exact-product price calculator and embeds the Dolomiti Superski tariff iframe. The wrapper returned HTTP 200 on 2026-08-13, but the embedded calculator returned HTTP 403, so no official adult one-day amount, season year, or applicable date band could be reproduced.",
+      "normalization_note": "This bounded official search supports retaining verified_with_adjustment rather than upgrading the provider proxy to an official tariff."
+    },
+    {
+      "evidence_id": "remediation-vg-pass-price-proxy",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "prices",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+      "source_title": "Skiresort.info Val Gardena resort profile",
+      "source_value": {
+        "duration_days": 1,
+        "audience": "adult",
+        "amount": 80.0,
+        "currency": "EUR",
+        "season_label": "main season"
+      },
+      "evidence_summary": "The retained EUR 80 fixed adult one-day amount is a provider proxy, not a reproduced official tariff. The official Val Gardena/Seiser Alm product page was reachable on 2026-08-13 and linked its exact-product real-time price calculator, but the embedded Dolomiti Superski calculator returned HTTP 403. Therefore the official amount could not be reproduced; the exact season year and applicable date band remain unknown, and the live proxy landing page did not reproduce the stored amount.",
+      "normalization_note": "Retain only as the existing representative comparison because the exact-product official tariff was not reproducible; do not treat the main-season label as a known date band."
+    },
+    {
+      "evidence_id": "remediation-vg-pass-validity-scope",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html",
+      "source_title": "Dolomites Region Seiser Alm official ski-pass guide",
+      "source_value": "shared Val Gardena and Seiser Alm ski area",
+      "evidence_summary": "The official guide states that Val Gardena and Seiser Alm have joined as one shared pass area and separate area-only passes are no longer sold.",
+      "normalization_note": "Shared coverage across two terrain presentations maps to local_multi_area."
+    },
+    {
+      "evidence_id": "remediation-vg-pass-external-scope",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html",
+      "source_title": "Dolomites Region Seiser Alm official ski-pass guide",
+      "source_value": "Seiser Alm is included in the shared pass but is not yet a modeled Snowcast ski area.",
+      "evidence_summary": "The official guide distinguishes Seiser Alm as 62 km and 22 lifts inside the shared product.",
+      "normalization_note": "The catalog summary keeps that supported but unmodeled coverage explicit pending the complete linked graph."
+    },
+    {
+      "evidence_id": "remediation-vg-pass-terrain",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "val-gardena-seiser-alm-skipass",
+      "field_path": "pass_accessible_terrain",
+      "source_type": "official",
+      "source_url": "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html",
+      "source_title": "Dolomites Region Seiser Alm official ski-pass guide",
+      "source_value": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 181.0,
+        "total_lift_count": 79,
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html"
+        ]
+      },
+      "evidence_summary": "The official shared-pass owner publishes 181 km of slopes and 79 lifts across Val Gardena and Seiser Alm.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-santa-latitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47244",
+      "source_title": "OpenStreetMap S. Cristina municipality relation",
+      "source_value": 46.5590697,
+      "evidence_summary": "The OSM municipality relation supplies the representative settlement point used for the catalog latitude.",
+      "normalization_note": "This is a municipality-relation representative point, not an accommodation coordinate."
+    },
+    {
+      "evidence_id": "completion-vg-santa-longitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47244",
+      "source_title": "OpenStreetMap S. Cristina municipality relation",
+      "source_value": 11.7154906,
+      "evidence_summary": "The OSM municipality relation supplies the representative settlement point used for the catalog longitude.",
+      "normalization_note": "This is a municipality-relation representative point, not an accommodation coordinate."
+    },
+    {
+      "evidence_id": "completion-vg-santa-regional-id",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47244",
+      "source_title": "OpenStreetMap S. Cristina municipality relation",
+      "source_value": {
+        "osm_relation_id": "47244"
+      },
+      "evidence_summary": "The exact OSM municipality relation is stored as the base regional identifier.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-santa-elevation",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/history-geography/",
+      "source_title": "Val Gardena official history and geography",
+      "source_value": 1428,
+      "evidence_summary": "The official destination geography page lists S. Cristina at 1,428 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-santa-development",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Val Gardena official S. Cristina guide",
+      "source_value": "traditional",
+      "evidence_summary": "The official guide emphasizes retained village character, hospitality, and living traditions.",
+      "normalization_note": "Retained village character and traditions normalize to traditional development style."
+    },
+    {
+      "evidence_id": "completion-vg-santa-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Val Gardena official S. Cristina guide",
+      "source_value": "quiet",
+      "evidence_summary": "The official guide presents S. Cristina as a place for inner peace, with a traffic-calmed centre and peaceful walks.",
+      "normalization_note": "Explicit peace and traffic-calmed village wording normalize to quiet local pace."
+    },
+    {
+      "evidence_id": "completion-vg-santa-apres-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/holiday_guide/70/",
+      "source_title": "Val Gardena official Holiday Guide 2026 - S. Cristina bars",
+      "source_value": "available",
+      "evidence_summary": "The official guide lists multiple S. Cristina bars, cafes, a cocktail bar, lounge bar, and craft brewery.",
+      "normalization_note": "The breadth of listed local venues establishes availability."
+    },
+    {
+      "evidence_id": "completion-vg-santa-apres-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/holiday_guide/70/",
+      "source_title": "Val Gardena official Holiday Guide 2026 - S. Cristina bars",
+      "source_value": "low_key",
+      "evidence_summary": "The official guide establishes several local evening venues, while the village guide consistently emphasizes peace and a calm centre rather than a broad nightlife scene.",
+      "normalization_note": "Multiple venues plus calm village positioning normalize conservatively to low_key."
+    },
+    {
+      "evidence_id": "completion-vg-selva-latitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47242",
+      "source_title": "OpenStreetMap Selva municipality relation",
+      "source_value": 46.5551877,
+      "evidence_summary": "The OSM municipality relation supplies the representative settlement point used for the catalog latitude.",
+      "normalization_note": "This is a municipality-relation representative point, not an accommodation coordinate."
+    },
+    {
+      "evidence_id": "completion-vg-selva-longitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47242",
+      "source_title": "OpenStreetMap Selva municipality relation",
+      "source_value": 11.7600992,
+      "evidence_summary": "The OSM municipality relation supplies the representative settlement point used for the catalog longitude.",
+      "normalization_note": "This is a municipality-relation representative point, not an accommodation coordinate."
+    },
+    {
+      "evidence_id": "completion-vg-selva-regional-id",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47242",
+      "source_title": "OpenStreetMap Selva municipality relation",
+      "source_value": {
+        "osm_relation_id": "47242"
+      },
+      "evidence_summary": "The exact OSM municipality relation is stored as the base regional identifier.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-selva-elevation",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/history-geography/",
+      "source_title": "Val Gardena official history and geography",
+      "source_value": 1563,
+      "evidence_summary": "The official destination geography page lists Selva Gardena at 1,563 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-selva-development",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Val Gardena official Selva guide",
+      "source_value": "mixed",
+      "evidence_summary": "The official guide describes Selva as a tourism-led village where modernity meets a bucolic setting.",
+      "normalization_note": "Substantial modern tourism development layered onto a village setting normalizes to mixed."
+    },
+    {
+      "evidence_id": "completion-vg-selva-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Val Gardena official Selva guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide highlights tourism intensity, varied events, and good mood between apres-ski and live music.",
+      "normalization_note": "The explicit event and apres presentation normalizes to lively local pace."
+    },
+    {
+      "evidence_id": "completion-vg-selva-apres-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/holiday_guide/56/",
+      "source_title": "Val Gardena official Holiday Guide 2026 - Selva apres and nightlife",
+      "source_value": "available",
+      "evidence_summary": "The official guide lists numerous Selva apres and evening venues, including recurring DJ and live-music offers.",
+      "normalization_note": "The recurring multi-venue offer establishes availability."
+    },
+    {
+      "evidence_id": "completion-vg-selva-apres-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/holiday_guide/56/",
+      "source_title": "Val Gardena official Holiday Guide 2026 - Selva apres and nightlife",
+      "source_value": "lively",
+      "evidence_summary": "The official guide lists numerous Selva venues with recurring DJ and live-music offers; the village guide also makes apres and live music part of Selva presentation.",
+      "normalization_note": "Frequent multi-venue music-led apres normalizes to lively, short of destination_defining."
+    },
+    {
+      "evidence_id": "completion-vg-santa-access-name",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/355184871",
+      "source_title": "OpenStreetMap Monte Pana valley station",
+      "source_value": "Monte Pana",
+      "evidence_summary": "The exact valley-station node identifies Monte Pana as the nearest modeled lift endpoint to the representative S. Cristina point.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-santa-access-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/355184871",
+      "source_title": "OpenStreetMap Monte Pana valley station",
+      "source_value": 663,
+      "evidence_summary": "Haversine distance from the OSM S. Cristina relation representative point (46.5590697, 11.7154906) to Monte Pana valley-station node 355184871 (46.5565518, 11.7233567) is 663 m after nearest-meter rounding.",
+      "normalization_note": "Representative straight-line village-centre access, not a routed accommodation distance."
+    },
+    {
+      "evidence_id": "completion-vg-santa-access-regional-ids",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/355184871",
+      "source_title": "OpenStreetMap S. Cristina and Monte Pana geometry",
+      "source_value": {
+        "nearest_lift_osm_node_id": "355184871",
+        "stay_base_osm_relation_id": "47244"
+      },
+      "evidence_summary": "The access edge stores the exact OSM origin relation and valley-station endpoint used by the distance calculation.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-santa-access-sources",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "source_urls",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47244",
+      "source_title": "OpenStreetMap S. Cristina municipality relation",
+      "source_value": [
+        "https://www.openstreetmap.org/node/355184871",
+        "https://www.openstreetmap.org/relation/47244",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/s-cristina/"
+      ],
+      "evidence_summary": "The edge now exposes both geometry endpoints alongside official relationship evidence.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-selva-access-name",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/520626402",
+      "source_title": "OpenStreetMap Ciampinoi valley station",
+      "source_value": "Ciampinoi",
+      "evidence_summary": "The exact valley-station node identifies Ciampinoi as the nearest modeled lift endpoint to the representative Selva point.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-selva-access-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/520626402",
+      "source_title": "OpenStreetMap Ciampinoi valley station",
+      "source_value": 243,
+      "evidence_summary": "Haversine distance from the OSM Selva relation representative point (46.5551877, 11.7600992) to Ciampinoi valley-station node 520626402 (46.5533122, 11.7617381) is 243 m after nearest-meter rounding.",
+      "normalization_note": "Representative straight-line village-centre access, not a routed accommodation distance."
+    },
+    {
+      "evidence_id": "completion-vg-selva-access-regional-ids",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/520626402",
+      "source_title": "OpenStreetMap Selva and Ciampinoi geometry",
+      "source_value": {
+        "nearest_lift_osm_node_id": "520626402",
+        "stay_base_osm_relation_id": "47242"
+      },
+      "evidence_summary": "The access edge stores the exact OSM origin relation and valley-station endpoint used by the distance calculation.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-selva-access-sources",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "source_urls",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47242",
+      "source_title": "OpenStreetMap Selva municipality relation",
+      "source_value": [
+        "https://www.openstreetmap.org/node/520626402",
+        "https://www.openstreetmap.org/relation/47242",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/selva-val-gardena/"
+      ],
+      "evidence_summary": "The edge now exposes both geometry endpoints alongside official relationship evidence.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-santa-name",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Val Gardena official S. Cristina guide",
+      "source_value": "S. Cristina",
+      "evidence_summary": "The official village guide uses S. Cristina as the English display name.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-santa-base-type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Val Gardena official S. Cristina guide",
+      "source_value": "village",
+      "evidence_summary": "The official destination consistently presents S. Cristina as one of the three Val Gardena villages.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-santa-parent",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-santa-cristina",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/booking/",
+      "source_title": "Val Gardena official accommodation booking collection",
+      "source_value": "val-gardena",
+      "evidence_summary": "The shared official booking market places S. Cristina inside the Val Gardena stay destination.",
+      "normalization_note": "The official market relationship normalizes to the stable stay_destination_id."
+    },
+    {
+      "evidence_id": "completion-vg-selva-name",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Val Gardena official Selva guide",
+      "source_value": "Selva Val Gardena",
+      "evidence_summary": "The official village guide uses Selva Val Gardena as the English display name.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-selva-base-type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Val Gardena official Selva guide",
+      "source_value": "village",
+      "evidence_summary": "The official destination consistently presents Selva as one of the three Val Gardena villages.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "completion-vg-selva-parent",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-selva",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/booking/",
+      "source_title": "Val Gardena official accommodation booking collection",
+      "source_value": "val-gardena",
+      "evidence_summary": "The shared official booking market places Selva inside the Val Gardena stay destination.",
+      "normalization_note": "The official market relationship normalizes to the stable stay_destination_id."
+    },
+    {
+      "evidence_id": "completion-vg-santa-access-mode",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Val Gardena official S. Cristina guide",
+      "source_value": "walk",
+      "evidence_summary": "The official village presentation and mapped in-village Monte Pana gateway support walk access from the representative settlement centre.",
+      "normalization_note": "Village-centre proximity normalizes to walk; individual accommodation access can differ."
+    },
+    {
+      "evidence_id": "completion-vg-santa-access-direct",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "is_direct",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+      "source_title": "Val Gardena and Seiser Alm official winter ski map",
+      "source_value": true,
+      "evidence_summary": "The official map connects Monte Pana directly into the retained Val Gardena lift-served graph without a required road transfer.",
+      "normalization_note": "Direct describes the base-to-area relationship, not ski-in/ski-out lodging."
+    },
+    {
+      "evidence_id": "completion-vg-santa-access-band",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/355184871",
+      "source_title": "OpenStreetMap Monte Pana valley station",
+      "source_value": "near",
+      "evidence_summary": "The reviewed representative straight-line distance is 663 m.",
+      "normalization_note": "The 663 m point-to-point distance maps to the catalog near band."
+    },
+    {
+      "evidence_id": "completion-vg-santa-access-area-parent",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+      "source_title": "Val Gardena and Seiser Alm official winter ski map",
+      "source_value": "val-gardena-ski-area",
+      "evidence_summary": "The official lift graph places the S. Cristina gateways inside the retained Val Gardena area.",
+      "normalization_note": "The official terrain relationship normalizes to the stable ski_area_id."
+    },
+    {
+      "evidence_id": "completion-vg-santa-access-base-parent",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/s-cristina/",
+      "source_title": "Val Gardena official S. Cristina guide",
+      "source_value": "val-gardena-santa-cristina",
+      "evidence_summary": "The official village page owns the modeled S. Cristina access presentation.",
+      "normalization_note": "The relationship normalizes to the stable stay_base_id."
+    },
+    {
+      "evidence_id": "completion-vg-selva-access-mode",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Val Gardena official Selva guide",
+      "source_value": "walk",
+      "evidence_summary": "The official village presentation and mapped in-village Ciampinoi gateway support walk access from the representative settlement centre.",
+      "normalization_note": "Village-centre proximity normalizes to walk; individual accommodation access can differ."
+    },
+    {
+      "evidence_id": "completion-vg-selva-access-direct",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "is_direct",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+      "source_title": "Val Gardena and Seiser Alm official winter ski map",
+      "source_value": true,
+      "evidence_summary": "The official map connects Ciampinoi directly into the retained Val Gardena lift-served graph without a required road transfer.",
+      "normalization_note": "Direct describes the base-to-area relationship, not ski-in/ski-out lodging."
+    },
+    {
+      "evidence_id": "completion-vg-selva-access-band",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/520626402",
+      "source_title": "OpenStreetMap Ciampinoi valley station",
+      "source_value": "near",
+      "evidence_summary": "The reviewed representative straight-line distance is 243 m.",
+      "normalization_note": "The 243 m point-to-point distance maps to the catalog near band."
+    },
+    {
+      "evidence_id": "completion-vg-selva-access-area-parent",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+      "source_title": "Val Gardena and Seiser Alm official winter ski map",
+      "source_value": "val-gardena-ski-area",
+      "evidence_summary": "The official lift graph places the Selva gateways inside the retained Val Gardena area.",
+      "normalization_note": "The official terrain relationship normalizes to the stable ski_area_id."
+    },
+    {
+      "evidence_id": "completion-vg-selva-access-base-parent",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-gardena-selva--val-gardena-ski-area",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/selva-val-gardena/",
+      "source_title": "Val Gardena official Selva guide",
+      "source_value": "val-gardena-selva",
+      "evidence_summary": "The official village page owns the modeled Selva access presentation.",
+      "normalization_note": "The relationship normalizes to the stable stay_base_id."
+    }
+  ],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "val-gardena",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "pass",
+          "notes": "The unified official booking collection covers all three named valley villages and a broad multi-night accommodation inventory.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "inventory-vg-three-villages"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "pass",
+          "notes": "Dolomites Val Gardena operates the shared official destination and directBooking collection for the valley market.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "pass",
+          "notes": "The unified valley owns a distinct accommodation collection, visitor identity, and direct access to the Val Gardena lift graph.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "inventory-vg-three-villages"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_stay_market_treatment",
+          "status": "pass",
+          "notes": "The official destination treats Val Gardena as the booking market containing all three villages.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking"
+          ]
+        }
+      ],
+      "failure_route": null
+    },
+    {
+      "candidate_id": "ortisei",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "unresolved",
+          "notes": "A large village-specific accommodation inventory exists, but this pass did not establish whether it is complete outside the shared valley collection.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "v2-enrichment-007-val-gardena-ortisei-base-character-development-style"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "unresolved",
+          "notes": "The official site provides an Ortisei collection but presents booking through the unified Val Gardena market.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "v2-enrichment-007-val-gardena-ortisei-base-character-development-style"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "unresolved",
+          "notes": "Ortisei has distinct character and direct lift access, but comparative accommodation, arrival and service separation remains incomplete.",
+          "evidence_refs": [
+            "inventory-vg-three-villages",
+            "scope-val-gardena-ortisei-access"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "independent_accommodation_inventory",
+          "status": "unresolved",
+          "notes": "The village has a dedicated official accommodation view, but its ownership relationship to the valley-wide collection is not established.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking"
+          ]
+        }
+      ],
+      "failure_route": "stay_base"
+    },
+    {
+      "candidate_id": "santa-cristina",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "unresolved",
+          "notes": "A village-specific booking entry exists, but this pass did not establish its complete accommodation boundary outside the shared valley collection.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "inventory-vg-santa-cristina-market"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "unresolved",
+          "notes": "The official village presentation does not establish destination-management ownership separate from Dolomites Val Gardena.",
+          "evidence_refs": [
+            "inventory-vg-santa-cristina-market",
+            "inventory-vg-unified-booking"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "unresolved",
+          "notes": "Direct Col Raiser, Monte Pana and Sellaronda access suggests separation value, but comparative lodging and arrival evidence remains incomplete.",
+          "evidence_refs": [
+            "inventory-vg-santa-cristina-market",
+            "inventory-vg-core-winter-map"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "independent_accommodation_inventory",
+          "status": "unresolved",
+          "notes": "The village has a dedicated official accommodation entry, but its ownership relationship to the valley-wide collection is not established.",
+          "evidence_refs": [
+            "inventory-vg-santa-cristina-market",
+            "inventory-vg-unified-booking"
+          ]
+        }
+      ],
+      "failure_route": "stay_base"
+    },
+    {
+      "candidate_id": "selva-val-gardena",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "unresolved",
+          "notes": "A village-specific booking entry and broad tourism infrastructure exist, but this pass did not establish the complete boundary outside the shared valley collection.",
+          "evidence_refs": [
+            "inventory-vg-unified-booking",
+            "inventory-vg-selva-market"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "unresolved",
+          "notes": "The official village presentation does not establish destination-management ownership separate from Dolomites Val Gardena.",
+          "evidence_refs": [
+            "inventory-vg-selva-market",
+            "inventory-vg-unified-booking"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "unresolved",
+          "notes": "Direct Ciampinoi, Dantercepies and Sellaronda access suggests separation value, but comparative lodging and arrival evidence remains incomplete.",
+          "evidence_refs": [
+            "inventory-vg-selva-market",
+            "inventory-vg-core-winter-map"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "independent_accommodation_inventory",
+          "status": "unresolved",
+          "notes": "The village has a dedicated official accommodation entry, but its ownership relationship to the valley-wide collection is not established.",
+          "evidence_refs": [
+            "inventory-vg-selva-market",
+            "inventory-vg-unified-booking"
+          ]
+        }
+      ],
+      "failure_route": "stay_base"
+    }
+  ],
+  "entity_scope_assessments": [
+    {
+      "candidate_id": "val-gardena",
+      "candidate_name": "Val Gardena",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market"
+      ],
+      "evidence_refs": [
+        "inventory-vg-unified-booking",
+        "inventory-vg-three-villages",
+        "inventory-vg-plan-de-gralba-lodging",
+        "inventory-vg-monte-pana-lodging",
+        "inventory-vg-seiser-alm-stay-market"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "val-gardena"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official destination and directBooking system establish one non-overlapping Val Gardena stay market containing three sibling village bases.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-gardena-ortisei",
+      "candidate_name": "Ortisei",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-007-val-gardena-ortisei-base-character-development-style",
+        "v2-enrichment-008-val-gardena-ortisei-base-character-local-pace",
+        "v2-enrichment-009-val-gardena-ortisei-base-type",
+        "v2-enrichment-010-val-gardena-ortisei-elevation-m",
+        "scope-val-gardena-ortisei-access"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "val-gardena-ortisei"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The report's existing official Ortisei evidence supports retaining the current stay-base record while the independent review reconstructs the complete Val Gardena stay-market inventory.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-gardena-ski-area",
+      "candidate_name": "Val Gardena",
+      "candidate_kind": "ski_area",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-001-val-gardena-ski-area-official-trail-map-url",
+        "v2-enrichment-006-val-gardena-ski-area-snowmaking-availability",
+        "scope-val-gardena-local-pass",
+        "inventory-vg-core-winter-map",
+        "inventory-vg-seceda-owner",
+        "inventory-vg-dantercepies-owner-pass",
+        "inventory-vg-seiser-alm-pass-graph"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "The retained weather/access ID is clipped to evidence-supported local claims; combined Seiser Alm terrain and pass inventory has been removed from this owner. The only modeled local product is shared across Val Gardena and Seiser Alm, so it does not establish a Val Gardena-only full-local-pass owner. Complete parent operations/weather ownership remains unresolved.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "unresolved",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "unknown",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "v2-enrichment-001-val-gardena-ski-area-official-trail-map-url",
+          "v2-enrichment-006-val-gardena-ski-area-snowmaking-availability",
+          "scope-val-gardena-local-pass",
+          "inventory-vg-core-winter-map",
+          "inventory-vg-seceda-owner",
+          "inventory-vg-dantercepies-owner-pass",
+          "inventory-vg-seiser-alm-pass-graph"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "seceda-col-raiser-rasciesa",
+      "candidate_name": "Seceda-Col Raiser-Rasciesa",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity",
+        "separate_operator",
+        "child_scoped_terrain_metrics",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-seceda-owner",
+        "inventory-vg-core-winter-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator owns a connected consortium presentation and child-scoped terrain operations, but the official inventory gathered here establishes neither an independent weather owner nor a full local pass; under the connected-area test it remains inside the current Val Gardena owner pending reviewer confirmation.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "mixed",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-vg-seceda-owner",
+          "inventory-vg-core-winter-map"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "dantercepies",
+      "candidate_name": "Dantercepies",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity",
+        "separate_operator",
+        "independent_status_or_schedule",
+        "limited_area_ticket",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-dantercepies-owner-pass",
+        "inventory-vg-core-winter-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Dantercepies has its own lift operator, schedule and limited three-hour tariff, but no independent weather presentation or full-local-pass owner was established; the official regional map aggregates it into Val Gardena.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "independent",
+        "weather_scope": "unknown",
+        "pass_scope": "limited",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-vg-dantercepies-owner-pass",
+          "inventory-vg-core-winter-map"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "ciampinoi-saslong",
+      "candidate_name": "Ciampinoi-Saslong",
+      "candidate_kind": "ski_area",
+      "disposition": "unresolved",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "The official map and route presentation identify Ciampinoi and Saslong as connected sectors and village gateways, without an independent weather or full-local-pass owner in the reviewed source neighborhood. Direct parent operations and weather ownership remain unproven, so the report no longer claims parent ownership or redundant separation.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "monte-pana-mont-de-seura",
+      "candidate_name": "Monte Pana-Mont de Seura",
+      "candidate_kind": "ski_area",
+      "disposition": "unresolved",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "The official map and Ronda route identify Monte Pana and Mont de Seura as connected Val Gardena sectors; no independent operations-plus-weather or full-local-pass ownership was established. Direct parent operations and weather ownership remain unproven, so the report no longer claims parent ownership or redundant separation.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "plan-de-gralba-piz-sella-piz-seteur",
+      "candidate_name": "Plan de Gralba-Piz Sella-Piz Seteur",
+      "candidate_kind": "ski_area",
+      "disposition": "unresolved",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "The official map and village route describe this as a connected lift sector from Selva and Plan de Gralba; no independent weather or full-local-pass owner was found in the bounded source neighborhood. Direct parent operations and weather ownership remain unproven, so the report no longer claims parent ownership or redundant separation.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "resciesa",
+      "candidate_name": "Resciesa-Rasciesa",
+      "candidate_kind": "ski_area",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-seceda-owner",
+        "inventory-vg-core-winter-map"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "The Seceda operator expressly includes Rasciesa in the connected consortium and shared grooming presentation; no independent evidence owner was established. Direct parent operations and weather ownership remain unproven, so the report no longer claims parent ownership or redundant separation.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "inventory-vg-seceda-owner",
+          "inventory-vg-core-winter-map"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "gardena-pass-sector",
+      "candidate_name": "Gardena Pass sector",
+      "candidate_kind": "ski_area",
+      "disposition": "deferred",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#alta-badia-and-regional-catalog-refinements",
+      "rationale": "The map exposes the Passo Gardena presentation, but its complete boundary crosses into the linked Alta Badia graph. It remains deferred until the owning linked graph can establish full operations, weather and pass scope.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "mixed",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "sella-pass",
+      "candidate_name": "Sella Pass sector",
+      "candidate_kind": "ski_area",
+      "disposition": "deferred",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#alta-badia-and-regional-catalog-refinements",
+      "rationale": "The Sella Pass presentation reaches beyond the selected Val Gardena owner graph. Complete membership and parent ownership require the separately owned adjacent regional graph before it can be safely modeled.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "mixed",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "inventory-vg-core-winter-map",
+          "inventory-vg-ronda-access"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "ortisei--seceda",
+      "candidate_name": "Ortisei to Seceda access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "not_separate",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access",
+        "inventory-vg-seceda-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "val-gardena-ortisei--val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official map and operator establish direct Ortisei-Seceda lift access. Because Seceda remains inside the current Val Gardena area owner, the sector presentation maps to the existing whole-area access edge rather than a second catalog edge.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-gardena-santa-cristina",
+      "candidate_name": "S. Cristina",
+      "candidate_kind": "stay_base",
+      "disposition": "add_entity",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "remediation-vg-santa-base-id",
+        "inventory-vg-unified-booking",
+        "inventory-vg-three-villages"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "val-gardena-santa-cristina"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official unified booking market presents this named village as one sibling accommodation base rather than an overlapping destination.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-gardena-selva",
+      "candidate_name": "Selva Val Gardena",
+      "candidate_kind": "stay_base",
+      "disposition": "add_entity",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "remediation-vg-selva-base-id",
+        "inventory-vg-unified-booking",
+        "inventory-vg-three-villages"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "val-gardena-selva"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official unified booking market presents this named village as one sibling accommodation base rather than an overlapping destination.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "santa-cristina--val-gardena",
+      "candidate_name": "S. Cristina to Val Gardena access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "add_entity",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "remediation-vg-santa-access",
+        "inventory-vg-core-winter-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "val-gardena-santa-cristina--val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official village and map evidence supports one direct base-to-current-area access edge; named sectors remain inside the retained area.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "selva--val-gardena",
+      "candidate_name": "Selva to Val Gardena access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "add_entity",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "remediation-vg-selva-access",
+        "inventory-vg-core-winter-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "val-gardena-selva--val-gardena-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official village and map evidence supports one direct base-to-current-area access edge; named sectors remain inside the retained area.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-gardena-seiser-alm-skipass",
+      "candidate_name": "Val Gardena/Seiser Alm Ski Pass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "remediation-vg-pass-validity-scope",
+        "remediation-vg-pass-terrain",
+        "remediation-vg-pass-official-tariff-search",
+        "remediation-vg-pass-price-proxy"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "val-gardena-seiser-alm-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The shared product remains available from Val Gardena; modeled coverage points to the retained Val Gardena area and supported aggregate/external Seiser scope stays on the pass. Its retained EUR 80 adult one-day main-season amount is explicitly bounded as an unreproduced provider proxy because the official exact-product calculator was blocked and supplied no verifiable amount or date band.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "seiser-alm-region",
+      "candidate_name": "Seiser Alm region",
+      "candidate_kind": "stay_destination",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-vg-seiser-alm-stay-market"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "Requires the complete linked accommodation and access graph; shared pass validity alone does not establish the destination boundary.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "seiser-alm",
+      "candidate_name": "Seiser Alm",
+      "candidate_kind": "ski_area",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-vg-seiser-alm-pass-graph"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "Requires complete direct operations, weather, access, and owner-boundary evidence before modeling.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-gardena-ski-area",
+        "terrain_scope": "complete",
+        "connectivity_to_parent": "transfer_required",
+        "operational_scope": "unknown",
+        "weather_scope": "unknown",
+        "pass_scope": "shared_only",
+        "provider_consensus": "separate",
+        "separation_value": "unresolved",
+        "evidence_refs": [
+          "inventory-vg-seiser-alm-pass-graph"
+        ]
+      },
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "ortisei--seiser-alm",
+      "candidate_name": "Ortisei to Seiser Alm access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-vg-core-winter-map",
+        "inventory-vg-ronda-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "Requires the Seiser Alm ski-area owner to exist before an access edge can be modeled.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-gardena-plan-de-gralba",
+      "candidate_name": "Plan de Gralba",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-vg-plan-de-gralba-lodging"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "Requires evidence that the lodging/access sector has material stay-base separation from Selva.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-gardena-monte-pana",
+      "candidate_name": "Monte Pana",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-vg-monte-pana-lodging"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "Requires evidence that the lodging/access sector has material stay-base separation from S. Cristina.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-gardena-points-value-card",
+      "candidate_name": "Val Gardena points value card",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "scope-val-gardena-local-pass"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "Requires a current exact tariff and durable trip-planning value distinct from the shared main pass.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "dantercepies-three-hour",
+      "candidate_name": "Dantercepies three-hour ticket",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "inventory-vg-dantercepies-owner-pass"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-gardena-regional-catalog-refinements",
+      "rationale": "Requires a current complete tariff and durable trip-planning value distinct from the shared main pass.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    }
+  ],
+  "review_evidence_envelope": [
+    {
+      "family_id": "val-gardena-destination-booking",
+      "source_kind": "destination_booking",
+      "source_urls": [
+        "https://www.valgardena.it/en/ortisei/"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base"
+      ]
+    },
+    {
+      "family_id": "val-gardena-operator-map",
+      "source_kind": "ski_area_operator",
+      "source_urls": [
+        "https://www.dolomitisuperski.com/en/live-info/ski-map",
+        "https://www.valgardena.it/en/news-val-gardena/detail/new-slopes-lifts-in-val-gardena/"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "terrain_domain"
+      ]
+    },
+    {
+      "family_id": "val-gardena-pass-tariff",
+      "source_kind": "pass_tariff",
+      "source_urls": [
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/skipass-eshop/"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "val-gardena-access",
+      "source_kind": "access_transport",
+      "source_urls": [
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
+      ],
+      "candidate_kinds": [
+        "stay_base",
+        "ski_area_access"
+      ]
+    },
+    {
+      "family_id": "val-gardena-touched-relationships",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://www.dolomitisuperski.com/en/live-info/ski-map",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
+      ],
+      "candidate_kinds": [
+        "stay_base",
+        "ski_area",
+        "ski_area_access",
+        "lift_pass_product",
+        "terrain_domain"
+      ]
+    },
+    {
+      "family_id": "inventory-vg-stay-market-completion",
+      "source_kind": "destination_booking",
+      "source_urls": [
+        "https://www.valgardena.it/booking/",
+        "https://www.valgardena.it/en/",
+        "https://www.valgardena.it/en/accommodation/base/hotel/s-cristina-val-gardena/monte-pana-dolomites-hotel/C0DF926F76D911D18F2900A02427D15E/",
+        "https://www.valgardena.it/en/accommodation/base/hotel/selva-di-val-gardena/hotel-plan-de-gralba-das-berghotel/020CA1C27CA15BF9AA254F1D179ABCE0/",
+        "https://www.valgardena.it/en/history-geography/",
+        "https://www.valgardena.it/en/holiday_guide/56/",
+        "https://www.valgardena.it/en/holiday_guide/70/",
+        "https://www.valgardena.it/en/s-cristina/",
+        "https://www.valgardena.it/en/selva-val-gardena/"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base"
+      ]
+    },
+    {
+      "family_id": "inventory-vg-core-access-completion",
+      "source_kind": "access_transport",
+      "source_urls": [
+        "https://www.openstreetmap.org/node/355184871",
+        "https://www.openstreetmap.org/node/520626402",
+        "https://www.openstreetmap.org/relation/47242",
+        "https://www.openstreetmap.org/relation/47244",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
+      ],
+      "candidate_kinds": [
+        "stay_base",
+        "ski_area",
+        "ski_area_access",
+        "terrain_domain"
+      ]
+    },
+    {
+      "family_id": "inventory-vg-operator-boundary-completion",
+      "source_kind": "ski_area_operator",
+      "source_urls": [
+        "https://www.seceda.it/en/winter",
+        "https://www.dantercepies.it/en/opening-times-and-prices-winter.asp",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "inventory-vg-seiser-alm-linked-graph",
+      "source_kind": "linked_pr_dependency",
+      "source_urls": [
+        "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html",
+        "https://www.seiseralm.it/en/plan-your-holiday/search-book/all-accommodations.html"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base",
+        "ski_area",
+        "ski_area_access",
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "val-gardena-remediation-sources",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://www.openstreetmap.org/node/355184871",
+        "https://www.openstreetmap.org/node/520626402",
+        "https://www.openstreetmap.org/relation/47242",
+        "https://www.openstreetmap.org/relation/47244",
+        "https://www.val-gardena.com/en/ortisei-val-gardena-dolomites/",
+        "https://www.valgardena.it/en/history-geography/",
+        "https://www.valgardena.it/en/holiday_guide/56/",
+        "https://www.valgardena.it/en/holiday_guide/70/",
+        "https://www.valgardena.it/en/s-cristina/",
+        "https://www.valgardena.it/en/selva-val-gardena/"
+      ],
+      "candidate_kinds": [
+        "stay_base"
+      ]
+    }
+  ],
+  "boundary_decision_targets": [
+    "val-gardena",
+    "ortisei",
+    "santa-cristina",
+    "selva-val-gardena"
+  ],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "resulting_graph": {
+    "focus_stay_destination_ids": [
+      "val-gardena"
+    ]
+  },
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog --catalog-path app/data/catalog.json --trust-manifest-path app/data/resort_trust_manifest.json",
+    "git show 7b01a82:app/data/catalog.json > /tmp/snowcast-pr39-base-catalog.json && git show 7b01a82:app/data/resort_trust_manifest.json > /tmp/snowcast-pr39-base-trust.json && UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile docs/catalog-curation/2026-07-05-val-gardena-v2-enrichment.json --base-catalog-path /tmp/snowcast-pr39-base-catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path /tmp/snowcast-pr39-base-trust.json --current-trust-manifest-path app/data/resort_trust_manifest.json --require-report-schema-version 3 --product-backlog-path docs/product-backlog.md --markdown-output docs/catalog-curation/2026-07-05-val-gardena-v2-enrichment.md"
+  ],
+  "ranking_impact_summary": "The selected graph now exposes three sibling village bases with direct current-area access; shared 181 km/79-lift inventory affects pass context rather than Val Gardena ski-area terrain scoring.",
+  "unresolved_caveats": [
+    "No authoritative glacier, night-skiing, or marked downhill freeride-route inventory was established.",
+    "The retained Val Gardena weather/access ID has no combined Seiser Alm metrics; direct complete parent operations/weather ownership remains unresolved in the report.",
+    "Ciampinoi-Saslong, Monte Pana-Mont de Seura, Plan de Gralba-Piz Sella-Piz Seteur, and Resciesa no longer claim unsupported parent ownership or redundant separation.",
+    "Seiser Alm, adjacent lodging sectors, the points value card, and the Dantercepies three-hour ticket remain consolidated regional follow-ups.",
+    "New village lodging prices and quality inherit the existing valley estimate. Representative village-centre geometry, elevation, character, local apres, and nearest-lift access are now source-backed; access durations remain accommodation- and route-dependent."
+  ]
+}

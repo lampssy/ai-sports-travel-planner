@@ -2456,18 +2456,68 @@
       "quality": "premium",
       "latitude": 46.5752,
       "longitude": 11.6721,
-      "base_type": "town",
+      "base_type": "village",
       "regional_data_ids": {
         "osm_relation_id": "47265"
       },
-      "elevation_m": null,
+      "elevation_m": 1236,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
         "availability": "unknown",
         "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "val-gardena-santa-cristina",
+      "stay_destination_id": "val-gardena",
+      "name": "S. Cristina",
+      "price_range": "EUR 210-290",
+      "price_min": 210.0,
+      "price_max": 290.0,
+      "quality": "premium",
+      "latitude": 46.5590697,
+      "longitude": 11.7154906,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "47244"
+      },
+      "elevation_m": 1428,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "low_key",
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "val-gardena-selva",
+      "stay_destination_id": "val-gardena",
+      "name": "Selva Val Gardena",
+      "price_range": "EUR 210-290",
+      "price_min": 210.0,
+      "price_max": 290.0,
+      "quality": "premium",
+      "latitude": 46.5551877,
+      "longitude": 11.7600992,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "47242"
+      },
+      "elevation_m": 1563,
+      "base_character": {
+        "development_style": "mixed",
+        "local_pace": "lively"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4912,20 +4962,16 @@
           "status": "planned"
         }
       ],
-      "total_piste_km": 181.0,
-      "total_lift_count": 79,
-      "piste_km_by_difficulty": {
-        "beginner": 52.0,
-        "intermediate": 108.0,
-        "advanced": 21.0
-      },
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
         "intermediate",
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -4934,8 +4980,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 3,
         "season_label": null
       },
       "night_skiing": {
@@ -4947,10 +4993,12 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.dolomitisuperski.com/en/live-info/ski-map"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -6403,7 +6451,50 @@
       },
       "source_urls": [
         "https://www.openstreetmap.org/node/411679826",
-        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-resort-val-gardena/val-gardena/daily-ski-trips/"
+      ]
+    },
+    {
+      "ski_area_access_id": "val-gardena-santa-cristina--val-gardena-ski-area",
+      "stay_base_id": "val-gardena-santa-cristina",
+      "ski_area_id": "val-gardena-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Monte Pana",
+      "distance_m": 663,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "355184871",
+        "stay_base_osm_relation_id": "47244"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/355184871",
+        "https://www.openstreetmap.org/relation/47244",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/s-cristina/"
+      ]
+    },
+    {
+      "ski_area_access_id": "val-gardena-selva--val-gardena-ski-area",
+      "stay_base_id": "val-gardena-selva",
+      "ski_area_id": "val-gardena-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Ciampinoi",
+      "distance_m": 243,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "520626402",
+        "stay_base_osm_relation_id": "47242"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/520626402",
+        "https://www.openstreetmap.org/relation/47242",
+        "https://www.valgardena.it/dl/stchristina/pdf/Winter-ski-map-lifts-dolomites-val-gardena_seiseralm.pdf",
+        "https://www.valgardena.it/en/selva-val-gardena/"
       ]
     },
     {
@@ -8717,7 +8808,7 @@
     {
       "lift_pass_product_id": "val-gardena-seiser-alm-skipass",
       "name": "Val Gardena/Seiser Alm Ski Pass",
-      "validity_scope": "single_ski_area",
+      "validity_scope": "local_multi_area",
       "available_from_stay_destination_ids": [
         "val-gardena"
       ],
@@ -8728,8 +8819,16 @@
         "val-gardena-ski-area"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": null,
-      "pass_accessible_terrain": null,
+      "external_validity_summary": "Also valid across the unmodeled Seiser Alm ski area; its complete stay, access, operations/weather, and terrain graph is deferred.",
+      "pass_accessible_terrain": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 181.0,
+        "total_lift_count": 79,
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://www.seiseralm.it/en/active/winter/skiing/ski-pass.html"
+        ]
+      },
       "prices": [
         {
           "duration_days": 1,
