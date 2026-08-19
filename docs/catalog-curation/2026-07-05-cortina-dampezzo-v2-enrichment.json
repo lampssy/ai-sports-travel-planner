@@ -1787,6 +1787,19 @@
       "normalization_note": null
     },
     {
+      "evidence_id": "linked-auronzo-taiarezze-lodging",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Auronzo Misurina official accommodation carnet",
+      "source_value": "auronzo-di-cadore-taiarezze",
+      "evidence_summary": "The official accommodation directory lists tourist apartments in Taiarezze, supporting the locality's bounded-linked stay-base identity.",
+      "normalization_note": "Lodging price and quality remain destination-level estimates pending a dedicated Taiarezze sampling policy."
+    },
+    {
       "evidence_id": "linked-auronzo-taiarezze-access",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -2907,7 +2920,7 @@
         "independent_stay_market"
       ],
       "evidence_refs": [
-        "linked-auronzo-taiarezze-access"
+        "linked-auronzo-taiarezze-lodging"
       ],
       "target_refs": [],
       "backlog_ref": null,
@@ -3201,6 +3214,7 @@
         "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
         "https://www.skiareasanvito.com/en/rates/",
         "https://auronzo.info/en/holidays/",
+        "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
         "https://monteagudo.it/en/auronzo-misurina-ski-area/",
         "https://monteagudo.it/en/opening-and-prices/",
         "https://auronzo.info/en/misurina-dolomites/",
