@@ -3159,6 +3159,97 @@
       "source_value": "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf",
       "evidence_summary": "The official piste map covers the connected Madonna di Campiglio, Pinzolo, and Folgarida-Marilleva terrain domain.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-p1-folgarida-operator-identity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/skiarea/folgarida-marilleva",
+      "source_title": "Ski.it official Folgarida-Marilleva ski-area page",
+      "source_value": "Folgarida Marilleva",
+      "evidence_summary": "The shared official Ski.it platform presents Folgarida-Marilleva as a separately named ski area and operator-facing product surface inside the connected Campiglio domain.",
+      "normalization_note": "Scope evidence only; it does not replace the map URL stored in the catalog."
+    },
+    {
+      "evidence_id": "inventory-p1-folgarida-current-operations",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/info-live/lift-status",
+      "source_title": "Ski.it official current lift-status board",
+      "source_value": "Folgarida-Marilleva current lift and connection status",
+      "evidence_summary": "The official live-status board exposes current Folgarida-Marilleva lifts and the named connection toward Madonna di Campiglio.",
+      "normalization_note": "Current-operations scope evidence only; no volatile lift state is written to the catalog."
+    },
+    {
+      "evidence_id": "inventory-p1-madonna-operator-identity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+      "source_title": "Ski.it official Madonna di Campiglio ski-area page",
+      "source_value": "Madonna di Campiglio",
+      "evidence_summary": "The shared official Ski.it platform presents Madonna di Campiglio as a separately named ski area and operator-facing product surface inside the connected Campiglio domain.",
+      "normalization_note": "Scope evidence only; it does not replace the map URL stored in the catalog."
+    },
+    {
+      "evidence_id": "inventory-p1-madonna-current-operations",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/info-live/lift-status",
+      "source_title": "Ski.it official current lift-status board",
+      "source_value": "Madonna di Campiglio current lift and connection status",
+      "evidence_summary": "The official live-status board exposes current Madonna di Campiglio lifts and named connections toward both Folgarida-Marilleva and Pinzolo.",
+      "normalization_note": "Current-operations scope evidence only; no volatile lift state is written to the catalog."
+    },
+    {
+      "evidence_id": "inventory-p1-pinzolo-operator-identity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/skiarea/pinzolo",
+      "source_title": "Ski.it official Pinzolo ski-area page",
+      "source_value": "Pinzolo",
+      "evidence_summary": "The shared official Ski.it platform presents Pinzolo as a separately named ski area and operator-facing product surface inside the connected Campiglio domain.",
+      "normalization_note": "Scope evidence only; it does not replace the map URL stored in the catalog."
+    },
+    {
+      "evidence_id": "inventory-p1-pinzolo-current-operations",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/info-live/lift-status",
+      "source_title": "Ski.it official current lift-status board",
+      "source_value": "Pinzolo current lift and connection status",
+      "evidence_summary": "The official live-status board exposes current Pinzolo lifts and the named connection toward Madonna di Campiglio.",
+      "normalization_note": "Current-operations scope evidence only; no volatile lift state is written to the catalog."
+    },
+    {
+      "evidence_id": "inventory-p1-daolasa-scope",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/commezzadura",
+      "source_title": "Visit Val di Sole official Commezzadura destination page",
+      "source_value": "Daolasa di Commezzadura",
+      "evidence_summary": "The official destination page identifies Daolasa di Commezzadura as a named village, while the official accommodation inventory contains lodging addressed in Frazione Daolasa.",
+      "normalization_note": "This supports the represented stay-base identity but does not establish a representative accommodation elevation."
     }
   ],
   "destination_boundary_assessments": [],
@@ -3175,7 +3266,8 @@
       ],
       "evidence_refs": [
         "v2-enrichment-001-folgarida-marilleva-ski-area-official-trail-map-url",
-        "v2-enrichment-002-folgarida-marilleva-ski-area-snow-park-availability"
+        "inventory-p1-folgarida-operator-identity",
+        "inventory-p1-folgarida-current-operations"
       ],
       "target_refs": [
         {
@@ -3196,7 +3288,8 @@
         "separation_value": "material",
         "evidence_refs": [
           "v2-enrichment-001-folgarida-marilleva-ski-area-official-trail-map-url",
-          "v2-enrichment-002-folgarida-marilleva-ski-area-snow-park-availability"
+          "inventory-p1-folgarida-operator-identity",
+          "inventory-p1-folgarida-current-operations"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -3211,8 +3304,9 @@
         "separate_operator"
       ],
       "evidence_refs": [
-        "v2-enrichment-004-madonna-di-campiglio-ski-area-ski-day-apres-profile-availability",
-        "v2-enrichment-006-madonna-di-campiglio-ski-area-snow-park-availability"
+        "v2-enrichment-001-folgarida-marilleva-ski-area-official-trail-map-url",
+        "inventory-p1-madonna-operator-identity",
+        "inventory-p1-madonna-current-operations"
       ],
       "target_refs": [
         {
@@ -3232,8 +3326,9 @@
         "provider_consensus": "separate",
         "separation_value": "material",
         "evidence_refs": [
-          "v2-enrichment-004-madonna-di-campiglio-ski-area-ski-day-apres-profile-availability",
-          "v2-enrichment-006-madonna-di-campiglio-ski-area-snow-park-availability"
+          "v2-enrichment-001-folgarida-marilleva-ski-area-official-trail-map-url",
+          "inventory-p1-madonna-operator-identity",
+          "inventory-p1-madonna-current-operations"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -3248,8 +3343,9 @@
         "separate_operator"
       ],
       "evidence_refs": [
-        "v2-enrichment-008-pinzolo-ski-area-snow-park-availability",
-        "v2-enrichment-009-pinzolo-ski-area-snow-park-park-count"
+        "v2-enrichment-001-folgarida-marilleva-ski-area-official-trail-map-url",
+        "inventory-p1-pinzolo-operator-identity",
+        "inventory-p1-pinzolo-current-operations"
       ],
       "target_refs": [
         {
@@ -3269,10 +3365,34 @@
         "provider_consensus": "separate",
         "separation_value": "material",
         "evidence_refs": [
-          "v2-enrichment-008-pinzolo-ski-area-snow-park-availability",
-          "v2-enrichment-009-pinzolo-ski-area-snow-park-park-count"
+          "v2-enrichment-001-folgarida-marilleva-ski-area-official-trail-map-url",
+          "inventory-p1-pinzolo-operator-identity",
+          "inventory-p1-pinzolo-current-operations"
         ]
       },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "folgarida-marilleva-daolasa",
+      "candidate_name": "Daolasa",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-p1-daolasa-scope"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "folgarida-marilleva-daolasa"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official destination and accommodation inventory identifies Daolasa as a named village with lodging, while the prepared report conservatively leaves its representative accommodation elevation and character fields unresolved.",
+      "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
     {
@@ -3422,6 +3542,10 @@
       "source_urls": [
         "https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf",
         "https://www.ski.it/ski/documenti-file/pagine-di-dettaglio/pagine-istituzionali/folgarida-marilleva/Sostenibilit%C3%A0/bilancio-sostenibilita-24_FFM_web.pdf",
+        "https://www.ski.it/en/skiarea/folgarida-marilleva",
+        "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+        "https://www.ski.it/en/skiarea/pinzolo",
+        "https://www.ski.it/en/info-live/lift-status",
         "https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks",
         "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf"
       ],
@@ -3441,6 +3565,16 @@
       "candidate_kinds": [
         "stay_base",
         "ski_area"
+      ]
+    },
+    {
+      "family_id": "campiglio-daolasa-stay-boundary",
+      "source_kind": "destination_booking",
+      "source_urls": [
+        "https://www.visitvaldisole.it/en/commezzadura"
+      ],
+      "candidate_kinds": [
+        "stay_base"
       ]
     }
   ],
