@@ -869,6 +869,30 @@
     },
     {
       "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-alpin-card",
+      "field_path": "notes",
+      "before": [
+        "Official regional sources confirm Zell am See-Kaprun, Kitzsteinhorn, Maiskogel connection, Schmittenhoehe, and Brundl Sports at the Kitzsteinhorn/Alpincenter.",
+        "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory; exact future season end dates remain unresolved as of the 2026-06-23 curation.",
+        "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
+        "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
+        "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
+        "The official Ski ALPIN CARD page directly supports the 408 km and 121-lift pass-accessible aggregate."
+      ],
+      "after": [
+        "Official regional sources confirm Zell am See-Kaprun, Kitzsteinhorn, Maiskogel connection, Schmittenhoehe, and Brundl Sports at the Kitzsteinhorn/Alpincenter.",
+        "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory; exact future season end dates remain unresolved as of the 2026-06-23 curation.",
+        "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
+        "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
+        "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
+        "The official Ski ALPIN CARD page directly supports the 408 km and 121-lift pass-accessible aggregate.",
+        "The prices group keeps a representative adult Ski ALPIN CARD sample rather than the full tariff: Zell am See-Kaprun one-day and six-day examples for the winter-start/bonus and main-season date bands, plus the Saalbach three-day peak-season example; each published Winter 2026/27 date band is retained in its season label."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
       "target_id": "ski_areas:kitzsteinhorn",
       "field_path": "field_source_refs",
       "before": {
@@ -2888,7 +2912,8 @@
       "target_type": "trust_manifest",
       "target_id": "lift_pass_products:ski-alpin-card",
       "field_path": "notes",
-      "status": "reviewed-no-change"
+      "status": "changed",
+      "notes": "Added the price-group-specific normalization explanation required by the retained verified_with_adjustment status."
     }
   ],
   "evidence": [
@@ -3313,7 +3338,7 @@
         }
       ],
       "evidence_summary": "The official destination tariff page publishes representative Ski ALPIN CARD prices for the current modeled product.",
-      "normalization_note": null
+      "normalization_note": "Snowcast keeps a representative adult Ski ALPIN CARD sample rather than the full tariff: Zell am See-Kaprun one-day and six-day examples for the winter-start/bonus and main-season date bands, plus the Saalbach three-day peak-season example; each published Winter 2026/27 date band is retained in its season label."
     },
     {
       "evidence_id": "scope-saalbach-destination",
@@ -4012,7 +4037,7 @@
         "season_label": "Winter 2026/27 peak season"
       },
       "evidence_summary": "The official tariff supports the retained representative adult three-day Ski ALPIN CARD peak-season price.",
-      "normalization_note": null
+      "normalization_note": "Snowcast keeps a representative adult Ski ALPIN CARD sample rather than the full tariff: Zell am See-Kaprun one-day and six-day examples for the winter-start/bonus and main-season date bands, plus the Saalbach three-day peak-season example; each published Winter 2026/27 date band is retained in its season label."
     },
     {
       "evidence_id": "trust-envelope-kaprun-terrain-corroboration",
