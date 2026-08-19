@@ -207,6 +207,13 @@ Out of scope:
   wrong from a `regional_followup` that only expands correct coverage. A
   follow-up is recorded in the report and merged product backlog, receives a
   targeted handoff review, and cannot by itself make curation non-converging.
+- Applies a diff-causality gate to linked dependencies. The exact base-to-head
+  diff must create, remove, or change the linked relationship, or change a
+  selected node's meaning so an unchanged relationship becomes semantically
+  invalid, before that dependency can block. Unchanged pre-existing graph debt
+  does not become graph-blocking merely because a review discovers it through
+  a pass, domain, access, or weather link; it becomes a source-backed regional
+  follow-up owned by a separate bounded slice.
 - Runs catalog validation and exact reconciliation as the two-command delta
   validation checkpoint after each mechanically valid remediation, then performs one
   fresh bounded semantic review. It reserves the broad catalog suite and full
@@ -549,6 +556,17 @@ prepare -> provisional evidence envelope -> dual inventory
    when its omission cannot misstate the selected graph; uncertainty that could
    invalidate ownership or an edge follows manual-check, owner-decision, or
    review-incomplete instead of being silently downgraded.
+
+   For a `linked_pr_dependency`, reviewers must additionally apply the
+   diff-causality gate against the exact base-to-head diff. The dependency is
+   blocking only when the selected PR creates, removes, or changes its pass,
+   domain, access, ownership, or weather relationship, or changes a selected
+   node's meaning so an unchanged relationship becomes semantically invalid.
+   An existing relationship and its unchanged pre-existing graph debt do not
+   become graph-blocking merely because they are discovered during review.
+   Record them as a source-backed `regional_followup` with the owning scope and
+   canonical backlog reference. Discovery evidence alone never establishes
+   selected-PR causality.
 
    For an operations-ownership gap, the envelope and any completion pass inspect
    the full bounded official publication neighborhood: destination or resort

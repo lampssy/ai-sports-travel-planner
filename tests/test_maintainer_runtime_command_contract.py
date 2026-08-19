@@ -851,6 +851,23 @@ def test_convergence_contract_tolerates_residuals_and_two_exact_repeats() -> Non
     )
 
 
+def test_linked_dependency_blocking_requires_selected_diff_causality() -> None:
+    sources = {
+        "activation": ACTIVATION_PATH,
+        "design": DESIGN_PATH,
+        "engineering_notes": ENGINEERING_NOTES_PATH,
+    }
+
+    for source, path in sources.items():
+        text = " ".join(path.read_text(encoding="utf-8").split()).lower()
+        assert "exact base-to-head diff" in text, source
+        assert "create, remove, or change" in text, source
+        assert "semantically invalid" in text, source
+        assert "unchanged pre-existing graph debt" in text, source
+        assert "does not become graph-blocking merely because" in text, source
+        assert "regional follow-up" in text, source
+
+
 def test_runtime_helper_does_not_own_semantic_convergence() -> None:
     contract = " ".join(CONTRACT_PATH.read_text(encoding="utf-8").split()).lower()
 

@@ -1407,6 +1407,15 @@ published against the selected PR. A dependency-only entity retained in
 inventory but cannot own changes or force its destination into the canonical
 Resulting Graph.
 
+Linked-dependency blocking is diff-causal. The exact base-to-head diff must
+create, remove, or change the dependency relationship, or change a selected
+node's meaning so an unchanged relationship becomes semantically invalid.
+Unchanged pre-existing graph debt does not become graph-blocking merely because
+review discovers it through a pass, domain, access, or weather link. It remains
+a source-backed regional follow-up owned by a separate bounded slice. This
+keeps broad graph discovery without making a local enrichment PR responsible
+for unrelated catalog debt.
+
 When curation changes ranking or fit inputs, include ranking-impact notes and
 run the Search V4 factor-readiness audit plus affected golden scenarios.
 

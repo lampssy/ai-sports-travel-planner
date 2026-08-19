@@ -386,6 +386,15 @@ The installed skill must:
   graph correctness boundary sends additive coverage to the report and merged
   backlog, where it receives a targeted
   handoff review without causing non-convergence;
+- apply a diff-causality gate before a `linked_pr_dependency` can be
+  `graph_blocking`. The exact base-to-head diff must create, remove, or change a
+  relationship to the dependency, or change a selected node's meaning so an
+  unchanged relationship becomes semantically invalid. An unchanged
+  pre-existing graph debt does not become graph-blocking merely because review
+  discovers it through a pass, domain, access, or weather link. Record that
+  debt as a source-backed `regional_followup` with its owning scope and
+  canonical backlog reference. The selected PR remains responsible for any
+  unsupported cross-scope assertion that it introduces or makes newly false;
 - collect any post-freeze additive candidates into one report/rendered-report/
   backlog patch, run delta validation, and use a targeted independent handoff
   review to confirm that the resulting graph did not change;
