@@ -1251,6 +1251,110 @@
       "source_value": "cortina-dampezzo",
       "evidence_summary": "The official accommodation collection exposes lodging presentations in Pocol and Zuel and describes Ciasa Vervei in the Passo Falzarego area overlooking the Pocol-Socrepes slopes.",
       "normalization_note": "These are candidate stay-base signals only; complete base fields and approved child-area access edges remain deferred to the owner-completion backlog."
+    },
+    {
+      "evidence_id": "inventory-cortina-faloria-member",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/EN/s7-faloria-spa",
+      "source_title": "Faloria S.p.A. consortium member presentation",
+      "source_value": "cortina-dampezzo-ski-area",
+      "evidence_summary": "The consortium member presentation identifies Faloria S.p.A. as the operator presentation for the Faloria side of the Cortina inventory.",
+      "normalization_note": "The direct request can encounter bot verification; the exact official URL and current indexed official content are retained for manual review."
+    },
+    {
+      "evidence_id": "inventory-cortina-faloria-weather",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://faloriacristallo.it/en/weather-winter/",
+      "source_title": "Faloria-Cristallo official winter weather",
+      "source_value": "cortina-dampezzo-ski-area",
+      "evidence_summary": "The operator site publishes a Faloria-Cristallo winter weather, fresh-snow, snow-depth, temperature, wind, and avalanche-information presentation.",
+      "normalization_note": "This establishes a candidate-scoped weather source but does not authorize re-keying the retained umbrella weather owner."
+    },
+    {
+      "evidence_id": "inventory-cortina-ista-member",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/EN/s5-ista-spa",
+      "source_title": "ISTA S.p.A. consortium member presentation",
+      "source_value": "cortina-dampezzo-ski-area",
+      "evidence_summary": "The official member page assigns Socrepes, Pocol, Tofana, and Falzarego lift management to ISTA S.p.A.",
+      "normalization_note": "The operator scope overlaps the Tofane presentation and remains a candidate boundary signal."
+    },
+    {
+      "evidence_id": "inventory-cortina-freccia-operations-weather",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.freccianelcielo.com/en/what-to-do-in-winter/",
+      "source_title": "Tofana Freccia nel Cielo winter operations",
+      "source_value": "cortina-dampezzo-ski-area",
+      "evidence_summary": "The operator publishes its own Tofana winter season, live lift-and-slope status, bus access, and linked webcam/weather presentation.",
+      "normalization_note": "This is candidate-scoped operating evidence for the Freccia presentation, not evidence that all Tofane sectors share one operator."
+    },
+    {
+      "evidence_id": "inventory-cortina-lagazuoi-member",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/EN/s11-lagazuoi-spa",
+      "source_title": "Lagazuoi S.p.A. consortium member presentation",
+      "source_value": "cortina-dampezzo-ski-area",
+      "evidence_summary": "The official member page assigns the Passo Falzarego-to-Lagazuoi cable car and its winter descents to Lagazuoi S.p.A.",
+      "normalization_note": "This direct owner evidence must be reconciled to the already existing lagazuoi-ski-area catalog node."
+    },
+    {
+      "evidence_id": "inventory-cortina-current-lift-groups",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.dolomitisuperski.com/en/widgets/cortina-d-ampezzo/lifts",
+      "source_title": "Dolomiti Superski current Cortina lift groups",
+      "source_value": "cortina-dampezzo-ski-area",
+      "evidence_summary": "The current official lift-status inventory groups live facilities under Falzarego-Lagazuoi, 5 Torri, Tofana, Faloria, and Cristallo presentations.",
+      "normalization_note": "Current grouped operations narrow the candidate inventory; they do not independently settle weather or pass ownership."
+    },
+    {
+      "evidence_id": "inventory-cortina-pocol-field-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://cortina.dolomiti.org/it/dove-dormire/hotel-tofana-cortina/",
+      "source_title": "Cortina official Hotel Tofana Pocol listing",
+      "source_value": "cortina-dampezzo",
+      "evidence_summary": "A second official Pocol lodging record gives Località Pocol 40, 70 rooms, 140 beds, direct slope positioning, skibus service, and substantial hotel amenities alongside the existing Villa Argentina record at Località Pocol 44.",
+      "normalization_note": "The bounded two-property search establishes lodging breadth, address, service, and qualitative access signals; it does not supply a canonical locality centroid, elevation, or complete deterministic base-character policy."
+    },
+    {
+      "evidence_id": "inventory-cortina-access-provenance-search",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/EN/news208-preolympic-mobility",
+      "source_title": "Cortina Skiworld pre-Olympic mobility and access notice",
+      "source_value": "cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area",
+      "evidence_summary": "The current official notice provides named ski-bus lines and stops for Freccia, Faloria, Socrepes, Piè Tofana, and Son dei Prade while separately naming open Pocol, Cinque Torri, Col Gallina, and Lagazuoi areas.",
+      "normalization_note": "Together with the official ski map and lodging records, the bounded search supports qualitative access modes but no exact town centroid, child lift endpoint coordinates, route length, or Haversine calculation; exact geometry remains unavailable."
     }
   ],
   "destination_boundary_assessments": [
@@ -1314,7 +1418,9 @@
     "Pocol and its direct access are deferred behind the Tofane owner decision rather than added as an incomplete graph.",
     "The bounded inventory pass found official Zuel and Passo Falzarego lodging presentations but not complete stay-base fields or independently supported child-area access geometry, so both remain explicit regional follow-ups.",
     "The current tariff inventory exposes Olympic-season variants and resort-local ticket sales, but does not prove that three existing local-pass IDs are duplicate destination-scoped copies of the single Valle Skipass product.",
-    "Current consortium evidence establishes named operator and Cortina Skiworld presentations; weather ownership and the durable umbrella-versus-child mapping remain unresolved."
+    "Current consortium evidence establishes named operator and Cortina Skiworld presentations; candidate-scoped Faloria and Freccia weather sources now exist, while weather ownership for ISTA, Averau, Col Gallina, and Lagazuoi and the durable umbrella-versus-child mapping remain unresolved after the bounded official-source search.",
+    "Two official Pocol lodging records establish locality addresses, 148 rooms, 310 beds, substantial services, and qualitative ski-in/ski-out or direct-slope access; no source in the bounded search supplies a canonical locality centroid, locality elevation, deterministic base-character policy, exact child lift endpoint, or reproducible route calculation.",
+    "The official current map and mobility notice establish qualitative Cortina access by lift, ski bus, and on-ski connections, but exact town and child endpoint coordinates, distances, durations, and directness calculations remain unavailable and must not be inferred."
   ],
   "report_schema_version": 3,
   "entity_scope_assessments": [
@@ -1376,6 +1482,7 @@
       "evidence_refs": [
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
+        "inventory-cortina-current-lift-groups",
         "v2-scope-002-cortina-area-inventory"
       ],
       "target_refs": [],
@@ -1407,9 +1514,11 @@
         "child_scoped_terrain_metrics"
       ],
       "evidence_refs": [
-        "inventory-cortina-averau-operations",
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
+        "inventory-cortina-current-lift-groups",
+        "inventory-cortina-faloria-member",
+        "inventory-cortina-faloria-weather",
         "v2-scope-002-cortina-area-inventory",
         "v2-scope-003-cortina-operator-inventory"
       ],
@@ -1443,9 +1552,11 @@
         "child_scoped_terrain_metrics"
       ],
       "evidence_refs": [
-        "inventory-cortina-averau-operations",
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
+        "inventory-cortina-current-lift-groups",
+        "inventory-cortina-freccia-operations-weather",
+        "inventory-cortina-ista-member",
         "v2-scope-002-cortina-area-inventory",
         "v2-scope-003-cortina-operator-inventory"
       ],
@@ -1483,6 +1594,8 @@
         "inventory-cortina-averau-operations",
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
+        "inventory-cortina-current-lift-groups",
+        "inventory-cortina-lagazuoi-member",
         "v2-scope-002-cortina-area-inventory",
         "v2-scope-003-cortina-operator-inventory"
       ],
@@ -1515,9 +1628,9 @@
         "official_map_sector"
       ],
       "evidence_refs": [
-        "inventory-cortina-averau-operations",
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
+        "inventory-cortina-ista-member",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1548,9 +1661,9 @@
         "official_map_sector"
       ],
       "evidence_refs": [
-        "inventory-cortina-averau-operations",
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
+        "inventory-cortina-freccia-operations-weather",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1584,6 +1697,7 @@
         "inventory-cortina-averau-operations",
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
+        "inventory-cortina-current-lift-groups",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1614,9 +1728,9 @@
         "official_map_sector"
       ],
       "evidence_refs": [
-        "inventory-cortina-averau-operations",
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
+        "inventory-cortina-current-lift-groups",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1647,9 +1761,10 @@
         "official_map_sector"
       ],
       "evidence_refs": [
-        "inventory-cortina-averau-operations",
         "inventory-cortina-consortium-members",
         "inventory-cortina-consortium-scope",
+        "inventory-cortina-current-lift-groups",
+        "inventory-cortina-lagazuoi-member",
         "v2-scope-003-cortina-operator-inventory"
       ],
       "target_refs": [],
@@ -1680,6 +1795,7 @@
         "direct_access_relationship"
       ],
       "evidence_refs": [
+        "inventory-cortina-access-provenance-search",
         "v2-scope-006-cortina-current-access"
       ],
       "target_refs": [],
@@ -1698,6 +1814,7 @@
         "direct_access_relationship"
       ],
       "evidence_refs": [
+        "inventory-cortina-access-provenance-search",
         "v2-scope-006-cortina-current-access"
       ],
       "target_refs": [],
@@ -1716,6 +1833,7 @@
         "direct_access_relationship"
       ],
       "evidence_refs": [
+        "inventory-cortina-access-provenance-search",
         "v2-scope-006-cortina-current-access"
       ],
       "target_refs": [],
@@ -1734,6 +1852,7 @@
         "direct_access_relationship"
       ],
       "evidence_refs": [
+        "inventory-cortina-access-provenance-search",
         "v2-scope-006-cortina-current-access"
       ],
       "target_refs": [],
@@ -1753,6 +1872,7 @@
       ],
       "evidence_refs": [
         "inventory-cortina-accommodation-neighborhood",
+        "inventory-cortina-pocol-field-search",
         "v2-scope-007-pocol-lodging-access"
       ],
       "target_refs": [],
@@ -1771,6 +1891,8 @@
         "distinct_access"
       ],
       "evidence_refs": [
+        "inventory-cortina-access-provenance-search",
+        "inventory-cortina-pocol-field-search",
         "v2-scope-007-pocol-lodging-access"
       ],
       "target_refs": [],
@@ -1849,6 +1971,8 @@
         "distinct_access"
       ],
       "evidence_refs": [
+        "inventory-cortina-access-provenance-search",
+        "inventory-cortina-pocol-field-search",
         "v2-scope-007-pocol-lodging-access"
       ],
       "target_refs": [],
@@ -1984,7 +2108,8 @@
         "https://cortina.dolomiti.org/en/winter/alpine-lifestyle/",
         "https://cortina.dolomiti.org/wp-content/uploads/2024/09/Cortina-Official-Guide_EN.pdf",
         "https://cortina.dolomiti.org/en/dove-dormire/hotel-villa-argentina-en/",
-        "https://cortina.dolomiti.org/en/winter/plan/accommodation/?filtro=hotel-en"
+        "https://cortina.dolomiti.org/en/winter/plan/accommodation/?filtro=hotel-en",
+        "https://cortina.dolomiti.org/it/dove-dormire/hotel-tofana-cortina/"
       ],
       "candidate_kinds": [
         "stay_destination",
@@ -2000,7 +2125,13 @@
         "https://cortina.dolomiti.org/wp-content/uploads/2025/12/Cortina_Skimap_2025-2026_web.pdf",
         "https://skipasscortina.com/EN/companies.php",
         "https://skipasscortina.com/EN/page8-the-consortium",
-        "https://skipasscortina.com/EN/s10-impianti-averau-srl"
+        "https://skipasscortina.com/EN/s10-impianti-averau-srl",
+        "https://skipasscortina.com/EN/s7-faloria-spa",
+        "https://faloriacristallo.it/en/weather-winter/",
+        "https://skipasscortina.com/EN/s5-ista-spa",
+        "https://www.freccianelcielo.com/en/what-to-do-in-winter/",
+        "https://skipasscortina.com/EN/s11-lagazuoi-spa",
+        "https://www.dolomitisuperski.com/en/widgets/cortina-d-ampezzo/lifts"
       ],
       "candidate_kinds": [
         "ski_area",
@@ -2027,7 +2158,9 @@
         "https://cortina.dolomiti.org/en/winter/plan/lifts/",
         "https://cortina.dolomiti.org/en/dove-dormire/hotel-villa-argentina-en/",
         "https://cortina.dolomiti.org/wp-content/uploads/2025/12/Cortina_Skimap_2025-2026_web.pdf",
-        "https://cortina.dolomiti.org/en/winter/plan/accommodation/?filtro=hotel-en"
+        "https://cortina.dolomiti.org/en/winter/plan/accommodation/?filtro=hotel-en",
+        "https://cortina.dolomiti.org/it/dove-dormire/hotel-tofana-cortina/",
+        "https://skipasscortina.com/EN/news208-preolympic-mobility"
       ],
       "candidate_kinds": [
         "stay_base",
