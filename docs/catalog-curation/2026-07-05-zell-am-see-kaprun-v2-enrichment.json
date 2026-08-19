@@ -300,7 +300,7 @@
         "base_type",
         "regional_data_ids"
       ],
-      "resulting_graph_role": "focus"
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "stay_base",
@@ -316,7 +316,7 @@
         "base_type",
         "regional_data_ids"
       ],
-      "resulting_graph_role": "focus"
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area",
@@ -335,7 +335,7 @@
         "total_piste_km",
         "total_lift_count"
       ],
-      "resulting_graph_role": "focus"
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area_access",
@@ -354,7 +354,7 @@
         "regional_data_ids",
         "source_urls"
       ],
-      "resulting_graph_role": "focus"
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "ski_area_access",
@@ -373,7 +373,7 @@
         "regional_data_ids",
         "source_urls"
       ],
-      "resulting_graph_role": "focus"
+      "resulting_graph_role": "linked_dependency"
     },
     {
       "target_type": "lift_pass_product",
@@ -406,7 +406,7 @@
       "after": [
         "zell-am-see-kaprun"
       ],
-      "trust_status": "verified",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
     {
@@ -415,7 +415,7 @@
       "field_path": "default_for_stay_destination_ids",
       "before": null,
       "after": [],
-      "trust_status": "verified",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
     {
@@ -424,7 +424,7 @@
       "field_path": "lift_pass_product_id",
       "before": null,
       "after": "kitzsteinhorn-local-ski-pass",
-      "trust_status": "verified",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -433,7 +433,7 @@
       "field_path": "name",
       "before": null,
       "after": "Kitzsteinhorn Local Ski Pass",
-      "trust_status": "verified",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -505,7 +505,7 @@
       "field_path": "validity_scope",
       "before": null,
       "after": "single_ski_area",
-      "trust_status": "verified",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
     {
@@ -527,7 +527,7 @@
           "status": "planned"
         }
       ],
-      "trust_status": "verified",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
     {
@@ -746,7 +746,7 @@
       "before": null,
       "after": {
         "coverage": "verified",
-        "identity_scope_availability": "verified",
+        "identity_scope_availability": "verified_with_adjustment",
         "pass_accessible_terrain": "needs_source",
         "prices": "verified"
       },
@@ -3565,7 +3565,12 @@
     },
     {
       "evidence_id": "inventory-kitzsteinhorn-seasonal-pass-presentations",
-      "boundary_target_ids": [],
+      "boundary_target_ids": [
+        "junior-xplore-card",
+        "kitzsteinhorn",
+        "kitzsteinhorn-fall-ski-pass",
+        "kitzsteinhorn-summer-ski-pass"
+      ],
       "target_type": "lift_pass_product",
       "target_id": "ski-alpin-card",
       "field_path": "prices",
@@ -3600,7 +3605,13 @@
     {
       "evidence_id": "inventory-kaprun-local-and-superskicard-tariffs",
       "boundary_target_ids": [
-        "lechnerberg"
+        "kitzsteinhorn",
+        "lechnerberg",
+        "lechnerberg-10-ride-ticket",
+        "lechnerberg-single-ride-ticket",
+        "maiskogel-day-pass",
+        "superskicard",
+        "superskicard-10-day-flexible"
       ],
       "target_type": "lift_pass_product",
       "target_id": "ski-alpin-card",
@@ -3930,6 +3941,93 @@
       "source_value": "No dedicated Lechnerberg weather geometry",
       "evidence_summary": "The operator weather presentation lacks a reproducible Lechnerberg sampling point and lift-served range.",
       "normalization_note": "This supports the deferred weather prerequisite attached to the separate candidate."
+    },
+    {
+      "evidence_id": "trust-envelope-kaprun-winter-release",
+      "boundary_target_ids": [
+        "kitzsteinhorn",
+        "kitzsteinhorn-maiskogel",
+        "maiskogel"
+      ],
+      "target_type": "terrain_domain",
+      "target_id": "kitzsteinhorn-maiskogel",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
+      "source_title": "Kitzsteinhorn and Maiskogel official winter 2025/26 release",
+      "source_value": "Connected Kitzsteinhorn-Maiskogel winter terrain presentation",
+      "evidence_summary": "The official winter release is retained as verification-capable evidence for the connected Kitzsteinhorn-Maiskogel terrain and the trust groups that cite it.",
+      "normalization_note": "The report keeps child-area facts and aggregate-domain corroboration at their separate catalog owners."
+    },
+    {
+      "evidence_id": "trust-envelope-zell-am-see-osm-relation",
+      "boundary_target_ids": [
+        "zell-am-see-kaprun-zell-am-see"
+      ],
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945962",
+      "source_title": "OpenStreetMap relation 945962",
+      "source_value": {
+        "osm_relation_id": "945962"
+      },
+      "evidence_summary": "The live OpenStreetMap relation identifies the retained Zell am See settlement relation used by the stay-base trust record.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "trust-envelope-kaprun-osm-relation",
+      "boundary_target_ids": [
+        "zell-am-see-kaprun-kaprun"
+      ],
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945977",
+      "source_title": "OpenStreetMap relation 945977",
+      "source_value": {
+        "osm_relation_id": "945977"
+      },
+      "evidence_summary": "The live OpenStreetMap relation identifies the retained Kaprun settlement relation used by the stay-base trust record.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "trust-envelope-saalbach-peak-tariff",
+      "boundary_target_ids": [
+        "ski-alpin-card"
+      ],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-alpin-card",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season",
+      "source_title": "Saalbach official peak-season tariff",
+      "source_value": {
+        "audience": "adult",
+        "duration_days": 3,
+        "amount": 240.0,
+        "currency": "EUR",
+        "season_label": "Winter 2026/27 peak season"
+      },
+      "evidence_summary": "The official tariff supports the retained representative adult three-day Ski ALPIN CARD peak-season price.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "trust-envelope-kaprun-terrain-corroboration",
+      "boundary_target_ids": [
+        "kitzsteinhorn-maiskogel"
+      ],
+      "target_type": "terrain_domain",
+      "target_id": "kitzsteinhorn-maiskogel",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/kitzsteinhorn-maiskogel-kaprun/slope-offering/",
+      "source_title": "Skiresort.info Kitzsteinhorn-Maiskogel slope offering",
+      "source_value": "Aggregate Kitzsteinhorn-Maiskogel piste split corroboration",
+      "evidence_summary": "The reviewed specialist page corroborates the aggregate terrain-domain difficulty split retained in the trust record.",
+      "normalization_note": "This source is corroboration for the aggregate domain and is not promoted to primary official truth."
     }
   ],
   "destination_boundary_assessments": [
@@ -4096,8 +4194,8 @@
     "Lechnerberg is a confirmed separate beginner area and central-Kaprun access candidate, but it remains deferred because exact required elevation and season fields are unpublished under the current SkiArea contract.",
     "Kaprun and Zell am See base elevations remain unset because the former exact document is unavailable and the latter source is only a regional valley proxy.",
     "The broad Ski ALPIN CARD map is not treated as an exact Kitzsteinhorn-Maiskogel domain-owned document.",
-    "The operator directory and candidate-scoped lift schedules establish independent operations-owner categories for Saalbach/Hinterglemm, Leogang and Fieberbrunn; complete connected-terrain boundaries, weather ownership and the remaining connected-domain graph stay unresolved in the consolidated handoff.",
-    "The tariff now explicitly inventories Maiskogel Day Pass, consecutive-day SuperSkiCard, SuperSkiCard 10-Day Flexible, and the two Lechnerberg ride entitlements, but this report-only pass cannot add their required deferred assessments because the canonical Zell/Kaprun backlog item lacks their exact candidate markers; ordinary remediation must add those markers before typed deferral."
+    "The operator directory and candidate-scoped lift schedules establish independent operations-owner categories for Saalbach/Hinterglemm, Leogang and Fieberbrunn; complete connected-terrain boundaries, weather ownership and the remaining connected-domain graph stay unresolved in the consolidated handoff. This unchanged pre-existing debt is a linked regional follow-up rather than part of the selected resulting graph.",
+    "Maiskogel Day Pass, consecutive-day SuperSkiCard, SuperSkiCard 10-Day Flexible, and the two Lechnerberg ride entitlements are preserved as typed deferred regional follow-ups under the consolidated Zell am See-Kaprun backlog item."
   ],
   "report_schema_version": 3,
   "entity_scope_assessments": [
@@ -4136,7 +4234,8 @@
       ],
       "evidence_refs": [
         "v2-enrichment-009-zell-am-see-kaprun-kaprun-base-character-development-style",
-        "scope-zell-kitz-connection"
+        "scope-zell-kitz-connection",
+        "trust-envelope-kaprun-osm-relation"
       ],
       "target_refs": [
         {
@@ -4160,7 +4259,8 @@
       ],
       "evidence_refs": [
         "v2-enrichment-014-zell-am-see-kaprun-zell-am-see-base-character-development-style",
-        "scope-zell-access-schmitten"
+        "scope-zell-access-schmitten",
+        "trust-envelope-zell-am-see-osm-relation"
       ],
       "target_refs": [
         {
@@ -4182,12 +4282,14 @@
         "distinct_elevation_or_season",
         "independent_status_or_schedule",
         "independent_weather_presentation",
+        "full_local_pass",
         "official_independent_identity",
         "separate_operator"
       ],
       "evidence_refs": [
         "boundary-kitzsteinhorn-live-status",
         "boundary-kitzsteinhorn-weather-presentation",
+        "inventory-kitzsteinhorn-seasonal-pass-presentations",
         "scope-zell-kitz-connection",
         "v2-enrichment-001-kitzsteinhorn-glacier-terrain-availability"
       ],
@@ -4205,12 +4307,13 @@
         "connectivity_to_parent": "not_applicable",
         "operational_scope": "independent",
         "weather_scope": "independent",
-        "pass_scope": "shared_only",
+        "pass_scope": "full_local",
         "provider_consensus": "separate",
         "separation_value": "material",
         "evidence_refs": [
           "boundary-kitzsteinhorn-live-status",
           "boundary-kitzsteinhorn-weather-presentation",
+          "inventory-kitzsteinhorn-seasonal-pass-presentations",
           "scope-zell-kitz-connection",
           "v2-enrichment-001-kitzsteinhorn-glacier-terrain-availability"
         ]
@@ -4313,7 +4416,9 @@
         "distinct_access"
       ],
       "evidence_refs": [
-        "scope-zell-kitz-connection"
+        "scope-zell-kitz-connection",
+        "trust-envelope-kaprun-terrain-corroboration",
+        "trust-envelope-kaprun-winter-release"
       ],
       "target_refs": [
         {
@@ -4407,7 +4512,8 @@
       ],
       "evidence_refs": [
         "scope-zell-pass-identity",
-        "scope-zell-pass-tariff"
+        "scope-zell-pass-tariff",
+        "trust-envelope-saalbach-peak-tariff"
       ],
       "target_refs": [
         {
@@ -4510,7 +4616,7 @@
       ],
       "target_refs": [],
       "backlog_ref": "docs/product-backlog.md#skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
-      "rationale": "The lift-company directory and candidate-scoped schedules establish a distinct Saalbach/Hinterglemm operations-owner category. The retained catalog node remains unresolved because the reviewed sources do not yet establish its complete connected-terrain boundary or a second owner category independently of the whole Skicircus.",
+      "rationale": "The lift-company directory and candidate-scoped schedules establish a distinct Saalbach/Hinterglemm operations-owner category. The retained catalog node remains unresolved because the reviewed sources do not yet establish its complete connected-terrain boundary or a second owner category independently of the whole Skicircus. The exact base-to-head diff does not change this pre-existing node or its relationships, so the unresolved owner boundary is retained as regional follow-up rather than claimed as part of the selected resulting graph.",
       "ski_area_boundary": {
         "parent_ski_area_id": null,
         "terrain_scope": "unresolved",
@@ -4527,7 +4633,7 @@
           "scope-saalbach-live"
         ]
       },
-      "graph_impact": "graph_blocking"
+      "graph_impact": "regional_followup"
     },
     {
       "candidate_id": "saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
@@ -4682,6 +4788,94 @@
       "rationale": "The official tariff publishes exact Kitzsteinhorn-only summer and fall validity windows, represented together by one local single-area product.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "maiskogel-day-pass",
+      "candidate_name": "Maiskogel Day Pass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity",
+        "limited_area_ticket"
+      ],
+      "evidence_refs": [
+        "inventory-kaprun-local-and-superskicard-tariffs"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#zell-am-see-kaprun-linked-area-and-pass-extensions",
+      "rationale": "The official tariff presents a distinct Maiskogel day ticket. Complete dated validity, exact area coverage, and availability ownership remain in the consolidated Zell am See-Kaprun pass-extension slice.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "superskicard",
+      "candidate_name": "SuperSkiCard consecutive-day products",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "inventory-kaprun-local-and-superskicard-tariffs"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#zell-am-see-kaprun-linked-area-and-pass-extensions",
+      "rationale": "The official tariff presents consecutive-day SuperSkiCard products. Their complete regional-network coverage, dated validity, and availability ownership require the bounded pass-extension slice.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "superskicard-10-day-flexible",
+      "candidate_name": "SuperSkiCard 10-Day Flexible",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "inventory-kaprun-local-and-superskicard-tariffs"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#zell-am-see-kaprun-linked-area-and-pass-extensions",
+      "rationale": "The official tariff separately presents a non-consecutive 10-day flexible SuperSkiCard. Complete regional-network coverage, dated validity, and availability ownership require the bounded pass-extension slice.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "lechnerberg-single-ride-ticket",
+      "candidate_name": "Lechnerberg single-ride ticket",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity",
+        "limited_area_ticket"
+      ],
+      "evidence_refs": [
+        "inventory-kaprun-local-and-superskicard-tariffs"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#zell-am-see-kaprun-linked-area-and-pass-extensions",
+      "rationale": "The official tariff lists a Lechnerberg single-ride entitlement. Its exact coverage and availability depend on the deferred complete Lechnerberg area and access graph.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "lechnerberg-10-ride-ticket",
+      "candidate_name": "Lechnerberg 10-ride ticket",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity",
+        "limited_area_ticket"
+      ],
+      "evidence_refs": [
+        "inventory-kaprun-local-and-superskicard-tariffs"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#zell-am-see-kaprun-linked-area-and-pass-extensions",
+      "rationale": "The official tariff lists a Lechnerberg 10-ride entitlement. Its exact coverage and availability depend on the deferred complete Lechnerberg area and access graph.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
     },
     {
       "candidate_id": "365-action-alpin-card",
@@ -5011,6 +5205,8 @@
       "source_urls": [
         "https://www.kitzsteinhorn.at/en/service/backstage/press/k-onnected-kaprun---maiskogel---kitzsteinhorn-pr9393",
         "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
+        "https://www.skiresort.info/ski-resort/kitzsteinhorn-maiskogel-kaprun/slope-offering/",
         "https://www.zellamsee-kaprun.com/en/sport/winter/skimap"
       ],
       "candidate_kinds": [
@@ -5023,6 +5219,8 @@
       "family_id": "zell-access-and-endpoints",
       "source_kind": "access_transport",
       "source_urls": [
+        "https://www.openstreetmap.org/relation/945962",
+        "https://www.openstreetmap.org/relation/945977",
         "https://www.openstreetmap.org/way/158348741",
         "https://www.openstreetmap.org/way/197183389",
         "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
@@ -5037,6 +5235,7 @@
       "source_kind": "pass_tariff",
       "source_urls": [
         "https://www.alpincard.at/en/ski-alpin-card.html",
+        "https://www.saalbach.com/en/winter/skitickets/peak-season",
         "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
       ],
       "candidate_kinds": [

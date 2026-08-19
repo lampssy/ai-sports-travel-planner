@@ -496,6 +496,14 @@ Next bounded slice:
   `lift_pass_product:365-classic-alpin-card`, and
   `lift_pass_product:superskicard-premium` as complete dated products with
   exact coverage, tariff, and availability ownership.
+- Resolve the separately inventoried tariff presentations for
+  `lift_pass_product:maiskogel-day-pass`,
+  `lift_pass_product:superskicard`,
+  `lift_pass_product:superskicard-10-day-flexible`,
+  `lift_pass_product:lechnerberg-single-ride-ticket`, and
+  `lift_pass_product:lechnerberg-10-ride-ticket` with complete coverage,
+  dated validity, and availability ownership; the Lechnerberg entitlements
+  must land only with the complete deferred area and access graph.
 
 Why it matters:
 
@@ -509,6 +517,10 @@ Why it matters:
 - The three named annual or wider-network products have concrete identities and
   tariffs. They should not be collapsed into Ski ALPIN CARD or treated as
   generic external context.
+- The Maiskogel, SuperSkiCard, and Lechnerberg tariff presentations are concrete
+  candidates rather than generic price-table rows. They remain deferred because
+  their complete area or regional-network ownership is outside this bounded
+  curation slice, not because of the tariff's ambiguous date typography.
 
 Prerequisites:
 

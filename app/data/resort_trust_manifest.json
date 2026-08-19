@@ -12456,7 +12456,7 @@
       "kitzsteinhorn-local-ski-pass": {
         "display_name": "Kitzsteinhorn Local Ski Pass",
         "field_statuses": {
-          "identity_scope_availability": "verified",
+          "identity_scope_availability": "verified_with_adjustment",
           "coverage": "verified",
           "prices": "verified",
           "pass_accessible_terrain": "needs_source"
