@@ -2,30 +2,112 @@
 
 Reviews the three connected Campiglio ski areas, their six accommodation bases, and the shared terrain domain against official operator and destination sources.
 
+## Resulting Graph
+
+```mermaid
+flowchart LR
+  region_1["Trip market<br/>Campiglio Dolomiti di Brenta"]
+  destination_1["Stay destination<br/>Folgarida-Marilleva"]
+  destination_2["Stay destination<br/>Madonna di Campiglio"]
+  destination_3["Stay destination<br/>Pinzolo"]
+  base_1["Stay base<br/>Daolasa"]
+  base_2["Stay base<br/>Folgarida"]
+  base_3["Stay base<br/>Marilleva 1400"]
+  base_4["Stay base<br/>Marilleva 900"]
+  base_5["Stay base<br/>Madonna di Campiglio"]
+  base_6["Stay base<br/>Pinzolo"]
+  area_1["Ski area<br/>Folgarida-Marilleva"]
+  area_2["Ski area<br/>Madonna di Campiglio"]
+  area_3["Ski area<br/>Pinzolo"]
+  domain_1["Terrain domain<br/>Campiglio Dolomiti di Brenta"]
+  pass_1["Lift pass<br/>Campiglio Dolomiti di Brenta Skiarea Skipass"]
+  pass_2["Lift pass<br/>Folgarida Marilleva Skipass"]
+  pass_3["Lift pass<br/>Pinzolo Skipass"]
+  region_1 -->|"trip market"| destination_1
+  region_1 -->|"trip market"| destination_2
+  region_1 -->|"trip market"| destination_3
+  destination_1 -->|"stay base"| base_1
+  destination_1 -->|"stay base"| base_2
+  destination_1 -->|"stay base"| base_3
+  destination_1 -->|"stay base"| base_4
+  destination_2 -->|"stay base"| base_5
+  destination_3 -->|"stay base"| base_6
+  base_1 -->|"access: walk via Daolasa, 285 m"| area_1
+  base_2 -->|"access: walk via Folgarida, 516 m"| area_1
+  base_3 -->|"access: walk via Marilleva, 172 m"| area_1
+  base_4 -->|"access: walk via Contrè, 47 m"| area_1
+  base_5 -->|"access: walk via Spinale Express, 243 m"| area_2
+  base_6 -->|"access: walk via Funivia Pinzolo - Pra Rodont, 206 m"| area_3
+  domain_1 -->|"contains"| area_1
+  domain_1 -->|"contains"| area_2
+  domain_1 -->|"contains"| area_3
+  destination_1 -->|"default pass"| pass_1
+  destination_2 -->|"default pass"| pass_1
+  destination_3 -->|"default pass"| pass_1
+  pass_1 -->|"covers area"| area_1
+  pass_1 -->|"covers area"| area_2
+  pass_1 -->|"covers area"| area_3
+  pass_1 -->|"covers terrain domain"| domain_1
+  destination_1 -->|"pass available"| pass_2
+  pass_2 -->|"covers area"| area_1
+  destination_3 -->|"pass available"| pass_3
+  pass_3 -->|"covers area"| area_3
+```
+
 ## Reviewed Targets
 
-| Target | Scope | Required Fields |
-| --- | --- | --- |
-| `ski_area:folgarida-marilleva-ski-area` | `narrow` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label` |
-| `ski_area:madonna-di-campiglio-ski-area` | `narrow` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label` |
-| `ski_area:pinzolo-ski-area` | `narrow` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label` |
-| `stay_base:folgarida-marilleva-daolasa` | `narrow` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
-| `stay_base:folgarida-marilleva-folgarida` | `narrow` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `narrow` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
-| `stay_base:folgarida-marilleva-marilleva-900` | `narrow` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `narrow` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
-| `stay_base:pinzolo-pinzolo` | `narrow` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
-| `terrain_domain:campiglio-dolomiti-di-brenta` | `narrow` | `official_trail_map.url`, `official_trail_map.season_label` |
-| `trust_manifest:ski_areas:folgarida-marilleva-ski-area` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
-| `trust_manifest:ski_areas:madonna-di-campiglio-ski-area` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
-| `trust_manifest:ski_areas:pinzolo-ski-area` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
-| `trust_manifest:stay_bases:folgarida-marilleva-daolasa` | `narrow` | `notes` |
-| `trust_manifest:stay_bases:folgarida-marilleva-folgarida` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
-| `trust_manifest:stay_bases:folgarida-marilleva-marilleva-1400` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
-| `trust_manifest:stay_bases:folgarida-marilleva-marilleva-900` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
-| `trust_manifest:stay_bases:madonna-di-campiglio-madonna-di-campiglio` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
-| `trust_manifest:stay_bases:pinzolo-pinzolo` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
-| `trust_manifest:terrain_domains:campiglio-dolomiti-di-brenta` | `narrow` | `field_source_refs`, `field_statuses`, `notes` |
+| Target | Scope | Graph Role | Required Fields |
+| --- | --- | --- | --- |
+| `ski_area:folgarida-marilleva-ski-area` | `narrow` | `focus` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label` |
+| `ski_area:madonna-di-campiglio-ski-area` | `narrow` | `focus` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label` |
+| `ski_area:pinzolo-ski-area` | `narrow` | `focus` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label` |
+| `stay_base:folgarida-marilleva-daolasa` | `narrow` | `focus` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
+| `stay_base:folgarida-marilleva-folgarida` | `narrow` | `focus` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
+| `stay_base:folgarida-marilleva-marilleva-1400` | `narrow` | `focus` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
+| `stay_base:folgarida-marilleva-marilleva-900` | `narrow` | `focus` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
+| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `narrow` | `focus` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
+| `stay_base:pinzolo-pinzolo` | `narrow` | `focus` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
+| `terrain_domain:campiglio-dolomiti-di-brenta` | `narrow` | `focus` | `official_trail_map.url`, `official_trail_map.season_label` |
+| `trust_manifest:ski_areas:folgarida-marilleva-ski-area` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `trust_manifest:ski_areas:madonna-di-campiglio-ski-area` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `trust_manifest:ski_areas:pinzolo-ski-area` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `trust_manifest:stay_bases:folgarida-marilleva-daolasa` | `narrow` | `focus` | `notes` |
+| `trust_manifest:stay_bases:folgarida-marilleva-folgarida` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `trust_manifest:stay_bases:folgarida-marilleva-marilleva-1400` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `trust_manifest:stay_bases:folgarida-marilleva-marilleva-900` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `trust_manifest:stay_bases:madonna-di-campiglio-madonna-di-campiglio` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `trust_manifest:stay_bases:pinzolo-pinzolo` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+| `trust_manifest:terrain_domains:campiglio-dolomiti-di-brenta` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
+
+## Review Evidence Envelope
+
+| Family | Source Kind | Source URLs | Candidate Kinds |
+| --- | --- | --- | --- |
+| `campiglio-destination-and-stay` | `destination_booking` | [https://www.visitvaldisole.it/en/folgarida](https://www.visitvaldisole.it/en/folgarida), [https://www.visitvaldisole.it/en/marilleva-mezzana](https://www.visitvaldisole.it/en/marilleva-mezzana), [https://www.campigliodolomiti.it/en/land/val-rendena/madonna-di-campiglio](https://www.campigliodolomiti.it/en/land/val-rendena/madonna-di-campiglio), [https://www.campigliodolomiti.it/en/land/val-rendena/pinzolo](https://www.campigliodolomiti.it/en/land/val-rendena/pinzolo) | `stay_destination`, `stay_base` |
+| `campiglio-operator-and-terrain` | `ski_area_operator` | [https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf](https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf), [https://www.ski.it/ski/documenti-file/pagine-di-dettaglio/pagine-istituzionali/folgarida-marilleva/Sostenibilit%C3%A0/bilancio-sostenibilita-24_FFM_web.pdf](https://www.ski.it/ski/documenti-file/pagine-di-dettaglio/pagine-istituzionali/folgarida-marilleva/Sostenibilit%C3%A0/bilancio-sostenibilita-24_FFM_web.pdf), [https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks](https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks), [https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf](https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf) | `ski_area`, `terrain_domain` |
+| `campiglio-current-local-presentation` | `other_official` | [https://www.campigliodolomiti.it/en/services/arena-super-g](https://www.campigliodolomiti.it/en/services/arena-super-g), [https://www.campigliodolomiti.it/en/services/zangola](https://www.campigliodolomiti.it/en/services/zangola), [https://www.campigliodolomiti.it/en/services/bar-nazionale-2](https://www.campigliodolomiti.it/en/services/bar-nazionale-2) | `stay_base`, `ski_area` |
+
+## Entity Scope Assessments
+
+| Candidate | Kind | Disposition | Signals | Catalog Targets | Evidence | Backlog | Graph Impact | Rationale |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `folgarida-marilleva-ski-area` (Folgarida-Marilleva ski area) | `ski_area` | `represented` | `official_independent_identity`, `separate_operator`, `child_scoped_terrain_metrics` | `ski_area:folgarida-marilleva-ski-area` | `v2-enrichment-001-folgarida-marilleva-ski-area-official-trail-map-url`, `v2-enrichment-002-folgarida-marilleva-ski-area-snow-park-availability` |  | `graph_blocking` | The prepared catalog represents Folgarida-Marilleva as a complete child-scoped ski area inside the connected Campiglio terrain domain; semantic ownership remains subject to fresh review. |
+| `madonna-di-campiglio-ski-area` (Madonna di Campiglio ski area) | `ski_area` | `represented` | `official_independent_identity`, `separate_operator` | `ski_area:madonna-di-campiglio-ski-area` | `v2-enrichment-004-madonna-di-campiglio-ski-area-ski-day-apres-profile-availability`, `v2-enrichment-006-madonna-di-campiglio-ski-area-snow-park-availability` |  | `graph_blocking` | The prepared catalog retains Madonna di Campiglio as a complete ski-area identity inside the connected domain; semantic ownership remains subject to fresh review. |
+| `pinzolo-ski-area` (Pinzolo ski area) | `ski_area` | `represented` | `official_independent_identity`, `separate_operator` | `ski_area:pinzolo-ski-area` | `v2-enrichment-008-pinzolo-ski-area-snow-park-availability`, `v2-enrichment-009-pinzolo-ski-area-snow-park-park-count` |  | `graph_blocking` | The prepared catalog represents Pinzolo as a complete ski-area identity inside the connected domain; semantic ownership remains subject to fresh review. |
+| `folgarida-marilleva-folgarida` (Folgarida) | `stay_base` | `represented` | `official_independent_identity` | `stay_base:folgarida-marilleva-folgarida` | `v2-enrichment-010-folgarida-marilleva-folgarida-base-character-development-style`, `v2-enrichment-011-folgarida-marilleva-folgarida-elevation-m` |  | `graph_blocking` | The official destination material directly identifies Folgarida as a distinct accommodation base in the prepared graph. |
+| `folgarida-marilleva-marilleva-1400` (Marilleva 1400) | `stay_base` | `represented` | `official_independent_identity` | `stay_base:folgarida-marilleva-marilleva-1400` | `v2-enrichment-012-folgarida-marilleva-marilleva-1400-base-character-development-style`, `v2-enrichment-013-folgarida-marilleva-marilleva-1400-elevation-m` |  | `graph_blocking` | The official destination material directly identifies Marilleva 1400 as a distinct accommodation base in the prepared graph. |
+| `folgarida-marilleva-marilleva-900` (Marilleva 900) | `stay_base` | `represented` | `official_independent_identity` | `stay_base:folgarida-marilleva-marilleva-900` | `v2-enrichment-014-folgarida-marilleva-marilleva-900-base-character-development-style`, `v2-enrichment-015-folgarida-marilleva-marilleva-900-elevation-m` |  | `graph_blocking` | The official destination material directly identifies Marilleva 900 as a distinct accommodation base in the prepared graph. |
+| `madonna-di-campiglio-madonna-di-campiglio` (Madonna di Campiglio) | `stay_base` | `represented` | `official_independent_identity` | `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `v2-enrichment-016-madonna-di-campiglio-madonna-di-campiglio-base-character-development-style`, `v2-enrichment-019-madonna-di-campiglio-madonna-di-campiglio-elevation-m` |  | `graph_blocking` | The official destination material directly identifies Madonna di Campiglio as the represented accommodation base. |
+| `pinzolo-pinzolo` (Pinzolo) | `stay_base` | `represented` | `official_independent_identity` | `stay_base:pinzolo-pinzolo` | `v2-enrichment-022-pinzolo-pinzolo-base-character-development-style`, `v2-enrichment-024-pinzolo-pinzolo-elevation-m` |  | `graph_blocking` | The official destination material directly identifies Pinzolo as the represented accommodation base. |
+| `campiglio-dolomiti-di-brenta` (Campiglio Dolomiti di Brenta connected terrain) | `terrain_domain` | `represented` | `ski_connected_terrain` | `terrain_domain:campiglio-dolomiti-di-brenta` | `v2-enrichment-027-campiglio-dolomiti-di-brenta-official-trail-map-url` |  | `graph_blocking` | The official domain map presents the three represented ski areas as one connected terrain domain. |
+
+## Ski-Area Boundary Assessments
+
+| Candidate | Parent | Terrain | Connectivity | Operations | Weather | Pass | Provider Consensus | Separation Value | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `folgarida-marilleva-ski-area` |  | `complete` | `not_applicable` | `independent` | `unknown` | `shared_only` | `separate` | `material` | `v2-enrichment-001-folgarida-marilleva-ski-area-official-trail-map-url`, `v2-enrichment-002-folgarida-marilleva-ski-area-snow-park-availability` |
+| `madonna-di-campiglio-ski-area` |  | `complete` | `not_applicable` | `independent` | `unknown` | `shared_only` | `separate` | `material` | `v2-enrichment-004-madonna-di-campiglio-ski-area-ski-day-apres-profile-availability`, `v2-enrichment-006-madonna-di-campiglio-ski-area-snow-park-availability` |
+| `pinzolo-ski-area` |  | `complete` | `not_applicable` | `independent` | `unknown` | `shared_only` | `separate` | `material` | `v2-enrichment-008-pinzolo-ski-area-snow-park-availability`, `v2-enrichment-009-pinzolo-ski-area-snow-park-park-count` |
 
 ## Changed Fields
 
