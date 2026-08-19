@@ -356,13 +356,17 @@ def test_select_active_ski_areas_resolves_single_area_destination() -> None:
     assert tuple(area.ski_area_id for area in selected) == ("pinzolo-ski-area",)
 
 
-def test_select_active_ski_areas_without_targets_selects_every_area() -> None:
+def test_select_active_ski_areas_without_targets_selects_every_active_area() -> None:
     snapshot = load_catalog()
 
     selected = catalog_repository.select_active_ski_areas(snapshot)
 
     assert tuple(area.ski_area_id for area in selected) == tuple(
-        sorted(area.ski_area_id for area in snapshot.ski_areas)
+        sorted(
+            area.ski_area_id
+            for area in snapshot.ski_areas
+            if area.weather_sampling_status == "active"
+        )
     )
 
 
