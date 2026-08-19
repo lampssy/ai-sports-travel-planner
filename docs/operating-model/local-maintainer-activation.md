@@ -278,6 +278,18 @@ The installed skill must:
   enumerate every concrete operator presentation and lift-pass candidate, with
   typed assessments and canonical backlog refs for deferred or unresolved pass
   products;
+- for every catalog entity absent from the exact base, apply the new-entity
+  completeness gate before freezing the evidence envelope. Enumerate every
+  canonical field and required graph relationship, then perform a bounded
+  field-specific source search. Foundational identity and graph facts must be
+  populated when suitable authoritative or structured evidence is discoverable;
+  fit and precision facts may remain unresolved when a value would create false
+  precision. Every unresolved row must name the source families or direct URLs
+  attempted, explain their insufficiency, and state what would resolve the
+  field. Absence from the provisional or frozen envelope is not itself a valid
+  unresolved reason. A new active stay base also requires at least one reviewed
+  applicable ski-area access assessment; exact distance remains optional without
+  defensible base-point and lift-endpoint geometry;
 - for an operations-ownership gap, the evidence envelope and completion pass
   must inspect the candidate's official publication neighborhood: destination
   or resort page, operator or consortium member directory and candidate member

@@ -810,6 +810,17 @@ reconciliation; the parent maintainer retains lease, branch, commit, validation,
 and publication authority. This avoids weakening worktree isolation or giving a
 sub-skill a second GitHub mutation path.
 
+New catalog entities use a stronger completeness gate than ordinary unchanged
+entities. Every applicable canonical field and required graph relationship gets
+a bounded field-specific source search before the evidence envelope is frozen.
+Foundational identity and graph facts are populated whenever suitable evidence
+is discoverable; descriptive or precision fields may remain unresolved rather
+than introduce weak inference or false precision. An unresolved row records the
+sources attempted, why they were insufficient, and what would resolve it;
+absence from the initial evidence packet is never sufficient by itself. This
+keeps the typed coverage matrix as evidence of actual review rather than a
+mechanical list of omissions.
+
 The helper exposes four capability groups: inspect, prepare, validate, and
 publish. `ops/maintainer/cli.py` is only the JSON parser and dependency
 composition boundary; `ops/maintainer/capabilities.py` dispatches the explicit
