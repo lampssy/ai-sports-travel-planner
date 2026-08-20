@@ -3808,14 +3808,14 @@
       "target_id": "folgarida-marilleva-ski-area",
       "field_path": "night_skiing.availability",
       "status": "unresolved",
-      "notes": "The direct official/operator and open-data sources in the bounded review envelope were checked but did not establish this exact scalar at the target scope; it remains unknown."
+      "notes": "The official Ski.it FAQ and current official piste map identify Marilleva night-skiing discovery signals, but neither supplies a reproducible current recurring or season-scheduled lift-served downhill timetable, tariff, or operating notice. Availability remains unknown pending that exact operating evidence."
     },
     {
       "target_type": "ski_area",
       "target_id": "folgarida-marilleva-ski-area",
       "field_path": "night_skiing.season_label",
       "status": "unresolved",
-      "notes": "The direct official/operator and open-data sources in the bounded review envelope were checked but did not establish this exact scalar at the target scope; it remains unknown."
+      "notes": "The official Ski.it FAQ and current official piste map do not publish a current recurring operating window that can support a season label. Keep the label unset until a same-scope timetable, tariff, or operating notice is directly reproducible."
     },
     {
       "target_type": "ski_area",
@@ -5424,13 +5424,15 @@
       "target_type": "stay_base",
       "target_id": "marilleva-mezzana-mezzana",
       "field_path": "base_character.development_style",
-      "status": "changed"
+      "status": "changed",
+      "notes": "The official Marilleva-Mezzana destination page, official accommodation collection, and reviewed OSM settlement object were searched for Mezzana-specific built-form history. They establish village identity but not enough development chronology to normalize traditional, mixed, or planned_resort, so the new entity records unknown."
     },
     {
       "target_type": "stay_base",
       "target_id": "marilleva-mezzana-mezzana",
       "field_path": "base_character.local_pace",
-      "status": "changed"
+      "status": "changed",
+      "notes": "The official destination and accommodation sources were searched for a positive Mezzana-specific pace signal. Broad destination activity and lodging inventory do not establish quiet, balanced, or lively, so the new entity records unknown."
     },
     {
       "target_type": "stay_base",
@@ -5454,21 +5456,22 @@
       "target_type": "stay_base",
       "target_id": "marilleva-mezzana-mezzana",
       "field_path": "local_apres_profile.availability",
-      "status": "changed"
+      "status": "changed",
+      "notes": "The official destination page and accommodation collection were searched for a recurring Mezzana-local apres offer. Neither establishes availability at the accommodation-base scope; website silence is not unavailability, so the new entity records unknown."
     },
     {
       "target_type": "stay_base",
       "target_id": "marilleva-mezzana-mezzana",
       "field_path": "local_apres_profile.intensity",
       "status": "unresolved",
-      "notes": "The official Marilleva-Mezzana destination page, official accommodation collection, and OSM Mezzana settlement object were checked; they do not publish this scalar. A direct municipal or destination source scoped to Mezzana would be required."
+      "notes": "The official Marilleva-Mezzana destination page and accommodation collection were checked; they do not establish breadth, frequency, duration, or source wording for a Mezzana-local apres scene. Intensity remains unset until direct base-scoped evidence supports it."
     },
     {
       "target_type": "stay_base",
       "target_id": "marilleva-mezzana-mezzana",
       "field_path": "local_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "The official Marilleva-Mezzana destination page, official accommodation collection, and OSM Mezzana settlement object were checked; they do not publish this scalar. A direct municipal or destination source scoped to Mezzana would be required."
+      "notes": "The official Marilleva-Mezzana destination page and accommodation collection do not publish a Mezzana-local recurring apres season. The season label remains unset pending direct base-scoped programme evidence."
     },
     {
       "target_type": "stay_base",
@@ -5486,25 +5489,29 @@
       "target_type": "stay_base",
       "target_id": "marilleva-mezzana-mezzana",
       "field_path": "price_max",
-      "status": "changed"
+      "status": "changed",
+      "notes": "The official accommodation collection confirms lodging supply but does not publish a reproducible representative nightly maximum for this normalized base. EUR 170 remains an explicit estimate and is not upgraded to source-backed trust."
     },
     {
       "target_type": "stay_base",
       "target_id": "marilleva-mezzana-mezzana",
       "field_path": "price_min",
-      "status": "changed"
+      "status": "changed",
+      "notes": "The official accommodation collection confirms lodging supply but does not publish a reproducible representative nightly minimum for this normalized base. EUR 100 remains an explicit estimate and is not upgraded to source-backed trust."
     },
     {
       "target_type": "stay_base",
       "target_id": "marilleva-mezzana-mezzana",
       "field_path": "price_range",
-      "status": "changed"
+      "status": "changed",
+      "notes": "The official accommodation collection confirms lodging supply but not a comparable normalized nightly range. EUR 100-170 remains the model-required explicit estimate pending a reproducible scoped price sample."
     },
     {
       "target_type": "stay_base",
       "target_id": "marilleva-mezzana-mezzana",
       "field_path": "quality",
-      "status": "changed"
+      "status": "changed",
+      "notes": "The official accommodation collection does not establish Snowcast's internal lodging-quality tier. standard remains an explicit model estimate and is not a hotel-star claim."
     },
     {
       "target_type": "stay_base",
@@ -8554,6 +8561,305 @@
       "source_title": "Official Pinzolo destination page",
       "source_value": "unknown",
       "evidence_summary": "The broad official activity presentation does not support a positive balanced local-pace assertion; the scalar remains unknown."
+    },
+    {
+      "evidence_id": "regional-handoff-campo-carlo-magno-identity",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/hotels/hotel-forte-carlomagno",
+      "source_title": "Official Campo Carlo Magno accommodation listing",
+      "source_value": {
+        "candidate": "campo-carlo-magno",
+        "lodging_signal": true,
+        "published_location": "Passo Campo Carlo Magno"
+      },
+      "evidence_summary": "The official destination accommodation listing establishes a real overnight-stay candidate at Passo Campo Carlo Magno, 2.5 km from central Madonna di Campiglio, but it does not prove the complete lodging boundary or final parent ownership."
+    },
+    {
+      "evidence_id": "regional-handoff-carisolo-identity",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "pinzolo",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/val-rendena/carisolo",
+      "source_title": "Official Carisolo destination page",
+      "source_value": {
+        "candidate": "carisolo",
+        "place_kind": "village"
+      },
+      "evidence_summary": "The official destination page establishes Carisolo as a distinct named village adjacent to Pinzolo; complete lodging scope and normalized ownership remain to be researched."
+    },
+    {
+      "evidence_id": "regional-handoff-giustino-identity",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "pinzolo",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/val-rendena/giustino",
+      "source_title": "Official Giustino destination page",
+      "source_value": {
+        "candidate": "giustino",
+        "place_kind": "village"
+      },
+      "evidence_summary": "The official destination page establishes Giustino as a named Alpine village whose new development is contiguous with Pinzolo; complete lodging scope and normalized ownership remain to be researched."
+    },
+    {
+      "evidence_id": "regional-handoff-massimeno-identity",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "pinzolo",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/val-rendena/massimeno",
+      "source_title": "Official Massimeno destination page",
+      "source_value": {
+        "candidate": "massimeno",
+        "place_kind": "village"
+      },
+      "evidence_summary": "The official destination page establishes Massimeno as a distinct named village in Val Rendena; complete lodging scope and normalized ownership remain to be researched."
+    },
+    {
+      "evidence_id": "regional-handoff-rendena-skibus-candidates",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "pinzolo",
+      "field_path": "regional_data_ids",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/val-rendena/activities/mobilita-invernale/local-winter-transportation-skibus",
+      "source_title": "Official Val Rendena winter ski-bus service",
+      "source_value": {
+        "campo_carlo_magno": "Line 5 with Madonna di Campiglio and Pinzolo",
+        "carisolo_giustino_massimeno": "Line 6 to Pinzolo centre and Tulot lifts",
+        "season": "2025/26"
+      },
+      "evidence_summary": "The current official winter transport page gives direct candidate-specific access evidence: Campo Carlo Magno appears on Line 5, while Carisolo, Giustino, and Massimeno have Line 6 service to the Pinzolo lifts. Exact future access entities still require endpoint, duration/distance, and ownership review."
+    },
+    {
+      "evidence_id": "regional-handoff-madonna-local-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-skiarea-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFMCen.pdf",
+      "source_title": "Official Madonna di Campiglio and regional 2025/26 tariff",
+      "source_value": {
+        "candidate": "madonna-di-campiglio-local-pass",
+        "product_class": "genuine local lift-pass product",
+        "season": "2025/26"
+      },
+      "evidence_summary": "The current official tariff distinguishes a Madonna di Campiglio local product from the SkiArea and Superskirama products. A future entity needs exact stay availability, area coverage, representative prices, default policy, and trust scope."
+    },
+    {
+      "evidence_id": "regional-handoff-superskirama",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-skiarea-pass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/ski-pass/superskirama-season-pass",
+      "source_title": "Official Superskirama season-pass page",
+      "source_value": {
+        "candidate": "superskirama",
+        "product_class": "genuine regional-network product",
+        "season": "2025/26",
+        "includes_pejo": true
+      },
+      "evidence_summary": "The official current page establishes Superskirama as a genuine named season product spanning eight resorts, including disconnected Pejo. Modeling it requires complete regional-network coverage and pass semantics without extending the Campiglio terrain domain."
+    },
+    {
+      "evidence_id": "regional-handoff-starpass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-skiarea-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/ski-pass/starpass",
+      "source_title": "Official Starpass product page",
+      "source_value": {
+        "candidate": "starpass",
+        "product_class": "genuine pay-per-use product",
+        "coverage": [
+          "folgarida-marilleva",
+          "madonna-di-campiglio",
+          "pinzolo",
+          "pejo"
+        ]
+      },
+      "evidence_summary": "The official product page establishes Starpass as a genuine pay-per-use entitlement with spending thresholds across the three Campiglio areas and Pejo. A future model decision must avoid representing its threshold mechanics as false fixed prices."
+    },
+    {
+      "evidence_id": "regional-handoff-five-of-seven",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-skiarea-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/activities/5-out-of-7-the-ski-pass-to-discover-the-dolomites",
+      "source_title": "Official 5 out of 7 pass presentation",
+      "source_value": {
+        "candidate": "campiglio-five-of-seven",
+        "product_class": "flexible-duration variant",
+        "entitlement": "five ski days within seven days"
+      },
+      "evidence_summary": "The official page presents 5 out of 7 as a seven-day flexible-use variant for five SkiArea ski days. A future product-policy review must decide whether this is a separately useful product or a duration option on an existing pass."
+    },
+    {
+      "evidence_id": "regional-handoff-daily-upgrade",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-skiarea-pass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/ski-pass/purchase-lift-passes",
+      "source_title": "Official lift-pass purchase and daily-upgrade page",
+      "source_value": {
+        "candidate": "campiglio-daily-upgrade",
+        "product_class": "one-day add-on",
+        "prerequisite": "Folgarida-Marilleva or Pinzolo local pass"
+      },
+      "evidence_summary": "The official page describes the daily SkiArea upgrade as an add-on bought by holders of Folgarida-Marilleva or Pinzolo local passes, not as a stand-alone terrain product. Product-selection policy must decide whether the catalog should model such add-ons."
+    },
+    {
+      "evidence_id": "regional-handoff-folgarida-night-faq",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "night_skiing.availability",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/en/info/faq",
+      "source_title": "Official SkiArea FAQ night-skiing entry",
+      "source_value": "unknown",
+      "evidence_summary": "The FAQ identifies night skiing on Marilleva's Biancaneve run as a discovery signal, but it does not provide a current recurring or season-scheduled lift-served downhill timetable, tariff, or operating notice. The catalog value remains unknown."
+    },
+    {
+      "evidence_id": "regional-handoff-folgarida-night-map",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "night_skiing.season_label",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf",
+      "source_title": "Current official Folgarida-Marilleva piste map",
+      "source_value": null,
+      "evidence_summary": "The map provides the Biancaneve piste and lift geometry used to locate the FAQ claim, but it does not publish a reproducible current night-skiing operating schedule or season label."
+    },
+    {
+      "evidence_id": "regional-handoff-mezzana-development-style-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "marilleva-mezzana-mezzana",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/marilleva-mezzana",
+      "source_title": "Official Marilleva-Mezzana destination page",
+      "source_value": "unknown",
+      "evidence_summary": "The source distinguishes Mezzana's village core from the purpose-built Marilleva stations but does not provide enough Mezzana-specific built-form history to normalize traditional, mixed, or planned_resort."
+    },
+    {
+      "evidence_id": "regional-handoff-mezzana-local-pace-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "marilleva-mezzana-mezzana",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/marilleva-mezzana",
+      "source_title": "Official Marilleva-Mezzana destination page",
+      "source_value": "unknown",
+      "evidence_summary": "The broad destination presentation does not provide a positive Mezzana-specific quiet, balanced, or lively pace signal. Balanced is not used as a fallback."
+    },
+    {
+      "evidence_id": "regional-handoff-mezzana-local-apres-availability-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "marilleva-mezzana-mezzana",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/where-to-stay",
+      "source_title": "Official Val di Sole accommodation collection",
+      "source_value": "unknown",
+      "evidence_summary": "The scoped lodging collection establishes accommodation supply but not a recurring Mezzana-local apres offer. Silence remains unknown rather than unavailable."
+    },
+    {
+      "evidence_id": "regional-handoff-mezzana-local-apres-intensity-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "marilleva-mezzana-mezzana",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/marilleva-mezzana",
+      "source_title": "Official Marilleva-Mezzana destination page",
+      "source_value": null,
+      "evidence_summary": "The page does not establish the breadth, frequency, duration, or source wording needed to normalize a Mezzana-local apres intensity."
+    },
+    {
+      "evidence_id": "regional-handoff-mezzana-local-apres-season-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "marilleva-mezzana-mezzana",
+      "field_path": "local_apres_profile.season_label",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/marilleva-mezzana",
+      "source_title": "Official Marilleva-Mezzana destination page",
+      "source_value": null,
+      "evidence_summary": "The page does not publish a recurring Mezzana-local apres season, so the season label remains unset."
+    },
+    {
+      "evidence_id": "regional-handoff-mezzana-price-range-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "marilleva-mezzana-mezzana",
+      "field_path": "price_range",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/where-to-stay",
+      "source_title": "Official Val di Sole accommodation collection",
+      "source_value": null,
+      "evidence_summary": "The lodging collection establishes supply but does not publish a reproducible representative nightly range for the normalized Mezzana base.",
+      "normalization_note": "The model requires an explicit display range for the new base; EUR 100-170 remains an estimated value and is not upgraded to source-backed trust."
+    },
+    {
+      "evidence_id": "regional-handoff-mezzana-price-min-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "marilleva-mezzana-mezzana",
+      "field_path": "price_min",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/where-to-stay",
+      "source_title": "Official Val di Sole accommodation collection",
+      "source_value": null,
+      "evidence_summary": "The lodging collection does not publish a reproducible representative nightly minimum for the normalized Mezzana base.",
+      "normalization_note": "EUR 100 remains an explicit catalog estimate pending a scoped comparable price sample."
+    },
+    {
+      "evidence_id": "regional-handoff-mezzana-price-max-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "marilleva-mezzana-mezzana",
+      "field_path": "price_max",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/where-to-stay",
+      "source_title": "Official Val di Sole accommodation collection",
+      "source_value": null,
+      "evidence_summary": "The lodging collection does not publish a reproducible representative nightly maximum for the normalized Mezzana base.",
+      "normalization_note": "EUR 170 remains an explicit catalog estimate pending a scoped comparable price sample."
+    },
+    {
+      "evidence_id": "regional-handoff-mezzana-quality-search",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "marilleva-mezzana-mezzana",
+      "field_path": "quality",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/where-to-stay",
+      "source_title": "Official Val di Sole accommodation collection",
+      "source_value": null,
+      "evidence_summary": "The lodging collection does not establish Snowcast's internal lodging-quality tier and is not a hotel-star proxy.",
+      "normalization_note": "standard remains an explicit catalog estimate pending a reviewed policy-scoped lodging sample."
     }
   ],
   "destination_boundary_assessments": [
@@ -9878,6 +10184,178 @@
           "scope-pinzolo-ski-area-current-operations"
         ]
       }
+    },
+    {
+      "candidate_id": "campo-carlo-magno",
+      "candidate_name": "Campo Carlo Magno stay base candidate",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "regional-handoff-campo-carlo-magno-identity",
+        "regional-handoff-rendena-skibus-candidates"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "Official lodging and Line 5 transport evidence establish a useful candidate near Madonna di Campiglio, but the complete accommodation boundary, owning stay destination, normalized new-base field sweep, and exact sourced ski-area access edge remain prerequisites. No catalog entity is added in this post-freeze handoff.",
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "carisolo",
+      "candidate_name": "Carisolo stay base candidate",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "regional-handoff-carisolo-identity",
+        "regional-handoff-rendena-skibus-candidates"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "Official village identity and Line 6 access to the Pinzolo lifts establish a regional candidate, but complete lodging scope, stay-destination ownership, the full new-base field sweep, and an exact access entity remain unresolved prerequisites. No catalog entity is added.",
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "giustino",
+      "candidate_name": "Giustino stay base candidate",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "regional-handoff-giustino-identity",
+        "regional-handoff-rendena-skibus-candidates"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "Official village identity, contiguity with Pinzolo, and Line 6 lift access establish a regional candidate, but complete lodging scope, final parent ownership, the full new-base field sweep, and an exact access entity remain unresolved prerequisites. No catalog entity is added.",
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "massimeno",
+      "candidate_name": "Massimeno stay base candidate",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "regional-handoff-massimeno-identity",
+        "regional-handoff-rendena-skibus-candidates"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "Official village identity and Line 6 access to the Pinzolo lifts establish a regional candidate, but complete lodging scope, stay-destination ownership, the full new-base field sweep, and an exact access entity remain unresolved prerequisites. No catalog entity is added.",
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "madonna-di-campiglio-local-pass",
+      "candidate_name": "Madonna di Campiglio local pass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity",
+        "full_local_pass"
+      ],
+      "evidence_refs": [
+        "regional-handoff-madonna-local-pass"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "The current official tariff establishes a genuine local product. Addition is deferred to a bounded pass slice that can establish exact stay-market availability and default policy, ski-area coverage, representative prices, validity semantics, and trust ownership without reopening the accepted graph.",
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "superskirama",
+      "candidate_name": "Superskirama regional-network pass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "deferred",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "regional-handoff-superskirama"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "The official 2025/26 product page establishes a genuine regional-network season pass. Addition requires a bounded complete coverage and availability slice across its eight resorts, representative tariff semantics, and explicit disconnected validity handling; Pejo must remain outside the Campiglio terrain domain.",
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "starpass",
+      "candidate_name": "Starpass pay-per-use product",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "unresolved",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "regional-handoff-starpass"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "Official evidence establishes a genuine pay-per-use product across the three Campiglio areas and Pejo. The current threshold/payment mechanics need a policy decision and complete coverage review before they can be represented without false fixed-price precision; Pejo remains disconnected external coverage.",
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "campiglio-five-of-seven",
+      "candidate_name": "Campiglio 5 out of 7 pass variant",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "unresolved",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "regional-handoff-five-of-seven"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "The official page establishes a five-ski-days-within-seven variant, not yet an independently justified catalog entity. Promotion requires product-selection policy to decide separate-product versus duration-option ownership and a current tariff/coverage/default review.",
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "campiglio-daily-upgrade",
+      "candidate_name": "Campiglio daily SkiArea upgrade",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "unresolved",
+      "signals": [
+        "official_product_identity",
+        "limited_area_ticket"
+      ],
+      "evidence_refs": [
+        "regional-handoff-daily-upgrade"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "The official purchase page establishes this as a one-day add-on for holders of Folgarida-Marilleva or Pinzolo local passes, not a stand-alone terrain entitlement. Promotion requires a product-model policy for add-ons plus exact prerequisite, coverage, availability, and price semantics.",
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "pejo-external-pass-context",
+      "candidate_name": "Pejo disconnected external pass context",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "unresolved",
+      "signals": [
+        "official_product_identity",
+        "disconnected_terrain"
+      ],
+      "evidence_refs": [
+        "regional-handoff-superskirama",
+        "regional-handoff-starpass"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#campiglio-dolomiti-regional-catalog-extensions",
+      "rationale": "Official regional products include Pejo, but Pejo is not ski-connected to the accepted Campiglio terrain domain and this marker is not a stand-alone product. A future pass slice must attach it only to a genuine modeled product's external validity or curate a separate complete Pejo graph; no terrain-domain expansion is permitted.",
+      "graph_impact": "regional_followup"
     }
   ],
   "review_evidence_envelope": [
@@ -9885,7 +10363,11 @@
       "family_id": "destination-booking",
       "source_kind": "destination_booking",
       "source_urls": [
+        "https://www.campigliodolomiti.it/en/hotels/hotel-forte-carlomagno",
+        "https://www.campigliodolomiti.it/en/land/val-rendena/carisolo",
+        "https://www.campigliodolomiti.it/en/land/val-rendena/giustino",
         "https://www.campigliodolomiti.it/en/land/val-rendena/madonna-di-campiglio",
+        "https://www.campigliodolomiti.it/en/land/val-rendena/massimeno",
         "https://www.campigliodolomiti.it/en/land/val-rendena/pinzolo",
         "https://www.campigliodolomiti.it/en/plan/hotels-where-to-stay",
         "https://www.visitvaldisole.it/en/commezzadura",
@@ -9904,6 +10386,7 @@
       "source_urls": [
         "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf",
         "https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks",
+        "https://www.ski.it/en/info/faq",
         "https://www.ski.it/en/skiarea/folgarida-marilleva",
         "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
         "https://www.ski.it/en/skiarea/pinzolo",
@@ -9940,7 +10423,11 @@
       "source_kind": "pass_tariff",
       "source_urls": [
         "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+        "https://www.ski.it/en/activities/5-out-of-7-the-ski-pass-to-discover-the-dolomites",
         "https://www.ski.it/en/ski-pass/purchase-lift-passes",
+        "https://www.ski.it/en/ski-pass/starpass",
+        "https://www.ski.it/en/ski-pass/superskirama-season-pass",
+        "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFMCen.pdf",
         "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf",
         "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
       ],
@@ -9953,6 +10440,7 @@
       "family_id": "access-transport",
       "source_kind": "access_transport",
       "source_urls": [
+        "https://www.campigliodolomiti.it/en/land/val-rendena/activities/mobilita-invernale/local-winter-transportation-skibus",
         "https://www.openstreetmap.org/node/1023438277",
         "https://www.openstreetmap.org/node/1096349433",
         "https://www.openstreetmap.org/node/1096349822",
@@ -10010,11 +10498,12 @@
   ],
   "ranking_impact_summary": "The direct stay-market split changes base ownership, the Mezzana access edge, and shared/local pass availability. Ranking consumers now receive three explicit Val di Sole stay markets; local passes remain non-default, and no distance or duration is inferred for the ski-bus edge.",
   "unresolved_caveats": [
-    "Mezzana price/quality remain explicit estimates required by the current model; development style, local pace and local apres remain unknown.",
+    "For the new Mezzana base, the official destination page, accommodation collection, and reviewed settlement source were searched field by field. They do not support development style, local pace, local apres availability/intensity/season, or a source-backed normalized lodging range/quality tier. The character and apres fields remain unknown or unset; price/quality remain explicit model estimates rather than verified facts.",
     "Daolasa is source-backed as a Commezzadura hamlet, but no Daolasa-specific lodging, elevation, character, pace or apres assertion is retained.",
     "The Mezzana ski-bus edge has no inferred Cartesian distance or representative duration; the official timetable supports the qualitative medium, non-direct relationship.",
     "The aggregate official trail map is terrain-domain-owned; Folgarida-Marilleva has no child-scoped map retained.",
     "Madonna di Campiglio uses the dedicated settlement guide's 1550 m value as its representative accommodation-base elevation; the aggregate ski map's 1524 m label is retained as a distinct cartographic reference point.",
-    "Regional Campo Carlo Magno/Carisolo/Giustino/Massimeno and additional pass-context candidates are intentionally outside this ordinary graph-blocking fix."
+    "Regional Campo Carlo Magno, Carisolo, Giustino, and Massimeno stay-base candidates require complete lodging ownership, new-entity field sweeps, and exact access edges before catalog addition. The Madonna local pass and Superskirama are genuine product candidates; Starpass is pay-per-use, 5 out of 7 is a flexible-duration variant, and the daily upgrade is an add-on. Pejo remains disconnected external pass context. All are deferred or unresolved under the consolidated regional backlog item and do not alter the accepted Resulting Graph.",
+    "Folgarida-Marilleva night skiing remains unknown. The official FAQ and current piste map are discovery evidence, but a directly reproducible current recurring or season-scheduled lift-served downhill timetable, tariff, or operating notice is still required before asserting availability or a season label."
   ]
 }
