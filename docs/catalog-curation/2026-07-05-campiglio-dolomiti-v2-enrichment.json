@@ -832,7 +832,7 @@
       "field_path": "elevation_m",
       "before": null,
       "after": 1550,
-      "trust_status": "verified",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -7758,8 +7758,8 @@
       "source_url": "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf",
       "source_title": "Official aggregate Campiglio terrain map",
       "source_value": 1524,
-      "evidence_summary": "The aggregate terrain map labels Madonna at 1524 m, while the same-scope official settlement page publishes 1550 m for the accommodation base.",
-      "normalization_note": "The 1550 m same-scope official settlement value is retained; 1524 m is recorded as a different aggregate-map point, so the field is verified_with_adjustment."
+      "evidence_summary": "The aggregate terrain map labels Madonna at 1524 m as a cartographic resort reference, while the dedicated settlement guide publishes 1550 m for the accommodation base.",
+      "normalization_note": "The dedicated settlement guide's 1550 m value is retained as the representative accommodation-base elevation; the aggregate map's 1524 m label describes a different cartographic reference point, so the field is verified_with_adjustment."
     },
     {
       "evidence_id": "boundary-madonna-di-campiglio-official-treatment",
@@ -10014,7 +10014,7 @@
     "Daolasa is source-backed as a Commezzadura hamlet, but no Daolasa-specific lodging, elevation, character, pace or apres assertion is retained.",
     "The Mezzana ski-bus edge has no inferred Cartesian distance or representative duration; the official timetable supports the qualitative medium, non-direct relationship.",
     "The aggregate official trail map is terrain-domain-owned; Folgarida-Marilleva has no child-scoped map retained.",
-    "Madonna di Campiglio settlement elevation uses the same-scope official 1550 m destination source; the aggregate ski map's 1524 m label is recorded as a different-scope conflict.",
+    "Madonna di Campiglio uses the dedicated settlement guide's 1550 m value as its representative accommodation-base elevation; the aggregate ski map's 1524 m label is retained as a distinct cartographic reference point.",
     "Regional Campo Carlo Magno/Carisolo/Giustino/Massimeno and additional pass-context candidates are intentionally outside this ordinary graph-blocking fix."
   ]
 }
