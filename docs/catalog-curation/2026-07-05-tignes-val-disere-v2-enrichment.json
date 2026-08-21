@@ -6214,7 +6214,8 @@
     {
       "evidence_id": "inventory-pass1-val-disere-laisinant-market",
       "boundary_target_ids": [
-        "val-disere"
+        "val-disere",
+        "val-disere-laisinant"
       ],
       "target_type": "stay_destination",
       "target_id": "val-disere",
@@ -6229,7 +6230,8 @@
     {
       "evidence_id": "inventory-pass1-val-disere-legettaz-market",
       "boundary_target_ids": [
-        "val-disere"
+        "val-disere",
+        "val-disere-legettaz"
       ],
       "target_type": "stay_destination",
       "target_id": "val-disere",
@@ -6244,7 +6246,8 @@
     {
       "evidence_id": "inventory-pass1-val-disere-joseray-market",
       "boundary_target_ids": [
-        "val-disere"
+        "val-disere",
+        "val-disere-joseray"
       ],
       "target_type": "stay_destination",
       "target_id": "val-disere",
@@ -6285,7 +6288,8 @@
     {
       "evidence_id": "inventory-pass2-val-disere-le-cret-accommodation",
       "boundary_target_ids": [
-        "val-disere"
+        "val-disere",
+        "val-disere-le-cret"
       ],
       "target_type": "stay_destination",
       "target_id": "val-disere",
@@ -6311,6 +6315,42 @@
       "source_value": "val-disere-ski-area",
       "evidence_summary": "The structured aerialway station and official accommodation coordinates place Lanche about 725 m straight-line from the representative Le Cret listing. The bounded source pass did not establish a walking route, duration, or direct ski access, so exact access semantics remain a concrete remediation decision rather than an unknown candidate.",
       "normalization_note": "Representative straight-line geometry only; do not treat it as a routed distance or direct-access claim."
+    },
+    {
+      "evidence_id": "inventory-pass3-tignes-booking-subareas",
+      "boundary_target_ids": [
+        "tignes-val-claret-centre",
+        "tignes-val-claret-grande-motte",
+        "tignes-val-claret-les-chartreux",
+        "tignes-le-lac-le-bec-rouge",
+        "tignes-le-lac-les-almes",
+        "tignes-le-lac-le-rosset",
+        "tignes-les-boisses"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://reservation.tignes.net/location-appartement-chalet.html",
+      "source_title": "Tignes Reservation official accommodation collection",
+      "source_value": "tignes",
+      "evidence_summary": "The official booking filters enumerate Val Claret Centre, Grande Motte, and Les Chartreux; Le Lac Bec Rouge, Les Almes, and Le Rosset; Le Lavachet; Tignes 1800 and Les Boisses; and Les Brevieres. The named subareas are booking sub-localities of the five represented Tignes stay bases rather than separate stay markets.",
+      "normalization_note": "Booking sub-localities are dispositioned individually; establishment and residence names are inventory records, not separate stay-base candidates."
+    },
+    {
+      "evidence_id": "inventory-pass3-val-disere-chatelard-boundary",
+      "boundary_target_ids": [
+        "val-disere-chatelard"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://booking.valdisere.com/en/accommodation/town-legettaz-200069.html?page=1",
+      "source_title": "Official Legettaz booking collection containing Chatelard accommodation",
+      "source_value": "val-disere-legettaz",
+      "evidence_summary": "The official booking collection categorizes Chatelard accommodation under Legettaz even though destination shuttle material names Chatelard as a stop. For accommodation-market modeling, Chatelard is a sub-locality of the Legettaz candidate rather than a separate stay base.",
+      "normalization_note": "Transit stop naming alone does not establish an independent accommodation market."
     },
     {
       "evidence_id": "remediation-val-disere-snowmaking-availability",
@@ -6701,7 +6741,7 @@
     "Tignes publishes snowmaking availability and a 400-snowgun inventory but no coverage percentage with a declared denominator; coverage remains unknown.",
     "Official sources reviewed did not establish child-scoped snowmaking coverage or stable night-skiing availability for Val d'Isere.",
     "La Daille character and elevation remain unknown because the reviewed first-party sources did not provide sufficiently specific structural evidence.",
-    "Inventory completion established Laisinant, Legettaz, Joseray, and Le Cret as concrete Val d'Isere stay-base candidates. Their typed catalog additions remain regional follow-up findings; unsupported access route, duration, mode, and directness must stay unresolved.",
+    "Inventory completion established Laisinant, Legettaz, Joseray, Le Cret, Rond Point des Pistes, and Les Carats as concrete Val d'Isere stay-base candidates. Their typed catalog additions or canonical regional deferrals remain graph-blocking findings; unsupported access route, duration, mode, and directness must stay unresolved. Chatelard is dispositioned as an accommodation sub-locality of the Legettaz candidate.",
     "Candidate-scoped source passes did not establish exact routed access semantics for the eight represented base-to-area links. Relationships are retained with narrowed official sources, while access mode is unknown and directness is false."
   ],
   "report_schema_version": 3,
@@ -6865,6 +6905,160 @@
       "graph_impact": "graph_blocking"
     },
     {
+      "candidate_id": "tignes-val-claret-centre",
+      "candidate_name": "Val Claret Centre",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-pass3-tignes-booking-subareas"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-val-claret"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Tignes Reservation presents Centre as a booking subarea within Val Claret, not as an independent accommodation market or access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-val-claret-grande-motte",
+      "candidate_name": "Val Claret Grande Motte",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-pass3-tignes-booking-subareas"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-val-claret"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Tignes Reservation presents Grande Motte as a booking subarea within Val Claret, not as an independent accommodation market or access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-val-claret-les-chartreux",
+      "candidate_name": "Val Claret Les Chartreux",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-pass3-tignes-booking-subareas"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-val-claret"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Tignes Reservation presents Les Chartreux as a booking subarea within Val Claret, not as an independent accommodation market or access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-le-lac-le-bec-rouge",
+      "candidate_name": "Le Lac Le Bec Rouge",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-pass3-tignes-booking-subareas"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-le-lac"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Tignes Reservation presents Le Bec Rouge as a booking subarea within Le Lac, not as an independent accommodation market or access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-le-lac-les-almes",
+      "candidate_name": "Le Lac Les Almes",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-pass3-tignes-booking-subareas"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-le-lac"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Tignes Reservation presents Les Almes as a booking subarea within Le Lac, not as an independent accommodation market or access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-le-lac-le-rosset",
+      "candidate_name": "Le Lac Le Rosset",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-pass3-tignes-booking-subareas"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-le-lac"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Tignes Reservation presents Le Rosset as a booking subarea within Le Lac, not as an independent accommodation market or access base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-les-boisses",
+      "candidate_name": "Les Boisses",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-pass3-tignes-booking-subareas"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-1800"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official booking inventory exposes Les Boisses alongside Tignes 1800, while the destination village presentation treats Les Boisses as the historical name and locality within the modeled Tignes 1800 base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
       "candidate_id": "val-disere-la-daille",
       "candidate_name": "La Daille",
       "candidate_kind": "stay_base",
@@ -6928,6 +7122,28 @@
       ],
       "backlog_ref": null,
       "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-chatelard",
+      "candidate_name": "Chatelard",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-pass3-val-disere-chatelard-boundary"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "val-disere-village"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official booking inventory categorizes Chatelard accommodation within the wider Legettaz locality. Because neither locality is represented separately and shuttle-stop naming alone does not establish an independent accommodation market, Chatelard remains absorbed by the represented Val d'Isere village base; a later Legettaz addition would own the sub-locality decision.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -7700,7 +7916,9 @@
         "https://booking.valdisere.com/2-rooms-1-bedroom-cret-1.html",
         "https://booking.valdisere.com/en/accommodation/town-joseray-200077.html?page=1",
         "https://booking.valdisere.com/en/accommodation/town-laisinant-200068.html",
+        "https://booking.valdisere.com/en/accommodation/town-legettaz-200069.html?page=1",
         "https://en.tignes.net/discover/ski-resort/tignes-villages",
+        "https://reservation.tignes.net/location-appartement-chalet.html",
         "https://reservation.valdisere.com/fr/hebergement/zone-legettaz-200069.html",
         "https://www.valdisere.com/en/val-disere/",
         "https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/"
