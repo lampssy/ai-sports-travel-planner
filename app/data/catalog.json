@@ -2269,8 +2269,8 @@
       "regional_data_ids": {},
       "elevation_m": 1800,
       "base_character": {
-        "development_style": "planned_resort",
-        "local_pace": "quiet"
+        "development_style": "unknown",
+        "local_pace": "unknown"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2292,8 +2292,8 @@
       "regional_data_ids": {},
       "elevation_m": 2050,
       "base_character": {
-        "development_style": "planned_resort",
-        "local_pace": "quiet"
+        "development_style": "unknown",
+        "local_pace": "unknown"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2315,12 +2315,12 @@
       "regional_data_ids": {},
       "elevation_m": 2100,
       "base_character": {
-        "development_style": "planned_resort",
-        "local_pace": "lively"
+        "development_style": "unknown",
+        "local_pace": "unknown"
       },
       "local_apres_profile": {
-        "availability": "available",
-        "intensity": "lively",
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     },
@@ -2338,8 +2338,8 @@
       "regional_data_ids": {},
       "elevation_m": 1550,
       "base_character": {
-        "development_style": "traditional",
-        "local_pace": "balanced"
+        "development_style": "unknown",
+        "local_pace": "unknown"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2361,12 +2361,12 @@
       "regional_data_ids": {},
       "elevation_m": 2150,
       "base_character": {
-        "development_style": "planned_resort",
-        "local_pace": "lively"
+        "development_style": "unknown",
+        "local_pace": "unknown"
       },
       "local_apres_profile": {
-        "availability": "available",
-        "intensity": "lively",
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     },
@@ -2415,8 +2415,8 @@
         "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "available",
-        "intensity": "low_key",
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     },
@@ -4923,8 +4923,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "available",
-        "intensity": "lively",
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     },
@@ -4955,7 +4955,7 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -6365,87 +6365,87 @@
       "ski_area_access_id": "tignes-1800--tignes-ski-area",
       "stay_base_id": "tignes-1800",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "walk",
+      "access_mode": "unknown",
       "lift_distance": "near",
-      "nearest_lift_name": "Les Boisses gondola",
+      "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
       ]
     },
     {
       "ski_area_access_id": "tignes-lavachet--tignes-ski-area",
       "stay_base_id": "tignes-lavachet",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "walk",
+      "access_mode": "unknown",
       "lift_distance": "near",
       "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
       ]
     },
     {
       "ski_area_access_id": "tignes-le-lac--tignes-ski-area",
       "stay_base_id": "tignes-le-lac",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "walk",
+      "access_mode": "unknown",
       "lift_distance": "near",
       "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
       ]
     },
     {
       "ski_area_access_id": "tignes-les-brevieres--tignes-ski-area",
       "stay_base_id": "tignes-les-brevieres",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "walk",
+      "access_mode": "unknown",
       "lift_distance": "near",
       "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
       ]
     },
     {
       "ski_area_access_id": "tignes-val-claret--tignes-ski-area",
       "stay_base_id": "tignes-val-claret",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "walk",
+      "access_mode": "unknown",
       "lift_distance": "near",
-      "nearest_lift_name": "Tichot chairlift",
+      "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
       ]
     },
     {
       "ski_area_access_id": "val-disere-la-daille--val-disere-ski-area",
       "stay_base_id": "val-disere-la-daille",
       "ski_area_id": "val-disere-ski-area",
-      "access_mode": "walk",
+      "access_mode": "unknown",
       "lift_distance": "near",
-      "nearest_lift_name": "La Daille gondola / Funival",
+      "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
@@ -6455,12 +6455,12 @@
       "ski_area_access_id": "val-disere-le-fornet--val-disere-ski-area",
       "stay_base_id": "val-disere-le-fornet",
       "ski_area_id": "val-disere-ski-area",
-      "access_mode": "walk",
+      "access_mode": "unknown",
       "lift_distance": "near",
-      "nearest_lift_name": "Fornet cable car",
+      "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
@@ -6470,12 +6470,12 @@
       "ski_area_access_id": "val-disere-village--val-disere-ski-area",
       "stay_base_id": "val-disere-village",
       "ski_area_id": "val-disere-ski-area",
-      "access_mode": "walk",
+      "access_mode": "unknown",
       "lift_distance": "near",
-      "nearest_lift_name": "Solaise gondola / Olympique cable car",
+      "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
@@ -8857,34 +8857,34 @@
         {
           "duration_days": 3,
           "audience": "adult",
-          "amount": 225.0,
+          "amount": 234.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 main season",
+          "season_label": "Winter 2026/27 main season",
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         },
         {
           "duration_days": 6,
           "audience": "adult",
-          "amount": 450.0,
+          "amount": 468.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 main season; 6 equals 7 days",
+          "season_label": "Winter 2026/27 main season; 6 equals 7 days",
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         },
         {
           "duration_days": 1,
           "audience": "adult",
-          "amount": 75.0,
+          "amount": 78.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 main season",
+          "season_label": "Winter 2026/27 main season",
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         }
       ]
@@ -8907,12 +8907,12 @@
         {
           "duration_days": 1,
           "audience": "adult",
-          "amount": 68.0,
+          "amount": 70.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 main season",
+          "season_label": "Winter 2026/27 main season",
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         }
       ]
@@ -9154,6 +9154,35 @@
           "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
         }
       ]
+    },
+    {
+      "lift_pass_product_id": "tignes-local-ski-pass",
+      "name": "Tignes local ski pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "tignes"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "tignes-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 70.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        }
+      ],
+      "validity_windows": []
     }
   ],
   "rental_display_facts": [
