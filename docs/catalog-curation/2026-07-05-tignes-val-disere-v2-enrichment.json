@@ -4561,6 +4561,155 @@
       "source_value": "val-disere-day-ticket",
       "evidence_summary": "Official tariff material identifies the pass product; product coverage and current presentation remain for independent review.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass1-tignes-sector-map",
+      "boundary_target_ids": [
+        "grande-motte",
+        "toviere",
+        "palet",
+        "aiguille-percee",
+        "brevieres-sector",
+        "boisses-sector"
+      ],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area/ski-map",
+      "source_title": "Official Tignes winter piste map",
+      "source_value": "tignes-ski-area",
+      "evidence_summary": "The official Tignes map presents the named candidates as sectors within the connected Tignes terrain rather than as complete independent ski areas.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass1-tignes-sector-status",
+      "boundary_target_ids": [
+        "grande-motte",
+        "toviere",
+        "palet",
+        "aiguille-percee",
+        "brevieres-sector",
+        "boisses-sector"
+      ],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area/lifts-and-pistes-live-opening",
+      "source_title": "Official Tignes live lifts and pistes presentation",
+      "source_value": "tignes-ski-area",
+      "evidence_summary": "Tignes publishes lift, piste, snow, and weather status through one parent-area presentation; no candidate-specific independent operations, weather, or full-local-pass owner is presented.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass1-val-disere-sector-status",
+      "boundary_target_ids": [
+        "la-daille-sector",
+        "bellevarde",
+        "solaise",
+        "fornet-iseran",
+        "pisaillas"
+      ],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.ski/en/lifts-openings-and-piste-map",
+      "source_title": "Official Val d'Isere lift-opening and piste-map presentation",
+      "source_value": "val-disere-ski-area",
+      "evidence_summary": "The official operating presentation names La Daille, Bellevarde, Solaise, Fornet/Iseran, and Pisaillas within one Val d'Isere area and publishes their live state through that parent owner.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass1-val-disere-sector-pass",
+      "boundary_target_ids": [
+        "la-daille-sector",
+        "bellevarde",
+        "solaise",
+        "fornet-iseran",
+        "pisaillas"
+      ],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+      "source_title": "Official Val d'Isere pass and lift presentation",
+      "source_value": "val-disere-ski-area",
+      "evidence_summary": "The official pass page lists lifts by these sectors while selling products at Val d'Isere or connected-domain scope; it does not present a full local downhill pass owned by an individual sector.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass1-val-disere-laisinant-market",
+      "boundary_target_ids": [
+        "val-disere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://booking.valdisere.com/en/accommodation/town-laisinant-200068.html",
+      "source_title": "Official booking collection for Laisinant",
+      "source_value": "val-disere",
+      "evidence_summary": "The official booking collection identifies Laisinant as a distinct accommodation hamlet, close to slopes with direct chairlift access and a free-shuttle link to central Val d'Isere.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass1-val-disere-legettaz-market",
+      "boundary_target_ids": [
+        "val-disere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://reservation.valdisere.com/fr/hebergement/zone-legettaz-200069.html",
+      "source_title": "Official booking collection for Legettaz",
+      "source_value": "val-disere",
+      "evidence_summary": "The official booking collection identifies Legettaz as a distinct accommodation hamlet at the foot of Solaise, with piste proximity and pedestrian or shuttle access to the village centre.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass1-val-disere-joseray-market",
+      "boundary_target_ids": [
+        "val-disere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://booking.valdisere.com/en/accommodation/town-joseray-200077.html?page=1",
+      "source_title": "Official booking collection for Joseray",
+      "source_value": "val-disere",
+      "evidence_summary": "The official booking collection identifies Joseray as a distinct accommodation quarter below Bellevarde, near the Solaise and Bellevarde lifts and central village.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass1-val-disere-ski-touring-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+      "source_title": "Official Val d'Isere ski-touring lift product",
+      "source_value": "val-disere-day-ticket",
+      "evidence_summary": "The official page describes a ski-touring access product as three one-time lift rides to reach touring itineraries, not a downhill ski-area coverage pass.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass1-val-disere-village-heritage",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/",
+      "source_title": "Official Val d'Isere heritage and architecture guide",
+      "source_value": "mixed",
+      "evidence_summary": "The live official village guide exposes dedicated heritage and architecture material that supports the existing mixed built-form assessment alongside the detailed history source.",
+      "normalization_note": null
     }
   ],
   "destination_boundary_assessments": [
@@ -4657,7 +4806,8 @@
     "The official piste map covers the connected Tignes-Val d'Isere domain, so it is stored on the terrain domain rather than duplicated onto both child ski areas.",
     "Tignes publishes snowmaking availability and a 400-snowgun inventory but no coverage percentage with a declared denominator; coverage remains unknown.",
     "Official sources reviewed did not establish child-scoped snowmaking coverage or stable night-skiing availability for Val d'Isere.",
-    "La Daille character and elevation remain unknown because the reviewed first-party sources did not provide sufficiently specific structural evidence."
+    "La Daille character and elevation remain unknown because the reviewed first-party sources did not provide sufficiently specific structural evidence.",
+    "Inventory-completion pass 1 found direct official accommodation-market and access evidence for Laisinant, Legettaz, and Joseray. Their exact catalog dispositions remain for fresh independent review before any catalog mutation."
   ],
   "report_schema_version": 3,
   "entity_scope_assessments": [
@@ -4692,7 +4842,10 @@
         "independent_stay_market"
       ],
       "evidence_refs": [
-        "schema-v3-inventory-stay-destination-val-disere"
+        "schema-v3-inventory-stay-destination-val-disere",
+        "inventory-pass1-val-disere-laisinant-market",
+        "inventory-pass1-val-disere-legettaz-market",
+        "inventory-pass1-val-disere-joseray-market"
       ],
       "target_refs": [
         {
@@ -4868,7 +5021,8 @@
         "direct_access_relationship"
       ],
       "evidence_refs": [
-        "v2-enrichment-040-val-disere-village-base-character-development-style"
+        "v2-enrichment-040-val-disere-village-base-character-development-style",
+        "inventory-pass1-val-disere-village-heritage"
       ],
       "target_refs": [
         {
@@ -5192,6 +5346,430 @@
       "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "grande-motte",
+      "candidate_name": "Grande Motte",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-tignes-sector-map",
+        "inventory-pass1-tignes-sector-status"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "tignes-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-tignes-sector-map",
+          "inventory-pass1-tignes-sector-status"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "toviere",
+      "candidate_name": "Toviere",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-tignes-sector-map",
+        "inventory-pass1-tignes-sector-status"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "tignes-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-tignes-sector-map",
+          "inventory-pass1-tignes-sector-status"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "palet",
+      "candidate_name": "Palet",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-tignes-sector-map",
+        "inventory-pass1-tignes-sector-status"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "tignes-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-tignes-sector-map",
+          "inventory-pass1-tignes-sector-status"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "aiguille-percee",
+      "candidate_name": "Aiguille Percee",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-tignes-sector-map",
+        "inventory-pass1-tignes-sector-status"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "tignes-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-tignes-sector-map",
+          "inventory-pass1-tignes-sector-status"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "brevieres-sector",
+      "candidate_name": "Brevieres sector",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-tignes-sector-map",
+        "inventory-pass1-tignes-sector-status"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "tignes-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-tignes-sector-map",
+          "inventory-pass1-tignes-sector-status"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "boisses-sector",
+      "candidate_name": "Boisses sector",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-tignes-sector-map",
+        "inventory-pass1-tignes-sector-status"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "tignes-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-tignes-sector-map",
+          "inventory-pass1-tignes-sector-status"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "la-daille-sector",
+      "candidate_name": "La Daille sector",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-sector-status",
+        "inventory-pass1-val-disere-sector-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-disere-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-disere-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-val-disere-sector-status",
+          "inventory-pass1-val-disere-sector-pass"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "bellevarde",
+      "candidate_name": "Bellevarde",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-sector-status",
+        "inventory-pass1-val-disere-sector-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-disere-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-disere-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-val-disere-sector-status",
+          "inventory-pass1-val-disere-sector-pass"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "solaise",
+      "candidate_name": "Solaise",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-sector-status",
+        "inventory-pass1-val-disere-sector-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-disere-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-disere-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-val-disere-sector-status",
+          "inventory-pass1-val-disere-sector-pass"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "fornet-iseran",
+      "candidate_name": "Fornet / Iseran",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-sector-status",
+        "inventory-pass1-val-disere-sector-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-disere-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-disere-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-val-disere-sector-status",
+          "inventory-pass1-val-disere-sector-pass"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "pisaillas",
+      "candidate_name": "Pisaillas",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-sector-status",
+        "inventory-pass1-val-disere-sector-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-disere-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The candidate is a named connected sector in the parent map/status inventory. The parent presentation owns current operations, weather context, and area-level pass scope, with no direct evidence of an independently owned complete ski area.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": "val-disere-ski-area",
+        "terrain_scope": "sector",
+        "connectivity_to_parent": "connected",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
+        "evidence_refs": [
+          "inventory-pass1-val-disere-sector-status",
+          "inventory-pass1-val-disere-sector-pass"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-ski-touring-pass",
+      "candidate_name": "Val d'Isere ski touring pass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "external_pass_context",
+      "signals": [
+        "limited_area_ticket"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-ski-touring-pass"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "The source defines a limited uphill-access product for reaching ski-touring itineraries. It is not a downhill LiftPassProduct whose terrain validity should enter the modeled pass graph.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     }
   ],
   "review_evidence_envelope": [
@@ -5199,8 +5777,12 @@
       "family_id": "tignes-val-disere-destination-booking",
       "source_kind": "destination_booking",
       "source_urls": [
+        "https://booking.valdisere.com/en/accommodation/town-joseray-200077.html?page=1",
+        "https://booking.valdisere.com/en/accommodation/town-laisinant-200068.html",
         "https://en.tignes.net/discover/ski-resort/tignes-villages",
-        "https://www.valdisere.com/en/val-disere/"
+        "https://reservation.valdisere.com/fr/hebergement/zone-legettaz-200069.html",
+        "https://www.valdisere.com/en/val-disere/",
+        "https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/"
       ],
       "candidate_kinds": [
         "stay_destination",
@@ -5212,7 +5794,9 @@
       "source_kind": "ski_area_operator",
       "source_urls": [
         "https://en.tignes.net/skiing/ski-area",
-        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        "https://en.tignes.net/skiing/ski-area/lifts-and-pistes-live-opening",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+        "https://www.valdisere.ski/en/lifts-openings-and-piste-map"
       ],
       "candidate_kinds": [
         "ski_area",
