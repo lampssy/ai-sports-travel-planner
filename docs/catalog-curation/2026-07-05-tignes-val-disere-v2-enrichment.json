@@ -1,0 +1,3736 @@
+{
+  "title": "Tignes-Val d'Isere Catalog V2 Fact Enrichment",
+  "summary": "Reviews the Tignes and Val d'Isere ski areas, their eight accommodation bases, and the shared connected terrain domain against official operator and destination sources.",
+  "changed_entities": [
+    "ski_area:tignes-ski-area",
+    "ski_area:val-disere-ski-area",
+    "stay_base:tignes-1800",
+    "stay_base:tignes-lavachet",
+    "stay_base:tignes-le-lac",
+    "stay_base:tignes-les-brevieres",
+    "stay_base:tignes-val-claret",
+    "stay_base:val-disere-la-daille",
+    "stay_base:val-disere-le-fornet",
+    "stay_base:val-disere-village",
+    "terrain_domain:tignes-val-disere",
+    "trust_manifest:ski_areas:tignes-ski-area",
+    "trust_manifest:ski_areas:val-disere-ski-area",
+    "trust_manifest:stay_bases:tignes-1800",
+    "trust_manifest:stay_bases:tignes-lavachet",
+    "trust_manifest:stay_bases:tignes-le-lac",
+    "trust_manifest:stay_bases:tignes-les-brevieres",
+    "trust_manifest:stay_bases:tignes-val-claret",
+    "trust_manifest:stay_bases:val-disere-la-daille",
+    "trust_manifest:stay_bases:val-disere-le-fornet",
+    "trust_manifest:stay_bases:val-disere-village",
+    "trust_manifest:terrain_domains:tignes-val-disere"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "scope": "narrow",
+      "required_field_paths": [
+        "official_trail_map.url",
+        "official_trail_map.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:tignes-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-disere-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-1800",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-lavachet",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-le-lac",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-les-brevieres",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-val-claret",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-la-daille",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-le-fornet",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-village",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:tignes-val-disere",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "planned_resort",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "quiet",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1800,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "planned_resort",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "quiet",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 2050,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "planned_resort",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 2100,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "traditional",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "balanced",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1550,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "planned_resort",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 2150,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "traditional",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "quiet",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1930,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "low_key",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1850,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://en.tignes.net/skiing/ski-area/ski-map",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:tignes-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "glacier_terrain": [
+          "https://en.tignes.net/discover/ski-resort/grande-motte-glacier"
+        ],
+        "identity_coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "marked_freeride_routes": [
+          "https://en.tignes.net/skiing/ski-for-all/freeride-in-tignes"
+        ],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [
+          "https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski"
+        ],
+        "skill_fit": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "snow_park": [
+          "https://en.tignes.net/skiing/ski-for-all/freestyle-areas"
+        ],
+        "snowmaking": [
+          "https://en.tignes.net/skiing/ski-area/commitments-ski-area"
+        ],
+        "terrain_metrics": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:tignes-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified"
+      },
+      "after": {
+        "elevation_season": "verified",
+        "glacier_terrain": "verified",
+        "identity_coordinates": "verified",
+        "marked_freeride_routes": "verified_with_adjustment",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "estimated",
+        "snow_park": "verified_with_adjustment",
+        "snowmaking": "verified",
+        "terrain_metrics": "verified"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:tignes-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed official Tignes ski-area, glacier, freestyle, freeride, and slope-side apres material on 2026-07-05.",
+        "The shared Tignes-Val d'Isere piste map is stored on the connected terrain domain."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-disere-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "glacier_terrain": [
+          "https://www.valdisere.com/en/val-disere-in-summer/summer-skiing/"
+        ],
+        "identity_coordinates": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
+        ],
+        "skill_fit": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "snow_park": [
+          "https://www.valdisere.com/en/offres/snowpark-val-disere-en-4125642/"
+        ],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-disere-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "verified",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "estimated",
+        "snow_park": "verified",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-disere-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
+        "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+        "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
+        "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+        "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
+        "Source-aware v2 enrichment reviewed official Val d'Isere glacier, snowpark, and apres material on 2026-07-05.",
+        "The shared Tignes-Val d'Isere piste map is stored on the connected terrain domain."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-1800",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        ],
+        "base_type": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        ],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [
+          "https://en.tignes.net/holidays"
+        ],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-1800",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-1800",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-lavachet",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        ],
+        "base_type": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        ],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [
+          "https://en.tignes.net/holidays"
+        ],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-lavachet",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-lavachet",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-le-lac",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar"
+        ],
+        "base_type": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        ],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [
+          "https://en.tignes.net/holidays"
+        ],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [
+          "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar"
+        ],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-le-lac",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-le-lac",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed official Tignes Le Lac character, altitude, and apres material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-les-brevieres",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        ],
+        "base_type": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        ],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [
+          "https://en.tignes.net/holidays"
+        ],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-les-brevieres",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-les-brevieres",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-val-claret",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe"
+        ],
+        "base_type": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        ],
+        "coordinates": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "elevation": [
+          "https://en.tignes.net/holidays"
+        ],
+        "identity_ownership": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ],
+        "local_apres": [
+          "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe"
+        ],
+        "lodging_price_quality": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+          "https://en.tignes.net/resort-opening-dates",
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.tignes.net/",
+          "https://www.tignes.net/skiing/ski-area",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.wikidata.org/wiki/Q330899"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-val-claret",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-val-claret",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed official Val Claret character, altitude, and apres material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-la-daille",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
+        ],
+        "base_type": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
+        ],
+        "coordinates": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "local_apres": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
+        ],
+        "lodging_price_quality": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-la-daille",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-la-daille",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
+        "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+        "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
+        "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+        "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
+        "Source-aware v2 enrichment reviewed official La Daille apres and destination material on 2026-07-05.",
+        "Representative elevation and development style remain unresolved for this specific accommodation sector."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-le-fornet",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
+        ],
+        "base_type": [
+          "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
+        ],
+        "coordinates": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "elevation": [
+          "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
+        ],
+        "identity_ownership": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "local_apres": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
+        ],
+        "lodging_price_quality": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-le-fornet",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified",
+        "base_type": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-le-fornet",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
+        "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+        "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
+        "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+        "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
+        "Source-aware v2 enrichment reviewed official Le Fornet history, character, and apres material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-village",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+          "https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/",
+          "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
+        ],
+        "base_type": [
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
+        ],
+        "coordinates": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "elevation": [
+          "https://www.valdisere.com/en/val-disere/"
+        ],
+        "identity_ownership": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "local_apres": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
+        ],
+        "lodging_price_quality": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-village",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-village",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
+        "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+        "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
+        "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+        "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
+        "Source-aware v2 enrichment reviewed official Val d'Isere village, history, heritage, and apres material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:tignes-val-disere",
+      "field_path": "field_source_refs",
+      "before": {
+        "aggregate_terrain": [
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.bergfex.com/skiregionen/valdiseres-tignes/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        ],
+        "membership_connectivity": [
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.bergfex.com/skiregionen/valdiseres-tignes/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        ],
+        "official_documents": [],
+        "season": [
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.bergfex.com/skiregionen/valdiseres-tignes/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        ]
+      },
+      "after": {
+        "aggregate_terrain": [
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.bergfex.com/skiregionen/valdiseres-tignes/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        ],
+        "membership_connectivity": [
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.bergfex.com/skiregionen/valdiseres-tignes/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        ],
+        "official_documents": [
+          "https://en.tignes.net/skiing/ski-area/ski-map"
+        ],
+        "season": [
+          "https://en.tignes.net/skiing/ski-area",
+          "https://www.bergfex.com/skiregionen/valdiseres-tignes/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:tignes-val-disere",
+      "field_path": "field_statuses",
+      "before": {
+        "aggregate_terrain": "verified_with_adjustment",
+        "membership_connectivity": "verified",
+        "official_documents": "needs_source",
+        "season": "needs_source"
+      },
+      "after": {
+        "aggregate_terrain": "verified_with_adjustment",
+        "membership_connectivity": "verified",
+        "official_documents": "verified",
+        "season": "needs_source"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:tignes-val-disere",
+      "field_path": "notes",
+      "before": [
+        "Official Tignes and Val d'Isere pages identify one ski-connected 300 km domain spanning both modeled destinations.",
+        "The aggregate lift count is verified_with_adjustment: official pages conflict at 74 and 71 lifts, so the reviewed Bergfex category sum supplies the normalized value of 72; aggregate elevations remain scoped to the domain.",
+        "No shared-domain season window is stored; season dates remain owned by the local ski-area records."
+      ],
+      "after": [
+        "Official Tignes and Val d'Isere pages identify one ski-connected 300 km domain spanning both modeled destinations.",
+        "The aggregate lift count is verified_with_adjustment: official pages conflict at 74 and 71 lifts, so the reviewed Bergfex category sum supplies the normalized value of 72; aggregate elevations remain scoped to the domain.",
+        "No shared-domain season window is stored; season dates remain owned by the local ski-area records.",
+        "Source-aware v2 enrichment reviewed the official connected-domain piste map on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "changed",
+      "notes": "The official operator documents a controlled snowmaking network with 400 snowguns across the Tignes ski area."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "changed",
+      "notes": "The official guide documents lift-served blue, red, and black skiing on the Grande Motte glacier from November through winter."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official freestyle guide documents the dedicated Alpha Park snowpark in Tignes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "Alpha Park is counted as one dedicated snowpark; its multiple lines, boardercross, chill zone, and separate beginner Easy Park are not counted as additional dedicated parks."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "changed",
+      "notes": "The official guide identifies Naturides as safe, marked, ungroomed black runs accessed by lift."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory documents a ski-in outdoor apres venue at the foot of Grande Motte with daily live music and DJ entertainment."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The venue runs recurring live music, DJ sets, and a large outdoor dance terrace through the ski season."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "changed",
+      "notes": "The official destination documents lift-served skiing on the Pisaillas glacier."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official listing documents Val Park as a dedicated snowpark on Bellevarde."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "The official inventory identifies one dedicated Val d'Isere snowpark."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official apres guide documents multiple on-slope and ski-accessible foot-of-slope venues."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The official guide highlights cabaret, DJs, live music, open-air dancing, and multiple high-energy venues across the ski day."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain claims."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official accommodation guide identifies Tignes 1800 at 1800 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing resort_station type is retained because the official guide describes a distinct, predominantly tourism-oriented village with its own services and ski access."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official guide says the new village opened in 2013 and was specially designed around accommodation, services, ski access, and families."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide emphasizes peace and quiet and a village spirit despite access to the wider resort."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Tignes 1800 sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Tignes 1800 sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes 1800 sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official accommodation guide identifies Tignes le Lavachet at 2050 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing neighbourhood type is retained because the official guide presents Lavachet as a district within Tignes 2100 rather than an independent settlement."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "Lavachet is presented as one of the resort's high-altitude accommodation districts, linked by lifts and shuttles to the other Tignes 2100 sectors."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide explicitly positions Lavachet around peace and quiet while retaining nearby services."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Lavachet sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Lavachet sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Lavachet sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official accommodation guide identifies Tignes le Lac at 2100 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing resort_sector type is retained because Le Lac is the central accommodation and service sector within Tignes 2100 rather than an independent settlement."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official guide presents Le Lac as the purpose-developed centre of the high-altitude resort with shops, culture, wellness, terraces, and ski access."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide calls Le Lac the resort centre and says there is always something to do, with shopping, terraces, culture, and wellness."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory documents ski-in apres sessions and party nights in Le Lac."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The listing highlights large apres sessions, live bands, DJs, party nights, and recurring happy hours."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes Le Lac sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official accommodation guide identifies Tignes les Brevieres at 1550 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing village type is retained because the official guide presents a distinct lower settlement with traditional chalets and its own restaurants and activities."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official guide emphasizes the village's traditional chalets, larch setting, and established lower-village identity."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide presents a convivial village with authentic restaurants, practical ski access, and family activities without a consistently lively nightlife claim."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Tignes les Brevieres sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Tignes les Brevieres sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes les Brevieres sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official accommodation guide identifies Tignes Val Claret at 2150 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing resort_sector type is retained because Val Claret is a high-altitude accommodation and lift sector within Tignes 2100 rather than an independent settlement."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official guide presents Val Claret as a high-altitude sport and accommodation sector organized around ski lifts, competition venues, restaurants, and nightlife."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide explicitly describes Val Claret as festive and invites visitors to move from apres-ski to the dance floor through the night."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory documents a central Val Claret apres bar with DJs and nightly opening."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The listing documents a seven-day schedule from late afternoon to 2 a.m. with DJs, cocktails, and apres-ski."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Val Claret sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "elevation_m",
+      "status": "unresolved",
+      "notes": "Official La Daille sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing resort_sector type is retained because the official destination treats La Daille as a distinct sector within Val d'Isere rather than an independent settlement."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "base_character.development_style",
+      "status": "unresolved",
+      "notes": "Official La Daille sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide describes a wild apres scene plus a lively venue with daily concerts, live music, and DJ sets in La Daille."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official destination guide documents multiple apres venues in La Daille."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The source explicitly calls the sector's apres scene wild and its venues lively, with recurring concerts and DJs."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official La Daille sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official history identifies Le Fornet as a hamlet at 1930 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing hamlet type is retained because the official history identifies Le Fornet as a small year-round hamlet with about seventy residents."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official history documents eighteenth-century buildings, original local families, and a preserved authentic hamlet form."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official history explicitly emphasizes Le Fornet's tranquillity and preserved feel."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official apres guide identifies a bar and terrace at the bottom of the Fornet cable car."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The Fornet offer is presented as relaxed sun-soaked deckchairs at one cable-car-base venue, in contrast with the high-energy Village and La Daille scenes."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Le Fornet sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official destination guide places Val d'Isere village at 1850 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing village type is retained because official material describes a historic year-round mountain village that developed into a ski resort while preserving a distinct settlement centre."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "Official history documents a centuries-old village and built heritage alongside planned twentieth-century hotels, public infrastructure, lifts, and resort expansion."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide documents numerous village bars and nightclubs operating into the early hours alongside a broad restaurant and retail offer."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official destination guide documents a wide selection of bars, live music, theme parties, and nightclubs in the village centre."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The official guide describes multiple lively bars and nightclubs where guests can dance until the early hours."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Val d'Isere village sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "The official Tignes piste-map page covers the connected Tignes-Val d'Isere terrain domain and links the current interactive and downloadable maps."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Tignes-Val d'Isere connected-domain sources were reviewed, but they did not establish this exact terrain-domain document value."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:tignes-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:tignes-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:tignes-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-disere-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-disere-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-disere-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-1800",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-1800",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-1800",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-lavachet",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-lavachet",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-lavachet",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-le-lac",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-le-lac",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-le-lac",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-les-brevieres",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-les-brevieres",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-les-brevieres",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-val-claret",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-val-claret",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:tignes-val-claret",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-la-daille",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-la-daille",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-la-daille",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-le-fornet",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-le-fornet",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-le-fornet",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-village",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-village",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-disere-village",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:tignes-val-disere",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:tignes-val-disere",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:tignes-val-disere",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-tignes-ski-area-glacier-terrain-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/grande-motte-glacier",
+      "source_title": "Tignes official Grande Motte glacier guide",
+      "source_value": "available",
+      "evidence_summary": "The official guide documents lift-served blue, red, and black skiing on the Grande Motte glacier from November through winter.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-tignes-ski-area-marked-freeride-routes-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-for-all/freeride-in-tignes",
+      "source_title": "Tignes official freeride guide",
+      "source_value": "available",
+      "evidence_summary": "The official guide identifies Naturides as safe, marked, ungroomed black runs accessed by lift.",
+      "normalization_note": "Marked and controlled ungroomed Naturides are mapped to marked freeride-route availability; no count is asserted."
+    },
+    {
+      "evidence_id": "v2-enrichment-003-tignes-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski",
+      "source_title": "Tignes official Cocorico apres-ski listing",
+      "source_value": "available",
+      "evidence_summary": "The official directory documents a ski-in outdoor apres venue at the foot of Grande Motte with daily live music and DJ entertainment.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-004-tignes-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski",
+      "source_title": "Tignes official Cocorico apres-ski listing",
+      "source_value": "lively",
+      "evidence_summary": "The venue runs recurring live music, DJ sets, and a large outdoor dance terrace through the ski season.",
+      "normalization_note": "The daily programmed slope-side party offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-005-tignes-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-for-all/freestyle-areas",
+      "source_title": "Tignes official freestyle-area guide",
+      "source_value": "available",
+      "evidence_summary": "The official freestyle guide documents the dedicated Alpha Park snowpark in Tignes.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-006-tignes-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-for-all/freestyle-areas",
+      "source_title": "Tignes official freestyle-area guide",
+      "source_value": 1,
+      "evidence_summary": "Alpha Park is counted as one dedicated snowpark; its multiple lines, boardercross, chill zone, and separate beginner Easy Park are not counted as additional dedicated parks.",
+      "normalization_note": "The named dedicated snowpark is counted once despite its internal zones."
+    },
+    {
+      "evidence_id": "v2-enrichment-007-tignes-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area/commitments-ski-area",
+      "source_title": "Tignes official ski-area snowmaking guide",
+      "source_value": "available",
+      "evidence_summary": "The official operator documents a controlled snowmaking network with 400 snowguns across the Tignes ski area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-008-val-disere-ski-area-glacier-terrain-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere-in-summer/summer-skiing/",
+      "source_title": "Val d'Isere official Pisaillas glacier skiing guide",
+      "source_value": "available",
+      "evidence_summary": "The official destination documents lift-served skiing on the Pisaillas glacier.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-009-val-disere-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "available",
+      "evidence_summary": "The official apres guide documents multiple on-slope and ski-accessible foot-of-slope venues.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-val-disere-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide highlights cabaret, DJs, live music, open-air dancing, and multiple high-energy venues across the ski day.",
+      "normalization_note": "The broad recurring slope-side party offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-011-val-disere-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/offres/snowpark-val-disere-en-4125642/",
+      "source_title": "Val d'Isere official snowpark listing",
+      "source_value": "available",
+      "evidence_summary": "The official listing documents Val Park as a dedicated snowpark on Bellevarde.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-012-val-disere-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/offres/snowpark-val-disere-en-4125642/",
+      "source_title": "Val d'Isere official snowpark listing",
+      "source_value": 1,
+      "evidence_summary": "The official inventory identifies one dedicated Val d'Isere snowpark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-013-tignes-1800-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "planned_resort",
+      "evidence_summary": "The official guide says the new village opened in 2013 and was specially designed around accommodation, services, ski access, and families.",
+      "normalization_note": "The explicitly new and specially designed resort village is mapped to planned_resort."
+    },
+    {
+      "evidence_id": "v2-enrichment-014-tignes-1800-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "quiet",
+      "evidence_summary": "The official guide emphasizes peace and quiet and a village spirit despite access to the wider resort.",
+      "normalization_note": "The explicit peace-and-quiet positioning is mapped to quiet."
+    },
+    {
+      "evidence_id": "v2-enrichment-015-tignes-1800-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/holidays",
+      "source_title": "Tignes official accommodation-base altitude guide",
+      "source_value": 1800,
+      "evidence_summary": "The official accommodation guide identifies Tignes 1800 at 1800 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-016-tignes-lavachet-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "planned_resort",
+      "evidence_summary": "Lavachet is presented as one of the resort's high-altitude accommodation districts, linked by lifts and shuttles to the other Tignes 2100 sectors.",
+      "normalization_note": "The resort-era district form is mapped to planned_resort."
+    },
+    {
+      "evidence_id": "v2-enrichment-017-tignes-lavachet-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "quiet",
+      "evidence_summary": "The official guide explicitly positions Lavachet around peace and quiet while retaining nearby services.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-018-tignes-lavachet-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/holidays",
+      "source_title": "Tignes official accommodation-base altitude guide",
+      "source_value": 2050,
+      "evidence_summary": "The official accommodation guide identifies Tignes le Lavachet at 2050 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-019-tignes-le-lac-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "planned_resort",
+      "evidence_summary": "The official guide presents Le Lac as the purpose-developed centre of the high-altitude resort with shops, culture, wellness, terraces, and ski access.",
+      "normalization_note": "The resort-centre form is mapped to planned_resort."
+    },
+    {
+      "evidence_id": "v2-enrichment-020-tignes-le-lac-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide calls Le Lac the resort centre and says there is always something to do, with shopping, terraces, culture, and wellness.",
+      "normalization_note": "The continuously active resort-centre positioning is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-021-tignes-le-lac-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/holidays",
+      "source_title": "Tignes official accommodation-base altitude guide",
+      "source_value": 2100,
+      "evidence_summary": "The official accommodation guide identifies Tignes le Lac at 2100 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-022-tignes-le-lac-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar",
+      "source_title": "Tignes official Loop Bar listing",
+      "source_value": "available",
+      "evidence_summary": "The official directory documents ski-in apres sessions and party nights in Le Lac.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-023-tignes-le-lac-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar",
+      "source_title": "Tignes official Loop Bar listing",
+      "source_value": "lively",
+      "evidence_summary": "The listing highlights large apres sessions, live bands, DJs, party nights, and recurring happy hours.",
+      "normalization_note": "The recurring high-energy local offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-024-tignes-les-brevieres-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "traditional",
+      "evidence_summary": "The official guide emphasizes the village's traditional chalets, larch setting, and established lower-village identity.",
+      "normalization_note": "The predominantly inherited village form is mapped to traditional."
+    },
+    {
+      "evidence_id": "v2-enrichment-025-tignes-les-brevieres-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "balanced",
+      "evidence_summary": "The official guide presents a convivial village with authentic restaurants, practical ski access, and family activities without a consistently lively nightlife claim.",
+      "normalization_note": "The meaningful local services and conviviality are mapped to balanced."
+    },
+    {
+      "evidence_id": "v2-enrichment-026-tignes-les-brevieres-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/holidays",
+      "source_title": "Tignes official accommodation-base altitude guide",
+      "source_value": 1550,
+      "evidence_summary": "The official accommodation guide identifies Tignes les Brevieres at 1550 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-027-tignes-val-claret-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "planned_resort",
+      "evidence_summary": "The official guide presents Val Claret as a high-altitude sport and accommodation sector organized around ski lifts, competition venues, restaurants, and nightlife.",
+      "normalization_note": "The resort-era sector form is mapped to planned_resort."
+    },
+    {
+      "evidence_id": "v2-enrichment-028-tignes-val-claret-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide explicitly describes Val Claret as festive and invites visitors to move from apres-ski to the dance floor through the night.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-029-tignes-val-claret-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/holidays",
+      "source_title": "Tignes official accommodation-base altitude guide",
+      "source_value": 2150,
+      "evidence_summary": "The official accommodation guide identifies Tignes Val Claret at 2150 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-030-tignes-val-claret-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe",
+      "source_title": "Tignes official Val Claret apres listing",
+      "source_value": "available",
+      "evidence_summary": "The official directory documents a central Val Claret apres bar with DJs and nightly opening.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-031-tignes-val-claret-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe",
+      "source_title": "Tignes official Val Claret apres listing",
+      "source_value": "lively",
+      "evidence_summary": "The listing documents a seven-day schedule from late afternoon to 2 a.m. with DJs, cocktails, and apres-ski.",
+      "normalization_note": "The recurring late-night programmed offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-032-val-disere-la-daille-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide describes a wild apres scene plus a lively venue with daily concerts, live music, and DJ sets in La Daille.",
+      "normalization_note": "The recurring active social offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-033-val-disere-la-daille-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "available",
+      "evidence_summary": "The official destination guide documents multiple apres venues in La Daille.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-034-val-disere-la-daille-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "lively",
+      "evidence_summary": "The source explicitly calls the sector's apres scene wild and its venues lively, with recurring concerts and DJs.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-035-val-disere-le-fornet-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/village-guide/history-pioneering-village/",
+      "source_title": "Val d'Isere official village history",
+      "source_value": "traditional",
+      "evidence_summary": "The official history documents eighteenth-century buildings, original local families, and a preserved authentic hamlet form.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-036-val-disere-le-fornet-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/village-guide/history-pioneering-village/",
+      "source_title": "Val d'Isere official village history",
+      "source_value": "quiet",
+      "evidence_summary": "The official history explicitly emphasizes Le Fornet's tranquillity and preserved feel.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-037-val-disere-le-fornet-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/village-guide/history-pioneering-village/",
+      "source_title": "Val d'Isere official village history",
+      "source_value": 1930,
+      "evidence_summary": "The official history identifies Le Fornet as a hamlet at 1930 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-038-val-disere-le-fornet-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "available",
+      "evidence_summary": "The official apres guide identifies a bar and terrace at the bottom of the Fornet cable car.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-039-val-disere-le-fornet-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "low_key",
+      "evidence_summary": "The Fornet offer is presented as relaxed sun-soaked deckchairs at one cable-car-base venue, in contrast with the high-energy Village and La Daille scenes.",
+      "normalization_note": "The source-backed relaxed single-venue offer is mapped to low_key."
+    },
+    {
+      "evidence_id": "v2-enrichment-040-val-disere-village-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/village-guide/history-pioneering-village/",
+      "source_title": "Val d'Isere official village history",
+      "source_value": "mixed",
+      "evidence_summary": "Official history documents a centuries-old village and built heritage alongside planned twentieth-century hotels, public infrastructure, lifts, and resort expansion.",
+      "normalization_note": "The preserved historic village core plus substantial resort-era development is mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-041-val-disere-village-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide documents numerous village bars and nightclubs operating into the early hours alongside a broad restaurant and retail offer.",
+      "normalization_note": "The broad recurring evening and nightlife offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-042-val-disere-village-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere/",
+      "source_title": "Val d'Isere official village guide",
+      "source_value": 1850,
+      "evidence_summary": "The official destination guide places Val d'Isere village at 1850 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-043-val-disere-village-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "available",
+      "evidence_summary": "The official destination guide documents a wide selection of bars, live music, theme parties, and nightclubs in the village centre.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-044-val-disere-village-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+      "source_title": "Val d'Isere official apres-ski guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide describes multiple lively bars and nightclubs where guests can dance until the early hours.",
+      "normalization_note": "The broad late-running local scene is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-045-tignes-val-disere-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area/ski-map",
+      "source_title": "Tignes official connected ski-area map",
+      "source_value": "https://en.tignes.net/skiing/ski-area/ski-map",
+      "evidence_summary": "The official Tignes piste-map page covers the connected Tignes-Val d'Isere terrain domain and links the current interactive and downloadable maps.",
+      "normalization_note": null
+    }
+  ],
+  "destination_boundary_assessments": [],
+  "boundary_decision_targets": [],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [],
+  "ranking_impact_summary": null,
+  "unresolved_caveats": [
+    "The official piste map covers the connected Tignes-Val d'Isere domain, so it is stored on the terrain domain rather than duplicated onto both child ski areas.",
+    "Tignes publishes snowmaking availability and a 400-snowgun inventory but no coverage percentage with a declared denominator; coverage remains unknown.",
+    "Official sources reviewed did not establish child-scoped snowmaking coverage or stable night-skiing availability for Val d'Isere.",
+    "La Daille character and elevation remain unknown because the reviewed first-party sources did not provide sufficiently specific structural evidence."
+  ]
+}

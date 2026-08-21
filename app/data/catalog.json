@@ -2267,10 +2267,10 @@
       "longitude": null,
       "base_type": "resort_station",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 1800,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2290,10 +2290,10 @@
       "longitude": null,
       "base_type": "neighbourhood",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 2050,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2313,14 +2313,14 @@
       "longitude": null,
       "base_type": "resort_sector",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 2100,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2336,10 +2336,10 @@
       "longitude": null,
       "base_type": "village",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 1550,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2359,14 +2359,14 @@
       "longitude": null,
       "base_type": "resort_sector",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 2150,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2387,11 +2387,11 @@
       "elevation_m": null,
       "base_character": {
         "development_style": "unknown",
-        "local_pace": "unknown"
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2409,14 +2409,14 @@
       "regional_data_ids": {
         "osm_node_id": "240913965"
       },
-      "elevation_m": null,
+      "elevation_m": 1930,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "low_key",
         "season_label": null
       }
     },
@@ -2435,14 +2435,14 @@
         "osm_relation_id": "133944",
         "wikidata_id": "Q207589"
       },
-      "elevation_m": null,
+      "elevation_m": 1850,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4899,17 +4899,17 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -4917,14 +4917,14 @@
         "season_label": null
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
+        "availability": "available",
         "route_count": null,
         "season_label": null
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4961,11 +4961,11 @@
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -4979,8 +4979,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -7101,7 +7101,9 @@
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
         "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
       ],
-      "official_trail_map": null
+      "official_trail_map": {
+        "url": "https://en.tignes.net/skiing/ski-area/ski-map"
+      }
     },
     {
       "terrain_domain_id": "cervinia-valtournenche",
