@@ -4885,7 +4885,7 @@
           "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "verified",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -10326,7 +10326,7 @@
         "display_name": "La Daille -> Val d'Isere",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "verified_with_adjustment"
+          "access_mode_distance": "needs_source"
         },
         "field_source_refs": {
           "relationship": [
@@ -10340,7 +10340,7 @@
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
           "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
-          "The official ski-area page presents La Daille as a direct departure point served by the La Daille gondola and Funival. Snowcast normalizes that candidate-bound presentation to walk access, direct=true, and the combined nearest-lift label; exact distance and duration remain unknown."
+          "The current official ski-area page supports the parent-area relationship but does not candidate-bind La Daille to a routed mode, named lift, duration, or directness. Snowcast therefore keeps the edge while recording access mode as unknown, nearest lift as unset, and directness as false."
         ]
       },
       "val-disere-le-fornet--val-disere-ski-area": {

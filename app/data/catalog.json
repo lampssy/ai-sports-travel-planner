@@ -6440,12 +6440,12 @@
       "ski_area_access_id": "val-disere-la-daille--val-disere-ski-area",
       "stay_base_id": "val-disere-la-daille",
       "ski_area_id": "val-disere-ski-area",
-      "access_mode": "walk",
+      "access_mode": "unknown",
       "lift_distance": "near",
-      "nearest_lift_name": "La Daille gondola / Funival",
+      "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
