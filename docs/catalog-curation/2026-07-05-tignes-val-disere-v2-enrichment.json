@@ -4710,6 +4710,36 @@
       "source_value": "mixed",
       "evidence_summary": "The live official village guide exposes dedicated heritage and architecture material that supports the existing mixed built-form assessment alongside the detailed history source.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass2-val-disere-le-cret-accommodation",
+      "boundary_target_ids": [
+        "val-disere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://booking.valdisere.com/2-rooms-1-bedroom-cret-1.html",
+      "source_title": "Official Val d'Isere booking listing in Le Cret",
+      "source_value": "val-disere",
+      "evidence_summary": "The official booking service places a multi-night accommodation at 70 Chemin du Cret, supplies representative coordinates, and describes it as about 1 km from the village centre. Together with the official heritage page, this confirms Le Cret as a concrete accommodation hamlet candidate.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "inventory-pass2-val-disere-le-cret-lanche-geometry",
+      "boundary_target_ids": [
+        "val-disere-ski-area"
+      ],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/10138037904",
+      "source_title": "OpenStreetMap Lanche aerialway station",
+      "source_value": "val-disere-ski-area",
+      "evidence_summary": "The structured aerialway station and official accommodation coordinates place Lanche about 725 m straight-line from the representative Le Cret listing. The bounded source pass did not establish a walking route, duration, or direct ski access, so exact access semantics remain a concrete remediation decision rather than an unknown candidate.",
+      "normalization_note": "Representative straight-line geometry only; do not treat it as a routed distance or direct-access claim."
     }
   ],
   "destination_boundary_assessments": [
@@ -4807,7 +4837,8 @@
     "Tignes publishes snowmaking availability and a 400-snowgun inventory but no coverage percentage with a declared denominator; coverage remains unknown.",
     "Official sources reviewed did not establish child-scoped snowmaking coverage or stable night-skiing availability for Val d'Isere.",
     "La Daille character and elevation remain unknown because the reviewed first-party sources did not provide sufficiently specific structural evidence.",
-    "Inventory-completion pass 1 found direct official accommodation-market and access evidence for Laisinant, Legettaz, and Joseray. Their exact catalog dispositions remain for fresh independent review before any catalog mutation."
+    "Inventory-completion pass 1 found direct official accommodation-market and access evidence for Laisinant, Legettaz, and Joseray. Their exact catalog dispositions remain for fresh independent review before any catalog mutation.",
+    "Inventory-completion pass 2 verified Le Cret as a concrete accommodation hamlet candidate and bounded its nearest structured lift geometry, but no first-party source established a routed distance, duration, or direct ski access. Its exact add/not-separate/access disposition remains for fresh independent review and ordinary remediation."
   ],
   "report_schema_version": 3,
   "entity_scope_assessments": [
@@ -4845,7 +4876,8 @@
         "schema-v3-inventory-stay-destination-val-disere",
         "inventory-pass1-val-disere-laisinant-market",
         "inventory-pass1-val-disere-legettaz-market",
-        "inventory-pass1-val-disere-joseray-market"
+        "inventory-pass1-val-disere-joseray-market",
+        "inventory-pass2-val-disere-le-cret-accommodation"
       ],
       "target_refs": [
         {
@@ -5080,7 +5112,8 @@
         "independent_status_or_schedule"
       ],
       "evidence_refs": [
-        "schema-v3-inventory-ski-area-val-disere-ski-area"
+        "schema-v3-inventory-ski-area-val-disere-ski-area",
+        "inventory-pass2-val-disere-le-cret-lanche-geometry"
       ],
       "target_refs": [
         {
@@ -5777,6 +5810,7 @@
       "family_id": "tignes-val-disere-destination-booking",
       "source_kind": "destination_booking",
       "source_urls": [
+        "https://booking.valdisere.com/2-rooms-1-bedroom-cret-1.html",
         "https://booking.valdisere.com/en/accommodation/town-joseray-200077.html?page=1",
         "https://booking.valdisere.com/en/accommodation/town-laisinant-200068.html",
         "https://en.tignes.net/discover/ski-resort/tignes-villages",
@@ -5808,6 +5842,7 @@
       "source_kind": "access_transport",
       "source_urls": [
         "https://en.tignes.net/skiing/ski-area",
+        "https://www.openstreetmap.org/node/10138037904",
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
       ],
       "candidate_kinds": [
