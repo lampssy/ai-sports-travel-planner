@@ -2269,8 +2269,8 @@
       "regional_data_ids": {},
       "elevation_m": 1800,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2293,7 +2293,7 @@
       "elevation_m": 2050,
       "base_character": {
         "development_style": "unknown",
-        "local_pace": "unknown"
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2338,7 +2338,7 @@
       "regional_data_ids": {},
       "elevation_m": 1550,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "traditional",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
@@ -2362,7 +2362,7 @@
       "elevation_m": 2150,
       "base_character": {
         "development_style": "unknown",
-        "local_pace": "unknown"
+        "local_pace": "lively"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -6365,12 +6365,12 @@
       "ski_area_access_id": "tignes-1800--tignes-ski-area",
       "stay_base_id": "tignes-1800",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Les Boisses gondola",
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": false,
+      "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
         "https://en.tignes.net/discover/ski-resort/tignes-villages"
@@ -6380,12 +6380,12 @@
       "ski_area_access_id": "tignes-lavachet--tignes-ski-area",
       "stay_base_id": "tignes-lavachet",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
       "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": false,
+      "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
         "https://en.tignes.net/discover/ski-resort/tignes-villages"
@@ -6440,12 +6440,12 @@
       "ski_area_access_id": "val-disere-la-daille--val-disere-ski-area",
       "stay_base_id": "val-disere-la-daille",
       "ski_area_id": "val-disere-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "La Daille gondola / Funival",
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": false,
+      "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
@@ -9173,16 +9173,57 @@
         {
           "duration_days": 1,
           "audience": "adult",
+          "amount": 60.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 preview: 28 November to 11 December 2026",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
           "amount": 70.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main season",
+          "season_label": "Winter 2026/27 main season: 12 December 2026 to 23 April 2027",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 60.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 closing week: 24 April to 2 May 2027",
           "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
         }
       ],
-      "validity_windows": []
+      "validity_windows": [
+        {
+          "season_label": "Winter 2026/27 preview",
+          "start_date": "2026-11-28",
+          "end_date": "2026-12-11",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 main season",
+          "start_date": "2026-12-12",
+          "end_date": "2027-04-23",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 closing week",
+          "start_date": "2027-04-24",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ]
     }
   ],
   "rental_display_facts": [

@@ -120,6 +120,66 @@ historical data, migration/backfill handoff, merge order, and rollback. Actual
 database migrations, catalog-schema changes, and production-code changes remain
 separate work and block readiness rather than proposal creation.
 
+### Val d'Isere Accommodation Base Refinements
+
+Status: active
+Area: Data Trust
+Source: Tignes-Val d'Isere curation review; PR #42
+
+Next bounded slice:
+
+- Model the official accommodation localities and only their source-backed
+  access edges as one coherent Val d'Isere stay-base extension.
+
+Candidate inventory:
+
+- `stay_base:val-disere-laisinant`, `stay_base:val-disere-legettaz`,
+  `stay_base:val-disere-joseray`, `stay_base:val-disere-le-cret`,
+  `stay_base:val-disere-rond-point-des-pistes`, and
+  `stay_base:val-disere-les-carats` have direct official accommodation evidence
+  but are intentionally kept out of the already broad PR #42 graph.
+- `ski_area_access:val-disere-laisinant--val-disere-ski-area`,
+  `ski_area_access:val-disere-legettaz--val-disere-ski-area`,
+  `ski_area_access:val-disere-joseray--val-disere-ski-area`,
+  `ski_area_access:val-disere-le-cret--val-disere-ski-area`,
+  `ski_area_access:val-disere-rond-point-des-pistes--val-disere-ski-area`, and
+  `ski_area_access:val-disere-les-carats--val-disere-ski-area` require a
+  candidate-level access review. Preserve unknown routed mode, distance, and
+  duration unless a direct source establishes them; piste proximity, shuttle
+  service, and straight-line geometry are not interchangeable.
+
+The current selected graph remains correct without these additive bases. The
+next slice should add complete stay-base and trust records together with only
+the access edges that pass the direct-provenance gate.
+
+### Tignes Off-Base Accommodation Refinements
+
+Status: active
+Area: Data Trust
+Source: Tignes-Val d'Isere curation review; PR #42
+
+Next bounded slice:
+
+- Complete one bounded accommodation and access graph for Tignes localities
+  outside the five represented bases.
+
+Candidate inventory:
+
+- `stay_base:tignes-villaret-des-brevieres` is a current official lodging
+  candidate whose addition requires the full base/trust record and a defensible
+  disposition for
+  `ski_area_access:tignes-villaret-des-brevieres--tignes-ski-area`; the current
+  listing states five minutes to the pistes by car, not direct lift access.
+- `stay_base:tignes-villaret-du-nial`, `stay_base:tignes-la-reculaz`,
+  `stay_base:tignes-le-franchet`, and `stay_base:tignes-le-chevril` remain
+  unresolved accommodation candidates. Current official map or shuttle
+  material confirms the localities, but does not yet establish a complete
+  current lodging inventory and direct ski-area access contract for each one.
+
+Crouze remains within Le Lac and Les Boisses remains the locality represented
+by Tignes 1800. Do not create off-base access edges from shuttle-stop identity
+or stale private-directory evidence.
+
 ### Val Gardena Regional Catalog Refinements
 
 Status: parked

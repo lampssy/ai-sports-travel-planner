@@ -1,6 +1,6 @@
 {
   "title": "Tignes-Val d'Isere Catalog V2 Fact Enrichment",
-  "summary": "Schema-v3 curation for Tignes and Val d'Isere, including conservative source-scope corrections, a Tignes-local downhill pass, current 2026/27 price points, and a frozen two-pass inventory ledger.",
+  "summary": "Schema-v3 curation for Tignes and Val d Isere with current source normalization for village character, access, local-pass windows and prices, complete sector-boundary review, external pass context, and conservative regional accommodation follow-ups.",
   "changed_entities": [
     "lift_pass_product:tignes-local-ski-pass",
     "lift_pass_product:tignes-val-disere-ski-pass",
@@ -669,12 +669,34 @@
         {
           "duration_days": 1,
           "audience": "adult",
+          "amount": 60.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 preview: 28 November to 11 December 2026",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
           "amount": 70.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main season",
+          "season_label": "Winter 2026/27 main season: 12 December 2026 to 23 April 2027",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 60.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 closing week: 24 April to 2 May 2027",
           "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
         }
       ],
@@ -715,7 +737,26 @@
       "target_id": "tignes-local-ski-pass",
       "field_path": "validity_windows",
       "before": null,
-      "after": [],
+      "after": [
+        {
+          "season_label": "Winter 2026/27 preview",
+          "start_date": "2026-11-28",
+          "end_date": "2026-12-11",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 main season",
+          "start_date": "2026-12-12",
+          "end_date": "2027-04-23",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 closing week",
+          "start_date": "2027-04-24",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -931,33 +972,6 @@
     {
       "target_type": "ski_area_access",
       "target_id": "tignes-1800--tignes-ski-area",
-      "field_path": "access_mode",
-      "before": "walk",
-      "after": "unknown",
-      "trust_status": "needs_source",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area_access",
-      "target_id": "tignes-1800--tignes-ski-area",
-      "field_path": "is_direct",
-      "before": true,
-      "after": false,
-      "trust_status": "needs_source",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area_access",
-      "target_id": "tignes-1800--tignes-ski-area",
-      "field_path": "nearest_lift_name",
-      "before": "Les Boisses gondola",
-      "after": null,
-      "trust_status": "needs_source",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area_access",
-      "target_id": "tignes-1800--tignes-ski-area",
       "field_path": "source_urls",
       "before": [
         "https://en.tignes.net/skiing/ski-area"
@@ -966,24 +980,6 @@
         "https://en.tignes.net/discover/ski-resort/tignes-villages"
       ],
       "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area_access",
-      "target_id": "tignes-lavachet--tignes-ski-area",
-      "field_path": "access_mode",
-      "before": "walk",
-      "after": "unknown",
-      "trust_status": "needs_source",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area_access",
-      "target_id": "tignes-lavachet--tignes-ski-area",
-      "field_path": "is_direct",
-      "before": true,
-      "after": false,
-      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -1103,33 +1099,6 @@
     },
     {
       "target_type": "ski_area_access",
-      "target_id": "val-disere-la-daille--val-disere-ski-area",
-      "field_path": "access_mode",
-      "before": "walk",
-      "after": "unknown",
-      "trust_status": "needs_source",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area_access",
-      "target_id": "val-disere-la-daille--val-disere-ski-area",
-      "field_path": "is_direct",
-      "before": true,
-      "after": false,
-      "trust_status": "needs_source",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area_access",
-      "target_id": "val-disere-la-daille--val-disere-ski-area",
-      "field_path": "nearest_lift_name",
-      "before": "La Daille gondola / Funival",
-      "after": null,
-      "trust_status": "needs_source",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area_access",
       "target_id": "val-disere-le-fornet--val-disere-ski-area",
       "field_path": "access_mode",
       "before": "walk",
@@ -1185,10 +1154,37 @@
     {
       "target_type": "stay_base",
       "target_id": "tignes-1800",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "planned_resort",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "quiet",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
       "field_path": "elevation_m",
       "before": null,
       "after": 1800,
       "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "quiet",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -1212,10 +1208,28 @@
     {
       "target_type": "stay_base",
       "target_id": "tignes-les-brevieres",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "traditional",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
       "field_path": "elevation_m",
       "before": null,
       "after": 1550,
       "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -1384,7 +1398,9 @@
       "field_path": "notes",
       "before": null,
       "after": [
-        "The official 2026/27 tariff presents a Tignes-only downhill product distinct from the connected-domain pass.",
+        "The official 2026/27 tariff presents a Tignes-only downhill product distinct from the connected-domain pass and publishes three exact validity bands with one-day adult prices of EUR 60, EUR 70, and EUR 60.",
+        "The identity_scope_availability group is verified_with_adjustment because Snowcast normalizes the tariff into a stable local-product identity, Tignes availability, no default assignment, and three planned pass-validity windows. These pass windows do not replace ski-area operating dates.",
+        "The prices group directly preserves the tariff’s audience, duration, amount, currency, and exact seasonal date-band labels.",
         "No run-level pass-accessible-terrain list is asserted."
       ],
       "trust_status": "estimated",
@@ -1717,21 +1733,6 @@
     {
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:tignes-1800--tignes-ski-area",
-      "field_path": "field_statuses",
-      "before": {
-        "relationship": "verified_with_adjustment",
-        "access_mode_distance": "verified_with_adjustment"
-      },
-      "after": {
-        "relationship": "verified_with_adjustment",
-        "access_mode_distance": "needs_source"
-      },
-      "trust_status": "estimated",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "trust_manifest",
-      "target_id": "ski_area_access:tignes-1800--tignes-ski-area",
       "field_path": "notes",
       "before": [
         "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
@@ -1742,7 +1743,7 @@
         "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
         "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
-        "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+        "The official villages page states direct access to the ski area via the Les Boisses gondola and a ski-in/ski-out return. Snowcast normalizes that candidate-bound description to walk access, direct=true, and nearest lift Les Boisses gondola; exact distance and duration remain unknown."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -1773,21 +1774,6 @@
     {
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:tignes-lavachet--tignes-ski-area",
-      "field_path": "field_statuses",
-      "before": {
-        "relationship": "verified_with_adjustment",
-        "access_mode_distance": "verified_with_adjustment"
-      },
-      "after": {
-        "relationship": "verified_with_adjustment",
-        "access_mode_distance": "needs_source"
-      },
-      "trust_status": "estimated",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "trust_manifest",
-      "target_id": "ski_area_access:tignes-lavachet--tignes-ski-area",
       "field_path": "notes",
       "before": [
         "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
@@ -1798,7 +1784,7 @@
         "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
         "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
-        "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+        "The official villages page places ski lifts on Lavachet’s doorstep. Snowcast normalizes that candidate-bound wording to walk access and direct=true without inventing a nearest lift, exact distance, or duration."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -1968,21 +1954,6 @@
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
       ],
-      "trust_status": "estimated",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "trust_manifest",
-      "target_id": "ski_area_access:val-disere-la-daille--val-disere-ski-area",
-      "field_path": "field_statuses",
-      "before": {
-        "relationship": "verified_with_adjustment",
-        "access_mode_distance": "verified_with_adjustment"
-      },
-      "after": {
-        "relationship": "verified_with_adjustment",
-        "access_mode_distance": "needs_source"
-      },
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -1999,7 +1970,7 @@
         "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
         "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
         "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
-        "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+        "The official ski-area page presents La Daille as a direct departure point served by the La Daille gondola and Funival. Snowcast normalizes that candidate-bound presentation to walk access, direct=true, and the combined nearest-lift label; exact distance and duration remain unknown."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2532,7 +2503,7 @@
         "elevation": "verified",
         "lodging_price_quality": "estimated",
         "base_type": "verified",
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "local_apres": "needs_source"
       },
       "trust_status": "estimated",
@@ -2552,7 +2523,7 @@
         "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-        "The official villages overview establishes the named base but not a candidate-bound development-style or local-pace classification; those values remain unknown."
+        "The official villages page calls Tignes 1800 a new, specially designed village and explicitly describes its peace and quiet. Snowcast normalizes those direct phrases to planned_resort development and quiet local pace."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2661,7 +2632,7 @@
         "elevation": "verified",
         "lodging_price_quality": "estimated",
         "base_type": "verified",
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "local_apres": "needs_source"
       },
       "trust_status": "estimated",
@@ -2681,7 +2652,7 @@
         "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-        "The official villages overview establishes the named base but not a candidate-bound development-style or local-pace classification; those values remain unknown."
+        "The official villages page repeatedly describes Lavachet as quiet. Snowcast normalizes that direct wording to quiet local pace; development style remains unknown."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2792,7 +2763,7 @@
         "elevation": "verified",
         "lodging_price_quality": "estimated",
         "base_type": "verified",
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "local_apres": "needs_source"
       },
       "trust_status": "estimated",
@@ -2942,7 +2913,7 @@
         "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-        "The official villages overview establishes the named base but not a candidate-bound development-style or local-pace classification; those values remain unknown."
+        "The official villages page directly describes Les Brevieres and its traditional chalets. Snowcast normalizes that built-form evidence to traditional development; local pace remains unknown."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -3053,7 +3024,7 @@
         "elevation": "verified",
         "lodging_price_quality": "estimated",
         "base_type": "verified",
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "local_apres": "needs_source"
       },
       "trust_status": "estimated",
@@ -3073,8 +3044,8 @@
         "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed official Val Claret character, altitude, and apres material on 2026-07-05.",
-        "The official villages overview establishes the named base but not a candidate-bound development-style or local-pace classification; those values remain unknown.",
-        "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown."
+        "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown.",
+        "The official villages page describes Val Claret as festive, with activity from apres-ski through late-night partying. Snowcast normalizes that direct wording to lively local pace; development style remains unknown."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -3084,8 +3055,19 @@
       "target_id": "stay_bases:val-disere-la-daille",
       "field_path": "field_source_refs",
       "before": {
-        "base_character": [],
-        "base_type": [],
+        "identity_ownership": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
         "coordinates": [
           "https://skihut.ski/ski-hut-val-disere/",
           "https://www.openstreetmap.org/node/240913965",
@@ -3100,6 +3082,24 @@
           "https://www.wikidata.org/wiki/Q207589"
         ],
         "elevation": [],
+        "lodging_price_quality": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "base_type": [],
+        "base_character": [],
+        "local_apres": []
+      },
+      "after": {
         "identity_ownership": [
           "https://skihut.ski/ski-hut-val-disere/",
           "https://www.openstreetmap.org/node/240913965",
@@ -3113,7 +3113,20 @@
           "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
           "https://www.wikidata.org/wiki/Q207589"
         ],
-        "local_apres": [],
+        "coordinates": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "elevation": [],
         "lodging_price_quality": [
           "https://skihut.ski/ski-hut-val-disere/",
           "https://www.openstreetmap.org/node/240913965",
@@ -3126,57 +3139,15 @@
           "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
           "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
           "https://www.wikidata.org/wiki/Q207589"
-        ]
-      },
-      "after": {
-        "base_character": [
-          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
         ],
         "base_type": [
           "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
         ],
-        "coordinates": [
-          "https://skihut.ski/ski-hut-val-disere/",
-          "https://www.openstreetmap.org/node/240913965",
-          "https://www.openstreetmap.org/node/249835000",
-          "https://www.openstreetmap.org/relation/133944",
-          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
-          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
-          "https://www.valdisere.com/en/val-disere/",
-          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
-          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
-          "https://www.wikidata.org/wiki/Q207589"
-        ],
-        "elevation": [],
-        "identity_ownership": [
-          "https://skihut.ski/ski-hut-val-disere/",
-          "https://www.openstreetmap.org/node/240913965",
-          "https://www.openstreetmap.org/node/249835000",
-          "https://www.openstreetmap.org/relation/133944",
-          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
-          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
-          "https://www.valdisere.com/en/val-disere/",
-          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
-          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
-          "https://www.wikidata.org/wiki/Q207589"
+        "base_character": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
         ],
         "local_apres": [
           "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
-        ],
-        "lodging_price_quality": [
-          "https://skihut.ski/ski-hut-val-disere/",
-          "https://www.openstreetmap.org/node/240913965",
-          "https://www.openstreetmap.org/node/249835000",
-          "https://www.openstreetmap.org/relation/133944",
-          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
-          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
-          "https://www.valdisere.com/en/val-disere/",
-          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
-          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
-          "https://www.wikidata.org/wiki/Q207589"
         ]
       },
       "trust_status": "estimated",
@@ -3187,22 +3158,22 @@
       "target_id": "stay_bases:val-disere-la-daille",
       "field_path": "field_statuses",
       "before": {
-        "base_character": "needs_source",
-        "base_type": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
         "elevation": "needs_source",
-        "identity_ownership": "verified_with_adjustment",
-        "local_apres": "needs_source",
-        "lodging_price_quality": "estimated"
+        "lodging_price_quality": "estimated",
+        "base_type": "needs_source",
+        "base_character": "needs_source",
+        "local_apres": "needs_source"
       },
       "after": {
-        "base_character": "verified_with_adjustment",
-        "base_type": "verified",
+        "identity_ownership": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
         "elevation": "needs_source",
-        "identity_ownership": "verified_with_adjustment",
-        "local_apres": "verified_with_adjustment",
-        "lodging_price_quality": "estimated"
+        "lodging_price_quality": "estimated",
+        "base_type": "verified",
+        "base_character": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -3380,8 +3351,19 @@
       "target_id": "stay_bases:val-disere-village",
       "field_path": "field_source_refs",
       "before": {
-        "base_character": [],
-        "base_type": [],
+        "identity_ownership": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
+        ],
         "coordinates": [
           "https://skihut.ski/ski-hut-val-disere/",
           "https://www.openstreetmap.org/node/240913965",
@@ -3396,20 +3378,6 @@
           "https://www.wikidata.org/wiki/Q207589"
         ],
         "elevation": [],
-        "identity_ownership": [
-          "https://skihut.ski/ski-hut-val-disere/",
-          "https://www.openstreetmap.org/node/240913965",
-          "https://www.openstreetmap.org/node/249835000",
-          "https://www.openstreetmap.org/relation/133944",
-          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
-          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
-          "https://www.valdisere.com/en/val-disere/",
-          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
-          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
-          "https://www.wikidata.org/wiki/Q207589"
-        ],
-        "local_apres": [],
         "lodging_price_quality": [
           "https://skihut.ski/ski-hut-val-disere/",
           "https://www.openstreetmap.org/node/240913965",
@@ -3422,17 +3390,24 @@
           "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
           "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
           "https://www.wikidata.org/wiki/Q207589"
-        ]
+        ],
+        "base_type": [],
+        "base_character": [],
+        "local_apres": []
       },
       "after": {
-        "base_character": [
-          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
-          "https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/",
-          "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
-        ],
-        "base_type": [
+        "identity_ownership": [
+          "https://skihut.ski/ski-hut-val-disere/",
+          "https://www.openstreetmap.org/node/240913965",
+          "https://www.openstreetmap.org/node/249835000",
+          "https://www.openstreetmap.org/relation/133944",
+          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
           "https://www.valdisere.com/en/val-disere/",
-          "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
+          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+          "https://www.wikidata.org/wiki/Q207589"
         ],
         "coordinates": [
           "https://skihut.ski/ski-hut-val-disere/",
@@ -3450,22 +3425,6 @@
         "elevation": [
           "https://www.valdisere.com/en/val-disere/"
         ],
-        "identity_ownership": [
-          "https://skihut.ski/ski-hut-val-disere/",
-          "https://www.openstreetmap.org/node/240913965",
-          "https://www.openstreetmap.org/node/249835000",
-          "https://www.openstreetmap.org/relation/133944",
-          "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-          "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
-          "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
-          "https://www.valdisere.com/en/val-disere/",
-          "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
-          "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
-          "https://www.wikidata.org/wiki/Q207589"
-        ],
-        "local_apres": [
-          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
-        ],
         "lodging_price_quality": [
           "https://skihut.ski/ski-hut-val-disere/",
           "https://www.openstreetmap.org/node/240913965",
@@ -3478,6 +3437,18 @@
           "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
           "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
           "https://www.wikidata.org/wiki/Q207589"
+        ],
+        "base_type": [
+          "https://www.valdisere.com/en/val-disere/",
+          "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
+        ],
+        "base_character": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+          "https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/",
+          "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
+        ],
+        "local_apres": [
+          "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
         ]
       },
       "trust_status": "estimated",
@@ -3488,22 +3459,22 @@
       "target_id": "stay_bases:val-disere-village",
       "field_path": "field_statuses",
       "before": {
-        "base_character": "needs_source",
-        "base_type": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
         "elevation": "needs_source",
-        "identity_ownership": "verified_with_adjustment",
-        "local_apres": "needs_source",
-        "lodging_price_quality": "estimated"
+        "lodging_price_quality": "estimated",
+        "base_type": "needs_source",
+        "base_character": "needs_source",
+        "local_apres": "needs_source"
       },
       "after": {
-        "base_character": "verified_with_adjustment",
-        "base_type": "verified",
+        "identity_ownership": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
         "elevation": "verified",
-        "identity_ownership": "verified_with_adjustment",
-        "local_apres": "verified_with_adjustment",
-        "lodging_price_quality": "estimated"
+        "lodging_price_quality": "estimated",
+        "base_type": "verified",
+        "base_character": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -3576,16 +3547,16 @@
       "target_id": "terrain_domains:tignes-val-disere",
       "field_path": "field_statuses",
       "before": {
-        "aggregate_terrain": "verified_with_adjustment",
         "membership_connectivity": "verified",
-        "official_documents": "needs_source",
-        "season": "needs_source"
+        "aggregate_terrain": "verified_with_adjustment",
+        "season": "needs_source",
+        "official_documents": "needs_source"
       },
       "after": {
-        "aggregate_terrain": "verified_with_adjustment",
         "membership_connectivity": "verified",
-        "official_documents": "verified",
-        "season": "needs_source"
+        "aggregate_terrain": "verified_with_adjustment",
+        "season": "needs_source",
+        "official_documents": "verified"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -3657,7 +3628,7 @@
       "target_id": "tignes-local-ski-pass",
       "field_path": "prices",
       "status": "changed",
-      "notes": "The official Tignes 2026/27 tariff directly supports this local downhill-pass field: https://en.tignes.net/skiing/ski-pass-you-need."
+      "notes": "The official tariff publishes exact one-day adult prices of EUR 60, EUR 70, and EUR 60 for the three 2026/27 date bands."
     },
     {
       "target_type": "lift_pass_product",
@@ -3685,7 +3656,7 @@
       "target_id": "tignes-local-ski-pass",
       "field_path": "validity_windows",
       "status": "changed",
-      "notes": "The official Tignes 2026/27 tariff directly supports this local downhill-pass field: https://en.tignes.net/skiing/ski-pass-you-need."
+      "notes": "Three planned pass-validity windows preserve the official tariff bands: 28 Nov-11 Dec, 12 Dec-23 Apr, and 24 Apr-2 May. No 21-27 Nov window is invented."
     },
     {
       "target_type": "lift_pass_product",
@@ -4055,22 +4026,22 @@
       "target_type": "ski_area_access",
       "target_id": "tignes-1800--tignes-ski-area",
       "field_path": "access_mode",
-      "status": "changed",
-      "notes": "Candidate-scoped official destination evidence supports the relationship but not a routed access mode; the catalog now records unknown."
+      "status": "reviewed-no-change",
+      "notes": "The official villages guide supports preserving walk access from the exact base."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "tignes-1800--tignes-ski-area",
       "field_path": "is_direct",
-      "status": "changed",
-      "notes": "Candidate-scoped official destination evidence does not establish direct access; the catalog now records false without asserting a route."
+      "status": "reviewed-no-change",
+      "notes": "The official villages guide supports preserving direct=true through stated direct ski-area access and ski-in/ski-out return."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "tignes-1800--tignes-ski-area",
       "field_path": "nearest_lift_name",
-      "status": "changed",
-      "notes": "The nearest-lift label was reviewed and cleared where unsupported; candidate-bound route evidence is required before repopulating a missing label."
+      "status": "reviewed-no-change",
+      "notes": "The official villages guide names the Les Boisses gondola, preserving the exact-base lift name."
     },
     {
       "target_type": "ski_area_access",
@@ -4104,15 +4075,15 @@
       "target_type": "ski_area_access",
       "target_id": "tignes-lavachet--tignes-ski-area",
       "field_path": "access_mode",
-      "status": "changed",
-      "notes": "Candidate-scoped official destination evidence supports the relationship but not a routed access mode; the catalog now records unknown."
+      "status": "reviewed-no-change",
+      "notes": "The official villages guide states lifts are on the doorstep, supporting preservation of walk access."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "tignes-lavachet--tignes-ski-area",
       "field_path": "is_direct",
-      "status": "changed",
-      "notes": "Candidate-scoped official destination evidence does not establish direct access; the catalog now records false without asserting a route."
+      "status": "reviewed-no-change",
+      "notes": "The official villages guide supports preserving direct=true; no nearest lift name is invented."
     },
     {
       "target_type": "ski_area_access",
@@ -4300,22 +4271,22 @@
       "target_type": "ski_area_access",
       "target_id": "val-disere-la-daille--val-disere-ski-area",
       "field_path": "access_mode",
-      "status": "changed",
-      "notes": "Candidate-scoped official destination evidence supports the relationship but not a routed access mode; the catalog now records unknown."
+      "status": "reviewed-no-change",
+      "notes": "The current official ski-area page supports preserving walk access."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "val-disere-la-daille--val-disere-ski-area",
       "field_path": "is_direct",
-      "status": "changed",
-      "notes": "Candidate-scoped official destination evidence does not establish direct access; the catalog now records false without asserting a route."
+      "status": "reviewed-no-change",
+      "notes": "The current official ski-area page supports preserving direct=true."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "val-disere-la-daille--val-disere-ski-area",
       "field_path": "nearest_lift_name",
-      "status": "changed",
-      "notes": "The nearest-lift label was reviewed and cleared where unsupported; candidate-bound route evidence is required before repopulating a missing label."
+      "status": "reviewed-no-change",
+      "notes": "The current official ski-area page supports preserving La Daille gondola / Funival."
     },
     {
       "target_type": "ski_area_access",
@@ -4447,15 +4418,15 @@
       "target_type": "stay_base",
       "target_id": "tignes-1800",
       "field_path": "base_character.development_style",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-1800: https://en.tignes.net/discover/ski-resort/tignes-villages. They did not publish candidate-bound base_character.development_style. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The direct official new-village and specially-designed wording is normalized field-specifically to planned_resort."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-1800",
       "field_path": "base_character.local_pace",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-1800: https://en.tignes.net/discover/ski-resort/tignes-villages. They did not publish candidate-bound base_character.local_pace. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The direct official peace-and-quiet wording is normalized field-specifically to quiet."
     },
     {
       "target_type": "stay_base",
@@ -4503,8 +4474,8 @@
       "target_type": "stay_base",
       "target_id": "tignes-lavachet",
       "field_path": "base_character.local_pace",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-lavachet: https://en.tignes.net/discover/ski-resort/tignes-villages. They did not publish candidate-bound base_character.local_pace. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The direct official peace-and-quiet wording is normalized field-specifically to quiet; development_style stays unknown."
     },
     {
       "target_type": "stay_base",
@@ -4594,8 +4565,8 @@
       "target_type": "stay_base",
       "target_id": "tignes-les-brevieres",
       "field_path": "base_character.development_style",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-les-brevieres: https://en.tignes.net/discover/ski-resort/tignes-villages. They did not publish candidate-bound base_character.development_style. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The direct official traditional-chalet wording is normalized field-specifically to traditional; local_pace stays unknown."
     },
     {
       "target_type": "stay_base",
@@ -4650,8 +4621,8 @@
       "target_type": "stay_base",
       "target_id": "tignes-val-claret",
       "field_path": "base_character.local_pace",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-val-claret: https://en.tignes.net/discover/ski-resort/tignes-villages. They did not publish candidate-bound base_character.local_pace. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The direct official festive and late-night wording is normalized field-specifically to lively; development_style stays unknown."
     },
     {
       "target_type": "stay_base",
@@ -4972,8 +4943,8 @@
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:tignes-1800--tignes-ski-area",
       "field_path": "field_statuses",
-      "status": "changed",
-      "notes": "Trust metadata was reconciled with the source-scoped catalog disposition."
+      "status": "reviewed-no-change",
+      "notes": "The restored catalog values remain consistent with the exact-base verified_with_adjustment grouped statuses."
     },
     {
       "target_type": "trust_manifest",
@@ -4993,8 +4964,8 @@
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:tignes-lavachet--tignes-ski-area",
       "field_path": "field_statuses",
-      "status": "changed",
-      "notes": "Trust metadata was reconciled with the source-scoped catalog disposition."
+      "status": "reviewed-no-change",
+      "notes": "The restored catalog values remain consistent with the exact-base verified_with_adjustment grouped statuses."
     },
     {
       "target_type": "trust_manifest",
@@ -5077,8 +5048,8 @@
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:val-disere-la-daille--val-disere-ski-area",
       "field_path": "field_statuses",
-      "status": "changed",
-      "notes": "Trust metadata was reconciled with the source-scoped catalog disposition."
+      "status": "reviewed-no-change",
+      "notes": "The restored catalog values remain consistent with the exact-base verified_with_adjustment grouped statuses."
     },
     {
       "target_type": "trust_manifest",
@@ -6215,7 +6186,8 @@
       "evidence_id": "inventory-pass1-val-disere-laisinant-market",
       "boundary_target_ids": [
         "val-disere",
-        "val-disere-laisinant"
+        "val-disere-laisinant",
+        "val-disere-laisinant--val-disere-ski-area"
       ],
       "target_type": "stay_destination",
       "target_id": "val-disere",
@@ -6231,7 +6203,8 @@
       "evidence_id": "inventory-pass1-val-disere-legettaz-market",
       "boundary_target_ids": [
         "val-disere",
-        "val-disere-legettaz"
+        "val-disere-legettaz",
+        "val-disere-legettaz--val-disere-ski-area"
       ],
       "target_type": "stay_destination",
       "target_id": "val-disere",
@@ -6247,7 +6220,8 @@
       "evidence_id": "inventory-pass1-val-disere-joseray-market",
       "boundary_target_ids": [
         "val-disere",
-        "val-disere-joseray"
+        "val-disere-joseray",
+        "val-disere-joseray--val-disere-ski-area"
       ],
       "target_type": "stay_destination",
       "target_id": "val-disere",
@@ -6289,7 +6263,8 @@
       "evidence_id": "inventory-pass2-val-disere-le-cret-accommodation",
       "boundary_target_ids": [
         "val-disere",
-        "val-disere-le-cret"
+        "val-disere-le-cret",
+        "val-disere-le-cret--val-disere-ski-area"
       ],
       "target_type": "stay_destination",
       "target_id": "val-disere",
@@ -6304,7 +6279,8 @@
     {
       "evidence_id": "inventory-pass2-val-disere-le-cret-lanche-geometry",
       "boundary_target_ids": [
-        "val-disere-ski-area"
+        "val-disere-ski-area",
+        "val-disere-le-cret--val-disere-ski-area"
       ],
       "target_type": "ski_area",
       "target_id": "val-disere-ski-area",
@@ -6368,21 +6344,6 @@
       "normalization_note": "A named lodging quarter inside the contiguous Le Lac base does not require a separate stay-base entity."
     },
     {
-      "evidence_id": "inventory-pass4-tignes-offbase-accommodation-taxonomy",
-      "boundary_target_ids": [
-        "tignes"
-      ],
-      "target_type": "stay_destination",
-      "target_id": "tignes",
-      "field_path": "stay_destination_id",
-      "source_type": "official",
-      "source_url": "https://nl.tignes.net/holidays/booking/holiday-residences",
-      "source_title": "Official Tignes accommodation locality taxonomy",
-      "source_value": "tignes",
-      "evidence_summary": "The official accommodation directory exposes Villaret du Nial, La Reculaz, Le Franchet, Le Chevril, and Crouze as lodging-location filters outside the five represented base labels. Current supply and graph ownership still require candidate-level decisions.",
-      "normalization_note": "Directory taxonomy establishes a bounded candidate inventory but does not by itself prove an independent stay market."
-    },
-    {
       "evidence_id": "inventory-pass4-tignes-villaret-des-brevieres-lodging",
       "boundary_target_ids": [
         "tignes"
@@ -6398,39 +6359,11 @@
       "normalization_note": "The listing establishes a candidate and distinct access context, not automatic separation from or absorption into Les Brevieres."
     },
     {
-      "evidence_id": "inventory-pass4-tignes-private-lodging-hamlets",
-      "boundary_target_ids": [
-        "tignes"
-      ],
-      "target_type": "stay_destination",
-      "target_id": "tignes",
-      "field_path": "stay_destination_id",
-      "source_type": "official",
-      "source_url": "https://es.tignes.net/uploads/media/default/0001/65/5e7ac9623d0b20f0e3bd84e435b8114b5a3230c7.pdf",
-      "source_title": "Official Tignes private-lodging directory",
-      "source_value": "tignes",
-      "evidence_summary": "The official directory places multi-night accommodation in Villaret du Nial and La Reculaz and records Crouze under Le Lac. Its dated inventory establishes historical lodging evidence but requires current-source normalization before new entities are added.",
-      "normalization_note": "Use as bounded candidate and parent evidence; do not claim current availability from the dated directory."
-    },
-    {
-      "evidence_id": "inventory-pass4-tignes-franchet-lodging",
-      "boundary_target_ids": [
-        "tignes"
-      ],
-      "target_type": "stay_destination",
-      "target_id": "tignes",
-      "field_path": "stay_destination_id",
-      "source_type": "official",
-      "source_url": "https://en.tignes.net/resort-guide/directory/hebergements/hebergement-detail?slug=chalet-colinn",
-      "source_title": "Official Chalet Colinn accommodation entry at Le Franchet",
-      "source_value": "tignes",
-      "evidence_summary": "The official entry describes multi-night lodging at the edge of the classic Le Franchet hamlet. Its displayed opening dates are stale, so a current source is required before adding a represented entity.",
-      "normalization_note": "Concrete candidate evidence only; current lodging availability remains unverified."
-    },
-    {
       "evidence_id": "inventory-pass4-tignes-offbase-shuttle",
       "boundary_target_ids": [
-        "tignes"
+        "tignes-villaret-du-nial",
+        "tignes-la-reculaz",
+        "tignes-le-chevril"
       ],
       "target_type": "stay_destination",
       "target_id": "tignes",
@@ -6439,8 +6372,8 @@
       "source_url": "https://public.tignes.net/TIGNES.NET/NAVETTES/TIGNES_VDI_HIVER.pdf",
       "source_title": "Official Tignes-Val d'Isere winter shuttle",
       "source_value": "tignes",
-      "evidence_summary": "The official winter shuttle names Villaret du Nial, Le Chevril, and La Reculaz as request stops between Tignes 1800 and Val d'Isere, confirming distinct locality and transport context without establishing ski-area access semantics.",
-      "normalization_note": "Shuttle-stop identity supports candidate scoping but not a lift-access edge or independent stay market by itself."
+      "evidence_summary": "The current official winter shuttle identifies Villaret du Nial, La Reculaz, and Le Chevril as request-stop localities between Tignes 1800 and Val d Isere. It supports bounded candidate identity only; it does not establish current lodging supply or a ski-area access mode.",
+      "normalization_note": "Shuttle-stop identity is retained as candidate evidence without creating a base or lift-access edge."
     },
     {
       "evidence_id": "inventory-pass3-val-disere-chatelard-boundary",
@@ -6552,8 +6485,8 @@
       "source_url": "https://en.tignes.net/skiing/ski-pass-you-need",
       "source_title": "Official Tignes 2026/27 ski-pass tariff",
       "source_value": "tignes-local-ski-pass",
-      "evidence_summary": "The official tariff presents a one-day adult Tignes-only downhill pass at EUR 70, distinct from the connected-domain product.",
-      "normalization_note": null
+      "evidence_summary": "The official 2026/27 tariff presents a distinct Tignes-only downhill pass across three published date bands.",
+      "normalization_note": "The tariff is normalized into one stable Snowcast pass identity; date bands remain pass validity rather than ski-area operating dates."
     },
     {
       "evidence_id": "remediation-tignes-local-ski-pass-name",
@@ -6646,9 +6579,28 @@
       "source_type": "official",
       "source_url": "https://en.tignes.net/skiing/ski-pass-you-need",
       "source_title": "Official Tignes 2026/27 ski-pass tariff",
-      "source_value": [],
-      "evidence_summary": "The official current tariff directly supports this normalized local downhill-pass field.",
-      "normalization_note": null
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27 preview",
+          "start_date": "2026-11-28",
+          "end_date": "2026-12-11",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 main season",
+          "start_date": "2026-12-12",
+          "end_date": "2027-04-23",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 closing week",
+          "start_date": "2027-04-24",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "The official tariff publishes preview, main-season, and closing-week validity bands for the Tignes-only product.",
+      "normalization_note": "The unpublished 21-27 November opening period is intentionally excluded from pass validity."
     },
     {
       "evidence_id": "remediation-tignes-local-ski-pass-prices",
@@ -6663,47 +6615,73 @@
         {
           "duration_days": 1,
           "audience": "adult",
+          "amount": 60.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 preview: 28 November to 11 December 2026",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
           "amount": 70.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main season",
+          "season_label": "Winter 2026/27 main season: 12 December 2026 to 23 April 2027",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 60.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 closing week: 24 April to 2 May 2027",
           "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
         }
       ],
-      "evidence_summary": "The official current tariff directly supports this normalized local downhill-pass field.",
-      "normalization_note": null
+      "evidence_summary": "The official tariff publishes one-day adult Tignes-only prices of EUR 60, EUR 70, and EUR 60 for the three exact 2026/27 bands.",
+      "normalization_note": "Each representative price retains its exact tariff date band."
     },
     {
       "evidence_id": "remediation-access-tignes-1800--tignes-ski-area",
       "boundary_target_ids": [],
       "target_type": "ski_area_access",
       "target_id": "tignes-1800--tignes-ski-area",
-      "field_path": "source_urls",
+      "field_path": "access_mode",
       "source_type": "official",
       "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
       "source_title": "Official candidate-bearing destination and ski-area presentation",
-      "source_value": [
-        "https://en.tignes.net/discover/ski-resort/tignes-villages"
-      ],
-      "evidence_summary": "The page supports the named base within the destination and its parent ski area, but does not establish a candidate-bound route, mode, duration, or direct-access claim.",
-      "normalization_note": "Relationship retained; access mode is unknown and directness is false."
+      "source_value": {
+        "access_mode": "walk",
+        "nearest_lift_name": "Les Boisses gondola",
+        "is_direct": true
+      },
+      "evidence_summary": "The official villages page states direct access to the ski area via the Les Boisses gondola and a ski-in/ski-out return.",
+      "normalization_note": "Normalized to walk access, direct=true, and the named gondola; exact route distance and duration remain unknown."
     },
     {
       "evidence_id": "remediation-access-tignes-lavachet--tignes-ski-area",
       "boundary_target_ids": [],
       "target_type": "ski_area_access",
       "target_id": "tignes-lavachet--tignes-ski-area",
-      "field_path": "source_urls",
+      "field_path": "access_mode",
       "source_type": "official",
       "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
       "source_title": "Official candidate-bearing destination and ski-area presentation",
-      "source_value": [
-        "https://en.tignes.net/discover/ski-resort/tignes-villages"
-      ],
-      "evidence_summary": "The page supports the named base within the destination and its parent ski area, but does not establish a candidate-bound route, mode, duration, or direct-access claim.",
-      "normalization_note": "Relationship retained; access mode is unknown and directness is false."
+      "source_value": {
+        "access_mode": "walk",
+        "nearest_lift_name": null,
+        "is_direct": true
+      },
+      "evidence_summary": "The official villages page places ski lifts on Lavachet s doorstep.",
+      "normalization_note": "Normalized to walk access and direct=true without inventing a nearest-lift label, route distance, or duration."
     },
     {
       "evidence_id": "remediation-access-tignes-le-lac--tignes-ski-area",
@@ -6749,6 +6727,294 @@
       ],
       "evidence_summary": "The page supports the named base within the destination and its parent ski area, but does not establish a candidate-bound route, mode, duration, or direct-access claim.",
       "normalization_note": "Relationship retained; access mode is unknown and directness is false."
+    },
+    {
+      "evidence_id": "remediation-access-val-disere-la-daille--val-disere-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-la-daille--val-disere-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+      "source_title": "Official Val d Isere ski-area access presentation",
+      "source_value": {
+        "access_mode": "walk",
+        "nearest_lift_name": "La Daille gondola / Funival",
+        "is_direct": true
+      },
+      "evidence_summary": "The official ski-area page presents La Daille as a direct departure point served by the La Daille gondola and Funival.",
+      "normalization_note": "Normalized to walk access, direct=true, and the combined lift label; exact route distance and duration remain unknown."
+    },
+    {
+      "evidence_id": "remediation-tignes-1800-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Official Tignes villages guide",
+      "source_value": "planned_resort",
+      "evidence_summary": "The page calls Tignes 1800 a new village opened in December 2013 and says it was specially designed.",
+      "normalization_note": "Newly opened and specially designed are direct structural signals normalized to planned_resort for this field only."
+    },
+    {
+      "evidence_id": "remediation-tignes-1800-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Official Tignes villages guide",
+      "source_value": "quiet",
+      "evidence_summary": "The page directly emphasizes peace and quiet at Tignes 1800.",
+      "normalization_note": "The direct peace-and-quiet claim is normalized to quiet for local pace only."
+    },
+    {
+      "evidence_id": "remediation-tignes-lavachet-character",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Official Tignes villages guide",
+      "source_value": "quiet",
+      "evidence_summary": "The page describes Lavachet as a little peace and quiet and repeats the quiet character of the district.",
+      "normalization_note": "The direct qualitative wording is normalized to quiet; development style remains unknown."
+    },
+    {
+      "evidence_id": "remediation-tignes-les-brevieres-character",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Official Tignes villages guide",
+      "source_value": "traditional",
+      "evidence_summary": "The page describes Les Brevieres and its traditional chalets.",
+      "normalization_note": "Direct built-form wording is normalized to traditional; local pace remains unknown."
+    },
+    {
+      "evidence_id": "remediation-tignes-val-claret-character",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Official Tignes villages guide",
+      "source_value": "lively",
+      "evidence_summary": "The page describes Val Claret as festive with activity from apres-ski through late-night partying.",
+      "normalization_note": "The direct intensity wording is normalized to lively; development style remains unknown."
+    },
+    {
+      "evidence_id": "remediation-val-disere-rond-point-accommodation",
+      "boundary_target_ids": [
+        "val-disere-rond-point-des-pistes",
+        "val-disere-rond-point-des-pistes--val-disere-ski-area"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://booking.valdisere.com/en/accommodation/town-rond-point-des-pistes-200070.html",
+      "source_title": "Official Rond Point des Pistes accommodation collection",
+      "source_value": "val-disere",
+      "evidence_summary": "The official booking collection identifies Rond Point des Pistes as a lodging neighbourhood with apartments, chalets, piste proximity, and ski-in/ski-out examples.",
+      "normalization_note": "The source establishes a concrete additive base and access candidate, not routed distance or duration."
+    },
+    {
+      "evidence_id": "remediation-val-disere-les-carats-accommodation",
+      "boundary_target_ids": [
+        "val-disere-les-carats",
+        "val-disere-les-carats--val-disere-ski-area"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/accommodation/private-rentals/chalets-cristal-val-disere-en-4020873/",
+      "source_title": "Official Les Carats accommodation listing",
+      "source_value": "val-disere",
+      "evidence_summary": "The current official listing identifies Les Carats as a Val d Isere lodging neighbourhood and states direct access to the slopes.",
+      "normalization_note": "The listing establishes a concrete additive base and access candidate; no route distance or duration is inferred."
+    },
+    {
+      "evidence_id": "remediation-tignes-offbase-locality-map",
+      "boundary_target_ids": [
+        "tignes-villaret-des-brevieres",
+        "tignes-villaret-du-nial",
+        "tignes-la-reculaz",
+        "tignes-le-franchet",
+        "tignes-le-chevril"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://public.tignes.net/TIGNES.NET/BROCHURES/RANDONNEE_AUX_SOMMETS.pdf",
+      "source_title": "Official Tignes locality map",
+      "source_value": "tignes",
+      "evidence_summary": "The current official map names Villaret des Brevieres, Villaret du Nial, La Reculaz, Le Franchet, and Le Chevril within the Tignes locality context.",
+      "normalization_note": "Map identity bounds the candidate inventory but does not establish current lodging supply or ski access."
+    },
+    {
+      "evidence_id": "remediation-tignes-altta-parent-owner",
+      "boundary_target_ids": [
+        "grande-motte",
+        "toviere",
+        "palet",
+        "aiguille-percee",
+        "brevieres-sector",
+        "boisses-sector"
+      ],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/administrations/stgm",
+      "source_title": "Current ALTTA ski-lift operator listing",
+      "source_value": "tignes-ski-area",
+      "evidence_summary": "The current official listing identifies ALTTA as the Tignes lift, shuttle, and pass-sales operator at parent Tignes scope.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "remediation-val-disere-stvi-parent-owner",
+      "boundary_target_ids": [
+        "la-daille-sector",
+        "bellevarde",
+        "solaise",
+        "fornet-iseran",
+        "pisaillas"
+      ],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.ski/en/legal-notice",
+      "source_title": "Current STVI operator legal notice",
+      "source_value": "val-disere-ski-area",
+      "evidence_summary": "The official operator site identifies STVI as its publisher and service owner for the Val d Isere ski-area presentation.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "remediation-tignes-parent-weather",
+      "boundary_target_ids": [
+        "grande-motte",
+        "toviere",
+        "palet",
+        "aiguille-percee",
+        "brevieres-sector",
+        "boisses-sector"
+      ],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/tignes-weather-10979?id=12192",
+      "source_title": "Official parent Tignes weather presentation",
+      "source_value": "tignes-ski-area",
+      "evidence_summary": "Tignes publishes weather, snow, and altitude information at parent resort and ski-area scope rather than as independent sector weather owners.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "remediation-val-disere-parent-weather",
+      "boundary_target_ids": [
+        "la-daille-sector",
+        "bellevarde",
+        "solaise",
+        "fornet-iseran",
+        "pisaillas"
+      ],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/live/weather-forecast/",
+      "source_title": "Official parent Val d Isere weather presentation",
+      "source_value": "val-disere-ski-area",
+      "evidence_summary": "Val d Isere publishes village and altitude weather through one parent destination presentation rather than independent sector weather owners.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "remediation-provider-parent-consensus",
+      "boundary_target_ids": [
+        "grande-motte",
+        "toviere",
+        "palet",
+        "aiguille-percee",
+        "brevieres-sector",
+        "boisses-sector",
+        "la-daille-sector",
+        "bellevarde",
+        "solaise",
+        "fornet-iseran",
+        "pisaillas"
+      ],
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "ski_area_ids",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.com/en/ski-resort/tignes-val-disere/",
+      "source_title": "Bounded provider presentation for Tignes Val d Isere",
+      "source_value": [
+        "tignes-ski-area",
+        "val-disere-ski-area"
+      ],
+      "evidence_summary": "The bounded specialist provider presents one connected Tignes Val d Isere ski resort and lists the named villages and sectors within that aggregate rather than as independent ski areas.",
+      "normalization_note": "Provider scope corroborates the direct parent-owner evidence; it does not determine Snowcast ownership by itself."
+    },
+    {
+      "evidence_id": "remediation-val-pass-external-preferential-days",
+      "boundary_target_ids": [
+        "sainte-foy-preferential-day",
+        "la-rosiere-preferential-day"
+      ],
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+      "source_title": "Official Val d Isere pass benefits",
+      "source_value": [
+        "Sainte-Foy preferential-rate ski day",
+        "La Rosiere preferential-rate ski day"
+      ],
+      "evidence_summary": "The official page advertises one preferential-rate ski day at Sainte-Foy and La Rosiere for passes of six or more consecutive days.",
+      "normalization_note": "These are external commercial perks, not modeled terrain coverage or terrain-domain membership."
+    },
+    {
+      "evidence_id": "remediation-access-tignes-1800-source-urls",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "tignes-1800--tignes-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Official Tignes villages guide",
+      "source_value": [
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
+      ],
+      "evidence_summary": "The candidate-bound villages guide replaces the generic ski-area page as the direct source for this access edge.",
+      "normalization_note": "Source narrowing only; exact-base walk, directness, and named lift values are preserved."
+    },
+    {
+      "evidence_id": "remediation-access-tignes-lavachet-source-urls",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "tignes-lavachet--tignes-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Official Tignes villages guide",
+      "source_value": [
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
+      ],
+      "evidence_summary": "The candidate-bound villages guide replaces the generic ski-area page as the direct source for this access edge.",
+      "normalization_note": "Source narrowing only; exact-base walk and directness values are preserved and no nearest lift is invented."
     }
   ],
   "destination_boundary_assessments": [
@@ -6842,13 +7108,15 @@
   "validation_commands": [],
   "ranking_impact_summary": null,
   "unresolved_caveats": [
-    "The official piste map covers the connected Tignes-Val d'Isere domain, so it is stored on the terrain domain rather than duplicated onto both child ski areas.",
+    "The official piste map covers the connected Tignes-Val d Isere domain, so it is stored on the terrain domain rather than duplicated onto both child ski areas.",
     "Tignes publishes snowmaking availability and a 400-snowgun inventory but no coverage percentage with a declared denominator; coverage remains unknown.",
-    "Official sources reviewed did not establish child-scoped snowmaking coverage or stable night-skiing availability for Val d'Isere.",
+    "Official sources reviewed did not establish child-scoped snowmaking coverage or stable night-skiing availability for Val d Isere.",
     "La Daille character and elevation remain unknown because the reviewed first-party sources did not provide sufficiently specific structural evidence.",
-    "Inventory completion established Laisinant, Legettaz, Joseray, Le Cret, Rond Point des Pistes, and Les Carats as concrete Val d'Isere stay-base candidates. Their typed catalog additions or canonical regional deferrals remain graph-blocking findings; unsupported access route, duration, mode, and directness must stay unresolved. Chatelard is dispositioned as an accommodation sub-locality of the Legettaz candidate.",
-    "The final bounded Tignes accommodation inventory pass dispositioned Crouze under Le Lac and confirmed Les Boisses as the locality represented by Tignes 1800. Villaret des Brevieres, Villaret du Nial, La Reculaz, and Le Franchet have concrete official lodging or directory evidence, while Le Chevril appears in the official accommodation taxonomy and shuttle route. Their missing typed assessments and entity/access or canonical regional-handoff decisions are actionable remediation findings rather than unsearched inventory.",
-    "Candidate-scoped source passes did not establish exact routed access semantics for the eight represented base-to-area links. Relationships are retained with narrowed official sources, while access mode is unknown and directness is false."
+    "The six Val d Isere accommodation candidates and their access candidates are recorded as one canonical regional follow-up without adding catalog entities; unsupported route, duration, distance, and directness semantics remain unresolved.",
+    "The five Tignes off-base accommodation candidates are recorded as one canonical regional follow-up. Stale taxonomy, private-directory, and Chalet Colinn claims were removed; verified Crouze and Les Boisses dispositions remain.",
+    "Five represented base-to-area edges remain deliberately unknown after candidate-scoped source review: Tignes Le Lac, Tignes Les Brevieres, Tignes Val Claret, Val d Isere Le Fornet, and Val d Isere village.",
+    "The Tignes local-pass window does not include 21-27 November 2026 because the official source does not publish that product and price band.",
+    "Sainte-Foy and La Rosiere preferential-day benefits are external commercial context only and create no Snowcast pass coverage or terrain-domain membership."
   ],
   "report_schema_version": 3,
   "entity_scope_assessments": [
@@ -6861,12 +7129,10 @@
         "independent_stay_market"
       ],
       "evidence_refs": [
-        "schema-v3-inventory-stay-destination-tignes",
-        "inventory-pass4-tignes-offbase-accommodation-taxonomy",
+        "inventory-pass4-tignes-offbase-shuttle",
         "inventory-pass4-tignes-villaret-des-brevieres-lodging",
-        "inventory-pass4-tignes-private-lodging-hamlets",
-        "inventory-pass4-tignes-franchet-lodging",
-        "inventory-pass4-tignes-offbase-shuttle"
+        "remediation-tignes-offbase-locality-map",
+        "schema-v3-inventory-stay-destination-tignes"
       ],
       "target_refs": [
         {
@@ -6888,11 +7154,13 @@
         "independent_stay_market"
       ],
       "evidence_refs": [
-        "schema-v3-inventory-stay-destination-val-disere",
+        "inventory-pass1-val-disere-joseray-market",
         "inventory-pass1-val-disere-laisinant-market",
         "inventory-pass1-val-disere-legettaz-market",
-        "inventory-pass1-val-disere-joseray-market",
-        "inventory-pass2-val-disere-le-cret-accommodation"
+        "inventory-pass2-val-disere-le-cret-accommodation",
+        "remediation-val-disere-les-carats-accommodation",
+        "remediation-val-disere-rond-point-accommodation",
+        "schema-v3-inventory-stay-destination-val-disere"
       ],
       "target_refs": [
         {
@@ -7287,10 +7555,13 @@
       "candidate_kind": "ski_area",
       "disposition": "represented",
       "signals": [
-        "official_independent_identity",
-        "independent_status_or_schedule"
+        "independent_status_or_schedule",
+        "independent_weather_presentation",
+        "official_independent_identity"
       ],
       "evidence_refs": [
+        "remediation-tignes-altta-parent-owner",
+        "remediation-tignes-parent-weather",
         "schema-v3-inventory-ski-area-tignes-ski-area"
       ],
       "target_refs": [
@@ -7306,11 +7577,13 @@
         "terrain_scope": "complete",
         "connectivity_to_parent": "not_applicable",
         "operational_scope": "independent",
-        "weather_scope": "unknown",
+        "weather_scope": "independent",
         "pass_scope": "unknown",
         "provider_consensus": "separate",
         "separation_value": "material",
         "evidence_refs": [
+          "remediation-tignes-altta-parent-owner",
+          "remediation-tignes-parent-weather",
           "schema-v3-inventory-ski-area-tignes-ski-area"
         ]
       },
@@ -7322,12 +7595,15 @@
       "candidate_kind": "ski_area",
       "disposition": "represented",
       "signals": [
-        "official_independent_identity",
-        "independent_status_or_schedule"
+        "independent_status_or_schedule",
+        "independent_weather_presentation",
+        "official_independent_identity"
       ],
       "evidence_refs": [
-        "schema-v3-inventory-ski-area-val-disere-ski-area",
-        "inventory-pass2-val-disere-le-cret-lanche-geometry"
+        "inventory-pass2-val-disere-le-cret-lanche-geometry",
+        "remediation-val-disere-parent-weather",
+        "remediation-val-disere-stvi-parent-owner",
+        "schema-v3-inventory-ski-area-val-disere-ski-area"
       ],
       "target_refs": [
         {
@@ -7342,11 +7618,13 @@
         "terrain_scope": "complete",
         "connectivity_to_parent": "not_applicable",
         "operational_scope": "independent",
-        "weather_scope": "unknown",
+        "weather_scope": "independent",
         "pass_scope": "unknown",
         "provider_consensus": "separate",
         "separation_value": "material",
         "evidence_refs": [
+          "remediation-val-disere-parent-weather",
+          "remediation-val-disere-stvi-parent-owner",
           "schema-v3-inventory-ski-area-val-disere-ski-area"
         ]
       },
@@ -7361,6 +7639,7 @@
         "direct_access_relationship"
       ],
       "evidence_refs": [
+        "remediation-access-tignes-1800--tignes-ski-area",
         "schema-v3-inventory-access-tignes-1800--tignes-ski-area"
       ],
       "target_refs": [
@@ -7370,7 +7649,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "rationale": "The official villages page directly states ski-area access via the Les Boisses gondola and a ski-in/ski-out return, supporting the represented edge with walk access, directness, and the named lift while leaving exact distance and duration unknown.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -7383,6 +7662,7 @@
         "direct_access_relationship"
       ],
       "evidence_refs": [
+        "remediation-access-tignes-lavachet--tignes-ski-area",
         "schema-v3-inventory-access-tignes-lavachet--tignes-ski-area"
       ],
       "target_refs": [
@@ -7392,7 +7672,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "rationale": "The official villages page places lifts on Lavachet s doorstep, supporting the represented edge with walk access and directness without inventing a nearest lift, route distance, or duration.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -7471,6 +7751,7 @@
         "direct_access_relationship"
       ],
       "evidence_refs": [
+        "remediation-access-val-disere-la-daille--val-disere-ski-area",
         "schema-v3-inventory-access-val-disere-la-daille--val-disere-ski-area"
       ],
       "target_refs": [
@@ -7480,7 +7761,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "rationale": "The official ski-area page presents La Daille as a direct departure point served by the La Daille gondola and Funival, supporting the represented edge while leaving exact distance and duration unknown.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -7605,7 +7886,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-tignes-sector-map",
-        "inventory-pass1-tignes-sector-status"
+        "inventory-pass1-tignes-sector-status",
+        "remediation-tignes-altta-parent-owner",
+        "remediation-tignes-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7614,19 +7898,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official map keeps this connected candidate inside Tignes; ALTTA operates the parent presentation, Tignes publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "tignes-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-tignes-sector-map",
-          "inventory-pass1-tignes-sector-status"
+          "inventory-pass1-tignes-sector-status",
+          "remediation-tignes-altta-parent-owner",
+          "remediation-tignes-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7642,7 +7929,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-tignes-sector-map",
-        "inventory-pass1-tignes-sector-status"
+        "inventory-pass1-tignes-sector-status",
+        "remediation-tignes-altta-parent-owner",
+        "remediation-tignes-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7651,19 +7941,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official map keeps this connected candidate inside Tignes; ALTTA operates the parent presentation, Tignes publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "tignes-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-tignes-sector-map",
-          "inventory-pass1-tignes-sector-status"
+          "inventory-pass1-tignes-sector-status",
+          "remediation-tignes-altta-parent-owner",
+          "remediation-tignes-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7679,7 +7972,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-tignes-sector-map",
-        "inventory-pass1-tignes-sector-status"
+        "inventory-pass1-tignes-sector-status",
+        "remediation-tignes-altta-parent-owner",
+        "remediation-tignes-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7688,19 +7984,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official map keeps this connected candidate inside Tignes; ALTTA operates the parent presentation, Tignes publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "tignes-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-tignes-sector-map",
-          "inventory-pass1-tignes-sector-status"
+          "inventory-pass1-tignes-sector-status",
+          "remediation-tignes-altta-parent-owner",
+          "remediation-tignes-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7716,7 +8015,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-tignes-sector-map",
-        "inventory-pass1-tignes-sector-status"
+        "inventory-pass1-tignes-sector-status",
+        "remediation-tignes-altta-parent-owner",
+        "remediation-tignes-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7725,19 +8027,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official map keeps this connected candidate inside Tignes; ALTTA operates the parent presentation, Tignes publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "tignes-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-tignes-sector-map",
-          "inventory-pass1-tignes-sector-status"
+          "inventory-pass1-tignes-sector-status",
+          "remediation-tignes-altta-parent-owner",
+          "remediation-tignes-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7753,7 +8058,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-tignes-sector-map",
-        "inventory-pass1-tignes-sector-status"
+        "inventory-pass1-tignes-sector-status",
+        "remediation-tignes-altta-parent-owner",
+        "remediation-tignes-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7762,19 +8070,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official map keeps this connected candidate inside Tignes; ALTTA operates the parent presentation, Tignes publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "tignes-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-tignes-sector-map",
-          "inventory-pass1-tignes-sector-status"
+          "inventory-pass1-tignes-sector-status",
+          "remediation-tignes-altta-parent-owner",
+          "remediation-tignes-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7790,7 +8101,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-tignes-sector-map",
-        "inventory-pass1-tignes-sector-status"
+        "inventory-pass1-tignes-sector-status",
+        "remediation-tignes-altta-parent-owner",
+        "remediation-tignes-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7799,19 +8113,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official map keeps this connected candidate inside Tignes; ALTTA operates the parent presentation, Tignes publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "tignes-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-tignes-sector-map",
-          "inventory-pass1-tignes-sector-status"
+          "inventory-pass1-tignes-sector-status",
+          "remediation-tignes-altta-parent-owner",
+          "remediation-tignes-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7827,7 +8144,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-val-disere-sector-status",
-        "inventory-pass1-val-disere-sector-pass"
+        "inventory-pass1-val-disere-sector-pass",
+        "remediation-val-disere-stvi-parent-owner",
+        "remediation-val-disere-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7836,19 +8156,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official operating and pass presentations keep this connected candidate inside Val d Isere; STVI operates the parent presentation, Val d Isere publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "val-disere-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-val-disere-sector-status",
-          "inventory-pass1-val-disere-sector-pass"
+          "inventory-pass1-val-disere-sector-pass",
+          "remediation-val-disere-stvi-parent-owner",
+          "remediation-val-disere-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7864,7 +8187,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-val-disere-sector-status",
-        "inventory-pass1-val-disere-sector-pass"
+        "inventory-pass1-val-disere-sector-pass",
+        "remediation-val-disere-stvi-parent-owner",
+        "remediation-val-disere-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7873,19 +8199,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official operating and pass presentations keep this connected candidate inside Val d Isere; STVI operates the parent presentation, Val d Isere publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "val-disere-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-val-disere-sector-status",
-          "inventory-pass1-val-disere-sector-pass"
+          "inventory-pass1-val-disere-sector-pass",
+          "remediation-val-disere-stvi-parent-owner",
+          "remediation-val-disere-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7901,7 +8230,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-val-disere-sector-status",
-        "inventory-pass1-val-disere-sector-pass"
+        "inventory-pass1-val-disere-sector-pass",
+        "remediation-val-disere-stvi-parent-owner",
+        "remediation-val-disere-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7910,19 +8242,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official operating and pass presentations keep this connected candidate inside Val d Isere; STVI operates the parent presentation, Val d Isere publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "val-disere-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-val-disere-sector-status",
-          "inventory-pass1-val-disere-sector-pass"
+          "inventory-pass1-val-disere-sector-pass",
+          "remediation-val-disere-stvi-parent-owner",
+          "remediation-val-disere-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7938,7 +8273,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-val-disere-sector-status",
-        "inventory-pass1-val-disere-sector-pass"
+        "inventory-pass1-val-disere-sector-pass",
+        "remediation-val-disere-stvi-parent-owner",
+        "remediation-val-disere-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7947,19 +8285,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official operating and pass presentations keep this connected candidate inside Val d Isere; STVI operates the parent presentation, Val d Isere publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "val-disere-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-val-disere-sector-status",
-          "inventory-pass1-val-disere-sector-pass"
+          "inventory-pass1-val-disere-sector-pass",
+          "remediation-val-disere-stvi-parent-owner",
+          "remediation-val-disere-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -7975,7 +8316,10 @@
       ],
       "evidence_refs": [
         "inventory-pass1-val-disere-sector-status",
-        "inventory-pass1-val-disere-sector-pass"
+        "inventory-pass1-val-disere-sector-pass",
+        "remediation-val-disere-stvi-parent-owner",
+        "remediation-val-disere-parent-weather",
+        "remediation-provider-parent-consensus"
       ],
       "target_refs": [
         {
@@ -7984,19 +8328,22 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official parent map, status, and pass evidence establishes a connected sector under the parent operating/pass presentation. Candidate-bound weather ownership and provider consensus are not directly established and remain unknown.",
+      "rationale": "The official operating and pass presentations keep this connected candidate inside Val d Isere; STVI operates the parent presentation, Val d Isere publishes parent-scoped weather, and the bounded provider corroborates aggregation. No independent operations, weather, or full-local-pass owner supports a separate ski area.",
       "ski_area_boundary": {
         "parent_ski_area_id": "val-disere-ski-area",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
         "operational_scope": "parent_owned",
-        "weather_scope": "unknown",
+        "weather_scope": "parent_owned",
         "pass_scope": "shared_only",
-        "provider_consensus": "unknown",
+        "provider_consensus": "aggregated",
         "separation_value": "redundant",
         "evidence_refs": [
           "inventory-pass1-val-disere-sector-status",
-          "inventory-pass1-val-disere-sector-pass"
+          "inventory-pass1-val-disere-sector-pass",
+          "remediation-val-disere-stvi-parent-owner",
+          "remediation-val-disere-parent-weather",
+          "remediation-provider-parent-consensus"
         ]
       },
       "graph_impact": "graph_blocking"
@@ -8028,7 +8375,9 @@
         "full_local_pass"
       ],
       "evidence_refs": [
-        "remediation-tignes-local-ski-pass"
+        "remediation-tignes-local-ski-pass",
+        "remediation-tignes-local-ski-pass-prices",
+        "remediation-tignes-local-ski-pass-validity-windows"
       ],
       "target_refs": [
         {
@@ -8037,7 +8386,361 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The official current tariff presents a distinct Tignes-only downhill product, so it is modeled separately from the connected-domain pass.",
+      "rationale": "The official 2026/27 tariff supports the represented Tignes-only product, its three planned pass-validity bands, and representative one-day adult prices. The unpublished 21-27 November opening period is excluded.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-laisinant",
+      "candidate_name": "Laisinant",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-laisinant-market"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "The official booking collection establishes an additive accommodation hamlet with chairlift and shuttle context. Adding the full base, trust entry, and reviewed edge would broaden PR #42, so it is consolidated into the regional follow-up.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-legettaz",
+      "candidate_name": "Legettaz",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-legettaz-market"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "The official booking collection establishes an additive accommodation hamlet at the foot of Solaise. Its full base, trust, and access graph is consolidated into the regional follow-up rather than expanding PR #42.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-joseray",
+      "candidate_name": "Joseray",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-joseray-market"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "The official booking collection establishes a concrete lodging quarter near the lifts, but a complete base boundary and candidate-level routed access remain unresolved for the regional follow-up.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-le-cret",
+      "candidate_name": "Le Cret",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-pass2-val-disere-le-cret-accommodation"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "Current official lodging evidence establishes the named locality, while structured Lanche proximity establishes only a candidate access context. A complete base graph and routed ski access remain unresolved for the regional follow-up.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-rond-point-des-pistes",
+      "candidate_name": "Rond Point des Pistes",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "remediation-val-disere-rond-point-accommodation"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "The official booking collection establishes an additive accommodation neighbourhood with piste-side lodging. Its complete base, trust, and access graph is deferred to the consolidated regional slice.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-les-carats",
+      "candidate_name": "Les Carats",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "remediation-val-disere-les-carats-accommodation"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "The current official listing establishes an additive lodging neighbourhood with slope access. Its complete base, trust, and edge graph is deferred to the consolidated regional slice.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-laisinant--val-disere-ski-area",
+      "candidate_name": "Laisinant to Val d Isere ski area",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-laisinant-market"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "The official source states chairlift and shuttle access, but the edge depends on the deferred base and still requires field-specific normalization without inventing distance or duration.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-legettaz--val-disere-ski-area",
+      "candidate_name": "Legettaz to Val d Isere ski area",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-legettaz-market"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "The official source states piste proximity and pedestrian or shuttle context, but the edge depends on the deferred base and exact routed semantics remain for the follow-up.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-joseray--val-disere-ski-area",
+      "candidate_name": "Joseray to Val d Isere ski area",
+      "candidate_kind": "ski_area_access",
+      "disposition": "unresolved",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-pass1-val-disere-joseray-market"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "The source establishes proximity to Solaise and Bellevarde lifts but does not establish a routed access mode, directness, distance, or duration.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-le-cret--val-disere-ski-area",
+      "candidate_name": "Le Cret to Val d Isere ski area",
+      "candidate_kind": "ski_area_access",
+      "disposition": "unresolved",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-pass2-val-disere-le-cret-lanche-geometry"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "Structured geometry establishes only straight-line proximity to Lanche; mode, route, directness, and duration remain unresolved and must not be inferred.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-rond-point-des-pistes--val-disere-ski-area",
+      "candidate_name": "Rond Point des Pistes to Val d Isere ski area",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "remediation-val-disere-rond-point-accommodation"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "Official booking evidence establishes piste-side and ski-in/ski-out lodging examples, but the edge depends on the deferred base and must preserve unknown exact route precision.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "val-disere-les-carats--val-disere-ski-area",
+      "candidate_name": "Les Carats to Val d Isere ski area",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "remediation-val-disere-les-carats-accommodation"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#val-d-isere-accommodation-base-refinements",
+      "rationale": "The official current listing states direct slope access, but the edge depends on the deferred base and exact route precision remains outside PR #42.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "tignes-villaret-des-brevieres",
+      "candidate_name": "Villaret des Brevieres",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-pass4-tignes-villaret-des-brevieres-lodging",
+        "remediation-tignes-offbase-locality-map"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#tignes-off-base-accommodation-refinements",
+      "rationale": "The current official listing establishes a lodging hamlet about five minutes from the pistes by car. A complete base, trust record, and access disposition are deferred together as one regional slice.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "tignes-villaret-des-brevieres--tignes-ski-area",
+      "candidate_name": "Villaret des Brevieres to Tignes ski area",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "inventory-pass4-tignes-villaret-des-brevieres-lodging"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#tignes-off-base-accommodation-refinements",
+      "rationale": "The listing establishes car proximity to the pistes, not direct lift access. The edge remains tied to the deferred base and requires a complete candidate-level route review.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "tignes-villaret-du-nial",
+      "candidate_name": "Villaret du Nial",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "remediation-tignes-offbase-locality-map",
+        "inventory-pass4-tignes-offbase-shuttle"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#tignes-off-base-accommodation-refinements",
+      "rationale": "Current official map and shuttle evidence confirms the locality, but a complete current lodging inventory and ski-area access contract were not established.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "tignes-la-reculaz",
+      "candidate_name": "La Reculaz",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "remediation-tignes-offbase-locality-map",
+        "inventory-pass4-tignes-offbase-shuttle"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#tignes-off-base-accommodation-refinements",
+      "rationale": "Current official map and shuttle evidence confirms the locality, but a complete current lodging inventory and ski-area access contract were not established.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "tignes-le-franchet",
+      "candidate_name": "Le Franchet",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "remediation-tignes-offbase-locality-map"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#tignes-off-base-accommodation-refinements",
+      "rationale": "The current official map establishes the named locality, but current lodging supply, complete base ownership, and ski-area access remain unresolved after removing the stale Chalet Colinn claim.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "tignes-le-chevril",
+      "candidate_name": "Le Chevril",
+      "candidate_kind": "stay_base",
+      "disposition": "unresolved",
+      "signals": [
+        "official_independent_identity",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "remediation-tignes-offbase-locality-map",
+        "inventory-pass4-tignes-offbase-shuttle"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#tignes-off-base-accommodation-refinements",
+      "rationale": "Current official map and shuttle evidence confirms the locality, but a complete current lodging inventory and ski-area access contract were not established.",
+      "ski_area_boundary": null,
+      "graph_impact": "regional_followup"
+    },
+    {
+      "candidate_id": "sainte-foy-preferential-day",
+      "candidate_name": "Sainte-Foy preferential-rate ski day",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "remediation-val-pass-external-preferential-days"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "The official benefit is a preferential-rate external ski day for qualifying pass holders. It remains external commercial context and creates neither modeled pass coverage nor terrain-domain membership.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "la-rosiere-preferential-day",
+      "candidate_name": "La Rosiere preferential-rate ski day",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "remediation-val-pass-external-preferential-days"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "The official benefit is a preferential-rate external ski day for qualifying pass holders. It remains external commercial context and creates neither modeled pass coverage nor terrain-domain membership.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     }
@@ -8051,16 +8754,16 @@
         "https://booking.valdisere.com/en/accommodation/town-joseray-200077.html?page=1",
         "https://booking.valdisere.com/en/accommodation/town-laisinant-200068.html",
         "https://booking.valdisere.com/en/accommodation/town-legettaz-200069.html?page=1",
+        "https://booking.valdisere.com/en/accommodation/town-rond-point-des-pistes-200070.html",
         "https://en.tignes.net/discover/ski-resort/discovering-tignes",
         "https://en.tignes.net/discover/ski-resort/tignes-villages",
-        "https://en.tignes.net/resort-guide/directory/hebergements/hebergement-detail?slug=chalet-colinn",
-        "https://es.tignes.net/uploads/media/default/0001/65/5e7ac9623d0b20f0e3bd84e435b8114b5a3230c7.pdf",
-        "https://nl.tignes.net/holidays/booking/holiday-residences",
+        "https://public.tignes.net/TIGNES.NET/BROCHURES/RANDONNEE_AUX_SOMMETS.pdf",
         "https://public.tignes.net/TIGNES.NET/NAVETTES/TIGNES_VDI_HIVER.pdf",
         "https://reservation.tignes.net/chalet-4-chambres-10-personnes-sarrasin-tignes-villaret-des-brevieres-chaletsarrasin.html",
         "https://reservation.tignes.net/location-appartement-chalet.html",
         "https://reservation.tignes.net/medias/images/PLANS_TIGNES_2100.pdf",
         "https://reservation.valdisere.com/fr/hebergement/zone-legettaz-200069.html",
+        "https://www.valdisere.com/en/prepare-for-your-stay/accommodation/private-rentals/chalets-cristal-val-disere-en-4020873/",
         "https://www.valdisere.com/en/val-disere/",
         "https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/"
       ],
@@ -8073,9 +8776,11 @@
       "family_id": "tignes-val-disere-ski-area-operators",
       "source_kind": "ski_area_operator",
       "source_urls": [
+        "https://en.tignes.net/resort-guide/directory/administrations/stgm",
         "https://en.tignes.net/skiing/ski-area",
         "https://en.tignes.net/skiing/ski-area/lifts-and-pistes-live-opening",
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+        "https://www.valdisere.ski/en/legal-notice",
         "https://www.valdisere.ski/en/lifts-openings-and-piste-map"
       ],
       "candidate_kinds": [
@@ -8087,8 +8792,15 @@
       "family_id": "tignes-val-disere-access",
       "source_kind": "access_transport",
       "source_urls": [
+        "https://booking.valdisere.com/2-rooms-1-bedroom-cret-1.html",
+        "https://booking.valdisere.com/en/accommodation/town-joseray-200077.html?page=1",
+        "https://booking.valdisere.com/en/accommodation/town-laisinant-200068.html",
+        "https://booking.valdisere.com/en/accommodation/town-rond-point-des-pistes-200070.html",
+        "https://en.tignes.net/discover/ski-resort/tignes-villages",
         "https://en.tignes.net/skiing/ski-area",
+        "https://reservation.valdisere.com/fr/hebergement/zone-legettaz-200069.html",
         "https://www.openstreetmap.org/node/10138037904",
+        "https://www.valdisere.com/en/prepare-for-your-stay/accommodation/private-rentals/chalets-cristal-val-disere-en-4020873/",
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
       ],
       "candidate_kinds": [
@@ -8100,6 +8812,7 @@
       "family_id": "tignes-val-disere-pass-tariffs",
       "source_kind": "pass_tariff",
       "source_urls": [
+        "https://en.tignes.net/skiing/ski-pass-you-need",
         "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
       ],
       "candidate_kinds": [
@@ -8111,6 +8824,28 @@
       "source_kind": "other_official",
       "source_urls": [
         "https://en.tignes.net/skiing/ski-area/ski-map"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "terrain_domain"
+      ]
+    },
+    {
+      "family_id": "tignes-val-disere-parent-weather",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://en.tignes.net/tignes-weather-10979?id=12192",
+        "https://www.valdisere.com/en/live/weather-forecast/"
+      ],
+      "candidate_kinds": [
+        "ski_area"
+      ]
+    },
+    {
+      "family_id": "tignes-val-disere-provider-consensus",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://www.skiresort.com/en/ski-resort/tignes-val-disere/"
       ],
       "candidate_kinds": [
         "ski_area",

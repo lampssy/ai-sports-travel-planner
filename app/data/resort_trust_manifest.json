@@ -4699,7 +4699,7 @@
           "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "verified",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -4749,7 +4749,7 @@
           "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-          "The official villages overview establishes the named base but not a candidate-bound development-style or local-pace classification; those values remain unknown."
+          "The official villages page calls Tignes 1800 a new, specially designed village and explicitly describes its peace and quiet. Snowcast normalizes those direct phrases to planned_resort development and quiet local pace."
         ]
       },
       "tignes-lavachet": {
@@ -4760,7 +4760,7 @@
           "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "verified",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -4810,7 +4810,7 @@
           "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-          "The official villages overview establishes the named base but not a candidate-bound development-style or local-pace classification; those values remain unknown."
+          "The official villages page repeatedly describes Lavachet as quiet. Snowcast normalizes that direct wording to quiet local pace; development style remains unknown."
         ]
       },
       "tignes-le-lac": {
@@ -4821,7 +4821,7 @@
           "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "verified",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -4935,7 +4935,7 @@
           "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-          "The official villages overview establishes the named base but not a candidate-bound development-style or local-pace classification; those values remain unknown."
+          "The official villages page directly describes Les Brevieres and its traditional chalets. Snowcast normalizes that built-form evidence to traditional development; local pace remains unknown."
         ]
       },
       "tignes-val-claret": {
@@ -4946,7 +4946,7 @@
           "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "verified",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -4998,8 +4998,8 @@
           "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed official Val Claret character, altitude, and apres material on 2026-07-05.",
-          "The official villages overview establishes the named base but not a candidate-bound development-style or local-pace classification; those values remain unknown.",
-          "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown."
+          "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown.",
+          "The official villages page describes Val Claret as festive, with activity from apres-ski through late-night partying. Snowcast normalizes that direct wording to lively local pace; development style remains unknown."
         ]
       },
       "val-disere-la-daille": {
@@ -10221,7 +10221,7 @@
         "display_name": "Tignes 1800 -> Tignes",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
@@ -10235,14 +10235,14 @@
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
           "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
-          "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+          "The official villages page states direct access to the ski area via the Les Boisses gondola and a ski-in/ski-out return. Snowcast normalizes that candidate-bound description to walk access, direct=true, and nearest lift Les Boisses gondola; exact distance and duration remain unknown."
         ]
       },
       "tignes-lavachet--tignes-ski-area": {
         "display_name": "Lavachet -> Tignes",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
@@ -10256,7 +10256,7 @@
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
           "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
-          "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+          "The official villages page places ski lifts on Lavachet’s doorstep. Snowcast normalizes that candidate-bound wording to walk access and direct=true without inventing a nearest lift, exact distance, or duration."
         ]
       },
       "tignes-le-lac--tignes-ski-area": {
@@ -10326,7 +10326,7 @@
         "display_name": "La Daille -> Val d'Isere",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
@@ -10340,7 +10340,7 @@
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
           "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
-          "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+          "The official ski-area page presents La Daille as a direct departure point served by the La Daille gondola and Funival. Snowcast normalizes that candidate-bound presentation to walk access, direct=true, and the combined nearest-lift label; exact distance and duration remain unknown."
         ]
       },
       "val-disere-le-fornet--val-disere-ski-area": {
@@ -13254,7 +13254,9 @@
           "pass_accessible_terrain": []
         },
         "notes": [
-          "The official 2026/27 tariff presents a Tignes-only downhill product distinct from the connected-domain pass.",
+          "The official 2026/27 tariff presents a Tignes-only downhill product distinct from the connected-domain pass and publishes three exact validity bands with one-day adult prices of EUR 60, EUR 70, and EUR 60.",
+          "The identity_scope_availability group is verified_with_adjustment because Snowcast normalizes the tariff into a stable local-product identity, Tignes availability, no default assignment, and three planned pass-validity windows. These pass windows do not replace ski-area operating dates.",
+          "The prices group directly preserves the tariff’s audience, duration, amount, currency, and exact seasonal date-band labels.",
           "No run-level pass-accessible-terrain list is asserted."
         ]
       }
