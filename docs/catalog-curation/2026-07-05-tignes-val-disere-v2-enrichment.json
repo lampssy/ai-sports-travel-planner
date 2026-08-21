@@ -306,6 +306,172 @@
         "field_statuses",
         "notes"
       ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id",
+        "name",
+        "trip_market_region_id"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_destination_id",
+        "name",
+        "trip_market_region_id"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-1800--tignes-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id",
+        "stay_base_id",
+        "ski_area_id",
+        "access_mode",
+        "is_direct",
+        "source_urls"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-lavachet--tignes-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id",
+        "stay_base_id",
+        "ski_area_id",
+        "access_mode",
+        "is_direct",
+        "source_urls"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-le-lac--tignes-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id",
+        "stay_base_id",
+        "ski_area_id",
+        "access_mode",
+        "is_direct",
+        "source_urls"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-les-brevieres--tignes-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id",
+        "stay_base_id",
+        "ski_area_id",
+        "access_mode",
+        "is_direct",
+        "source_urls"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-val-claret--tignes-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id",
+        "stay_base_id",
+        "ski_area_id",
+        "access_mode",
+        "is_direct",
+        "source_urls"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-la-daille--val-disere-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id",
+        "stay_base_id",
+        "ski_area_id",
+        "access_mode",
+        "is_direct",
+        "source_urls"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-le-fornet--val-disere-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id",
+        "stay_base_id",
+        "ski_area_id",
+        "access_mode",
+        "is_direct",
+        "source_urls"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-village--val-disere-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_access_id",
+        "stay_base_id",
+        "ski_area_id",
+        "access_mode",
+        "is_direct",
+        "source_urls"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "name",
+        "validity_scope",
+        "available_from_stay_destination_ids",
+        "default_for_stay_destination_ids",
+        "valid_ski_area_ids",
+        "terrain_domain_ids",
+        "prices"
+      ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "scope": "narrow",
+      "required_field_paths": [
+        "lift_pass_product_id",
+        "name",
+        "validity_scope",
+        "available_from_stay_destination_ids",
+        "default_for_stay_destination_ids",
+        "valid_ski_area_ids",
+        "terrain_domain_ids",
+        "prices"
+      ],
+      "resulting_graph_role": "focus"
     }
   ],
   "changes": [
@@ -3132,6 +3298,496 @@
       "field_path": "notes",
       "status": "changed",
       "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "trip_market_region_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "trip_market_region_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-1800--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-1800--tignes-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-1800--tignes-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-1800--tignes-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-1800--tignes-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-1800--tignes-ski-area",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-lavachet--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-lavachet--tignes-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-lavachet--tignes-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-lavachet--tignes-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-lavachet--tignes-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-lavachet--tignes-ski-area",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-le-lac--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-le-lac--tignes-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-le-lac--tignes-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-le-lac--tignes-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-le-lac--tignes-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-le-lac--tignes-ski-area",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-les-brevieres--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-les-brevieres--tignes-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-les-brevieres--tignes-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-les-brevieres--tignes-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-les-brevieres--tignes-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-les-brevieres--tignes-ski-area",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-val-claret--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-val-claret--tignes-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-val-claret--tignes-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-val-claret--tignes-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-val-claret--tignes-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "tignes-val-claret--tignes-ski-area",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-la-daille--val-disere-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-la-daille--val-disere-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-la-daille--val-disere-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-la-daille--val-disere-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-la-daille--val-disere-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-la-daille--val-disere-ski-area",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-le-fornet--val-disere-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-le-fornet--val-disere-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-le-fornet--val-disere-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-le-fornet--val-disere-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-le-fornet--val-disere-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-le-fornet--val-disere-ski-area",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-village--val-disere-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-village--val-disere-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-village--val-disere-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-village--val-disere-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-village--val-disere-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-village--val-disere-ski-area",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "validity_scope",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "valid_ski_area_ids",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "terrain_domain_ids",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "prices",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "validity_scope",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "valid_ski_area_ids",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "terrain_domain_ids",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "prices",
+      "status": "reviewed-no-change",
+      "notes": "Added to the provisional graph inventory during schema-v3 structural normalization; semantic confirmation remains for the independent review lanes."
     }
   ],
   "evidence": [
@@ -3719,10 +4375,280 @@
       "source_value": "https://en.tignes.net/skiing/ski-area/ski-map",
       "evidence_summary": "The official Tignes piste-map page covers the connected Tignes-Val d'Isere terrain domain and links the current interactive and downloadable maps.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-stay-destination-tignes",
+      "boundary_target_ids": [
+        "tignes"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes official villages and resort guide",
+      "source_value": "tignes",
+      "evidence_summary": "Official destination material identifies Tignes and its named accommodation villages for provisional stay-market review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-stay-destination-val-disere",
+      "boundary_target_ids": [
+        "val-disere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "val-disere",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere/",
+      "source_title": "Val d'Isere official destination guide",
+      "source_value": "val-disere",
+      "evidence_summary": "Official destination material identifies Val d'Isere for provisional stay-market review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-ski-area-tignes-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Tignes official ski-area presentation",
+      "source_value": "tignes-ski-area",
+      "evidence_summary": "Official ski-area material identifies the modeled operating scope; the independent review lanes must confirm its complete boundary and owner categories.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-ski-area-val-disere-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+      "source_title": "Val d'Isere official ski-area presentation",
+      "source_value": "val-disere-ski-area",
+      "evidence_summary": "Official ski-area material identifies the modeled operating scope; the independent review lanes must confirm its complete boundary and owner categories.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-access-tignes-1800--tignes-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "tignes-1800--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Official ski-area access presentation",
+      "source_value": "tignes-1800--tignes-ski-area",
+      "evidence_summary": "The official ski-area presentation is the stored provenance for this base-to-area access edge; exact access semantics remain for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-access-tignes-lavachet--tignes-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "tignes-lavachet--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Official ski-area access presentation",
+      "source_value": "tignes-lavachet--tignes-ski-area",
+      "evidence_summary": "The official ski-area presentation is the stored provenance for this base-to-area access edge; exact access semantics remain for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-access-tignes-le-lac--tignes-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "tignes-le-lac--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Official ski-area access presentation",
+      "source_value": "tignes-le-lac--tignes-ski-area",
+      "evidence_summary": "The official ski-area presentation is the stored provenance for this base-to-area access edge; exact access semantics remain for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-access-tignes-les-brevieres--tignes-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "tignes-les-brevieres--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Official ski-area access presentation",
+      "source_value": "tignes-les-brevieres--tignes-ski-area",
+      "evidence_summary": "The official ski-area presentation is the stored provenance for this base-to-area access edge; exact access semantics remain for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-access-tignes-val-claret--tignes-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "tignes-val-claret--tignes-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Official ski-area access presentation",
+      "source_value": "tignes-val-claret--tignes-ski-area",
+      "evidence_summary": "The official ski-area presentation is the stored provenance for this base-to-area access edge; exact access semantics remain for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-access-val-disere-la-daille--val-disere-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-la-daille--val-disere-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+      "source_title": "Official ski-area access presentation",
+      "source_value": "val-disere-la-daille--val-disere-ski-area",
+      "evidence_summary": "The official ski-area presentation is the stored provenance for this base-to-area access edge; exact access semantics remain for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-access-val-disere-le-fornet--val-disere-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-le-fornet--val-disere-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+      "source_title": "Official ski-area access presentation",
+      "source_value": "val-disere-le-fornet--val-disere-ski-area",
+      "evidence_summary": "The official ski-area presentation is the stored provenance for this base-to-area access edge; exact access semantics remain for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-access-val-disere-village--val-disere-ski-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "val-disere-village--val-disere-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+      "source_title": "Official ski-area access presentation",
+      "source_value": "val-disere-village--val-disere-ski-area",
+      "evidence_summary": "The official ski-area presentation is the stored provenance for this base-to-area access edge; exact access semantics remain for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-pass-tignes-val-disere-ski-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+      "source_title": "Tignes - Val d'Isere ski pass official tariff and purchase page",
+      "source_value": "tignes-val-disere-ski-pass",
+      "evidence_summary": "Official tariff material identifies the pass product; product coverage and current presentation remain for independent review.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "schema-v3-inventory-pass-val-disere-day-ticket",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+      "source_title": "Val d'Isere day ticket official tariff and purchase page",
+      "source_value": "val-disere-day-ticket",
+      "evidence_summary": "Official tariff material identifies the pass product; product coverage and current presentation remain for independent review.",
+      "normalization_note": null
     }
   ],
-  "destination_boundary_assessments": [],
-  "boundary_decision_targets": [],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "tignes",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "pass",
+          "notes": "The prepared catalog models a coherent multi-night destination and named accommodation-base set; fresh review must independently confirm completeness.",
+          "evidence_refs": [
+            "schema-v3-inventory-stay-destination-tignes"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "pass",
+          "notes": "The official destination publication presents the market under its own destination identity; fresh review must independently confirm ownership scope.",
+          "evidence_refs": [
+            "schema-v3-inventory-stay-destination-tignes"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "pass",
+          "notes": "The prepared graph retains a distinct accommodation market and base set; fresh review must independently confirm material trip-fit separation.",
+          "evidence_refs": [
+            "schema-v3-inventory-stay-destination-tignes"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_stay_market_treatment",
+          "status": "pass",
+          "notes": "The official destination publication is the provisional direct stay-market signal for independent review.",
+          "evidence_refs": [
+            "schema-v3-inventory-stay-destination-tignes"
+          ]
+        }
+      ],
+      "failure_route": null
+    },
+    {
+      "candidate_id": "val-disere",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "pass",
+          "notes": "The prepared catalog models a coherent multi-night destination and named accommodation-base set; fresh review must independently confirm completeness.",
+          "evidence_refs": [
+            "schema-v3-inventory-stay-destination-val-disere"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "pass",
+          "notes": "The official destination publication presents the market under its own destination identity; fresh review must independently confirm ownership scope.",
+          "evidence_refs": [
+            "schema-v3-inventory-stay-destination-val-disere"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "pass",
+          "notes": "The prepared graph retains a distinct accommodation market and base set; fresh review must independently confirm material trip-fit separation.",
+          "evidence_refs": [
+            "schema-v3-inventory-stay-destination-val-disere"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_stay_market_treatment",
+          "status": "pass",
+          "notes": "The official destination publication is the provisional direct stay-market signal for independent review.",
+          "evidence_refs": [
+            "schema-v3-inventory-stay-destination-val-disere"
+          ]
+        }
+      ],
+      "failure_route": null
+    }
+  ],
+  "boundary_decision_targets": [
+    "tignes",
+    "val-disere"
+  ],
   "weather_request_geometry_targets": [],
   "weather_request_geometry_assessments": [],
   "validation_commands": [],
@@ -3732,5 +4658,605 @@
     "Tignes publishes snowmaking availability and a 400-snowgun inventory but no coverage percentage with a declared denominator; coverage remains unknown.",
     "Official sources reviewed did not establish child-scoped snowmaking coverage or stable night-skiing availability for Val d'Isere.",
     "La Daille character and elevation remain unknown because the reviewed first-party sources did not provide sufficiently specific structural evidence."
-  ]
+  ],
+  "report_schema_version": 3,
+  "entity_scope_assessments": [
+    {
+      "candidate_id": "tignes",
+      "candidate_name": "Tignes",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-stay-destination-tignes"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "tignes"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere",
+      "candidate_name": "Val d'Isere",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-stay-destination-val-disere"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "val-disere"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-1800",
+      "candidate_name": "Tignes 1800",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-013-tignes-1800-base-character-development-style"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-1800"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-lavachet",
+      "candidate_name": "Lavachet",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-016-tignes-lavachet-base-character-development-style"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-lavachet"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-le-lac",
+      "candidate_name": "Le Lac",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-019-tignes-le-lac-base-character-development-style"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-le-lac"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-les-brevieres",
+      "candidate_name": "Tignes les Brévières",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-024-tignes-les-brevieres-base-character-development-style"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-les-brevieres"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-val-claret",
+      "candidate_name": "Val Claret",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-027-tignes-val-claret-base-character-development-style"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-val-claret"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-la-daille",
+      "candidate_name": "La Daille",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-032-val-disere-la-daille-base-character-local-pace"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "val-disere-la-daille"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-le-fornet",
+      "candidate_name": "Le Fornet",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-035-val-disere-le-fornet-base-character-development-style"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "val-disere-le-fornet"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-village",
+      "candidate_name": "Val d'Isere",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-040-val-disere-village-base-character-development-style"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "val-disere-village"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-ski-area",
+      "candidate_name": "Tignes",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_status_or_schedule"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-ski-area-tignes-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "complete",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "independent",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "separate",
+        "separation_value": "material",
+        "evidence_refs": [
+          "schema-v3-inventory-ski-area-tignes-ski-area"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-ski-area",
+      "candidate_name": "Val d'Isere",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_status_or_schedule"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-ski-area-val-disere-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "val-disere-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "complete",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "independent",
+        "weather_scope": "unknown",
+        "pass_scope": "unknown",
+        "provider_consensus": "separate",
+        "separation_value": "material",
+        "evidence_refs": [
+          "schema-v3-inventory-ski-area-val-disere-ski-area"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-1800--tignes-ski-area",
+      "candidate_name": "Tignes 1800 to Tignes",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-access-tignes-1800--tignes-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "tignes-1800--tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-lavachet--tignes-ski-area",
+      "candidate_name": "Lavachet to Tignes",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-access-tignes-lavachet--tignes-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "tignes-lavachet--tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-le-lac--tignes-ski-area",
+      "candidate_name": "Le Lac to Tignes",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-access-tignes-le-lac--tignes-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "tignes-le-lac--tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-les-brevieres--tignes-ski-area",
+      "candidate_name": "Tignes les Brévières to Tignes",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-access-tignes-les-brevieres--tignes-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "tignes-les-brevieres--tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-val-claret--tignes-ski-area",
+      "candidate_name": "Val Claret to Tignes",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-access-tignes-val-claret--tignes-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "tignes-val-claret--tignes-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-la-daille--val-disere-ski-area",
+      "candidate_name": "La Daille to Val d'Isere",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-access-val-disere-la-daille--val-disere-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "val-disere-la-daille--val-disere-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-le-fornet--val-disere-ski-area",
+      "candidate_name": "Le Fornet to Val d'Isere",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-access-val-disere-le-fornet--val-disere-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "val-disere-le-fornet--val-disere-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-village--val-disere-ski-area",
+      "candidate_name": "Val d'Isere to Val d'Isere",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-access-val-disere-village--val-disere-ski-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "val-disere-village--val-disere-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-val-disere",
+      "candidate_name": "Tignes - Val d'Isere",
+      "candidate_kind": "terrain_domain",
+      "disposition": "represented",
+      "signals": [
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-045-tignes-val-disere-official-trail-map-url"
+      ],
+      "target_refs": [
+        {
+          "target_type": "terrain_domain",
+          "target_id": "tignes-val-disere"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-val-disere-ski-pass",
+      "candidate_name": "Tignes - Val d'Isere ski pass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-pass-tignes-val-disere-ski-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "tignes-val-disere-ski-pass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "val-disere-day-ticket",
+      "candidate_name": "Val d'Isere day ticket",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "schema-v3-inventory-pass-val-disere-day-ticket"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "val-disere-day-ticket"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Schema-v3 structural normalization records the current modeled representation from the prepared catalog and direct official evidence. The initial independent source-trust and graph-scope reviews must still verify the owner, boundary, and representation.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    }
+  ],
+  "review_evidence_envelope": [
+    {
+      "family_id": "tignes-val-disere-destination-booking",
+      "source_kind": "destination_booking",
+      "source_urls": [
+        "https://en.tignes.net/discover/ski-resort/tignes-villages",
+        "https://www.valdisere.com/en/val-disere/"
+      ],
+      "candidate_kinds": [
+        "stay_destination",
+        "stay_base"
+      ]
+    },
+    {
+      "family_id": "tignes-val-disere-ski-area-operators",
+      "source_kind": "ski_area_operator",
+      "source_urls": [
+        "https://en.tignes.net/skiing/ski-area",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "terrain_domain"
+      ]
+    },
+    {
+      "family_id": "tignes-val-disere-access",
+      "source_kind": "access_transport",
+      "source_urls": [
+        "https://en.tignes.net/skiing/ski-area",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+      ],
+      "candidate_kinds": [
+        "stay_base",
+        "ski_area_access"
+      ]
+    },
+    {
+      "family_id": "tignes-val-disere-pass-tariffs",
+      "source_kind": "pass_tariff",
+      "source_urls": [
+        "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+      ],
+      "candidate_kinds": [
+        "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "tignes-val-disere-official-map",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://en.tignes.net/skiing/ski-area/ski-map"
+      ],
+      "candidate_kinds": [
+        "ski_area",
+        "terrain_domain"
+      ]
+    }
+  ],
+  "resulting_graph": {
+    "focus_stay_destination_ids": [
+      "tignes",
+      "val-disere"
+    ]
+  }
 }
