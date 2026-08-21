@@ -6334,8 +6334,113 @@
       "source_url": "https://reservation.tignes.net/location-appartement-chalet.html",
       "source_title": "Tignes Reservation official accommodation collection",
       "source_value": "tignes",
-      "evidence_summary": "The official booking filters enumerate Val Claret Centre, Grande Motte, and Les Chartreux; Le Lac Bec Rouge, Les Almes, and Le Rosset; Le Lavachet; Tignes 1800 and Les Boisses; and Les Brevieres. The named subareas are booking sub-localities of the five represented Tignes stay bases rather than separate stay markets.",
-      "normalization_note": "Booking sub-localities are dispositioned individually; establishment and residence names are inventory records, not separate stay-base candidates."
+      "evidence_summary": "The official booking filters enumerate Val Claret Centre, Grande Motte, and Les Chartreux; Le Lac Bec Rouge, Les Almes, and Le Rosset; Le Lavachet; Tignes 1800 and Les Boisses; and Les Brevieres. These filter-level subareas are booking sub-localities of the five represented Tignes stay bases rather than separate stay markets.",
+      "normalization_note": "Filter-level booking sub-localities are dispositioned individually. Listing-level hamlets and official directory taxonomy values require their own inventory decisions and are handled separately."
+    },
+    {
+      "evidence_id": "inventory-pass4-tignes-1800-les-boisses-equivalence",
+      "boundary_target_ids": [
+        "tignes-les-boisses"
+      ],
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/discovering-tignes",
+      "source_title": "Official Tignes history of the rebuilt village at Les Boisses",
+      "source_value": "tignes-1800",
+      "evidence_summary": "The official history explains that the post-dam village was rebuilt higher at Les Boisses, while the current village presentation names that rebuilt locality Tignes 1800. This supports treating Les Boisses as a historical/locality name within the modeled Tignes 1800 base.",
+      "normalization_note": "The booking system may expose both labels, but the destination's own history establishes one modeled accommodation base rather than two independent stay markets."
+    },
+    {
+      "evidence_id": "inventory-pass4-tignes-crouze-parent",
+      "boundary_target_ids": [
+        "tignes-le-lac-crouze"
+      ],
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://reservation.tignes.net/medias/images/PLANS_TIGNES_2100.pdf",
+      "source_title": "Official Tignes 2100 locality map",
+      "source_value": "tignes-le-lac",
+      "evidence_summary": "The official Tignes 2100 map places Crouze inside the Le Lac urban area, and the official accommodation taxonomy exposes Crouze as a Le Lac lodging location rather than an independent stay market.",
+      "normalization_note": "A named lodging quarter inside the contiguous Le Lac base does not require a separate stay-base entity."
+    },
+    {
+      "evidence_id": "inventory-pass4-tignes-offbase-accommodation-taxonomy",
+      "boundary_target_ids": [
+        "tignes"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://nl.tignes.net/holidays/booking/holiday-residences",
+      "source_title": "Official Tignes accommodation locality taxonomy",
+      "source_value": "tignes",
+      "evidence_summary": "The official accommodation directory exposes Villaret du Nial, La Reculaz, Le Franchet, Le Chevril, and Crouze as lodging-location filters outside the five represented base labels. Current supply and graph ownership still require candidate-level decisions.",
+      "normalization_note": "Directory taxonomy establishes a bounded candidate inventory but does not by itself prove an independent stay market."
+    },
+    {
+      "evidence_id": "inventory-pass4-tignes-villaret-des-brevieres-lodging",
+      "boundary_target_ids": [
+        "tignes"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://reservation.tignes.net/chalet-4-chambres-10-personnes-sarrasin-tignes-villaret-des-brevieres-chaletsarrasin.html",
+      "source_title": "Official Villaret des Brevieres chalet listing",
+      "source_value": "tignes",
+      "evidence_summary": "The official booking listing calls Villaret des Brevieres a small mountain hamlet with multi-night lodging about five minutes from the pistes by car, establishing a concrete stay-base and access candidate.",
+      "normalization_note": "The listing establishes a candidate and distinct access context, not automatic separation from or absorption into Les Brevieres."
+    },
+    {
+      "evidence_id": "inventory-pass4-tignes-private-lodging-hamlets",
+      "boundary_target_ids": [
+        "tignes"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://es.tignes.net/uploads/media/default/0001/65/5e7ac9623d0b20f0e3bd84e435b8114b5a3230c7.pdf",
+      "source_title": "Official Tignes private-lodging directory",
+      "source_value": "tignes",
+      "evidence_summary": "The official directory places multi-night accommodation in Villaret du Nial and La Reculaz and records Crouze under Le Lac. Its dated inventory establishes historical lodging evidence but requires current-source normalization before new entities are added.",
+      "normalization_note": "Use as bounded candidate and parent evidence; do not claim current availability from the dated directory."
+    },
+    {
+      "evidence_id": "inventory-pass4-tignes-franchet-lodging",
+      "boundary_target_ids": [
+        "tignes"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/hebergements/hebergement-detail?slug=chalet-colinn",
+      "source_title": "Official Chalet Colinn accommodation entry at Le Franchet",
+      "source_value": "tignes",
+      "evidence_summary": "The official entry describes multi-night lodging at the edge of the classic Le Franchet hamlet. Its displayed opening dates are stale, so a current source is required before adding a represented entity.",
+      "normalization_note": "Concrete candidate evidence only; current lodging availability remains unverified."
+    },
+    {
+      "evidence_id": "inventory-pass4-tignes-offbase-shuttle",
+      "boundary_target_ids": [
+        "tignes"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "tignes",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://public.tignes.net/TIGNES.NET/NAVETTES/TIGNES_VDI_HIVER.pdf",
+      "source_title": "Official Tignes-Val d'Isere winter shuttle",
+      "source_value": "tignes",
+      "evidence_summary": "The official winter shuttle names Villaret du Nial, Le Chevril, and La Reculaz as request stops between Tignes 1800 and Val d'Isere, confirming distinct locality and transport context without establishing ski-area access semantics.",
+      "normalization_note": "Shuttle-stop identity supports candidate scoping but not a lift-access edge or independent stay market by itself."
     },
     {
       "evidence_id": "inventory-pass3-val-disere-chatelard-boundary",
@@ -6742,6 +6847,7 @@
     "Official sources reviewed did not establish child-scoped snowmaking coverage or stable night-skiing availability for Val d'Isere.",
     "La Daille character and elevation remain unknown because the reviewed first-party sources did not provide sufficiently specific structural evidence.",
     "Inventory completion established Laisinant, Legettaz, Joseray, Le Cret, Rond Point des Pistes, and Les Carats as concrete Val d'Isere stay-base candidates. Their typed catalog additions or canonical regional deferrals remain graph-blocking findings; unsupported access route, duration, mode, and directness must stay unresolved. Chatelard is dispositioned as an accommodation sub-locality of the Legettaz candidate.",
+    "The final bounded Tignes accommodation inventory pass dispositioned Crouze under Le Lac and confirmed Les Boisses as the locality represented by Tignes 1800. Villaret des Brevieres, Villaret du Nial, La Reculaz, and Le Franchet have concrete official lodging or directory evidence, while Le Chevril appears in the official accommodation taxonomy and shuttle route. Their missing typed assessments and entity/access or canonical regional-handoff decisions are actionable remediation findings rather than unsearched inventory.",
     "Candidate-scoped source passes did not establish exact routed access semantics for the eight represented base-to-area links. Relationships are retained with narrowed official sources, while access mode is unknown and directness is false."
   ],
   "report_schema_version": 3,
@@ -6755,7 +6861,12 @@
         "independent_stay_market"
       ],
       "evidence_refs": [
-        "schema-v3-inventory-stay-destination-tignes"
+        "schema-v3-inventory-stay-destination-tignes",
+        "inventory-pass4-tignes-offbase-accommodation-taxonomy",
+        "inventory-pass4-tignes-villaret-des-brevieres-lodging",
+        "inventory-pass4-tignes-private-lodging-hamlets",
+        "inventory-pass4-tignes-franchet-lodging",
+        "inventory-pass4-tignes-offbase-shuttle"
       ],
       "target_refs": [
         {
@@ -7045,7 +7156,8 @@
         "official_independent_identity"
       ],
       "evidence_refs": [
-        "inventory-pass3-tignes-booking-subareas"
+        "inventory-pass3-tignes-booking-subareas",
+        "inventory-pass4-tignes-1800-les-boisses-equivalence"
       ],
       "target_refs": [
         {
@@ -7055,6 +7167,28 @@
       ],
       "backlog_ref": null,
       "rationale": "The official booking inventory exposes Les Boisses alongside Tignes 1800, while the destination village presentation treats Les Boisses as the historical name and locality within the modeled Tignes 1800 base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "tignes-le-lac-crouze",
+      "candidate_name": "Le Lac Crouze",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "inventory-pass4-tignes-crouze-parent"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "tignes-le-lac"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official resort map and accommodation taxonomy place Crouze inside the contiguous Le Lac lodging area. It is a named quarter of the represented Le Lac base rather than an independent accommodation market or access base.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -7917,8 +8051,15 @@
         "https://booking.valdisere.com/en/accommodation/town-joseray-200077.html?page=1",
         "https://booking.valdisere.com/en/accommodation/town-laisinant-200068.html",
         "https://booking.valdisere.com/en/accommodation/town-legettaz-200069.html?page=1",
+        "https://en.tignes.net/discover/ski-resort/discovering-tignes",
         "https://en.tignes.net/discover/ski-resort/tignes-villages",
+        "https://en.tignes.net/resort-guide/directory/hebergements/hebergement-detail?slug=chalet-colinn",
+        "https://es.tignes.net/uploads/media/default/0001/65/5e7ac9623d0b20f0e3bd84e435b8114b5a3230c7.pdf",
+        "https://nl.tignes.net/holidays/booking/holiday-residences",
+        "https://public.tignes.net/TIGNES.NET/NAVETTES/TIGNES_VDI_HIVER.pdf",
+        "https://reservation.tignes.net/chalet-4-chambres-10-personnes-sarrasin-tignes-villaret-des-brevieres-chaletsarrasin.html",
         "https://reservation.tignes.net/location-appartement-chalet.html",
+        "https://reservation.tignes.net/medias/images/PLANS_TIGNES_2100.pdf",
         "https://reservation.valdisere.com/fr/hebergement/zone-legettaz-200069.html",
         "https://www.valdisere.com/en/val-disere/",
         "https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/"
