@@ -1854,6 +1854,7 @@ def test_active_weather_geometry_requires_reproducible_derivation_metadata() -> 
             "geometry_completeness": "complete",
             "derivation_status": "verified",
             "evidence_refs": ["example-weather-geometry"],
+            "post_merge_handoff": "scheduled_completion",
         }
     ]
     report = CatalogCurationReport.model_validate(payload)
@@ -1874,7 +1875,7 @@ def test_active_weather_geometry_requires_reproducible_derivation_metadata() -> 
     validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
 
 
-def test_deferred_weather_geometry_requires_activation_prerequisite() -> None:
+def test_deferred_weather_geometry_requires_exhaustive_coordinate_attempts() -> None:
     payload = _scope_report_payload(
         candidate_kind="ski_area",
         disposition="represented",
@@ -1943,7 +1944,193 @@ def test_deferred_weather_geometry_requires_activation_prerequisite() -> None:
     payload["weather_request_geometry_assessments"][0]["activation_prerequisite"] = (
         "Source a reproducible in-terrain sampling point and elevation range."
     )
+    with pytest.raises(
+        CatalogValidationError,
+        match="deferred weather sampling requires documented coordinate attempts",
+    ):
+        validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+    attempt_specs = [
+        ("official_terrain_medoid", "official", "Official map has no geometry"),
+        ("osm_terrain_medoid", "open_data", "OSM terrain coverage is partial"),
+        (
+            "official_central_on_mountain_point",
+            "official",
+            "No exact central weather or hub point is published",
+        ),
+        (
+            "structured_lift_inventory_medoid",
+            "open_data",
+            "No complete structured lift inventory is available",
+        ),
+    ]
+    evidence_refs = []
+    coordinate_attempts = []
+    for index, (method, source_type, rationale) in enumerate(attempt_specs, start=1):
+        evidence_id = f"coordinate-attempt-{index}"
+        evidence_refs.append(evidence_id)
+        payload["evidence"].append(
+            {
+                "evidence_id": evidence_id,
+                "target_type": "ski_area",
+                "target_id": "example-area",
+                "field_path": "latitude",
+                "source_type": source_type,
+                "source_url": f"https://example.com/coordinate-attempt-{index}",
+                "source_title": f"Coordinate attempt {index}",
+                "source_value": rationale,
+                "evidence_summary": rationale,
+            }
+        )
+        coordinate_attempts.append(
+            {
+                "method": method,
+                "outcome": "unavailable",
+                "evidence_refs": [evidence_id],
+                "rationale": rationale,
+            }
+        )
+    assessment = payload["weather_request_geometry_assessments"][0]
+    assessment["evidence_refs"] = evidence_refs
+    assessment["coordinate_derivation_attempts"] = coordinate_attempts
+
+    report = CatalogCurationReport.model_validate(payload)
     validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+    rendered = render_catalog_curation_report_markdown(report)
+    assert "Coordinate derivation attempts" in rendered
+    assert "`official_terrain_medoid`: `unavailable`" in rendered
+
+    assessment["coordinate_derivation_attempts"].pop()
+    with pytest.raises(
+        CatalogValidationError,
+        match="missing coordinate derivation attempts: "
+        "structured_lift_inventory_medoid",
+    ):
+        validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+    assessment["coordinate_derivation_method"] = "osm_terrain_medoid"
+    assessment["coordinate_derivation_attempts"] = coordinate_attempts[:2]
+    with pytest.raises(
+        CatalogValidationError,
+        match="selected coordinate attempt must match osm_terrain_medoid",
+    ):
+        validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+    assessment["coordinate_derivation_attempts"][1]["outcome"] = "selected"
+    validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+
+def test_retained_weather_geometry_change_requires_post_merge_refetch_handoff() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="represented",
+        signals=[
+            "official_independent_identity",
+            "separate_operator",
+            "independent_weather_presentation",
+            "full_local_pass",
+        ],
+        target_type="ski_area",
+        target_id="example-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0].update(
+        {
+            "candidate_id": "example-area",
+            "evidence_refs": ["example-scope", "example-weather-geometry"],
+            "ski_area_boundary": _ski_area_boundary_payload(
+                operational_scope="independent",
+                weather_scope="independent",
+                pass_scope="full_local",
+                evidence_refs=["example-scope", "example-weather-geometry"],
+            ),
+        }
+    )
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "example-area",
+            "scope": "narrow",
+            "required_field_paths": ["latitude"],
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "example-area",
+            "field_path": "latitude",
+            "status": "changed",
+        }
+    )
+    payload["changes"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "example-area",
+            "field_path": "latitude",
+            "before": 45.0,
+            "after": 45.01,
+            "trust_status": "verified",
+            "ranking_relevant": False,
+        }
+    )
+    payload["evidence"].append(
+        {
+            "evidence_id": "example-weather-geometry",
+            "target_type": "ski_area",
+            "target_id": "example-area",
+            "field_path": "latitude",
+            "source_type": "official",
+            "source_url": "https://example.com/trail-map",
+            "source_title": "Official trail map",
+            "source_value": 45.01,
+            "evidence_summary": "Supports the reviewed terrain geometry.",
+        }
+    )
+    payload["weather_request_geometry_targets"] = ["example-area"]
+    payload["weather_request_geometry_assessments"] = [
+        {
+            "ski_area_id": "example-area",
+            "before": {
+                "weather_sampling_status": "active",
+                "latitude": 45.0,
+                "longitude": 6.0,
+                "base_elevation_m": 1200,
+                "mid_elevation_m": 1800,
+                "upper_elevation_m": 2280,
+            },
+            "after": {
+                "weather_sampling_status": "active",
+                "latitude": 45.01,
+                "longitude": 6.01,
+                "base_elevation_m": 1200,
+                "mid_elevation_m": 1800,
+                "upper_elevation_m": 2280,
+            },
+            "coordinate_derivation_method": "official_terrain_medoid",
+            "elevation_derivation_method": "preserved_existing",
+            "geometry_completeness": "complete",
+            "derivation_status": "verified_with_adjustment",
+            "evidence_refs": ["example-weather-geometry"],
+        }
+    ]
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="retained weather geometry changes require "
+        "post_merge_handoff=force_refetch_and_rebuild_climatology",
+    ):
+        validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+    payload["weather_request_geometry_assessments"][0]["post_merge_handoff"] = (
+        "force_refetch_and_rebuild_climatology"
+    )
+    report = CatalogCurationReport.model_validate(payload)
+    validate_catalog_curation_report(report)
+
+    rendered = render_catalog_curation_report_markdown(report)
+    assert "Post-merge weather handoff" in rendered
+    assert "targeted forced historical refetch and climatology rebuild" in rendered
 
 
 def test_catalog_policy_checks_normalized_access_and_terrain_metrics() -> None:

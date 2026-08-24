@@ -92,6 +92,37 @@ CatalogScopeSignalType = Literal[
     "official_product_identity",
 ]
 CatalogAssessmentStatus = Literal["pass", "fail", "unresolved"]
+CatalogCoordinateDerivationAttemptMethod = Literal[
+    "official_terrain_medoid",
+    "osm_terrain_medoid",
+    "official_central_on_mountain_point",
+    "structured_lift_inventory_medoid",
+]
+CatalogCoordinateDerivationMethod = Literal[
+    "official_terrain_medoid",
+    "osm_terrain_medoid",
+    "official_central_on_mountain_point",
+    "structured_lift_inventory_medoid",
+    "preserved_existing",
+]
+CatalogCoordinateDerivationAttemptOutcome = Literal[
+    "selected",
+    "rejected",
+    "unavailable",
+]
+CatalogWeatherPostMergeHandoff = Literal[
+    "scheduled_completion",
+    "force_refetch_and_rebuild_climatology",
+    "force_refetch_and_rebuild_after_activation",
+]
+COORDINATE_DERIVATION_HIERARCHY: tuple[
+    CatalogCoordinateDerivationAttemptMethod, ...
+] = (
+    "official_terrain_medoid",
+    "osm_terrain_medoid",
+    "official_central_on_mountain_point",
+    "structured_lift_inventory_medoid",
+)
 CatalogBoundaryGateName = Literal[
     "independent_stay_context",
     "independent_ski_access",
@@ -923,20 +954,31 @@ class CatalogWeatherRequestGeometry(CatalogCurationContractModel):
         return self
 
 
+class CatalogCoordinateDerivationAttempt(CatalogCurationContractModel):
+    method: CatalogCoordinateDerivationAttemptMethod
+    outcome: CatalogCoordinateDerivationAttemptOutcome
+    evidence_refs: list[str] = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
+        return _validate_string_list(values, "coordinate attempt evidence_refs")
+
+    @field_validator("rationale")
+    @classmethod
+    def validate_rationale(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("coordinate attempt rationale must not be blank")
+        return normalized
+
+
 class CatalogWeatherRequestGeometryAssessment(CatalogCurationContractModel):
     ski_area_id: str = Field(min_length=1)
     before: CatalogWeatherRequestGeometry | None
     after: CatalogWeatherRequestGeometry
-    coordinate_derivation_method: (
-        Literal[
-            "official_terrain_medoid",
-            "osm_terrain_medoid",
-            "official_central_on_mountain_point",
-            "structured_lift_inventory_medoid",
-            "preserved_existing",
-        ]
-        | None
-    ) = None
+    coordinate_derivation_method: CatalogCoordinateDerivationMethod | None = None
     elevation_derivation_method: (
         Literal[
             "official_lift_served_range",
@@ -954,7 +996,11 @@ class CatalogWeatherRequestGeometryAssessment(CatalogCurationContractModel):
         Literal["verified", "verified_with_adjustment", "deferred"] | None
     ) = None
     evidence_refs: list[str] = Field(default_factory=list)
+    coordinate_derivation_attempts: list[CatalogCoordinateDerivationAttempt] = Field(
+        default_factory=list
+    )
     activation_prerequisite: str | None = None
+    post_merge_handoff: CatalogWeatherPostMergeHandoff | None = None
 
     @field_validator("evidence_refs")
     @classmethod
@@ -969,6 +1015,21 @@ class CatalogWeatherRequestGeometryAssessment(CatalogCurationContractModel):
     @property
     def material_change(self) -> bool:
         return self.before != self.after
+
+    @property
+    def request_geometry_changed(self) -> bool:
+        if self.before is None:
+            return False
+        return any(
+            before_value != after_value
+            for before_value, after_value in (
+                (self.before.latitude, self.after.latitude),
+                (self.before.longitude, self.after.longitude),
+                (self.before.base_elevation_m, self.after.base_elevation_m),
+                (self.before.mid_elevation_m, self.after.mid_elevation_m),
+                (self.before.upper_elevation_m, self.after.upper_elevation_m),
+            )
+        )
 
 
 class CatalogResultingGraph(CatalogCurationContractModel):
@@ -1739,11 +1800,37 @@ def _validate_weather_geometry_derivation(
                 f"{ski_area_id}: weather geometry evidence {evidence_id} "
                 "must target the assessed ski area"
             )
+    _validate_coordinate_derivation_attempts(
+        assessment,
+        evidence_by_id,
+        issues,
+    )
 
     if assessment.geometry_completeness is None:
         issues.append(f"{ski_area_id}: weather geometry requires geometry_completeness")
     if assessment.derivation_status is None:
         issues.append(f"{ski_area_id}: weather geometry requires derivation_status")
+
+    if (
+        assessment.before is None
+        and assessment.after.weather_sampling_status == "active"
+    ):
+        if assessment.post_merge_handoff != "scheduled_completion":
+            issues.append(
+                f"{ski_area_id}: new active weather geometry requires "
+                "post_merge_handoff=scheduled_completion"
+            )
+    elif assessment.request_geometry_changed:
+        required_handoff = (
+            "force_refetch_and_rebuild_climatology"
+            if assessment.after.weather_sampling_status == "active"
+            else "force_refetch_and_rebuild_after_activation"
+        )
+        if assessment.post_merge_handoff != required_handoff:
+            issues.append(
+                f"{ski_area_id}: retained weather geometry changes require "
+                f"post_merge_handoff={required_handoff}"
+            )
 
     if assessment.after.weather_sampling_status == "deferred":
         if assessment.derivation_status != "deferred":
@@ -1823,6 +1910,105 @@ def _validate_weather_geometry_derivation(
             f"{ski_area_id}: derivation_status must be {expected_status} for the "
             "selected methods"
         )
+
+
+def _validate_coordinate_derivation_attempts(
+    assessment: CatalogWeatherRequestGeometryAssessment,
+    evidence_by_id: Mapping[str, CatalogEvidenceItem],
+    issues: list[str],
+) -> None:
+    ski_area_id = assessment.ski_area_id
+    attempts = assessment.coordinate_derivation_attempts
+    methods = [attempt.method for attempt in attempts]
+    if len(methods) != len(set(methods)):
+        issues.append(f"{ski_area_id}: coordinate derivation attempts must be unique")
+
+    hierarchy_order = {
+        method: index for index, method in enumerate(COORDINATE_DERIVATION_HIERARCHY)
+    }
+    hierarchy_methods = [method for method in methods if method in hierarchy_order]
+    if hierarchy_methods != sorted(
+        hierarchy_methods,
+        key=hierarchy_order.__getitem__,
+    ):
+        issues.append(
+            f"{ski_area_id}: coordinate derivation attempts must follow the "
+            "source hierarchy"
+        )
+
+    assessment_evidence_refs = set(assessment.evidence_refs)
+    for attempt in attempts:
+        for evidence_id in attempt.evidence_refs:
+            if evidence_id not in assessment_evidence_refs:
+                issues.append(
+                    f"{ski_area_id}: coordinate attempt evidence {evidence_id} "
+                    "must also appear in weather geometry evidence_refs"
+                )
+            evidence = evidence_by_id.get(evidence_id)
+            if evidence is None:
+                issues.append(
+                    f"{ski_area_id}: unknown coordinate attempt evidence {evidence_id}"
+                )
+            elif evidence.target_key[:2] != ("ski_area", ski_area_id):
+                issues.append(
+                    f"{ski_area_id}: coordinate attempt evidence {evidence_id} "
+                    "must target the assessed ski area"
+                )
+
+    if assessment.after.weather_sampling_status != "deferred":
+        return
+
+    selected_method = assessment.coordinate_derivation_method
+    if selected_method == "preserved_existing":
+        return
+    if selected_method is None:
+        required_methods = list(COORDINATE_DERIVATION_HIERARCHY)
+        selected_attempt_method = None
+    else:
+        selected_index = hierarchy_order[selected_method]
+        required_methods = list(COORDINATE_DERIVATION_HIERARCHY[: selected_index + 1])
+        selected_attempt_method = selected_method
+
+    if not attempts:
+        issues.append(
+            f"{ski_area_id}: deferred weather sampling requires documented "
+            "coordinate attempts"
+        )
+        return
+
+    missing_methods = [method for method in required_methods if method not in methods]
+    if missing_methods:
+        issues.append(
+            f"{ski_area_id}: missing coordinate derivation attempts: "
+            f"{', '.join(missing_methods)}"
+        )
+
+    attempts_by_method = {attempt.method: attempt for attempt in attempts}
+    selected_attempt_methods = [
+        attempt.method for attempt in attempts if attempt.outcome == "selected"
+    ]
+    expected_selected_methods = (
+        [] if selected_attempt_method is None else [selected_attempt_method]
+    )
+    if selected_attempt_methods != expected_selected_methods:
+        expected = selected_attempt_method or "none"
+        issues.append(
+            f"{ski_area_id}: selected coordinate attempt must match {expected}"
+        )
+    for method in required_methods:
+        attempt = attempts_by_method.get(method)
+        if attempt is None:
+            continue
+        expected_outcomes = (
+            {"selected"}
+            if method == selected_attempt_method
+            else {"rejected", "unavailable"}
+        )
+        if attempt.outcome not in expected_outcomes:
+            allowed = " or ".join(sorted(expected_outcomes))
+            issues.append(
+                f"{ski_area_id}: {method} coordinate attempt must be {allowed}"
+            )
 
 
 def _markdown_cell(value: str) -> str:
@@ -2502,6 +2688,34 @@ def render_catalog_curation_report_markdown(
                 lines.append(
                     f"  - Activation prerequisite: "
                     f"{_markdown_cell(assessment.activation_prerequisite)}"
+                )
+            if assessment.coordinate_derivation_attempts:
+                lines.append("  - Coordinate derivation attempts:")
+                for attempt in assessment.coordinate_derivation_attempts:
+                    evidence_refs = ", ".join(
+                        _code_cell(evidence_ref)
+                        for evidence_ref in attempt.evidence_refs
+                    )
+                    lines.append(
+                        f"    - {_code_cell(attempt.method)}: "
+                        f"{_code_cell(attempt.outcome)}; "
+                        f"evidence={evidence_refs}; "
+                        f"{_markdown_cell(attempt.rationale)}"
+                    )
+            if assessment.post_merge_handoff:
+                handoff_labels = {
+                    "scheduled_completion": ("scheduled historical-weather completion"),
+                    "force_refetch_and_rebuild_climatology": (
+                        "targeted forced historical refetch and climatology rebuild"
+                    ),
+                    "force_refetch_and_rebuild_after_activation": (
+                        "after activation, targeted forced historical refetch and "
+                        "climatology rebuild"
+                    ),
+                }
+                lines.append(
+                    "  - Post-merge weather handoff: "
+                    f"{handoff_labels[assessment.post_merge_handoff]}."
                 )
     if report.ranking_impact_summary:
         lines.extend(["", "## Ranking Impact", "", report.ranking_impact_summary])

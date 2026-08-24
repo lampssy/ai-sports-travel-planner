@@ -65,12 +65,15 @@ under the same durable ID for audit and later reactivation.
 
 The request coordinate represents the complete modeled lift-served terrain,
 preferably its official-geometry medoid. Complete/corroborated OSM geometry, an
-exact official central on-mountain point, or a complete structured lift
-inventory are progressively weaker reviewed fallbacks. Village centres, map
-viewports, isolated endpoints, and bounding-box midpoints are not accepted
-weather coordinates. Base and summit elevations are the area-wide lift-served
-bounds; the mid and upper request bands remain derived from that range. See ADR
-0021 for the complete source hierarchy and deferral contract.
+exact official central on-mountain point, an unambiguous official named point
+matched to exact OSM geometry, or a complete structured lift inventory are
+progressively weaker reviewed fallbacks. Village centres, map viewports,
+isolated endpoints, and bounding-box midpoints are not accepted weather
+coordinates. Deferral records the outcome, evidence, and rejection reason for
+every coordinate hierarchy tier rather than treating an incomplete source
+packet as proof of unavailability. Base and summit elevations are the area-wide
+lift-served bounds; the mid and upper request bands remain derived from that
+range. See ADR 0021 for the complete source hierarchy and deferral contract.
 
 ### Raw Archive
 

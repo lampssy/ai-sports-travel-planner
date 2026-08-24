@@ -1013,14 +1013,14 @@
       "regional_data_ids": {
         "osm_relation_id": "47235"
       },
-      "elevation_m": null,
+      "elevation_m": 1224,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -5400,15 +5400,16 @@
       "ski_area_access_id": "cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area",
       "stay_base_id": "cortina-dampezzo-cortina-dampezzo",
       "ski_area_id": "cortina-dampezzo-ski-area",
-      "access_mode": "walk",
-      "lift_distance": "near",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
       "nearest_lift_name": "Funivia Faloria",
-      "distance_m": 472,
+      "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+        "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+        "https://skipasscortina.com/EN/news208-preolympic-mobility"
       ]
     },
     {
@@ -7431,6 +7432,7 @@
       "valid_ski_area_ids": [
         "auronzo-monte-agudo",
         "cortina-dampezzo-ski-area",
+        "lagazuoi-ski-area",
         "misurina-passo-tre-croci",
         "san-vito-di-cadore-ski-area"
       ],

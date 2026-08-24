@@ -59,7 +59,8 @@ modeled lift-served terrain. Use this hierarchy:
 1. medoid of complete official terrain geometry (`verified`);
 2. medoid of complete or sufficiently complete OSM terrain geometry,
    corroborated by the official map (`verified_with_adjustment`);
-3. exact official central on-mountain hub or weather point
+3. exact official central on-mountain hub or weather point, or an unambiguous
+   official named hub/weather point matched to exact OSM feature geometry
    (`verified_with_adjustment`);
 4. medoid of a complete structured lift inventory
    (`verified_with_adjustment`);
@@ -71,6 +72,14 @@ Sufficient OSM geometry means every official named terrain sector is
 represented, no known boundary-defining lift cluster is omitted, the reviewed
 point lies within the skiable footprint, and discrepancies with the official
 map are documented.
+
+Deferral is an evidenced conclusion, not the absence of a coordinate in the
+initial source packet. When no accepted coordinate is available, the typed
+assessment records all four hierarchy tiers in order. Every attempt identifies
+the method, its `rejected` or `unavailable` outcome, direct evidence references,
+and a concise reason. When a fallback tier is selected while sampling remains
+deferred for another geometry reason, every higher-priority tier is recorded and
+the selected tier uses outcome `selected`.
 
 `base_elevation_m` and `summit_elevation_m` are the area-wide lift-served
 elevation bounds used both for user-facing terrain range and the base/mid/upper
@@ -92,13 +101,19 @@ Schema-v3 curation reports treat every new ski area and every retained ski area
 whose coordinate, elevation bounds, or sampling status changes as a weather
 geometry target. The typed assessment records before/after request geometry,
 coordinate and elevation derivation methods, geometry completeness, derivation
-status, evidence references, and an activation prerequisite when deferred.
+status, coordinate-attempt evidence, and an activation prerequisite when
+deferred. A new active ID records its scheduled historical-weather completion
+handoff. A retained ID with changed coordinates or elevation bands records a
+targeted forced-refetch and climatology-rebuild handoff; when sampling remains
+deferred, that handoff occurs after activation.
 Catalog reconciliation derives the required target set, including new IDs, so
 report prose cannot waive the assessment.
 
 Retained IDs with unchanged terrain boundaries may preserve an already
-defensible sampling geometry. A material geometry change requires the existing
-force-refetch and climatology-rebuild handoff after activation.
+defensible sampling geometry. Catalog curation records the operational handoff
+but does not run production weather jobs before the PR is prepared or merged.
+A material geometry change requires the existing force-refetch and climatology
+rebuild after merge when active, or after later activation when deferred.
 
 ## Consequences
 
@@ -111,6 +126,9 @@ force-refetch and climatology-rebuild handoff after activation.
   evidence until activated and populated.
 - Curation reports become more explicit, but the same metadata makes reviews
   reproducible and prevents repeated coordinate/elevation arguments.
+- A reviewer can distinguish exhausted derivation options from incomplete
+  research, and can see the required post-merge weather work directly in the
+  rendered report.
 
 ## Alternatives Considered
 
