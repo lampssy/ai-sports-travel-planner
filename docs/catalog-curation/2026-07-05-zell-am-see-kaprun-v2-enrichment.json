@@ -23,6 +23,8 @@
       "required_field_paths": [
         "base_elevation_m",
         "glacier_terrain.availability",
+        "latitude",
+        "longitude",
         "marked_freeride_routes.availability",
         "marked_freeride_routes.route_count",
         "marked_freeride_routes.season_label",
@@ -50,6 +52,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "glacier_terrain.availability",
+        "latitude",
+        "longitude",
         "marked_freeride_routes.availability",
         "marked_freeride_routes.route_count",
         "marked_freeride_routes.season_label",
@@ -587,10 +591,19 @@
     {
       "target_type": "ski_area",
       "target_id": "kitzsteinhorn",
-      "field_path": "weather_sampling_status",
-      "before": "active",
-      "after": "deferred",
-      "trust_status": "needs_source",
+      "field_path": "latitude",
+      "before": 47.1975,
+      "after": 47.2082826,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "longitude",
+      "before": 12.7243,
+      "after": 12.6894952,
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
     {
@@ -632,10 +645,19 @@
     {
       "target_type": "ski_area",
       "target_id": "maiskogel",
-      "field_path": "weather_sampling_status",
-      "before": "active",
-      "after": "deferred",
-      "trust_status": "needs_source",
+      "field_path": "latitude",
+      "before": 47.2711,
+      "after": 47.2579253,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "longitude",
+      "before": 12.759,
+      "after": 12.7151844,
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
     {
@@ -983,7 +1005,10 @@
         "glacier_terrain": [
           "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board"
         ],
-        "identity_coordinates": [],
+        "identity_coordinates": [
+          "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn/huts-restaurants/restaurant-alpincenter-r71",
+          "https://www.openstreetmap.org/node/310153457"
+        ],
         "marked_freeride_routes": [
           "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board/freeride"
         ],
@@ -1025,7 +1050,7 @@
       "after": {
         "elevation_season": "verified",
         "glacier_terrain": "verified",
-        "identity_coordinates": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
         "marked_freeride_routes": "verified",
         "night_skiing": "needs_source",
         "official_documents": "needs_source",
@@ -1056,7 +1081,8 @@
         "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
         "Source-aware v2 enrichment reviewed official Kitzsteinhorn and Zell am See-Kaprun material on 2026-07-05.",
         "The shared Kitzsteinhorn-Maiskogel map is stored on the connected terrain domain.",
-        "The official child-area page publishes the 1,976-3,029 m lift-served piste range and October-to-May season; weather sampling is deferred until an accepted reproducible area-wide coordinate derivation is available."
+        "The official child-area page publishes the 1,976-3,029 m lift-served piste range and October-to-May season.",
+        "Weather sampling uses the official Alpincenter on-mountain hub, matched to exact OSM feature geometry; the changed retained request geometry requires targeted historical force-refetch and climatology rebuild after merge."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -1151,7 +1177,11 @@
           "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board"
         ],
         "glacier_terrain": [],
-        "identity_coordinates": [],
+        "identity_coordinates": [
+          "https://www.kitzsteinhorn.at/en/service/backstage/press/summer-2026-pr16418",
+          "https://www.openstreetmap.org/node/6307550394",
+          "https://www.openstreetmap.org/way/673539308"
+        ],
         "marked_freeride_routes": [],
         "night_skiing": [],
         "official_documents": [],
@@ -1193,7 +1223,7 @@
       "after": {
         "elevation_season": "verified",
         "glacier_terrain": "needs_source",
-        "identity_coordinates": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
         "marked_freeride_routes": "needs_source",
         "night_skiing": "needs_source",
         "official_documents": "needs_source",
@@ -1224,7 +1254,8 @@
         "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
         "Source-aware v2 enrichment reviewed official Maiskogel material on 2026-07-05.",
         "Maisi Park is retained as a fun/beginner area and is not counted as a dedicated snowpark.",
-        "The official child-area page publishes the 768-1,730 m lift-served piste range; weather sampling is deferred until an accepted reproducible area-wide coordinate derivation is available."
+        "The official child-area page publishes the 768-1,730 m lift-served piste range.",
+        "Weather sampling uses the official MK Maiskogelbahn mountain station, matched to the named OSM lift endpoint; the changed retained request geometry requires targeted historical force-refetch and climatology rebuild after merge."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -1658,9 +1689,23 @@
     {
       "target_type": "ski_area",
       "target_id": "kitzsteinhorn",
-      "field_path": "weather_sampling_status",
+      "field_path": "latitude",
       "status": "changed",
-      "notes": "Sampling is deferred because the frozen evidence does not establish an accepted reproducible area-wide coordinate."
+      "notes": "Official Alpincenter identity is matched to exact OSM feature geometry."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Official Alpincenter identity is matched to exact OSM feature geometry."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "weather_sampling_status",
+      "status": "reviewed-no-change",
+      "notes": "Sampling remains active with reviewed central on-mountain fallback geometry."
     },
     {
       "target_type": "ski_area",
@@ -1797,9 +1842,23 @@
     {
       "target_type": "ski_area",
       "target_id": "maiskogel",
-      "field_path": "weather_sampling_status",
+      "field_path": "latitude",
       "status": "changed",
-      "notes": "Sampling is deferred because the frozen evidence does not establish an accepted reproducible area-wide coordinate."
+      "notes": "Official MK Maiskogelbahn mountain-station identity is matched to its exact OSM lift endpoint."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Official MK Maiskogelbahn mountain-station identity is matched to its exact OSM lift endpoint."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "weather_sampling_status",
+      "status": "reviewed-no-change",
+      "notes": "Sampling remains active with reviewed central on-mountain fallback geometry."
     },
     {
       "target_type": "stay_base",
@@ -3908,6 +3967,81 @@
       "normalization_note": null
     },
     {
+      "evidence_id": "weather-kitzsteinhorn-official-map-geometry",
+      "boundary_target_ids": [
+        "kitzsteinhorn"
+      ],
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "latitude",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board",
+      "source_title": "Kitzsteinhorn official ski-area presentation",
+      "source_value": "Named Kitzsteinhorn terrain sectors without georeferenced polygon geometry",
+      "evidence_summary": "The official presentation establishes terrain scope but does not publish machine-readable complete terrain geometry from which a medoid can be reproduced.",
+      "normalization_note": "Used to reject the higher-priority official-terrain-medoid method, not as the coordinate value."
+    },
+    {
+      "evidence_id": "weather-kitzsteinhorn-osm-boundary",
+      "boundary_target_ids": [
+        "kitzsteinhorn"
+      ],
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/1266571967",
+      "source_title": "OSM Kitzsteinhorn winter-sports polygon",
+      "source_value": "way/1266571967",
+      "evidence_summary": "OSM contains a named Kitzsteinhorn winter-sports polygon, but the bounded evidence does not prove that it covers every official boundary-defining terrain sector.",
+      "normalization_note": "Used to reject an OSM terrain medoid until polygon completeness is established, not as the coordinate value."
+    },
+    {
+      "evidence_id": "weather-kitzsteinhorn-alpincenter-official",
+      "boundary_target_ids": [
+        "kitzsteinhorn"
+      ],
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "latitude",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn/huts-restaurants/restaurant-alpincenter-r71",
+      "source_title": "Kitzsteinhorn Alpincenter official presentation",
+      "source_value": "Alpincenter at 2,450 m",
+      "evidence_summary": "The operator identifies Alpincenter as a central on-mountain Kitzsteinhorn hub at 2,450 m.",
+      "normalization_note": "The official source establishes point identity; exact coordinates come from the matched OSM feature."
+    },
+    {
+      "evidence_id": "weather-kitzsteinhorn-alpincenter-osm-latitude",
+      "boundary_target_ids": [
+        "kitzsteinhorn"
+      ],
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/310153457",
+      "source_title": "OSM Alpincenter node latitude",
+      "source_value": 47.2082826,
+      "evidence_summary": "The exact OSM node named Alpincenter supplies the reproducible latitude for the official hub.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "weather-kitzsteinhorn-alpincenter-osm-longitude",
+      "boundary_target_ids": [
+        "kitzsteinhorn"
+      ],
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/310153457",
+      "source_title": "OSM Alpincenter node longitude",
+      "source_value": 12.6894952,
+      "evidence_summary": "The exact OSM node named Alpincenter supplies the reproducible longitude for the official hub.",
+      "normalization_note": null
+    },
+    {
       "evidence_id": "weather-maiskogel-lift-served-range",
       "boundary_target_ids": [
         "maiskogel"
@@ -3920,6 +4054,96 @@
       "source_title": "Maiskogel official ski-area facts",
       "source_value": 1730,
       "evidence_summary": "The child-area page publishes lift-served pistes from 768 m to 1,730 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "weather-maiskogel-official-map-geometry",
+      "boundary_target_ids": [
+        "maiskogel"
+      ],
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "latitude",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
+      "source_title": "Maiskogel official ski-area presentation",
+      "source_value": "Named Maiskogel terrain without georeferenced polygon geometry",
+      "evidence_summary": "The official presentation establishes terrain scope but does not publish machine-readable complete terrain geometry from which a medoid can be reproduced.",
+      "normalization_note": "Used to reject the higher-priority official-terrain-medoid method, not as the coordinate value."
+    },
+    {
+      "evidence_id": "weather-maiskogel-osm-boundary",
+      "boundary_target_ids": [
+        "maiskogel"
+      ],
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/342022110",
+      "source_title": "OSM Maiskogel winter-sports polygon",
+      "source_value": "way/342022110",
+      "evidence_summary": "OSM contains a named Maiskogel winter-sports polygon, but the bounded evidence does not prove that it covers every official boundary-defining terrain sector.",
+      "normalization_note": "Used to reject an OSM terrain medoid until polygon completeness is established, not as the coordinate value."
+    },
+    {
+      "evidence_id": "weather-maiskogel-mountain-station-official",
+      "boundary_target_ids": [
+        "maiskogel"
+      ],
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "latitude",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/service/backstage/press/summer-2026-pr16418",
+      "source_title": "MK Maiskogelbahn mountain-station official presentation",
+      "source_value": "MK Maiskogelbahn mountain station at 1,570 m",
+      "evidence_summary": "The operator identifies the MK Maiskogelbahn mountain station as the central Maiskogel hub at 1,570 m.",
+      "normalization_note": "The official source establishes point identity; exact coordinates come from the matched OSM lift endpoint."
+    },
+    {
+      "evidence_id": "weather-maiskogel-lift-way-osm",
+      "boundary_target_ids": [
+        "maiskogel"
+      ],
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/673539308",
+      "source_title": "OSM MK Maiskogelbahn lift way",
+      "source_value": "way/673539308 ending at node/6307550394",
+      "evidence_summary": "The named OSM gondola way identifies node 6307550394 as the upper MK Maiskogelbahn endpoint operated by Gletscherbahnen Kaprun AG.",
+      "normalization_note": "Used to match the official mountain-station identity to the exact endpoint, not as the coordinate value."
+    },
+    {
+      "evidence_id": "weather-maiskogel-mountain-station-osm-latitude",
+      "boundary_target_ids": [
+        "maiskogel"
+      ],
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/6307550394",
+      "source_title": "OSM MK Maiskogelbahn mountain-station latitude",
+      "source_value": 47.2579253,
+      "evidence_summary": "The exact upper-station endpoint supplies the reproducible latitude for the official Maiskogel hub.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "weather-maiskogel-mountain-station-osm-longitude",
+      "boundary_target_ids": [
+        "maiskogel"
+      ],
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/6307550394",
+      "source_title": "OSM MK Maiskogelbahn mountain-station longitude",
+      "source_value": 12.7151844,
+      "evidence_summary": "The exact upper-station endpoint supplies the reproducible longitude for the official Maiskogel hub.",
       "normalization_note": null
     },
     {
@@ -4165,21 +4389,56 @@
         "upper_elevation_m": 2803
       },
       "after": {
-        "weather_sampling_status": "deferred",
-        "latitude": 47.1975,
-        "longitude": 12.7243,
+        "weather_sampling_status": "active",
+        "latitude": 47.2082826,
+        "longitude": 12.6894952,
         "base_elevation_m": 1976,
         "mid_elevation_m": 2502,
         "upper_elevation_m": 2924
       },
-      "coordinate_derivation_method": null,
+      "coordinate_derivation_method": "official_central_on_mountain_point",
       "elevation_derivation_method": "official_lift_served_range",
       "geometry_completeness": "partial",
-      "derivation_status": "deferred",
+      "derivation_status": "verified_with_adjustment",
       "evidence_refs": [
-        "weather-kitzsteinhorn-lift-served-range"
+        "weather-kitzsteinhorn-lift-served-range",
+        "weather-kitzsteinhorn-official-map-geometry",
+        "weather-kitzsteinhorn-osm-boundary",
+        "weather-kitzsteinhorn-alpincenter-official",
+        "weather-kitzsteinhorn-alpincenter-osm-latitude",
+        "weather-kitzsteinhorn-alpincenter-osm-longitude"
       ],
-      "activation_prerequisite": "Source an accepted reproducible area-wide Kitzsteinhorn coordinate derivation, update the trust group-specific refs, then force-refetch affected history before reactivation."
+      "coordinate_derivation_attempts": [
+        {
+          "method": "official_terrain_medoid",
+          "outcome": "unavailable",
+          "evidence_refs": [
+            "weather-kitzsteinhorn-official-map-geometry"
+          ],
+          "rationale": "The official presentation establishes terrain scope but does not publish complete georeferenced geometry for a reproducible medoid."
+        },
+        {
+          "method": "osm_terrain_medoid",
+          "outcome": "rejected",
+          "evidence_refs": [
+            "weather-kitzsteinhorn-official-map-geometry",
+            "weather-kitzsteinhorn-osm-boundary"
+          ],
+          "rationale": "A named OSM polygon exists, but its completeness against every official boundary-defining terrain sector is not established."
+        },
+        {
+          "method": "official_central_on_mountain_point",
+          "outcome": "selected",
+          "evidence_refs": [
+            "weather-kitzsteinhorn-alpincenter-official",
+            "weather-kitzsteinhorn-alpincenter-osm-latitude",
+            "weather-kitzsteinhorn-alpincenter-osm-longitude"
+          ],
+          "rationale": "Alpincenter is an official central on-mountain Kitzsteinhorn hub matched to exact OSM feature geometry."
+        }
+      ],
+      "activation_prerequisite": null,
+      "post_merge_handoff": "force_refetch_and_rebuild_climatology"
     },
     {
       "ski_area_id": "maiskogel",
@@ -4192,30 +4451,66 @@
         "upper_elevation_m": 1490
       },
       "after": {
-        "weather_sampling_status": "deferred",
-        "latitude": 47.2711,
-        "longitude": 12.759,
+        "weather_sampling_status": "active",
+        "latitude": 47.2579253,
+        "longitude": 12.7151844,
         "base_elevation_m": 768,
         "mid_elevation_m": 1249,
         "upper_elevation_m": 1634
       },
-      "coordinate_derivation_method": null,
+      "coordinate_derivation_method": "official_central_on_mountain_point",
       "elevation_derivation_method": "official_lift_served_range",
       "geometry_completeness": "partial",
-      "derivation_status": "deferred",
+      "derivation_status": "verified_with_adjustment",
       "evidence_refs": [
-        "weather-maiskogel-lift-served-range"
+        "weather-maiskogel-lift-served-range",
+        "weather-maiskogel-official-map-geometry",
+        "weather-maiskogel-osm-boundary",
+        "weather-maiskogel-mountain-station-official",
+        "weather-maiskogel-lift-way-osm",
+        "weather-maiskogel-mountain-station-osm-latitude",
+        "weather-maiskogel-mountain-station-osm-longitude"
       ],
-      "activation_prerequisite": "Source an accepted reproducible area-wide Maiskogel coordinate derivation, update the trust group-specific refs, then force-refetch affected history before reactivation."
+      "coordinate_derivation_attempts": [
+        {
+          "method": "official_terrain_medoid",
+          "outcome": "unavailable",
+          "evidence_refs": [
+            "weather-maiskogel-official-map-geometry"
+          ],
+          "rationale": "The official presentation establishes terrain scope but does not publish complete georeferenced geometry for a reproducible medoid."
+        },
+        {
+          "method": "osm_terrain_medoid",
+          "outcome": "rejected",
+          "evidence_refs": [
+            "weather-maiskogel-official-map-geometry",
+            "weather-maiskogel-osm-boundary"
+          ],
+          "rationale": "A named OSM polygon exists, but its completeness against every official boundary-defining terrain sector is not established."
+        },
+        {
+          "method": "official_central_on_mountain_point",
+          "outcome": "selected",
+          "evidence_refs": [
+            "weather-maiskogel-mountain-station-official",
+            "weather-maiskogel-lift-way-osm",
+            "weather-maiskogel-mountain-station-osm-latitude",
+            "weather-maiskogel-mountain-station-osm-longitude"
+          ],
+          "rationale": "The MK Maiskogelbahn mountain station is an official central on-mountain hub matched to the exact upper endpoint of the named OSM lift way."
+        }
+      ],
+      "activation_prerequisite": null,
+      "post_merge_handoff": "force_refetch_and_rebuild_climatology"
     }
   ],
   "validation_commands": [
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog --catalog-path app/data/catalog.json --trust-manifest-path app/data/resort_trust_manifest.json",
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile docs/catalog-curation/2026-07-05-zell-am-see-kaprun-v2-enrichment.json --base-catalog-path <prepared-base>/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path <prepared-base>/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json --require-report-schema-version 3 --product-backlog-path docs/product-backlog.md --markdown-output docs/catalog-curation/2026-07-05-zell-am-see-kaprun-v2-enrichment.md"
   ],
-  "ranking_impact_summary": "Kitzsteinhorn and Maiskogel retain exact child-area elevation ranges but are excluded from weather-backed ranking until reproducible area-wide coordinates are sourced; the exact local summer/fall pass remains available, while Lechnerberg stays unmodeled until required geometry can be represented without guesses.",
+  "ranking_impact_summary": "Kitzsteinhorn and Maiskogel remain active for weather-backed ranking with exact child-area elevation ranges and reviewed central on-mountain fallback coordinates. Because both retained request geometries changed, their historical weather must be force-refetched and climatology rebuilt after merge; the exact local summer/fall pass remains available, while Lechnerberg stays unmodeled until required geometry can be represented without guesses.",
   "unresolved_caveats": [
-    "Kitzsteinhorn and Maiskogel weather sampling is deferred because the frozen evidence does not support the preserved coordinates; reactivation requires accepted reproducible area-wide coordinate derivations, exact trust refs, and a forced history refetch before ranking use.",
     "Lechnerberg is a confirmed separate beginner area and central-Kaprun access candidate, but it remains deferred because exact required elevation and season fields are unpublished under the current SkiArea contract.",
     "Kaprun and Zell am See base elevations remain unset because the former exact document is unavailable and the latter source is only a regional valley proxy.",
     "The broad Ski ALPIN CARD map is not treated as an exact Kitzsteinhorn-Maiskogel domain-owned document.",
@@ -5306,6 +5601,31 @@
       ],
       "candidate_kinds": [
         "lift_pass_product"
+      ]
+    },
+    {
+      "family_id": "zell-weather-hub-identity",
+      "source_kind": "ski_area_operator",
+      "source_urls": [
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/summer-2026-pr16418",
+        "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn/huts-restaurants/restaurant-alpincenter-r71"
+      ],
+      "candidate_kinds": [
+        "ski_area"
+      ]
+    },
+    {
+      "family_id": "zell-weather-hub-open-data",
+      "source_kind": "access_transport",
+      "source_urls": [
+        "https://www.openstreetmap.org/node/310153457",
+        "https://www.openstreetmap.org/node/6307550394",
+        "https://www.openstreetmap.org/way/342022110",
+        "https://www.openstreetmap.org/way/673539308",
+        "https://www.openstreetmap.org/way/1266571967"
+      ],
+      "candidate_kinds": [
+        "ski_area"
       ]
     },
     {

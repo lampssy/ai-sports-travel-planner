@@ -7343,7 +7343,7 @@
       "kitzsteinhorn": {
         "display_name": "Kitzsteinhorn",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
+          "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "verified",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
@@ -7356,7 +7356,10 @@
           "official_documents": "needs_source"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
+          "identity_coordinates": [
+            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn/huts-restaurants/restaurant-alpincenter-r71",
+            "https://www.openstreetmap.org/node/310153457"
+          ],
           "elevation_season": [
             "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board"
           ],
@@ -7388,7 +7391,8 @@
           "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
           "Source-aware v2 enrichment reviewed official Kitzsteinhorn and Zell am See-Kaprun material on 2026-07-05.",
           "The shared Kitzsteinhorn-Maiskogel map is stored on the connected terrain domain.",
-          "The official child-area page publishes the 1,976-3,029 m lift-served piste range and October-to-May season; weather sampling is deferred until an accepted reproducible area-wide coordinate derivation is available."
+          "The official child-area page publishes the 1,976-3,029 m lift-served piste range and October-to-May season.",
+          "Weather sampling uses the official Alpincenter on-mountain hub, matched to exact OSM feature geometry; the changed retained request geometry requires targeted historical force-refetch and climatology rebuild after merge."
         ]
       },
       "la-plagne-ski-area": {
@@ -7800,7 +7804,7 @@
       "maiskogel": {
         "display_name": "Maiskogel",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
+          "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "verified",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
@@ -7813,7 +7817,11 @@
           "official_documents": "needs_source"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
+          "identity_coordinates": [
+            "https://www.kitzsteinhorn.at/en/service/backstage/press/summer-2026-pr16418",
+            "https://www.openstreetmap.org/node/6307550394",
+            "https://www.openstreetmap.org/way/673539308"
+          ],
           "elevation_season": [
             "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board"
           ],
@@ -7843,7 +7851,8 @@
           "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
           "Source-aware v2 enrichment reviewed official Maiskogel material on 2026-07-05.",
           "Maisi Park is retained as a fun/beginner area and is not counted as a dedicated snowpark.",
-          "The official child-area page publishes the 768-1,730 m lift-served piste range; weather sampling is deferred until an accepted reproducible area-wide coordinate derivation is available."
+          "The official child-area page publishes the 768-1,730 m lift-served piste range.",
+          "Weather sampling uses the official MK Maiskogelbahn mountain station, matched to the named OSM lift endpoint; the changed retained request geometry requires targeted historical force-refetch and climatology rebuild after merge."
         ]
       },
       "mayrhofen-ski-area": {
