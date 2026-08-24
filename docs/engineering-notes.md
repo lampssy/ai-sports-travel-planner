@@ -1379,7 +1379,12 @@ ski-area IDs start without archive/climatology rows; after merge, the separate
 Complete Historical Weather workflow discovers them, resumes backfill across
 scheduled runs, and rebuilds climatology once archive coverage is complete.
 Retained IDs keep their evidence. A material coordinate/elevation change on a
-retained ID requires an explicit forced refetch and rebuild handoff.
+retained ID requires an explicit post-merge forced refetch and rebuild handoff;
+catalog curation records that work but does not run production weather jobs
+before preparing the PR. A weather-coordinate deferral is valid only after the
+official terrain, corroborated OSM terrain, central on-mountain point, and
+structured lift-inventory options have typed evidence-backed outcomes. This
+distinguishes unavailable geometry from unfinished research.
 
 Sourceable missing entities that fit the active curation batch should be added
 in that PR. Deferral is an escape hatch for work that would make the batch

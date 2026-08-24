@@ -180,8 +180,17 @@ area carries `weather_sampling_status=active|deferred`. Automated weather jobs
 and product weather-evidence reads select only active areas. A new ski area and
 any retained area whose coordinate, lift-served elevation bounds, or sampling
 status changes require the typed schema-v3 weather geometry assessment defined
-by ADR 0021. Deferred assessments name the concrete evidence required for
-activation.
+by ADR 0021. A deferred coordinate assessment records every derivation tier in
+order with its evidence-backed selected, rejected, or unavailable outcome and
+reason; absence from the initial evidence packet is not enough. Deferred
+assessments also name the concrete evidence required for activation.
+
+The curation PR may fill corrected geometry without first mutating production
+weather data. Its typed handoff and reviewer-facing synopsis identify scheduled
+completion for a new active ID, or targeted forced history refetch plus
+climatology rebuild for a retained ID whose request geometry changes. Those
+operations run after merge, or after later activation when the area remains
+deferred.
 
 ## Skill Workflow
 
@@ -326,6 +335,10 @@ Continue validating catalog shape and expand typed coverage where useful:
 - unique destination, ski-area, and stay-base IDs;
 - plausible coordinates and elevations;
 - typed weather sampling status and source-backed geometry derivation metadata;
+- exhaustive, source-backed coordinate-attempt outcomes before weather sampling
+  is deferred;
+- typed post-merge weather completion/refetch handoffs for new or changed
+  request geometry;
 - valid season months and season windows;
 - valid lift-pass price objects;
 - valid lift-pass products with explicit validity scope;

@@ -1799,6 +1799,7 @@ def _regional_report_payload(
                 "geometry_completeness": "complete",
                 "derivation_status": "verified",
                 "evidence_refs": [f"{area.ski_area_id}-weather-geometry"],
+                "post_merge_handoff": "scheduled_completion",
             }
             for area in added_ski_areas
         ],
