@@ -942,6 +942,37 @@ def test_canonical_manifest_routes_special_terrain_trust_to_new_owners() -> None
     }
 
 
+def test_canonical_catalog_uses_exact_kaprun_geometry_and_local_pass() -> None:
+    catalog, manifest = _load_canonical_pair()
+
+    areas = {area.ski_area_id: area for area in catalog.ski_areas}
+    access = {link.ski_area_access_id: link for link in catalog.ski_area_access}
+    passes = {
+        product.lift_pass_product_id: product for product in catalog.lift_pass_products
+    }
+
+    assert areas["kitzsteinhorn"].base_elevation_m == 1976
+    assert areas["maiskogel"].summit_elevation_m == 1730
+    assert "lechnerberg" not in areas
+    assert "zell-am-see-kaprun-kaprun--lechnerberg" not in access
+
+    local_pass = passes["kitzsteinhorn-local-ski-pass"]
+    assert local_pass.valid_ski_area_ids == ("kitzsteinhorn",)
+    assert [window.season_label for window in local_pass.validity_windows] == [
+        "Summer skiing 2026",
+        "Fall skiing 2026",
+    ]
+    assert [price.amount for price in local_pass.prices] == [61.5, 74.0, 77.0]
+    assert "lechnerberg" not in passes["ski-alpin-card"].valid_ski_area_ids
+
+    assert "lechnerberg" not in manifest.entities["ski_areas"]
+    assert (
+        "zell-am-see-kaprun-kaprun--lechnerberg"
+        not in manifest.entities["ski_area_access"]
+    )
+    assert "kitzsteinhorn-local-ski-pass" in manifest.entities["lift_pass_products"]
+
+
 def test_canonical_manifest_keeps_access_sources_on_access_owner() -> None:
     catalog, manifest = _load_canonical_pair()
     access_entries = manifest.entities["ski_area_access"]

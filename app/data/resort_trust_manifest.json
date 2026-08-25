@@ -5337,76 +5337,38 @@
           "coordinates": "verified",
           "elevation": "needs_source",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.zellamsee-kaprun.com/en/experience/kaprun"
           ],
           "coordinates": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.openstreetmap.org/relation/945977"
           ],
           "elevation": [],
           "lodging_price_quality": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.zellamsee-kaprun.com/en/experience/kaprun"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.zellamsee-kaprun.com/en/experience/kaprun"
+          ],
+          "base_character": [
+            "https://www.zellamsee-kaprun.com/en/experience/kaprun"
+          ],
+          "local_apres": [
+            "https://www.zellamsee-kaprun.com/en/poi/winter-on-the-maiskogel~2470"
+          ]
         },
         "notes": [
           "Official regional sources confirm Zell am See-Kaprun, Kitzsteinhorn, Maiskogel connection, Schmittenhoehe, and Brundl Sports at the Kitzsteinhorn/Alpincenter.",
           "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory; exact future season end dates remain unresolved as of the 2026-06-23 curation.",
           "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
           "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
-          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area."
+          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
+          "Source-aware v2 enrichment reviewed official Kaprun village, history, and Maiskogel material on 2026-07-05."
         ]
       },
       "zell-am-see-kaprun-zell-am-see": {
@@ -5416,76 +5378,38 @@
           "coordinates": "verified",
           "elevation": "needs_source",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.zellamsee-kaprun.com/en/experience/zell-am-see"
           ],
           "coordinates": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.openstreetmap.org/relation/945962"
           ],
           "elevation": [],
           "lodging_price_quality": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.zellamsee-kaprun.com/en/experience/zell-am-see"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.zellamsee-kaprun.com/en/experience/zell-am-see"
+          ],
+          "base_character": [
+            "https://www.zellamsee-kaprun.com/en/experience/zell-am-see"
+          ],
+          "local_apres": [
+            "https://www.zellamsee-kaprun.com/en/experience/zell-am-see"
+          ]
         },
         "notes": [
           "Official regional sources confirm Zell am See-Kaprun, Kitzsteinhorn, Maiskogel connection, Schmittenhoehe, and Brundl Sports at the Kitzsteinhorn/Alpincenter.",
           "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory; exact future season end dates remain unresolved as of the 2026-06-23 curation.",
           "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
           "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
-          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area."
+          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
+          "Source-aware v2 enrichment reviewed official Zell am See town and snow-report material on 2026-07-05."
         ]
       },
       "zermatt-zermatt": {
@@ -7420,104 +7344,55 @@
         "display_name": "Kitzsteinhorn",
         "field_statuses": {
           "identity_coordinates": "verified_with_adjustment",
-          "elevation_season": "verified_with_adjustment",
+          "elevation_season": "verified",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
           "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
+          "marked_freeride_routes": "verified",
           "ski_day_apres": "needs_source",
           "official_documents": "needs_source"
         },
         "field_source_refs": {
           "identity_coordinates": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn/huts-restaurants/restaurant-alpincenter-r71",
+            "https://www.openstreetmap.org/node/310153457"
           ],
           "elevation_season": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board"
           ],
           "terrain_metrics": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
             "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board"
           ],
           "skill_fit": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board"
           ],
           "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
+          "glacier_terrain": [
+            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board"
+          ],
+          "snow_park": [
+            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-resorts"
+          ],
           "night_skiing": [],
-          "marked_freeride_routes": [],
+          "marked_freeride_routes": [
+            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board/freeride"
+          ],
           "ski_day_apres": [],
           "official_documents": []
         },
         "notes": [
           "Official regional sources confirm Zell am See-Kaprun, Kitzsteinhorn, Maiskogel connection, Schmittenhoehe, and Brundl Sports at the Kitzsteinhorn/Alpincenter.",
-          "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory; exact future season end dates remain unresolved as of the 2026-06-23 curation.",
           "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
           "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
-          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area."
+          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
+          "Source-aware v2 enrichment reviewed official Kitzsteinhorn and Zell am See-Kaprun material on 2026-07-05.",
+          "The shared Kitzsteinhorn-Maiskogel map is stored on the connected terrain domain.",
+          "The official child-area page publishes the 1,976-3,029 m lift-served piste range and October-to-May season.",
+          "Weather sampling uses the official Alpincenter on-mountain hub, matched to exact OSM feature geometry; the changed retained request geometry requires targeted historical force-refetch and climatology rebuild after merge."
         ]
       },
       "la-plagne-ski-area": {
@@ -7930,104 +7805,54 @@
         "display_name": "Maiskogel",
         "field_statuses": {
           "identity_coordinates": "verified_with_adjustment",
-          "elevation_season": "verified_with_adjustment",
+          "elevation_season": "verified",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
           "snow_park": "needs_source",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
+          "ski_day_apres": "verified_with_adjustment",
           "official_documents": "needs_source"
         },
         "field_source_refs": {
           "identity_coordinates": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.kitzsteinhorn.at/en/service/backstage/press/summer-2026-pr16418",
+            "https://www.openstreetmap.org/node/6307550394",
+            "https://www.openstreetmap.org/way/673539308"
           ],
           "elevation_season": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board"
           ],
           "terrain_metrics": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
             "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board"
           ],
           "skill_fit": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board"
           ],
-          "snowmaking": [],
+          "snowmaking": [
+            "https://www.kitzsteinhorn.at/en/service/backstage/press/k-onnected-kaprun---maiskogel---kitzsteinhorn-pr9393"
+          ],
           "glacier_terrain": [],
           "snow_park": [],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
+          "ski_day_apres": [
+            "https://www.zellamsee-kaprun.com/en/poi/winter-on-the-maiskogel~2470"
+          ],
           "official_documents": []
         },
         "notes": [
           "Official regional sources confirm Zell am See-Kaprun, Kitzsteinhorn, Maiskogel connection, Schmittenhoehe, and Brundl Sports at the Kitzsteinhorn/Alpincenter.",
-          "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory; exact future season end dates remain unresolved as of the 2026-06-23 curation.",
           "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
           "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
-          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area."
+          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
+          "Source-aware v2 enrichment reviewed official Maiskogel material on 2026-07-05.",
+          "Maisi Park is retained as a fun/beginner area and is not counted as a dedicated snowpark.",
+          "The official child-area page publishes the 768-1,730 m lift-served piste range.",
+          "Weather sampling uses the official MK Maiskogelbahn mountain station, matched to the named OSM lift endpoint; the changed retained request geometry requires targeted historical force-refetch and climatology rebuild after merge."
         ]
       },
       "mayrhofen-ski-area": {
@@ -11365,7 +11190,8 @@
           "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory; exact future season end dates remain unresolved as of the 2026-06-23 curation.",
           "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
           "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
-          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area."
+          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
+          "Source-aware v2 enrichment reviewed the official connected Kitzsteinhorn-Maiskogel piste map on 2026-07-05."
         ]
       },
       "matterhorn-ski-paradise": {
@@ -12650,6 +12476,32 @@
           "The current official regional network inventory is 75 lifts."
         ]
       },
+      "kitzsteinhorn-local-ski-pass": {
+        "display_name": "Kitzsteinhorn Local Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.kitzsteinhorn.at/en/tickets-prices/ski-board"
+          ],
+          "coverage": [
+            "https://www.kitzsteinhorn.at/en/tickets-prices/ski-board"
+          ],
+          "prices": [
+            "https://www.kitzsteinhorn.at/en/tickets-prices/ski-board"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "The official tariff publishes exact Kitzsteinhorn-only summer and fall validity windows distinct from the regional Ski ALPIN CARD.",
+          "Snowcast normalizes the two official Summer/Fall 2026 tariff headings into one single-area product; the catalog stores representative adult one-day prices for summer and both exact fall date bands.",
+          "No separate pass-accessible aggregate terrain metric is stored for this single-area product."
+        ]
+      },
       "ski-alpin-card": {
         "display_name": "Ski ALPIN CARD",
         "field_statuses": {
@@ -12660,80 +12512,18 @@
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://www.alpincard.at/en/ski-alpin-card.html",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.alpincard.at/en/ski-alpin-card.html"
           ],
           "coverage": [
             "https://www.alpincard.at/en/ski-alpin-card.html",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.kitzsteinhorn.at/en/tickets-prices/ski-board"
           ],
           "prices": [
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
             "https://www.saalbach.com/en/winter/skitickets/peak-season",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
           ],
           "pass_accessible_terrain": [
-            "https://www.alpincard.at/en/ski-alpin-card.html",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
-            "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
-            "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
-            "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
-            "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
-            "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
-            "https://www.openstreetmap.org/relation/945962",
-            "https://www.openstreetmap.org/relation/945977",
-            "https://www.openstreetmap.org/way/158348741",
-            "https://www.openstreetmap.org/way/197183389",
-            "https://www.schmitten.at/en/Company",
-            "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-            "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
-            "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
-            "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-            "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+            "https://www.alpincard.at/en/ski-alpin-card.html"
           ]
         },
         "notes": [
@@ -12742,7 +12532,8 @@
           "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
           "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
           "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
-          "The official Ski ALPIN CARD page directly supports the 408 km and 121-lift pass-accessible aggregate."
+          "The official Ski ALPIN CARD page directly supports the 408 km and 121-lift pass-accessible aggregate.",
+          "The prices group keeps a representative adult Ski ALPIN CARD sample rather than the full tariff: Zell am See-Kaprun one-day and six-day examples for the winter-start/bonus and main-season date bands, plus the Saalbach three-day peak-season example; each published Winter 2026/27 date band is retained in its season label."
         ]
       },
       "ski-arlberg-pass": {

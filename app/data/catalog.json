@@ -2563,12 +2563,12 @@
       },
       "elevation_m": null,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "low_key",
         "season_label": null
       }
     },
@@ -2588,12 +2588,12 @@
       },
       "elevation_m": null,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -3881,9 +3881,9 @@
       "ski_area_id": "kitzsteinhorn",
       "name": "Kitzsteinhorn",
       "weather_sampling_status": "active",
-      "latitude": 47.1975,
-      "longitude": 12.7243,
-      "base_elevation_m": 768,
+      "latitude": 47.2082826,
+      "longitude": 12.6894952,
+      "base_elevation_m": 1976,
       "summit_elevation_m": 3029,
       "season_start_month": 10,
       "season_end_month": 5,
@@ -3903,11 +3903,11 @@
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 4,
         "season_label": null
       },
       "night_skiing": {
@@ -3915,8 +3915,8 @@
         "season_label": null
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
-        "route_count": null,
+        "availability": "available",
+        "route_count": 5,
         "season_label": null
       },
       "official_trail_map": null,
@@ -4256,10 +4256,10 @@
       "ski_area_id": "maiskogel",
       "name": "Maiskogel",
       "weather_sampling_status": "active",
-      "latitude": 47.2711,
-      "longitude": 12.759,
+      "latitude": 47.2579253,
+      "longitude": 12.7151844,
       "base_elevation_m": 768,
-      "summit_elevation_m": 1570,
+      "summit_elevation_m": 1730,
       "season_start_month": 12,
       "season_end_month": 4,
       "season_windows": [],
@@ -4272,7 +4272,7 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -4296,8 +4296,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "low_key",
         "season_label": null
       }
     },
@@ -8400,6 +8400,70 @@
           "price_kind": "fixed",
           "season_label": "Winter 2026/27 main season",
           "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "kitzsteinhorn-local-ski-pass",
+      "name": "Kitzsteinhorn Local Ski Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "zell-am-see-kaprun"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "kitzsteinhorn"
+      ],
+      "terrain_domain_ids": [],
+      "validity_windows": [
+        {
+          "season_label": "Summer skiing 2026",
+          "start_date": "2026-05-04",
+          "end_date": "2026-10-09",
+          "status": "planned"
+        },
+        {
+          "season_label": "Fall skiing 2026",
+          "start_date": "2026-10-10",
+          "end_date": "2026-11-26",
+          "status": "planned"
+        }
+      ],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 61.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Summer skiing 2026",
+          "source_url": "https://www.kitzsteinhorn.at/en/tickets-prices/ski-board"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 74.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Fall skiing 2026: Oct 10-22",
+          "source_url": "https://www.kitzsteinhorn.at/en/tickets-prices/ski-board"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 77.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Fall skiing 2026: Oct 23-Nov 26",
+          "source_url": "https://www.kitzsteinhorn.at/en/tickets-prices/ski-board"
         }
       ]
     },
