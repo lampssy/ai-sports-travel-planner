@@ -4746,7 +4746,7 @@
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
           "The official villages page calls Tignes 1800 a new, specially designed village and explicitly describes its peace and quiet. Snowcast normalizes those direct phrases to planned_resort development and quiet local pace."
@@ -4801,16 +4801,17 @@
             "https://en.tignes.net/discover/ski-resort/tignes-villages"
           ],
           "base_character": [
-            "https://en.tignes.net/discover/ski-resort/tignes-villages"
+            "https://en.tignes.net/discover/ski-resort/tignes-villages",
+            "https://www.mairie-tignes.fr/cms_viewFile.php?idtf=124319&path=OAP-Renouvellement-architectural-et-energetique-2023.pdf"
           ],
           "local_apres": []
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-          "The official villages page repeatedly describes Lavachet as quiet. Snowcast normalizes that direct wording to quiet local pace; development style remains unknown."
+          "The official villages page repeatedly describes Lavachet as quiet, while the municipal architecture plan identifies Lavachet as a modern, functionally planned resort ensemble. Snowcast normalizes those field-specific sources to quiet local pace and planned-resort development."
         ]
       },
       "tignes-le-lac": {
@@ -4862,7 +4863,8 @@
             "https://en.tignes.net/discover/ski-resort/tignes-villages"
           ],
           "base_character": [
-            "https://en.tignes.net/discover/ski-resort/tignes-villages"
+            "https://en.tignes.net/discover/ski-resort/tignes-villages",
+            "https://www.mairie-tignes.fr/cms_viewFile.php?idtf=124319&path=OAP-Renouvellement-architectural-et-energetique-2023.pdf"
           ],
           "local_apres": [
             "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar"
@@ -4870,10 +4872,10 @@
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed official Tignes Le Lac character, altitude, and apres material on 2026-07-05.",
-          "The official villages overview establishes the named base but not a candidate-bound development-style or local-pace classification; those values remain unknown.",
+          "The official villages guide identifies Le Lac as the active resort centre, while the municipal architecture plan identifies its modern functional resort ensemble. Snowcast normalizes these sources to balanced local pace and planned-resort development.",
           "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown."
         ]
       },
@@ -4932,10 +4934,10 @@
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-          "The official villages page directly describes Les Brevieres and its traditional chalets. Snowcast normalizes that built-form evidence to traditional development; local pace remains unknown."
+          "The official villages page directly describes Les Brevieres and its traditional chalets, conviviality, and cosy winter evenings. Snowcast normalizes that evidence to traditional development and quiet local pace."
         ]
       },
       "tignes-val-claret": {
@@ -4987,7 +4989,8 @@
             "https://en.tignes.net/discover/ski-resort/tignes-villages"
           ],
           "base_character": [
-            "https://en.tignes.net/discover/ski-resort/tignes-villages"
+            "https://en.tignes.net/discover/ski-resort/tignes-villages",
+            "https://www.mairie-tignes.fr/cms_viewFile.php?idtf=124319&path=OAP-Renouvellement-architectural-et-energetique-2023.pdf"
           ],
           "local_apres": [
             "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe"
@@ -4995,11 +4998,11 @@
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed official Val Claret character, altitude, and apres material on 2026-07-05.",
           "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown.",
-          "The official villages page describes Val Claret as festive, with activity from apres-ski through late-night partying. Snowcast normalizes that direct wording to lively local pace; development style remains unknown."
+          "The official villages page describes Val Claret as festive through late night, while the municipal architecture plan identifies the district as a modern resort ensemble built to an overall plan. Snowcast normalizes those sources to lively local pace and planned-resort development."
         ]
       },
       "val-disere-la-daille": {
@@ -5007,7 +5010,7 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "verified",
           "base_character": "verified_with_adjustment",
@@ -5040,7 +5043,9 @@
             "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
             "https://www.wikidata.org/wiki/Q207589"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.valdisere.com/en/live/webcams/"
+          ],
           "lodging_price_quality": [
             "https://skihut.ski/ski-hut-val-disere/",
             "https://www.openstreetmap.org/node/240913965",
@@ -5058,7 +5063,8 @@
             "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
           ],
           "base_character": [
-            "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
+            "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
+            "https://pop.culture.gouv.fr/notice/merimee/ACR0000190"
           ],
           "local_apres": [
             "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
@@ -5066,10 +5072,10 @@
         },
         "notes": [
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
-          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
           "Source-aware v2 enrichment reviewed official La Daille apres and destination material on 2026-07-05.",
-          "Representative elevation and development style remain unresolved for this specific accommodation sector."
+          "The official La Daille snow-front webcam publishes 1,802 m, which is stored as the representative stay-base elevation. The French Ministry of Culture record documents the purpose-built 1968-1978 resort ensemble, supporting planned-resort development style."
         ]
       },
       "val-disere-le-fornet": {
@@ -5138,7 +5144,7 @@
         },
         "notes": [
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
-          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
           "Source-aware v2 enrichment reviewed official Le Fornet history, character, and apres material on 2026-07-05.",
           "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown."
@@ -5213,7 +5219,7 @@
         },
         "notes": [
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
-          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
           "Source-aware v2 enrichment reviewed official Val d'Isere village, history, heritage, and apres material on 2026-07-05."
         ]
@@ -8583,7 +8589,7 @@
           "night_skiing": "needs_source",
           "marked_freeride_routes": "verified_with_adjustment",
           "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -8642,14 +8648,16 @@
           "ski_day_apres": [
             "https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski"
           ],
-          "official_documents": []
+          "official_documents": [
+            "https://public.tignes.net/TIGNES.NET/BROCHURES/PLAN_DES_PISTES.pdf"
+          ]
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed official Tignes ski-area, glacier, freestyle, freeride, and slope-side apres material on 2026-07-05.",
-          "The shared Tignes-Val d'Isere piste map is stored on the connected terrain domain.",
+          "The shared 2025-2026 Tignes-Val d'Isere piste map is stored on the connected terrain domain; child map fields are intentionally not applicable.",
           "A single venue page does not establish an area-wide apres availability or intensity; both remain unknown pending area-level evidence."
         ]
       },
@@ -8666,7 +8674,7 @@
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
           "ski_day_apres": "verified_with_adjustment",
-          "official_documents": "needs_source"
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -8735,14 +8743,16 @@
           "ski_day_apres": [
             "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/"
           ],
-          "official_documents": []
+          "official_documents": [
+            "https://public.tignes.net/TIGNES.NET/BROCHURES/PLAN_DES_PISTES.pdf"
+          ]
         },
         "notes": [
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
-          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
           "Source-aware v2 enrichment reviewed official Val d'Isere glacier, snowpark, and apres material on 2026-07-05.",
-          "The shared Tignes-Val d'Isere piste map is stored on the connected terrain domain.",
+          "The shared 2025-2026 Tignes-Val d'Isere piste map is stored on the connected terrain domain; child map fields are intentionally not applicable.",
           "The official ski-area page confirms snowmaking availability but does not publish a child-area coverage percentage or denominator."
         ]
       },
@@ -10233,7 +10243,7 @@
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "The official villages page states direct access to the ski area via the Les Boisses gondola and a ski-in/ski-out return. Snowcast normalizes that candidate-bound description to walk access, direct=true, and nearest lift Les Boisses gondola; exact distance and duration remain unknown."
         ]
@@ -10254,7 +10264,7 @@
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "The official villages page places ski lifts on Lavachet’s doorstep. Snowcast normalizes that candidate-bound wording to walk access and direct=true without inventing a nearest lift, exact distance, or duration."
         ]
@@ -10263,126 +10273,136 @@
         "display_name": "Le Lac -> Tignes",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://en.tignes.net/discover/ski-resort/tignes-villages"
+            "https://en.tignes.net/skiing/ski-area/ski-lifts"
           ],
           "access_mode_distance": [
-            "https://en.tignes.net/discover/ski-resort/tignes-villages"
+            "https://en.tignes.net/skiing/ski-area/ski-lifts"
           ]
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
-          "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+          "The official lift inventory places Palafour and Paquis in Tignes le Lac, supporting walk access, a representative named lift pair, and direct access. Exact routed distance and duration remain unknown."
         ]
       },
       "tignes-les-brevieres--tignes-ski-area": {
         "display_name": "Tignes les Brévières -> Tignes",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://en.tignes.net/discover/ski-resort/tignes-villages"
+            "https://en.tignes.net/discover/tignes-an-adaptative-friendly-resort/wheelchair-friendly-facilities",
+            "https://en.tignes.net/resort-guide/directory/accommodation/resort-clubs/village-club-mmv-les-brevieres"
           ],
           "access_mode_distance": [
-            "https://en.tignes.net/discover/ski-resort/tignes-villages"
+            "https://en.tignes.net/discover/tignes-an-adaptative-friendly-resort/wheelchair-friendly-facilities",
+            "https://en.tignes.net/resort-guide/directory/accommodation/resort-clubs/village-club-mmv-les-brevieres"
           ]
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
-          "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+          "Official Tignes sources place the Brévières gondola at the base and describe representative village accommodation 150 m from it, supporting walk and direct access. Exact routed distance and duration remain unknown."
         ]
       },
       "tignes-val-claret--tignes-ski-area": {
         "display_name": "Val Claret -> Tignes",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://en.tignes.net/discover/ski-resort/tignes-villages"
+            "https://en.tignes.net/skiing/ski-area/ski-lifts",
+            "https://en.tignes.net/resort-guide/directory/accommodation/residences-de-tourisme/chalet-hotel-quartz"
           ],
           "access_mode_distance": [
-            "https://en.tignes.net/discover/ski-resort/tignes-villages"
+            "https://en.tignes.net/skiing/ski-area/ski-lifts",
+            "https://en.tignes.net/resort-guide/directory/accommodation/residences-de-tourisme/chalet-hotel-quartz"
           ]
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
-          "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+          "Official Tignes sources place Tufs and Fresse in Val Claret and document ski-in/ski-out accommodation with lifts 100 m away, supporting walk and direct access. Exact routed distance and duration remain unknown."
         ]
       },
       "val-disere-la-daille--val-disere-ski-area": {
         "display_name": "La Daille -> Val d'Isere",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/",
+            "https://www.valdisere.com/en/val-disere-in-winter/walks-and-snowshoeing-tours/"
           ],
           "access_mode_distance": [
-            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/",
+            "https://www.valdisere.com/en/val-disere-in-winter/walks-and-snowshoeing-tours/"
           ]
         },
         "notes": [
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
-          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
-          "The current official ski-area page supports the parent-area relationship but does not candidate-bind La Daille to a routed mode, named lift, duration, or directness. Snowcast therefore keeps the edge while recording access mode as unknown, nearest lift as unset, and directness as false."
+          "Official Val d'Isere pages place both the La Daille gondola and Funival in the La Daille sector and identify the Funival stop at the base, supporting walk and direct access. Exact routed distance and duration remain unknown."
         ]
       },
       "val-disere-le-fornet--val-disere-ski-area": {
         "display_name": "Le Fornet -> Val d'Isere",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/",
+            "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
           ],
           "access_mode_distance": [
-            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/",
+            "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
           ]
         },
         "notes": [
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
-          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
-          "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+          "Official Val d'Isere sources name the Fornet cable car in the Fornet sector and describe skiers reaching the upper mountain from Le Fornet through it, supporting walk and direct access. Exact routed distance and duration remain unknown."
         ]
       },
       "val-disere-village--val-disere-ski-area": {
         "display_name": "Val d'Isere -> Val d'Isere",
         "field_statuses": {
           "relationship": "verified_with_adjustment",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+            "https://www.valdisere.com/en/live/ski-map/",
+            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/"
           ],
           "access_mode_distance": [
-            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+            "https://www.valdisere.com/en/live/ski-map/",
+            "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/"
           ]
         },
         "notes": [
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
-          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
-          "The official destination page supports the base-to-area relationship, but it does not establish a routed mode, duration, or directness for this candidate; mode is unknown and directness is false."
+          "The official ski map places the Solaise gondola and Olympique cable car at the foot of the slopes in the village centre, supporting walk and direct access. Exact routed distance and duration remain unknown."
         ]
       },
       "val-gardena-ortisei--val-gardena-ski-area": {
@@ -11368,14 +11388,14 @@
             "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
           ],
           "official_documents": [
-            "https://en.tignes.net/skiing/ski-area/ski-map"
+            "https://public.tignes.net/TIGNES.NET/BROCHURES/PLAN_DES_PISTES.pdf"
           ]
         },
         "notes": [
           "Official Tignes and Val d'Isere pages identify one ski-connected 300 km domain spanning both modeled destinations.",
           "The aggregate lift count is verified_with_adjustment: official pages conflict at 74 and 71 lifts, so the reviewed Bergfex category sum supplies the normalized value of 72; aggregate elevations remain scoped to the domain.",
           "No shared-domain season window is stored; season dates remain owned by the local ski-area records.",
-          "Source-aware v2 enrichment reviewed the official connected-domain piste map on 2026-07-05."
+          "Source-aware v2 enrichment stores the direct official connected-domain piste-map PDF and its published 2025-2026 season label."
         ]
       },
       "paradiski": {
@@ -12829,10 +12849,10 @@
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
-          "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+          "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
-          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
           "Adult main-season price points were refreshed from the official 2026/27 tariff during maintainer remediation."
         ]
@@ -12891,7 +12911,7 @@
         },
         "notes": [
           "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
-          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+          "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
           "Adult main-season price points were refreshed from the official 2026/27 tariff during maintainer remediation."
         ]

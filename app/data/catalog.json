@@ -2292,7 +2292,7 @@
       "regional_data_ids": {},
       "elevation_m": 2050,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "planned_resort",
         "local_pace": "quiet"
       },
       "local_apres_profile": {
@@ -2315,8 +2315,8 @@
       "regional_data_ids": {},
       "elevation_m": 2100,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2339,7 +2339,7 @@
       "elevation_m": 1550,
       "base_character": {
         "development_style": "traditional",
-        "local_pace": "unknown"
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2361,7 +2361,7 @@
       "regional_data_ids": {},
       "elevation_m": 2150,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "planned_resort",
         "local_pace": "lively"
       },
       "local_apres_profile": {
@@ -2384,9 +2384,9 @@
       "regional_data_ids": {
         "osm_node_id": "249835000"
       },
-      "elevation_m": null,
+      "elevation_m": 1802,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "planned_resort",
         "local_pace": "lively"
       },
       "local_apres_profile": {
@@ -6395,90 +6395,95 @@
       "ski_area_access_id": "tignes-le-lac--tignes-ski-area",
       "stay_base_id": "tignes-le-lac",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Palafour / Paquis chairlifts",
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": false,
+      "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        "https://en.tignes.net/skiing/ski-area/ski-lifts"
       ]
     },
     {
       "ski_area_access_id": "tignes-les-brevieres--tignes-ski-area",
       "stay_base_id": "tignes-les-brevieres",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Brévières gondola",
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": false,
+      "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        "https://en.tignes.net/discover/tignes-an-adaptative-friendly-resort/wheelchair-friendly-facilities",
+        "https://en.tignes.net/resort-guide/directory/accommodation/resort-clubs/village-club-mmv-les-brevieres"
       ]
     },
     {
       "ski_area_access_id": "tignes-val-claret--tignes-ski-area",
       "stay_base_id": "tignes-val-claret",
       "ski_area_id": "tignes-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Tufs / Fresse chairlifts",
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": false,
+      "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/discover/ski-resort/tignes-villages"
+        "https://en.tignes.net/skiing/ski-area/ski-lifts",
+        "https://en.tignes.net/resort-guide/directory/accommodation/residences-de-tourisme/chalet-hotel-quartz"
       ]
     },
     {
       "ski_area_access_id": "val-disere-la-daille--val-disere-ski-area",
       "stay_base_id": "val-disere-la-daille",
       "ski_area_id": "val-disere-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "La Daille gondola / Funival",
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": false,
+      "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/",
+        "https://www.valdisere.com/en/val-disere-in-winter/walks-and-snowshoeing-tours/"
       ]
     },
     {
       "ski_area_access_id": "val-disere-le-fornet--val-disere-ski-area",
       "stay_base_id": "val-disere-le-fornet",
       "ski_area_id": "val-disere-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Fornet cable car",
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": false,
+      "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/",
+        "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
       ]
     },
     {
       "ski_area_access_id": "val-disere-village--val-disere-ski-area",
       "stay_base_id": "val-disere-village",
       "ski_area_id": "val-disere-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Solaise gondola / Olympique cable car",
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": false,
+      "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        "https://www.valdisere.com/en/live/ski-map/",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/"
       ]
     },
     {
@@ -7102,7 +7107,8 @@
         "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
       ],
       "official_trail_map": {
-        "url": "https://en.tignes.net/skiing/ski-area/ski-map"
+        "url": "https://public.tignes.net/TIGNES.NET/BROCHURES/PLAN_DES_PISTES.pdf",
+        "season_label": "2025-2026"
       }
     },
     {
