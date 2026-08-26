@@ -1618,6 +1618,73 @@ def test_schema_three_coordinated_component_targets_only_parent_catalog_area() -
         validate_catalog_curation_report(report)
 
 
+def test_schema_three_rejects_independently_viable_coordinated_component() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    component = payload["entity_scope_assessments"][1]
+    component["signals"] = [
+        "official_independent_identity",
+        "separate_operator",
+        "independent_status_or_schedule",
+        "full_local_pass",
+        "ski_connected_terrain",
+    ]
+    component_boundary = component["ski_area_boundary"]
+    component_boundary["terrain_scope"] = "complete"
+    component_boundary["pass_scope"] = "full_local"
+    component_boundary["provider_consensus"] = "separate"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "operator-a-sector: coordinated component independently satisfies "
+            "ordinary separate-ski-area evidence gates"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_accepts_connected_coordinated_component_with_only_pass() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    component = payload["entity_scope_assessments"][1]
+    component["signals"] = [
+        "official_independent_identity",
+        "full_local_pass",
+        "ski_connected_terrain",
+    ]
+    component_boundary = component["ski_area_boundary"]
+    component_boundary["terrain_scope"] = "complete"
+    component_boundary["pass_scope"] = "full_local"
+    component_boundary["provider_consensus"] = "separate"
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_curation_report(report)
+
+
+def test_schema_three_rejects_transfer_component_with_independent_operations() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    component = payload["entity_scope_assessments"][1]
+    component["signals"] = [
+        "official_independent_identity",
+        "separate_operator",
+        "disconnected_terrain",
+    ]
+    component_boundary = component["ski_area_boundary"]
+    component_boundary["terrain_scope"] = "complete"
+    component_boundary["connectivity_to_parent"] = "transfer_required"
+    component_boundary["provider_consensus"] = "separate"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "operator-a-sector: coordinated component independently satisfies "
+            "ordinary separate-ski-area evidence gates"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
 def test_schema_three_coordinated_component_cannot_belong_to_two_parents() -> None:
     payload = _coordinated_ski_area_report_payload()
     first_parent = payload["entity_scope_assessments"][0]

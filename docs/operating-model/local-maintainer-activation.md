@@ -256,6 +256,14 @@ The installed skill must:
   `disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
   parent, a target reference to that parent, and `operational_scope=coordinated`.
   Children leave the three parent coordination metadata lists empty. Reject
+  any child that independently passes the ordinary source-backed gates: require
+  complete terrain plus a terrain-identity signal, then derive operations,
+  weather, and full-local-pass owner categories directly from signals. Connected
+  children require two categories including operations or weather;
+  transfer-required or disconnected children require one. Do not let
+  `not_separate`, `redundant`, coordinated or parent-owned declarations, shared
+  branding, or provider consensus override this check. Sector terrain and one
+  connected pass-only category remain insufficient. Reject
   coordinated scope or metadata in report schema versions 1 and 2.
   `weather_scope` remains independently constrained by ADR 0021 and cannot be
   inferred from coordinated operations. A shared pass alone is insufficient.
@@ -335,6 +343,12 @@ The installed skill must:
   child is assessed exactly once with
   `disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
   parent, a target reference to that parent, and `operational_scope=coordinated`.
+  Independently re-evaluate each child's complete-terrain and terrain-identity
+  signals plus directly derived operations, weather, and full-local-pass owner
+  categories. Connected children require two categories including operations or
+  weather; transfer-required or disconnected children require one. Declarations
+  of `not_separate`, `redundant`, or coordinated ownership do not override this
+  evidence.
   A broader official status or pass source is acceptable only when each
   component is exactly addressable; a shared pass alone is insufficient.
   Evaluate `weather_scope` and ADR 0021 independently;
@@ -453,7 +467,13 @@ The installed skill must:
   - return `evidence_insufficient` whenever any evidence family or child
     closure is missing. Fail closed for a missing inventory or roster, current
     operations or status, pass coverage, ambiguous assignment evidence, or a
-    child that cannot meet the exact coordinated-child invariant;
+    child that cannot meet the exact coordinated-child invariant. Also fail
+    closed when a complete child with terrain identity independently satisfies
+    the ordinary owner threshold: two directly derived owner categories,
+    including operations or weather, when connected; one category when
+    transfer-required or disconnected. `not_separate`, `redundant`, coordinated
+    or parent-owned declarations, and provider consensus do not override
+    source-backed signals;
   - do not return `owner_choice_required` merely because several legal operators
     publish one policy-valid coordinated area.
   Return `policy_determined` results to the fixer. The fixer must preserve the

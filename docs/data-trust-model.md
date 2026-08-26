@@ -67,6 +67,18 @@ Each coordinated child is assessed exactly once with
 parent, a target reference to that parent, and `operational_scope=coordinated`.
 Children do not repeat the parent's component or coordination evidence metadata.
 
+Those child declarations do not override source-backed boundary evidence.
+Complete terrain plus a terrain-identity signal is checked against owner
+categories derived directly from signals: operations (`separate_operator` or
+`independent_status_or_schedule`), weather
+(`independent_weather_presentation`), and pass (`full_local_pass` together with
+`pass_scope=full_local`). A connected component independently passes with two
+categories including operations or weather; a transfer-required or disconnected
+component passes with one. `not_separate`, `redundant`, `coordinated`,
+parent-owned weather, shared branding, and provider consensus cannot suppress
+that evidence. Sector terrain and one connected pass-only category remain
+insufficient.
+
 Broader official status or pass sources are acceptable only when every
 coordinated component is exactly addressable. A shared pass alone is necessary
 but insufficient: it cannot establish the boundary or replace the inventory,

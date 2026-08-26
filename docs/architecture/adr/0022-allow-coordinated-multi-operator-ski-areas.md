@@ -62,6 +62,20 @@ A coordinated area additionally requires all of the following:
   separate identity;
 - no component that independently passes the ordinary separate-ski-area gates.
 
+Child closure declarations are not counter-evidence. For every coordinated
+child, ordinary viability is derived directly from its source-backed signals:
+complete terrain scope plus a terrain-identity signal is required first;
+operations evidence comes from `separate_operator` or
+`independent_status_or_schedule`, weather evidence comes from
+`independent_weather_presentation`, and pass evidence requires both
+`full_local_pass` and `pass_scope=full_local`. A connected complete child passes
+the ordinary threshold with at least two owner categories, including operations
+or weather. A transfer-required or disconnected complete child passes with at
+least one owner category. Declared `not_separate`, `separation_value=redundant`,
+`operational_scope=coordinated`, parent-owned weather, or provider consensus do
+not override that evidence. Shared branding, provider consensus alone, sector
+terrain, or one connected pass-only category remains insufficient.
+
 Minor nursery or satellite lifts may belong to the coordinated area even when
 they are not literally piste-connected. They must share the complete local map,
 status system, pass, and stay market; they must not have material independent

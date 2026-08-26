@@ -381,6 +381,18 @@ do not repeat the parent's coordination metadata. The pass may also cover a
 separately modeled adjacent ski area and does not establish the boundary by
 itself. Coordinated scope and metadata require report schema version 3.
 
+A coordinated child's `not_separate`, `separation_value=redundant`,
+`operational_scope=coordinated`, parent-owned weather, and provider-consensus
+declarations do not erase contradictory source-backed evidence. Complete terrain
+plus a terrain-identity signal is evaluated with owner categories derived from
+signals: operations (`separate_operator` or
+`independent_status_or_schedule`), weather
+(`independent_weather_presentation`), and a full local pass (`full_local_pass`
+with `pass_scope=full_local`). A connected child is independently viable with
+two categories including operations or weather; a transfer-required or
+disconnected child is viable with one. Shared branding, provider consensus
+alone, sector terrain, or one connected pass-only category is insufficient.
+
 Minor nursery or satellite lifts may remain coordinated components when they
 share the complete inventory, status system, pass, and stay market and have no
 material independent recommendation, weather, season, operations, or pass

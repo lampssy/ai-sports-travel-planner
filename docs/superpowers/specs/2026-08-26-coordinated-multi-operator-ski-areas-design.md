@@ -88,8 +88,12 @@ Invariants:
    parent, a target reference to that parent, and `operational_scope=coordinated`.
    The coordinated parent is a distinct candidate and is not included in its own
    component list.
-4. A component that independently passes the normal complete-area ownership and
-   material-separation gates remains a separate `SkiArea`.
+4. A component that independently passes the normal complete-area ownership
+   gates remains a separate `SkiArea`. Evaluate source-backed signals rather
+   than trusting its `not_separate`, `redundant`, or `coordinated` declarations:
+   connected complete terrain needs two owner categories including operations
+   or weather, while transfer-required or disconnected complete terrain needs
+   one owner category.
 5. A material transfer-required or weather-distinct complete area cannot be
    hidden inside a coordinated area. Minor nursery or satellite lifts may remain
    components when the common inventory, status, pass, and stay market cover
@@ -172,6 +176,18 @@ For `coordinated`, deterministic validation requires:
   `disposition=not_separate`, `parent_ski_area_id` set to the coordinated area,
   `operational_scope=coordinated`, and a target ref to that area;
 - no duplicate component membership within the report.
+
+Report-wide child closure independently evaluates contradictory source-backed
+evidence. A child is viable only after `terrain_scope=complete` and at least one
+terrain-identity signal. Owner categories are derived directly from signals:
+operations uses `separate_operator` or `independent_status_or_schedule`, weather
+uses `independent_weather_presentation`, and pass requires `full_local_pass`
+together with `pass_scope=full_local`. Connected children require two categories,
+including operations or weather; transfer-required or disconnected children
+require one. The child's declared `not_separate`, `redundant`, coordinated or
+parent-owned scopes, shared branding, and provider consensus cannot override
+those gates. Sector terrain and one connected pass-only category remain valid
+component evidence rather than separate-area proof.
 
 The three coordination metadata lists belong only to a `represented` or
 `add_entity` parent assessment. A coordinated `not_separate` child retains its
@@ -283,6 +299,9 @@ For Livigno, the intended later assessment is:
 - A common map plus status page with an incomplete component inventory fails.
 - A regional network pass spanning transfer-separated complete ski areas cannot
   create a coordinated ski area.
+- A connected complete child with operations and full-local-pass evidence cannot
+  be folded into the coordinated parent, while a connected pass-only child does
+  not pass solely on that category.
 - A material transfer-required component that passes the ordinary ski-area gates
   cannot be folded into the coordinated parent.
 - Minor satellite or nursery lifts can remain `not_separate` when all coordinated
@@ -323,7 +342,11 @@ For Livigno, the intended later assessment is:
   findings resolved. Both reviewers marked the feature merge-ready.
 - Feature-review corrections: official evidence is typed across all five
   required families with exact component coverage; schema-v3 enforcement and
-  parent-only metadata enforcement are explicit.
+  parent-only metadata enforcement are explicit. A follow-up High review
+  correction makes report-wide child closure derive ordinary owner categories
+  directly from source-backed signals, preventing coordinated declarations from
+  hiding an independently viable complete component while preserving sector and
+  connected pass-only cases.
 - Known residual risk: deterministic validation can enforce a complete declared
   inventory but cannot discover an operator omitted from the source packet;
   independent review remains necessary.

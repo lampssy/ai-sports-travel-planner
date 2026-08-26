@@ -1676,6 +1676,35 @@ def _validate_ski_area_boundary_assessment(
         )
 
 
+def _coordinated_child_independently_satisfies_separate_ski_area_gates(
+    assessment: CatalogEntityScopeAssessment,
+) -> bool:
+    boundary = assessment.ski_area_boundary
+    if boundary is None or boundary.terrain_scope != "complete":
+        return False
+
+    signals = set(assessment.signals)
+    if not SKI_AREA_TERRAIN_IDENTITY_SIGNALS.intersection(signals):
+        return False
+
+    independent_operations = bool(
+        SKI_AREA_OPERATION_OWNER_SIGNALS.intersection(signals)
+    )
+    independent_weather = bool(SKI_AREA_WEATHER_OWNER_SIGNALS.intersection(signals))
+    independent_pass = boundary.pass_scope == "full_local" and bool(
+        SKI_AREA_PASS_OWNER_SIGNALS.intersection(signals)
+    )
+    owner_categories = sum(
+        (independent_operations, independent_weather, independent_pass)
+    )
+
+    if boundary.connectivity_to_parent == "connected":
+        return owner_categories >= 2 and (independent_operations or independent_weather)
+    if boundary.connectivity_to_parent in {"transfer_required", "disconnected"}:
+        return owner_categories >= 1
+    return False
+
+
 def _validate_coordinated_ski_area_components(
     assessments: list[CatalogEntityScopeAssessment],
     issues: list[str],
@@ -1774,6 +1803,11 @@ def _validate_coordinated_ski_area_components(
             or boundary.parent_ski_area_id is None
         ):
             continue
+        if _coordinated_child_independently_satisfies_separate_ski_area_gates(child):
+            issues.append(
+                f"{child.candidate_id}: coordinated component independently "
+                "satisfies ordinary separate-ski-area evidence gates"
+            )
         parent = coordinated_parent_by_target_id.get(boundary.parent_ski_area_id)
         if parent is None:
             issues.append(
