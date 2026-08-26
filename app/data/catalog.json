@@ -341,6 +341,32 @@
       "regional_data_ids": {}
     },
     {
+      "stay_destination_id": "les-houches",
+      "name": "Les Houches",
+      "country": "France",
+      "region": "Haute-Savoie",
+      "price_level": "medium",
+      "latitude": 45.891508,
+      "longitude": 6.799138,
+      "trip_market_region_id": "chamonix-valley",
+      "regional_data_ids": {
+        "osm_relation_id": "104826"
+      }
+    },
+    {
+      "stay_destination_id": "vallorcine",
+      "name": "Vallorcine",
+      "country": "France",
+      "region": "Haute-Savoie",
+      "price_level": "medium",
+      "latitude": 46.0340383,
+      "longitude": 6.9324887,
+      "trip_market_region_id": "chamonix-valley",
+      "regional_data_ids": {
+        "osm_relation_id": "104843"
+      }
+    },
+    {
       "stay_destination_id": "cortina-dampezzo",
       "name": "Cortina d'Ampezzo",
       "country": "Italy",
@@ -938,9 +964,9 @@
       "regional_data_ids": {
         "osm_node_id": "285882627"
       },
-      "elevation_m": null,
+      "elevation_m": 1235,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "traditional",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
@@ -963,10 +989,10 @@
       "regional_data_ids": {
         "osm_relation_id": "104836"
       },
-      "elevation_m": null,
+      "elevation_m": 1035,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -976,7 +1002,7 @@
     },
     {
       "stay_base_id": "chamonix-mont-blanc-les-houches",
-      "stay_destination_id": "chamonix-mont-blanc",
+      "stay_destination_id": "les-houches",
       "name": "Les Houches",
       "price_range": "EUR 160-260",
       "price_min": 160.0,
@@ -991,7 +1017,80 @@
       "elevation_m": null,
       "base_character": {
         "development_style": "unknown",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "chamonix-mont-blanc-le-tour",
+      "stay_destination_id": "chamonix-mont-blanc",
+      "name": "Le Tour",
+      "price_range": "EUR 160-260",
+      "price_min": 160.0,
+      "price_max": 260.0,
+      "quality": "standard",
+      "latitude": 46.0026942,
+      "longitude": 6.9459258,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "285883299"
+      },
+      "elevation_m": 1453,
+      "base_character": {
+        "development_style": "unknown",
         "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "chamonix-mont-blanc-les-praz",
+      "stay_destination_id": "chamonix-mont-blanc",
+      "name": "Les Praz",
+      "price_range": "EUR 180-280",
+      "price_min": 180.0,
+      "price_max": 280.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "village",
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "vallorcine-vallorcine",
+      "stay_destination_id": "vallorcine",
+      "name": "Vallorcine",
+      "price_range": "EUR 160-260",
+      "price_min": 160.0,
+      "price_max": 260.0,
+      "quality": "standard",
+      "latitude": 46.0340383,
+      "longitude": 6.9324887,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "104843"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2949,7 +3048,9 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
+      },
       "ski_day_apres_profile": {
         "availability": "unknown",
         "intensity": null,
@@ -2985,8 +3086,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -2998,7 +3099,9 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/brevent"
+      },
       "ski_day_apres_profile": {
         "availability": "unknown",
         "intensity": null,
@@ -3576,7 +3679,9 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/grands-montets"
+      },
       "ski_day_apres_profile": {
         "availability": "unknown",
         "intensity": null,
@@ -4110,8 +4215,8 @@
       "season_start_month": 12,
       "season_end_month": 4,
       "season_windows": [],
-      "total_piste_km": 31.0,
-      "total_lift_count": 14,
+      "total_piste_km": 55.0,
+      "total_lift_count": 15,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
@@ -4141,7 +4246,9 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://leshouches.montblancnaturalresort.com/en/access-and-maps"
+      },
       "ski_day_apres_profile": {
         "availability": "unknown",
         "intensity": null,
@@ -5348,7 +5455,7 @@
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.chamonix.com/things-to-see-and-do/sports-and-outdoor/skiing-in-chamonix-mont-blanc-valley/list-of-ski-areas/ski-area-balme-vallorcine?espace_congres=124173"
+        "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
       ]
     },
     {
@@ -5378,7 +5485,52 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.chamonix.com/activities/winter/skiing"
+        "https://domaineschamonix.montblancnaturalresort.com/en/area/brevent"
+      ]
+    },
+    {
+      "ski_area_access_id": "chamonix-mont-blanc-le-tour--balme-le-tour-vallorcine",
+      "stay_base_id": "chamonix-mont-blanc-le-tour",
+      "ski_area_id": "balme-le-tour-vallorcine",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Charamillon gondola",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
+      ]
+    },
+    {
+      "ski_area_access_id": "chamonix-mont-blanc-les-praz--brevent-flegere",
+      "stay_base_id": "chamonix-mont-blanc-les-praz",
+      "ski_area_id": "brevent-flegere",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Flegere gondola",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://domaineschamonix.montblancnaturalresort.com/en/area/flegere"
+      ]
+    },
+    {
+      "ski_area_access_id": "vallorcine-vallorcine--balme-le-tour-vallorcine",
+      "stay_base_id": "vallorcine-vallorcine",
+      "ski_area_id": "balme-le-tour-vallorcine",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Vallorcine gondola",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
       ]
     },
     {
@@ -5393,7 +5545,7 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.chamonix.com/activities/winter/skiing"
+        "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
       ]
     },
     {
@@ -7381,10 +7533,12 @@
       "name": "CHAMONIX Le Pass",
       "validity_scope": "local_multi_area",
       "available_from_stay_destination_ids": [
-        "chamonix-mont-blanc"
+        "chamonix-mont-blanc",
+        "vallorcine"
       ],
       "default_for_stay_destination_ids": [
-        "chamonix-mont-blanc"
+        "chamonix-mont-blanc",
+        "vallorcine"
       ],
       "valid_ski_area_ids": [
         "balme-le-tour-vallorcine",
@@ -7392,7 +7546,7 @@
         "grands-montets"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": null,
+      "external_validity_summary": "Official coverage also names the unmodeled beginner areas La Vormaine, Les Chosalets, Le Savoy, Les Planards, and La Poya; Plateau 2000 and Plateau de Lognan remain sectors of modeled areas. The published 110 km and 43 lifts are pass-accessible aggregate scope, not the sum of modeled ski-area entities.",
       "pass_accessible_terrain": {
         "metric_scope": "pass_accessible",
         "total_piste_km": 110.0,
@@ -7892,9 +8046,11 @@
       "name": "Les Houches - Saint-Gervais ski pass",
       "validity_scope": "single_ski_area",
       "available_from_stay_destination_ids": [
-        "chamonix-mont-blanc"
+        "les-houches"
       ],
-      "default_for_stay_destination_ids": [],
+      "default_for_stay_destination_ids": [
+        "les-houches"
+      ],
       "valid_ski_area_ids": [
         "les-houches-saint-gervais"
       ],
@@ -8002,7 +8158,9 @@
       "name": "Mont-Blanc Unlimited",
       "validity_scope": "regional_network",
       "available_from_stay_destination_ids": [
-        "chamonix-mont-blanc"
+        "chamonix-mont-blanc",
+        "les-houches",
+        "vallorcine"
       ],
       "default_for_stay_destination_ids": [],
       "valid_ski_area_ids": [
@@ -8012,7 +8170,7 @@
         "les-houches-saint-gervais"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": "Also covers broader Mont-Blanc Natural Resort ski and visit access beyond the modeled local Chamonix valley ski areas, including Evasion Mont-Blanc, Courmayeur, and Crans-Montana access subject to pass conditions.",
+      "external_validity_summary": "Official external validity also names Megeve, Evasion Mont-Blanc and Saint-Gervais, Les Contamines, Saint-Nicolas-de-Veroce, Le Jaillet, Combloux, La Giettaz, Courmayeur, Crans-Montana, Montenvers-Mer de Glace, Tramway du Mont-Blanc, and Skyway Monte Bianco. Courmayeur and Crans-Montana depend on duration and conditions; Evasion Mont-Blanc and Montenvers are subject to a commercial agreement. These names remain external pass or attraction context, not local catalog entities or one connected terrain domain.",
       "pass_accessible_terrain": null,
       "prices": [
         {

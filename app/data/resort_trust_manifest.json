@@ -237,47 +237,21 @@
       "chamonix-valley": {
         "display_name": "Chamonix Valley",
         "field_statuses": {
-          "identity": "verified_with_adjustment",
-          "membership_context": "estimated"
+          "identity": "verified",
+          "membership_context": "verified"
         },
         "field_source_refs": {
           "identity": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts",
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/geography-and-climate"
           ],
           "membership_context": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts",
+            "https://en.chamonix.com/activities/winter/skiing"
           ]
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy.",
-          "Trip-market membership is retained as reviewed migration context and remains estimated."
+          "The regional container groups the separately modeled Chamonix, Les Houches, and Vallorcine stay markets without owning ski-area weather or terrain metrics."
         ]
       },
       "cortina-dampezzo": {
@@ -1017,62 +991,63 @@
       "chamonix-mont-blanc": {
         "display_name": "Chamonix Mont-Blanc",
         "field_statuses": {
-          "identity_location": "verified_with_adjustment",
-          "coordinates": "verified_with_adjustment",
+          "identity_location": "verified",
+          "coordinates": "verified",
           "price_level": "estimated"
         },
         "field_source_refs": {
           "identity_location": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts"
           ],
           "coordinates": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://www.openstreetmap.org/relation/104836"
           ],
-          "price_level": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
-          ]
+          "price_level": []
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Price level remains a curated estimate; the destination owns Chamonix, Argentière, Le Tour, and Les Praz stay bases."
+        ]
+      },
+      "les-houches": {
+        "display_name": "Les Houches",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/les-houches",
+            "https://booking.chamonix.com/en/serp?ref_c.LOCATION=cmb.houches&s_c.ACCOMMODATION=chalet%2Capartment&type=chalet%2Capartment"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/104826"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Independent official lodging inventory supports a separate stay destination; price level remains estimated."
+        ]
+      },
+      "vallorcine": {
+        "display_name": "Vallorcine",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/vallorcine",
+            "https://booking.chamonix.com/en/serp?ref_c.LOCATION=cmb.vallorcine&s_c.ACCOMMODATION=chalet%2Capartment&type=chalet%2Capartment"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/104843"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Independent official lodging inventory supports a separate stay destination; price level remains estimated."
         ]
       },
       "cortina-dampezzo": {
@@ -2629,208 +2604,213 @@
       "chamonix-mont-blanc-argentiere": {
         "display_name": "Argentiere",
         "field_statuses": {
-          "identity_ownership": "verified_with_adjustment",
-          "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/argentiere"
           ],
           "coordinates": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://www.openstreetmap.org/node/285882627"
           ],
-          "elevation": [],
-          "lodging_price_quality": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+          "elevation": [
+            "https://www.chamonix.com/sites/default/files/media/brochures/Plan_Argentiere.pdf"
           ],
-          "base_type": [],
-          "base_character": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/argentiere"
+          ],
+          "base_character": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/argentiere"
+          ],
           "local_apres": []
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "The official Argentière PDF states 1253 m on its map and 1235 m in narrative copy; the retained 1235 m value is explicitly adjusted to the narrative statement.",
+          "The traditional development style is a controlled normalization of the official old-village and mountain-village description; local pace remains unknown.",
+          "Lodging price and quality remain curated estimates; local apres remains unknown."
         ]
       },
       "chamonix-mont-blanc-chamonix": {
         "display_name": "Chamonix",
         "field_statuses": {
-          "identity_ownership": "verified_with_adjustment",
-          "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts"
           ],
           "coordinates": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://www.openstreetmap.org/relation/104836"
           ],
-          "elevation": [],
-          "lodging_price_quality": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+          "elevation": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/geography-and-climate"
           ],
-          "base_type": [],
-          "base_character": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts"
+          ],
+          "base_character": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts"
+          ],
           "local_apres": []
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Chamonix remains the primary town base within the Chamonix Mont-Blanc stay destination.",
+          "Mixed development style and lively local pace are controlled normalizations of the official cosmopolitan-destination and vibrant-cultural-scene description.",
+          "That character evidence does not establish a source-backed local apres profile, which remains unknown.",
+          "Lodging price and quality remain curated estimates; local apres remains unknown."
         ]
       },
       "chamonix-mont-blanc-les-houches": {
         "display_name": "Les Houches",
         "field_statuses": {
-          "identity_ownership": "verified_with_adjustment",
-          "coordinates": "verified_with_adjustment",
+          "identity_ownership": "verified",
+          "coordinates": "verified",
           "elevation": "needs_source",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/les-houches",
+            "https://booking.chamonix.com/en/serp?ref_c.LOCATION=cmb.houches&s_c.ACCOMMODATION=chalet%2Capartment&type=chalet%2Capartment"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/104826"
+          ],
+          "elevation": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/les-houches",
+            "https://booking.chamonix.com/en/serp?ref_c.LOCATION=cmb.houches&s_c.ACCOMMODATION=chalet%2Capartment&type=chalet%2Capartment"
+          ],
+          "base_character": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/les-houches"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "The stable base ID is retained while ownership moves to the separate Les Houches stay destination.",
+          "Quiet local pace is a controlled normalization of the official description of Les Houches as quieter than Chamonix and suitable for a relaxing family break; development style remains unknown.",
+          "Lodging price and quality remain curated estimates; local apres remains unknown."
+        ]
+      },
+      "chamonix-mont-blanc-le-tour": {
+        "display_name": "Le Tour",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
           "base_character": "needs_source",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
           "identity_ownership": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
           ],
           "coordinates": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://www.openstreetmap.org/node/285883299"
           ],
-          "elevation": [],
-          "lodging_price_quality": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+          "elevation": [
+            "https://www.chamonix.com/sites/default/files/media/brochures/Plan_Argentiere.pdf"
           ],
-          "base_type": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
+          ],
           "base_character": [],
           "local_apres": []
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Le Tour is a directly sourceable lodging/base locality with direct Balme lift access.",
+          "The current official Argentière and Le Tour village guide labels Le Tour at 1453 m.",
+          "The frozen official source packet does not directly support a development style or local pace, so both remain unknown.",
+          "Lodging price and quality remain curated estimates; local apres remains unknown."
+        ]
+      },
+      "chamonix-mont-blanc-les-praz": {
+        "display_name": "Les Praz",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "needs_source",
+          "elevation": "needs_source",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/area/flegere"
+          ],
+          "coordinates": [],
+          "elevation": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/area/flegere"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Les Praz is retained only as a directly evidenced base/access pair; unsupported representative coordinates, elevation, and character fields remain unknown.",
+          "The reviewed OSM object named Les Praz is a hiking guidepost rather than a settlement geometry owner, so it is not stored as base coordinate provenance.",
+          "Lodging price and quality remain curated estimates; local apres remains unknown."
+        ]
+      },
+      "vallorcine-vallorcine": {
+        "display_name": "Vallorcine",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "needs_source",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/vallorcine",
+            "https://booking.chamonix.com/en/serp?ref_c.LOCATION=cmb.vallorcine&s_c.ACCOMMODATION=chalet%2Capartment&type=chalet%2Capartment",
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/104843"
+          ],
+          "elevation": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/vallorcine",
+            "https://booking.chamonix.com/en/serp?ref_c.LOCATION=cmb.vallorcine&s_c.ACCOMMODATION=chalet%2Capartment&type=chalet%2Capartment",
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
+          ],
+          "base_character": [
+            "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/vallorcine"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "Vallorcine is the primary base of the separate Vallorcine stay destination with direct Balme access.",
+          "Traditional development style and quiet local pace are controlled normalizations of the official authentic, peaceful, tradition-rich village description.",
+          "Lodging price and quality remain curated estimates; local apres remains unknown."
         ]
       },
       "cortina-dampezzo-cortina-dampezzo": {
@@ -6213,75 +6193,27 @@
           "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified_with_adjustment",
-          "skill_fit": "estimated",
+          "skill_fit": "verified",
           "snowmaking": "needs_source",
           "glacier_terrain": "needs_source",
           "snow_park": "needs_source",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
           "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
           ],
           "elevation_season": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
           ],
           "terrain_metrics": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/"
           ],
           "skill_fit": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://en.chamonix.com/activities/winter/skiing"
           ],
           "snowmaking": [],
           "glacier_terrain": [],
@@ -6289,104 +6221,12 @@
           "night_skiing": [],
           "marked_freeride_routes": [],
           "ski_day_apres": [],
-          "official_documents": []
+          "official_documents": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
+          ]
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
-        ]
-      },
-      "brevent-flegere": {
-        "display_name": "Brevent-Flegere",
-        "field_statuses": {
-          "identity_coordinates": "verified_with_adjustment",
-          "elevation_season": "verified_with_adjustment",
-          "terrain_metrics": "verified_with_adjustment",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_coordinates": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
-          ],
-          "elevation_season": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
-          ],
-          "terrain_metrics": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
-          ],
-          "skill_fit": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
-          ],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
-        },
-        "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Balme remains one connected weather-owning ski area spanning the Le Tour and Vallorcine lift origins; provider/editorial child metrics are explicitly area-scoped."
         ]
       },
       "cervinia-ski-area": {
@@ -6927,75 +6767,27 @@
           "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified_with_adjustment",
-          "skill_fit": "estimated",
+          "skill_fit": "verified",
           "snowmaking": "needs_source",
           "glacier_terrain": "needs_source",
           "snow_park": "needs_source",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
           "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://en.chamonix.com/activities/winter/skiing"
           ],
           "elevation_season": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://en.chamonix.com/activities/winter/skiing"
           ],
           "terrain_metrics": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
             "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
           ],
           "skill_fit": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://en.chamonix.com/activities/winter/skiing"
           ],
           "snowmaking": [],
           "glacier_terrain": [],
@@ -7003,13 +6795,12 @@
           "night_skiing": [],
           "marked_freeride_routes": [],
           "ski_day_apres": [],
-          "official_documents": []
+          "official_documents": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/grands-montets"
+          ]
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Grands Montets remains a separate weather owner; only child-scoped terrain facts are assigned here."
         ]
       },
       "grindelwald-first-ski-area": {
@@ -7585,75 +7376,28 @@
           "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified_with_adjustment",
-          "skill_fit": "estimated",
+          "skill_fit": "verified",
           "snowmaking": "needs_source",
           "glacier_terrain": "needs_source",
           "snow_park": "needs_source",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
           "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
           ],
           "elevation_season": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
           ],
           "terrain_metrics": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://www.saintgervais.com/je-minspire/ski/decouvrir-nos-domaines-skiables/",
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
           ],
           "skill_fit": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
           ],
           "snowmaking": [],
           "glacier_terrain": [],
@@ -7661,13 +7405,13 @@
           "night_skiing": [],
           "marked_freeride_routes": [],
           "ski_day_apres": [],
-          "official_documents": []
+          "official_documents": [
+            "https://leshouches.montblancnaturalresort.com/en/access-and-maps"
+          ]
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "The Les Houches page presents a 31/14 inventory alongside a 55 km headline, while the Saint-Gervais page presents 55 km and 15 lifts; Snowcast retains 55 km / 15 lifts with verified_with_adjustment trust and preserves the same-scope conflict.",
+          "The ski-area ID and weather ownership remain unchanged."
         ]
       },
       "livigno-ski-area": {
@@ -8937,6 +8681,88 @@
           "Aggregate terrain is owned by the local pass-accessible scope and the official 2025/26 piste map establishes Lagazuoi coverage under the Alta Badia local pass; no terrain-domain membership is inferred.",
           "The new ski-area ID is handed to scheduled historical-weather completion after merge."
         ]
+      },
+      "brevent-flegere": {
+        "display_name": "Brevent-Flegere",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "needs_source",
+          "glacier_terrain": "needs_source",
+          "snow_park": "verified",
+          "night_skiing": "needs_source",
+          "marked_freeride_routes": "needs_source",
+          "ski_day_apres": "needs_source",
+          "official_documents": "verified"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+            "https://en.chamonix.com/activities/winter/skiing",
+            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
+            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
+            "https://www.bergfex.com/skiregionen/chamonix/",
+            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+            "https://www.openstreetmap.org/node/285882627",
+            "https://www.openstreetmap.org/relation/104826",
+            "https://www.openstreetmap.org/relation/104836",
+            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
+            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
+            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+          ],
+          "elevation_season": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+            "https://en.chamonix.com/activities/winter/skiing",
+            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
+            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
+            "https://www.bergfex.com/skiregionen/chamonix/",
+            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+            "https://www.openstreetmap.org/node/285882627",
+            "https://www.openstreetmap.org/relation/104826",
+            "https://www.openstreetmap.org/relation/104836",
+            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
+            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
+            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+          ],
+          "terrain_metrics": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+            "https://en.chamonix.com/activities/winter/skiing",
+            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
+            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
+            "https://www.bergfex.com/skiregionen/chamonix/",
+            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+            "https://www.openstreetmap.org/node/285882627",
+            "https://www.openstreetmap.org/relation/104826",
+            "https://www.openstreetmap.org/relation/104836",
+            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
+            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
+            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+          ],
+          "skill_fit": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/page/ski"
+          ],
+          "snowmaking": [],
+          "glacier_terrain": [],
+          "snow_park": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/page/ski"
+          ],
+          "night_skiing": [],
+          "marked_freeride_routes": [],
+          "ski_day_apres": [],
+          "official_documents": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/brevent"
+          ]
+        },
+        "notes": [
+          "Brevent-Flegere remains one lift-connected ski area and weather owner; operator Brevent and Flegere pages describe sectors rather than separate Snowcast weather entities.",
+          "The current combined piste and lift totals remain attached to the combined area. The sourced snowpark fact applies to the Brevent sector, and the official map covers the connected area.",
+          "No ski-area weather ID migration is required by this curation."
+        ]
       }
     },
     "ski_area_access": {
@@ -9054,29 +8880,25 @@
       "chamonix-mont-blanc-argentiere--balme-le-tour-vallorcine": {
         "display_name": "Argentiere -> Balme - Le Tour - Vallorcine",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "needs_source"
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://en.chamonix.com/things-to-see-and-do/sports-and-outdoor/skiing-in-chamonix-mont-blanc-valley/list-of-ski-areas/ski-area-balme-vallorcine?espace_congres=124173"
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
           ],
           "access_mode_distance": [
-            "https://en.chamonix.com/things-to-see-and-do/sports-and-outdoor/skiing-in-chamonix-mont-blanc-valley/list-of-ski-areas/ski-area-balme-vallorcine?espace_congres=124173"
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
           ]
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy.",
-          "New explicit migration edge remains conservative; the relationship is estimated and access mode/distance needs further source review."
+          "This remains a ski-bus relationship, not direct lift access."
         ]
       },
       "chamonix-mont-blanc-argentiere--grands-montets": {
         "display_name": "Argentiere -> Grands Montets",
         "field_statuses": {
-          "relationship": "verified_with_adjustment",
+          "relationship": "verified",
           "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
@@ -9088,52 +8910,61 @@
           ]
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Official destination material supports the direct Grands Montets / Plan Joran origin."
         ]
       },
-      "chamonix-mont-blanc-chamonix--brevent-flegere": {
-        "display_name": "Chamonix -> Brevent-Flegere",
+      "chamonix-mont-blanc-le-tour--balme-le-tour-vallorcine": {
+        "display_name": "Le Tour -> Balme - Le Tour - Vallorcine",
         "field_statuses": {
-          "relationship": "verified_with_adjustment",
+          "relationship": "verified",
           "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://en.chamonix.com/activities/winter/skiing"
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
           ],
           "access_mode_distance": [
-            "https://en.chamonix.com/activities/winter/skiing"
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
           ]
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Le Tour is a direct lift origin for Balme."
+        ]
+      },
+      "vallorcine-vallorcine--balme-le-tour-vallorcine": {
+        "display_name": "Vallorcine -> Balme - Le Tour - Vallorcine",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
+          ],
+          "access_mode_distance": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/access-and-maps/balme"
+          ]
+        },
+        "notes": [
+          "Vallorcine is a direct lift origin for Balme."
         ]
       },
       "chamonix-mont-blanc-les-houches--les-houches-saint-gervais": {
         "display_name": "Les Houches -> Les Houches - Saint-Gervais",
         "field_statuses": {
-          "relationship": "verified_with_adjustment",
+          "relationship": "verified",
           "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://en.chamonix.com/activities/winter/skiing"
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
           ],
           "access_mode_distance": [
-            "https://en.chamonix.com/activities/winter/skiing"
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
           ]
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Le Prarion is retained as the direct Les Houches lift origin."
         ]
       },
       "cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area": {
@@ -11129,6 +10960,42 @@
           "First-party Mayrhofen-Hippach material supports a ski-bus relationship to the Mayrhofen lift network.",
           "The coarse ski_bus/far normalization is conservative; no exact route distance or duration is asserted."
         ]
+      },
+      "chamonix-mont-blanc-chamonix--brevent-flegere": {
+        "display_name": "Chamonix -> Brevent-Flegere",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/area/brevent"
+          ],
+          "access_mode_distance": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/area/brevent"
+          ]
+        },
+        "notes": [
+          "Planpraz is the direct Chamonix lift origin for the combined Brevent-Flegere ski area."
+        ]
+      },
+      "chamonix-mont-blanc-les-praz--brevent-flegere": {
+        "display_name": "Les Praz -> Brevent-Flegere",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/area/flegere"
+          ],
+          "access_mode_distance": [
+            "https://domaineschamonix.montblancnaturalresort.com/en/area/flegere"
+          ]
+        },
+        "notes": [
+          "Les Praz is the direct Flegere gondola origin into the combined Brevent-Flegere ski area."
+        ]
       }
     },
     "terrain_domains": {
@@ -11629,78 +11496,29 @@
       "chamonix-le-pass": {
         "display_name": "CHAMONIX Le Pass",
         "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
+          "identity_scope_availability": "verified",
+          "coverage": "verified",
+          "prices": "verified",
           "pass_accessible_terrain": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
           ],
           "coverage": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
           ],
           "prices": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
           ],
           "pass_accessible_terrain": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
           ]
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Official Le Pass coverage supports Chamonix and Vallorcine availability, the four local ski areas, and the Brevent-Flegere terrain domain.",
+          "The official 110 km / 43-lift values remain pass-accessible aggregate facts and are intentionally not copied onto any one child ski area.",
+          "The external-validity summary preserves the five named unmodeled beginner areas while keeping Plateau 2000 and Plateau de Lognan as sectors of modeled areas."
         ]
       },
       "cortina-valle-skipass": {
@@ -11715,16 +11533,16 @@
           "identity_scope_availability": [
             "https://skipasscortina.com/EN/page17-cortina-winter-prices"
           ],
-      "coverage": [
-        "https://skipasscortina.com/EN/page17-cortina-winter-prices",
-        "https://skipasscortina.com/EN/page8-the-consortium"
+          "coverage": [
+            "https://skipasscortina.com/EN/page17-cortina-winter-prices",
+            "https://skipasscortina.com/EN/page8-the-consortium"
           ],
           "prices": [],
           "pass_accessible_terrain": []
         },
         "notes": [
           "identity_scope_availability normalization: the consortium's valley-resort ticket presentation is normalized to one canonical Valle Skipass product available from Cortina, San Vito, Auronzo, and Misurina, with Cortina as its sole default.",
-      "coverage normalization: the official four-place valley scope and five-area consortium presentation map to five modeled ski-area nodes, including the existing Lagazuoi owner alongside the retained Cortina umbrella; commercial coverage does not create a terrain domain.",
+          "coverage normalization: the official four-place valley scope and five-area consortium presentation map to five modeled ski-area nodes, including the existing Lagazuoi owner alongside the retained Cortina umbrella; commercial coverage does not create a terrain domain.",
           "The official page states over 120 km but does not publish an exact current representative price or an exact arithmetic terrain total, so prices and pass_accessible_terrain remain unset and needs_source."
         ]
       },
@@ -12038,78 +11856,25 @@
       "les-houches-saint-gervais-skipass": {
         "display_name": "Les Houches - Saint-Gervais ski pass",
         "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
+          "identity_scope_availability": "verified",
+          "coverage": "verified",
+          "prices": "verified",
           "pass_accessible_terrain": "needs_source"
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
           ],
           "coverage": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
           ],
           "prices": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
           ],
-          "pass_accessible_terrain": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
-          ]
+          "pass_accessible_terrain": []
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "The local pass is available from and default for the separate Les Houches stay destination."
         ]
       },
       "livigno-skipass": {
@@ -12193,78 +11958,26 @@
       "mont-blanc-unlimited": {
         "display_name": "Mont-Blanc Unlimited",
         "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
+          "identity_scope_availability": "verified",
+          "coverage": "verified",
+          "prices": "verified",
           "pass_accessible_terrain": "needs_source"
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
           ],
           "coverage": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
           ],
           "prices": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
+            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
           ],
-          "pass_accessible_terrain": [
-            "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-            "https://en.chamonix.com/activities/winter/skiing",
-            "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
-            "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
-            "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
-            "https://www.bergfex.com/skiregionen/chamonix/",
-            "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
-            "https://www.openstreetmap.org/node/285882627",
-            "https://www.openstreetmap.org/relation/104826",
-            "https://www.openstreetmap.org/relation/104836",
-            "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
-            "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
-            "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/"
-          ]
+          "pass_accessible_terrain": []
         },
         "notes": [
-          "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
-          "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
-          "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
-          "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
+          "Availability spans the modeled Chamonix, Les Houches, and Vallorcine stay destinations.",
+          "The official external-validity list remains summary-only and does not create local catalog entities or a connected terrain domain; duration and commercial-agreement caveats remain explicit."
         ]
       },
       "otztal-super-skipass": {
