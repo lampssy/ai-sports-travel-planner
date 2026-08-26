@@ -1504,6 +1504,28 @@ reactivation. ADR 0021 owns the accepted terrain medoid and area-wide lift-serve
 elevation hierarchy plus the typed curation
 assessment required to activate a new or changed geometry.
 
+## Coordinated Ski-Area Evidence Ownership
+
+The catalog keeps one runtime `SkiArea` for a complete skier-facing area even
+when several lift companies operate its components, but only through the
+explicit coordinated report contract. Component ownership is curation
+provenance, not a runtime `SkiSubArea` graph. Independent weather geometry and
+activation remain separate, so coordinated operations cannot silently reuse or
+activate weather history.
+
+That contract requires `official_complete_lift_inventory`, an exhaustive
+component roster, `coordinated_status_or_schedule`,
+`common_full_coverage_pass`, and direct assignment evidence. A coordinated
+parent records these as the five typed `coordination_evidence_families` defined
+by ADR 0022. Every family owns official evidence refs and covers the parent's
+exact component IDs; aggregate `coordination_evidence_refs` is their union.
+Each coordinated child is assessed exactly once with
+`disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
+parent, a target reference to that parent, and `operational_scope=coordinated`.
+Children carry no parent coordination metadata. Coordinated claims require
+report schema version 3. A shared pass alone is insufficient; `weather_scope`
+remains independently gated by ADR 0021.
+
 ## Maintainer Pre-Push Curation Authority
 
 Pre-push curation recovery uses one bounded generation timeline per PR. A

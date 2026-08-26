@@ -338,10 +338,10 @@ snowmaking coverage or open terrain.
 
 **Ski area**
 
-An independently stored terrain and weather-evidence entity. Current conditions,
-archive weather, climatology, season windows, elevation, terrain metrics, and
-skill support attach to ski_area_id. A ski area may be reachable from several
-stay destinations.
+A complete terrain entity with independent or coordinated evidence ownership.
+Current conditions, archive weather, climatology, season windows, elevation,
+terrain metrics, and skill support attach to ski_area_id. A ski area may be
+reachable from several stay destinations.
 
 A separate ski area must have complete terrain scope, at least one durable
 operations, weather, or full-local-pass owner, and material separation value.
@@ -356,6 +356,38 @@ transfer-required complete area may qualify with one owner category. A
 recognizable sector that fails these gates is `not_separate`; it may become a
 future ski sub-area if product needs justify that layer. Provider boundaries
 corroborate this assessment but do not determine it.
+
+Evidence ownership may be `independent` or `coordinated`. Independent ownership
+uses the existing area-level operations, weather, or full-local-pass evidence.
+A coordinated multi-operator ski area requires an official complete lift or
+terrain inventory (`official_complete_lift_inventory`), an exhaustive component
+roster, a current status or schedule presentation
+(`coordinated_status_or_schedule`) in which every component is addressable, one
+pass covering every component (`common_full_coverage_pass`), and an explicit
+child assessment. Each coordinated child is assessed exactly once with
+`disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
+parent, a target reference to that parent, and `operational_scope=coordinated`.
+The parent records five typed `coordination_evidence_families`:
+`complete_terrain_lift_inventory`,
+`exhaustive_component_operator_roster`,
+`component_addressable_operations_status`,
+`every_component_pass_coverage`, and
+`direct_component_parent_assignment`. Every family has official
+`evidence_refs` and `covered_component_candidate_ids` equal to the parent's
+exact `component_candidate_ids`; aggregate `coordination_evidence_refs` is the
+union of those family refs. Direct assignment must resolve every component,
+although a common official source may establish several assignments. Children
+do not repeat the parent's coordination metadata. The pass may also cover a
+separately modeled adjacent ski area and does not establish the boundary by
+itself. Coordinated scope and metadata require report schema version 3.
+
+Minor nursery or satellite lifts may remain coordinated components when they
+share the complete inventory, status system, pass, and stay market and have no
+material independent recommendation, weather, season, operations, or pass
+value. A complete transfer-required, weather-distinct, or independently owned
+area remains a separate ski area. Coordinated operational ownership does not
+imply active weather sampling; `weather_scope` and ADR 0021 are evaluated
+independently.
 
 Operations ownership describes the scope of official evidence, not ownership
 of a dedicated website. A candidate-scoped official operator/member page and a

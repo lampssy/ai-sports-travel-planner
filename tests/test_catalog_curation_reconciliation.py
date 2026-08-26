@@ -265,6 +265,106 @@ def _schema_three_relationship_report() -> CatalogCurationReport:
     return CatalogCurationReport.model_validate(payload)
 
 
+def _with_coordinated_scope_provenance(
+    report: CatalogCurationReport,
+) -> CatalogCurationReport:
+    payload = report.model_dump(mode="json")
+    component_ids = ["sector-a", "sector-b"]
+    family_evidence_refs = {
+        "complete_terrain_lift_inventory": "example-access-scope",
+        "exhaustive_component_operator_roster": "coordination-roster",
+        "component_addressable_operations_status": "coordination-operations",
+        "every_component_pass_coverage": "coordination-pass",
+        "direct_component_parent_assignment": "coordination-assignment",
+    }
+    coordination_evidence_refs = list(family_evidence_refs.values())
+    payload["evidence"].extend(
+        {
+            "evidence_id": evidence_id,
+            "target_type": "ski_area_access",
+            "target_id": "example-village--example-area",
+            "field_path": "source_urls",
+            "source_type": "official",
+            "source_url": f"https://example.com/{evidence_id}",
+            "source_title": family.replace("_", " ").title(),
+            "source_value": [f"https://example.com/{evidence_id}"],
+            "evidence_summary": f"Official evidence for {family}.",
+        }
+        for family, evidence_id in family_evidence_refs.items()
+        if evidence_id != "example-access-scope"
+    )
+    payload["entity_scope_assessments"].extend(
+        [
+            {
+                "candidate_id": "example-area-coordinated-boundary",
+                "candidate_name": "Example Area",
+                "candidate_kind": "ski_area",
+                "disposition": "represented",
+                "signals": [
+                    "official_complete_lift_inventory",
+                    "coordinated_status_or_schedule",
+                    "common_full_coverage_pass",
+                ],
+                "evidence_refs": coordination_evidence_refs,
+                "target_refs": [
+                    {"target_type": "ski_area", "target_id": "example-area"}
+                ],
+                "rationale": "The official sources define one coordinated area.",
+                "ski_area_boundary": {
+                    "terrain_scope": "complete",
+                    "connectivity_to_parent": "not_applicable",
+                    "operational_scope": "coordinated",
+                    "weather_scope": "unknown",
+                    "pass_scope": "full_local",
+                    "provider_consensus": "aggregated",
+                    "separation_value": "material",
+                    "component_candidate_ids": component_ids,
+                    "coordination_evidence_refs": coordination_evidence_refs,
+                    "coordination_evidence_families": [
+                        {
+                            "family": family,
+                            "evidence_refs": [evidence_id],
+                            "covered_component_candidate_ids": component_ids,
+                        }
+                        for family, evidence_id in family_evidence_refs.items()
+                    ],
+                    "evidence_refs": coordination_evidence_refs,
+                },
+            },
+            *[
+                {
+                    "candidate_id": component_id,
+                    "candidate_name": component_id.title(),
+                    "candidate_kind": "ski_area",
+                    "disposition": "not_separate",
+                    "signals": ["official_map_sector"],
+                    "evidence_refs": ["coordination-assignment"],
+                    "target_refs": [
+                        {
+                            "target_type": "ski_area",
+                            "target_id": "example-area",
+                        }
+                    ],
+                    "rationale": "The coordinated inventory assigns this sector.",
+                    "ski_area_boundary": {
+                        "parent_ski_area_id": "example-area",
+                        "terrain_scope": "sector",
+                        "connectivity_to_parent": "connected",
+                        "operational_scope": "coordinated",
+                        "weather_scope": "parent_owned",
+                        "pass_scope": "shared_only",
+                        "provider_consensus": "aggregated",
+                        "separation_value": "redundant",
+                        "evidence_refs": ["coordination-assignment"],
+                    },
+                }
+                for component_id in component_ids
+            ],
+        ]
+    )
+    return CatalogCurationReport.model_validate(payload)
+
+
 def _schema_two_deferred_report() -> CatalogCurationReport:
     payload = _schema_two_relationship_report().model_dump(mode="json")
     assessment = payload["entity_scope_assessments"][0]
@@ -642,6 +742,24 @@ def test_reconcile_accepts_exact_entity_and_relationship_deltas(tmp_path: Path) 
             "distance_m",
         )
     }
+
+
+def test_reconcile_ignores_coordinated_report_only_provenance(tmp_path: Path) -> None:
+    base_paths, current_paths = _relationship_snapshots(tmp_path)
+    report = _with_coordinated_scope_provenance(_schema_three_relationship_report())
+
+    result = reconcile_catalog_curation_report(
+        report,
+        base_catalog_path=base_paths[0],
+        current_catalog_path=current_paths[0],
+        base_trust_manifest_path=base_paths[1],
+        current_trust_manifest_path=current_paths[1],
+    )
+
+    assert {
+        (delta.target_type, delta.target_id, delta.field_path)
+        for delta in result.deltas
+    } == {("ski_area_access", "example-village--example-area", "distance_m")}
 
 
 def test_reconcile_accepts_exact_pass_validity_windows_and_owning_trust_deltas(

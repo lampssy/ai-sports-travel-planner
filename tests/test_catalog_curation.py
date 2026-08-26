@@ -262,6 +262,9 @@ def _ski_area_boundary_payload(
     pass_scope: str = "none",
     provider_consensus: str = "separate",
     separation_value: str = "material",
+    component_candidate_ids: list[str] | None = None,
+    coordination_evidence_refs: list[str] | None = None,
+    coordination_evidence_families: list[dict] | None = None,
     evidence_refs: list[str] | None = None,
 ) -> dict:
     return {
@@ -273,6 +276,9 @@ def _ski_area_boundary_payload(
         "pass_scope": pass_scope,
         "provider_consensus": provider_consensus,
         "separation_value": separation_value,
+        "component_candidate_ids": component_candidate_ids or [],
+        "coordination_evidence_refs": coordination_evidence_refs or [],
+        "coordination_evidence_families": coordination_evidence_families or [],
         "evidence_refs": evidence_refs or ["example-scope"],
     }
 
@@ -312,6 +318,105 @@ def _complete_new_ski_area_report_target(payload: dict, target_id: str) -> None:
             },
         ]
     )
+
+
+_COORDINATED_EVIDENCE_FAMILY_REFS = {
+    "complete_terrain_lift_inventory": "coordination-inventory",
+    "exhaustive_component_operator_roster": "coordination-roster",
+    "component_addressable_operations_status": "coordination-operations",
+    "every_component_pass_coverage": "coordination-pass",
+    "direct_component_parent_assignment": "coordination-assignment",
+}
+
+
+def _coordinated_ski_area_report_payload() -> dict:
+    parent_id = "coordinated-area"
+    component_ids = ["operator-a-sector", "operator-b-sector"]
+    coordination_evidence_refs = list(_COORDINATED_EVIDENCE_FAMILY_REFS.values())
+    coordination_evidence_families = [
+        {
+            "family": family,
+            "evidence_refs": [evidence_id],
+            "covered_component_candidate_ids": component_ids.copy(),
+        }
+        for family, evidence_id in _COORDINATED_EVIDENCE_FAMILY_REFS.items()
+    ]
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="add_entity",
+        signals=[
+            "official_complete_lift_inventory",
+            "coordinated_status_or_schedule",
+            "common_full_coverage_pass",
+        ],
+        target_type="ski_area",
+        target_id=parent_id,
+    )
+    payload["report_schema_version"] = 3
+    payload["evidence"] = [
+        {
+            "evidence_id": evidence_id,
+            "target_type": "ski_area_access",
+            "target_id": "example-village--example-area",
+            "field_path": "source_urls",
+            "source_type": "official",
+            "source_url": f"https://example.com/{evidence_id}",
+            "source_title": family.replace("_", " ").title(),
+            "source_value": [f"https://example.com/{evidence_id}"],
+            "evidence_summary": f"Official evidence for {family}.",
+        }
+        for family, evidence_id in _COORDINATED_EVIDENCE_FAMILY_REFS.items()
+    ]
+    parent = payload["entity_scope_assessments"][0]
+    parent["evidence_refs"] = coordination_evidence_refs.copy()
+    parent["ski_area_boundary"] = _ski_area_boundary_payload(
+        operational_scope="coordinated",
+        weather_scope="unknown",
+        pass_scope="shared_only",
+        provider_consensus="aggregated",
+        component_candidate_ids=component_ids.copy(),
+        coordination_evidence_refs=coordination_evidence_refs.copy(),
+        coordination_evidence_families=coordination_evidence_families,
+        evidence_refs=coordination_evidence_refs.copy(),
+    )
+    _complete_new_ski_area_report_target(payload, parent_id)
+    for component_id in component_ids:
+        payload["entity_scope_assessments"].append(
+            {
+                "candidate_id": component_id,
+                "candidate_name": component_id.replace("-", " ").title(),
+                "candidate_kind": "ski_area",
+                "disposition": "not_separate",
+                "signals": ["official_map_sector", "ski_connected_terrain"],
+                "evidence_refs": ["coordination-assignment"],
+                "target_refs": [{"target_type": "ski_area", "target_id": parent_id}],
+                "rationale": "The complete coordinated sources assign this sector.",
+                "ski_area_boundary": _ski_area_boundary_payload(
+                    parent_ski_area_id=parent_id,
+                    terrain_scope="sector",
+                    connectivity_to_parent="connected",
+                    operational_scope="coordinated",
+                    weather_scope="parent_owned",
+                    pass_scope="shared_only",
+                    provider_consensus="aggregated",
+                    separation_value="redundant",
+                    evidence_refs=["coordination-assignment"],
+                ),
+            }
+        )
+    return payload
+
+
+def _coordinated_parent(payload: dict) -> dict:
+    return payload["entity_scope_assessments"][0]
+
+
+def _sync_coordination_evidence_refs(parent: dict) -> None:
+    parent["ski_area_boundary"]["coordination_evidence_refs"] = [
+        evidence_ref
+        for family in parent["ski_area_boundary"]["coordination_evidence_families"]
+        for evidence_ref in family["evidence_refs"]
+    ]
 
 
 def test_canonical_paths_cover_only_normalized_catalog_entities() -> None:
@@ -930,6 +1035,636 @@ def test_schema_three_ski_area_assessment_requires_boundary_contract() -> None:
         validate_catalog_curation_report(report)
 
 
+def test_schema_three_rejects_coordinated_weather_scope() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="represented",
+        target_type="ski_area",
+        target_id="example-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(weather_scope="coordinated")
+    )
+
+    with pytest.raises(ValidationError, match="weather_scope"):
+        CatalogCurationReport.model_validate(payload)
+
+
+def test_schema_three_defaults_coordination_metadata_for_legacy_boundary() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="not_separate",
+        signals=["official_map_sector"],
+        target_type="ski_area",
+        target_id="parent-area",
+    )
+    payload["report_schema_version"] = 3
+    boundary_payload = _ski_area_boundary_payload(
+        parent_ski_area_id="parent-area",
+        terrain_scope="sector",
+        connectivity_to_parent="connected",
+        operational_scope="parent_owned",
+        weather_scope="parent_owned",
+        pass_scope="shared_only",
+        provider_consensus="aggregated",
+        separation_value="redundant",
+    )
+    del boundary_payload["component_candidate_ids"]
+    del boundary_payload["coordination_evidence_refs"]
+    del boundary_payload["coordination_evidence_families"]
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = boundary_payload
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "parent-area",
+            "scope": "narrow",
+            "required_field_paths": ["name"],
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "parent-area",
+            "field_path": "name",
+            "status": "reviewed-no-change",
+        }
+    )
+
+    report = CatalogCurationReport.model_validate(payload)
+    boundary = report.entity_scope_assessments[0].ski_area_boundary
+
+    validate_catalog_curation_report(report)
+    assert boundary is not None
+    assert boundary.component_candidate_ids == []
+    assert boundary.coordination_evidence_refs == []
+    assert boundary.coordination_evidence_families == []
+
+    explicit_payload = json.loads(json.dumps(payload))
+    explicit_boundary = explicit_payload["entity_scope_assessments"][0][
+        "ski_area_boundary"
+    ]
+    explicit_boundary["component_candidate_ids"] = []
+    explicit_boundary["coordination_evidence_refs"] = []
+    explicit_boundary["coordination_evidence_families"] = []
+    explicit_report = CatalogCurationReport.model_validate(explicit_payload)
+
+    assert render_catalog_curation_report_markdown(
+        report
+    ) == render_catalog_curation_report_markdown(explicit_report)
+
+
+def test_schema_three_rejects_coordination_metadata_on_independent_boundary() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="represented",
+        target_type="ski_area",
+        target_id="example-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(
+            operational_scope="independent",
+            component_candidate_ids=["operator-a", "operator-b"],
+            coordination_evidence_refs=["example-scope"],
+        )
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match="coordination metadata requires operational_scope=coordinated",
+    ):
+        CatalogCurationReport.model_validate(payload)
+
+
+def test_schema_three_rejects_unowned_coordination_evidence() -> None:
+    payload = _scope_report_payload(
+        candidate_kind="ski_area",
+        disposition="represented",
+        target_type="ski_area",
+        target_id="example-area",
+    )
+    payload["report_schema_version"] = 3
+    payload["entity_scope_assessments"][0]["ski_area_boundary"] = (
+        _ski_area_boundary_payload(
+            operational_scope="coordinated",
+            component_candidate_ids=["operator-a", "operator-b"],
+            coordination_evidence_refs=["missing-coordination-evidence"],
+            coordination_evidence_families=[
+                {
+                    "family": "direct_component_parent_assignment",
+                    "evidence_refs": ["missing-coordination-evidence"],
+                    "covered_component_candidate_ids": [
+                        "operator-a",
+                        "operator-b",
+                    ],
+                }
+            ],
+        )
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match="coordination_evidence_refs must be included in evidence_refs",
+    ):
+        CatalogCurationReport.model_validate(payload)
+
+
+def test_schema_three_accepts_complete_coordinated_parent() -> None:
+    report = CatalogCurationReport.model_validate(
+        _coordinated_ski_area_report_payload()
+    )
+
+    validate_catalog_curation_report(report)
+
+
+def test_schema_three_rejects_coordination_aggregate_outside_family_union() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    boundary = _coordinated_parent(payload)["ski_area_boundary"]
+    boundary["coordination_evidence_refs"].remove("coordination-roster")
+
+    with pytest.raises(
+        ValidationError,
+        match=(
+            "coordination_evidence_refs must equal the union of coordination "
+            "evidence family refs"
+        ),
+    ):
+        CatalogCurationReport.model_validate(payload)
+
+
+@pytest.mark.parametrize("missing_family", _COORDINATED_EVIDENCE_FAMILY_REFS)
+def test_schema_three_coordinated_parent_requires_every_evidence_family(
+    missing_family: str,
+) -> None:
+    payload = _coordinated_ski_area_report_payload()
+    parent = _coordinated_parent(payload)
+    families = parent["ski_area_boundary"]["coordination_evidence_families"]
+    parent["ski_area_boundary"]["coordination_evidence_families"] = [
+        family for family in families if family["family"] != missing_family
+    ]
+    _sync_coordination_evidence_refs(parent)
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=f"coordinated ski area requires evidence family {missing_family}",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_rejects_pass_only_coordination_evidence() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    parent = _coordinated_parent(payload)
+    pass_family = next(
+        family
+        for family in parent["ski_area_boundary"]["coordination_evidence_families"]
+        if family["family"] == "every_component_pass_coverage"
+    )
+    parent["ski_area_boundary"]["coordination_evidence_families"] = [pass_family]
+    parent["ski_area_boundary"]["coordination_evidence_refs"] = ["coordination-pass"]
+    parent["ski_area_boundary"]["evidence_refs"] = ["coordination-pass"]
+    parent["evidence_refs"] = ["coordination-pass"]
+    for child in payload["entity_scope_assessments"][1:]:
+        child["evidence_refs"] = ["coordination-pass"]
+        child["ski_area_boundary"]["evidence_refs"] = ["coordination-pass"]
+    payload["evidence"] = [
+        evidence
+        for evidence in payload["evidence"]
+        if evidence["evidence_id"] == "coordination-pass"
+    ]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "coordinated ski area requires evidence family "
+            "complete_terrain_lift_inventory"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_rejects_non_official_coordination_family_evidence() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    roster_evidence = next(
+        evidence
+        for evidence in payload["evidence"]
+        if evidence["evidence_id"] == "coordination-roster"
+    )
+    roster_evidence["source_type"] = "reviewed_editorial"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "evidence family exhaustive_component_operator_roster requires "
+            "official evidence coordination-roster"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_requires_family_evidence_in_scope_refs() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    _coordinated_parent(payload)["evidence_refs"].remove("coordination-roster")
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="ski-area boundary evidence must also appear in scope evidence_refs",
+    ):
+        validate_catalog_curation_report(report)
+
+
+@pytest.mark.parametrize(
+    "family_name",
+    [
+        "component_addressable_operations_status",
+        "every_component_pass_coverage",
+    ],
+)
+def test_schema_three_rejects_incomplete_component_family_coverage(
+    family_name: str,
+) -> None:
+    payload = _coordinated_ski_area_report_payload()
+    family = next(
+        family
+        for family in _coordinated_parent(payload)["ski_area_boundary"][
+            "coordination_evidence_families"
+        ]
+        if family["family"] == family_name
+    )
+    family["covered_component_candidate_ids"] = ["operator-a-sector"]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            f"evidence family {family_name} must cover exactly coordinated "
+            "components; missing=operator-b-sector"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_rejects_extra_component_family_coverage() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    inventory_family = _coordinated_parent(payload)["ski_area_boundary"][
+        "coordination_evidence_families"
+    ][0]
+    inventory_family["covered_component_candidate_ids"].append("operator-c-sector")
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "evidence family complete_terrain_lift_inventory must cover exactly "
+            "coordinated components; missing=none; extra=operator-c-sector"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_rejects_unresolved_component_assignment_coverage() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    assignment_family = next(
+        family
+        for family in _coordinated_parent(payload)["ski_area_boundary"][
+            "coordination_evidence_families"
+        ]
+        if family["family"] == "direct_component_parent_assignment"
+    )
+    assignment_family["covered_component_candidate_ids"] = ["operator-a-sector"]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "evidence family direct_component_parent_assignment must cover "
+            "exactly coordinated components; missing=operator-b-sector"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_one_rejects_coordinated_scope_and_metadata() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    payload["report_schema_version"] = 1
+    _coordinated_parent(payload)["disposition"] = "represented"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="coordinated ski area requires report schema version 3",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_two_rejects_coordinated_scope_and_metadata() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    payload["report_schema_version"] = 2
+    _coordinated_parent(payload)["disposition"] = "represented"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="coordinated ski area requires report schema version 3",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_coordinated_child_rejects_parent_metadata() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    parent = _coordinated_parent(payload)
+    child = payload["entity_scope_assessments"][1]
+    child_boundary = child["ski_area_boundary"]
+    child_boundary["component_candidate_ids"] = parent["ski_area_boundary"][
+        "component_candidate_ids"
+    ]
+    child_boundary["coordination_evidence_refs"] = parent["ski_area_boundary"][
+        "coordination_evidence_refs"
+    ]
+    child_boundary["coordination_evidence_families"] = parent["ski_area_boundary"][
+        "coordination_evidence_families"
+    ]
+    child_boundary["evidence_refs"] = parent["ski_area_boundary"]["evidence_refs"]
+    child["evidence_refs"] = parent["evidence_refs"]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "operator-a-sector: coordination metadata is only valid on a "
+            "represented or added parent"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_coordinated_parent_requires_coordination_evidence_refs() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    parent_boundary = _coordinated_parent(payload)["ski_area_boundary"]
+    parent_boundary["coordination_evidence_refs"] = []
+    parent_boundary["coordination_evidence_families"] = []
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="coordinated ski area requires coordination evidence refs",
+    ):
+        validate_catalog_curation_report(report)
+
+
+@pytest.mark.parametrize(
+    "missing_signal",
+    [
+        "official_complete_lift_inventory",
+        "coordinated_status_or_schedule",
+        "common_full_coverage_pass",
+    ],
+)
+def test_schema_three_coordinated_parent_requires_every_signal(
+    missing_signal: str,
+) -> None:
+    payload = _coordinated_ski_area_report_payload()
+    parent = payload["entity_scope_assessments"][0]
+    parent["signals"].remove(missing_signal)
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=f"coordinated ski area requires signal {missing_signal}",
+    ):
+        validate_catalog_curation_report(report)
+
+
+@pytest.mark.parametrize("pass_scope", ["limited", "none", "unknown"])
+def test_schema_three_coordinated_parent_requires_full_component_pass(
+    pass_scope: str,
+) -> None:
+    payload = _coordinated_ski_area_report_payload()
+    payload["entity_scope_assessments"][0]["ski_area_boundary"]["pass_scope"] = (
+        pass_scope
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="coordinated ski area requires pass_scope=full_local or shared_only",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_coordinated_parent_requires_two_components() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    parent_boundary = payload["entity_scope_assessments"][0]["ski_area_boundary"]
+    parent_boundary["component_candidate_ids"] = ["operator-a-sector"]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="coordinated ski area requires at least two component candidates",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_coordinated_parent_rejects_missing_component_assessment() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    payload["entity_scope_assessments"] = [
+        assessment
+        for assessment in payload["entity_scope_assessments"]
+        if assessment["candidate_id"] != "operator-b-sector"
+    ]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="coordinated component operator-b-sector has no scope assessment",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_coordinated_parent_rejects_self_membership() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    parent = _coordinated_parent(payload)
+    parent_boundary = parent["ski_area_boundary"]
+    component_ids = [parent["candidate_id"], "operator-a-sector"]
+    parent_boundary["component_candidate_ids"] = component_ids
+    for family in parent_boundary["coordination_evidence_families"]:
+        family["covered_component_candidate_ids"] = component_ids
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="coordinated parent cannot list itself as a component",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_coordinated_parent_rejects_duplicate_component_ids() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    _coordinated_parent(payload)["ski_area_boundary"]["component_candidate_ids"] = [
+        "operator-a-sector",
+        "operator-a-sector",
+    ]
+
+    with pytest.raises(
+        ValidationError,
+        match="ski-area boundary component_candidate_ids must be unique",
+    ):
+        CatalogCurationReport.model_validate(payload)
+
+
+def test_schema_three_rejects_multiple_coordinated_candidates_for_one_parent() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    duplicate_parent = json.loads(json.dumps(_coordinated_parent(payload)))
+    duplicate_parent["candidate_id"] = "duplicate-parent-assessment"
+    duplicate_parent["candidate_name"] = "Duplicate Parent Assessment"
+    payload["entity_scope_assessments"].append(duplicate_parent)
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "ski_area:coordinated-area: coordinated parent is represented by "
+            "multiple candidates"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_coordinated_parent_targets_exactly_one_catalog_area() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    _coordinated_parent(payload)["target_refs"].append(
+        {"target_type": "ski_area", "target_id": "other-area"}
+    )
+    _complete_new_ski_area_report_target(payload, "other-area")
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="coordinated ski area must target exactly one catalog ski area",
+    ):
+        validate_catalog_curation_report(report)
+
+
+@pytest.mark.parametrize(
+    ("field_path", "value", "message"),
+    [
+        ("disposition", "represented", "must use disposition=not_separate"),
+        (
+            "ski_area_boundary.operational_scope",
+            "parent_owned",
+            "must use operational_scope=coordinated",
+        ),
+        (
+            "ski_area_boundary.parent_ski_area_id",
+            "other-area",
+            "must name coordinated parent coordinated-area",
+        ),
+        (
+            "ski_area_boundary.weather_scope",
+            "independent",
+            "cannot retain independent weather scope",
+        ),
+    ],
+)
+def test_schema_three_coordinated_component_must_close_to_parent(
+    field_path: str,
+    value: str,
+    message: str,
+) -> None:
+    payload = _coordinated_ski_area_report_payload()
+    component = payload["entity_scope_assessments"][1]
+    target = component
+    segments = field_path.split(".")
+    for segment in segments[:-1]:
+        target = target[segment]
+    target[segments[-1]] = value
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(CatalogValidationError, match=message):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_coordinated_component_targets_only_parent_catalog_area() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    payload["entity_scope_assessments"][1]["target_refs"] = [
+        {"target_type": "ski_area", "target_id": "other-area"}
+    ]
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "other-area",
+            "scope": "narrow",
+            "required_field_paths": ["name"],
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": "other-area",
+            "field_path": "name",
+            "status": "reviewed-no-change",
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="must target coordinated parent ski_area:coordinated-area",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_coordinated_component_cannot_belong_to_two_parents() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    first_parent = payload["entity_scope_assessments"][0]
+    second_parent = json.loads(json.dumps(first_parent))
+    second_parent["candidate_id"] = "second-coordinated-area"
+    second_parent["candidate_name"] = "Second Coordinated Area"
+    second_parent["target_refs"] = [
+        {"target_type": "ski_area", "target_id": "second-coordinated-area"}
+    ]
+    second_parent["ski_area_boundary"]["component_candidate_ids"] = [
+        "operator-a-sector",
+        "operator-c-sector",
+    ]
+    payload["entity_scope_assessments"].append(second_parent)
+    _complete_new_ski_area_report_target(payload, "second-coordinated-area")
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="coordinated component operator-a-sector belongs to multiple parents",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_three_rejects_unlisted_coordinated_child() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    parent_boundary = payload["entity_scope_assessments"][0]["ski_area_boundary"]
+    parent_boundary["component_candidate_ids"] = [
+        "operator-a-sector",
+        "replacement-sector",
+    ]
+    replacement = json.loads(json.dumps(payload["entity_scope_assessments"][2]))
+    replacement["candidate_id"] = "replacement-sector"
+    replacement["candidate_name"] = "Replacement Sector"
+    payload["entity_scope_assessments"].append(replacement)
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "coordinated child operator-b-sector is not listed by parent "
+            "coordinated-area"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
 def test_schema_three_rejects_ski_area_identity_without_owner_evidence() -> None:
     payload = _scope_report_payload(
         candidate_kind="ski_area",
@@ -1283,6 +2018,52 @@ def test_ski_area_boundary_markdown_is_rendered() -> None:
     assert "`parent-area`" in rendered
     assert "`parent_owned`" in rendered
     assert "`redundant`" in rendered
+    assert "| Components |" not in rendered
+    assert "| Coordination Evidence |" not in rendered
+
+
+def test_coordinated_ski_area_markdown_renders_components_and_evidence() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    _coordinated_parent(payload)["ski_area_boundary"][
+        "coordination_evidence_families"
+    ].reverse()
+    report = CatalogCurationReport.model_validate(payload)
+
+    rendered = render_catalog_curation_report_markdown(report)
+
+    evidence_refs = (
+        "`coordination-inventory`, `coordination-roster`, "
+        "`coordination-operations`, `coordination-pass`, "
+        "`coordination-assignment`"
+    )
+    family_ownership = "<br>".join(
+        [
+            "`complete_terrain_lift_inventory`: components "
+            "`operator-a-sector`, `operator-b-sector`; evidence "
+            "`coordination-inventory`",
+            "`exhaustive_component_operator_roster`: components "
+            "`operator-a-sector`, `operator-b-sector`; evidence "
+            "`coordination-roster`",
+            "`component_addressable_operations_status`: components "
+            "`operator-a-sector`, `operator-b-sector`; evidence "
+            "`coordination-operations`",
+            "`every_component_pass_coverage`: components "
+            "`operator-a-sector`, `operator-b-sector`; evidence "
+            "`coordination-pass`",
+            "`direct_component_parent_assignment`: components "
+            "`operator-a-sector`, `operator-b-sector`; evidence "
+            "`coordination-assignment`",
+        ]
+    )
+    parent_row = (
+        "| `example-access` |  | `complete` | `not_applicable` | "
+        "`coordinated` | `unknown` | `shared_only` | `aggregated` | "
+        "`material` | `operator-a-sector`, `operator-b-sector` | "
+        f"{evidence_refs} | {family_ownership} | {evidence_refs} |"
+    )
+
+    assert "| Components | Coordination Evidence | Evidence Families |" in rendered
+    assert rendered.splitlines().count(parent_row) == 1
 
 
 def test_schema_three_graph_is_required_only_when_requested() -> None:
