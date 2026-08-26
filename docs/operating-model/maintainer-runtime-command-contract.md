@@ -489,6 +489,12 @@ including both bounded CI waits:
   while either recovery authority exists;
 - current generations and ordinary PRs both use `prepare curation`, then obey
   only the returned generation result and typed `next_action`;
+- a current generation reported as `head-drift` remains visible as immutable
+  diagnostic history but does not suppress the same PR's current remote head
+  from ordinary eligibility. The scheduled cycle must select that eligible
+  current head normally; helper-owned `prepare curation` then invalidates the
+  stale generation and creates the next generation under the active lease.
+  Never restore or replay the stale generation's unpublished checkpoint;
 - same-run first-wait and second-wait polling uses the already-held lease and
   composes `lock_heartbeat_curation -> inspect_curation ->
   lock_heartbeat_curation` before every branch; it never reacquires. A

@@ -290,7 +290,11 @@ def inspect_curation(
         )
         for generation in active_generations
     )
-    generation_pr_numbers = {item.pr_number for item in active_generations}
+    generation_pr_numbers = {
+        item.pr_number
+        for item in generation_summaries
+        if item.availability_reason != "head-drift"
+    }
 
     eligible = tuple(
         sorted(

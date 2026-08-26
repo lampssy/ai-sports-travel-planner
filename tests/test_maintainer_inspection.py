@@ -671,6 +671,24 @@ def test_curation_inventory_exposes_current_generation_and_suppresses_eligibilit
     assert [candidate.number for candidate in inventory.eligible] == [43]
 
 
+def test_head_drift_generation_exposes_current_remote_head_as_ordinary_work() -> None:
+    generation = _generation()
+
+    inventory = inspect_curation(
+        (
+            _pull_request(head_sha=SHA_D, is_draft=True),
+            _pull_request(43),
+        ),
+        {},
+        generations=(generation,),
+    )
+
+    assert inventory.generations[0].availability_reason == "head-drift"
+    assert inventory.generations[0].retryable is False
+    assert inventory.generations[0].next_action is None
+    assert [candidate.number for candidate in inventory.eligible] == [42, 43]
+
+
 def test_external_recovery_authority_hides_curation_generation() -> None:
     generation = _generation()
     pull_request = _pull_request()

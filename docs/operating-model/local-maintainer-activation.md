@@ -159,6 +159,12 @@ The installed skill must:
   helper-returned action as the clean-review branch and use the explicit
   requested-changes branch only after review finds bounded in-model defects.
   Never infer validation, publication, or readiness from a delta checkpoint;
+- treat a current generation with `availability_reason=head-drift` as
+  immutable diagnostic history, not resumable authority. It must not suppress
+  the same PR's current remote head from ordinary eligibility. Select that
+  eligible head normally and let helper-owned `prepare curation` invalidate the
+  stale generation and create the next one under the active lease; never
+  restore its unpublished checkpoint;
 - read curation automation memory using `CODEX_HOME` or the `$HOME/.codex`
   fallback, revalidate any unpublished-follow-up PR/head against helper
   inspection, and prioritize the oldest still-exact eligible follow-up before
