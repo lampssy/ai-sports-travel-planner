@@ -13,7 +13,8 @@ immutable CatalogSnapshot with these independent entity types:
 - ski_regions: trip-market and regional-network umbrellas;
 - stay_destinations: bookable town/destination contexts;
 - stay_bases: accommodation zones owned by one stay destination;
-- ski_areas: independent terrain and weather-evidence entities;
+- ski_areas: complete terrain entities with independent or coordinated evidence
+  ownership;
 - ski_area_access: explicit sourced stay-base-to-ski-area relationships;
 - terrain_domains: ski-connected aggregates over at least two ski areas;
 - lift_pass_products: ticket availability, coverage, prices, and optional
@@ -35,6 +36,54 @@ explicit development/test operation.
 
 The catalog and trust manifest use coordinated schema version `2`. Mixed
 catalog/trust versions are invalid.
+
+### Coordinated Ski-Area Evidence
+
+A coordinated multi-operator ski area remains one complete terrain entity; its
+curation provenance does not create runtime component entities. Its bounded
+official packet requires all five evidence families:
+
+1. `complete_terrain_lift_inventory`: a complete official map or lift inventory
+   supporting `official_complete_lift_inventory`;
+2. `exhaustive_component_operator_roster`: an exhaustive official operator or
+   component roster;
+3. `component_addressable_operations_status`: a current official status or
+   schedule presentation supporting `coordinated_status_or_schedule`;
+4. `every_component_pass_coverage`: an official pass supporting
+   `common_full_coverage_pass`; and
+5. `direct_component_parent_assignment`: official evidence assigning every
+   component directly to the parent.
+
+The parent records these in `coordination_evidence_families`. Each typed item
+has non-empty `evidence_refs` and `covered_component_candidate_ids`; the covered
+IDs must equal the parent's exact `component_candidate_ids`. Family evidence
+must be `source_type=official` and appear in the boundary and scope evidence
+refs. Aggregate `coordination_evidence_refs` equals the union of all family
+refs. A coordinated claim or any of this metadata requires report schema
+version 3.
+
+Each coordinated child is assessed exactly once with
+`disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
+parent, a target reference to that parent, and `operational_scope=coordinated`.
+Children do not repeat the parent's component or coordination evidence metadata.
+
+Those child declarations do not override source-backed boundary evidence.
+Complete terrain plus a terrain-identity signal is checked against owner
+categories derived directly from signals: operations (`separate_operator` or
+`independent_status_or_schedule`), weather
+(`independent_weather_presentation`), and pass (`full_local_pass` together with
+`pass_scope=full_local`). A connected component independently passes with two
+categories including operations or weather; a transfer-required or disconnected
+component passes with one. `not_separate`, `redundant`, `coordinated`,
+parent-owned weather, shared branding, and provider consensus cannot suppress
+that evidence. Sector terrain and one connected pass-only category remain
+insufficient.
+
+Broader official status or pass sources are acceptable only when every
+coordinated component is exactly addressable. A shared pass alone is necessary
+but insufficient: it cannot establish the boundary or replace the inventory,
+roster, current operations, or component assignment. `weather_scope` and
+weather activation remain independently gated by ADR 0021.
 
 Feature presence uses `AvailabilityStatus`; stay-base structure and character
 use `BaseType` and `BaseCharacterFact`; local and ski-day apres use

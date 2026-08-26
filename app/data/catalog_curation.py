@@ -9,7 +9,14 @@ from types import MappingProxyType
 from typing import Any, Literal, Mapping
 from urllib.parse import quote, urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from app.domain.catalog import CatalogSnapshot, LiftPassProduct, SkiArea
 from app.integrations.open_meteo import weather_elevation_points
@@ -90,6 +97,9 @@ CatalogScopeSignalType = Literal[
     "independent_stay_market",
     "direct_access_relationship",
     "official_product_identity",
+    "official_complete_lift_inventory",
+    "coordinated_status_or_schedule",
+    "common_full_coverage_pass",
 ]
 CatalogAssessmentStatus = Literal["pass", "fail", "unresolved"]
 CatalogCoordinateDerivationAttemptMethod = Literal[
@@ -158,7 +168,14 @@ CatalogSkiAreaParentConnectivity = Literal[
     "not_applicable",
     "unknown",
 ]
-CatalogSkiAreaOwnerScope = Literal[
+CatalogSkiAreaOperationalScope = Literal[
+    "independent",
+    "parent_owned",
+    "coordinated",
+    "mixed",
+    "unknown",
+]
+CatalogSkiAreaWeatherScope = Literal[
     "independent",
     "parent_owned",
     "mixed",
@@ -178,6 +195,13 @@ CatalogSkiAreaProviderConsensus = Literal[
     "unknown",
 ]
 CatalogSkiAreaSeparationValue = Literal["material", "redundant", "unresolved"]
+CatalogSkiAreaCoordinationEvidenceFamilyType = Literal[
+    "complete_terrain_lift_inventory",
+    "exhaustive_component_operator_roster",
+    "component_addressable_operations_status",
+    "every_component_pass_coverage",
+    "direct_component_parent_assignment",
+]
 JsonValue = str | int | float | bool | None | dict[str, Any] | list[Any]
 
 SOURCE_BACKED_TRUST_STATUSES = {"verified", "verified_with_adjustment"}
@@ -211,7 +235,27 @@ LEGACY_INDEPENDENT_SKI_AREA_SIGNALS = frozenset(
     }
 )
 SKI_AREA_TERRAIN_IDENTITY_SIGNALS = frozenset(
-    {"official_independent_identity", "child_scoped_terrain_metrics"}
+    {
+        "official_independent_identity",
+        "child_scoped_terrain_metrics",
+        "official_complete_lift_inventory",
+    }
+)
+SKI_AREA_COORDINATED_OPERATION_SIGNALS = frozenset(
+    {
+        "official_complete_lift_inventory",
+        "coordinated_status_or_schedule",
+        "common_full_coverage_pass",
+    }
+)
+SKI_AREA_COORDINATED_EVIDENCE_FAMILY_ORDER: tuple[
+    CatalogSkiAreaCoordinationEvidenceFamilyType, ...
+] = (
+    "complete_terrain_lift_inventory",
+    "exhaustive_component_operator_roster",
+    "component_addressable_operations_status",
+    "every_component_pass_coverage",
+    "direct_component_parent_assignment",
 )
 SKI_AREA_OPERATION_OWNER_SIGNALS = frozenset(
     {"separate_operator", "independent_status_or_schedule"}
@@ -842,15 +886,35 @@ class CatalogEntityScopeTargetRef(CatalogCurationContractModel):
         return self.target_type, self.target_id
 
 
+class CatalogSkiAreaCoordinationEvidenceFamily(CatalogCurationContractModel):
+    family: CatalogSkiAreaCoordinationEvidenceFamilyType
+    evidence_refs: list[str] = Field(min_length=1)
+    covered_component_candidate_ids: list[str] = Field(min_length=1)
+
+    @field_validator("evidence_refs", "covered_component_candidate_ids")
+    @classmethod
+    def validate_reference_lists(
+        cls, values: list[str], info: ValidationInfo
+    ) -> list[str]:
+        return _validate_string_list(
+            values, f"coordination evidence family {info.field_name}"
+        )
+
+
 class CatalogSkiAreaBoundaryAssessment(CatalogCurationContractModel):
     parent_ski_area_id: str | None = None
     terrain_scope: CatalogSkiAreaTerrainScope
     connectivity_to_parent: CatalogSkiAreaParentConnectivity
-    operational_scope: CatalogSkiAreaOwnerScope
-    weather_scope: CatalogSkiAreaOwnerScope
+    operational_scope: CatalogSkiAreaOperationalScope
+    weather_scope: CatalogSkiAreaWeatherScope
     pass_scope: CatalogSkiAreaPassScope
     provider_consensus: CatalogSkiAreaProviderConsensus
     separation_value: CatalogSkiAreaSeparationValue
+    component_candidate_ids: list[str] = Field(default_factory=list)
+    coordination_evidence_refs: list[str] = Field(default_factory=list)
+    coordination_evidence_families: list[CatalogSkiAreaCoordinationEvidenceFamily] = (
+        Field(default_factory=list)
+    )
     evidence_refs: list[str] = Field(min_length=1)
 
     @field_validator("parent_ski_area_id")
@@ -858,10 +922,16 @@ class CatalogSkiAreaBoundaryAssessment(CatalogCurationContractModel):
     def validate_parent_ski_area_id(cls, value: str | None) -> str | None:
         return _validate_optional_non_blank_string(value, "parent_ski_area_id")
 
-    @field_validator("evidence_refs")
+    @field_validator(
+        "component_candidate_ids",
+        "coordination_evidence_refs",
+        "evidence_refs",
+    )
     @classmethod
-    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
-        return _validate_string_list(values, "ski-area boundary evidence_refs")
+    def validate_reference_lists(
+        cls, values: list[str], info: ValidationInfo
+    ) -> list[str]:
+        return _validate_string_list(values, f"ski-area boundary {info.field_name}")
 
     @model_validator(mode="after")
     def validate_parent_reference(self) -> CatalogSkiAreaBoundaryAssessment:
@@ -873,6 +943,42 @@ class CatalogSkiAreaBoundaryAssessment(CatalogCurationContractModel):
         elif self.parent_ski_area_id is None:
             raise ValueError("ski-area parent connectivity requires parent_ski_area_id")
         return self
+
+    @model_validator(mode="after")
+    def validate_coordination_metadata(self) -> CatalogSkiAreaBoundaryAssessment:
+        if self.operational_scope != "coordinated" and self.has_coordination_metadata:
+            raise ValueError(
+                "coordination metadata requires operational_scope=coordinated"
+            )
+        family_names = [
+            evidence_family.family
+            for evidence_family in self.coordination_evidence_families
+        ]
+        if len(family_names) != len(set(family_names)):
+            raise ValueError("coordination evidence families must be unique")
+        family_evidence_refs = {
+            evidence_ref
+            for evidence_family in self.coordination_evidence_families
+            for evidence_ref in evidence_family.evidence_refs
+        }
+        if set(self.coordination_evidence_refs) != family_evidence_refs:
+            raise ValueError(
+                "coordination_evidence_refs must equal the union of coordination "
+                "evidence family refs"
+            )
+        if not set(self.coordination_evidence_refs).issubset(self.evidence_refs):
+            raise ValueError(
+                "coordination_evidence_refs must be included in evidence_refs"
+            )
+        return self
+
+    @property
+    def has_coordination_metadata(self) -> bool:
+        return bool(
+            self.component_candidate_ids
+            or self.coordination_evidence_refs
+            or self.coordination_evidence_families
+        )
 
 
 class CatalogEntityScopeAssessment(CatalogCurationContractModel):
@@ -1422,6 +1528,7 @@ def validate_catalog_curation_report(
 
 def _validate_ski_area_boundary_assessment(
     assessment: CatalogEntityScopeAssessment,
+    evidence_by_id: Mapping[str, CatalogEvidenceItem],
     issues: list[str],
 ) -> None:
     boundary = assessment.ski_area_boundary
@@ -1440,6 +1547,15 @@ def _validate_ski_area_boundary_assessment(
         issues.append(
             f"{candidate_id}: ski-area boundary evidence must also appear in "
             "scope evidence_refs"
+        )
+
+    if boundary.has_coordination_metadata and assessment.disposition not in {
+        "represented",
+        "add_entity",
+    }:
+        issues.append(
+            f"{candidate_id}: coordination metadata is only valid on a "
+            "represented or added parent"
         )
 
     if assessment.disposition == "not_separate":
@@ -1480,6 +1596,58 @@ def _validate_ski_area_boundary_assessment(
             f"{candidate_id}: separate ski area requires resolved parent connectivity"
         )
 
+    if boundary.operational_scope == "coordinated":
+        for required_signal in sorted(SKI_AREA_COORDINATED_OPERATION_SIGNALS):
+            if required_signal not in signals:
+                issues.append(
+                    f"{candidate_id}: coordinated ski area requires signal "
+                    f"{required_signal}"
+                )
+        if boundary.pass_scope not in {"full_local", "shared_only"}:
+            issues.append(
+                f"{candidate_id}: coordinated ski area requires "
+                "pass_scope=full_local or shared_only"
+            )
+        if len(boundary.component_candidate_ids) < 2:
+            issues.append(
+                f"{candidate_id}: coordinated ski area requires at least two "
+                "component candidates"
+            )
+        if not boundary.coordination_evidence_refs:
+            issues.append(
+                f"{candidate_id}: coordinated ski area requires coordination "
+                "evidence refs"
+            )
+        families_by_name = {
+            family.family: family for family in boundary.coordination_evidence_families
+        }
+        for family_name in SKI_AREA_COORDINATED_EVIDENCE_FAMILY_ORDER:
+            family = families_by_name.get(family_name)
+            if family is None:
+                issues.append(
+                    f"{candidate_id}: coordinated ski area requires evidence "
+                    f"family {family_name}"
+                )
+                continue
+            expected_components = set(boundary.component_candidate_ids)
+            covered_components = set(family.covered_component_candidate_ids)
+            if covered_components != expected_components:
+                missing = ", ".join(sorted(expected_components - covered_components))
+                extra = ", ".join(sorted(covered_components - expected_components))
+                issues.append(
+                    f"{candidate_id}: evidence family {family_name} must cover "
+                    "exactly coordinated components; "
+                    f"missing={missing or 'none'}; extra={extra or 'none'}"
+                )
+            for evidence_ref in family.evidence_refs:
+                evidence = evidence_by_id.get(evidence_ref)
+                if evidence is None or evidence.source_type != "official":
+                    issues.append(
+                        f"{candidate_id}: evidence family {family_name} requires "
+                        f"official evidence {evidence_ref}"
+                    )
+        return
+
     independent_operations = boundary.operational_scope == "independent" and bool(
         SKI_AREA_OPERATION_OWNER_SIGNALS.intersection(signals)
     )
@@ -1506,6 +1674,154 @@ def _validate_ski_area_boundary_assessment(
             f"{candidate_id}: connected ski area requires two independent owner "
             "categories, including operations or weather"
         )
+
+
+def _coordinated_child_independently_satisfies_separate_ski_area_gates(
+    assessment: CatalogEntityScopeAssessment,
+) -> bool:
+    boundary = assessment.ski_area_boundary
+    if boundary is None or boundary.terrain_scope != "complete":
+        return False
+
+    signals = set(assessment.signals)
+    if not SKI_AREA_TERRAIN_IDENTITY_SIGNALS.intersection(signals):
+        return False
+
+    independent_operations = bool(
+        SKI_AREA_OPERATION_OWNER_SIGNALS.intersection(signals)
+    )
+    independent_weather = bool(SKI_AREA_WEATHER_OWNER_SIGNALS.intersection(signals))
+    independent_pass = boundary.pass_scope == "full_local" and bool(
+        SKI_AREA_PASS_OWNER_SIGNALS.intersection(signals)
+    )
+    owner_categories = sum(
+        (independent_operations, independent_weather, independent_pass)
+    )
+
+    if boundary.connectivity_to_parent == "connected":
+        return owner_categories >= 2 and (independent_operations or independent_weather)
+    if boundary.connectivity_to_parent in {"transfer_required", "disconnected"}:
+        return owner_categories >= 1
+    return False
+
+
+def _validate_coordinated_ski_area_components(
+    assessments: list[CatalogEntityScopeAssessment],
+    issues: list[str],
+) -> None:
+    by_candidate_id = {
+        assessment.candidate_id: assessment for assessment in assessments
+    }
+    component_parent_by_id: dict[str, str] = {}
+    coordinated_parent_by_target_id: dict[str, CatalogEntityScopeAssessment] = {}
+
+    for parent in assessments:
+        boundary = parent.ski_area_boundary
+        if boundary is None or boundary.operational_scope != "coordinated":
+            continue
+        if parent.disposition not in {"represented", "add_entity"}:
+            continue
+        parent_target_ids = [target.target_id for target in parent.target_refs]
+        if len(parent_target_ids) != 1:
+            issues.append(
+                f"{parent.candidate_id}: coordinated ski area must target exactly "
+                "one catalog ski area"
+            )
+            continue
+        parent_target_id = parent_target_ids[0]
+        existing_parent = coordinated_parent_by_target_id.get(parent_target_id)
+        if existing_parent is not None:
+            issues.append(
+                f"ski_area:{parent_target_id}: coordinated parent is represented "
+                "by multiple candidates"
+            )
+            continue
+        coordinated_parent_by_target_id[parent_target_id] = parent
+        for component_id in boundary.component_candidate_ids:
+            if component_id == parent.candidate_id:
+                issues.append(
+                    f"{parent.candidate_id}: coordinated parent cannot list itself "
+                    "as a component"
+                )
+                continue
+            prior_parent = component_parent_by_id.setdefault(
+                component_id, parent_target_id
+            )
+            if prior_parent != parent_target_id:
+                issues.append(
+                    f"coordinated component {component_id} belongs to multiple parents"
+                )
+            component = by_candidate_id.get(component_id)
+            if component is None:
+                issues.append(
+                    f"{parent.candidate_id}: coordinated component {component_id} "
+                    "has no scope assessment"
+                )
+                continue
+            component_boundary = component.ski_area_boundary
+            if component.candidate_kind != "ski_area":
+                issues.append(
+                    f"{component_id}: coordinated component must be a ski-area "
+                    "candidate"
+                )
+            if component.disposition != "not_separate":
+                issues.append(
+                    f"{component_id}: coordinated component must use "
+                    "disposition=not_separate"
+                )
+            if component_boundary is None:
+                continue
+            if component_boundary.operational_scope != "coordinated":
+                issues.append(
+                    f"{component_id}: coordinated component must use "
+                    "operational_scope=coordinated"
+                )
+            if component_boundary.parent_ski_area_id != parent_target_id:
+                issues.append(
+                    f"{component_id}: coordinated component must name coordinated "
+                    f"parent {parent_target_id}"
+                )
+            if component_boundary.weather_scope == "independent":
+                issues.append(
+                    f"{component_id}: coordinated component cannot retain "
+                    "independent weather scope"
+                )
+            if {target.target_id for target in component.target_refs} != {
+                parent_target_id
+            }:
+                issues.append(
+                    f"{component_id}: coordinated component must target coordinated "
+                    f"parent ski_area:{parent_target_id}"
+                )
+
+    for child in assessments:
+        boundary = child.ski_area_boundary
+        if (
+            child.disposition != "not_separate"
+            or boundary is None
+            or boundary.operational_scope != "coordinated"
+            or boundary.parent_ski_area_id is None
+        ):
+            continue
+        if _coordinated_child_independently_satisfies_separate_ski_area_gates(child):
+            issues.append(
+                f"{child.candidate_id}: coordinated component independently "
+                "satisfies ordinary separate-ski-area evidence gates"
+            )
+        parent = coordinated_parent_by_target_id.get(boundary.parent_ski_area_id)
+        if parent is None:
+            issues.append(
+                f"{child.candidate_id}: coordinated child has no represented or "
+                "added coordinated parent"
+            )
+            continue
+        parent_boundary = parent.ski_area_boundary
+        assert parent_boundary is not None
+        if child.candidate_id not in parent_boundary.component_candidate_ids:
+            issues.append(
+                f"coordinated child {child.candidate_id} is not listed by parent "
+                f"{boundary.parent_ski_area_id}"
+            )
 
 
 def _validate_entity_scope_assessments(
@@ -1536,6 +1852,19 @@ def _validate_entity_scope_assessments(
         if assessment.is_passing
     }
     for assessment in assessments:
+        boundary = assessment.ski_area_boundary
+        if (
+            report.report_schema_version < 3
+            and boundary is not None
+            and (
+                boundary.operational_scope == "coordinated"
+                or boundary.has_coordination_metadata
+            )
+        ):
+            issues.append(
+                f"{assessment.candidate_id}: coordinated ski area requires "
+                "report schema version 3"
+            )
         if report.report_schema_version >= 2:
             if assessment.disposition in BACKLOG_REQUIRED_SCOPE_DISPOSITIONS:
                 if assessment.backlog_ref is None:
@@ -1567,7 +1896,11 @@ def _validate_entity_scope_assessments(
                 "assessment requires boundary contract"
             )
         if report.report_schema_version == 3:
-            _validate_ski_area_boundary_assessment(assessment, issues)
+            _validate_ski_area_boundary_assessment(
+                assessment,
+                evidence_by_id,
+                issues,
+            )
         for target_ref in assessment.target_refs:
             referenced_target_keys.add(target_ref.target_key)
             if target_ref.target_key not in reviewed_by_key:
@@ -1647,6 +1980,9 @@ def _validate_entity_scope_assessments(
                 f"{assessment.candidate_id}: new terrain domain requires "
                 "ski_connected_terrain"
             )
+
+    if report.report_schema_version == 3:
+        _validate_coordinated_ski_area_components(assessments, issues)
 
     if report.report_schema_version < 2:
         return
@@ -2017,6 +2353,30 @@ def _markdown_cell(value: str) -> str:
 
 def _code_cell(value: str) -> str:
     return f"`{_markdown_cell(value)}`"
+
+
+def _render_coordination_evidence_families(
+    boundary: CatalogSkiAreaBoundaryAssessment,
+) -> str:
+    families_by_name = {
+        family.family: family for family in boundary.coordination_evidence_families
+    }
+    rendered_families: list[str] = []
+    for family_name in SKI_AREA_COORDINATED_EVIDENCE_FAMILY_ORDER:
+        family = families_by_name.get(family_name)
+        if family is None:
+            continue
+        components = ", ".join(
+            _code_cell(component_id)
+            for component_id in family.covered_component_candidate_ids
+        )
+        evidence = ", ".join(
+            _code_cell(evidence_id) for evidence_id in family.evidence_refs
+        )
+        rendered_families.append(
+            f"{_code_cell(family_name)}: components {components}; evidence {evidence}"
+        )
+    return "<br>".join(rendered_families)
 
 
 def _json_cell(value: JsonValue) -> str:
@@ -2581,15 +2941,38 @@ def render_catalog_curation_report_markdown(
             if assessment.ski_area_boundary is not None
         ]
         if ski_area_assessments:
+            includes_coordination = any(
+                bool(
+                    assessment.ski_area_boundary
+                    and (
+                        assessment.ski_area_boundary.component_candidate_ids
+                        or assessment.ski_area_boundary.coordination_evidence_refs
+                        or assessment.ski_area_boundary.coordination_evidence_families
+                    )
+                )
+                for assessment in ski_area_assessments
+            )
+            boundary_header = (
+                "| Candidate | Parent | Terrain | Connectivity | Operations | "
+                "Weather | Pass | Provider Consensus | Separation Value | "
+            )
+            boundary_divider = (
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | "
+            )
+            if includes_coordination:
+                boundary_header += (
+                    "Components | Coordination Evidence | Evidence Families | "
+                )
+                boundary_divider += "--- | --- | --- | "
+            boundary_header += "Evidence |"
+            boundary_divider += "--- |"
             lines.extend(
                 [
                     "",
                     "## Ski-Area Boundary Assessments",
                     "",
-                    "| Candidate | Parent | Terrain | Connectivity | Operations | "
-                    "Weather | Pass | Provider Consensus | Separation Value | "
-                    "Evidence |",
-                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                    boundary_header,
+                    boundary_divider,
                 ]
             )
             for assessment in ski_area_assessments:
@@ -2603,6 +2986,21 @@ def render_catalog_curation_report_markdown(
                 evidence = ", ".join(
                     _code_cell(evidence_id) for evidence_id in boundary.evidence_refs
                 )
+                coordination_cells = ""
+                if includes_coordination:
+                    components = ", ".join(
+                        _code_cell(component_id)
+                        for component_id in boundary.component_candidate_ids
+                    )
+                    coordination_evidence = ", ".join(
+                        _code_cell(evidence_id)
+                        for evidence_id in boundary.coordination_evidence_refs
+                    )
+                    family_ownership = _render_coordination_evidence_families(boundary)
+                    coordination_cells = (
+                        f" | {components} | {coordination_evidence} | "
+                        f"{family_ownership}"
+                    )
                 lines.append(
                     f"| {_code_cell(assessment.candidate_id)} | {parent} | "
                     f"{_code_cell(boundary.terrain_scope)} | "
@@ -2611,7 +3009,8 @@ def render_catalog_curation_report_markdown(
                     f"{_code_cell(boundary.weather_scope)} | "
                     f"{_code_cell(boundary.pass_scope)} | "
                     f"{_code_cell(boundary.provider_consensus)} | "
-                    f"{_code_cell(boundary.separation_value)} | {evidence} |"
+                    f"{_code_cell(boundary.separation_value)}{coordination_cells} | "
+                    f"{evidence} |"
                 )
     lines.extend(
         [

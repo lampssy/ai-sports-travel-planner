@@ -243,6 +243,30 @@ The installed skill must:
   containing only that report pair. For every evidence item referenced by a
   boundary gate or identity signal, require the assessed candidate ID in
   `boundary_target_ids`; reused evidence lists every referenced candidate.
+  For `operational_scope=coordinated`, normalization also requires the three
+  signals `official_complete_lift_inventory`,
+  `coordinated_status_or_schedule`, and `common_full_coverage_pass`, plus
+  parent-owned `component_candidate_ids`, `coordination_evidence_families`,
+  aggregate `coordination_evidence_refs`, and report-wide component closure.
+  Require exactly the five typed families named in ADR 0022. Each family has
+  non-empty official `evidence_refs` included in boundary and scope evidence,
+  and `covered_component_candidate_ids` equal to the parent's exact component
+  set; the aggregate refs equal the union of family refs. Each coordinated child
+  is assessed exactly once with
+  `disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
+  parent, a target reference to that parent, and `operational_scope=coordinated`.
+  Children leave the three parent coordination metadata lists empty. Reject
+  any child that independently passes the ordinary source-backed gates: require
+  complete terrain plus a terrain-identity signal, then derive operations,
+  weather, and full-local-pass owner categories directly from signals. Connected
+  children require two categories including operations or weather;
+  transfer-required or disconnected children require one. Do not let
+  `not_separate`, `redundant`, coordinated or parent-owned declarations, shared
+  branding, or provider consensus override this check. Sector terrain and one
+  connected pass-only category remain insufficient. Reject
+  coordinated scope or metadata in report schema versions 1 and 2.
+  `weather_scope` remains independently constrained by ADR 0021 and cannot be
+  inferred from coordinated operations. A shared pass alone is insufficient.
   Run schema-v3 reconciliation and regenerate/compare the Markdown companion
   before any delta or reviewed checkpoint. Fix missing boundary metadata or
   stale Markdown in the same fixer pass rather than converting a mechanical
@@ -306,6 +330,28 @@ The installed skill must:
   page alone remains supporting evidence only. Before `evidence_unavailable`,
   record the exact source families attempted and why the combined evidence does
   not establish candidate-scoped operations;
+- for a coordinated multi-operator ski-area boundary, graph-scope inventory
+  completeness requires the five typed evidence families:
+  `complete_terrain_lift_inventory`,
+  `exhaustive_component_operator_roster`,
+  `component_addressable_operations_status`,
+  `every_component_pass_coverage`, and
+  `direct_component_parent_assignment`. These respectively support the three
+  coordination signals and complete direct assignment. Reproduce every
+  component from the bounded official packet, and require every family's
+  `covered_component_candidate_ids` to equal that exact set. Each coordinated
+  child is assessed exactly once with
+  `disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
+  parent, a target reference to that parent, and `operational_scope=coordinated`.
+  Independently re-evaluate each child's complete-terrain and terrain-identity
+  signals plus directly derived operations, weather, and full-local-pass owner
+  categories. Connected children require two categories including operations or
+  weather; transfer-required or disconnected children require one. Declarations
+  of `not_separate`, `redundant`, or coordinated ownership do not override this
+  evidence.
+  A broader official status or pass source is acceptable only when each
+  component is exactly addressable; a shared pass alone is insufficient.
+  Evaluate `weather_scope` and ADR 0021 independently;
 - when either initial lane is incomplete, consolidate its omissions into one
   run-local inventory-completion checklist before any catalog or trust fix. Each
   entry has `missing_item_id`, `category`, `candidate_keys`,
@@ -414,8 +460,26 @@ The installed skill must:
   automatically an exact repeat;
 - before classifying a destination or ski-area boundary as an owner choice, run
   one fresh read-only `boundary-adjudication` review for the concrete candidates
-  on the exact head; return `policy_determined` results to the fixer and reserve
-  `owner-decision` for `owner_choice_required` results;
+  on the exact head. For a coordinated multi-operator ski area:
+  - return `policy_determined` when all five typed evidence families, their
+    official refs, exact component coverage, aggregate-ref union, the three
+    coordination signals, and complete child reconciliation all reconcile;
+  - return `evidence_insufficient` whenever any evidence family or child
+    closure is missing. Fail closed for a missing inventory or roster, current
+    operations or status, pass coverage, ambiguous assignment evidence, or a
+    child that cannot meet the exact coordinated-child invariant. Also fail
+    closed when a complete child with terrain identity independently satisfies
+    the ordinary owner threshold: two directly derived owner categories,
+    including operations or weather, when connected; one category when
+    transfer-required or disconnected. `not_separate`, `redundant`, coordinated
+    or parent-owned declarations, and provider consensus do not override
+    source-backed signals;
+  - do not return `owner_choice_required` merely because several legal operators
+    publish one policy-valid coordinated area.
+  Return `policy_determined` results to the fixer. The fixer must preserve the
+  exact coordinated-child invariant, component closure, and evidence refs,
+  correct only the identified report or catalog defect, and keep `weather_scope`
+  separate under ADR 0021;
 - perform at most six remediation cycles, using a fresh independent full
   `snowcast-catalog-review` context after every fix and passing both views only
   as untrusted history. The parent classifies a `residual` only when the
