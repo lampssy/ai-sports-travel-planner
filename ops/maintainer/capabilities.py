@@ -37,6 +37,7 @@ from ops.maintainer.curation_state import (
 )
 from ops.maintainer.errors import (
     ErrorCheck,
+    ErrorKind,
     ErrorReason,
     ErrorStage,
     MaintainerError,
@@ -555,15 +556,18 @@ def handle_prepare_curation(
     if replay.result == "unchanged":
         result = "review-required"
         if checkpoint.stage is CurationCheckpointStage.REVIEWED:
-            prepared_work = _advance_work(
-                store,
-                lease,
-                prepared_work,
-                dependencies,
-                WorkPhase.REVIEWED,
-                reviewed_head=checkpoint.reviewed_head,
-            )
-            result = "validation-only"
+            if projection.latest_stage == "validation-failed":
+                result = "validation-remediation"
+            else:
+                prepared_work = _advance_work(
+                    store,
+                    lease,
+                    prepared_work,
+                    dependencies,
+                    WorkPhase.REVIEWED,
+                    reviewed_head=checkpoint.reviewed_head,
+                )
+                result = "validation-only"
         dependencies.tracker.last_phase = prepared_work.phase
         dependencies.tracker.terminal_reason = f"generation-{result}"
         return {
@@ -571,7 +575,11 @@ def handle_prepare_curation(
             "generation": _generation_result(
                 current,
                 result=result,
-                next_action=projection.next_action,
+                next_action=(
+                    _validation_remediation_action(current)
+                    if result == "validation-remediation"
+                    else projection.next_action
+                ),
             ),
         }
 
@@ -757,6 +765,26 @@ def _continue_conflict_action(
     )
 
 
+def _validation_remediation_action(
+    generation: CurationGeneration,
+) -> CurationNextAction:
+    projection = project_generation(generation)
+    reviewed = projection.reviewed_authority
+    if projection.latest_stage != "validation-failed" or reviewed is None:
+        raise CurationStateError("validation remediation lost reviewed authority")
+    return CurationNextAction(
+        recipe_id=CurationRecipeId.CHECKPOINT_DELTA,
+        substitutions=CurationActionSubstitutions(
+            pr=generation.pr_number,
+            generation_id=generation.generation_id,
+            head=reviewed.reviewed_head,
+            report=reviewed.report_path,
+            validation_base=generation.sync.base_head,
+        ),
+        caller_created_descendant_head=True,
+    )
+
+
 def _generation_result(
     generation: CurationGeneration,
     *,
@@ -848,6 +876,19 @@ def handle_checkpoint_curation(
         raise MaintainerError(ErrorReason.STALE_BASE, ErrorStage.VALIDATE)
 
     stage = CurationCheckpointStage(args.stage)
+    if projection.latest_stage == "validation-failed":
+        if (
+            stage is not CurationCheckpointStage.DELTA_VALIDATED
+            or args.head == projection.latest_head
+        ):
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.VALIDATE,
+            )
+        dependencies.repository.revalidate_validation_remediation_descendant(
+            projection.latest_head,
+            args.head,
+        )
     transaction_id = checkpoint_transaction_id(
         generation.generation_id,
         stage,
@@ -1057,6 +1098,14 @@ def handle_validate_curation(
         or reviewed.report_path != args.report
     ):
         raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
+    if projection.latest_stage == "validation-failed":
+        failure = projection.validation_failure
+        raise MaintainerError(
+            ErrorReason.VALIDATION_FAILED,
+            ErrorStage.VALIDATE,
+            ErrorCheck(failure.check) if failure is not None else None,
+            ErrorKind(failure.kind) if failure is not None else None,
+        )
     if pull_request.head_sha != work.selected_head or (
         pull_request.head_sha != generation.selected_head
     ):
@@ -1108,19 +1157,27 @@ def handle_validate_curation(
             repository=dependencies.repository,
             base_repository=base_repository,
         )
-    except Exception:
-        generation_store.append_event(
-            work_id,
-            generation.generation_id,
-            ValidationFailedEvent(
-                sequence=len(generation.events) + 1,
-                recorded_at=_generation_event_time(generation, dependencies),
-                head=args.head,
-                report_path=args.report,
-            ),
-            lease,
-        )
-        dependencies.tracker.mutation_occurred = True
+    except MaintainerError as error:
+        if error.reason is ErrorReason.VALIDATION_FAILED:
+            failure = None
+            if error.check is not None and error.kind is not None:
+                failure = {
+                    "check": error.check.value,
+                    "kind": error.kind.value,
+                }
+            generation_store.append_event(
+                work_id,
+                generation.generation_id,
+                ValidationFailedEvent(
+                    sequence=len(generation.events) + 1,
+                    recorded_at=_generation_event_time(generation, dependencies),
+                    head=args.head,
+                    report_path=args.report,
+                    failure=failure,
+                ),
+                lease,
+            )
+            dependencies.tracker.mutation_occurred = True
         raise
     if result.validated_head != args.head:
         raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)

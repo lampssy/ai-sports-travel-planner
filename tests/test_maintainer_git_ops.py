@@ -2064,6 +2064,37 @@ def test_v2_git_entry_points_build_prepare_and_revalidate_objective_intent(
     assert reviewed.changed_paths == immutable.changed_paths
 
 
+def test_validation_remediation_must_strictly_descend_from_reviewed_head(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    reviewed_head = prepared.rebased_head
+    (local.checkout / "README.md").write_text(
+        "base\nmain update\nvalidation fix\n",
+        encoding="utf-8",
+    )
+    _git(local.checkout, "add", "README.md")
+    _git(local.checkout, "commit", "-m", "fix validation")
+    remediation_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    repository.revalidate_validation_remediation_descendant(
+        reviewed_head,
+        remediation_head,
+    )
+    with pytest.raises(RepositorySafetyError, match="descendant commit"):
+        repository.revalidate_validation_remediation_descendant(
+            reviewed_head,
+            reviewed_head,
+        )
+    with pytest.raises(RepositorySafetyError, match="descend from the reviewed"):
+        repository.revalidate_validation_remediation_descendant(
+            reviewed_head,
+            local.target_sha,
+        )
+
+
 def test_generation_checkpoint_creates_exact_refs_and_restores_unchanged_head(
     tmp_path: Path,
 ) -> None:

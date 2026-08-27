@@ -1543,6 +1543,20 @@ validated authority, so ordinary push cannot bypass the final deterministic
 suite while the existing manual-check path can still preserve an explicitly
 unvalidated reviewed head.
 
+A classified failed final deterministic suite is a distinct generation stage
+rather than reviewed authority that can only retry unchanged. Its durable event
+records the allowlisted failing check and failure kind. Unexpected validator
+exceptions do not create this state or descendant-mutation authority; they leave
+the generation reviewed so a later run can retry validation unchanged. The next
+owned preparation after a classified failure
+restores the exact reviewed head and returns a typed validation-remediation
+delta action. That action authorizes only a clean descendant commit correcting
+the recorded validation defect; generation identity, prepare-time base, report,
+allowed paths, remote head, and deterministic deltas stay helper-owned. The
+corrected head must receive a fresh exact-head review and reviewed checkpoint
+before validation can run again. This preserves expensive semantic progress
+without allowing failed tests to become general mutation authority.
+
 Curation report mutations are atomic at the review-artifact boundary: the
 canonical schema-v3 JSON report and its deterministic Markdown companion move
 together before any delta or reviewed checkpoint. Boundary evidence also names

@@ -394,10 +394,26 @@ def test_runtime_contract_freezes_review_disposition_branches() -> None:
             ("checkpoint", "curation")
         ]
 
+    assert contract["curation_validation_remediation"] == {
+        "applies_to_result": "validation-remediation",
+        "remediation_base": "reviewed-head",
+        "allowed_change": "recorded-deterministic-validation-fix",
+        "next_recipe": "checkpoint_curation_delta",
+        "caller_created_descendant_head": True,
+        "after_checkpoint": "fresh-full-review",
+    }
+    remediation_recipe = contract["curation_validation_remediation"]["next_recipe"]
+    parsed = _parse_recipe_sequence([remediation_recipe])
+    assert [(item.family, item.command) for item in parsed] == [
+        ("checkpoint", "curation")
+    ]
+
     assert _allowed_next_steps()["prepare_curation*"] == (
-        "enter the full semantic flow for prepared or review-required work; "
-        "a clean review uses checkpoint_curation_reviewed, while requested "
-        "changes use checkpoint_curation_delta after bounded remediation"
+        "branch on its result: prepared/review-required enter the full semantic "
+        "flow; validation-only resumes deterministic finalization; "
+        "validation-remediation fixes only the recorded deterministic failure, "
+        "checkpoints the clean descendant through the typed delta action, and "
+        "requires a fresh exact-head review"
     )
 
     sources = {

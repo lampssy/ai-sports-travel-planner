@@ -177,6 +177,21 @@ class CurationActionSubstitutions(_StrictModel):
 class CurationNextAction(_StrictModel):
     recipe_id: CurationRecipeId
     substitutions: CurationActionSubstitutions
+    caller_created_descendant_head: Literal[True] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+
+    @model_validator(mode="after")
+    def validate_caller_created_head(self) -> Self:
+        if (
+            self.caller_created_descendant_head
+            and self.recipe_id is not CurationRecipeId.CHECKPOINT_DELTA
+        ):
+            raise ValueError(
+                "caller-created descendant is limited to delta checkpoints"
+            )
+        return self
 
 
 class _GenerationEvent(_StrictModel):
@@ -215,10 +230,31 @@ class CheckpointCompletedEvent(_GenerationEvent):
     squash_ref: str = Field(pattern=_REF_PATTERN)
 
 
+class CurationValidationFailure(_StrictModel):
+    check: Literal[
+        "preflight",
+        "catalog-validation",
+        "curation-reconciliation",
+        "catalog-tests",
+        "post-validation",
+        "remote-head",
+        "publication-input",
+    ]
+    kind: Literal[
+        "mismatch",
+        "command-failed",
+        "timeout",
+        "transport",
+        "invalid-file",
+        "not-basename",
+    ]
+
+
 class ValidationFailedEvent(_GenerationEvent):
     kind: Literal["validation-failed"] = "validation-failed"
     head: str = Field(pattern=_SHA_PATTERN)
     report_path: str = Field(pattern=_REPORT_PATTERN)
+    failure: CurationValidationFailure | None = None
 
 
 class ValidationPassedEvent(_GenerationEvent):
@@ -394,6 +430,7 @@ class CurationGenerationProjection(_StrictModel):
         CurationCheckpointStage
         | Literal[
             "prepared",
+            "validation-failed",
             "fully-validated",
             "superseded",
             "invalidated",
@@ -407,6 +444,7 @@ class CurationGenerationProjection(_StrictModel):
     checkpoint_authority: CurationCheckpointAuthority | None = None
     reviewed_authority: ReviewedCurationAuthority | None = None
     validated_authority: ValidatedCurationAuthority | None = None
+    validation_failure: CurationValidationFailure | None = None
     next_action: CurationNextAction | None = None
 
 
@@ -431,6 +469,7 @@ def project_generation(
         CurationCheckpointStage
         | Literal[
             "prepared",
+            "validation-failed",
             "fully-validated",
             "superseded",
             "invalidated",
@@ -442,6 +481,7 @@ def project_generation(
     reviewed: ReviewedCurationAuthority | None = None
     checkpoint: CurationCheckpointAuthority | None = None
     validated: ValidatedCurationAuthority | None = None
+    validation_failure: CurationValidationFailure | None = None
     latest_report: str | None = generation.events[0].report_path
     latest_refs: tuple[str, str] | None = None
 
@@ -458,6 +498,7 @@ def project_generation(
             latest_refs = (event.checkpoint_ref, event.squash_ref)
             checkpoint = _checkpoint_authority(generation, started, event)
             validated = None
+            validation_failure = None
             if started.stage is CurationCheckpointStage.REVIEWED:
                 reviewed = _reviewed_authority(
                     generation,
@@ -467,7 +508,9 @@ def project_generation(
             else:
                 reviewed = None
         elif isinstance(event, ValidationFailedEvent):
+            latest_stage = "validation-failed"
             validated = None
+            validation_failure = event.failure
         elif isinstance(event, ValidationPassedEvent):
             if reviewed is None:
                 raise CurationStateError("validated generation lost reviewed authority")
@@ -478,11 +521,13 @@ def project_generation(
                 resulting_graph_markdown=event.resulting_graph_markdown,
                 validated_at=event.recorded_at,
             )
+            validation_failure = None
         elif isinstance(event, GenerationClosedEvent):
             latest_stage = event.kind.removeprefix("generation-")
             checkpoint = None
             reviewed = None
             validated = None
+            validation_failure = None
 
     next_action: CurationNextAction | None = None
     if incomplete is not None:
@@ -496,6 +541,18 @@ def project_generation(
                 generation_id=generation.generation_id,
                 head=latest_head,
                 report=latest_report,
+                validation_base=generation.sync.base_head,
+            ),
+        )
+    elif latest_stage == "validation-failed":
+        assert reviewed is not None
+        next_action = CurationNextAction(
+            recipe_id=CurationRecipeId.PREPARE,
+            substitutions=CurationActionSubstitutions(
+                pr=generation.pr_number,
+                generation_id=generation.generation_id,
+                head=reviewed.reviewed_head,
+                report=reviewed.report_path,
                 validation_base=generation.sync.base_head,
             ),
         )
@@ -533,6 +590,7 @@ def project_generation(
     if latest_refs is None and latest_stage in {
         CurationCheckpointStage.DELTA_VALIDATED,
         CurationCheckpointStage.REVIEWED,
+        "validation-failed",
         "fully-validated",
     }:
         raise CurationStateError("generation projection lost checkpoint refs")
@@ -547,6 +605,7 @@ def project_generation(
         checkpoint_authority=checkpoint,
         reviewed_authority=reviewed,
         validated_authority=validated,
+        validation_failure=validation_failure,
         next_action=next_action,
     )
 

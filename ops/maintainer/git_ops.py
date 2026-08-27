@@ -850,6 +850,27 @@ class GitRepository:
             builder=build_preparation_intent_snapshot,
         )
 
+    def revalidate_validation_remediation_descendant(
+        self,
+        reviewed_head: str,
+        remediation_head: str,
+    ) -> None:
+        """Require one validation remediation to extend its reviewed head."""
+        _validate_sha(reviewed_head)
+        _validate_sha(remediation_head)
+        self.verify_repository()
+        self._verify_commit(reviewed_head)
+        self._verify_commit(remediation_head)
+        if reviewed_head == remediation_head:
+            raise RepositorySafetyError(
+                "validation remediation must create a descendant commit"
+            )
+        self._assert_ancestor(
+            reviewed_head,
+            remediation_head,
+            "validation remediation must descend from the reviewed head",
+        )
+
     def checkpoint_curation_generation(
         self,
         pull_request: PullRequest,

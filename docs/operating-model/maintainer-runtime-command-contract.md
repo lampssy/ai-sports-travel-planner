@@ -264,6 +264,14 @@ not have to derive an invocation.
     "reviewed_checkpoint_gate": "fresh-clean-exact-head-review",
     "delta_authority": "helper-validation-on-invocation"
   },
+  "curation_validation_remediation": {
+    "applies_to_result": "validation-remediation",
+    "remediation_base": "reviewed-head",
+    "allowed_change": "recorded-deterministic-validation-fix",
+    "next_recipe": "checkpoint_curation_delta",
+    "caller_created_descendant_head": true,
+    "after_checkpoint": "fresh-full-review"
+  },
   "ci_waits": {
     "initial_wait": {
       "poll": ["lock_heartbeat_curation", "inspect_curation", "lock_heartbeat_curation"],
@@ -376,10 +384,13 @@ not have to derive an invocation.
 - `${PR}`, report path, work ID, candidate identity, and branch come from the
   current helper inventory or the result of the immediately preceding helper
   capability. `${HEAD}` normally does too. For the explicit curation
-  review-disposition branches only, `${HEAD}` may instead be the exact clean
-  commit produced by allowed pre-review normalization or bounded remediation;
-  the checkpoint helper validates that caller-created head before granting any
-  recovery authority.
+  review-disposition branches and the typed validation-remediation branch only,
+  `${HEAD}` may instead be the exact clean commit produced by allowed
+  pre-review normalization or bounded remediation. Validation remediation is
+  authorized only when the returned next action sets
+  `caller_created_descendant_head=true`; only `${HEAD}` may change, and it must
+  be a clean descendant of the returned reviewed head. The checkpoint helper
+  validates that caller-created head before granting any recovery authority.
 - `${GENERATION_ID}` is copied exactly from the current curation generation or
   its helper-returned `next_action`; it is never synthesized from prose.
 - `${BASE_DIR}` is a caller-created detached clean checkout whose `HEAD`
@@ -398,12 +409,12 @@ not have to derive an invocation.
 | `migrate_curation_state` | run `inspect_curation`; migration is an owner activation action and never enters a semantic cycle directly |
 | `lock_acquire_*` | copy `run_id`, heartbeat, then run the selected worker capability |
 | `lock_heartbeat_*` | continue the already selected sequence; curation may also return helper-owned cumulative `ci_budget`, but heartbeat grants no new authority |
-| `prepare_curation*` | enter the full semantic flow for prepared or review-required work; a clean review uses checkpoint_curation_reviewed, while requested changes use checkpoint_curation_delta after bounded remediation |
+| `prepare_curation*` | branch on its result: prepared/review-required enter the full semantic flow; validation-only resumes deterministic finalization; validation-remediation fixes only the recorded deterministic failure, checkpoints the clean descendant through the typed delta action, and requires a fresh exact-head review |
 | `prepare_ci_repair` | branch on its phase: `repair-active` re-establishes the exact repair worktree for one static test-only repair plus a fresh focused independent review; `repair-reviewed` revalidates and returns the immutable reviewed checkpoint for publication |
 | `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
 | `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
-| `validate_curation` | `publish_push` for the exact validated work |
+| `validate_curation` | on success, `publish_push` for the exact validated work; on a classified deterministic failure (`reason=validation-failed` with `check` and `kind`), stop the current run and preserve that classification with the failed-validation generation for a later typed validation-remediation preparation; internal or unclassified validator exceptions do not create remediation authority |
 | `validate_proposal` | create publication inputs, then `publish_proposal` |
 | `publication_input_*` | pass that basename only to its selected publication recipe |
 | `publish_push` | create fresh inputs, then publish exact-head lifecycle state |
@@ -440,6 +451,17 @@ generation, remote head, base, paths, report, and deterministic deltas before
 persisting recovery evidence. A fresh clean exact-head review is required after
 the delta checkpoint before `checkpoint_curation_reviewed`. This branch is part
 of the registered contract and is not an inferred capability switch.
+
+For `validation-remediation`, the previously reviewed head is immutable
+semantic history and the bounded correction starts from that exact restored
+head. The returned delta-checkpoint action must include
+`caller_created_descendant_head=true`. That flag authorizes replacing only its
+`${HEAD}` substitution with the exact clean descendant commit containing the
+deterministic validation fix. It does not authorize new inventory research,
+semantic scope expansion, a different report, a different base, or another
+capability. After the helper accepts the delta checkpoint, a fresh full
+exact-head review and `checkpoint_curation_reviewed` are mandatory before
+validation can run again.
 
 This helper interface does not classify residuals or exact repeats and does not
 count candidate entries. Codex owns the assertion-level finding ledger,
@@ -489,6 +511,15 @@ including both bounded CI waits:
   while either recovery authority exists;
 - current generations and ordinary PRs both use `prepare curation`, then obey
   only the returned generation result and typed `next_action`;
+- a generation whose final deterministic suite recorded a classified
+  `validation_failed` event remains current with its reviewed authority and
+  allowlisted `check`/`kind` retained. Internal validator exceptions leave the
+  generation at its reviewed stage and do not authorize a descendant fix.
+  After deliberate
+  removal of any blocking hold, its successor uses `prepare curation`, receives
+  `validation-remediation`, fixes only the recorded validation defect, and
+  follows the typed delta-checkpoint and fresh-review path in the same
+  generation;
 - a current generation reported as `head-drift` remains visible as immutable
   diagnostic history but does not suppress the same PR's current remote head
   from ordinary eligibility. The scheduled cycle must select that eligible

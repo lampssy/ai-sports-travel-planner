@@ -526,7 +526,13 @@ The installed skill must:
   claim context, remains run-local, and is never persisted as helper or
   cross-run authority;
 - resume a validation-only generation only through its helper-returned typed
-  `next_action` and deterministic/finalization gates. Every prepared or
+  `next_action` and deterministic/finalization gates. For a
+  `validation-remediation` result, correct only the recorded deterministic
+  validation failure on the restored reviewed head. The returned
+  `checkpoint_curation_delta` action must set
+  `caller_created_descendant_head=true`; replace only its head with the exact
+  clean descendant correction, then require a fresh full exact-head review and
+  reviewed checkpoint before validation. Every prepared or
   review-required generation, including resumed work, enters the same complete
   normalization, inventory, review, and remediation flow as ordinary work. Its
   returned reviewed-checkpoint action is valid only for the clean-review branch;
@@ -702,8 +708,10 @@ For each schedule, confirm:
   automation memory and is selected first on the next run only while its exact
   PR/head remains eligible;
 - a deterministic validation failure leaves an exact resumable continuation,
-  and a successor run on the same prepare-time base returns `validation-only`
-  without repeating semantic review;
+  and a successor run on the same selected head and prepare-time base returns
+  `validation-remediation`. It preserves prior generation and review history,
+  permits only the bounded clean descendant correction named by the typed
+  delta action, and requires a fresh exact-head review before validation;
 - a delta-validated but not yet reviewed local head leaves a remediation
   continuation, resumes as `review-required`, and survives a safe blocked/hold
   outcome until deliberate label removal;

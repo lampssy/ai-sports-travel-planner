@@ -176,6 +176,7 @@ point. Under an owned curation lease, the helper decides whether to:
 
 - create an ordinary first generation;
 - restore an unchanged current generation for validation only;
+- restore a failed-validation generation for bounded validation remediation;
 - replay the latest safe checkpoint onto newer `main` and create a generation;
 - continue one bounded helper-owned replay conflict; or
 - invalidate stale authority and start from the exact remote PR head.
@@ -189,6 +190,7 @@ The result includes:
 - selected remote head;
 - prepare-time base and prepared head;
 - result such as `review-required`, `validation-only`,
+  `validation-remediation`,
   `conflict-resolution-required`, or `prepared`;
 - exact allowed conflict paths when applicable; and
 - exact clean-head next helper action as a registered recipe ID plus typed
@@ -210,6 +212,16 @@ base, paths, report, and deterministic deltas before granting recovery
 authority. After that checkpoint, a new fresh clean exact-head review is still
 required before `checkpoint_curation_reviewed`. Codex therefore does not invent
 a capability or mark a request-changes head as reviewed.
+
+`validation-remediation` is narrower. It restores the unchanged reviewed head
+after the final deterministic suite failed and authorizes correction only of
+that concrete validation defect. Its returned `checkpoint_curation_delta`
+action sets `caller_created_descendant_head=true`: the caller may replace only
+the action's `${HEAD}` with the exact clean descendant commit produced by the
+bounded correction. The PR, generation, report, prepare-time base, allowed
+paths, remote head, and deterministic deltas remain helper-validated. The
+corrected head must pass a fresh exact-head review and the normal reviewed
+checkpoint before final validation can run again.
 
 ### `checkpoint curation`
 
@@ -245,9 +257,15 @@ Success appends `validation_passed`, makes the generation eligible for the
 existing push-journal authorization flow, and preserves the exact resulting
 graph and report authority needed after push.
 
-Failure appends `validation_failed`. A later run can resume validation-only
-when the selected head, base, and reviewed checkpoint remain unchanged. Replay
-onto newer `main` creates a new generation and requires fresh review.
+Failure appends `validation_failed` while retaining the reviewed checkpoint as
+the remediation base. A later owned run on the unchanged selected head and
+prepare-time base returns `validation-remediation`, restores that reviewed
+head, and authorizes one bounded descendant correction through the typed delta
+checkpoint action. The correction remains in the same generation but requires
+a fresh exact-head review, reviewed checkpoint, and final validation. A
+validation-only resume remains available only when validation never recorded a
+failure. Replay onto newer `main` creates a new generation and requires the
+normal full review flow.
 
 ### `inspect curation`
 
@@ -301,7 +319,9 @@ Operational failures use specific reasons:
 - `lease-conflict`: another run owns the operation;
 - `checkpoint-conflict`: requested facts contradict completed generation facts;
 - `local-recovery-required`: an incomplete local transaction must finish first;
-- `validation-failed`: deterministic checks failed;
+- `validation-failed`: a classified deterministic check failed; its allowlisted
+  check and failure kind are durable, while internal validator exceptions do not
+  enter this state;
 - `unsafe-repository`: paths, modes, refs, ancestry, or worktree state are
   unsafe; and
 - `state-migration-required`: legacy pre-push state has not been archived.
