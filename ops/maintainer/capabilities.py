@@ -37,6 +37,7 @@ from ops.maintainer.curation_state import (
 )
 from ops.maintainer.errors import (
     ErrorCheck,
+    ErrorKind,
     ErrorReason,
     ErrorStage,
     MaintainerError,
@@ -1098,7 +1099,13 @@ def handle_validate_curation(
     ):
         raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
     if projection.latest_stage == "validation-failed":
-        raise MaintainerError(ErrorReason.VALIDATION_FAILED, ErrorStage.VALIDATE)
+        failure = projection.validation_failure
+        raise MaintainerError(
+            ErrorReason.VALIDATION_FAILED,
+            ErrorStage.VALIDATE,
+            ErrorCheck(failure.check) if failure is not None else None,
+            ErrorKind(failure.kind) if failure is not None else None,
+        )
     if pull_request.head_sha != work.selected_head or (
         pull_request.head_sha != generation.selected_head
     ):
@@ -1150,19 +1157,27 @@ def handle_validate_curation(
             repository=dependencies.repository,
             base_repository=base_repository,
         )
-    except Exception:
-        generation_store.append_event(
-            work_id,
-            generation.generation_id,
-            ValidationFailedEvent(
-                sequence=len(generation.events) + 1,
-                recorded_at=_generation_event_time(generation, dependencies),
-                head=args.head,
-                report_path=args.report,
-            ),
-            lease,
-        )
-        dependencies.tracker.mutation_occurred = True
+    except MaintainerError as error:
+        if error.reason is ErrorReason.VALIDATION_FAILED:
+            failure = None
+            if error.check is not None and error.kind is not None:
+                failure = {
+                    "check": error.check.value,
+                    "kind": error.kind.value,
+                }
+            generation_store.append_event(
+                work_id,
+                generation.generation_id,
+                ValidationFailedEvent(
+                    sequence=len(generation.events) + 1,
+                    recorded_at=_generation_event_time(generation, dependencies),
+                    head=args.head,
+                    report_path=args.report,
+                    failure=failure,
+                ),
+                lease,
+            )
+            dependencies.tracker.mutation_occurred = True
         raise
     if result.validated_head != args.head:
         raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)

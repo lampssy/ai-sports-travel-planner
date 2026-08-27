@@ -319,7 +319,9 @@ Operational failures use specific reasons:
 - `lease-conflict`: another run owns the operation;
 - `checkpoint-conflict`: requested facts contradict completed generation facts;
 - `local-recovery-required`: an incomplete local transaction must finish first;
-- `validation-failed`: deterministic checks failed;
+- `validation-failed`: a classified deterministic check failed; its allowlisted
+  check and failure kind are durable, while internal validator exceptions do not
+  enter this state;
 - `unsafe-repository`: paths, modes, refs, ancestry, or worktree state are
   unsafe; and
 - `state-migration-required`: legacy pre-push state has not been archived.

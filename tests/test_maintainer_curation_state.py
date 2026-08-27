@@ -474,6 +474,7 @@ def test_failed_validation_requires_bounded_remediation() -> None:
         recorded_at=NOW + timedelta(seconds=2),
         head=SHA_2,
         report_path=REPORT,
+        failure={"check": "catalog-tests", "kind": "command-failed"},
     )
 
     projection = project_generation(_generation(*checkpoint, failed))
@@ -481,6 +482,9 @@ def test_failed_validation_requires_bounded_remediation() -> None:
     assert projection.latest_stage == "validation-failed"
     assert projection.reviewed_authority is not None
     assert projection.validated_authority is None
+    assert projection.validation_failure is not None
+    assert projection.validation_failure.check == "catalog-tests"
+    assert projection.validation_failure.kind == "command-failed"
     assert projection.next_action is not None
     assert projection.next_action.recipe_id == "prepare_curation"
     assert projection.next_action.substitutions.head == SHA_2

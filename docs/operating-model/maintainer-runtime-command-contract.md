@@ -414,7 +414,7 @@ not have to derive an invocation.
 | `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
 | `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
-| `validate_curation` | on success, `publish_push` for the exact validated work; on deterministic failure, stop the current run and preserve the failed-validation generation for a later typed validation-remediation preparation |
+| `validate_curation` | on success, `publish_push` for the exact validated work; on a classified deterministic failure (`reason=validation-failed` with `check` and `kind`), stop the current run and preserve that classification with the failed-validation generation for a later typed validation-remediation preparation; internal or unclassified validator exceptions do not create remediation authority |
 | `validate_proposal` | create publication inputs, then `publish_proposal` |
 | `publication_input_*` | pass that basename only to its selected publication recipe |
 | `publish_push` | create fresh inputs, then publish exact-head lifecycle state |
@@ -511,8 +511,11 @@ including both bounded CI waits:
   while either recovery authority exists;
 - current generations and ordinary PRs both use `prepare curation`, then obey
   only the returned generation result and typed `next_action`;
-- a generation whose final deterministic suite recorded `validation_failed`
-  remains current with its reviewed authority retained. After deliberate
+- a generation whose final deterministic suite recorded a classified
+  `validation_failed` event remains current with its reviewed authority and
+  allowlisted `check`/`kind` retained. Internal validator exceptions leave the
+  generation at its reviewed stage and do not authorize a descendant fix.
+  After deliberate
   removal of any blocking hold, its successor uses `prepare curation`, receives
   `validation-remediation`, fixes only the recorded validation defect, and
   follows the typed delta-checkpoint and fresh-review path in the same

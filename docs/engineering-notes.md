@@ -1543,8 +1543,12 @@ validated authority, so ordinary push cannot bypass the final deterministic
 suite while the existing manual-check path can still preserve an explicitly
 unvalidated reviewed head.
 
-A failed final deterministic suite is a distinct generation stage rather than
-reviewed authority that can only retry unchanged. The next owned preparation
+A classified failed final deterministic suite is a distinct generation stage
+rather than reviewed authority that can only retry unchanged. Its durable event
+records the allowlisted failing check and failure kind. Unexpected validator
+exceptions do not create this state or descendant-mutation authority; they leave
+the generation reviewed so a later run can retry validation unchanged. The next
+owned preparation after a classified failure
 restores the exact reviewed head and returns a typed validation-remediation
 delta action. That action authorizes only a clean descendant commit correcting
 the recorded validation defect; generation identity, prepare-time base, report,

@@ -230,10 +230,31 @@ class CheckpointCompletedEvent(_GenerationEvent):
     squash_ref: str = Field(pattern=_REF_PATTERN)
 
 
+class CurationValidationFailure(_StrictModel):
+    check: Literal[
+        "preflight",
+        "catalog-validation",
+        "curation-reconciliation",
+        "catalog-tests",
+        "post-validation",
+        "remote-head",
+        "publication-input",
+    ]
+    kind: Literal[
+        "mismatch",
+        "command-failed",
+        "timeout",
+        "transport",
+        "invalid-file",
+        "not-basename",
+    ]
+
+
 class ValidationFailedEvent(_GenerationEvent):
     kind: Literal["validation-failed"] = "validation-failed"
     head: str = Field(pattern=_SHA_PATTERN)
     report_path: str = Field(pattern=_REPORT_PATTERN)
+    failure: CurationValidationFailure | None = None
 
 
 class ValidationPassedEvent(_GenerationEvent):
@@ -423,6 +444,7 @@ class CurationGenerationProjection(_StrictModel):
     checkpoint_authority: CurationCheckpointAuthority | None = None
     reviewed_authority: ReviewedCurationAuthority | None = None
     validated_authority: ValidatedCurationAuthority | None = None
+    validation_failure: CurationValidationFailure | None = None
     next_action: CurationNextAction | None = None
 
 
@@ -459,6 +481,7 @@ def project_generation(
     reviewed: ReviewedCurationAuthority | None = None
     checkpoint: CurationCheckpointAuthority | None = None
     validated: ValidatedCurationAuthority | None = None
+    validation_failure: CurationValidationFailure | None = None
     latest_report: str | None = generation.events[0].report_path
     latest_refs: tuple[str, str] | None = None
 
@@ -475,6 +498,7 @@ def project_generation(
             latest_refs = (event.checkpoint_ref, event.squash_ref)
             checkpoint = _checkpoint_authority(generation, started, event)
             validated = None
+            validation_failure = None
             if started.stage is CurationCheckpointStage.REVIEWED:
                 reviewed = _reviewed_authority(
                     generation,
@@ -486,6 +510,7 @@ def project_generation(
         elif isinstance(event, ValidationFailedEvent):
             latest_stage = "validation-failed"
             validated = None
+            validation_failure = event.failure
         elif isinstance(event, ValidationPassedEvent):
             if reviewed is None:
                 raise CurationStateError("validated generation lost reviewed authority")
@@ -496,11 +521,13 @@ def project_generation(
                 resulting_graph_markdown=event.resulting_graph_markdown,
                 validated_at=event.recorded_at,
             )
+            validation_failure = None
         elif isinstance(event, GenerationClosedEvent):
             latest_stage = event.kind.removeprefix("generation-")
             checkpoint = None
             reviewed = None
             validated = None
+            validation_failure = None
 
     next_action: CurationNextAction | None = None
     if incomplete is not None:
@@ -578,6 +605,7 @@ def project_generation(
         checkpoint_authority=checkpoint,
         reviewed_authority=reviewed,
         validated_authority=validated,
+        validation_failure=validation_failure,
         next_action=next_action,
     )
 

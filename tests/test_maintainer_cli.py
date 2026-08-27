@@ -6138,6 +6138,53 @@ def test_validate_failure_exposes_only_allowlisted_check_and_kind(
     assert payload["check"] == "catalog-tests"
     assert payload["kind"] == "command-failed"
     assert "kwargs" not in json.dumps(payload)
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    failed_event = generation.events[-1]
+    assert isinstance(failed_event, ValidationFailedEvent)
+    assert failed_event.failure is not None
+    assert failed_event.failure.check == "catalog-tests"
+    assert failed_event.failure.kind == "command-failed"
+    projection = project_generation(generation)
+    assert projection.validation_failure is not None
+    assert projection.validation_failure.check == "catalog-tests"
+    assert projection.validation_failure.kind == "command-failed"
+
+
+def test_validate_internal_error_does_not_create_remediation_state(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
+
+    def crash(**kwargs: object) -> ValidationResult:
+        raise RuntimeError("validator crashed")
+
+    code, payload = _invoke(
+        capsys,
+        _validate_curation_command(state_dir, run_id, base_dir=tmp_path / "base"),
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        curation_validator=crash,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "internal-error"
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    assert not any(
+        isinstance(event, ValidationFailedEvent) for event in generation.events
+    )
+    projection = project_generation(generation)
+    assert projection.latest_stage is CurationCheckpointStage.REVIEWED
+    assert projection.validation_failure is None
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "validate_curation"
 
 
 def test_validate_failure_rejects_unchanged_retry_before_remediation(
@@ -6192,6 +6239,8 @@ def test_validate_failure_rejects_unchanged_retry_before_remediation(
     assert first_code == retry_code == 2
     assert retry_payload["reason"] == "validation-failed"
     assert retry_payload["stage"] == "validate"
+    assert retry_payload["check"] == "catalog-tests"
+    assert retry_payload["kind"] == "command-failed"
     assert validator_calls == 1
 
 
