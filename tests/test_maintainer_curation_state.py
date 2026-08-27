@@ -462,7 +462,7 @@ def test_validation_projection_requires_latest_reviewed_checkpoint() -> None:
     assert projection.validated_authority.resulting_graph_markdown.endswith("- Example")
 
 
-def test_failed_validation_remains_reviewed_and_retryable() -> None:
+def test_failed_validation_requires_bounded_remediation() -> None:
     checkpoint = _completed_checkpoint(
         sequence=2,
         stage=CurationCheckpointStage.REVIEWED,
@@ -478,11 +478,12 @@ def test_failed_validation_remains_reviewed_and_retryable() -> None:
 
     projection = project_generation(_generation(*checkpoint, failed))
 
-    assert projection.latest_stage is CurationCheckpointStage.REVIEWED
+    assert projection.latest_stage == "validation-failed"
     assert projection.reviewed_authority is not None
     assert projection.validated_authority is None
     assert projection.next_action is not None
-    assert projection.next_action.recipe_id == "validate_curation"
+    assert projection.next_action.recipe_id == "prepare_curation"
+    assert projection.next_action.substitutions.head == SHA_2
 
 
 def test_incomplete_checkpoint_projects_exact_retry_action() -> None:
@@ -516,6 +517,23 @@ def test_generation_rejects_non_monotonic_or_mismatched_events() -> None:
         _generation(started, duplicate_sequence)
     with pytest.raises(ValidationError):
         _generation(started, wrong_transaction)
+
+
+def test_caller_created_descendant_requires_delta_checkpoint_recipe() -> None:
+    substitutions = curation_state.CurationActionSubstitutions(
+        pr=42,
+        generation_id=GENERATION_ID,
+        head=SHA_2,
+        report=REPORT,
+        validation_base=SHA_1,
+    )
+
+    with pytest.raises(ValidationError):
+        curation_state.CurationNextAction(
+            recipe_id=curation_state.CurationRecipeId.VALIDATE,
+            substitutions=substitutions,
+            caller_created_descendant_head=True,
+        )
 
 
 def test_generation_store_persists_private_ordered_generations(tmp_path: Path) -> None:

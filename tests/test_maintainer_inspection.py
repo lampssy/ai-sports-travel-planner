@@ -13,6 +13,7 @@ from ops.maintainer.curation_state import (
     CurationCheckpointStage,
     CurationGeneration,
     GenerationPreparedEvent,
+    ValidationFailedEvent,
     checkpoint_transaction_id,
 )
 from ops.maintainer.errors import ErrorReason, MaintainerError
@@ -669,6 +670,29 @@ def test_curation_inventory_exposes_current_generation_and_suppresses_eligibilit
         },
     }
     assert [candidate.number for candidate in inventory.eligible] == [43]
+
+
+def test_curation_inventory_exposes_failed_validation_remediation() -> None:
+    generation = _generation()
+    failed = ValidationFailedEvent(
+        sequence=4,
+        recorded_at=NOW + timedelta(seconds=3),
+        head=SHA_B,
+        report_path="docs/catalog-curation/pr-42.json",
+    )
+    generation = generation.model_copy(update={"events": (*generation.events, failed)})
+
+    inventory = inspect_curation(
+        (_pull_request(),),
+        {},
+        generations=(generation,),
+    )
+
+    summary = inventory.generations[0]
+    assert summary.stage == "validation-failed"
+    assert summary.retryable is True
+    assert summary.next_action is not None
+    assert summary.next_action.recipe_id == "prepare_curation"
 
 
 def test_head_drift_generation_exposes_current_remote_head_as_ordinary_work() -> None:

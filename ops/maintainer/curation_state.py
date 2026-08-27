@@ -177,6 +177,21 @@ class CurationActionSubstitutions(_StrictModel):
 class CurationNextAction(_StrictModel):
     recipe_id: CurationRecipeId
     substitutions: CurationActionSubstitutions
+    caller_created_descendant_head: Literal[True] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+
+    @model_validator(mode="after")
+    def validate_caller_created_head(self) -> Self:
+        if (
+            self.caller_created_descendant_head
+            and self.recipe_id is not CurationRecipeId.CHECKPOINT_DELTA
+        ):
+            raise ValueError(
+                "caller-created descendant is limited to delta checkpoints"
+            )
+        return self
 
 
 class _GenerationEvent(_StrictModel):
@@ -394,6 +409,7 @@ class CurationGenerationProjection(_StrictModel):
         CurationCheckpointStage
         | Literal[
             "prepared",
+            "validation-failed",
             "fully-validated",
             "superseded",
             "invalidated",
@@ -431,6 +447,7 @@ def project_generation(
         CurationCheckpointStage
         | Literal[
             "prepared",
+            "validation-failed",
             "fully-validated",
             "superseded",
             "invalidated",
@@ -467,6 +484,7 @@ def project_generation(
             else:
                 reviewed = None
         elif isinstance(event, ValidationFailedEvent):
+            latest_stage = "validation-failed"
             validated = None
         elif isinstance(event, ValidationPassedEvent):
             if reviewed is None:
@@ -496,6 +514,18 @@ def project_generation(
                 generation_id=generation.generation_id,
                 head=latest_head,
                 report=latest_report,
+                validation_base=generation.sync.base_head,
+            ),
+        )
+    elif latest_stage == "validation-failed":
+        assert reviewed is not None
+        next_action = CurationNextAction(
+            recipe_id=CurationRecipeId.PREPARE,
+            substitutions=CurationActionSubstitutions(
+                pr=generation.pr_number,
+                generation_id=generation.generation_id,
+                head=reviewed.reviewed_head,
+                report=reviewed.report_path,
                 validation_base=generation.sync.base_head,
             ),
         )
@@ -533,6 +563,7 @@ def project_generation(
     if latest_refs is None and latest_stage in {
         CurationCheckpointStage.DELTA_VALIDATED,
         CurationCheckpointStage.REVIEWED,
+        "validation-failed",
         "fully-validated",
     }:
         raise CurationStateError("generation projection lost checkpoint refs")

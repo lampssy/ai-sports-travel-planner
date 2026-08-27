@@ -251,6 +251,8 @@ Cover:
 
 - first preparation creates generation one;
 - same remote head/base plus reviewed authority returns `validation-only`;
+- same remote head/base plus a failed validation returns
+  `validation-remediation` with a typed descendant-head delta action;
 - same remote head with advanced `main` creates generation two and returns
   `review-required`;
 - changed remote head starts clean without blending saved local work;
@@ -406,10 +408,11 @@ git commit -m "feat: checkpoint curation generations idempotently"
 
 - [ ] **Step 1: Write failing validation and handoff tests**
 
-Cover validation success/failure/idempotency, validation-only resume, ordinary
-push requiring validated authority, manual-check requiring reviewed authority,
-push journal winning after authorization, and generation consumption only after
-the journal is durable.
+Cover validation success/failure/idempotency, validation-only resume, bounded
+same-generation validation remediation, ordinary push requiring validated
+authority, manual-check requiring reviewed authority, push journal winning
+after authorization, and generation consumption only after the journal is
+durable.
 
 Fault-inject between journal creation and generation consumption and assert
 inspection exposes push recovery, never pre-push generation recovery.
@@ -426,6 +429,13 @@ Load the active generation projection, require its exact reviewed authority,
 run the existing trusted-base validator, and append either `validation_failed`
 or `validation_passed`. Keep run-local `WorkState` populated for unchanged
 post-push CI/publication code.
+
+On `validation_failed`, retain the reviewed authority but project a distinct
+failed-validation stage. The next owned preparation restores that head and
+returns a typed `checkpoint_curation_delta` action whose
+`caller_created_descendant_head=true` flag permits only a bounded clean
+descendant correction. Require a fresh exact-head review and reviewed
+checkpoint before final validation is retried.
 
 - [ ] **Step 4: Adapt push and manual-check publication**
 

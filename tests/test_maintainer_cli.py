@@ -18,6 +18,7 @@ from ops.maintainer.curation_state import (
     CurationGeneration,
     CurationGenerationStore,
     GenerationPreparedEvent,
+    ValidationFailedEvent,
     checkpoint_transaction_id,
     project_generation,
 )
@@ -83,6 +84,7 @@ SHA_A = "a" * 40
 SHA_B = "b" * 40
 SHA_C = "c" * 40
 SHA_D = "d" * 40
+SHA_E = "e" * 40
 NOW = datetime(2026, 7, 8, 10, tzinfo=UTC)
 CANDIDATE = "stay_destination:nendaz"
 CANONICAL_GRAPH = (
@@ -515,6 +517,9 @@ class FakeRepository:
         default_factory=list
     )
     curation_checkpoint_calls: list[tuple[str, str]] = field(default_factory=list)
+    validation_remediation_descendant_calls: list[tuple[str, str]] = field(
+        default_factory=list
+    )
     curation_checkpoint_error: Exception | None = None
     non_test_tree_digest_calls: list[str] = field(default_factory=list)
     ci_repair_prepare_calls: list[PullRequest] = field(default_factory=list)
@@ -651,6 +656,16 @@ class FakeRepository:
         return CurationCheckpointRefs(
             checkpoint_ref=f"{prefix}checkpoint",
             squash_ref=f"{prefix}replay",
+        )
+
+    def revalidate_validation_remediation_descendant(
+        self,
+        reviewed_head: str,
+        remediation_head: str,
+    ) -> None:
+        assert reviewed_head != remediation_head
+        self.validation_remediation_descendant_calls.append(
+            (reviewed_head, remediation_head)
         )
 
     def revalidate_curation_checkpoint(
@@ -5184,6 +5199,189 @@ def test_prepare_curation_restores_reviewed_generation_for_validation_only(
     assert work.reviewed_head == SHA_C
 
 
+def test_prepare_curation_restores_failed_validation_for_bounded_remediation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin = RunLease.acquire(state_dir, "curation", now=NOW)
+    generation = _curation_generation()
+    failed = ValidationFailedEvent(
+        sequence=4,
+        recorded_at=NOW + timedelta(seconds=3),
+        head=SHA_C,
+        report_path="docs/catalog-curation/nendaz.json",
+    )
+    CurationGenerationStore(state_dir).start_generation(
+        generation.model_copy(update={"events": (*generation.events, failed)}),
+        origin,
+    )
+    origin.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    repository = FakeRepository()
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=FakeGitHub(),
+        repository=repository,
+    )
+
+    assert code == 0, payload
+    assert payload["generation"]["result"] == "validation-remediation"
+    assert payload["generation"]["next_action"] == {
+        "recipe_id": "checkpoint_curation_delta",
+        "substitutions": {
+            "pr": 42,
+            "generation_id": GENERATION_ID,
+            "head": SHA_C,
+            "report": "docs/catalog-curation/nendaz.json",
+            "validation_base": SHA_D,
+            "continue_conflict": False,
+        },
+        "caller_created_descendant_head": True,
+    }
+    work = StateStore(state_dir).load_work("curation-pr-42")
+    assert work is not None and work.phase is WorkPhase.PREPARED
+    assert work.prepared_head == SHA_B
+    assert work.reviewed_head is None
+
+
+def test_failed_validation_remediation_reuses_generation_through_review(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin = RunLease.acquire(state_dir, "curation", now=NOW)
+    generation = _curation_generation()
+    failed = ValidationFailedEvent(
+        sequence=4,
+        recorded_at=NOW + timedelta(seconds=3),
+        head=SHA_C,
+        report_path="docs/catalog-curation/nendaz.json",
+    )
+    CurationGenerationStore(state_dir).start_generation(
+        generation.model_copy(update={"events": (*generation.events, failed)}),
+        origin,
+    )
+    origin.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    github = FakeGitHub()
+    repository = FakeRepository()
+
+    prepare_code, prepare_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    repository.head = SHA_E
+    delta_code, _delta_payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+        head=SHA_E,
+    )
+    review_code, review_payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="reviewed",
+        head=SHA_E,
+    )
+
+    assert prepare_code == delta_code == review_code == 0, prepare_payload
+    current = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert current is not None
+    projection = project_generation(current)
+    assert current.generation_id == GENERATION_ID
+    assert projection.latest_head == SHA_E
+    assert projection.latest_stage is CurationCheckpointStage.REVIEWED
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "validate_curation"
+    assert review_payload["generation"]["generation_number"] == 1
+    assert repository.validation_remediation_descendant_calls == [(SHA_C, SHA_E)]
+
+
+def test_failed_validation_rejects_delta_checkpoint_without_a_correction(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    origin = RunLease.acquire(state_dir, "curation", now=NOW)
+    generation = _curation_generation()
+    failed = ValidationFailedEvent(
+        sequence=4,
+        recorded_at=NOW + timedelta(seconds=3),
+        head=SHA_C,
+        report_path="docs/catalog-curation/nendaz.json",
+    )
+    CurationGenerationStore(state_dir).start_generation(
+        generation.model_copy(update={"events": (*generation.events, failed)}),
+        origin,
+    )
+    origin.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    github = FakeGitHub()
+    repository = FakeRepository()
+    prepare_code, prepare_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    checkpoint_code, checkpoint_payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+        head=SHA_C,
+    )
+
+    assert prepare_code == 0, prepare_payload
+    assert checkpoint_code == 2
+    assert checkpoint_payload["reason"] == "checkpoint-conflict"
+    assert repository.validation_remediation_descendant_calls == []
+
+
 def test_prepare_curation_replays_same_pr_head_into_new_generation(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -5940,6 +6138,61 @@ def test_validate_failure_exposes_only_allowlisted_check_and_kind(
     assert payload["check"] == "catalog-tests"
     assert payload["kind"] == "command-failed"
     assert "kwargs" not in json.dumps(payload)
+
+
+def test_validate_failure_rejects_unchanged_retry_before_remediation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    _checkpoint_reviewed(capsys, state_dir, run_id, github, repository)
+    validator_calls = 0
+
+    def fail(**kwargs: object) -> ValidationResult:
+        nonlocal validator_calls
+        validator_calls += 1
+        raise MaintainerError(
+            ErrorReason.VALIDATION_FAILED,
+            ErrorStage.VALIDATE,
+            ErrorCheck.CATALOG_TESTS,
+            ErrorKind.COMMAND_FAILED,
+            "Validation command failed",
+        )
+
+    def succeed(**kwargs: object) -> ValidationResult:
+        nonlocal validator_calls
+        validator_calls += 1
+        return _validation_result()
+
+    command = _validate_curation_command(
+        state_dir,
+        run_id,
+        base_dir=tmp_path / "base",
+    )
+    first_code, _first_payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        curation_validator=fail,
+    )
+    retry_code, retry_payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        curation_validator=succeed,
+    )
+
+    assert first_code == retry_code == 2
+    assert retry_payload["reason"] == "validation-failed"
+    assert retry_payload["stage"] == "validate"
+    assert validator_calls == 1
 
 
 def test_validate_proposal_rechecks_inventory_and_persists_candidate_facts(
