@@ -40,6 +40,7 @@ from ops.maintainer.models import PullRequest
 from ops.maintainer.state import PushJournal, PushPhase
 from ops.maintainer.validation import (
     _PROCESS_GROUP_GRACE_SECONDS,
+    _VALIDATION_DIAGNOSTIC_LIMIT,
     VALIDATION_COMMAND_TIMEOUT_SECONDS,
     DeltaValidationResult,
     ProposalValidationResult,
@@ -411,6 +412,60 @@ def test_default_runner_discards_output_and_secret_environment(
     assert result.returncode == 0
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_catalog_test_failure_returns_bounded_sanitized_short_traceback(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+
+    class FailedCatalogRunner:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, ...]] = []
+
+        def run(
+            self,
+            argv: tuple[str, ...],
+            *,
+            cwd: Path,
+            timeout: float,
+        ) -> subprocess.CompletedProcess[str]:
+            del cwd, timeout
+            self.calls.append(tuple(argv))
+            if len(self.calls) < 3:
+                return subprocess.CompletedProcess(argv, 0, "", "")
+            traceback = (
+                "\x1b[31mFAILED\x1b[0m "
+                f"{base.root}/tests/test_catalog_trust.py::test_manifest\n"
+                f"{reviewed.root}/app/data/catalog.json: AssertionError\x00\n"
+                + ("mismatch\n" * _VALIDATION_DIAGNOSTIC_LIMIT)
+            )
+            return subprocess.CompletedProcess(argv, 1, traceback, "")
+
+    runner = FailedCatalogRunner()
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            reviewed_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=runner,
+        )
+
+    diagnostic = exc_info.value.diagnostic
+    assert diagnostic is not None
+    assert diagnostic.format == "pytest-short"
+    assert diagnostic.truncated is True
+    assert len(diagnostic.text) <= _VALIDATION_DIAGNOSTIC_LIMIT
+    assert "<base>/tests/test_catalog_trust.py::test_manifest" in diagnostic.text
+    assert "<reviewed>/app/data/catalog.json" in diagnostic.text
+    assert "\x1b" not in diagnostic.text
+    assert "\x00" not in diagnostic.text
+    assert "--tb=short" in runner.calls[-1]
+    assert "--no-showlocals" in runner.calls[-1]
 
 
 def _wait_for_process_exit(pid: int) -> None:
@@ -888,7 +943,7 @@ def test_validate_curation_does_not_read_backlog_without_regional_followup(
         (3, ErrorCheck.CATALOG_TESTS),
     ],
 )
-def test_validate_curation_maps_each_command_failure_without_raw_output(
+def test_validate_curation_exposes_output_only_for_catalog_test_failure(
     tmp_path: Path,
     command_index: int,
     check: ErrorCheck,
@@ -910,8 +965,14 @@ def test_validate_curation_maps_each_command_failure_without_raw_output(
     assert exc_info.value.reason is ErrorReason.VALIDATION_FAILED
     assert exc_info.value.check is check
     assert exc_info.value.kind is ErrorKind.COMMAND_FAILED
-    assert "raw" not in json.dumps(exc_info.value.payload())
-    assert "secret" not in json.dumps(exc_info.value.payload())
+    payload = exc_info.value.payload()
+    if check is ErrorCheck.CATALOG_TESTS:
+        assert payload["diagnostic"]["format"] == "pytest-short"
+        assert payload["diagnostic"]["truncated"] is True
+    else:
+        assert "diagnostic" not in payload
+        assert "raw" not in json.dumps(payload)
+        assert "secret" not in json.dumps(payload)
 
 
 @pytest.mark.parametrize(

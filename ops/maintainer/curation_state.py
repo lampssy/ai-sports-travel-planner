@@ -6,13 +6,21 @@ import os
 import re
 import secrets
 import stat
+import unicodedata
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Literal, Protocol, Self
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from ops.maintainer.git_ops import GuardedSyncResult, LegacyCurationRef
 from ops.maintainer.runtime import (
@@ -230,6 +238,22 @@ class CheckpointCompletedEvent(_GenerationEvent):
     squash_ref: str = Field(pattern=_REF_PATTERN)
 
 
+class CurationValidationDiagnostic(_StrictModel):
+    format: Literal["pytest-short"]
+    text: str = Field(min_length=1, max_length=8_192)
+    truncated: bool
+
+    @field_validator("text")
+    @classmethod
+    def reject_unsafe_control_characters(cls, value: str) -> str:
+        if any(
+            unicodedata.category(character) == "Cc" and character not in {"\n", "\t"}
+            for character in value
+        ):
+            raise ValueError("validation diagnostic contains a control character")
+        return value
+
+
 class CurationValidationFailure(_StrictModel):
     check: Literal[
         "preflight",
@@ -248,6 +272,17 @@ class CurationValidationFailure(_StrictModel):
         "invalid-file",
         "not-basename",
     ]
+    diagnostic: CurationValidationDiagnostic | None = None
+
+    @model_validator(mode="after")
+    def validate_diagnostic_scope(self) -> Self:
+        if self.diagnostic is not None and (
+            self.check != "catalog-tests" or self.kind != "command-failed"
+        ):
+            raise ValueError(
+                "validation diagnostic requires a catalog test command failure"
+            )
+        return self
 
 
 class ValidationFailedEvent(_GenerationEvent):
@@ -544,7 +579,7 @@ def project_generation(
                 validation_base=generation.sync.base_head,
             ),
         )
-    elif latest_stage == "validation-failed":
+    elif latest_stage == "validation-failed" and validation_failure is not None:
         assert reviewed is not None
         next_action = CurationNextAction(
             recipe_id=CurationRecipeId.PREPARE,

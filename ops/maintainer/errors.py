@@ -5,7 +5,10 @@ import unicodedata
 from dataclasses import dataclass
 from enum import StrEnum
 
-from ops.maintainer.curation_state import CurationNextAction
+from ops.maintainer.curation_state import (
+    CurationNextAction,
+    CurationValidationDiagnostic,
+)
 
 
 class ErrorReason(StrEnum):
@@ -131,6 +134,7 @@ class MaintainerError(Exception):
     detail: str | None = None
     retryable: bool = False
     next_action: CurationNextAction | None = None
+    diagnostic: CurationValidationDiagnostic | None = None
 
     def __post_init__(self) -> None:
         _require_enum("reason", self.reason, ErrorReason)
@@ -146,6 +150,20 @@ class MaintainerError(Exception):
             raise TypeError("next_action must be a CurationNextAction instance")
         if self.next_action is not None and not self.retryable:
             raise ValueError("next_action requires a retryable error")
+        if self.diagnostic is not None:
+            if not isinstance(self.diagnostic, CurationValidationDiagnostic):
+                raise TypeError(
+                    "diagnostic must be a CurationValidationDiagnostic instance"
+                )
+            if (
+                self.reason is not ErrorReason.VALIDATION_FAILED
+                or self.stage is not ErrorStage.VALIDATE
+                or self.check is not ErrorCheck.CATALOG_TESTS
+                or self.kind is not ErrorKind.COMMAND_FAILED
+            ):
+                raise ValueError(
+                    "diagnostic is limited to catalog test validation failures"
+                )
         if self.detail is not None:
             validate_safe_detail(self.detail)
         Exception.__init__(self, self.reason.value, self.stage.value)
@@ -169,6 +187,8 @@ class MaintainerError(Exception):
                 mode="json",
                 exclude_none=True,
             )
+        if self.diagnostic is not None:
+            payload["diagnostic"] = self.diagnostic.model_dump(mode="json")
         return payload
 
 

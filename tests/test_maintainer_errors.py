@@ -8,6 +8,7 @@ from ops.maintainer.curation_state import (
     CurationActionSubstitutions,
     CurationNextAction,
     CurationRecipeId,
+    CurationValidationDiagnostic,
 )
 from ops.maintainer.errors import (
     ErrorCheck,
@@ -75,6 +76,42 @@ def test_maintainer_error_allows_optional_diagnostic_fields_to_be_absent() -> No
         "reason": "lock-busy",
         "stage": "lock",
     }
+
+
+def test_validation_failure_emits_typed_bounded_diagnostic() -> None:
+    diagnostic = CurationValidationDiagnostic(
+        format="pytest-short",
+        text=(
+            "tests/test_catalog_trust.py:42: AssertionError\n"
+            "expected domain source references to match"
+        ),
+        truncated=False,
+    )
+    error = MaintainerError(
+        reason=ErrorReason.VALIDATION_FAILED,
+        stage=ErrorStage.VALIDATE,
+        check=ErrorCheck.CATALOG_TESTS,
+        kind=ErrorKind.COMMAND_FAILED,
+        detail="Validation command failed",
+        diagnostic=diagnostic,
+    )
+
+    assert error.payload()["diagnostic"] == diagnostic.model_dump(mode="json")
+
+
+def test_diagnostic_is_limited_to_catalog_test_validation_failures() -> None:
+    diagnostic = CurationValidationDiagnostic(
+        format="pytest-short",
+        text="tests/test_catalog_trust.py:42: AssertionError",
+        truncated=False,
+    )
+
+    with pytest.raises(ValueError, match="catalog test validation failures"):
+        MaintainerError(
+            reason=ErrorReason.TRANSPORT_FAILED,
+            stage=ErrorStage.VALIDATE,
+            diagnostic=diagnostic,
+        )
 
 
 def test_recoverable_error_emits_only_typed_next_action() -> None:

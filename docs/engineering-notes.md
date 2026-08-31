@@ -1545,7 +1545,12 @@ unvalidated reviewed head.
 
 A classified failed final deterministic suite is a distinct generation stage
 rather than reviewed authority that can only retry unchanged. Its durable event
-records the allowlisted failing check and failure kind. Unexpected validator
+records the allowlisted failing check and failure kind. A catalog-test command
+failure may also retain an optional bounded `pytest-short` traceback captured
+by the original exact-base run. The helper strips control characters,
+normalizes reviewed/base workspace paths, omits local variables, and marks
+truncation. This text is untrusted debugging context and never workflow or scope
+authority. Unexpected validator
 exceptions do not create this state or descendant-mutation authority; they leave
 the generation reviewed so a later run can retry validation unchanged. The next
 owned preparation after a classified failure

@@ -6,9 +6,11 @@ import re
 import signal
 import subprocess
 import time
+import unicodedata
 from collections.abc import Iterable, Sequence
+from contextlib import ExitStack
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, TemporaryFile
 from typing import Literal, Protocol, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -30,6 +32,7 @@ from app.data.catalog_loader import load_catalog_from_path
 from app.data.catalog_policy import catalog_policy_issues
 from app.domain.catalog import CatalogSnapshot
 from app.domain.catalog_trust import CatalogTrustManifest
+from ops.maintainer.curation_state import CurationValidationDiagnostic
 from ops.maintainer.errors import (
     ErrorCheck,
     ErrorKind,
@@ -51,6 +54,10 @@ from ops.maintainer.models import PullRequest
 
 VALIDATION_COMMAND_TIMEOUT_SECONDS = 600.0
 _OUTPUT_OBSERVATION_LIMIT = 4096
+_VALIDATION_DIAGNOSTIC_LIMIT = 8_192
+_PROCESS_OUTPUT_CAPTURE_LIMIT = _VALIDATION_DIAGNOSTIC_LIMIT * 2
+_OUTPUT_TRUNCATION_MARKER = "...[earlier output truncated]...\n"
+_ANSI_ESCAPE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))")
 _REPORT_PATH = re.compile(r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$")
 _CANDIDATE_KEY = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*$")
 _SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -142,15 +149,24 @@ class _SubprocessValidationRunner:
     ) -> subprocess.CompletedProcess[str]:
         if os.name != "posix":
             raise OSError("validation subprocess isolation requires POSIX")
-        with TemporaryDirectory(prefix="snowcast-maintainer-home-") as directory:
+        with (
+            TemporaryDirectory(prefix="snowcast-maintainer-home-") as directory,
+            ExitStack() as stack,
+        ):
             private_home = Path(directory)
             os.chmod(private_home, 0o700)
+            capture_output = "pytest" in argv
+            stdout_target: object = subprocess.DEVNULL
+            stderr_target: object = subprocess.DEVNULL
+            if capture_output:
+                stdout_target = stack.enter_context(TemporaryFile())
+                stderr_target = stack.enter_context(TemporaryFile())
             process = subprocess.Popen(
                 list(argv),
                 cwd=cwd,
                 stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=stdout_target,
+                stderr=stderr_target,
                 text=False,
                 shell=False,
                 start_new_session=True,
@@ -163,12 +179,34 @@ class _SubprocessValidationRunner:
                 _terminate_process_group(process, process_group)
                 raise subprocess.TimeoutExpired(list(argv), timeout) from None
             _terminate_process_group(process, process_group)
+            stdout = (
+                _read_recent_process_output(stdout_target) if capture_output else ""
+            )
+            stderr = (
+                _read_recent_process_output(stderr_target) if capture_output else ""
+            )
         return subprocess.CompletedProcess(
             list(argv),
             returncode,
-            stdout="",
-            stderr="",
+            stdout=stdout,
+            stderr=stderr,
         )
+
+
+def _read_recent_process_output(stream: object) -> str:
+    seek = getattr(stream, "seek")
+    tell = getattr(stream, "tell")
+    read = getattr(stream, "read")
+    seek(0, os.SEEK_END)
+    size = tell()
+    truncated = size > _PROCESS_OUTPUT_CAPTURE_LIMIT
+    if truncated:
+        seek(size - _PROCESS_OUTPUT_CAPTURE_LIMIT)
+    else:
+        seek(0)
+    payload = read(_PROCESS_OUTPUT_CAPTURE_LIMIT)
+    text = payload.decode("utf-8", errors="replace")
+    return (_OUTPUT_TRUNCATION_MARKER if truncated else "") + text
 
 
 def _validation_environment(private_home: Path) -> dict[str, str]:
@@ -422,10 +460,16 @@ def _run_curation_commands(
                 "Validation command could not start",
             ) from None
         if result.returncode != 0:
+            diagnostic = (
+                _catalog_test_diagnostic(result, initial)
+                if check is ErrorCheck.CATALOG_TESTS
+                else None
+            )
             raise _validation_error(
                 check,
                 ErrorKind.COMMAND_FAILED,
                 "Validation command failed",
+                diagnostic=diagnostic,
             )
         observations.append(_observe_command(index, result))
     return tuple(observations)
@@ -750,6 +794,8 @@ def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:
             str(plan.base_dir / "tests/test_catalog_models.py"),
             str(plan.base_dir / "tests/test_catalog_trust.py"),
             "-q",
+            "--tb=short",
+            "--no-showlocals",
         ),
     )
 
@@ -1004,6 +1050,8 @@ def _validation_error(
     check: ErrorCheck,
     kind: ErrorKind,
     detail: str,
+    *,
+    diagnostic: CurationValidationDiagnostic | None = None,
 ) -> MaintainerError:
     return MaintainerError(
         reason=ErrorReason.VALIDATION_FAILED,
@@ -1011,4 +1059,48 @@ def _validation_error(
         check=check,
         kind=kind,
         detail=detail,
+        diagnostic=diagnostic,
+    )
+
+
+def _catalog_test_diagnostic(
+    result: subprocess.CompletedProcess[str],
+    plan: _CurationPlan,
+) -> CurationValidationDiagnostic | None:
+    streams = tuple(
+        value
+        for value in (result.stdout, result.stderr)
+        if isinstance(value, str) and value.strip()
+    )
+    if not streams:
+        return None
+    text = "\n".join(streams).replace("\r\n", "\n").replace("\r", "\n")
+    for path, replacement in sorted(
+        (
+            (str(plan.base_dir), "<base>"),
+            (str(plan.reviewed_dir), "<reviewed>"),
+        ),
+        key=lambda item: len(item[0]),
+        reverse=True,
+    ):
+        text = text.replace(path, replacement)
+    text = _ANSI_ESCAPE.sub("", text)
+    text = "".join(
+        character
+        for character in text
+        if unicodedata.category(character) != "Cc" or character in {"\n", "\t"}
+    ).strip()
+    if not text:
+        return None
+    truncated = (
+        _OUTPUT_TRUNCATION_MARKER.strip() in text
+        or len(text) > _VALIDATION_DIAGNOSTIC_LIMIT
+    )
+    if len(text) > _VALIDATION_DIAGNOSTIC_LIMIT:
+        suffix = "\n...[diagnostic truncated]..."
+        text = text[: _VALIDATION_DIAGNOSTIC_LIMIT - len(suffix)].rstrip() + suffix
+    return CurationValidationDiagnostic(
+        format="pytest-short",
+        text=text,
+        truncated=truncated,
     )

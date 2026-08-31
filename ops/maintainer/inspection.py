@@ -384,6 +384,11 @@ def _generation_availability(
         return "hold-label"
     if not _is_safe_curation_candidate(pull_request, comments):
         return "invalid-state"
+    if (
+        projection.latest_stage == "validation-failed"
+        and projection.validation_failure is None
+    ):
+        return "invalid-state"
     if projection.next_action is None:
         return "complete"
     return "available"
