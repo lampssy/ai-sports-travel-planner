@@ -412,6 +412,13 @@ def handle_prepare_curation(
         )
 
     projection = project_generation(current)
+    if (
+        projection.latest_stage == "validation-failed"
+        and projection.validation_failure is None
+    ):
+        raise CurationStateError(
+            "unclassified validation failure cannot authorize remediation"
+        )
     if projection.latest_stage in {"superseded", "invalidated", "consumed"}:
         if args.continue_conflict:
             raise MaintainerError(
@@ -770,7 +777,11 @@ def _validation_remediation_action(
 ) -> CurationNextAction:
     projection = project_generation(generation)
     reviewed = projection.reviewed_authority
-    if projection.latest_stage != "validation-failed" or reviewed is None:
+    if (
+        projection.latest_stage != "validation-failed"
+        or projection.validation_failure is None
+        or reviewed is None
+    ):
         raise CurationStateError("validation remediation lost reviewed authority")
     return CurationNextAction(
         recipe_id=CurationRecipeId.CHECKPOINT_DELTA,
@@ -883,6 +894,10 @@ def handle_checkpoint_curation(
 
     stage = CurationCheckpointStage(args.stage)
     if projection.latest_stage == "validation-failed":
+        if projection.validation_failure is None:
+            raise CurationStateError(
+                "unclassified validation failure cannot authorize remediation"
+            )
         if (
             stage is not CurationCheckpointStage.DELTA_VALIDATED
             or args.head == projection.latest_head
@@ -1106,11 +1121,15 @@ def handle_validate_curation(
         raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
     if projection.latest_stage == "validation-failed":
         failure = projection.validation_failure
+        if failure is None:
+            raise CurationStateError(
+                "unclassified validation failure cannot authorize remediation"
+            )
         raise MaintainerError(
             ErrorReason.VALIDATION_FAILED,
             ErrorStage.VALIDATE,
-            ErrorCheck(failure.check) if failure is not None else None,
-            ErrorKind(failure.kind) if failure is not None else None,
+            ErrorCheck(failure.check),
+            ErrorKind(failure.kind),
         )
     if pull_request.head_sha != work.selected_head or (
         pull_request.head_sha != generation.selected_head
@@ -1164,15 +1183,17 @@ def handle_validate_curation(
             base_repository=base_repository,
         )
     except MaintainerError as error:
-        if error.reason is ErrorReason.VALIDATION_FAILED:
-            failure = None
-            if error.check is not None and error.kind is not None:
-                failure = {
-                    "check": error.check.value,
-                    "kind": error.kind.value,
-                }
-                if error.diagnostic is not None:
-                    failure["diagnostic"] = error.diagnostic.model_dump(mode="json")
+        if (
+            error.reason is ErrorReason.VALIDATION_FAILED
+            and error.check is not None
+            and error.kind is not None
+        ):
+            failure = {
+                "check": error.check.value,
+                "kind": error.kind.value,
+            }
+            if error.diagnostic is not None:
+                failure["diagnostic"] = error.diagnostic.model_dump(mode="json")
             generation_store.append_event(
                 work_id,
                 generation.generation_id,

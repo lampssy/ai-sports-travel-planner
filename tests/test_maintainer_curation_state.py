@@ -507,6 +507,27 @@ def test_failed_validation_requires_bounded_remediation() -> None:
     assert projection.next_action.substitutions.head == SHA_2
 
 
+def test_unclassified_failed_validation_does_not_authorize_remediation() -> None:
+    checkpoint = _completed_checkpoint(
+        sequence=2,
+        stage=CurationCheckpointStage.REVIEWED,
+        head=SHA_2,
+        recorded_at=NOW + timedelta(seconds=1),
+    )
+    failed = ValidationFailedEvent(
+        sequence=4,
+        recorded_at=NOW + timedelta(seconds=2),
+        head=SHA_2,
+        report_path=REPORT,
+    )
+
+    projection = project_generation(_generation(*checkpoint, failed))
+
+    assert projection.latest_stage == "validation-failed"
+    assert projection.validation_failure is None
+    assert projection.next_action is None
+
+
 def test_incomplete_checkpoint_projects_exact_retry_action() -> None:
     started, _completed = _completed_checkpoint(
         sequence=2,

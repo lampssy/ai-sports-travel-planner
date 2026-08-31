@@ -579,7 +579,7 @@ def project_generation(
                 validation_base=generation.sync.base_head,
             ),
         )
-    elif latest_stage == "validation-failed":
+    elif latest_stage == "validation-failed" and validation_failure is not None:
         assert reviewed is not None
         next_action = CurationNextAction(
             recipe_id=CurationRecipeId.PREPARE,
