@@ -18,6 +18,8 @@ from ops.maintainer.curation_state import (
     CurationGeneration,
     CurationGenerationStore,
     CurationMigrationError,
+    CurationValidationDiagnostic,
+    CurationValidationFailure,
     GenerationPreparedEvent,
     ValidationFailedEvent,
     ValidationPassedEvent,
@@ -43,6 +45,21 @@ from ops.maintainer.state import (
 pytestmark = pytest.mark.db_free
 
 NOW = datetime(2026, 8, 15, 10, tzinfo=UTC)
+
+
+def test_validation_diagnostic_requires_catalog_test_command_failure() -> None:
+    with pytest.raises(ValidationError, match="catalog test command failure"):
+        CurationValidationFailure(
+            check="catalog-validation",
+            kind="command-failed",
+            diagnostic=CurationValidationDiagnostic(
+                format="pytest-short",
+                text="tests/test_catalog_trust.py:42: AssertionError",
+                truncated=False,
+            ),
+        )
+
+
 SHA_1 = "1" * 40
 SHA_2 = "2" * 40
 SHA_3 = "3" * 40

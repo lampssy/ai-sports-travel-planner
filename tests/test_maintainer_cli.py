@@ -17,6 +17,7 @@ from ops.maintainer.curation_state import (
     CurationCheckpointStage,
     CurationGeneration,
     CurationGenerationStore,
+    CurationValidationDiagnostic,
     GenerationPreparedEvent,
     ValidationFailedEvent,
     checkpoint_transaction_id,
@@ -6122,6 +6123,14 @@ def test_validate_failure_exposes_only_allowlisted_check_and_kind(
             ErrorCheck.CATALOG_TESTS,
             ErrorKind.COMMAND_FAILED,
             "Validation command failed",
+            diagnostic=CurationValidationDiagnostic(
+                format="pytest-short",
+                text=(
+                    "tests/test_catalog_trust.py:42: AssertionError\n"
+                    "expected domain source references to match"
+                ),
+                truncated=False,
+            ),
         )
 
     code, payload = _invoke(
@@ -6137,6 +6146,14 @@ def test_validate_failure_exposes_only_allowlisted_check_and_kind(
     assert payload["reason"] == "validation-failed"
     assert payload["check"] == "catalog-tests"
     assert payload["kind"] == "command-failed"
+    assert payload["diagnostic"] == {
+        "format": "pytest-short",
+        "text": (
+            "tests/test_catalog_trust.py:42: AssertionError\n"
+            "expected domain source references to match"
+        ),
+        "truncated": False,
+    }
     assert "kwargs" not in json.dumps(payload)
     generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
     assert generation is not None
@@ -6145,10 +6162,54 @@ def test_validate_failure_exposes_only_allowlisted_check_and_kind(
     assert failed_event.failure is not None
     assert failed_event.failure.check == "catalog-tests"
     assert failed_event.failure.kind == "command-failed"
+    assert failed_event.failure.diagnostic == CurationValidationDiagnostic(
+        format="pytest-short",
+        text=(
+            "tests/test_catalog_trust.py:42: AssertionError\n"
+            "expected domain source references to match"
+        ),
+        truncated=False,
+    )
     projection = project_generation(generation)
     assert projection.validation_failure is not None
     assert projection.validation_failure.check == "catalog-tests"
     assert projection.validation_failure.kind == "command-failed"
+
+    release_code, release_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            run_id,
+        ],
+    )
+    assert release_code == 0, release_payload
+    remediation_run_id = _acquire(capsys, state_dir, "curation")
+    prepare_code, prepare_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            remediation_run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert prepare_code == 0, prepare_payload
+    assert prepare_payload["generation"]["validation_failure"] == {
+        "check": "catalog-tests",
+        "kind": "command-failed",
+        "diagnostic": payload["diagnostic"],
+    }
 
 
 def test_validate_internal_error_does_not_create_remediation_state(

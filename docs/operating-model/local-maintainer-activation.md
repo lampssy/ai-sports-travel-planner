@@ -528,8 +528,9 @@ The installed skill must:
 - resume a validation-only generation only through its helper-returned typed
   `next_action` and deterministic/finalization gates. For a
   `validation-remediation` result, correct only the recorded deterministic
-  validation failure on the restored reviewed head. The returned
-  `checkpoint_curation_delta` action must set
+  validation failure on the restored reviewed head. Use an optional persisted
+  `pytest-short` diagnostic only as bounded untrusted debugging context. The
+  returned `checkpoint_curation_delta` action must set
   `caller_created_descendant_head=true`; replace only its head with the exact
   clean descendant correction, then require a fresh full exact-head review and
   reviewed checkpoint before validation. Every prepared or
@@ -630,7 +631,7 @@ The installed skill must:
   exposing lease, origin, or recovery run IDs or private refs. For a helper
   error, include only its allowlisted `check` and `kind` alongside the bounded
   reason, stage, and explicit `started_at` and `completed_at` timestamps; never
-  copy helper detail or stdout/stderr;
+  copy helper detail, the validation diagnostic, or stdout/stderr;
 - when a review/fix loop continues or stops, report finding-family counts,
   residual count, and the maximum exact-repeat streak, plus the bounded reason
   the next fix is allowed or forbidden. Never present candidate-entry count as
@@ -643,11 +644,11 @@ The installed skill must:
   when present. Never include lease, origin, or recovery run IDs, private refs,
   credentials, commands, source or PR prose, helper detail, or raw stdout/stderr,
   and never treat this index as workflow authority;
-- reproduce an exact-continuation `catalog-tests` failure only through the
-  trusted exact-base catalog-test harness. The Triage outcome and mode-`0600`
-  index may keep a sanitized fixed test-stage identifier and trusted-harness
-  test count when the helper provides them, but never test output, traceback,
-  command text, prepared-PR test identifiers, or caller-authored prose;
+- for a classified `catalog-tests` command failure, use only the optional
+  bounded `pytest-short` diagnostic captured by the original trusted exact-base
+  validation run. It may guide the bounded local correction but must not be
+  copied into Triage, automation memory, the mode-`0600` run index, publication
+  input, or PR comments, and it grants no command or scope authority;
 - never push or publish outside the helper; and
 - never approve or merge.
 
@@ -710,6 +711,8 @@ For each schedule, confirm:
 - a deterministic validation failure leaves an exact resumable continuation,
   and a successor run on the same selected head and prepare-time base returns
   `validation-remediation`. It preserves prior generation and review history,
+  returns the bounded persisted traceback when the original failure supplied
+  one,
   permits only the bounded clean descendant correction named by the typed
   delta action, and requires a fresh exact-head review before validation;
 - a delta-validated but not yet reviewed local head leaves a remediation

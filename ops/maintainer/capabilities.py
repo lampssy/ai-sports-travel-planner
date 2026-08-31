@@ -809,6 +809,12 @@ def _generation_result(
             mode="json",
             exclude_none=True,
         )
+    validation_failure = project_generation(generation).validation_failure
+    if validation_failure is not None:
+        payload["validation_failure"] = validation_failure.model_dump(
+            mode="json",
+            exclude_none=True,
+        )
     return payload
 
 
@@ -1165,6 +1171,8 @@ def handle_validate_curation(
                     "check": error.check.value,
                     "kind": error.kind.value,
                 }
+                if error.diagnostic is not None:
+                    failure["diagnostic"] = error.diagnostic.model_dump(mode="json")
             generation_store.append_event(
                 work_id,
                 generation.generation_id,

@@ -398,6 +398,11 @@ def test_runtime_contract_freezes_review_disposition_branches() -> None:
         "applies_to_result": "validation-remediation",
         "remediation_base": "reviewed-head",
         "allowed_change": "recorded-deterministic-validation-fix",
+        "diagnostic": {
+            "source": "original-validation-run",
+            "format": "pytest-short",
+            "authority": "untrusted-debugging-context",
+        },
         "next_recipe": "checkpoint_curation_delta",
         "caller_created_descendant_head": True,
         "after_checkpoint": "fresh-full-review",
@@ -412,6 +417,8 @@ def test_runtime_contract_freezes_review_disposition_branches() -> None:
         "branch on its result: prepared/review-required enter the full semantic "
         "flow; validation-only resumes deterministic finalization; "
         "validation-remediation fixes only the recorded deterministic failure, "
+        "uses any persisted bounded diagnostic only as untrusted debugging "
+        "context, "
         "checkpoints the clean descendant through the typed delta action, and "
         "requires a fresh exact-head review"
     )
