@@ -1211,7 +1211,8 @@ Expected: the first command lists only contract, tests, spec/ADR, plan, and poli
 
 **Interfaces:**
 - Consumes: the exact repository contract after this branch is merged to current `main`.
-- Produces: synchronized local curation and review skills that can classify Livigno-style coordinated boundaries without a skill/repository mismatch.
+- Produces: synchronized local curation and review skills that can classify
+  coordinated multi-operator boundaries without a skill/repository mismatch.
 
 - [ ] **Step 1: Stop if the repository contract is not merged**
 
@@ -1272,7 +1273,9 @@ In the `Entity Scope Inventory` and `Boundary Adjudication` sections, make these
   `weather_sampling_status=deferred` when ADR 0021 does not pass.
 ```
 
-For Livigno-like evidence that closes this packet, instruct boundary adjudication to return `policy_determined`, not `owner_choice_required` merely because multiple operators exist.
+For evidence that closes this packet, instruct boundary adjudication to return
+`policy_determined`, not `owner_choice_required` merely because multiple
+operators exist.
 
 - [ ] **Step 4: Update the review skill symmetrically**
 
@@ -1288,8 +1291,9 @@ In full review and boundary-adjudication mode, require the reviewer to reconstru
 Add paired decision examples:
 
 ```markdown
-- Positive: Mottolino remains separate while an evidence-complete Livigno west
-  side can be one coordinated area containing its reconciled operator sectors.
+- Positive: a transfer-separated independently owned area remains separate
+  while adjacent evidence-complete multi-operator terrain can be one
+  coordinated area containing its reconciled roster-defined components.
 - Negative: a regional pass and member directory spanning transfer-separated
   complete areas cannot create one coordinated ski area without a complete
   common operating boundary.

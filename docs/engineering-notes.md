@@ -1526,6 +1526,15 @@ Children carry no parent coordination metadata. Coordinated claims require
 report schema version 3. A shared pass alone is insufficient; `weather_scope`
 remains independently gated by ADR 0021.
 
+Component discovery is roster-first. The exhaustive official operator/member
+roster defines the baseline component set; lift names, sectors, stations,
+product labels, and rename pairs from map or status sources remain supporting
+presentations assigned to those members. This does not weaken graph review:
+roster completeness never closes separate-area discovery. Out-of-roster names
+with official terrain, access, operations, weather/season, or dedicated-pass
+semantics are still screened through the ordinary separate-ski-area gates and
+remain unresolved when they may describe a durable boundary.
+
 ## Maintainer Pre-Push Curation Authority
 
 Pre-push curation recovery uses one bounded generation timeline per PR. A

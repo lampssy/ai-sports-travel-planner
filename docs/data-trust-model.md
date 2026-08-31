@@ -62,6 +62,17 @@ refs. Aggregate `coordination_evidence_refs` equals the union of all family
 refs. A coordinated claim or any of this metadata requires report schema
 version 3.
 
+The exhaustive official operator/member roster is the baseline for those
+component IDs. Lift installations, piste sectors, stations, map labels, product
+labels, and legacy/current renames named only by other official sources remain
+supporting presentations and must be assigned to a roster member when used as
+evidence. They are not automatically promoted to components. Every
+out-of-roster presentation with official terrain, access, operations,
+weather/season, or dedicated-pass semantics is nevertheless screened under the
+ordinary separate-ski-area gates. Roster completeness never closes
+separate-area discovery; potential durable terrain or operating boundaries are
+assessed or left unresolved rather than silently ignored.
+
 Each coordinated child is assessed exactly once with
 `disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
 parent, a target reference to that parent, and `operational_scope=coordinated`.

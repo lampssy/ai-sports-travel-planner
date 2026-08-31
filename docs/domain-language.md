@@ -381,6 +381,16 @@ do not repeat the parent's coordination metadata. The pass may also cover a
 separately modeled adjacent ski area and does not establish the boundary by
 itself. Coordinated scope and metadata require report schema version 3.
 
+The exhaustive official operator/member roster is the baseline component set.
+Lift names or numbers, piste sectors, stations, map labels, product labels, and
+legacy/current rename pairs found in other official sources are supporting
+presentations, not automatic components. Assign them to roster members when the
+official relationship is reproducible. Roster completeness never closes
+separate-area discovery. Screen an out-of-roster name whenever official
+evidence gives it terrain, access, operations, weather/season, or dedicated-pass
+semantics: a possible durable boundary must be assessed or left unresolved and
+may be excluded only when evidence establishes an internal feature or rename.
+
 A coordinated child's `not_separate`, `separation_value=redundant`,
 `operational_scope=coordinated`, parent-owned weather, and provider-consensus
 declarations do not erase contradictory source-backed evidence. Complete terrain

@@ -307,7 +307,15 @@ The installed skill must:
   refs, normalization-note need, and coverage disposition. Graph/scope must
   enumerate every concrete operator presentation and lift-pass candidate, with
   typed assessments and canonical backlog refs for deferred or unresolved pass
-  products;
+  products. For coordinated-area candidate selection, use the exhaustive
+  official operator/member roster as the baseline component set. Keep lift
+  names or numbers, piste sectors, stations, map labels, product labels, and
+  rename pairs as supporting presentations unless evidence shows a durable
+  boundary. Roster completeness never closes separate-area discovery. Screen
+  every out-of-roster presentation with official terrain, access, operations,
+  weather/season, or dedicated-pass semantics through the ordinary
+  separate-ski-area gates; assess or leave unresolved a possible complete area,
+  but do not promote an internal feature solely because it is named;
 - for every catalog entity absent from the exact base, apply the new-entity
   completeness gate before freezing the evidence envelope. Enumerate every
   canonical field and required graph relationship, then perform a bounded
@@ -338,9 +346,9 @@ The installed skill must:
   `every_component_pass_coverage`, and
   `direct_component_parent_assignment`. These respectively support the three
   coordination signals and complete direct assignment. Reproduce every
-  component from the bounded official packet, and require every family's
-  `covered_component_candidate_ids` to equal that exact set. Each coordinated
-  child is assessed exactly once with
+  roster-defined component from the bounded official packet, and require every
+  family's `covered_component_candidate_ids` to equal that exact set. Each
+  coordinated child is assessed exactly once with
   `disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
   parent, a target reference to that parent, and `operational_scope=coordinated`.
   Independently re-evaluate each child's complete-terrain and terrain-identity
@@ -349,6 +357,13 @@ The installed skill must:
   weather; transfer-required or disconnected children require one. Declarations
   of `not_separate`, `redundant`, or coordinated ownership do not override this
   evidence.
+  Cross-check map, status, schedule, pass, and operator pages against the roster.
+  Assign lift, sector, station, product, and rename presentations to their
+  roster-defined component when official evidence makes the mapping
+  reproducible. An out-of-roster name with official terrain, access, operations,
+  weather/season, or dedicated-pass semantics remains a candidate for the
+  ordinary separation assessment; an established internal feature is not a
+  missing component.
   A broader official status or pass source is acceptable only when each
   component is exactly addressable; a shared pass alone is insufficient.
   Evaluate `weather_scope` and ADR 0021 independently;

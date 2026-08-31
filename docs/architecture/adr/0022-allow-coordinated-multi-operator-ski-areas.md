@@ -62,6 +62,25 @@ A coordinated area additionally requires all of the following:
   separate identity;
 - no component that independently passes the ordinary separate-ski-area gates.
 
+The official exhaustive operator/component roster is the baseline component
+set. A lift name or number, piste sector, station, map label, product label, or
+legacy/current rename pair does not become a component candidate merely because
+it appears in a map, status, schedule, or pass source. Those presentations are
+supporting evidence and must be assigned to a roster-defined component when the
+official sources make that relationship reproducible.
+
+The roster is not a blind allowlist. Roster completeness closes only the
+coordinated component set; it never closes separate-area discovery. An
+out-of-roster name must be screened against the ordinary separate-ski-area
+gates whenever official evidence associates it with terrain extent,
+access/connectivity, current operations or schedules, weather or season
+semantics, or a dedicated pass or product. Promote it to a component or
+separate-area assessment when that evidence indicates a durable terrain or
+operating boundary. Leave the graph unresolved when the evidence conflicts or
+cannot distinguish such a boundary. Exclude it from the component set only
+when the evidence establishes that it is an internal lift, sector, station,
+product label, or rename of an already assigned presentation.
+
 Child closure declarations are not counter-evidence. For every coordinated
 child, ordinary viability is derived directly from its source-backed signals:
 complete terrain scope plus a terrain-identity signal is required first;

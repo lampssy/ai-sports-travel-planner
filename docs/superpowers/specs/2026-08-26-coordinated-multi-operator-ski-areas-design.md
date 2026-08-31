@@ -247,7 +247,28 @@ membership or status so the coordinated subset is reproducible. Regional pass
 coverage, a member list without common operations, or an area-wide map without
 an exhaustive component disposition is insufficient.
 
-For Livigno, the intended later assessment is:
+Candidate selection is roster-first. The authoritative exhaustive official
+operator/member roster, or an equivalent official component roster, defines the
+baseline `component_candidate_ids`. Names found only as lift installations,
+piste sectors, stations, map labels, product labels, or legacy/current renames
+remain supporting presentations and are mapped to roster members; they do not
+become candidates solely because another official source names them.
+
+Roster-first does not permit omissions or close separate-area discovery. An
+out-of-roster name is screened through the ordinary separate-ski-area gates
+whenever official evidence associates it with terrain extent,
+access/connectivity, current operations or schedules, weather or season
+semantics, or a dedicated pass or product. It is added to the boundary
+assessment when it may represent a durable component or independent complete
+area, and remains unresolved when conflicting evidence cannot decide that
+question. It may be excluded from the component set only when official evidence
+identifies it as an internal feature or rename of an already assessed
+presentation. This changes source interpretation only; it does not add report
+fields or require a new schema version.
+
+Non-normative Livigno illustration: all destination-specific source facts and
+name assignments must be reverified and recorded in the curation report rather
+than copied from this spec. The intended graph pattern is:
 
 - keep Mottolino-Trepalle separate because it is a complete transfer-required
   area with material operations and weather value;
@@ -306,12 +327,17 @@ For Livigno, the intended later assessment is:
   cannot be folded into the coordinated parent.
 - Minor satellite or nursery lifts can remain `not_separate` when all coordinated
   evidence and no-independent-value conditions pass.
+- A lift, sector, station, product label, or rename found outside the official
+  roster does not become a component automatically, while an out-of-roster
+  complete area satisfying the ordinary separation gates is still detected and
+  cannot be hidden inside the coordinated parent.
 - Existing non-coordinated schema-version-3 reports and their deterministic
   Markdown rendering remain unchanged.
 - Curation and review skills use the same coordinated-area definition and
   evidence checklist.
-- Livigno can be reviewed as Mottolino-Trepalle plus one coordinated west-side
-  ski area without treating legal operator plurality as evidence insufficiency.
+- A transfer-separated independently owned area can remain separate while an
+  adjacent evidence-complete multi-operator area is coordinated without
+  treating legal operator plurality as evidence insufficiency.
 - Weather sampling for that west-side area remains independently gated.
 
 ## Verification
@@ -322,8 +348,8 @@ For Livigno, the intended later assessment is:
   coordinated component and parent-target deltas.
 - Rendering tests: deterministic Markdown includes coordinated ownership and
   component IDs.
-- Skill checks: paired Livigno positive case and regional-pass negative case in
-  curation/review guidance.
+- Skill checks: paired coordinated-area positive case and regional-pass
+  negative case in curation/review guidance.
 - Regression: existing catalog validation and focused catalog suites remain
   green.
 
