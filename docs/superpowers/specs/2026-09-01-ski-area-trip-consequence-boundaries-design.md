@@ -121,6 +121,10 @@ Invariants:
   not merely a shuttle, excursion, connector, or map distance;
 - coordinated-child closure evaluates all three ordinary gates, so independent
   owner evidence without material trip value does not force a child split;
+- schema-v4 coordinated parents may use explicit component assignment or a
+  reproducible derivation from the complete official terrain topology, exact
+  roster, and addressable operations view; pass, branding, or proximity alone
+  remains insufficient;
 - aggregate pass terrain stays on the pass and is not copied to child ski areas.
 - `external_pass_context` is invalid for a concrete ski-area candidate; use a
   typed deferred or unresolved boundary instead;
@@ -221,9 +225,11 @@ Compatibility lifecycle:
 | New proposal or remediation output | 4 | Requires semantic review |
 | Reviewed intent, reconciliation, and finalization | 4 | Current publication authority |
 
-Schema version 4 is a strict superset of every schema-version-3 structural and
-trust invariant. Normalizing an in-flight schema-v3 generation to version 4 is
-a semantic change and cannot reuse earlier reviewed authority.
+Schema version 4 preserves every schema-version-3 structural and trust
+invariant while replacing its literal direct-assignment family with the current
+generic component-assignment family. Normalizing an in-flight schema-v3
+generation to version 4 is a semantic change and cannot reuse earlier reviewed
+authority.
 
 ## Acceptance Criteria
 
@@ -238,6 +244,10 @@ a semantic change and cannot reuse earlier reviewed authority.
 - a coordinated child with owner evidence but no material consequence remains
   valid inside its coordinated parent;
 - a coordinated child with all three gates is rejected as independently viable;
+- schema-v4 uses `component_parent_assignment`, while schema-v3 retains its
+  historical `direct_component_parent_assignment`; derived assignment requires
+  unique candidate-specific official terrain placement and documented
+  normalization;
 - schema-v3 reports retain their existing behavior and deterministic Markdown;
 - maintainer finalization requires schema version 4;
 - installed curation and review skills state the same generic rule.

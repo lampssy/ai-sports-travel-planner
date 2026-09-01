@@ -57,8 +57,9 @@ A coordinated area additionally requires all of the following:
 - each coordinated child assessed exactly once with
   `disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
   parent, a target reference to that parent, and `operational_scope=coordinated`;
-- direct component-to-parent assignment evidence for every component; common
-  official sources may supply it when they make every assignment explicit;
+- component-to-parent assignment evidence for every component. The assignment
+  may be explicit in an official source or reproducibly derived from official
+  terrain evidence under the constraints below;
 - no material component-level weather or season semantics that require a
   separate identity;
 - no component that independently passes the ordinary separate-ski-area gates.
@@ -105,6 +106,23 @@ they are not literally piste-connected. They must share the complete local map,
 status system, pass, and stay market; they must not have material independent
 recommendation, operations, weather, season, or pass value.
 
+A reproducibly derived component assignment is valid only when official
+evidence collectively:
+
+- defines the complete parent terrain boundary through a map or lift inventory;
+- locates the component's named installations inside that boundary;
+- identifies the same component through the exhaustive roster and addressable
+  operations or schedule presentation; and
+- leaves no conflicting or equally plausible parent assignment.
+
+The report must preserve the candidate-specific evidence and explain the
+derivation in its evidence summary or normalization note. A Snowcast-normalized
+parent name does not need to appear verbatim in the source. Shared pass
+coverage, branding, association membership, geographical proximity, or one
+website cannot establish a derived assignment without the complete terrain and
+component evidence above. If the topology cannot assign a component uniquely,
+the coordinated graph remains unresolved.
+
 A substantial transfer-required, weather-distinct, or independently operated
 complete area remains a separate `SkiArea` only when it also has the durable
 material trip-level consequence required by ADR 0023. Those facts are owner or
@@ -116,12 +134,13 @@ The curation contract represents this decision explicitly rather than changing
 the meaning of `independent`. A coordinated parent owns
 `component_candidate_ids`, `coordination_evidence_families`, and aggregate
 `coordination_evidence_refs`. Each typed family item records `family`, non-empty
-`evidence_refs`, and `covered_component_candidate_ids`. The five allowed family
+`evidence_refs`, and `covered_component_candidate_ids`. The five current family
 values are `complete_terrain_lift_inventory`,
 `exhaustive_component_operator_roster`,
 `component_addressable_operations_status`,
 `every_component_pass_coverage`, and
-`direct_component_parent_assignment`.
+`component_parent_assignment`. The final family may use an explicit official
+assignment or the reproducible official-terrain derivation above.
 
 Every family covers exactly the parent's component IDs. Its evidence resolves
 to `source_type=official` items included in both boundary and scope evidence,
@@ -129,9 +148,10 @@ and the aggregate refs equal the union of the family refs. The metadata belongs
 only to a `represented` or `add_entity` parent; coordinated `not_separate`
 children retain the coordinated operational scope and parent target but no
 parent metadata. Schema versions 1 and 2 cannot claim coordinated scope or
-metadata. Existing schema-version-3 reports remain valid and retain their legacy
-Markdown. Current schema version 4 adds ADR 0023's material trip-consequence
-gate without changing the coordination evidence packet. Operations and weather use separate report-only
+metadata. Existing schema-version-3 reports remain valid with their historical
+`direct_component_parent_assignment` family and retain their legacy Markdown.
+Current schema version 4 uses `component_parent_assignment` and adds ADR 0023's
+material trip-consequence gate. Operations and weather use separate report-only
 type aliases so `coordinated` is valid only for `operational_scope`; it is not a
 weather-scope classification.
 

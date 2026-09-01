@@ -238,6 +238,7 @@ CatalogSkiAreaCoordinationEvidenceFamilyType = Literal[
     "component_addressable_operations_status",
     "every_component_pass_coverage",
     "direct_component_parent_assignment",
+    "component_parent_assignment",
 ]
 JsonValue = str | int | float | bool | None | dict[str, Any] | list[Any]
 
@@ -285,14 +286,25 @@ SKI_AREA_COORDINATED_OPERATION_SIGNALS = frozenset(
         "common_full_coverage_pass",
     }
 )
-SKI_AREA_COORDINATED_EVIDENCE_FAMILY_ORDER: tuple[
+SKI_AREA_COORDINATED_BASE_EVIDENCE_FAMILY_ORDER: tuple[
     CatalogSkiAreaCoordinationEvidenceFamilyType, ...
 ] = (
     "complete_terrain_lift_inventory",
     "exhaustive_component_operator_roster",
     "component_addressable_operations_status",
     "every_component_pass_coverage",
+)
+SKI_AREA_COORDINATED_LEGACY_EVIDENCE_FAMILY_ORDER: tuple[
+    CatalogSkiAreaCoordinationEvidenceFamilyType, ...
+] = (
+    *SKI_AREA_COORDINATED_BASE_EVIDENCE_FAMILY_ORDER,
     "direct_component_parent_assignment",
+)
+SKI_AREA_COORDINATED_CURRENT_EVIDENCE_FAMILY_ORDER: tuple[
+    CatalogSkiAreaCoordinationEvidenceFamilyType, ...
+] = (
+    *SKI_AREA_COORDINATED_BASE_EVIDENCE_FAMILY_ORDER,
+    "component_parent_assignment",
 )
 SKI_AREA_OPERATION_OWNER_SIGNALS = frozenset(
     {"separate_operator", "independent_status_or_schedule"}
@@ -1783,7 +1795,19 @@ def _validate_ski_area_boundary_assessment(
         families_by_name = {
             family.family: family for family in boundary.coordination_evidence_families
         }
-        for family_name in SKI_AREA_COORDINATED_EVIDENCE_FAMILY_ORDER:
+        required_family_order = (
+            SKI_AREA_COORDINATED_CURRENT_EVIDENCE_FAMILY_ORDER
+            if report_schema_version >= 4
+            else SKI_AREA_COORDINATED_LEGACY_EVIDENCE_FAMILY_ORDER
+        )
+        unexpected_families = set(families_by_name) - set(required_family_order)
+        for family_name in sorted(unexpected_families):
+            issues.append(
+                f"{candidate_id}: coordinated ski area has unexpected evidence "
+                f"family {family_name} for report schema version "
+                f"{report_schema_version}"
+            )
+        for family_name in required_family_order:
             family = families_by_name.get(family_name)
             if family is None:
                 issues.append(
@@ -2755,12 +2779,19 @@ def _code_cell(value: str) -> str:
 
 def _render_coordination_evidence_families(
     boundary: CatalogSkiAreaBoundaryAssessment,
+    *,
+    report_schema_version: int,
 ) -> str:
     families_by_name = {
         family.family: family for family in boundary.coordination_evidence_families
     }
     rendered_families: list[str] = []
-    for family_name in SKI_AREA_COORDINATED_EVIDENCE_FAMILY_ORDER:
+    family_order = (
+        SKI_AREA_COORDINATED_CURRENT_EVIDENCE_FAMILY_ORDER
+        if report_schema_version >= 4
+        else SKI_AREA_COORDINATED_LEGACY_EVIDENCE_FAMILY_ORDER
+    )
+    for family_name in family_order:
         family = families_by_name.get(family_name)
         if family is None:
             continue
@@ -3416,7 +3447,10 @@ def render_catalog_curation_report_markdown(
                         _code_cell(evidence_id)
                         for evidence_id in boundary.coordination_evidence_refs
                     )
-                    family_ownership = _render_coordination_evidence_families(boundary)
+                    family_ownership = _render_coordination_evidence_families(
+                        boundary,
+                        report_schema_version=report.report_schema_version,
+                    )
                     coordination_cells = (
                         f" | {components} | {coordination_evidence} | "
                         f"{family_ownership}"

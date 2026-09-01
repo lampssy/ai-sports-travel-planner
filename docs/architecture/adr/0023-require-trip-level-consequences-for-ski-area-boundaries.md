@@ -95,10 +95,17 @@ parent even when it has a company, page, or candidate-scoped operations
 presentation, provided it lacks material trip-level value. Conversely, a child
 that passes all three gates cannot be hidden inside the parent.
 
+Failure of the third gate also permits schema-version-4 component membership to
+be reproducibly derived under ADR 0022. The derivation still requires complete
+official terrain topology, exact roster and operations accounting, and a unique
+parent; it does not permit grouping by pass, branding, or proximity alone.
+
 Historical report schemas 1-3 remain parseable under their original contract.
-Schema version 4 is a strict superset of schema version 3. Newly finalized
-maintainer reports use schema version 4, and normalization from an in-flight
-schema-version-3 generation requires fresh semantic review.
+Schema version 4 preserves schema-version-3 invariants but replaces its literal
+direct-assignment family with ADR 0022's current generic component-assignment
+family. Newly finalized maintainer reports use schema version 4, and
+normalization from an in-flight schema-version-3 generation requires fresh
+semantic review.
 
 ## Consequences
 

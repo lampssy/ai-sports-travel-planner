@@ -53,8 +53,9 @@ official packet requires all five evidence families:
    schedule presentation supporting `coordinated_status_or_schedule`;
 4. `every_component_pass_coverage`: an official pass supporting
    `common_full_coverage_pass`; and
-5. `direct_component_parent_assignment`: official evidence assigning every
-   component directly to the parent.
+5. `component_parent_assignment`: official evidence assigning every component
+   to the parent, either explicitly or through a reproducible derivation from
+   the complete official terrain map or inventory.
 
 The parent records these in `coordination_evidence_families`. Each typed item
 has non-empty `evidence_refs` and `covered_component_candidate_ids`; the covered
@@ -62,7 +63,16 @@ IDs must equal the parent's exact `component_candidate_ids`. Family evidence
 must be `source_type=official` and appear in the boundary and scope evidence
 refs. Aggregate `coordination_evidence_refs` equals the union of all family
 refs. Coordinated claims and metadata were introduced in report schema version
-3 and remain valid in current schema version 4.
+3. Historical schema-version-3 reports retain
+`direct_component_parent_assignment`; current schema version 4 uses
+`component_parent_assignment`.
+
+A derived assignment requires candidate-specific official evidence locating
+the component's installations inside the complete parent terrain boundary, the
+same component in the exhaustive roster and addressable operations view, and
+no conflicting or equally plausible parent. Record the derivation in the
+evidence summary or normalization note. Pass coverage, branding, association
+membership, proximity, or a shared website cannot establish it alone.
 
 The exhaustive official operator/member roster is the baseline for those
 component IDs. Lift installations, piste sectors, stations, map labels, product

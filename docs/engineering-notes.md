@@ -1515,7 +1515,7 @@ activate weather history.
 
 That contract requires `official_complete_lift_inventory`, an exhaustive
 component roster, `coordinated_status_or_schedule`,
-`common_full_coverage_pass`, and direct assignment evidence. A coordinated
+`common_full_coverage_pass`, and component assignment evidence. A coordinated
 parent records these as the five typed `coordination_evidence_families` defined
 by ADR 0022. Every family owns official evidence refs and covers the parent's
 exact component IDs; aggregate `coordination_evidence_refs` is their union.
@@ -1526,6 +1526,15 @@ Children carry no parent coordination metadata. Coordinated claims were
 introduced in report schema version 3. Current schema version 4 additionally
 requires ADR 0023's material trip-consequence assessment. A shared pass alone
 is insufficient; `weather_scope` remains independently gated by ADR 0021.
+
+Schema version 4 accepts an explicit component assignment or a reproducible
+derivation from official terrain topology. The derived path requires the
+complete parent map or inventory, candidate-specific installation placement,
+the same component in the exhaustive roster and addressable operations view,
+and no conflicting parent. It exists for normalized skier-facing areas whose
+name is not published verbatim; it does not permit grouping by pass, branding,
+association membership, or proximity alone. Historical schema-version-3
+reports retain the literal `direct_component_parent_assignment` family.
 
 Component discovery is roster-first. The exhaustive official operator/member
 roster defines the baseline component set; lift names, sectors, stations,

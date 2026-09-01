@@ -272,6 +272,14 @@ The installed skill must:
   branding, or provider consensus override this check. Sector terrain and one
   connected pass-only category remain insufficient. Reject
   coordinated scope or metadata in report schema versions 1 and 2.
+  Schema-version-3 reports retain `direct_component_parent_assignment`;
+  schema-version-4 reports require `component_parent_assignment`. The current
+  family may use an explicit assignment or a reproducible derivation from an
+  official complete parent map or inventory, candidate-specific installation
+  placement, the exhaustive roster, and the addressable operations view. The
+  evidence summary or normalization note explains the derivation. Reject a
+  derived assignment when another parent is equally plausible or when it rests
+  only on pass coverage, branding, association membership, or proximity.
   `weather_scope` remains independently constrained by ADR 0021 and cannot be
   inferred from coordinated operations. A shared pass alone is insufficient.
   Run schema-v4 reconciliation and regenerate/compare the Markdown companion
@@ -351,8 +359,8 @@ The installed skill must:
   `exhaustive_component_operator_roster`,
   `component_addressable_operations_status`,
   `every_component_pass_coverage`, and
-  `direct_component_parent_assignment`. These respectively support the three
-  coordination signals and complete direct assignment. Reproduce every
+  `component_parent_assignment`. These respectively support the three
+  coordination signals and complete assignment. Reproduce every
   roster-defined component from the bounded official packet, and require every
   family's `covered_component_candidate_ids` to equal that exact set. Each
   coordinated child is assessed exactly once with
@@ -367,7 +375,11 @@ The installed skill must:
   Cross-check map, status, schedule, pass, and operator pages against the roster.
   Assign lift, sector, station, product, and rename presentations to their
   roster-defined component when official evidence makes the mapping
-  reproducible. An out-of-roster name with official terrain, access, operations,
+  reproducible. Component-to-parent assignment may likewise be derived when the
+  complete official parent topology uniquely contains the component's named
+  installations and the roster and operations view identify the same component.
+  The normalized parent name need not appear verbatim. An out-of-roster name
+  with official terrain, access, operations,
   weather/season, or dedicated-pass semantics remains a candidate for the
   ordinary separation assessment; an established internal feature is not a
   missing component.
@@ -488,7 +500,8 @@ The installed skill must:
     coordination signals, and complete child reconciliation all reconcile;
   - return `evidence_insufficient` whenever any evidence family or child
     closure is missing. Fail closed for a missing inventory or roster, current
-    operations or status, pass coverage, ambiguous assignment evidence, or a
+    operations or status, pass coverage, assignment evidence that is neither
+    explicit nor uniquely reproducible from the official terrain packet, or a
     child that cannot meet the exact coordinated-child invariant. Also fail
     closed when a complete child with terrain identity independently satisfies
     the ordinary owner threshold: two directly derived owner categories,

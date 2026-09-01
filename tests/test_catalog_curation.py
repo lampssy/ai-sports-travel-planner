@@ -547,6 +547,9 @@ def _coordinated_parent(payload: dict) -> dict:
 def _upgrade_coordinated_payload_to_schema_four(payload: dict) -> None:
     payload["report_schema_version"] = 4
     parent = _coordinated_parent(payload)
+    for family in parent["ski_area_boundary"]["coordination_evidence_families"]:
+        if family["family"] == "direct_component_parent_assignment":
+            family["family"] = "component_parent_assignment"
     parent["ski_area_boundary"]["material_trip_consequences"] = [
         _material_trip_consequence_payload(
             consequence_type="pass_price_or_coverage",
@@ -1506,6 +1509,28 @@ def test_schema_three_rejects_unresolved_component_assignment_coverage() -> None
         validate_catalog_curation_report(report)
 
 
+def test_schema_three_rejects_schema_four_component_assignment_family() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    assignment_family = next(
+        family
+        for family in _coordinated_parent(payload)["ski_area_boundary"][
+            "coordination_evidence_families"
+        ]
+        if family["family"] == "direct_component_parent_assignment"
+    )
+    assignment_family["family"] = "component_parent_assignment"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "coordinated ski area requires evidence family "
+            "direct_component_parent_assignment"
+        ),
+    ):
+        validate_catalog_curation_report(report)
+
+
 def test_schema_one_rejects_coordinated_scope_and_metadata() -> None:
     payload = _coordinated_ski_area_report_payload()
     payload["report_schema_version"] = 1
@@ -1860,6 +1885,27 @@ def test_schema_four_allows_coordinated_component_without_trip_consequence() -> 
     component_boundary["provider_consensus"] = "separate"
 
     validate_catalog_curation_report(CatalogCurationReport.model_validate(payload))
+
+
+def test_schema_four_rejects_legacy_direct_parent_assignment_family() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    _upgrade_coordinated_payload_to_schema_four(payload)
+    parent = _coordinated_parent(payload)
+    assignment_family = next(
+        family
+        for family in parent["ski_area_boundary"]["coordination_evidence_families"]
+        if family["family"] == "component_parent_assignment"
+    )
+    assignment_family["family"] = "direct_component_parent_assignment"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "coordinated ski area requires evidence family component_parent_assignment"
+        ),
+    ):
+        validate_catalog_curation_report(report)
 
 
 def test_schema_four_rejects_coordinated_component_when_all_three_gates_pass() -> None:
@@ -3349,6 +3395,17 @@ def test_coordinated_ski_area_markdown_renders_components_and_evidence() -> None
 
     assert "| Components | Coordination Evidence | Evidence Families |" in rendered
     assert rendered.splitlines().count(parent_row) == 1
+
+
+def test_schema_four_markdown_renders_component_parent_assignment() -> None:
+    payload = _coordinated_ski_area_report_payload()
+    _upgrade_coordinated_payload_to_schema_four(payload)
+    report = CatalogCurationReport.model_validate(payload)
+
+    rendered = render_catalog_curation_report_markdown(report)
+
+    assert "`component_parent_assignment`: components" in rendered
+    assert "`direct_component_parent_assignment`: components" not in rendered
 
 
 def test_schema_three_graph_is_required_only_when_requested() -> None:

@@ -389,15 +389,20 @@ The parent records five typed `coordination_evidence_families`:
 `exhaustive_component_operator_roster`,
 `component_addressable_operations_status`,
 `every_component_pass_coverage`, and
-`direct_component_parent_assignment`. Every family has official
+`component_parent_assignment`. Every family has official
 `evidence_refs` and `covered_component_candidate_ids` equal to the parent's
 exact `component_candidate_ids`; aggregate `coordination_evidence_refs` is the
-union of those family refs. Direct assignment must resolve every component,
-although a common official source may establish several assignments. Children
+union of those family refs. Assignment must resolve every component. It may be
+explicit or reproducibly derived when official terrain evidence uniquely
+locates the component inside the complete parent boundary and the official
+roster and operations view identify the same component. The report records the
+derivation in its evidence summary or normalization note. Pass coverage,
+branding, proximity, or association membership alone is insufficient. Children
 do not repeat the parent's coordination metadata. The pass may also cover a
 separately modeled adjacent ski area and does not establish the boundary by
-itself. Coordinated scope and metadata were introduced in report schema version
-3 and remain required by current schema version 4.
+itself. Schema-version-3 reports retain the historical
+`direct_component_parent_assignment`; current schema version 4 uses the generic
+family above.
 
 The exhaustive official operator/member roster is the baseline component set.
 Lift names or numbers, piste sectors, stations, map labels, product labels, and

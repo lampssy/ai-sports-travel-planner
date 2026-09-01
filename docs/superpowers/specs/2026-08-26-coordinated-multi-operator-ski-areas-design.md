@@ -1,5 +1,12 @@
 # Feature Spec: Coordinated Multi-Operator Ski Areas
 
+> Schema-version-4 amendment (2026-09-02): the original
+> `direct_component_parent_assignment` family below remains the historical
+> schema-version-3 contract. Current schema version 4 uses
+> `component_parent_assignment`, which accepts explicit assignment or a unique,
+> documented derivation from complete official terrain topology, exact roster,
+> and addressable operations evidence. ADR 0022 owns the current rule.
+
 ## Status
 
 - Status: implementation and clean Data Trust / Backend API feature re-review
