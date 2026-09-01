@@ -53,7 +53,8 @@ CatalogFieldCoverageStatus = Literal[
 CatalogIssueSeverity = Literal["error", "warning"]
 CatalogReviewScope = Literal["full", "narrow"]
 CatalogResultingGraphRole = Literal["focus", "linked_dependency"]
-CatalogReportSchemaVersion = Literal[1, 2, 3]
+CatalogReportSchemaVersion = Literal[1, 2, 3, 4]
+CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION = 4
 CatalogScopeCandidateKind = Literal[
     "stay_destination",
     "stay_base",
@@ -195,6 +196,42 @@ CatalogSkiAreaProviderConsensus = Literal[
     "unknown",
 ]
 CatalogSkiAreaSeparationValue = Literal["material", "redundant", "unresolved"]
+CatalogSkiAreaTripConsequenceType = Literal[
+    "pass_price_or_coverage",
+    "stay_access_or_transfer",
+    "weather_or_season",
+    "terrain_character_or_skill_fit",
+]
+CatalogSkiAreaTripDecisionEffect = Literal[
+    "selected_ski_area",
+    "stay_to_ski_configuration",
+    "lift_pass_choice",
+    "conditions_evidence_profile",
+]
+CatalogSkiAreaTripComparisonBasis = Literal[
+    "parent_ski_area",
+    "sibling_ski_area",
+    "stay_market_baseline",
+]
+CatalogSkiAreaTripConsequenceDurabilityBasis = Literal[
+    "published_product_contract",
+    "durable_access_geometry",
+    "recurring_season_pattern",
+    "durable_terrain_profile",
+]
+SKI_AREA_TRIP_CONSEQUENCE_DURABILITY_BASES: Mapping[
+    CatalogSkiAreaTripConsequenceType,
+    frozenset[CatalogSkiAreaTripConsequenceDurabilityBasis],
+] = MappingProxyType(
+    {
+        "pass_price_or_coverage": frozenset({"published_product_contract"}),
+        "stay_access_or_transfer": frozenset({"durable_access_geometry"}),
+        "weather_or_season": frozenset(
+            {"recurring_season_pattern", "durable_terrain_profile"}
+        ),
+        "terrain_character_or_skill_fit": frozenset({"durable_terrain_profile"}),
+    }
+)
 CatalogSkiAreaCoordinationEvidenceFamilyType = Literal[
     "complete_terrain_lift_inventory",
     "exhaustive_component_operator_roster",
@@ -901,6 +938,40 @@ class CatalogSkiAreaCoordinationEvidenceFamily(CatalogCurationContractModel):
         )
 
 
+class CatalogSkiAreaTripConsequence(CatalogCurationContractModel):
+    consequence_type: CatalogSkiAreaTripConsequenceType
+    decision_effect: CatalogSkiAreaTripDecisionEffect
+    comparison_basis: CatalogSkiAreaTripComparisonBasis
+    comparison_target_id: str = Field(min_length=1)
+    durability_basis: CatalogSkiAreaTripConsequenceDurabilityBasis
+    evidence_refs: list[str] = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
+        return _validate_string_list(values, "material trip consequence evidence_refs")
+
+    @field_validator("comparison_target_id", "rationale")
+    @classmethod
+    def validate_text_fields(cls, value: str, info: ValidationInfo) -> str:
+        return _validate_non_blank_string(
+            value,
+            f"material trip consequence {info.field_name}",
+        )
+
+    @model_validator(mode="after")
+    def validate_durability_basis(self) -> CatalogSkiAreaTripConsequence:
+        allowed = SKI_AREA_TRIP_CONSEQUENCE_DURABILITY_BASES[self.consequence_type]
+        if self.durability_basis not in allowed:
+            expected = " or ".join(sorted(allowed))
+            raise ValueError(
+                f"{self.consequence_type} consequence requires "
+                f"durability_basis={expected}"
+            )
+        return self
+
+
 class CatalogSkiAreaBoundaryAssessment(CatalogCurationContractModel):
     parent_ski_area_id: str | None = None
     terrain_scope: CatalogSkiAreaTerrainScope
@@ -914,6 +985,9 @@ class CatalogSkiAreaBoundaryAssessment(CatalogCurationContractModel):
     coordination_evidence_refs: list[str] = Field(default_factory=list)
     coordination_evidence_families: list[CatalogSkiAreaCoordinationEvidenceFamily] = (
         Field(default_factory=list)
+    )
+    material_trip_consequences: list[CatalogSkiAreaTripConsequence] = Field(
+        default_factory=list
     )
     evidence_refs: list[str] = Field(min_length=1)
 
@@ -970,6 +1044,24 @@ class CatalogSkiAreaBoundaryAssessment(CatalogCurationContractModel):
             raise ValueError(
                 "coordination_evidence_refs must be included in evidence_refs"
             )
+        return self
+
+    @model_validator(mode="after")
+    def validate_material_trip_consequences(self) -> CatalogSkiAreaBoundaryAssessment:
+        consequence_keys = [
+            (
+                consequence.consequence_type,
+                consequence.decision_effect,
+                consequence.comparison_basis,
+                consequence.comparison_target_id,
+                consequence.durability_basis,
+                tuple(sorted(consequence.evidence_refs)),
+                consequence.rationale,
+            )
+            for consequence in self.material_trip_consequences
+        ]
+        if len(consequence_keys) != len(set(consequence_keys)):
+            raise ValueError("exact duplicate material trip consequences are forbidden")
         return self
 
     @property
@@ -1252,10 +1344,12 @@ def validate_catalog_curation_report(
         )
     if (
         require_resulting_graph
-        and report.report_schema_version == 3
+        and report.report_schema_version >= 3
         and report.resulting_graph is None
     ):
-        issues.append("schema version 3 requires resulting_graph")
+        issues.append(
+            f"schema version {report.report_schema_version} requires resulting_graph"
+        )
     if any(change.ranking_relevant for change in report.changes):
         if not report.ranking_impact_summary:
             issues.append(
@@ -1425,7 +1519,7 @@ def validate_catalog_curation_report(
     for change in report.changes:
         matching_evidence = evidence_by_key.get(change.target_key, [])
         if (
-            report.report_schema_version == 3
+            report.report_schema_version >= 3
             and change.target_type == "lift_pass_product"
             and change.field_path == "validity_windows"
             and isinstance(change.after, list)
@@ -1530,6 +1624,8 @@ def _validate_ski_area_boundary_assessment(
     assessment: CatalogEntityScopeAssessment,
     evidence_by_id: Mapping[str, CatalogEvidenceItem],
     issues: list[str],
+    *,
+    report_schema_version: int,
 ) -> None:
     boundary = assessment.ski_area_boundary
     if boundary is None:
@@ -1548,6 +1644,39 @@ def _validate_ski_area_boundary_assessment(
             f"{candidate_id}: ski-area boundary evidence must also appear in "
             "scope evidence_refs"
         )
+
+    _validate_material_trip_consequences(
+        assessment,
+        evidence_by_id,
+        issues,
+        report_schema_version=report_schema_version,
+    )
+
+    if assessment.disposition == "external_pass_context" and report_schema_version >= 4:
+        issues.append(
+            f"{candidate_id}: ski-area candidate forbids external_pass_context; "
+            "use deferred or unresolved for an undecided boundary"
+        )
+
+    if report_schema_version >= 4:
+        has_consequences = bool(boundary.material_trip_consequences)
+        if boundary.separation_value == "redundant" and has_consequences:
+            issues.append(
+                f"{candidate_id}: redundant separation value forbids material "
+                "trip consequences"
+            )
+        if boundary.separation_value == "material" and not has_consequences:
+            issues.append(
+                f"{candidate_id}: material separation value requires a material "
+                "trip consequence"
+            )
+        if assessment.disposition in {"deferred", "unresolved"} and (
+            boundary.separation_value != "unresolved"
+        ):
+            issues.append(
+                f"{candidate_id}: {assessment.disposition} ski area requires "
+                "unresolved separation value"
+            )
 
     if boundary.has_coordination_metadata and assessment.disposition not in {
         "represented",
@@ -1568,10 +1697,35 @@ def _validate_ski_area_boundary_assessment(
                 f"{candidate_id}: not_separate ski area requires its parent "
                 "as the catalog target"
             )
-        if boundary.separation_value != "redundant":
+        if report_schema_version < 4 and boundary.separation_value != "redundant":
             issues.append(
                 f"{candidate_id}: not_separate ski area requires redundant "
                 "separation value"
+            )
+        if report_schema_version >= 4 and (
+            boundary.connectivity_to_parent == "unknown"
+        ):
+            issues.append(
+                f"{candidate_id}: not_separate ski area requires resolved "
+                "parent connectivity"
+            )
+        if report_schema_version >= 4 and (
+            _ski_area_candidate_satisfies_ordinary_separate_gates(
+                assessment,
+                require_material_trip_consequence=True,
+            )
+        ):
+            issues.append(
+                f"{candidate_id}: not_separate candidate independently satisfies "
+                "ordinary separate-ski-area gates"
+            )
+        if report_schema_version >= 4 and boundary.separation_value not in {
+            "redundant",
+            "material",
+        }:
+            issues.append(
+                f"{candidate_id}: not_separate ski area requires redundant or "
+                "material separation value"
             )
         return
 
@@ -1590,6 +1744,14 @@ def _validate_ski_area_boundary_assessment(
     if boundary.separation_value != "material":
         issues.append(
             f"{candidate_id}: separate ski area requires material separation value"
+        )
+    if (
+        report_schema_version >= 4
+        and boundary.separation_value == "material"
+        and not boundary.material_trip_consequences
+    ):
+        issues.append(
+            f"{candidate_id}: separate ski area requires a material trip consequence"
         )
     if boundary.connectivity_to_parent == "unknown":
         issues.append(
@@ -1676,8 +1838,83 @@ def _validate_ski_area_boundary_assessment(
         )
 
 
-def _coordinated_child_independently_satisfies_separate_ski_area_gates(
+def _validate_material_trip_consequences(
     assessment: CatalogEntityScopeAssessment,
+    evidence_by_id: Mapping[str, CatalogEvidenceItem],
+    issues: list[str],
+    *,
+    report_schema_version: int,
+) -> None:
+    boundary = assessment.ski_area_boundary
+    assert boundary is not None
+    candidate_id = assessment.candidate_id
+    consequences = boundary.material_trip_consequences
+    if report_schema_version < 4:
+        if consequences:
+            issues.append(
+                f"{candidate_id}: material trip consequences require report "
+                "schema version 4"
+            )
+        return
+
+    for consequence in consequences:
+        if (
+            consequence.comparison_basis == "parent_ski_area"
+            and boundary.parent_ski_area_id is None
+        ):
+            issues.append(
+                f"{candidate_id}: parent_ski_area comparison requires "
+                "parent_ski_area_id"
+            )
+        if (
+            consequence.comparison_basis == "parent_ski_area"
+            and boundary.parent_ski_area_id is not None
+            and consequence.comparison_target_id != boundary.parent_ski_area_id
+        ):
+            issues.append(
+                f"{candidate_id}: parent_ski_area comparison target must equal "
+                "parent_ski_area_id"
+            )
+        if (
+            consequence.comparison_basis == "stay_market_baseline"
+            and boundary.parent_ski_area_id is not None
+        ):
+            issues.append(
+                f"{candidate_id}: stay_market_baseline comparison forbids "
+                "parent_ski_area_id"
+            )
+        missing_boundary_refs = set(consequence.evidence_refs) - set(
+            boundary.evidence_refs
+        )
+        if missing_boundary_refs:
+            issues.append(
+                f"{candidate_id}: material trip consequence evidence must also "
+                "appear in ski-area boundary evidence_refs"
+            )
+        for evidence_ref in consequence.evidence_refs:
+            evidence = evidence_by_id.get(evidence_ref)
+            if evidence is None:
+                issues.append(
+                    f"{candidate_id}: unknown material trip consequence evidence "
+                    f"{evidence_ref}"
+                )
+            elif evidence.source_type not in VERIFICATION_SOURCE_TYPES:
+                issues.append(
+                    f"{candidate_id}: material trip consequence requires "
+                    f"verification-capable evidence {evidence_ref}"
+                )
+            elif candidate_id not in evidence.boundary_target_ids:
+                issues.append(
+                    f"{candidate_id}: material trip consequence evidence "
+                    f"{evidence_ref} must include {candidate_id} in "
+                    "boundary_target_ids"
+                )
+
+
+def _ski_area_candidate_satisfies_ordinary_separate_gates(
+    assessment: CatalogEntityScopeAssessment,
+    *,
+    require_material_trip_consequence: bool,
 ) -> bool:
     boundary = assessment.ski_area_boundary
     if boundary is None or boundary.terrain_scope != "complete":
@@ -1685,6 +1922,8 @@ def _coordinated_child_independently_satisfies_separate_ski_area_gates(
 
     signals = set(assessment.signals)
     if not SKI_AREA_TERRAIN_IDENTITY_SIGNALS.intersection(signals):
+        return False
+    if require_material_trip_consequence and not boundary.material_trip_consequences:
         return False
 
     independent_operations = bool(
@@ -1708,6 +1947,8 @@ def _coordinated_child_independently_satisfies_separate_ski_area_gates(
 def _validate_coordinated_ski_area_components(
     assessments: list[CatalogEntityScopeAssessment],
     issues: list[str],
+    *,
+    require_material_trip_consequence: bool,
 ) -> None:
     by_candidate_id = {
         assessment.candidate_id: assessment for assessment in assessments
@@ -1803,7 +2044,10 @@ def _validate_coordinated_ski_area_components(
             or boundary.parent_ski_area_id is None
         ):
             continue
-        if _coordinated_child_independently_satisfies_separate_ski_area_gates(child):
+        if _ski_area_candidate_satisfies_ordinary_separate_gates(
+            child,
+            require_material_trip_consequence=require_material_trip_consequence,
+        ):
             issues.append(
                 f"{child.candidate_id}: coordinated component independently "
                 "satisfies ordinary separate-ski-area evidence gates"
@@ -1822,6 +2066,149 @@ def _validate_coordinated_ski_area_components(
                 f"coordinated child {child.candidate_id} is not listed by parent "
                 f"{boundary.parent_ski_area_id}"
             )
+
+
+def _validate_material_trip_comparison_targets(
+    assessments: list[CatalogEntityScopeAssessment],
+    issues: list[str],
+    *,
+    report_schema_version: int,
+) -> None:
+    if report_schema_version < 4:
+        return
+
+    represented_by_target: dict[
+        tuple[CatalogScopeCandidateKind, str],
+        list[CatalogEntityScopeAssessment],
+    ] = {}
+    for assessment in assessments:
+        if assessment.disposition not in {"represented", "add_entity"}:
+            continue
+        for target_ref in assessment.target_refs:
+            represented_by_target.setdefault(target_ref.target_key, []).append(
+                assessment
+            )
+
+    stay_market_roots: dict[str, set[str]] = {}
+    sibling_comparison_candidates: set[str] = set()
+
+    for assessment in assessments:
+        boundary = assessment.ski_area_boundary
+        if assessment.candidate_kind != "ski_area" or boundary is None:
+            continue
+
+        subject_target_id: str | None = None
+        if (
+            assessment.disposition in {"represented", "add_entity"}
+            and boundary.material_trip_consequences
+        ):
+            subject_target_ids = [
+                target_ref.target_id for target_ref in assessment.target_refs
+            ]
+            if len(subject_target_ids) != 1:
+                issues.append(
+                    f"{assessment.candidate_id}: material trip consequences "
+                    "require exactly one ski-area target_ref"
+                )
+            else:
+                subject_target_id = subject_target_ids[0]
+                if (
+                    len(represented_by_target.get(("ski_area", subject_target_id), []))
+                    != 1
+                ):
+                    issues.append(
+                        f"{assessment.candidate_id}: ski-area target "
+                        f"{subject_target_id} must have one represented or added "
+                        "scope assessment"
+                    )
+
+        for consequence in boundary.material_trip_consequences:
+            basis = consequence.comparison_basis
+            target_id = consequence.comparison_target_id
+            if basis == "parent_ski_area":
+                if target_id == subject_target_id:
+                    issues.append(
+                        f"{assessment.candidate_id}: parent comparison must name "
+                        "a different ski-area target"
+                    )
+                    continue
+                parent_targets = represented_by_target.get(("ski_area", target_id), [])
+                if len(parent_targets) != 1:
+                    issues.append(
+                        f"{assessment.candidate_id}: parent comparison target "
+                        f"{target_id} must resolve to one represented or added "
+                        "ski area"
+                    )
+                continue
+
+            if basis == "sibling_ski_area":
+                if subject_target_id is not None:
+                    sibling_comparison_candidates.add(subject_target_id)
+                sibling_comparison_candidates.add(target_id)
+                sibling_targets = represented_by_target.get(("ski_area", target_id), [])
+                if not sibling_targets:
+                    issues.append(
+                        f"{assessment.candidate_id}: unknown sibling comparison "
+                        f"target {target_id}"
+                    )
+                    continue
+                if len(sibling_targets) != 1:
+                    issues.append(
+                        f"{assessment.candidate_id}: sibling comparison target "
+                        f"{target_id} must resolve to one represented or added "
+                        "ski area"
+                    )
+                    continue
+                if target_id == subject_target_id:
+                    issues.append(
+                        f"{assessment.candidate_id}: sibling comparison must name "
+                        "another ski-area target"
+                    )
+                    continue
+                target_boundary = sibling_targets[0].ski_area_boundary
+                if target_boundary is None:
+                    issues.append(
+                        f"{assessment.candidate_id}: sibling comparison target "
+                        f"{target_id} requires a ski-area boundary assessment"
+                    )
+                    continue
+                if target_boundary.parent_ski_area_id != boundary.parent_ski_area_id:
+                    issues.append(
+                        f"{assessment.candidate_id}: sibling comparison target "
+                        f"{target_id} must share parent_ski_area_id"
+                    )
+                continue
+
+            stay_targets = represented_by_target.get(
+                ("stay_destination", target_id), []
+            )
+            if len(stay_targets) != 1:
+                issues.append(
+                    f"{assessment.candidate_id}: stay-market comparison target "
+                    f"{target_id} must resolve to one represented or added stay "
+                    "destination"
+                )
+                continue
+            if subject_target_id is not None:
+                stay_market_roots.setdefault(target_id, set()).add(subject_target_id)
+
+    stay_market_root_candidates: set[str] = set()
+    for target_id, candidate_ids in stay_market_roots.items():
+        stay_market_root_candidates.update(candidate_ids)
+        if len(candidate_ids) > 1:
+            issues.append(
+                f"{target_id}: stay-market comparison must identify the sole root "
+                "ski area"
+            )
+
+    overlapping_candidates = sorted(
+        stay_market_root_candidates.intersection(sibling_comparison_candidates)
+    )
+    for candidate_id in overlapping_candidates:
+        issues.append(
+            f"{candidate_id}: stay-market comparison cannot coexist with a "
+            "sibling comparison for the same root ski-area scope"
+        )
 
 
 def _validate_entity_scope_assessments(
@@ -1887,19 +2274,21 @@ def _validate_entity_scope_assessments(
                 f"{assessment.candidate_id}: unknown scope evidence {evidence_id}"
             )
         if (
-            report.report_schema_version == 3
+            report.report_schema_version >= 3
             and assessment.candidate_kind == "ski_area"
             and assessment.ski_area_boundary is None
         ):
             issues.append(
-                f"{assessment.candidate_id}: schema version 3 ski-area "
+                f"{assessment.candidate_id}: schema version "
+                f"{report.report_schema_version} ski-area "
                 "assessment requires boundary contract"
             )
-        if report.report_schema_version == 3:
+        if report.report_schema_version >= 3:
             _validate_ski_area_boundary_assessment(
                 assessment,
                 evidence_by_id,
                 issues,
+                report_schema_version=report.report_schema_version,
             )
         for target_ref in assessment.target_refs:
             referenced_target_keys.add(target_ref.target_key)
@@ -1981,8 +2370,17 @@ def _validate_entity_scope_assessments(
                 "ski_connected_terrain"
             )
 
-    if report.report_schema_version == 3:
-        _validate_coordinated_ski_area_components(assessments, issues)
+    if report.report_schema_version >= 3:
+        _validate_coordinated_ski_area_components(
+            assessments,
+            issues,
+            require_material_trip_consequence=report.report_schema_version >= 4,
+        )
+        _validate_material_trip_comparison_targets(
+            assessments,
+            issues,
+            report_schema_version=report.report_schema_version,
+        )
 
     if report.report_schema_version < 2:
         return
@@ -2377,6 +2775,25 @@ def _render_coordination_evidence_families(
             f"{_code_cell(family_name)}: components {components}; evidence {evidence}"
         )
     return "<br>".join(rendered_families)
+
+
+def _render_material_trip_consequences(
+    boundary: CatalogSkiAreaBoundaryAssessment,
+) -> str:
+    rendered_consequences: list[str] = []
+    for consequence in boundary.material_trip_consequences:
+        evidence = ", ".join(
+            _code_cell(evidence_id) for evidence_id in consequence.evidence_refs
+        )
+        rendered_consequences.append(
+            f"{_code_cell(consequence.consequence_type)}; "
+            f"effect {_code_cell(consequence.decision_effect)}; "
+            f"comparison {_code_cell(consequence.comparison_basis)}; "
+            f"target {_code_cell(consequence.comparison_target_id)}; "
+            f"durability {_code_cell(consequence.durability_basis)}; "
+            f"evidence {evidence}; {_markdown_cell(consequence.rationale)}"
+        )
+    return "<br>".join(rendered_consequences)
 
 
 def _json_cell(value: JsonValue) -> str:
@@ -2964,6 +3381,9 @@ def render_catalog_curation_report_markdown(
                     "Components | Coordination Evidence | Evidence Families | "
                 )
                 boundary_divider += "--- | --- | --- | "
+            if report.report_schema_version >= 4:
+                boundary_header += "Material Trip Consequences | "
+                boundary_divider += "--- | "
             boundary_header += "Evidence |"
             boundary_divider += "--- |"
             lines.extend(
@@ -3001,6 +3421,11 @@ def render_catalog_curation_report_markdown(
                         f" | {components} | {coordination_evidence} | "
                         f"{family_ownership}"
                     )
+                consequence_cell = ""
+                if report.report_schema_version >= 4:
+                    consequence_cell = " | " + _render_material_trip_consequences(
+                        boundary
+                    )
                 lines.append(
                     f"| {_code_cell(assessment.candidate_id)} | {parent} | "
                     f"{_code_cell(boundary.terrain_scope)} | "
@@ -3009,7 +3434,8 @@ def render_catalog_curation_report_markdown(
                     f"{_code_cell(boundary.weather_scope)} | "
                     f"{_code_cell(boundary.pass_scope)} | "
                     f"{_code_cell(boundary.provider_consensus)} | "
-                    f"{_code_cell(boundary.separation_value)}{coordination_cells} | "
+                    f"{_code_cell(boundary.separation_value)}{coordination_cells}"
+                    f"{consequence_cell} | "
                     f"{evidence} |"
                 )
     lines.extend(

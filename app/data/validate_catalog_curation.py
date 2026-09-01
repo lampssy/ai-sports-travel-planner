@@ -7,6 +7,7 @@ from typing import Sequence
 from pydantic import ValidationError
 
 from app.data.catalog_curation import (
+    CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION,
     CatalogCurationReport,
     CatalogValidationError,
     load_catalog_curation_report,
@@ -28,7 +29,7 @@ def _add_report_schema_version_argument(parser: argparse.ArgumentParser) -> None
     parser.add_argument(
         "--require-report-schema-version",
         type=int,
-        choices=(1, 2, 3),
+        choices=tuple(range(1, CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION + 1)),
         help="Reject reports older than this curation-report schema version.",
     )
 
@@ -162,7 +163,10 @@ def main(argv: list[str] | None = None) -> int:
                     f"required version {args.require_report_schema_version}"
                 ]
             )
-        require_resulting_graph = args.require_report_schema_version == 3
+        require_resulting_graph = (
+            args.require_report_schema_version is not None
+            and args.require_report_schema_version >= 3
+        )
         validate_catalog_curation_report(
             report,
             require_resulting_graph=require_resulting_graph,

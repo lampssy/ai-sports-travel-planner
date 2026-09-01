@@ -147,7 +147,7 @@ def _intent(
 
 def _current_graph_report_payload() -> dict[str, object]:
     return {
-        "report_schema_version": 3,
+        "report_schema_version": 4,
         "title": "Example access review",
         "summary": "Reviews the exact access graph.",
         "resulting_graph": {"focus_stay_destination_ids": ["example"]},
@@ -538,7 +538,7 @@ def test_validate_curation_runs_fixed_commands_for_one_exact_head(
     assert "app.data.validate_catalog" in commands[0]
     assert "app.data.validate_catalog_curation" in commands[1]
     schema_flag = commands[1].index("--require-report-schema-version")
-    assert commands[1][schema_flag + 1] == "3"
+    assert commands[1][schema_flag + 1] == "4"
     markdown_flag = commands[1].index("--require-markdown-path")
     assert commands[1][markdown_flag + 1] == REPORT_PATH.removesuffix(".json") + ".md"
     assert "--skip-product-backlog-validation" in commands[1]
@@ -1144,7 +1144,7 @@ def _report_payload(
                 }
             )
     return {
-        "report_schema_version": 3,
+        "report_schema_version": 4,
         "title": "Nendaz Village onboarding",
         "summary": "Adds a separately represented stay base.",
         "resulting_graph": {
@@ -1654,6 +1654,10 @@ def _regional_report_payload(
         for area in catalog.ski_areas
         if f"ski_area:{area.ski_area_id}" in added_keys
     )
+    added_ski_area_ids = [area.ski_area_id for area in added_ski_areas]
+    for item in evidence:
+        if item["evidence_id"] == "sample-passes":
+            item["boundary_target_ids"] = added_ski_area_ids
     for area in added_ski_areas:
         evidence.append(
             {
@@ -1731,6 +1735,19 @@ def _regional_report_payload(
             "graph_impact": "graph_blocking",
         }
         if kind == "ski_area":
+            comparison_basis = (
+                "sibling_ski_area"
+                if len(added_ski_area_ids) > 1
+                else "stay_market_baseline"
+            )
+            comparison_target_id = next(
+                (
+                    ski_area_id
+                    for ski_area_id in added_ski_area_ids
+                    if ski_area_id != entity_id
+                ),
+                "sample-valley",
+            )
             assessment["ski_area_boundary"] = {
                 "parent_ski_area_id": None,
                 "terrain_scope": "complete",
@@ -1740,6 +1757,21 @@ def _regional_report_payload(
                 "pass_scope": "full_local",
                 "provider_consensus": "separate",
                 "separation_value": "material",
+                "material_trip_consequences": [
+                    {
+                        "consequence_type": "pass_price_or_coverage",
+                        "decision_effect": "lift_pass_choice",
+                        "comparison_basis": comparison_basis,
+                        "comparison_target_id": comparison_target_id,
+                        "durability_basis": "published_product_contract",
+                        "evidence_refs": ["sample-passes"],
+                        "rationale": (
+                            "Compared with the stay-market baseline, the candidate "
+                            "is a substantial primary ski-day option whose durable "
+                            "pass coverage can change a normal trip choice."
+                        ),
+                    }
+                ],
                 "evidence_refs": ["sample-ski-areas", "sample-passes"],
             }
         scope_assessments.append(assessment)
@@ -1759,7 +1791,7 @@ def _regional_report_payload(
     )
 
     return {
-        "report_schema_version": 3,
+        "report_schema_version": 4,
         "title": "Sample Valley regional catalog proposal",
         "summary": "Adds one coherent multi-entity destination graph slice.",
         "resulting_graph": {

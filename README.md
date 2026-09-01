@@ -114,7 +114,7 @@ availability, defaults, coverage, prices, and pass-accessible aggregates.
 High-impact changes should include a typed catalog curation report with
 before/after values, affected entities, trust statuses, clickable source links,
 normalization notes, validation commands, and ranking-impact notes when the
-changed fields affect ranking or fit behavior. Current schema-v3 reports also
+changed fields affect ranking or fit behavior. Current schema-v4 reports also
 declare the focus stay destinations for a deterministic resulting-graph diagram.
 The diagram is derived from the normalized catalog, not maintained as separate
 free-form prose. Validation derives the destinations reached by every reviewed
@@ -218,7 +218,7 @@ validate curation|proposal
 publish push|manual-check|recover|proposal|outcome|state|ensure-labels
 ```
 
-`publish manual-check` also receives the schema-v3 report path. Before pushing,
+`publish manual-check` also receives the schema-v4 report path. Before pushing,
 the helper reproduces the graph from the immutable reviewed head and requires
 that exact Mermaid section in the supplied PR body. It also revalidates that
 this path is the PR diff's single curation report, rather than trusting a
@@ -249,7 +249,7 @@ caller path. Workflows pass only those returned basenames to publication
 commands; the reader rejects unsafe text/files and never passes caller paths to
 `gh`.
 `waiting-ci` and `ready` publication require a concise current synopsis through
-`--body-file`. For newly validated schema-v3 work, that synopsis must contain
+`--body-file`. For newly validated schema-v4 work, that synopsis must contain
 the exact canonical resulting-graph Mermaid section persisted from the
 validated head; the helper rejects missing or independently edited diagrams
 before GitHub mutation. On an automation-owned curation PR whose legacy body

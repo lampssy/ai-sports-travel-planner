@@ -241,7 +241,7 @@ The installed skill must:
   maintainer-managed structural normalization pass when the single report is
   legacy, malformed, graph-less after refresh, incomplete, or non-reconciling;
   use the exact prepared base/current catalog and trust snapshots to rebuild
-  the canonical schema-v3 JSON report and deterministic Markdown companion.
+  the canonical schema-v4 JSON report and deterministic Markdown companion.
   Validate those snapshots before edit and stop without edits if either fails;
   assert catalog/trust object IDs remain identical and locally commit a diff
   containing only that report pair. For every evidence item referenced by a
@@ -260,18 +260,21 @@ The installed skill must:
   `disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
   parent, a target reference to that parent, and `operational_scope=coordinated`.
   Children leave the three parent coordination metadata lists empty. Reject
-  any child that independently passes the ordinary source-backed gates: require
+  any child that independently passes the ordinary gates: require
   complete terrain plus a terrain-identity signal, then derive operations,
   weather, and full-local-pass owner categories directly from signals. Connected
   children require two categories including operations or weather;
-  transfer-required or disconnected children require one. Do not let
-  `not_separate`, `redundant`, coordinated or parent-owned declarations, shared
+  transfer-required or disconnected children require one. Then require a
+  claim-scoped durable material trip consequence capable of changing a normal
+  trip decision. Reject folding only when all three gates pass; a child may
+  retain a verified consequence when terrain or owner evidence fails. Do not let
+  `not_separate`, coordinated or parent-owned declarations, shared
   branding, or provider consensus override this check. Sector terrain and one
   connected pass-only category remain insufficient. Reject
   coordinated scope or metadata in report schema versions 1 and 2.
   `weather_scope` remains independently constrained by ADR 0021 and cannot be
   inferred from coordinated operations. A shared pass alone is insufficient.
-  Run schema-v3 reconciliation and regenerate/compare the Markdown companion
+  Run schema-v4 reconciliation and regenerate/compare the Markdown companion
   before any delta or reviewed checkpoint. Fix missing boundary metadata or
   stale Markdown in the same fixer pass rather than converting a mechanical
   report defect into semantic `review-incomplete`. Do not claim semantic
@@ -282,7 +285,7 @@ The installed skill must:
   heading that exists in the exact-head product backlog. The helper checks only
   anchor existence, never backlog meaning, priority, or status;
 - after each remediation, first require the canonical JSON report and
-  deterministic Markdown companion to pass schema-v3 reconciliation and
+  deterministic Markdown companion to pass schema-v4 reconciliation and
   rendering parity, including the `boundary_target_ids` invariant above. Fix a
   mechanical report failure in the same fixer pass. Then call
   `checkpoint_curation_delta` once. That single invocation runs bounded
@@ -607,7 +610,7 @@ The installed skill must:
   the applicable bases, access, ski-area/pass ownership, weather/migration
   implications, complete source families and dispositions, canonical graph,
   exclusions, backlog anchor, caveats, owner decisions, and rollback;
-- use GitHub proposal identity and the merged schema-v3 report as durable
+- use GitHub proposal identity and the merged schema-v4 report as durable
   proposal authority. The proposal marks its backlog item `proposed`. After the
   owner accepts it by removing the proposal label, normal curation on that same
   PR must mark the item `completed`, or narrow it to the remaining gaps and mark

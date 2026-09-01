@@ -2268,7 +2268,7 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
 
     prepared = repository.prepare_guarded_sync(local.pull_request)
     normalized_report = {
-        "report_schema_version": 3,
+        "report_schema_version": 4,
         "title": "Normalized destination report",
         "summary": "Rebuilds the legacy input before independent review.",
         "resulting_graph": {"focus_stay_destination_ids": [destination_id]},
