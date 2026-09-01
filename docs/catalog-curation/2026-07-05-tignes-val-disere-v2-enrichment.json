@@ -1,6 +1,6 @@
 {
   "title": "Tignes-Val d'Isere Catalog V2 Fact Enrichment",
-  "summary": "Schema-v3 curation for Tignes and Val d Isere with field-specific official evidence closing stay-base character, representative La Daille elevation, qualitative lift access, and connected-domain piste-map ownership, alongside the existing pass, boundary, and regional follow-up review.",
+  "summary": "Schema-v3 curation for Tignes and Val d Isere with field-specific official evidence closing stay-base character, local apres profiles, representative La Daille elevation, qualitative lift access, and connected-domain piste-map ownership, alongside the existing pass, boundary, and regional follow-up review.",
   "changed_entities": [
     "lift_pass_product:tignes-local-ski-pass",
     "lift_pass_product:tignes-val-disere-ski-pass",
@@ -1134,6 +1134,33 @@
     },
     {
       "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "moderate",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "local_apres_profile.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
       "target_id": "tignes-lavachet",
       "field_path": "base_character.development_style",
       "before": "unknown",
@@ -1157,6 +1184,33 @@
       "before": null,
       "after": 2050,
       "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "low_key",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "local_apres_profile.season_label",
+      "before": null,
+      "after": "2026/27",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -1188,6 +1242,33 @@
     },
     {
       "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.season_label",
+      "before": null,
+      "after": "2026/27",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
       "target_id": "tignes-les-brevieres",
       "field_path": "base_character.development_style",
       "before": "unknown",
@@ -1215,6 +1296,33 @@
     },
     {
       "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "low_key",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "local_apres_profile.season_label",
+      "before": null,
+      "after": "2026/27",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
       "target_id": "tignes-val-claret",
       "field_path": "base_character.development_style",
       "before": "unknown",
@@ -1238,6 +1346,33 @@
       "before": null,
       "after": 2150,
       "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.season_label",
+      "before": null,
+      "after": "2026/27",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -1310,6 +1445,24 @@
       "before": null,
       "after": 1930,
       "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "low_key",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -2503,7 +2656,10 @@
           "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
           "https://www.wikidata.org/wiki/Q330899"
         ],
-        "local_apres": [],
+        "local_apres": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://restaurant1800.fr/en/bar_en/"
+        ],
         "lodging_price_quality": [
           "https://en.tignes.net/discover/ski-resort/tignes-villages",
           "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
@@ -2537,7 +2693,7 @@
         "coordinates": "verified",
         "elevation": "verified",
         "identity_ownership": "verified",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
@@ -2557,7 +2713,8 @@
         "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-        "The official villages page calls Tignes 1800 a new, specially designed village and explicitly describes its peace and quiet. Snowcast normalizes those direct phrases to planned_resort development and quiet local pace."
+        "The official villages page calls Tignes 1800 a new, specially designed village and explicitly describes its peace and quiet. Snowcast normalizes those direct phrases to planned_resort development and quiet local pace.",
+        "The CavO operator page confirms a dedicated Tignes 1800 apres bar with music and lively evenings for 2025/26. Because the wider village remains officially quiet, Snowcast records availability with moderate rather than lively intensity."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2633,7 +2790,12 @@
           "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
           "https://www.wikidata.org/wiki/Q330899"
         ],
-        "local_apres": [],
+        "local_apres": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/bars-tignes",
+          "https://en.tignes.net/resort-guide/directory/bars-tignes/kodo",
+          "https://en.tignes.net/resort-guide/directory/bars-tignes/la-paillote"
+        ],
         "lodging_price_quality": [
           "https://en.tignes.net/discover/ski-resort/tignes-villages",
           "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
@@ -2667,7 +2829,7 @@
         "coordinates": "verified",
         "elevation": "verified",
         "identity_ownership": "verified",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
@@ -2687,7 +2849,8 @@
         "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-        "The official villages page repeatedly describes Lavachet as quiet, while the municipal architecture plan identifies Lavachet as a modern, functionally planned resort ensemble. Snowcast normalizes those field-specific sources to quiet local pace and planned-resort development."
+        "The official villages page repeatedly describes Lavachet as quiet, while the municipal architecture plan identifies Lavachet as a modern, functionally planned resort ensemble. Snowcast normalizes those field-specific sources to quiet local pace and planned-resort development.",
+        "The official Tignes directory lists current bars in Lavachet, including Kodo and La Paillote, for 2026/27. The village remains officially quiet, so Snowcast records a low-key local apres offer."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2764,6 +2927,8 @@
           "https://www.wikidata.org/wiki/Q330899"
         ],
         "local_apres": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/bars-tignes",
           "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar"
         ],
         "lodging_price_quality": [
@@ -2799,7 +2964,7 @@
         "coordinates": "verified",
         "elevation": "verified",
         "identity_ownership": "verified",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
@@ -2820,7 +2985,7 @@
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed official Tignes Le Lac character, altitude, and apres material on 2026-07-05.",
         "The official villages guide identifies Le Lac as the active resort centre, while the municipal architecture plan identifies its modern functional resort ensemble. Snowcast normalizes these sources to balanced local pace and planned-resort development.",
-        "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown."
+        "The official Tignes directory lists multiple current Le Lac bars, and the Loop Bar listing advertises recurring live bands, DJs, and major apres sessions for 2026/27. Snowcast normalizes that breadth and frequency to lively local apres."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2895,7 +3060,10 @@
           "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
           "https://www.wikidata.org/wiki/Q330899"
         ],
-        "local_apres": [],
+        "local_apres": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/bars-tignes/le-reservoir"
+        ],
         "lodging_price_quality": [
           "https://en.tignes.net/discover/ski-resort/tignes-villages",
           "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
@@ -2929,7 +3097,7 @@
         "coordinates": "verified",
         "elevation": "verified",
         "identity_ownership": "verified",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
@@ -2949,7 +3117,8 @@
         "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-        "The official villages page directly describes Les Brevieres and its traditional chalets, conviviality, and cosy winter evenings. Snowcast normalizes that evidence to traditional development and quiet local pace."
+        "The official villages page directly describes Les Brevieres and its traditional chalets, conviviality, and cosy winter evenings. Snowcast normalizes that evidence to traditional development and quiet local pace.",
+        "The official Tignes directory confirms Le Reservoir as a current Les Brevieres bar for 2026/27. Combined with the village's cosy character, Snowcast records a low-key local apres offer."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -3026,6 +3195,8 @@
           "https://www.wikidata.org/wiki/Q330899"
         ],
         "local_apres": [
+          "https://en.tignes.net/discover/ski-resort/tignes-villages",
+          "https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski",
           "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe"
         ],
         "lodging_price_quality": [
@@ -3061,7 +3232,7 @@
         "coordinates": "verified",
         "elevation": "verified",
         "identity_ownership": "verified",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
@@ -3081,8 +3252,8 @@
         "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed official Val Claret character, altitude, and apres material on 2026-07-05.",
-        "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown.",
-        "The official villages page describes Val Claret as festive through late night, while the municipal architecture plan identifies the district as a modern resort ensemble built to an overall plan. Snowcast normalizes those sources to lively local pace and planned-resort development."
+        "The official villages page describes Val Claret as festive through late night, while current official Cocorico and Arobaze listings document recurring live music and DJs for 2026/27. Snowcast normalizes those sources to lively local apres.",
+        "The municipal architecture plan identifies Val Claret as a modern resort ensemble built to an overall plan, supporting planned-resort development style."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -3361,7 +3532,7 @@
         "coordinates": "verified_with_adjustment",
         "elevation": "verified",
         "identity_ownership": "verified_with_adjustment",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
@@ -3381,7 +3552,7 @@
         "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
         "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
         "Source-aware v2 enrichment reviewed official Le Fornet history, character, and apres material on 2026-07-05.",
-        "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown."
+        "The official Val d'Isere apres guide identifies Crozets at the Le Fornet cable-car base as a relaxed terrace offer. Snowcast records available, low-key local apres without adding a season label because the guide describes a recurring profile rather than an explicit season window."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -4486,22 +4657,22 @@
       "target_type": "stay_base",
       "target_id": "tignes-1800",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-1800: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.availability. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "A candidate-bound first-party venue confirms a dedicated apres bar in Tignes 1800."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-1800",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-1800: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.intensity. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The operator describes music and lively evenings, while the official village guide describes Tignes 1800 as quiet; Snowcast normalizes the combined evidence to moderate."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-1800",
       "field_path": "local_apres_profile.season_label",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-1800: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The first-party venue publishes its 2025/26 operating window."
     },
     {
       "target_type": "stay_base",
@@ -4535,22 +4706,22 @@
       "target_type": "stay_base",
       "target_id": "tignes-lavachet",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-lavachet: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.availability. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official Tignes directory lists current bars in Lavachet."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-lavachet",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-lavachet: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.intensity. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official village guide describes Lavachet as quiet; the confirmed local venues are normalized to a low-key offer."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-lavachet",
       "field_path": "local_apres_profile.season_label",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-lavachet: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "Current official venue listings publish 2026/27 operating dates."
     },
     {
       "target_type": "stay_base",
@@ -4584,22 +4755,22 @@
       "target_type": "stay_base",
       "target_id": "tignes-le-lac",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-le-lac: https://en.tignes.net/resort-guide/directory/restaurants/loop-bar. They did not publish candidate-bound local_apres_profile.availability. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official Tignes directory lists multiple bars in Le Lac."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-le-lac",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-le-lac: https://en.tignes.net/resort-guide/directory/restaurants/loop-bar. They did not publish candidate-bound local_apres_profile.intensity. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official Loop Bar listing documents recurring large apres sessions with live bands and DJs; Snowcast normalizes the broad active-centre offer to lively."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-le-lac",
       "field_path": "local_apres_profile.season_label",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-le-lac: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays, https://en.tignes.net/resort-guide/directory/restaurants/loop-bar. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official Loop Bar listing publishes a 2026/27 operating window."
     },
     {
       "target_type": "stay_base",
@@ -4633,22 +4804,22 @@
       "target_type": "stay_base",
       "target_id": "tignes-les-brevieres",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-les-brevieres: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.availability. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official Tignes directory confirms a current bar in Les Brevieres."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-les-brevieres",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-les-brevieres: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.intensity. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official village guide describes cosy winter evenings and a quiet village character; Snowcast normalizes the confirmed offer to low-key."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-les-brevieres",
       "field_path": "local_apres_profile.season_label",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-les-brevieres: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official Le Reservoir listing publishes a 2026/27 operating window."
     },
     {
       "target_type": "stay_base",
@@ -4682,22 +4853,22 @@
       "target_type": "stay_base",
       "target_id": "tignes-val-claret",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-val-claret: https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski. They did not publish candidate-bound local_apres_profile.availability. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official village guide and current official listings confirm multiple apres venues in Val Claret."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-val-claret",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-val-claret: https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski. They did not publish candidate-bound local_apres_profile.intensity. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official village guide describes late-night festivity and current venue listings document recurring live music and DJs; Snowcast normalizes the offer to lively."
     },
     {
       "target_type": "stay_base",
       "target_id": "tignes-val-claret",
       "field_path": "local_apres_profile.season_label",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:tignes-val-claret: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays, https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "Current official Val Claret venue listings publish 2026/27 operating windows."
     },
     {
       "target_type": "stay_base",
@@ -4745,8 +4916,8 @@
       "target_type": "stay_base",
       "target_id": "val-disere-la-daille",
       "field_path": "local_apres_profile.season_label",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:val-disere-la-daille: https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "reviewed-no-change",
+      "notes": "The current official destination guide supports the recurring local profile but does not publish a candidate-bound season window, so the optional season label remains unset without false precision."
     },
     {
       "target_type": "stay_base",
@@ -4780,22 +4951,22 @@
       "target_type": "stay_base",
       "target_id": "val-disere-le-fornet",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:val-disere-le-fornet: https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/. They did not publish candidate-bound local_apres_profile.availability. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official Val d'Isere apres guide confirms a candidate-bound terrace venue at the Le Fornet cable-car base."
     },
     {
       "target_type": "stay_base",
       "target_id": "val-disere-le-fornet",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:val-disere-le-fornet: https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/. They did not publish candidate-bound local_apres_profile.intensity. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "changed",
+      "notes": "The official guide presents a small relaxed terrace offer; Snowcast normalizes it to low-key rather than a broad lively scene."
     },
     {
       "target_type": "stay_base",
       "target_id": "val-disere-le-fornet",
       "field_path": "local_apres_profile.season_label",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:val-disere-le-fornet: https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/, https://www.valdisere.com/en/village-guide/history-pioneering-village/. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "reviewed-no-change",
+      "notes": "The current official destination guide supports the recurring local profile but does not publish a candidate-bound season window, so the optional season label remains unset without false precision."
     },
     {
       "target_type": "stay_base",
@@ -4843,8 +5014,8 @@
       "target_type": "stay_base",
       "target_id": "val-disere-village",
       "field_path": "local_apres_profile.season_label",
-      "status": "unresolved",
-      "notes": "Direct official sources attempted for stay_base:val-disere-village: https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/, https://www.valdisere.com/en/val-disere/, https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/, https://www.valdisere.com/en/village-guide/history-pioneering-village/. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target."
+      "status": "reviewed-no-change",
+      "notes": "The current official destination guide supports the recurring local profile but does not publish a candidate-bound season window, so the optional season label remains unset without false precision."
     },
     {
       "target_type": "stay_destination",
@@ -7119,30 +7290,43 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "v2-enrichment-022-tignes-le-lac-local-apres-profile-availability",
+      "evidence_id": "apres-closure-tignes-le-lac-availability-directory",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes",
+      "source_title": "Official Tignes bars directory",
+      "source_value": "available",
+      "evidence_summary": "The official directory lists multiple current bars in Le Lac.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "apres-closure-tignes-le-lac-availability-loop",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-le-lac",
       "field_path": "local_apres_profile.availability",
       "source_type": "official",
       "source_url": "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar",
-      "source_title": "Tignes official Loop Bar listing",
-      "source_value": "unknown",
-      "evidence_summary": "The page verifies one venue, not a base-wide apres profile; the reviewed field is conservatively left unknown.",
-      "normalization_note": "Do not generalize a single venue to a base-wide availability or intensity."
+      "source_title": "Official Loop Bar listing",
+      "source_value": "available",
+      "evidence_summary": "The official listing identifies Loop Bar in Tignes Le Lac and advertises recurring apres sessions.",
+      "normalization_note": null
     },
     {
-      "evidence_id": "v2-enrichment-023-tignes-le-lac-local-apres-profile-intensity",
+      "evidence_id": "apres-closure-tignes-le-lac-intensity",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-le-lac",
       "field_path": "local_apres_profile.intensity",
       "source_type": "official",
       "source_url": "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar",
-      "source_title": "Tignes official Loop Bar listing",
-      "source_value": null,
-      "evidence_summary": "The page verifies one venue, not a base-wide apres profile; the reviewed field is conservatively left unknown.",
-      "normalization_note": "Do not generalize a single venue to a base-wide availability or intensity."
+      "source_title": "Official Loop Bar listing",
+      "source_value": "lively",
+      "evidence_summary": "The listing advertises major apres sessions with recurring live bands and DJs in the active resort centre.",
+      "normalization_note": "Recurring high-energy programming plus multiple candidate-bound bars is normalized to lively."
     },
     {
       "evidence_id": "v2-enrichment-024-tignes-les-brevieres-base-character-development-style",
@@ -7197,30 +7381,43 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "v2-enrichment-030-tignes-val-claret-local-apres-profile-availability",
+      "evidence_id": "apres-closure-tignes-val-claret-availability",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-val-claret",
       "field_path": "local_apres_profile.availability",
       "source_type": "official",
       "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe",
-      "source_title": "Tignes official Val Claret apres listing",
-      "source_value": "unknown",
-      "evidence_summary": "The page verifies one venue, not a base-wide apres profile; the reviewed field is conservatively left unknown.",
-      "normalization_note": "Do not generalize a single venue to a base-wide availability or intensity."
+      "source_title": "Official Arobaze listing",
+      "source_value": "available",
+      "evidence_summary": "The official listing identifies a Val Claret apres bar with recurring DJ programming.",
+      "normalization_note": null
     },
     {
-      "evidence_id": "v2-enrichment-031-tignes-val-claret-local-apres-profile-intensity",
+      "evidence_id": "apres-closure-tignes-val-claret-intensity-cocorico",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-val-claret",
       "field_path": "local_apres_profile.intensity",
       "source_type": "official",
-      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe",
-      "source_title": "Tignes official Val Claret apres listing",
-      "source_value": null,
-      "evidence_summary": "The page verifies one venue, not a base-wide apres profile; the reviewed field is conservatively left unknown.",
-      "normalization_note": "Do not generalize a single venue to a base-wide availability or intensity."
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski",
+      "source_title": "Official Cocorico listing",
+      "source_value": "lively",
+      "evidence_summary": "The official listing documents daily live music and DJs in Val Claret.",
+      "normalization_note": "Daily recurring high-energy programming corroborates lively intensity."
+    },
+    {
+      "evidence_id": "apres-closure-tignes-val-claret-intensity-village",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Official Tignes villages guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide describes Val Claret as festive and says the party continues from apres-ski until late at night.",
+      "normalization_note": "Direct candidate-level destination wording supports lively intensity."
     },
     {
       "evidence_id": "v2-enrichment-032-val-disere-la-daille-base-character-local-pace",
@@ -7301,30 +7498,30 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "v2-enrichment-038-val-disere-le-fornet-local-apres-profile-availability",
+      "evidence_id": "apres-closure-val-disere-le-fornet-availability",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "val-disere-le-fornet",
       "field_path": "local_apres_profile.availability",
       "source_type": "official",
       "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
-      "source_title": "Val d'Isere official apres-ski guide",
-      "source_value": "unknown",
-      "evidence_summary": "The page verifies one venue, not a base-wide apres profile; the reviewed field is conservatively left unknown.",
-      "normalization_note": "Do not generalize a single venue to a base-wide availability or intensity."
+      "source_title": "Official Val d'Isere apres guide",
+      "source_value": "available",
+      "evidence_summary": "The official guide identifies Crozets at the bottom of the Le Fornet cable car as a candidate-bound apres option.",
+      "normalization_note": "A candidate-bound public venue establishes availability."
     },
     {
-      "evidence_id": "v2-enrichment-039-val-disere-le-fornet-local-apres-profile-intensity",
+      "evidence_id": "apres-closure-val-disere-le-fornet-intensity",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "val-disere-le-fornet",
       "field_path": "local_apres_profile.intensity",
       "source_type": "official",
       "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
-      "source_title": "Val d'Isere official apres-ski guide",
-      "source_value": null,
-      "evidence_summary": "The page verifies one venue, not a base-wide apres profile; the reviewed field is conservatively left unknown.",
-      "normalization_note": "Do not generalize a single venue to a base-wide availability or intensity."
+      "source_title": "Official Val d'Isere apres guide",
+      "source_value": "low_key",
+      "evidence_summary": "The guide presents Crozets as a terrace and deckchair stop rather than a broad late-running scene.",
+      "normalization_note": "The small relaxed offer is normalized to low_key."
     },
     {
       "evidence_id": "v2-enrichment-040-val-disere-village-base-character-development-style",
@@ -7652,20 +7849,33 @@
       "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-1800-local-apres-profile-availability",
+      "evidence_id": "apres-closure-tignes-1800-availability",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-1800",
       "field_path": "local_apres_profile.availability",
       "source_type": "official",
-      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
-      "source_title": "Official Tignes villages guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-1800: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.availability. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_url": "https://restaurant1800.fr/en/bar_en/",
+      "source_title": "CavO Tignes 1800 bar",
+      "source_value": "available",
+      "evidence_summary": "The first-party operator identifies a dedicated apres-ski bar in Tignes 1800.",
+      "normalization_note": "A candidate-bound recurring venue is sufficient to establish availability."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-1800-local-apres-profile-intensity",
+      "evidence_id": "apres-closure-tignes-1800-intensity-operator",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://restaurant1800.fr/en/bar_en/",
+      "source_title": "CavO Tignes 1800 bar",
+      "source_value": "moderate",
+      "evidence_summary": "The operator describes music, a relaxed atmosphere, and lively evenings.",
+      "normalization_note": "The venue proves a visible offer but does not by itself make the quiet village a lively scene."
+    },
+    {
+      "evidence_id": "apres-closure-tignes-1800-intensity-village",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-1800",
@@ -7673,38 +7883,51 @@
       "source_type": "official",
       "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
       "source_title": "Official Tignes villages guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-1800: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.intensity. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_value": "moderate",
+      "evidence_summary": "The official village guide emphasizes Tignes 1800's peace and quiet.",
+      "normalization_note": "The quiet village context caps the candidate-bound venue evidence at moderate intensity."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-1800-local-apres-profile-season-label",
+      "evidence_id": "apres-closure-tignes-1800-season",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-1800",
       "field_path": "local_apres_profile.season_label",
       "source_type": "official",
-      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
-      "source_title": "Official Tignes villages guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-1800: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_url": "https://restaurant1800.fr/en/bar_en/",
+      "source_title": "CavO Tignes 1800 bar",
+      "source_value": "2025/26",
+      "evidence_summary": "The operator publishes dates from 15 December 2025 to 17 April 2026.",
+      "normalization_note": "The explicit operating dates are normalized to the 2025/26 winter label."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-lavachet-local-apres-profile-availability",
+      "evidence_id": "apres-closure-tignes-lavachet-availability-directory",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-lavachet",
       "field_path": "local_apres_profile.availability",
       "source_type": "official",
-      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
-      "source_title": "Official Tignes villages guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-lavachet: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.availability. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes",
+      "source_title": "Official Tignes bars directory",
+      "source_value": "available",
+      "evidence_summary": "The official directory returns candidate-bound bar listings for Lavachet.",
+      "normalization_note": "Candidate-bound current directory entries establish local availability."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-lavachet-local-apres-profile-intensity",
+      "evidence_id": "apres-closure-tignes-lavachet-availability-paillote",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/la-paillote",
+      "source_title": "Official La Paillote listing",
+      "source_value": "available",
+      "evidence_summary": "The official listing identifies La Paillote as a friendly cocktail, beer, and wine bar in Lavachet.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "apres-closure-tignes-lavachet-intensity",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-lavachet",
@@ -7712,51 +7935,51 @@
       "source_type": "official",
       "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
       "source_title": "Official Tignes villages guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-lavachet: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.intensity. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_value": "low_key",
+      "evidence_summary": "The official guide repeatedly characterizes Lavachet as quiet while confirming local bars and services.",
+      "normalization_note": "A real but quiet candidate-bound offer is normalized to low_key."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-lavachet-local-apres-profile-season-label",
+      "evidence_id": "apres-closure-tignes-lavachet-season",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-lavachet",
       "field_path": "local_apres_profile.season_label",
       "source_type": "official",
-      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
-      "source_title": "Official Tignes villages guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-lavachet: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/kodo",
+      "source_title": "Official Kodo listing",
+      "source_value": "2026/27",
+      "evidence_summary": "The official Kodo listing publishes a 1 December 2026 to 17 April 2027 operating window in Lavachet.",
+      "normalization_note": "The explicit dates are normalized to the 2026/27 winter label."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-le-lac-local-apres-profile-season-label",
+      "evidence_id": "apres-closure-tignes-le-lac-season",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-le-lac",
       "field_path": "local_apres_profile.season_label",
       "source_type": "official",
       "source_url": "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar",
-      "source_title": "Official Tignes Le Lac venue listing",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-le-lac: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays, https://en.tignes.net/resort-guide/directory/restaurants/loop-bar. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_title": "Official Loop Bar listing",
+      "source_value": "2026/27",
+      "evidence_summary": "The official listing publishes dates from 23 November 2026 to 30 April 2027.",
+      "normalization_note": "The explicit dates are normalized to the 2026/27 winter label."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-les-brevieres-local-apres-profile-availability",
+      "evidence_id": "apres-closure-tignes-les-brevieres-availability",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-les-brevieres",
       "field_path": "local_apres_profile.availability",
       "source_type": "official",
-      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
-      "source_title": "Official Tignes villages guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-les-brevieres: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.availability. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/le-reservoir",
+      "source_title": "Official Le Reservoir listing",
+      "source_value": "available",
+      "evidence_summary": "The official directory identifies Le Reservoir as a bar in Tignes les Brevieres.",
+      "normalization_note": null
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-les-brevieres-local-apres-profile-intensity",
+      "evidence_id": "apres-closure-tignes-les-brevieres-intensity",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-les-brevieres",
@@ -7764,74 +7987,35 @@
       "source_type": "official",
       "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
       "source_title": "Official Tignes villages guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-les-brevieres: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.intensity. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_value": "low_key",
+      "evidence_summary": "The official village guide describes a convivial traditional village with cosy winter evenings.",
+      "normalization_note": "The confirmed local bar and quiet village character are normalized to low_key."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-les-brevieres-local-apres-profile-season-label",
+      "evidence_id": "apres-closure-tignes-les-brevieres-season",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-les-brevieres",
       "field_path": "local_apres_profile.season_label",
       "source_type": "official",
-      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
-      "source_title": "Official Tignes villages guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-les-brevieres: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/le-reservoir",
+      "source_title": "Official Le Reservoir listing",
+      "source_value": "2026/27",
+      "evidence_summary": "The official listing publishes dates from 29 November 2026 to 30 April 2027.",
+      "normalization_note": "The explicit dates are normalized to the 2026/27 winter label."
     },
     {
-      "evidence_id": "field-closure-stay_base-tignes-val-claret-local-apres-profile-season-label",
+      "evidence_id": "apres-closure-tignes-val-claret-season",
       "boundary_target_ids": [],
       "target_type": "stay_base",
       "target_id": "tignes-val-claret",
       "field_path": "local_apres_profile.season_label",
       "source_type": "official",
       "source_url": "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe",
-      "source_title": "Official Tignes Val Claret venue listing",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:tignes-val-claret: https://en.tignes.net/discover/ski-resort/tignes-villages, https://en.tignes.net/holidays, https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
-    },
-    {
-      "evidence_id": "field-closure-stay_base-val-disere-la-daille-local-apres-profile-season-label",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "val-disere-la-daille",
-      "field_path": "local_apres_profile.season_label",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
-      "source_title": "Official Val d Isere apres-ski guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:val-disere-la-daille: https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
-    },
-    {
-      "evidence_id": "field-closure-stay_base-val-disere-le-fornet-local-apres-profile-season-label",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "val-disere-le-fornet",
-      "field_path": "local_apres_profile.season_label",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
-      "source_title": "Official Val d Isere apres-ski guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:val-disere-le-fornet: https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/, https://www.valdisere.com/en/village-guide/history-pioneering-village/. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
-    },
-    {
-      "evidence_id": "field-closure-stay_base-val-disere-village-local-apres-profile-season-label",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "val-disere-village",
-      "field_path": "local_apres_profile.season_label",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/",
-      "source_title": "Official Val d Isere apres-ski guide",
-      "source_value": null,
-      "evidence_summary": "Direct official sources attempted for stay_base:val-disere-village: https://www.valdisere.com/en/events-entertainment-calendar/apres-ski/, https://www.valdisere.com/en/val-disere/, https://www.valdisere.com/en/village-guide/heritage-gastronomy-and-architecture/, https://www.valdisere.com/en/village-guide/history-pioneering-village/. They did not publish candidate-bound local_apres_profile.season_label. Prerequisite: a direct official source explicitly publishing that field for this exact target.",
-      "normalization_note": "The bounded review did not establish a defensible value, so the field remains unresolved rather than inferred."
+      "source_title": "Official Arobaze listing",
+      "source_value": "2026/27",
+      "evidence_summary": "The official listing publishes a 2026/27 winter operating window and daily 16:00-02:00 hours.",
+      "normalization_note": "The explicit operating period is normalized to the 2026/27 winter label."
     }
   ],
   "destination_boundary_assessments": [
@@ -9686,12 +9870,17 @@
         "https://en.tignes.net/discover/ski-resort/grande-motte-glacier",
         "https://en.tignes.net/discover/ski-resort/tignes-villages",
         "https://en.tignes.net/holidays",
+        "https://en.tignes.net/resort-guide/directory/bars-tignes",
         "https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski",
+        "https://en.tignes.net/resort-guide/directory/bars-tignes/kodo",
         "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe",
+        "https://en.tignes.net/resort-guide/directory/bars-tignes/la-paillote",
+        "https://en.tignes.net/resort-guide/directory/bars-tignes/le-reservoir",
         "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar",
         "https://en.tignes.net/skiing/ski-area/commitments-ski-area",
         "https://en.tignes.net/skiing/ski-for-all/freeride-in-tignes",
         "https://en.tignes.net/skiing/ski-for-all/freestyle-areas",
+        "https://restaurant1800.fr/en/bar_en/",
         "https://www.mairie-tignes.fr/cms_viewFile.php?idtf=124319&path=OAP-Renouvellement-architectural-et-energetique-2023.pdf"
       ],
       "candidate_kinds": [

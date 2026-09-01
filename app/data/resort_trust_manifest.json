@@ -4700,7 +4700,7 @@
           "lodging_price_quality": "estimated",
           "base_type": "verified",
           "base_character": "verified_with_adjustment",
-          "local_apres": "needs_source"
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -4742,14 +4742,18 @@
           "base_character": [
             "https://en.tignes.net/discover/ski-resort/tignes-villages"
           ],
-          "local_apres": []
+          "local_apres": [
+            "https://en.tignes.net/discover/ski-resort/tignes-villages",
+            "https://restaurant1800.fr/en/bar_en/"
+          ]
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
           "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-          "The official villages page calls Tignes 1800 a new, specially designed village and explicitly describes its peace and quiet. Snowcast normalizes those direct phrases to planned_resort development and quiet local pace."
+          "The official villages page calls Tignes 1800 a new, specially designed village and explicitly describes its peace and quiet. Snowcast normalizes those direct phrases to planned_resort development and quiet local pace.",
+          "The CavO operator page confirms a dedicated Tignes 1800 apres bar with music and lively evenings for 2025/26. Because the wider village remains officially quiet, Snowcast records availability with moderate rather than lively intensity."
         ]
       },
       "tignes-lavachet": {
@@ -4761,7 +4765,7 @@
           "lodging_price_quality": "estimated",
           "base_type": "verified",
           "base_character": "verified_with_adjustment",
-          "local_apres": "needs_source"
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -4804,14 +4808,20 @@
             "https://en.tignes.net/discover/ski-resort/tignes-villages",
             "https://www.mairie-tignes.fr/cms_viewFile.php?idtf=124319&path=OAP-Renouvellement-architectural-et-energetique-2023.pdf"
           ],
-          "local_apres": []
+          "local_apres": [
+            "https://en.tignes.net/discover/ski-resort/tignes-villages",
+            "https://en.tignes.net/resort-guide/directory/bars-tignes",
+            "https://en.tignes.net/resort-guide/directory/bars-tignes/kodo",
+            "https://en.tignes.net/resort-guide/directory/bars-tignes/la-paillote"
+          ]
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
           "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-          "The official villages page repeatedly describes Lavachet as quiet, while the municipal architecture plan identifies Lavachet as a modern, functionally planned resort ensemble. Snowcast normalizes those field-specific sources to quiet local pace and planned-resort development."
+          "The official villages page repeatedly describes Lavachet as quiet, while the municipal architecture plan identifies Lavachet as a modern, functionally planned resort ensemble. Snowcast normalizes those field-specific sources to quiet local pace and planned-resort development.",
+          "The official Tignes directory lists current bars in Lavachet, including Kodo and La Paillote, for 2026/27. The village remains officially quiet, so Snowcast records a low-key local apres offer."
         ]
       },
       "tignes-le-lac": {
@@ -4823,7 +4833,7 @@
           "lodging_price_quality": "estimated",
           "base_type": "verified",
           "base_character": "verified_with_adjustment",
-          "local_apres": "needs_source"
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -4867,6 +4877,8 @@
             "https://www.mairie-tignes.fr/cms_viewFile.php?idtf=124319&path=OAP-Renouvellement-architectural-et-energetique-2023.pdf"
           ],
           "local_apres": [
+            "https://en.tignes.net/discover/ski-resort/tignes-villages",
+            "https://en.tignes.net/resort-guide/directory/bars-tignes",
             "https://en.tignes.net/resort-guide/directory/restaurants/loop-bar"
           ]
         },
@@ -4876,7 +4888,7 @@
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed official Tignes Le Lac character, altitude, and apres material on 2026-07-05.",
           "The official villages guide identifies Le Lac as the active resort centre, while the municipal architecture plan identifies its modern functional resort ensemble. Snowcast normalizes these sources to balanced local pace and planned-resort development.",
-          "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown."
+          "The official Tignes directory lists multiple current Le Lac bars, and the Loop Bar listing advertises recurring live bands, DJs, and major apres sessions for 2026/27. Snowcast normalizes that breadth and frequency to lively local apres."
         ]
       },
       "tignes-les-brevieres": {
@@ -4888,7 +4900,7 @@
           "lodging_price_quality": "estimated",
           "base_type": "verified",
           "base_character": "verified_with_adjustment",
-          "local_apres": "needs_source"
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -4930,14 +4942,18 @@
           "base_character": [
             "https://en.tignes.net/discover/ski-resort/tignes-villages"
           ],
-          "local_apres": []
+          "local_apres": [
+            "https://en.tignes.net/discover/ski-resort/tignes-villages",
+            "https://en.tignes.net/resort-guide/directory/bars-tignes/le-reservoir"
+          ]
         },
         "notes": [
           "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
           "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed the official Tignes villages and altitude guides on 2026-07-05.",
-          "The official villages page directly describes Les Brevieres and its traditional chalets, conviviality, and cosy winter evenings. Snowcast normalizes that evidence to traditional development and quiet local pace."
+          "The official villages page directly describes Les Brevieres and its traditional chalets, conviviality, and cosy winter evenings. Snowcast normalizes that evidence to traditional development and quiet local pace.",
+          "The official Tignes directory confirms Le Reservoir as a current Les Brevieres bar for 2026/27. Combined with the village's cosy character, Snowcast records a low-key local apres offer."
         ]
       },
       "tignes-val-claret": {
@@ -4949,7 +4965,7 @@
           "lodging_price_quality": "estimated",
           "base_type": "verified",
           "base_character": "verified_with_adjustment",
-          "local_apres": "needs_source"
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -4993,6 +5009,8 @@
             "https://www.mairie-tignes.fr/cms_viewFile.php?idtf=124319&path=OAP-Renouvellement-architectural-et-energetique-2023.pdf"
           ],
           "local_apres": [
+            "https://en.tignes.net/discover/ski-resort/tignes-villages",
+            "https://en.tignes.net/resort-guide/directory/bars-tignes/cocorico-apres-ski",
             "https://en.tignes.net/resort-guide/directory/bars-tignes/l-arobaze-cafe"
           ]
         },
@@ -5001,8 +5019,8 @@
           "Official 300 km and 74-lift facts describe the modeled Tignes - Val d'Isere terrain domain; child-area local terrain totals remain unresolved where official sources publish only domain aggregates.",
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
           "Source-aware v2 enrichment reviewed official Val Claret character, altitude, and apres material on 2026-07-05.",
-          "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown.",
-          "The official villages page describes Val Claret as festive through late night, while the municipal architecture plan identifies the district as a modern resort ensemble built to an overall plan. Snowcast normalizes those sources to lively local pace and planned-resort development."
+          "The official villages page describes Val Claret as festive through late night, while current official Cocorico and Arobaze listings document recurring live music and DJs for 2026/27. Snowcast normalizes those sources to lively local apres.",
+          "The municipal architecture plan identifies Val Claret as a modern resort ensemble built to an overall plan, supporting planned-resort development style."
         ]
       },
       "val-disere-la-daille": {
@@ -5087,7 +5105,7 @@
           "lodging_price_quality": "estimated",
           "base_type": "verified",
           "base_character": "verified",
-          "local_apres": "needs_source"
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -5147,7 +5165,7 @@
           "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain is owned by terrain_domain:tignes-val-disere and exposed through the linked pass product.",
           "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.",
           "Source-aware v2 enrichment reviewed official Le Fornet history, character, and apres material on 2026-07-05.",
-          "A single venue page does not establish a base-wide apres profile; availability and intensity remain unknown."
+          "The official Val d'Isere apres guide identifies Crozets at the Le Fornet cable-car base as a relaxed terrace offer. Snowcast records available, low-key local apres without adding a season label because the guide describes a recurring profile rather than an explicit season window."
         ]
       },
       "val-disere-village": {

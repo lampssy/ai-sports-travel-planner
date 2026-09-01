@@ -2273,9 +2273,9 @@
         "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "moderate",
+        "season_label": "2025/26"
       }
     },
     {
@@ -2296,9 +2296,9 @@
         "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "low_key",
+        "season_label": "2026/27"
       }
     },
     {
@@ -2319,9 +2319,9 @@
         "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "lively",
+        "season_label": "2026/27"
       }
     },
     {
@@ -2342,9 +2342,9 @@
         "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "low_key",
+        "season_label": "2026/27"
       }
     },
     {
@@ -2365,9 +2365,9 @@
         "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "lively",
+        "season_label": "2026/27"
       }
     },
     {
@@ -2415,8 +2415,8 @@
         "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "low_key",
         "season_label": null
       }
     },
