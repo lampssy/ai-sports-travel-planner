@@ -8,6 +8,7 @@ from typing import Protocol
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from app.data.catalog_curation import (
+    CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION,
     CatalogCurationReport,
     CatalogValidationError,
     validate_catalog_curation_report,
@@ -78,7 +79,7 @@ def build_intent_snapshot(
     base: str,
     head: str,
 ) -> IntentSnapshot:
-    """Build canonical output intent, including schema-v3 report targets."""
+    """Build canonical output intent, including current-schema report targets."""
     snapshot = build_preparation_intent_snapshot(repository, base, head)
     report_targets: set[str] = set()
     for path in sorted(snapshot.changed_paths):
@@ -313,8 +314,14 @@ def _report_targets(
                 f"cannot read changed report {path}: {error}"
             ) from error
         raise
-    if report.get("report_schema_version") != 3:
-        raise IntentValidationError(f"{path}: report_schema_version must be 3")
+    if (
+        report.get("report_schema_version")
+        != CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION
+    ):
+        raise IntentValidationError(
+            f"{path}: report_schema_version must be "
+            f"{CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION}"
+        )
     try:
         typed_report = CatalogCurationReport.model_validate(report)
         validate_catalog_curation_report(typed_report)

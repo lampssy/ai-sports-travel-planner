@@ -100,7 +100,7 @@ def _catalog(**rows: list[dict[str, object]]) -> str:
 
 def _valid_full_report() -> dict[str, object]:
     return {
-        "report_schema_version": 3,
+        "report_schema_version": 4,
         "title": "Alpha full curation",
         "summary": "Reviews Alpha against its official source.",
         "resulting_graph": {"focus_stay_destination_ids": ["alpha"]},
@@ -116,6 +116,12 @@ def _valid_full_report() -> dict[str, object]:
                 "target_id": "ski_areas:alpha",
                 "scope": "narrow",
                 "required_field_paths": ["display_name"],
+            },
+            {
+                "target_type": "stay_destination",
+                "target_id": "alpha-destination",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
             },
         ],
         "entity_scope_assessments": [
@@ -142,9 +148,39 @@ def _valid_full_report() -> dict[str, object]:
                     "pass_scope": "none",
                     "provider_consensus": "separate",
                     "separation_value": "material",
+                    "material_trip_consequences": [
+                        {
+                            "consequence_type": "weather_or_season",
+                            "decision_effect": "conditions_evidence_profile",
+                            "comparison_basis": "stay_market_baseline",
+                            "comparison_target_id": "alpha-destination",
+                            "durability_basis": "recurring_season_pattern",
+                            "evidence_refs": ["alpha-scope"],
+                            "rationale": (
+                                "Compared with the stay-market baseline, the "
+                                "candidate has a distinct recurring conditions "
+                                "profile capable of changing a normal trip choice."
+                            ),
+                        }
+                    ],
                     "evidence_refs": ["alpha-scope"],
                 },
-            }
+            },
+            {
+                "candidate_id": "alpha-destination",
+                "candidate_name": "Alpha Destination",
+                "candidate_kind": "stay_destination",
+                "disposition": "represented",
+                "signals": ["independent_stay_market"],
+                "evidence_refs": ["alpha-scope"],
+                "target_refs": [
+                    {
+                        "target_type": "stay_destination",
+                        "target_id": "alpha-destination",
+                    }
+                ],
+                "rationale": "The source identifies the represented stay market.",
+            },
         ],
         "evidence": [
             {
@@ -157,6 +193,7 @@ def _valid_full_report() -> dict[str, object]:
                 "source_title": "Official Alpha",
                 "source_value": "Alpha",
                 "evidence_summary": "Confirms Alpha's independent identity.",
+                "boundary_target_ids": ["alpha"],
             }
         ],
         "field_coverage": [
@@ -170,6 +207,12 @@ def _valid_full_report() -> dict[str, object]:
                 "target_type": "trust_manifest",
                 "target_id": "ski_areas:alpha",
                 "field_path": "display_name",
+                "status": "reviewed-no-change",
+            },
+            {
+                "target_type": "stay_destination",
+                "target_id": "alpha-destination",
+                "field_path": "name",
                 "status": "reviewed-no-change",
             },
         ],
@@ -325,7 +368,7 @@ def test_catalog_comparison_requires_schema_version_two() -> None:
         build_intent_snapshot(repository, "base", "head")
 
 
-def test_full_schema_v3_report_collects_reviewed_scope_and_trust_targets() -> None:
+def test_full_schema_v4_report_collects_reviewed_scope_and_trust_targets() -> None:
     path = "docs/catalog-curation/alpha.json"
     report = _valid_full_report()
     repository = FakeIntentRepository(
@@ -338,13 +381,14 @@ def test_full_schema_v3_report_collects_reviewed_scope_and_trust_targets() -> No
     assert snapshot.report_targets == frozenset(
         {
             "ski_area:alpha",
+            "stay_destination:alpha-destination",
             "trust_manifest:ski_areas:alpha",
         }
     )
     assert repository.show_calls == [("head", path)]
 
 
-def test_schema_v3_report_without_graph_remains_admissible_review_input() -> None:
+def test_schema_v4_report_without_graph_remains_admissible_review_input() -> None:
     report_path = "docs/catalog-curation/alpha.json"
     report = _valid_full_report()
     report.pop("resulting_graph")
@@ -373,14 +417,18 @@ def test_report_target_can_be_declared_by_review_and_scope_without_drift() -> No
     snapshot = build_intent_snapshot(repository, "base", "head")
 
     assert snapshot.report_targets == frozenset(
-        {"ski_area:alpha", "trust_manifest:ski_areas:alpha"}
+        {
+            "ski_area:alpha",
+            "stay_destination:alpha-destination",
+            "trust_manifest:ski_areas:alpha",
+        }
     )
 
 
-def test_incomplete_schema_v3_report_is_rejected_with_path_context() -> None:
+def test_incomplete_schema_v4_report_is_rejected_with_path_context() -> None:
     path = "docs/catalog-curation/incomplete.json"
     report = {
-        "report_schema_version": 3,
+        "report_schema_version": 4,
         "reviewed_targets": [],
         "entity_scope_assessments": [],
     }
@@ -400,12 +448,13 @@ def test_incomplete_schema_v3_report_is_rejected_with_path_context() -> None:
     ("content", "canonical_error"),
     [
         ("not-json", "invalid JSON"),
-        (json.dumps({"report_schema_version": 1}), "report_schema_version must be 3"),
-        (json.dumps({"report_schema_version": 2}), "report_schema_version must be 3"),
+        (json.dumps({"report_schema_version": 1}), "report_schema_version must be 4"),
+        (json.dumps({"report_schema_version": 2}), "report_schema_version must be 4"),
+        (json.dumps({"report_schema_version": 3}), "report_schema_version must be 4"),
         (
             json.dumps(
                 {
-                    "report_schema_version": 3,
+                    "report_schema_version": 4,
                     "title": "Incomplete current report",
                     "summary": "Requires pre-review normalization.",
                 }
@@ -447,7 +496,7 @@ def test_preparation_treats_noncanonical_report_content_as_review_input(
                     "entity_scope_assessments": [],
                 }
             ),
-            "report_schema_version must be 3",
+            "report_schema_version must be 4",
         ),
     ],
 )

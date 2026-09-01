@@ -14,7 +14,9 @@ immutable CatalogSnapshot with these independent entity types:
 - stay_destinations: bookable town/destination contexts;
 - stay_bases: accommodation zones owned by one stay destination;
 - ski_areas: complete terrain entities with independent or coordinated evidence
-  ownership;
+  ownership and a durable, evidence-backed material trip consequence; a sole
+  root area compares ski-terrain evidence with a named stay destination rather
+  than inventing a parent;
 - ski_area_access: explicit sourced stay-base-to-ski-area relationships;
 - terrain_domains: ski-connected aggregates over at least two ski areas;
 - lift_pass_products: ticket availability, coverage, prices, and optional
@@ -59,8 +61,8 @@ has non-empty `evidence_refs` and `covered_component_candidate_ids`; the covered
 IDs must equal the parent's exact `component_candidate_ids`. Family evidence
 must be `source_type=official` and appear in the boundary and scope evidence
 refs. Aggregate `coordination_evidence_refs` equals the union of all family
-refs. A coordinated claim or any of this metadata requires report schema
-version 3.
+refs. Coordinated claims and metadata were introduced in report schema version
+3 and remain valid in current schema version 4.
 
 The exhaustive official operator/member roster is the baseline for those
 component IDs. Lift installations, piste sectors, stations, map labels, product
@@ -87,8 +89,19 @@ categories derived directly from signals: operations (`separate_operator` or
 categories including operations or weather; a transfer-required or disconnected
 component passes with one. `not_separate`, `redundant`, `coordinated`,
 parent-owned weather, shared branding, and provider consensus cannot suppress
-that evidence. Sector terrain and one connected pass-only category remain
-insufficient.
+that evidence. Current schema version 4 also checks a separate claim-scoped
+material trip consequence. A child can retain a verified consequence while
+remaining folded when terrain or ownership fails, but a child that passes all
+three gates is invalid. Sector terrain and one connected pass-only category
+remain insufficient.
+
+Every consequence names its actual comparison target. Parent comparisons match
+the declared parent ID; sibling comparisons name another represented or added
+ski area with the same parent; stay-market comparisons name a represented or
+added stay destination. A stay destination has at most one stay-market root,
+and that root cannot simultaneously participate in a sibling comparison.
+Target resolution uses unique typed `target_refs`, not report-local candidate
+aliases.
 
 Broader official status or pass sources are acceptable only when every
 coordinated component is exactly addressable. A shared pass alone is necessary
@@ -237,7 +250,10 @@ Material catalog changes use a typed CatalogCurationReport. A report must:
 - record normalization notes;
 - assess destination boundaries and weather request geometry when relevant;
 - declare focus stay destinations for a deterministic resulting graph in
-  current schema-v3 work;
+  current schema-v4 work;
+- record every material ski-area consequence as a typed item with its affected
+  decision, durability basis, direct evidence refs, and parent-relative
+  rationale; each cited item includes the candidate in `boundary_target_ids`;
 - state ranking impact for ranking-relevant changes; and
 - list unresolved caveats without hiding them in prose.
 
@@ -379,7 +395,7 @@ Reconcile a report against a base checkout:
       --current-catalog-path app/data/catalog.json \
       --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json \
       --current-trust-manifest-path app/data/resort_trust_manifest.json \
-      --require-report-schema-version 3 \
+      --require-report-schema-version 4 \
       --product-backlog-path docs/product-backlog.md \
       --require-markdown-path docs/catalog-curation/REPORT.md
 

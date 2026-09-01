@@ -10,6 +10,7 @@ Related ADRs:
 - `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md`
 - `docs/architecture/adr/0016-require-evidence-owner-boundaries-for-ski-areas.md`
 - `docs/architecture/adr/0021-gate-ski-area-weather-sampling.md`
+- `docs/architecture/adr/0023-require-trip-level-consequences-for-ski-area-boundaries.md`
 
 Related docs:
 - `docs/domain-language.md`
@@ -62,6 +63,10 @@ A coordinated area additionally requires all of the following:
   separate identity;
 - no component that independently passes the ordinary separate-ski-area gates.
 
+For schema-version-4 reports, those ordinary gates include the typed material
+trip-level consequence required by ADR 0023; owner evidence alone never forces
+a component split.
+
 The official exhaustive operator/component roster is the baseline component
 set. A lift name or number, piste sector, station, map label, product label, or
 legacy/current rename pair does not become a component candidate merely because
@@ -101,12 +106,14 @@ status system, pass, and stay market; they must not have material independent
 recommendation, operations, weather, season, or pass value.
 
 A substantial transfer-required, weather-distinct, or independently operated
-complete area remains a separate `SkiArea`. Shared branding, a shared pass, an
-operator directory, geographical proximity, or one website is insufficient
-without the complete coordinated evidence packet.
+complete area remains a separate `SkiArea` only when it also has the durable
+material trip-level consequence required by ADR 0023. Those facts are owner or
+access evidence, not substitutes for the third gate. Shared branding, a shared
+pass, an operator directory, geographical proximity, or one website is
+insufficient without the complete coordinated evidence packet.
 
 The curation contract represents this decision explicitly rather than changing
-the meaning of `independent`. A schema-version-3 coordinated parent owns
+the meaning of `independent`. A coordinated parent owns
 `component_candidate_ids`, `coordination_evidence_families`, and aggregate
 `coordination_evidence_refs`. Each typed family item records `family`, non-empty
 `evidence_refs`, and `covered_component_candidate_ids`. The five allowed family
@@ -122,8 +129,9 @@ and the aggregate refs equal the union of the family refs. The metadata belongs
 only to a `represented` or `add_entity` parent; coordinated `not_separate`
 children retain the coordinated operational scope and parent target but no
 parent metadata. Schema versions 1 and 2 cannot claim coordinated scope or
-metadata. Existing non-coordinated schema-version-3 reports remain valid and
-retain their legacy Markdown. Operations and weather use separate report-only
+metadata. Existing schema-version-3 reports remain valid and retain their legacy
+Markdown. Current schema version 4 adds ADR 0023's material trip-consequence
+gate without changing the coordination evidence packet. Operations and weather use separate report-only
 type aliases so `coordinated` is valid only for `operational_scope`; it is not a
 weather-scope classification.
 

@@ -859,7 +859,7 @@ empty diffs fail closed. Before the initial dual review, a legacy, malformed,
 graph-less refreshed, incomplete, or non-reconciling report receives one
 `maintainer-managed` structural normalization pass. It reads the exact prepared
 base/current catalog and trust snapshots, rebuilds and locally commits the
-single schema-v3 report, then yields to review without claiming semantic
+single schema-v4 report, then yields to review without claiming semantic
 resolution or consuming a remediation cycle. It validates those snapshots
 before edits, stops without edits when catalog/trust validation fails, asserts
 the catalog/trust object IDs remain identical, and permits only the report path
@@ -868,7 +868,7 @@ dual-review ledger and consume a normal remediation cycle. Normalization and
 remediation run catalog validation, exact reconciliation, and finding-related
 focused tests; the fixed broad catalog suite remains final helper-validation
 work.
-Validation-backed push and readiness still require one canonical schema-v3
+Validation-backed push and readiness still require one canonical schema-v4
 report reconciled to the exact reviewed catalog and trust changes.
 
 Ski-area-access catalog `source_urls` are the entity-level union of the trust
@@ -1062,7 +1062,7 @@ catalog for the live "already represented" check, while GitHub remains the
 authority for open proposal identity. Reading the modified worktree for this
 gate would make every valid addition appear to duplicate itself.
 
-For curation readiness, the checked-in schema-v3 report is the complete source
+For curation readiness, the checked-in schema-v4 report is the complete source
 of truth and the PR body is only a concise human synopsis. Both `waiting-ci` and
 `ready` require that synopsis. Legacy unmarked bodies are replaced only through
 an explicit helper adoption flag on an already-authorized automation-owned PR;
@@ -1070,8 +1070,8 @@ once managed markers exist, updates are idempotent. Recovery must finish the
 body publication as well as the label and canonical comment, so a recovered PR
 cannot become ready with its original discovery-era description still shown.
 
-Schema-v3 reports may declare `resulting_graph.focus_stay_destination_ids`.
-Historical v3 reports remain readable without it, but current maintainer
+Schema-v3 and later reports may declare `resulting_graph.focus_stay_destination_ids`.
+Historical v3 reports remain readable without it, but current schema-v4 maintainer
 validation requires it. The renderer derives regions, destinations, stay bases,
 access edges, ski areas, terrain domains, and lift-pass coverage from the exact
 normalized catalog head and emits one canonical Mermaid section. Validation
@@ -1390,7 +1390,7 @@ Sourceable missing entities that fit the active curation batch should be added
 in that PR. Deferral is an escape hatch for work that would make the batch
 unmanageably broad, mix a separate model concern, depend on uncurated graph
 nodes, require weather-identity migration, or remain genuinely unresolved. In
-schema-version-3 reports, every `deferred` or `unresolved` assessment carries a
+schema-version-4 reports, every `deferred` or `unresolved` assessment carries a
 canonical `backlog_ref` to one consolidated regional H3 item under
 `Catalog Curation Refinements`; that item contains the exact
 `candidate_kind:candidate_id` marker for each linked assessment. Other
@@ -1522,9 +1522,10 @@ exact component IDs; aggregate `coordination_evidence_refs` is their union.
 Each coordinated child is assessed exactly once with
 `disposition=not_separate`, `parent_ski_area_id` equal to the coordinated
 parent, a target reference to that parent, and `operational_scope=coordinated`.
-Children carry no parent coordination metadata. Coordinated claims require
-report schema version 3. A shared pass alone is insufficient; `weather_scope`
-remains independently gated by ADR 0021.
+Children carry no parent coordination metadata. Coordinated claims were
+introduced in report schema version 3. Current schema version 4 additionally
+requires ADR 0023's material trip-consequence assessment. A shared pass alone
+is insufficient; `weather_scope` remains independently gated by ADR 0021.
 
 Component discovery is roster-first. The exhaustive official operator/member
 roster defines the baseline component set; lift names, sectors, stations,
@@ -1534,6 +1535,37 @@ roster completeness never closes separate-area discovery. Out-of-roster names
 with official terrain, access, operations, weather/season, or dedicated-pass
 semantics are still screened through the ordinary separate-ski-area gates and
 remain unresolved when they may describe a durable boundary.
+
+## Ski-Area Trip-Consequence Boundary
+
+Evidence ownership answers where source facts can attach; it does not by itself
+justify another skier-facing `SkiArea`. Current schema-version-4 curation adds a
+third independent gate: a complete, evidence-owned candidate needs a durable
+material trip consequence capable of changing the selected ski area,
+stay-to-ski configuration, lift-pass choice, or conditions evidence profile.
+Each consequence owns its type, affected decision, durability basis, evidence
+refs, candidate-specific `boundary_target_ids`, concrete
+`comparison_target_id`, and comparison-relative rationale.
+Operator names, pages, maps, connectivity,
+provider structure, and shared passes remain supporting signals only.
+
+Materiality is assessed even when another gate fails. A candidate may therefore
+remain `not_separate` while retaining a verified consequence, but it cannot be
+folded when complete terrain, evidence ownership, and material trip value all
+pass. Historical report schemas remain readable; new maintainer-reviewed and
+finalized reports require schema version 4 and fresh semantic review after any
+schema-version-3 normalization.
+
+A consequence declares `comparison_basis=parent_ski_area`,
+`sibling_ski_area`, or `stay_market_baseline`. The last basis gives a
+destination's sole root downhill area a real comparison between ski-terrain
+evidence and accommodation-market conditions without inventing a parent. A
+parentless area that competes with another ski area uses the sibling basis.
+The target ID must resolve to the declared parent, an assessed sibling with the
+same parent, or an assessed stay destination. One stay destination cannot have
+multiple stay-market roots or a root that also participates in a sibling
+comparison. Resolution uses each assessment's typed catalog `target_refs`; the
+report-local `candidate_id` is descriptive identity, not comparison authority.
 
 ## Maintainer Pre-Push Curation Authority
 
@@ -1572,7 +1604,7 @@ before validation can run again. This preserves expensive semantic progress
 without allowing failed tests to become general mutation authority.
 
 Curation report mutations are atomic at the review-artifact boundary: the
-canonical schema-v3 JSON report and its deterministic Markdown companion move
+canonical schema-v4 JSON report and its deterministic Markdown companion move
 together before any delta or reviewed checkpoint. Boundary evidence also names
 every assessment candidate explicitly through `boundary_target_ids`; an
 evidence target alone does not establish boundary ownership. These mechanical

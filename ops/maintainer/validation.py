@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.data.catalog_curation import (
     CATALOG_BACKLOG_REF_PREFIX,
+    CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION,
     CatalogCurationReport,
     catalog_resulting_graph_scope,
     load_catalog_curation_report,
@@ -506,8 +507,11 @@ def _validate_finalized_report(
     revision: str,
     report: CatalogCurationReport,
 ) -> None:
-    if report.report_schema_version != 3:
-        raise ValueError("finalized curation report must use schema version 3")
+    if report.report_schema_version != CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION:
+        raise ValueError(
+            "finalized curation report must use schema version "
+            f"{CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION}"
+        )
     validate_catalog_curation_report(
         report,
         require_resulting_graph=True,
@@ -619,7 +623,10 @@ def validate_proposal(
             base_trust.validate_against_catalog(base_catalog)
             head_trust.validate_against_catalog(head_catalog)
             report = load_catalog_curation_report(report_file)
-            if report.report_schema_version != 3:
+            if (
+                report.report_schema_version
+                != CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION
+            ):
                 raise ValueError
             validate_catalog_curation_report(
                 report,
@@ -769,7 +776,7 @@ def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:
             "--current-trust-manifest-path",
             TRUST_MANIFEST_PATH,
             "--require-report-schema-version",
-            "3",
+            str(CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION),
             "--require-markdown-path",
             plan.report_path.removesuffix(".json") + ".md",
             "--skip-product-backlog-validation",

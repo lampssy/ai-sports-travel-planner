@@ -9,6 +9,7 @@ Superseded by: N/A
 Related ADRs:
 - `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md`
 - `docs/architecture/adr/0009-normalized-trip-market-catalog.md`
+- `docs/architecture/adr/0023-require-trip-level-consequences-for-ski-area-boundaries.md`
 
 Related docs:
 - `docs/domain-language.md`
@@ -43,7 +44,8 @@ A separate `SkiArea` must pass three gates:
    signals and cannot satisfy ownership alone.
 3. **Material separation value:** a separate ID prevents misleading attribution
    of weather, operations, season, pass coverage, or terrain facts. A redundant
-   child remains inside its parent area.
+   child remains inside its parent area. ADR 0023 refines this gate for current
+   reports by requiring a typed, evidence-backed trip-level consequence.
 
 Connected terrain receives a stronger default. A connected candidate that the
 parent reports as one operational area remains `not_separate` unless it has two
@@ -64,7 +66,8 @@ separate hostname is not required. A separate company or member page alone,
 without candidate-scoped current operations evidence, remains supporting
 evidence only.
 
-Every current curation report uses schema version 3. Each ski-area candidate
+Schema version 3 introduced the typed ski-area boundary assessment. Each
+ski-area candidate
 records complete-versus-sector scope, parent connectivity, operations ownership,
 weather ownership, pass scope, provider consensus, separation value, parent ID,
 and direct evidence references. Provider listings corroborate the decision but
@@ -76,8 +79,8 @@ sources truthfully support each classification.
 `not_separate` names its parent and targets that parent ski area, so a merge
 decision cannot exist without an explicit owner scope.
 
-Historical schema-version-1 and schema-version-2 reports remain parseable. The
-maintainer's final intent and reconciliation gates require schema version 3 for
+Historical schema versions 1-3 remain parseable. ADR 0023 adds the material
+trip-consequence gate in schema version 4, which the maintainer requires for
 newly remediated or published curation work.
 
 ## Consequences

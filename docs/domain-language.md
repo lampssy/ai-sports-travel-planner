@@ -338,16 +338,33 @@ snowmaking coverage or open terrain.
 
 **Ski area**
 
-A complete terrain entity with independent or coordinated evidence ownership.
+A complete terrain entity with independent or coordinated evidence ownership
+and at least one durable, evidence-backed material trip consequence. Every
+consequence declares whether it compares the candidate with a parent ski area,
+sibling ski area, or stay-market baseline and names the actual compared entity.
+A destination's sole root downhill area names its stay destination as the
+baseline; a parentless area that competes with another ski area names that
+sibling.
 Current conditions, archive weather, climatology, season windows, elevation,
 terrain metrics, and skill support attach to ski_area_id. A ski area may be
 reachable from several stay destinations.
 
+The comparison graph is closed: a parent target equals the declared parent, a
+sibling target is another represented or added ski area under the same parent,
+and a stay-market target is a represented or added stay destination with one
+sole root ski area. These are catalog entity IDs resolved through typed
+`target_refs`, not report-local candidate aliases.
+
 A separate ski area must have complete terrain scope, at least one durable
-operations, weather, or full-local-pass owner, and material separation value.
+operations, weather, or full-local-pass owner, and a material trip consequence
+capable of changing the selected ski area, stay-to-ski configuration, lift-pass
+choice, or conditions evidence profile for a normal trip.
 Dedicated identity pages, child-scoped metrics, individual lift tickets,
 webcams, and named map sectors are supporting evidence only. Curation must
-compare every candidate with its nearest parent owner scope.
+compare every candidate with its nearest parent or sibling scope. The candidate
+must be a substantial primary ski-day option; route preference, ordinary sector
+variation, a novelty or individual-lift product, temporary disruption, one
+forecast, or an isolated incident is insufficient.
 
 A ski-connected child remains part of its parent by default. Splitting it
 requires two independent owner categories across operations, weather, and full
@@ -379,7 +396,8 @@ union of those family refs. Direct assignment must resolve every component,
 although a common official source may establish several assignments. Children
 do not repeat the parent's coordination metadata. The pass may also cover a
 separately modeled adjacent ski area and does not establish the boundary by
-itself. Coordinated scope and metadata require report schema version 3.
+itself. Coordinated scope and metadata were introduced in report schema version
+3 and remain required by current schema version 4.
 
 The exhaustive official operator/member roster is the baseline component set.
 Lift names or numbers, piste sectors, stations, map labels, product labels, and
@@ -391,7 +409,7 @@ evidence gives it terrain, access, operations, weather/season, or dedicated-pass
 semantics: a possible durable boundary must be assessed or left unresolved and
 may be excluded only when evidence establishes an internal feature or rename.
 
-A coordinated child's `not_separate`, `separation_value=redundant`,
+A coordinated child's `not_separate`,
 `operational_scope=coordinated`, parent-owned weather, and provider-consensus
 declarations do not erase contradictory source-backed evidence. Complete terrain
 plus a terrain-identity signal is evaluated with owner categories derived from
@@ -402,12 +420,15 @@ with `pass_scope=full_local`). A connected child is independently viable with
 two categories including operations or weather; a transfer-required or
 disconnected child is viable with one. Shared branding, provider consensus
 alone, sector terrain, or one connected pass-only category is insufficient.
+Schema-version-4 closure also requires a claim-scoped material trip consequence.
+A child may record such a consequence while remaining `not_separate` when its
+terrain or owner gate fails; it cannot remain folded when all three gates pass.
 
 Minor nursery or satellite lifts may remain coordinated components when they
-share the complete inventory, status system, pass, and stay market and have no
-material independent recommendation, weather, season, operations, or pass
-value. A complete transfer-required, weather-distinct, or independently owned
-area remains a separate ski area. Coordinated operational ownership does not
+share the complete inventory, status system, pass, and stay market and fail at
+least one ordinary separate-area gate. A complete, independently or
+coordinately evidenced candidate still remains folded when no durable
+trip-level consequence distinguishes it. Coordinated operational ownership does not
 imply active weather sampling; `weather_scope` and ADR 0021 are evaluated
 independently.
 
@@ -672,7 +693,7 @@ until fixed or routed through an explicit evidence or owner-decision gate.
 **Regional follow-up**
 
 An additive adjacent catalog opportunity whose omission does not make the
-selected graph incorrect. It is recorded in the schema-v3 report and merged
+selected graph incorrect. It is recorded in the current schema-v4 report and merged
 product backlog for discovery; it does not by itself make curation
 non-converging.
 

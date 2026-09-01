@@ -234,7 +234,7 @@ failure, and truthful blocked or owner-decision publication without being
 mistaken for reviewed work. This adds private state and refs, but prevents
 repeating completed remediation. Additive regional findings no longer expand an
 otherwise correct curation indefinitely; they become visible owner-gated
-backlog/proposal work. GitHub proposal identity and the merged schema-v3 report,
+backlog/proposal work. GitHub proposal identity and the merged schema-v4 report,
 not private memory, remain the durable proposal record.
 
 A normal CI wait now delays discovery or another curation run for up to 30
