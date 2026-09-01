@@ -2267,15 +2267,15 @@
       "longitude": null,
       "base_type": "resort_station",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 1800,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "moderate",
+        "season_label": "2025/26"
       }
     },
     {
@@ -2290,15 +2290,15 @@
       "longitude": null,
       "base_type": "neighbourhood",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 2050,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "low_key",
+        "season_label": "2026/27"
       }
     },
     {
@@ -2313,15 +2313,15 @@
       "longitude": null,
       "base_type": "resort_sector",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 2100,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "lively",
+        "season_label": "2026/27"
       }
     },
     {
@@ -2336,15 +2336,15 @@
       "longitude": null,
       "base_type": "village",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 1550,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "low_key",
+        "season_label": "2026/27"
       }
     },
     {
@@ -2359,15 +2359,15 @@
       "longitude": null,
       "base_type": "resort_sector",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 2150,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "lively",
+        "season_label": "2026/27"
       }
     },
     {
@@ -2384,14 +2384,14 @@
       "regional_data_ids": {
         "osm_node_id": "249835000"
       },
-      "elevation_m": null,
+      "elevation_m": 1802,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2409,14 +2409,14 @@
       "regional_data_ids": {
         "osm_node_id": "240913965"
       },
-      "elevation_m": null,
+      "elevation_m": 1930,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "low_key",
         "season_label": null
       }
     },
@@ -2435,14 +2435,14 @@
         "osm_relation_id": "133944",
         "wikidata_id": "Q207589"
       },
-      "elevation_m": null,
+      "elevation_m": 1850,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4899,17 +4899,17 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -4917,7 +4917,7 @@
         "season_label": null
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
+        "availability": "available",
         "route_count": null,
         "season_label": null
       },
@@ -4955,17 +4955,17 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -4979,8 +4979,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -6373,7 +6373,7 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
       ]
     },
     {
@@ -6388,7 +6388,7 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
       ]
     },
     {
@@ -6397,13 +6397,13 @@
       "ski_area_id": "tignes-ski-area",
       "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Palafour / Paquis chairlifts",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/skiing/ski-area/ski-lifts"
       ]
     },
     {
@@ -6412,13 +6412,14 @@
       "ski_area_id": "tignes-ski-area",
       "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Brévières gondola",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/discover/tignes-an-adaptative-friendly-resort/wheelchair-friendly-facilities",
+        "https://en.tignes.net/resort-guide/directory/accommodation/resort-clubs/village-club-mmv-les-brevieres"
       ]
     },
     {
@@ -6427,13 +6428,14 @@
       "ski_area_id": "tignes-ski-area",
       "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": "Tichot chairlift",
+      "nearest_lift_name": "Tufs / Fresse chairlifts",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.tignes.net/skiing/ski-area"
+        "https://en.tignes.net/skiing/ski-area/ski-lifts",
+        "https://en.tignes.net/resort-guide/directory/accommodation/residences-de-tourisme/chalet-hotel-quartz"
       ]
     },
     {
@@ -6448,7 +6450,8 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/",
+        "https://www.valdisere.com/en/val-disere-in-winter/walks-and-snowshoeing-tours/"
       ]
     },
     {
@@ -6463,7 +6466,8 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/",
+        "https://www.valdisere.com/en/village-guide/history-pioneering-village/"
       ]
     },
     {
@@ -6478,7 +6482,8 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        "https://www.valdisere.com/en/live/ski-map/",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/skipass-and-lift-pass-purchases/"
       ]
     },
     {
@@ -7101,7 +7106,10 @@
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
         "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
       ],
-      "official_trail_map": null
+      "official_trail_map": {
+        "url": "https://public.tignes.net/TIGNES.NET/BROCHURES/PLAN_DES_PISTES.pdf",
+        "season_label": "2025-2026"
+      }
     },
     {
       "terrain_domain_id": "cervinia-valtournenche",
@@ -8855,34 +8863,34 @@
         {
           "duration_days": 3,
           "audience": "adult",
-          "amount": 225.0,
+          "amount": 234.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 main season",
+          "season_label": "Winter 2026/27 main season",
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         },
         {
           "duration_days": 6,
           "audience": "adult",
-          "amount": 450.0,
+          "amount": 468.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 main season; 6 equals 7 days",
+          "season_label": "Winter 2026/27 main season; 6 equals 7 days",
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         },
         {
           "duration_days": 1,
           "audience": "adult",
-          "amount": 75.0,
+          "amount": 78.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 main season",
+          "season_label": "Winter 2026/27 main season",
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         }
       ]
@@ -8905,12 +8913,12 @@
         {
           "duration_days": 1,
           "audience": "adult",
-          "amount": 68.0,
+          "amount": 70.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 main season",
+          "season_label": "Winter 2026/27 main season",
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         }
       ]
@@ -9150,6 +9158,76 @@
           "price_kind": "fixed",
           "season_label": "Winter 2026/27",
           "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "tignes-local-ski-pass",
+      "name": "Tignes local ski pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "tignes"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "tignes-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 60.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 preview: 28 November to 11 December 2026",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 70.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season: 12 December 2026 to 23 April 2027",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 60.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 closing week: 24 April to 2 May 2027",
+          "source_url": "https://en.tignes.net/skiing/ski-pass-you-need"
+        }
+      ],
+      "validity_windows": [
+        {
+          "season_label": "Winter 2026/27 preview",
+          "start_date": "2026-11-28",
+          "end_date": "2026-12-11",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 main season",
+          "start_date": "2026-12-12",
+          "end_date": "2027-04-23",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 closing week",
+          "start_date": "2027-04-24",
+          "end_date": "2027-05-02",
+          "status": "planned"
         }
       ]
     }
