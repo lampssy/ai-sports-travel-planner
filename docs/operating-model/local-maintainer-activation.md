@@ -165,6 +165,10 @@ The installed skill must:
   eligible head normally and let helper-owned `prepare curation` invalidate the
   stale generation and create the next one under the active lease; never
   restore its unpublished checkpoint;
+- treat a current generation with `availability_reason=complete` as diagnostic
+  history too. It must not reserve the PR number; after any exact-head hold is
+  removed, a safe open PR may be selected normally and `prepare curation`
+  creates the next generation;
 - read curation automation memory using `CODEX_HOME` or the `$HOME/.codex`
   fallback, revalidate any unpublished-follow-up PR/head against helper
   inspection, and prioritize the oldest still-exact eligible follow-up before

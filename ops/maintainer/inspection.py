@@ -293,7 +293,7 @@ def inspect_curation(
     generation_pr_numbers = {
         item.pr_number
         for item in generation_summaries
-        if item.availability_reason != "head-drift"
+        if item.availability_reason not in {"complete", "head-drift"}
     }
 
     eligible = tuple(

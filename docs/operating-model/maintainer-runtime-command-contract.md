@@ -536,6 +536,11 @@ including both bounded CI waits:
   current head normally; helper-owned `prepare curation` then invalidates the
   stale generation and creates the next generation under the active lease.
   Never restore or replay the stale generation's unpublished checkpoint;
+- a current generation reported as `complete` is also diagnostic history and
+  does not reserve its PR number. After any exact-head hold label is removed, a
+  safe open PR may re-enter ordinary eligibility; helper-owned
+  `prepare curation` creates the next generation instead of resuming or
+  rewriting the completed one;
 - same-run first-wait and second-wait polling uses the already-held lease and
   composes `lock_heartbeat_curation -> inspect_curation ->
   lock_heartbeat_curation` before every branch; it never reacquires. A

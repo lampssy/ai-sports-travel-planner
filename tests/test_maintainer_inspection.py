@@ -12,6 +12,7 @@ from ops.maintainer.curation_state import (
     CheckpointStartedEvent,
     CurationCheckpointStage,
     CurationGeneration,
+    GenerationClosedEvent,
     GenerationPreparedEvent,
     ValidationFailedEvent,
     checkpoint_transaction_id,
@@ -732,6 +733,33 @@ def test_head_drift_generation_exposes_current_remote_head_as_ordinary_work() ->
     )
 
     assert inventory.generations[0].availability_reason == "head-drift"
+    assert inventory.generations[0].retryable is False
+    assert inventory.generations[0].next_action is None
+    assert [candidate.number for candidate in inventory.eligible] == [42, 43]
+
+
+def test_completed_generation_exposes_current_remote_head_as_ordinary_work() -> None:
+    generation = _generation()
+    consumed = GenerationClosedEvent(
+        sequence=4,
+        recorded_at=NOW + timedelta(seconds=3),
+        kind="generation-consumed",
+        reason="external_journal_authorized",
+    )
+    generation = generation.model_copy(
+        update={"events": (*generation.events, consumed)}
+    )
+
+    inventory = inspect_curation(
+        (
+            _pull_request(head_sha=SHA_D, is_draft=True),
+            _pull_request(43),
+        ),
+        {},
+        generations=(generation,),
+    )
+
+    assert inventory.generations[0].availability_reason == "complete"
     assert inventory.generations[0].retryable is False
     assert inventory.generations[0].next_action is None
     assert [candidate.number for candidate in inventory.eligible] == [42, 43]
