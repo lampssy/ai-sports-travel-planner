@@ -203,6 +203,16 @@ actual external source reviewed by the owner.
 - Stay-base elevation, structural type, character, and local apres remain
   independent facts. A ski area's ski-day apres does not imply the stay base's
   local profile.
+- Local apres availability and intensity are separate judgments. One
+  candidate-bound, publicly accessible venue backed by direct first-party or
+  official evidence may establish `availability=available`; it does not by
+  itself establish a `lively` scene. Normalize intensity from venue breadth,
+  event frequency, operating duration, and locality-wide source wording. One
+  venue may support `low_key` or `moderate` when that wider context supports
+  it; `lively` normally requires multiple venues, recurring high-energy
+  programming, or explicit locality-wide wording. Failure to find a venue
+  remains `unknown`, not `unavailable`, and `season_label` requires an explicit
+  operating window.
 - Snowmaking percentages retain their published denominator basis. Cannon
   counts and broad marketing claims do not establish coverage.
 - Glacier terrain, snow parks, night skiing, and marked freeride routes require
