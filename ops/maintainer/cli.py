@@ -181,6 +181,11 @@ def _parser() -> argparse.ArgumentParser:
         required=True,
     )
     checkpoint_curation.add_argument(
+        "--inventory-completion",
+        action="store_true",
+        help="mark a report-only inventory-completion delta checkpoint",
+    )
+    checkpoint_curation.add_argument(
         "--base-dir",
         type=Path,
         required=True,
@@ -257,6 +262,7 @@ def _parser() -> argparse.ArgumentParser:
             "ci-failure",
             "conflict",
             "deadline",
+            "evidence-unavailable",
             "non-converging",
             "owner-decision",
             "review-incomplete",

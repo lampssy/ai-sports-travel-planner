@@ -133,6 +133,7 @@ def _completed_checkpoint(
     stage: CurationCheckpointStage,
     head: str,
     recorded_at: datetime,
+    inventory_completion: bool = False,
 ) -> tuple[CheckpointStartedEvent, CheckpointCompletedEvent]:
     transaction_id = checkpoint_transaction_id(
         GENERATION_ID,
@@ -140,6 +141,7 @@ def _completed_checkpoint(
         head,
         REPORT,
         SHA_4,
+        inventory_completion=True if inventory_completion else None,
     )
     started = CheckpointStartedEvent(
         sequence=sequence,
@@ -149,6 +151,7 @@ def _completed_checkpoint(
         head=head,
         report_path=REPORT,
         validation_base=SHA_4,
+        inventory_completion=True if inventory_completion else None,
         expected_checkpoint_ref=(
             f"refs/snowcast-maintainer/curation/pr-42/{GENERATION_ID}/"
             f"{transaction_id}/checkpoint"
@@ -453,6 +456,81 @@ def test_newer_delta_checkpoint_supersedes_reviewed_head_within_generation() -> 
     )
     assert projection.next_action is not None
     assert projection.next_action.recipe_id == "checkpoint_curation_reviewed"
+
+
+def test_inventory_completion_checkpoint_is_a_durable_minimal_marker() -> None:
+    inventory = _completed_checkpoint(
+        sequence=2,
+        stage=CurationCheckpointStage.DELTA_VALIDATED,
+        head=SHA_2,
+        recorded_at=NOW + timedelta(seconds=1),
+        inventory_completion=True,
+    )
+
+    projection = project_generation(_generation(*inventory))
+
+    assert projection.inventory_completion_checkpointed is True
+    assert projection.inventory_completion_checkpoint_head == SHA_2
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "checkpoint_curation_reviewed"
+
+
+def test_inventory_completion_checkpoint_uses_a_distinct_transaction_identity() -> None:
+    ordinary = checkpoint_transaction_id(
+        GENERATION_ID,
+        CurationCheckpointStage.DELTA_VALIDATED,
+        SHA_2,
+        REPORT,
+        SHA_4,
+    )
+    inventory = checkpoint_transaction_id(
+        GENERATION_ID,
+        CurationCheckpointStage.DELTA_VALIDATED,
+        SHA_2,
+        REPORT,
+        SHA_4,
+        inventory_completion=True,
+    )
+
+    assert ordinary != inventory
+
+
+def test_later_delta_does_not_reuse_an_inventory_completion_marker() -> None:
+    inventory = _completed_checkpoint(
+        sequence=2,
+        stage=CurationCheckpointStage.DELTA_VALIDATED,
+        head=SHA_2,
+        recorded_at=NOW + timedelta(seconds=1),
+        inventory_completion=True,
+    )
+    later_delta = _completed_checkpoint(
+        sequence=4,
+        stage=CurationCheckpointStage.DELTA_VALIDATED,
+        head=SHA_3,
+        recorded_at=NOW + timedelta(seconds=2),
+    )
+
+    projection = project_generation(_generation(*inventory, *later_delta))
+
+    assert projection.inventory_completion_checkpointed is True
+    assert projection.inventory_completion_checkpoint_head == SHA_2
+    assert projection.latest_head == SHA_3
+
+
+def test_inventory_completion_cannot_mark_a_reviewed_checkpoint() -> None:
+    with pytest.raises(ValidationError, match="limited to delta-validated"):
+        CheckpointStartedEvent(
+            sequence=2,
+            recorded_at=NOW + timedelta(seconds=1),
+            transaction_id="a" * 64,
+            stage=CurationCheckpointStage.REVIEWED,
+            head=SHA_2,
+            report_path=REPORT,
+            validation_base=SHA_4,
+            inventory_completion=True,
+            expected_checkpoint_ref="refs/snowcast-maintainer/checkpoint",
+            expected_squash_ref="refs/snowcast-maintainer/replay",
+        )
 
 
 def test_validation_projection_requires_latest_reviewed_checkpoint() -> None:

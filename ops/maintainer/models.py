@@ -178,6 +178,7 @@ OUTCOME_REASONS = frozenset(
         "ci-failure",
         "conflict",
         "deadline",
+        "evidence-unavailable",
         "non-converging",
         "owner-decision",
         "review-incomplete",

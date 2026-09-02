@@ -152,6 +152,33 @@ def test_runtime_contract_documents_every_cli_route_with_parseable_argv() -> Non
     assert documented_routes == expected_routes
 
 
+def test_runtime_contract_registers_the_inventory_completion_checkpoint() -> None:
+    recipe = _contract()["recipes"]["checkpoint_curation_inventory_completion"]
+
+    assert recipe == {
+        "argv": [
+            "checkpoint",
+            "curation",
+            "--pr",
+            "${PR}",
+            "--generation-id",
+            "${GENERATION_ID}",
+            "--head",
+            "${HEAD}",
+            "--report",
+            "${REPORT}",
+            "--stage",
+            "delta-validated",
+            "--inventory-completion",
+            "--base-dir",
+            "${BASE_DIR}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["work_id", "generation"],
+    }
+
+
 def test_registered_prefix_relies_on_project_cli_directory_defaults() -> None:
     parsed = _parser().parse_args(["inspect", "curation"])
 

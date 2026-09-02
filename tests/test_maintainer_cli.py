@@ -5666,6 +5666,7 @@ def _checkpoint_curation_generation(
     *,
     stage: str,
     head: str = SHA_B,
+    inventory_completion: bool = False,
 ) -> tuple[int, dict[str, object]]:
     generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
     assert generation is not None
@@ -5686,6 +5687,7 @@ def _checkpoint_curation_generation(
             "docs/catalog-curation/nendaz.json",
             "--stage",
             stage,
+            *(["--inventory-completion"] if inventory_completion else []),
             "--base-dir",
             str(tmp_path),
             "--run-id",
@@ -5770,6 +5772,198 @@ def test_checkpoint_curation_completes_delta_review_and_idempotent_retry(
     projection = project_generation(generation)
     assert projection.latest_stage is CurationCheckpointStage.REVIEWED
     assert projection.reviewed_authority is not None
+
+
+def test_inventory_completion_checkpoint_is_recorded_and_resumable(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    code, payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+        inventory_completion=True,
+    )
+
+    assert code == 0, payload
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    projection = project_generation(generation)
+    assert projection.inventory_completion_checkpointed is True
+
+
+def test_inventory_completion_checkpoint_rejects_a_reviewed_stage(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    code, payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="reviewed",
+        inventory_completion=True,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+
+
+def test_review_incomplete_outcome_requires_inventory_completion_checkpoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Review remains incomplete.",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "review-incomplete",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+    assert payload["stage"] == "publish"
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+
+
+def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    checkpoint_code, checkpoint = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+        inventory_completion=True,
+    )
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Review remains incomplete.",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "review-incomplete",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert checkpoint_code == 0, checkpoint
+    assert code == 0, payload
+    assert payload["reason"] == "review-incomplete"
+    assert github.label_writes == 1
+
+
+def test_evidence_unavailable_outcome_needs_no_inventory_checkpoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    run_id = _acquire(capsys, state_dir, "curation")
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Official sources cannot establish the required graph fact.",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "evidence-unavailable",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=FakeRepository(),
+    )
+
+    assert code == 0, payload
+    assert payload["reason"] == "evidence-unavailable"
+    assert github.label_writes == 1
 
 
 def test_checkpoint_curation_new_delta_supersedes_reviewed_authority(

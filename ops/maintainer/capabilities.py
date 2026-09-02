@@ -894,7 +894,18 @@ def handle_checkpoint_curation(
         raise MaintainerError(ErrorReason.STALE_BASE, ErrorStage.VALIDATE)
 
     stage = CurationCheckpointStage(args.stage)
+    inventory_completion = bool(args.inventory_completion)
+    if inventory_completion and stage is not CurationCheckpointStage.DELTA_VALIDATED:
+        raise MaintainerError(
+            ErrorReason.CHECKPOINT_CONFLICT,
+            ErrorStage.VALIDATE,
+        )
     if projection.latest_stage == "validation-failed":
+        if inventory_completion:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.VALIDATE,
+            )
         if projection.validation_failure is None:
             raise CurationStateError(
                 "unclassified validation failure cannot authorize remediation"
@@ -917,6 +928,7 @@ def handle_checkpoint_curation(
         args.head,
         args.report,
         generation.sync.base_head,
+        inventory_completion=True if inventory_completion else None,
     )
     expected_refs = _curation_checkpoint_refs(
         args.pr,
@@ -994,6 +1006,7 @@ def handle_checkpoint_curation(
                 head=args.head,
                 report_path=args.report,
                 validation_base=generation.sync.base_head,
+                inventory_completion=True if inventory_completion else None,
                 expected_checkpoint_ref=expected_refs.checkpoint_ref,
                 expected_squash_ref=expected_refs.squash_ref,
             ),
@@ -3113,6 +3126,7 @@ def handle_publish_outcome(
     requested_state = _requested_state(args.state)
     lease = _owned_lease(args, "curation", dependencies)
     store = _state_store(args)
+    generation_store = CurationGenerationStore(args.state_dir)
     work_id = _work_id_for_pr(args.pr)
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
@@ -3154,6 +3168,22 @@ def handle_publish_outcome(
             "state": completed.target_state.value,
             "reason": completed.reason,
         }
+    if args.reason == "review-incomplete":
+        generation = generation_store.load_current(work_id)
+        if generation is None or generation.selected_head != args.expected_head:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PUBLISH,
+            )
+        projection = project_generation(generation)
+        if (
+            not projection.inventory_completion_checkpointed
+            or projection.inventory_completion_checkpoint_head != projection.latest_head
+        ):
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PUBLISH,
+            )
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request.head_sha != args.expected_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)

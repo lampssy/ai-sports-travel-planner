@@ -124,6 +124,10 @@ not have to derive an invocation.
       "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "delta-validated", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "generation"]
     },
+    "checkpoint_curation_inventory_completion": {
+      "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "delta-validated", "--inventory-completion", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation"]
+    },
     "checkpoint_curation_reviewed": {
       "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "reviewed", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "generation"]
@@ -484,11 +488,17 @@ candidate inventory, repeat streak, and convergence decision; the helper only
 checks objective command, state, head, scope, validation, and publication
 preconditions for the resulting requested action.
 
-The run-local report-only `inventory-completion` phase is also outside helper
-state. The helper does not persist its checklist, pass count, local report
-commit, or review conclusions, and that phase creates no helper continuation or
-cross-run authority. If interrupted before an ordinary remediation checkpoint,
-a later cycle starts with fresh preparation and review.
+The run-local report-only `inventory-completion` phase is outside helper state
+except for one completed-checkpoint marker. The helper does not persist its
+checklist, pass count, source evidence, local report commit, or review
+conclusions, and that phase creates no helper continuation or cross-run semantic
+authority. After a valid report-only pass, Codex calls
+`checkpoint_curation_inventory_completion`; the helper records only that the
+exact generation completed such a delta checkpoint on its current local head. A
+`review-incomplete` publication requires that marker on the current local head.
+It proves neither that the checklist was
+complete nor that the review conclusion was correct. If interrupted before this
+checkpoint, a later cycle starts with fresh preparation and review.
 
 The curation lifecycle scenarios freeze their high-risk sequence prefixes,
 including both bounded CI waits:

@@ -76,10 +76,15 @@ def test_inventory_completion_stops_on_no_progress_or_unsafe_scope() -> None:
         assert "remaining unresolved checklist count" in contract, path
 
 
-def test_inventory_completion_creates_no_helper_owned_recovery_authority() -> None:
+def test_inventory_completion_persists_only_a_terminal_gate_marker() -> None:
     contract = _normalized(RUNTIME_CONTRACT_PATH)
     assert "inventory-completion" in contract
-    assert "does not persist" in contract
+    assert "does not persist its checklist" in contract
+    assert "completed-checkpoint marker" in contract
+    assert (
+        "review-incomplete publication requires that marker on the current local head"
+        in contract
+    )
     assert "no helper continuation" in contract
 
 
