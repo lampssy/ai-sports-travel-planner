@@ -13,6 +13,7 @@ from pydantic import (
     model_validator,
 )
 
+from app.data.catalog_curation import CatalogSkiAreaTripConsequence
 from ops.maintainer.errors import (
     ErrorCheck,
     ErrorKind,
@@ -43,42 +44,6 @@ class BoundaryGateAssessment(_StrictModel):
         return values
 
 
-class MaterialTripConsequence(_StrictModel):
-    consequence_type: Literal[
-        "pass_price_or_coverage",
-        "stay_access_or_transfer_mechanics",
-        "weather_or_season_suitability",
-        "terrain_character_or_party_skill_fit",
-    ]
-    decision_effect: Literal[
-        "selected_ski_area",
-        "stay_to_ski_configuration",
-        "lift_pass_choice",
-        "conditions_evidence_profile",
-    ]
-    comparison_basis: Literal[
-        "parent_ski_area",
-        "sibling_ski_area",
-        "stay_market_baseline",
-    ]
-    comparison_target_id: str = Field(
-        min_length=1,
-        max_length=128,
-        pattern=_CANDIDATE_ID_PATTERN,
-    )
-    evidence_refs: list[str] = Field(min_length=1)
-    rationale: str = Field(min_length=1, max_length=1000)
-
-    @field_validator("evidence_refs")
-    @classmethod
-    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
-        if any(not value.strip() for value in values):
-            raise ValueError("material consequence evidence refs must not be blank")
-        if len(set(values)) != len(values):
-            raise ValueError("material consequence evidence refs must be unique")
-        return values
-
-
 class SkiAreaBoundaryCandidate(_StrictModel):
     candidate_id: str = Field(
         min_length=1,
@@ -105,7 +70,7 @@ class SkiAreaBoundaryCandidate(_StrictModel):
     terrain_gate: BoundaryGateAssessment
     evidence_ownership_gate: BoundaryGateAssessment
     materiality_gate: BoundaryGateAssessment
-    material_trip_consequence: MaterialTripConsequence | None = None
+    material_trip_consequence: CatalogSkiAreaTripConsequence | None = None
 
     @model_validator(mode="after")
     def validate_decision(self) -> Self:
@@ -172,12 +137,12 @@ class BoundaryAdjudication(_StrictModel):
         candidates_by_id = {
             candidate.candidate_id: candidate for candidate in self.candidates
         }
-        if self.outcome == "policy_determined" and any(
+        if self.outcome in {"policy_determined", "owner_choice_required"} and any(
             candidate.decision == "evidence_insufficient"
             for candidate in self.candidates
         ):
             raise ValueError(
-                "policy-determined adjudication cannot retain an "
+                f"{self.outcome} adjudication cannot retain an "
                 "evidence-insufficient candidate"
             )
         if self.outcome == "evidence_insufficient" and not any(

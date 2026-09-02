@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from app.data.catalog_curation import CatalogSkiAreaTripConsequence
 from ops.maintainer.boundary_adjudication import validate_boundary_adjudication
 from ops.maintainer.cli import main
 from ops.maintainer.errors import ErrorCheck, ErrorKind, ErrorReason, MaintainerError
@@ -22,10 +23,11 @@ def _gate(status: str, evidence_ref: str) -> dict[str, object]:
 
 def _material_consequence(target_id: str) -> dict[str, object]:
     return {
-        "consequence_type": "stay_access_or_transfer_mechanics",
+        "consequence_type": "stay_access_or_transfer",
         "decision_effect": "selected_ski_area",
         "comparison_basis": "sibling_ski_area",
         "comparison_target_id": target_id,
+        "durability_basis": "durable_access_geometry",
         "evidence_refs": ["mottolino-transfer"],
         "rationale": (
             "The primary ski-day choice changes because the areas require a transfer."
@@ -82,6 +84,22 @@ def test_policy_determined_accepts_separate_area_with_all_gates_and_folded_compo
     assert result.folded_candidate_ids == ("sitas",)
 
 
+def test_boundary_consequence_matches_the_canonical_curation_contract(
+    tmp_path: Path,
+) -> None:
+    payload = _valid_payload()
+    candidates = payload["candidates"]
+    assert isinstance(candidates, list)
+    consequence = candidates[0]["material_trip_consequence"]
+    assert isinstance(consequence, dict)
+
+    canonical = CatalogSkiAreaTripConsequence.model_validate(consequence)
+    result = validate_boundary_adjudication(_write_payload(tmp_path, payload))
+
+    assert canonical.durability_basis == "durable_access_geometry"
+    assert result.separate_ski_area_ids == ("livigno-west", "mottolino")
+
+
 def test_policy_determined_rejects_promoted_area_without_material_consequence(
     tmp_path: Path,
 ) -> None:
@@ -107,6 +125,22 @@ def test_policy_determined_rejects_material_consequence_without_evidence(
     consequence = candidates[0]["material_trip_consequence"]
     assert isinstance(consequence, dict)
     consequence["evidence_refs"] = []
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_boundary_adjudication(_write_payload(tmp_path, payload))
+
+    assert exc_info.value.check is ErrorCheck.BOUNDARY_ADJUDICATION
+
+
+def test_policy_determined_rejects_material_consequence_without_durability(
+    tmp_path: Path,
+) -> None:
+    payload = _valid_payload()
+    candidates = payload["candidates"]
+    assert isinstance(candidates, list)
+    consequence = candidates[0]["material_trip_consequence"]
+    assert isinstance(consequence, dict)
+    del consequence["durability_basis"]
 
     with pytest.raises(MaintainerError) as exc_info:
         validate_boundary_adjudication(_write_payload(tmp_path, payload))
@@ -150,6 +184,26 @@ def test_policy_determined_rejects_an_evidence_insufficient_candidate(
     tmp_path: Path,
 ) -> None:
     payload = _valid_payload()
+    candidates = payload["candidates"]
+    assert isinstance(candidates, list)
+    candidates[2]["decision"] = "evidence_insufficient"
+    candidates[2]["materiality_gate"] = _gate(
+        "evidence_insufficient",
+        "sitas-materiality-gap",
+    )
+    candidates[2]["parent_ski_area_id"] = None
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_boundary_adjudication(_write_payload(tmp_path, payload))
+
+    assert exc_info.value.check is ErrorCheck.BOUNDARY_ADJUDICATION
+
+
+def test_owner_choice_rejects_an_evidence_insufficient_candidate(
+    tmp_path: Path,
+) -> None:
+    payload = _valid_payload()
+    payload["outcome"] = "owner_choice_required"
     candidates = payload["candidates"]
     assert isinstance(candidates, list)
     candidates[2]["decision"] = "evidence_insufficient"

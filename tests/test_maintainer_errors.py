@@ -279,6 +279,7 @@ def test_error_enums_cover_the_accepted_contract() -> None:
     }
     assert {check.value for check in ErrorCheck} == {
         "preflight",
+        "boundary-adjudication",
         "catalog-validation",
         "curation-reconciliation",
         "catalog-tests",

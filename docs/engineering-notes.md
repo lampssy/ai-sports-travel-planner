@@ -1567,9 +1567,10 @@ schema-version-3 normalization.
 
 Maintainer boundary adjudication adds a separate run-local handoff check before
 such a policy result may authorize a new ski area. The check requires the three
-recorded gates, direct evidence references, and a concrete comparison target
-for every promoted area. It verifies the review-to-fixer decision structure;
-it neither changes the curation-report schema nor replaces source-trust review.
+recorded gates, direct evidence references, a canonical curation consequence
+including its durability basis, and a concrete comparison target for every
+promoted area. It verifies the review-to-fixer decision structure; it neither
+changes the curation-report schema nor replaces source-trust review.
 
 A consequence declares `comparison_basis=parent_ski_area`,
 `sibling_ski_area`, or `stay_market_baseline`. The last basis gives a
