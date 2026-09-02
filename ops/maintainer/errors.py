@@ -54,6 +54,7 @@ class ErrorStage(StrEnum):
 
 class ErrorCheck(StrEnum):
     PREFLIGHT = "preflight"
+    BOUNDARY_ADJUDICATION = "boundary-adjudication"
     CATALOG_VALIDATION = "catalog-validation"
     CURATION_RECONCILIATION = "curation-reconciliation"
     CATALOG_TESTS = "catalog-tests"

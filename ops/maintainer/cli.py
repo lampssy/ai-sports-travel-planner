@@ -160,6 +160,14 @@ def _parser() -> argparse.ArgumentParser:
     )
     _add_run_id(validate_curation_parser)
 
+    validate_boundary_adjudication_parser = validate_commands.add_parser(
+        "boundary-adjudication"
+    )
+    validate_boundary_adjudication_parser.add_argument(
+        "--input", type=Path, required=True
+    )
+    _add_run_id(validate_boundary_adjudication_parser)
+
     checkpoint = families.add_parser("checkpoint")
     checkpoint_commands = checkpoint.add_subparsers(dest="command", required=True)
     checkpoint_curation = checkpoint_commands.add_parser("curation")

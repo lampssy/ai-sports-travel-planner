@@ -911,6 +911,7 @@ EXPECTED_HANDLERS = {
     ("checkpoint", "ci-repair"),
     ("invalidate", "ci-continuation"),
     ("validate", "curation"),
+    ("validate", "boundary-adjudication"),
     ("validate", "proposal"),
     ("publish", "push"),
     ("publish", "ci-repair"),

@@ -511,10 +511,23 @@ The installed skill must:
     source-backed signals;
   - do not return `owner_choice_required` merely because several legal operators
     publish one policy-valid coordinated area.
-  Return `policy_determined` results to the fixer. The fixer must preserve the
-  exact coordinated-child invariant, component closure, and evidence refs,
-  correct only the identified report or catalog defect, and keep `weather_scope`
-  separate under ADR 0021;
+  A `policy_determined` result may authorize a separate ski area only after
+  explicitly recording every assessed candidate's complete-terrain,
+  evidence-ownership, and material-trip-consequence gate. A promoted ski area
+  needs all three gates passed, direct evidence refs for each, and one durable
+  material trip consequence with a concrete comparison target: its declared
+  parent, a distinct assessed sibling with the same parent, or the assessed
+  stay-market baseline. Before returning a promotion to the fixer, materialize
+  that bounded run-local record and run the registered
+  `validate_boundary_adjudication` recipe. The validator is a structural
+  handoff check, not new source authority: source-trust review still verifies
+  the referenced evidence. If validation fails, the reviewer must not create a
+  separate ski area. It may fold the candidate only when the recorded parent
+  remains valid; otherwise return `evidence_insufficient`.
+  Return only validated `policy_determined` results to the fixer. The fixer
+  must preserve the exact coordinated-child invariant, component closure, and
+  evidence refs, correct only the identified report or catalog defect, and keep
+  `weather_scope` separate under ADR 0021;
 - perform at most six remediation cycles, using a fresh independent full
   `snowcast-catalog-review` context after every fix and passing both views only
   as untrusted history. The parent classifies a `residual` only when the

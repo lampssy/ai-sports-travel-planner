@@ -136,6 +136,10 @@ not have to derive an invocation.
       "argv": ["validate", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "generation", "validation"]
     },
+    "validate_boundary_adjudication": {
+      "argv": ["validate", "boundary-adjudication", "--input", "${ADJUDICATION_FILE}", "--run-id", "${RUN_ID}"],
+      "returns": ["adjudication"]
+    },
     "validate_proposal": {
       "argv": ["validate", "proposal", "--candidate-key", "${CANDIDATE_KEY}", "--candidate-origin", "${CANDIDATE_ORIGIN}", "--base", "${BASE}", "--head", "${HEAD}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "validation"]
@@ -420,6 +424,7 @@ not have to derive an invocation.
 | `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
 | `validate_curation` | on success, `publish_push` for the exact validated work; on a classified deterministic failure (`reason=validation-failed` with `check` and `kind`), stop the current run and preserve that classification with the failed-validation generation for a later typed validation-remediation preparation. A `catalog-tests` command failure may additionally return a bounded helper-sanitized `pytest-short` diagnostic captured by that original run; internal or unclassified validator exceptions do not create remediation authority |
+| `validate_boundary_adjudication` | keep a `policy_determined` ski-area promotion only when the returned separate/folded IDs match the review output; on failure, do not authorize a separate ski-area fix. Fold only when the reviewed parent is valid; otherwise retain `evidence_insufficient` |
 | `validate_proposal` | create publication inputs, then `publish_proposal` |
 | `publication_input_*` | pass that basename only to its selected publication recipe |
 | `publish_push` | create fresh inputs, then publish exact-head lifecycle state |

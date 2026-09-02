@@ -39,6 +39,7 @@ CONTRACT_PATTERN = re.compile(
 PLACEHOLDERS = {
     "${BASE}": "e" * 40,
     "${BASE_DIR}": "/tmp/exact-base",
+    "${ADJUDICATION_FILE}": "/tmp/boundary-adjudication.json",
     "${BODY_FILE}": "body-example",
     "${BRANCH}": "codex/catalog-curation-example",
     "${CANDIDATE_KEY}": "stay_destination:example",

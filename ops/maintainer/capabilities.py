@@ -14,6 +14,7 @@ from typing import Literal
 from pydantic import ValidationError
 
 from ops.maintainer import LABEL_DEFINITIONS
+from ops.maintainer.boundary_adjudication import validate_boundary_adjudication
 from ops.maintainer.curation_state import (
     CheckpointCompletedEvent,
     CheckpointStartedEvent,
@@ -3428,6 +3429,18 @@ def handle_migrate_curation_state(
     }
 
 
+def handle_validate_boundary_adjudication(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    dependencies.tracker.worker = "curation"
+    dependencies.tracker.lease_run_id = args.run_id
+    dependencies.tracker.stage = ErrorStage.VALIDATE
+    result = validate_boundary_adjudication(args.input)
+    dependencies.tracker.terminal_reason = "boundary_adjudication_validated"
+    return {"adjudication": result.model_dump(mode="json")}
+
+
 HANDLERS: dict[tuple[str, str], Handler] = {
     ("migrate", "curation-state"): handle_migrate_curation_state,
     ("inspect", "curation"): handle_inspect_curation,
@@ -3438,6 +3451,7 @@ HANDLERS: dict[tuple[str, str], Handler] = {
     ("checkpoint", "ci-repair"): handle_checkpoint_ci_repair,
     ("invalidate", "ci-continuation"): handle_invalidate_ci_continuation,
     ("validate", "curation"): handle_validate_curation,
+    ("validate", "boundary-adjudication"): handle_validate_boundary_adjudication,
     ("validate", "proposal"): handle_validate_proposal,
     ("publish", "push"): handle_publish_push,
     ("publish", "ci-repair"): handle_publish_ci_repair,

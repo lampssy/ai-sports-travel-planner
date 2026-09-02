@@ -1565,6 +1565,12 @@ pass. Historical report schemas remain readable; new maintainer-reviewed and
 finalized reports require schema version 4 and fresh semantic review after any
 schema-version-3 normalization.
 
+Maintainer boundary adjudication adds a separate run-local handoff check before
+such a policy result may authorize a new ski area. The check requires the three
+recorded gates, direct evidence references, and a concrete comparison target
+for every promoted area. It verifies the review-to-fixer decision structure;
+it neither changes the curation-report schema nor replaces source-trust review.
+
 A consequence declares `comparison_basis=parent_ski_area`,
 `sibling_ski_area`, or `stay_market_baseline`. The last basis gives a
 destination's sole root downhill area a real comparison between ski-terrain
