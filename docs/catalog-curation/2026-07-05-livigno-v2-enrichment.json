@@ -603,7 +603,7 @@
       "target_id": "livigno-livigno",
       "field_path": "local_apres_profile.availability",
       "status": "changed",
-      "notes": "The official directory lists ten bars, pubs, clubs, and après-ski venues."
+      "notes": "The official directory lists multiple bars, clubs, and après-ski venues."
     },
     {
       "target_type": "stay_base",
@@ -784,7 +784,7 @@
       "source_url": "https://www.livigno.eu/en/livigno-by-night",
       "source_title": "Livigno official bars, pubs, and après-ski directory",
       "source_value": "available",
-      "evidence_summary": "The official directory lists ten bars, pubs, clubs, and après-ski venues.",
+      "evidence_summary": "The official directory lists multiple bars, clubs, and après-ski venues.",
       "normalization_note": null
     },
     {
