@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import secrets
 import sys
 from collections.abc import Callable, Iterator, Sequence
@@ -23,6 +24,7 @@ from ops.maintainer.curation_state import (
     CurationCheckpointStage,
     CurationGeneration,
     CurationGenerationStore,
+    CurationInventoryDisposition,
     CurationMigrationError,
     CurationNextAction,
     CurationRecipeId,
@@ -3148,7 +3150,21 @@ def handle_publish_outcome(
         args.summary_file,
         kind="summary",
     )
-    if args.reason == "review-incomplete":
+    if args.reason == "evidence-unavailable":
+        inventory_disposition = _load_inventory_disposition(args, required=True)
+        assert inventory_disposition is not None
+        if not inventory_disposition.all_evidence_unavailable:
+            raise _inventory_disposition_error()
+        generation = generation_store.load_current(work_id)
+        if generation is None or generation.selected_head != args.expected_head:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PUBLISH,
+            )
+        projection = project_generation(generation)
+        if dependencies.repository.current_head() != projection.latest_head:
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
+    elif args.reason == "review-incomplete":
         generation = generation_store.load_current(work_id)
         if generation is None or generation.selected_head != args.expected_head:
             raise MaintainerError(
@@ -3169,6 +3185,12 @@ def handle_publish_outcome(
             != projection.inventory_completion_checkpoint_head
         ):
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
+        inventory_disposition = _load_inventory_disposition(args, required=True)
+        assert inventory_disposition is not None
+        if not inventory_disposition.has_inventory_missing:
+            raise _inventory_disposition_error()
+    elif args.inventory_disposition_file is not None:
+        raise _inventory_disposition_error()
     terminal_publications = store.list_unresolved_terminal_publications()
     if terminal_publications:
         if (
@@ -3405,11 +3427,50 @@ def _read_publication_stdin() -> bytes:
     return payload
 
 
+def _inventory_disposition_error() -> MaintainerError:
+    return MaintainerError(
+        ErrorReason.PUBLICATION_INPUT,
+        ErrorStage.PUBLISH,
+        ErrorCheck.PUBLICATION_INPUT,
+        ErrorKind.INVALID_FILE,
+    )
+
+
+def _parse_inventory_disposition(payload: str | bytes) -> CurationInventoryDisposition:
+    try:
+        return CurationInventoryDisposition.model_validate_json(payload)
+    except (TypeError, ValueError, json.JSONDecodeError, ValidationError):
+        raise _inventory_disposition_error() from None
+
+
+def _load_inventory_disposition(
+    args: argparse.Namespace,
+    *,
+    required: bool,
+) -> CurationInventoryDisposition | None:
+    supplied_file = args.inventory_disposition_file
+    if supplied_file is None:
+        if required:
+            raise _inventory_disposition_error()
+        return None
+    try:
+        payload = read_publication_text(
+            args.state_dir,
+            supplied_file,
+            kind="inventory-disposition",
+        )
+    except PublicationInputError:
+        raise _inventory_disposition_error() from None
+    return _parse_inventory_disposition(payload)
+
+
 def handle_publication_input_create(
     args: argparse.Namespace,
     dependencies: Dependencies,
 ) -> dict[str, object]:
     validate_publication_state_directory(args.state_dir)
+    if args.kind == "inventory-disposition" and args.worker != "curation":
+        raise PublicationInputError("publication input is unsafe")
     try:
         lease = _owned_lease(args, args.worker, dependencies)
     except RunLeaseError as exc:
@@ -3417,10 +3478,13 @@ def handle_publication_input_create(
             "maintainer run does not own the active lock"
         ) from exc
     dependencies.tracker.stage = ErrorStage.PUBLISH
+    payload = _read_publication_stdin()
+    if args.kind == "inventory-disposition":
+        _parse_inventory_disposition(payload)
     basename = create_publication_text(
         lease,
         kind=args.kind,
-        payload=_read_publication_stdin(),
+        payload=payload,
     )
     dependencies.tracker.mutation_occurred = True
     dependencies.tracker.terminal_reason = "publication-input-created"
