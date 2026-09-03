@@ -678,6 +678,29 @@ def test_generation_store_persists_private_ordered_generations(tmp_path: Path) -
     )
 
 
+def test_generation_store_orders_multi_digit_generation_numbers(
+    tmp_path: Path,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = CurationGenerationStore(tmp_path)
+    generations = tuple(
+        _generation(
+            generation_number=number,
+            generation_id=f"{number:032x}",
+        )
+        for number in range(1, 11)
+    )
+
+    for generation in generations:
+        store.start_generation(generation, lease)
+
+    assert store.list_generations("curation-pr-42") == generations
+    assert store.load_current("curation-pr-42") == generations[-1]
+    assert CurationGenerationStore.list_current_for_inspection_path(tmp_path) == (
+        generations[-1],
+    )
+
+
 def test_generation_store_appends_events_atomically(tmp_path: Path) -> None:
     lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = CurationGenerationStore(tmp_path)

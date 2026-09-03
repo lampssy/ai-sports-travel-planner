@@ -777,13 +777,20 @@ class CurationGenerationStore:
         except RunLeaseError as exc:
             raise CurationStateError("generation directory is unsafe") from exc
 
-        generations: list[CurationGeneration] = []
-        for path in sorted(work_dir.iterdir(), key=lambda item: item.name):
+        paths = tuple(work_dir.iterdir())
+
+        def generation_number(path: Path) -> int:
             match = _GENERATION_FILE_PATTERN.fullmatch(path.name)
             if match is None:
                 raise CurationStateError(
                     "generation directory contains an unknown file"
                 )
+            return int(match.group("number"))
+
+        generations: list[CurationGeneration] = []
+        for path in sorted(paths, key=generation_number):
+            match = _GENERATION_FILE_PATTERN.fullmatch(path.name)
+            assert match is not None
             generation = _load_generation(path)
             if (
                 generation.work_id != work_id
