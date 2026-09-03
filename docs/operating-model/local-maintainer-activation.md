@@ -398,9 +398,11 @@ The installed skill must:
   identical, runs catalog validation plus exact reconciliation, and does not
   consume a remediation cycle. Locally commit the report pair, then call
   `checkpoint_curation_inventory_completion`. The helper records only that
-  completed checkpoint marker on its current local head, not the checklist,
-  source evidence, report
-  content, or review conclusion; the local report commit remains
+  completed checkpoint marker after verifying the direct delta contains only
+  the canonical report pair. It also requires local `HEAD` still equals that
+  marker when `review-incomplete` is published. It does not store the
+  checklist, source evidence, report content, or review conclusion; the local
+  report commit remains
   non-authoritative and creates no helper continuation or cross-run semantic
   authority;
 - after each inventory-completion pass, start fresh independent source-trust

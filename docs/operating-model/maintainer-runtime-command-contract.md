@@ -494,11 +494,14 @@ checklist, pass count, source evidence, local report commit, or review
 conclusions, and that phase creates no helper continuation or cross-run semantic
 authority. After a valid report-only pass, Codex calls
 `checkpoint_curation_inventory_completion`; the helper records only that the
-exact generation completed such a delta checkpoint on its current local head. A
-`review-incomplete` publication requires that marker on the current local head.
-It proves neither that the checklist was
-complete nor that the review conclusion was correct. If interrupted before this
-checkpoint, a later cycle starts with fresh preparation and review.
+exact generation completed such a delta checkpoint. Before recording it, the
+helper verifies the direct delta from the previous checkpoint contains only the
+canonical JSON report and its deterministic Markdown companion; catalog, trust,
+backlog, test, and other objects cannot change. A `review-incomplete`
+publication requires the marker and a local `HEAD` still equal to the marked
+head. The marker proves neither that the checklist was complete nor that the
+review conclusion was correct. If interrupted before this checkpoint, a later
+cycle starts with fresh preparation and review.
 
 The curation lifecycle scenarios freeze their high-risk sequence prefixes,
 including both bounded CI waits:

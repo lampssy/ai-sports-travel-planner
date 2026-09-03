@@ -980,6 +980,18 @@ def handle_checkpoint_curation(
             ErrorReason.CHECKPOINT_CONFLICT,
             ErrorStage.VALIDATE,
         ) from None
+    if inventory_completion:
+        try:
+            dependencies.repository.verify_report_only_inventory_completion(
+                projection.latest_head,
+                args.head,
+                args.report,
+            )
+        except RepositorySafetyError:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.VALIDATE,
+            ) from None
     base_repository = dependencies.base_repository or GitRepository(
         args.base_dir.resolve()
     )
@@ -3136,6 +3148,27 @@ def handle_publish_outcome(
         args.summary_file,
         kind="summary",
     )
+    if args.reason == "review-incomplete":
+        generation = generation_store.load_current(work_id)
+        if generation is None or generation.selected_head != args.expected_head:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PUBLISH,
+            )
+        projection = project_generation(generation)
+        if (
+            not projection.inventory_completion_checkpointed
+            or projection.inventory_completion_checkpoint_head != projection.latest_head
+        ):
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PUBLISH,
+            )
+        if (
+            dependencies.repository.current_head()
+            != projection.inventory_completion_checkpoint_head
+        ):
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
     terminal_publications = store.list_unresolved_terminal_publications()
     if terminal_publications:
         if (
@@ -3168,22 +3201,6 @@ def handle_publish_outcome(
             "state": completed.target_state.value,
             "reason": completed.reason,
         }
-    if args.reason == "review-incomplete":
-        generation = generation_store.load_current(work_id)
-        if generation is None or generation.selected_head != args.expected_head:
-            raise MaintainerError(
-                ErrorReason.CHECKPOINT_CONFLICT,
-                ErrorStage.PUBLISH,
-            )
-        projection = project_generation(generation)
-        if (
-            not projection.inventory_completion_checkpointed
-            or projection.inventory_completion_checkpoint_head != projection.latest_head
-        ):
-            raise MaintainerError(
-                ErrorReason.CHECKPOINT_CONFLICT,
-                ErrorStage.PUBLISH,
-            )
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request.head_sha != args.expected_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)

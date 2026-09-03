@@ -518,6 +518,10 @@ class FakeRepository:
         default_factory=list
     )
     curation_checkpoint_calls: list[tuple[str, str]] = field(default_factory=list)
+    inventory_completion_scope_calls: list[tuple[str, str, str]] = field(
+        default_factory=list
+    )
+    inventory_completion_scope_error: Exception | None = None
     validation_remediation_descendant_calls: list[tuple[str, str]] = field(
         default_factory=list
     )
@@ -658,6 +662,19 @@ class FakeRepository:
             checkpoint_ref=f"{prefix}checkpoint",
             squash_ref=f"{prefix}replay",
         )
+
+    def verify_report_only_inventory_completion(
+        self,
+        previous_head: str,
+        inventory_head: str,
+        report_path: str,
+    ) -> None:
+        assert inventory_head == self.head
+        self.inventory_completion_scope_calls.append(
+            (previous_head, inventory_head, report_path)
+        )
+        if self.inventory_completion_scope_error is not None:
+            raise self.inventory_completion_scope_error
 
     def revalidate_validation_remediation_descendant(
         self,
@@ -5782,6 +5799,7 @@ def test_inventory_completion_checkpoint_is_recorded_and_resumable(
     github = FakeGitHub()
     repository = FakeRepository()
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
 
     code, payload = _checkpoint_curation_generation(
         capsys,
@@ -5791,10 +5809,14 @@ def test_inventory_completion_checkpoint_is_recorded_and_resumable(
         github,
         repository,
         stage="delta-validated",
+        head=SHA_C,
         inventory_completion=True,
     )
 
     assert code == 0, payload
+    assert repository.inventory_completion_scope_calls == [
+        (SHA_B, SHA_C, "docs/catalog-curation/nendaz.json")
+    ]
     generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
     assert generation is not None
     projection = project_generation(generation)
@@ -5823,6 +5845,37 @@ def test_inventory_completion_checkpoint_rejects_a_reviewed_stage(
 
     assert code == 2
     assert payload["reason"] == "checkpoint-conflict"
+
+
+def test_inventory_completion_checkpoint_rejects_non_report_only_scope(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(
+        inventory_completion_scope_error=RepositorySafetyError(
+            "inventory completion changed catalog data"
+        )
+    )
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+
+    code, payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+        head=SHA_C,
+        inventory_completion=True,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+    assert repository.curation_checkpoint_calls == []
 
 
 def test_review_incomplete_outcome_requires_inventory_completion_checkpoint(
@@ -5878,6 +5931,7 @@ def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
     github = FakeGitHub()
     repository = FakeRepository()
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
     checkpoint_code, checkpoint = _checkpoint_curation_generation(
         capsys,
         tmp_path,
@@ -5886,6 +5940,7 @@ def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
         github,
         repository,
         stage="delta-validated",
+        head=SHA_C,
         inventory_completion=True,
     )
     summary = _private_text(
@@ -5922,6 +5977,64 @@ def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
     assert code == 0, payload
     assert payload["reason"] == "review-incomplete"
     assert github.label_writes == 1
+
+
+def test_review_incomplete_outcome_requires_current_checkpoint_head(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    checkpoint_code, checkpoint = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+        head=SHA_C,
+        inventory_completion=True,
+    )
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Review remains incomplete.",
+    )
+    repository.head = SHA_D
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "review-incomplete",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert checkpoint_code == 0, checkpoint
+    assert code == 2
+    assert payload["reason"] == "stale-head"
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
 
 
 def test_evidence_unavailable_outcome_needs_no_inventory_checkpoint(

@@ -593,10 +593,12 @@ prepare -> provisional evidence envelope -> dual inventory
    validation plus exact reconciliation and Markdown parity. It does not
    consume a remediation cycle and cannot authorize catalog or trust
    remediation. After its local report-only commit, Codex calls
-   `checkpoint_curation_inventory_completion`. The helper records only that
-   completed checkpoint marker on its current local head, not the checklist,
-   source evidence, report
-   content, or review conclusion; the local report commit remains
+   `checkpoint_curation_inventory_completion`. The helper verifies the direct
+   delta contains only the canonical report pair, then records only that
+   completed checkpoint marker. It also requires local `HEAD` still equals the
+   marked head when `review-incomplete` is published. It does not store the
+   checklist, source evidence, report content, or review conclusion; the local
+   report commit remains
    non-authoritative and creates no helper continuation or cross-run semantic
    authority.
 

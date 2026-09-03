@@ -34,10 +34,12 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   Each pass must shrink the unresolved checklist and is followed by fresh dual
   review on the exact new head.
 - Completion may change only the canonical curation report. Catalog and trust
-  payloads and object IDs remain unchanged. The helper records only a completed
-  inventory-checkpoint marker, never the checklist, sources, report content, or
-  review conclusion; this creates no helper continuation or cross-run semantic
-  authority.
+  payloads and object IDs remain unchanged. The helper verifies the direct
+  delta contains only the JSON/Markdown report pair and records only a
+  completed inventory-checkpoint marker. It also requires local `HEAD` still
+  equals that marker before `review-incomplete`; it never stores the checklist,
+  sources, report content, or review conclusion. This creates no helper
+  continuation or cross-run semantic authority.
 - Inventory completeness is a knowledge gate, not a correctness gate. Each
   checklist item becomes missing, verified complete, actionable, defensibly
   deferred, or blocked by concretely unavailable evidence. Actionable catalog,
