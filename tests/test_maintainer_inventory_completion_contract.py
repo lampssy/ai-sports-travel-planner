@@ -135,6 +135,16 @@ def test_evidence_unavailable_is_reserved_for_graph_critical_unknowns() -> None:
         assert "no graph-safe conservative representation" in contract, path
 
 
+def test_terminal_unavailable_outcomes_require_researched_disposition() -> None:
+    for path in (ACTIVATION_PATH, DESIGN_PATH):
+        contract = _normalized(path)
+        assert "research_required_candidate" in contract, path
+        assert "exact missing fact" in contract, path
+        assert "affected target ids" in contract, path
+        assert "source attempts" in contract, path
+        assert "mixed set remains review-incomplete" in contract, path
+
+
 def test_stale_rendered_report_is_an_actionable_finding() -> None:
     for path in (ACTIVATION_PATH, DESIGN_PATH):
         contract = _normalized(path)

@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Literal, Protocol, Self
+from urllib.parse import urlparse
 
 from pydantic import (
     BaseModel,
@@ -86,6 +87,87 @@ class CurationRecipeId(StrEnum):
 
 class _StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+
+class CurationInventorySourceAttempt(_StrictModel):
+    """One bounded source-family attempt for an unresolved inventory item."""
+
+    source_family: str = Field(
+        min_length=1,
+        max_length=128,
+        pattern=_ID_PATTERN.pattern,
+    )
+    source_urls: list[str] = Field(min_length=1, max_length=12)
+    outcome: Literal["not_found", "insufficient", "contradictory"]
+
+    @field_validator("source_urls")
+    @classmethod
+    def validate_source_urls(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("source attempt URLs must be unique")
+        for value in values:
+            if type(value) is not str or len(value) > 2_048:
+                raise ValueError("source attempt URL is invalid")
+            parsed = urlparse(value)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise ValueError("source attempt URL must be absolute HTTP(S)")
+        return values
+
+
+class CurationInventoryDispositionItem(_StrictModel):
+    """Typed proof that one final inventory item was researched."""
+
+    missing_item_id: str = Field(
+        min_length=1,
+        max_length=128,
+        pattern=_ID_PATTERN.pattern,
+    )
+    affected_target_ids: list[str] = Field(min_length=1, max_length=32)
+    missing_fact: str = Field(min_length=1, max_length=512)
+    source_attempts: list[CurationInventorySourceAttempt] = Field(
+        min_length=1,
+        max_length=16,
+    )
+    outcome: Literal["inventory_missing", "evidence_unavailable"]
+
+    @field_validator("affected_target_ids")
+    @classmethod
+    def validate_affected_target_ids(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("affected target IDs must be unique")
+        for value in values:
+            if type(value) is not str or not _ID_PATTERN.fullmatch(value):
+                raise ValueError("affected target ID is invalid")
+        return values
+
+    @field_validator("missing_fact")
+    @classmethod
+    def validate_missing_fact(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("missing fact cannot be blank")
+        return normalized
+
+
+class CurationInventoryDisposition(_StrictModel):
+    """Private terminal inventory evidence for an incomplete curation review."""
+
+    items: list[CurationInventoryDispositionItem] = Field(min_length=1, max_length=64)
+
+    @model_validator(mode="after")
+    def validate_unique_items(self) -> Self:
+        item_ids = [item.missing_item_id for item in self.items]
+        if len(item_ids) != len(set(item_ids)):
+            raise ValueError("inventory disposition item IDs must be unique")
+        return self
+
+    @property
+    def has_inventory_missing(self) -> bool:
+        return any(item.outcome == "inventory_missing" for item in self.items)
+
+    @property
+    def all_evidence_unavailable(self) -> bool:
+        return all(item.outcome == "evidence_unavailable" for item in self.items)
 
 
 class CurationStateFormat(_StrictModel):

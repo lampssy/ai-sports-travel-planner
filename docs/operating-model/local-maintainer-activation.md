@@ -408,7 +408,12 @@ The installed skill must:
 - after each inventory-completion pass, start fresh independent source-trust
   and graph-scope contexts on the exact new head. Reconcile items by semantic
   acceptance criterion, not wording or identifier changes. Each relevant lane
-  assigns one `inventory_outcome` from this decision table:
+  assigns one `inventory_outcome` from this decision table. Every potential gap
+  begins as a `research_required_candidate`: investigate its bounded
+  authoritative-source neighborhood before choosing an outcome. Do not call an
+  unresearched candidate actionable, and do not call it unavailable merely
+  because the report-only pass cannot edit the eventual catalog, trust, or
+  backlog correction:
 
   | Outcome | Required evidence | Inventory transition | Remediation transition |
   | --- | --- | --- | --- |
@@ -416,7 +421,7 @@ The installed skill must:
   | `verified_complete` | Direct evidence proves the current representation is correct or the candidate is not applicable. | Remove from the missing-inventory checklist. | No finding. |
   | `actionable_finding` | Candidate and evidence are known well enough to state one exact defect and acceptance criterion. | Remove from the missing-inventory checklist. | Promote it to the finding ledger. |
   | `defensible_deferred` | Direct evidence supports a typed deferral with its concrete prerequisite and canonical backlog reference. | Remove from the missing-inventory checklist. | Apply the graph-impact rule below. |
-  | `evidence_unavailable` | The exact required evidence cannot currently be obtained and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
+  | `evidence_unavailable` | Bounded research documents absent or contradictory evidence for the exact required graph fact, and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
 
   For inventory outcomes, an optional scalar fact such as a representative
   price, count, or descriptive attribute must be `actionable_finding` when the
@@ -430,6 +435,14 @@ The installed skill must:
   conservative representation or defensible typed deferral is possible. Stale
   rendered Markdown is likewise an `actionable_finding`: regenerate it during
   ordinary remediation; it does not make review incomplete.
+
+  An `evidence_unavailable` outcome requires a completed bounded research
+  record: the exact missing fact, affected target IDs, attempted source
+  families and URLs, and a `not_found`, `insufficient`, or `contradictory`
+  result. If the investigation establishes an exact correction and acceptance
+  criterion, promote it to `actionable_finding` instead; a fixer must never
+  infer the missing graph from a shared pass, proximity, or an unsupported
+  parent choice.
 
   A regional-followup defensible deferral requires no remediation finding
   because omitting it leaves the selected graph correct. A graph-blocking
@@ -465,17 +478,21 @@ The installed skill must:
   actionable findings, and correctly transitioned defensible deferrals are
   complete knowledge dispositions. Inventory completion cannot authorize
   catalog or trust remediation; the resulting complete dual review does so by
-  promoting actionable findings into the ordinary remediation loop. Publish
-  status-only `blocked/review-incomplete` when there is no measurable progress,
-  evidence remains unavailable, an item-specific unsafe scope boundary prevents
-  research, the 210-minute cutoff prevents another pass, or the second
-  completion pass still contains `inventory_missing`, `evidence_unavailable`,
-  or unreconciled items, but only after a completed
-  `checkpoint_curation_inventory_completion` marker and its required fresh dual
-  review. When a safe report-only pass cannot start because every remaining
-  graph-critical item is already typed `evidence_unavailable` with its
-  attempted official source families, publish
-  `blocked/evidence-unavailable` instead;
+  promoting actionable findings into the ordinary remediation loop. Before a
+  status-only terminal publication, create a private helper-owned
+  `inventory-disposition` input with one record for every final unresolved
+  item. It names the missing item, exact missing fact, affected target IDs, and
+  source attempts with their direct URLs and `not_found`, `insufficient`, or
+  `contradictory` results. `blocked/review-incomplete` requires the current
+  report-only marker and at least one remaining `inventory_missing` record.
+  `blocked/evidence-unavailable` is allowed only when every final record is
+  `evidence_unavailable`; it requires a current curation generation but no
+  report-only marker. A mixed set remains `review-incomplete`. This input is
+  private workflow evidence, not catalog/report schema data or publication
+  content. When evidence remains unavailable after the documented research,
+  publish only after the required fresh dual review. The same terminal
+  classification applies on no measurable progress, an item-specific unsafe
+  scope expansion, or an incomplete second completion pass;
 - when inventory completion runs, include its inventory-completion pass count,
   remaining unresolved checklist count, and bounded stop reason in Triage
   without raw source evidence or checklist prose;

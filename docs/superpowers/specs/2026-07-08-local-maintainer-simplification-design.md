@@ -604,8 +604,12 @@ prepare -> provisional evidence envelope -> dual inventory
 
    Every completion commit receives fresh independent source-trust and
    graph-scope review on its exact head. The parent reconciles items by semantic
-   acceptance criterion rather than wording or ID. Each relevant lane assigns
-   one `inventory_outcome` using this decision table:
+   acceptance criterion rather than wording or ID. Every potential gap begins
+   as a `research_required_candidate`: investigate its bounded authoritative
+   source neighborhood before choosing an outcome. Do not call an unresearched
+   candidate actionable or unavailable merely because report-only mode cannot
+   edit its eventual correction. Each relevant lane assigns one
+   `inventory_outcome` using this decision table:
 
    | Outcome | Required evidence | Inventory transition | Remediation transition |
    | --- | --- | --- | --- |
@@ -613,7 +617,7 @@ prepare -> provisional evidence envelope -> dual inventory
    | `verified_complete` | Direct evidence proves the current representation is correct or the candidate is not applicable. | Remove from the missing-inventory checklist. | No finding. |
    | `actionable_finding` | Evidence supports one exact defect and acceptance criterion. | Remove from the missing-inventory checklist. | Promote it to the finding ledger. |
    | `defensible_deferred` | Direct evidence supports a typed deferral, concrete prerequisite, and canonical backlog reference. | Remove from the missing-inventory checklist. | Apply the graph-impact rule below. |
-   | `evidence_unavailable` | Exact required evidence cannot be obtained and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
+   | `evidence_unavailable` | Bounded research documents absent or contradictory evidence for the exact required graph fact, and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
 
    For inventory outcomes, an optional scalar fact such as a representative
    price, count, or descriptive attribute must be `actionable_finding` when the
@@ -627,6 +631,13 @@ prepare -> provisional evidence envelope -> dual inventory
    conservative representation or defensible typed deferral is possible. Stale
    rendered Markdown is likewise an `actionable_finding`: regenerate it during
    ordinary remediation; it does not make review incomplete.
+
+   An `evidence_unavailable` outcome requires a completed bounded research
+   record: the exact missing fact, affected target IDs, attempted source
+   families and URLs, and a `not_found`, `insufficient`, or `contradictory`
+   result. If the investigation establishes an exact correction and acceptance
+   criterion, promote it to `actionable_finding`; a fixer must never infer the
+   graph from a shared pass, proximity, or unsupported parent choice.
 
    A regional-followup defensible deferral requires no remediation finding. A
    graph-blocking defensible deferral closes the knowledge checklist but must
@@ -658,18 +669,23 @@ prepare -> provisional evidence envelope -> dual inventory
    complete every item is not a stop condition. The provisional evidence
    envelope becomes frozen only when both fresh lanes have no
    `inventory_missing`, `evidence_unavailable`, or unreconciled item. Codex
-   requests status-only `blocked/review-incomplete` on no measurable progress,
-   evidence remains unavailable, an item-specific unsafe scope boundary, the
-   210-minute cutoff, or an incomplete second completion pass only after a
-   completed `checkpoint_curation_inventory_completion` marker and its required
-   fresh dual review. When a safe report-only pass cannot start because every
-   remaining graph-critical item is already typed `evidence_unavailable` with
-   attempted official source families, Codex publishes
-   `blocked/evidence-unavailable` instead. An interrupted local completion
-   commit is non-authoritative; a later cycle starts from fresh helper
-   preparation and review. Terminal Triage reports the inventory-completion pass count,
-   remaining unresolved checklist count, and bounded stop reason without raw
-   evidence or checklist prose.
+   creates a private helper-owned `inventory-disposition` input before any
+   status-only terminal publication. It has one record per final unresolved
+   item with its missing item, exact missing fact, affected target IDs, and
+   source attempts including direct URLs and `not_found`, `insufficient`, or
+   `contradictory` results. `blocked/review-incomplete` requires the current
+   report-only marker and at least one remaining `inventory_missing` record.
+   `blocked/evidence-unavailable` is allowed only when every final record is
+   `evidence_unavailable`; it requires a current curation generation but no
+   report-only marker. A mixed set remains `review-incomplete`. This input is
+   private workflow evidence, not catalog/report schema data or publication
+   content. When evidence remains unavailable after the documented research, an
+   interrupted local completion commit is non-authoritative; a later cycle
+   starts from fresh helper preparation and review. Terminal Triage reports the
+   inventory-completion pass count, remaining unresolved checklist count, and
+   bounded stop reason without raw evidence or checklist prose. The same
+   terminal classification applies on no measurable progress, an item-specific
+   unsafe scope expansion, or an incomplete second completion pass.
 7. Codex consolidates the two complete dispositions into one private candidate
    inventory, finding ledger, and first fix. Candidate inventory and finding
    ledger are separate views. The inventory has one stable coverage entry per

@@ -47,6 +47,7 @@ PLACEHOLDERS = {
     "${EXPECTED_HEAD}": "a" * 40,
     "${GENERATION_ID}": "f" * 32,
     "${HEAD}": "b" * 40,
+    "${INVENTORY_DISPOSITION_FILE}": "inventory-disposition-example",
     "${OUTCOME_REASON}": "non-converging",
     "${OUTCOME_STATE}": "maintainer:blocked",
     "${PR}": "42",
@@ -177,6 +178,34 @@ def test_runtime_contract_registers_the_inventory_completion_checkpoint() -> Non
         ],
         "returns": ["work_id", "generation"],
     }
+
+
+def test_runtime_contract_registers_typed_incomplete_outcomes() -> None:
+    contract = _contract()
+
+    assert contract["recipes"]["publication_input_inventory_disposition"] == {
+        "argv": [
+            "publication-input",
+            "create",
+            "--worker",
+            "curation",
+            "--kind",
+            "inventory-disposition",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "stdin": "typed inventory disposition JSON",
+        "returns": ["basename"],
+    }
+    for recipe_name, reason in (
+        ("publish_incomplete_outcome", "review-incomplete"),
+        ("publish_evidence_unavailable_outcome", "evidence-unavailable"),
+    ):
+        argv = contract["recipes"][recipe_name]["argv"]
+        assert "--inventory-disposition-file" in argv
+        assert "${INVENTORY_DISPOSITION_FILE}" in argv
+        assert "--reason" in argv
+        assert reason in argv
 
 
 def test_registered_prefix_relies_on_project_cli_directory_defaults() -> None:

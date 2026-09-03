@@ -833,6 +833,37 @@ def _private_text(state_dir: Path, name: str, text: str) -> str:
     return name
 
 
+def _inventory_disposition(
+    state_dir: Path,
+    *,
+    outcome: str,
+    name: str = "inventory-disposition.json",
+) -> str:
+    return _private_text(
+        state_dir,
+        name,
+        json.dumps(
+            {
+                "items": [
+                    {
+                        "missing_item_id": "livigno-west-ownership",
+                        "affected_target_ids": ["ski_area:livigno-west"],
+                        "missing_fact": "Complete operator ownership assignment.",
+                        "source_attempts": [
+                            {
+                                "source_family": "ski_area_operator",
+                                "source_urls": ["https://example.test/operator"],
+                                "outcome": "insufficient",
+                            }
+                        ],
+                        "outcome": outcome,
+                    }
+                ]
+            }
+        ),
+    )
+
+
 def _invoke(
     capsys: pytest.CaptureFixture[str],
     argv: list[str],
@@ -5948,6 +5979,10 @@ def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
         "outcome-summary.md",
         "Review remains incomplete.",
     )
+    disposition = _inventory_disposition(
+        state_dir,
+        outcome="inventory_missing",
+    )
 
     code, payload = _invoke(
         capsys,
@@ -5966,6 +6001,8 @@ def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
             "review-incomplete",
             "--summary-file",
             summary,
+            "--inventory-disposition-file",
+            disposition,
             "--run-id",
             run_id,
         ],
@@ -5979,7 +6016,7 @@ def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
     assert github.label_writes == 1
 
 
-def test_review_incomplete_outcome_requires_current_checkpoint_head(
+def test_review_incomplete_outcome_requires_typed_research_record(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -6004,7 +6041,6 @@ def test_review_incomplete_outcome_requires_current_checkpoint_head(
         "outcome-summary.md",
         "Review remains incomplete.",
     )
-    repository.head = SHA_D
 
     code, payload = _invoke(
         capsys,
@@ -6032,6 +6068,70 @@ def test_review_incomplete_outcome_requires_current_checkpoint_head(
 
     assert checkpoint_code == 0, checkpoint
     assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+
+
+def test_review_incomplete_outcome_requires_current_checkpoint_head(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    checkpoint_code, checkpoint = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+        head=SHA_C,
+        inventory_completion=True,
+    )
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Review remains incomplete.",
+    )
+    disposition = _inventory_disposition(
+        state_dir,
+        outcome="inventory_missing",
+    )
+    repository.head = SHA_D
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "review-incomplete",
+            "--summary-file",
+            summary,
+            "--inventory-disposition-file",
+            disposition,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert checkpoint_code == 0, checkpoint
+    assert code == 2
     assert payload["reason"] == "stale-head"
     assert github.comment_creates == 0
     assert github.label_writes == 0
@@ -6043,7 +6143,57 @@ def test_evidence_unavailable_outcome_needs_no_inventory_checkpoint(
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     github = FakeGitHub()
-    run_id = _acquire(capsys, state_dir, "curation")
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Official sources cannot establish the required graph fact.",
+    )
+    disposition = _inventory_disposition(
+        state_dir,
+        outcome="evidence_unavailable",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "evidence-unavailable",
+            "--summary-file",
+            summary,
+            "--inventory-disposition-file",
+            disposition,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0, payload
+    assert payload["reason"] == "evidence-unavailable"
+    assert github.label_writes == 1
+
+
+def test_evidence_unavailable_outcome_requires_typed_research_record(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
     summary = _private_text(
         state_dir,
         "outcome-summary.md",
@@ -6071,12 +6221,125 @@ def test_evidence_unavailable_outcome_needs_no_inventory_checkpoint(
             run_id,
         ],
         github=github,
-        repository=FakeRepository(),
+        repository=repository,
     )
 
-    assert code == 0, payload
-    assert payload["reason"] == "evidence-unavailable"
-    assert github.label_writes == 1
+    assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+
+
+def test_evidence_unavailable_rejects_an_unresolved_inventory_item(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Official sources cannot establish the required graph fact.",
+    )
+    disposition = _inventory_disposition(
+        state_dir,
+        outcome="inventory_missing",
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "evidence-unavailable",
+            "--summary-file",
+            summary,
+            "--inventory-disposition-file",
+            disposition,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+
+
+def test_evidence_unavailable_rejects_a_record_without_source_attempts(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Official sources cannot establish the required graph fact.",
+    )
+    disposition = _private_text(
+        state_dir,
+        "inventory-disposition.json",
+        json.dumps(
+            {
+                "items": [
+                    {
+                        "missing_item_id": "livigno-west-ownership",
+                        "affected_target_ids": ["ski_area:livigno-west"],
+                        "missing_fact": "Complete operator ownership assignment.",
+                        "outcome": "evidence_unavailable",
+                    }
+                ]
+            }
+        ),
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "evidence-unavailable",
+            "--summary-file",
+            summary,
+            "--inventory-disposition-file",
+            disposition,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
 
 
 def test_checkpoint_curation_new_delta_supersedes_reviewed_authority(

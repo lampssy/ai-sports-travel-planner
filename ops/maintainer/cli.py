@@ -127,7 +127,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     publication_input_create.add_argument(
         "--kind",
-        choices=("title", "body", "summary"),
+        choices=("title", "body", "summary", "inventory-disposition"),
         required=True,
     )
     _add_run_id(publication_input_create)
@@ -271,6 +271,7 @@ def _parser() -> argparse.ArgumentParser:
         required=True,
     )
     outcome.add_argument("--summary-file", required=True)
+    outcome.add_argument("--inventory-disposition-file")
     _add_run_id(outcome)
     state = publish_commands.add_parser("state")
     state.add_argument("--pr", type=int, required=True)

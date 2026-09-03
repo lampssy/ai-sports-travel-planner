@@ -100,6 +100,11 @@ not have to derive an invocation.
       "stdin": "bounded UTF-8 summary",
       "returns": ["basename"]
     },
+    "publication_input_inventory_disposition": {
+      "argv": ["publication-input", "create", "--worker", "curation", "--kind", "inventory-disposition", "--run-id", "${RUN_ID}"],
+      "stdin": "typed inventory disposition JSON",
+      "returns": ["basename"]
+    },
     "prepare_curation": {
       "argv": ["prepare", "curation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "generation"]
@@ -174,6 +179,14 @@ not have to derive an invocation.
     },
     "publish_outcome": {
       "argv": ["publish", "outcome", "--pr", "${PR}", "--expected-head", "${EXPECTED_HEAD}", "--state", "${OUTCOME_STATE}", "--reason", "${OUTCOME_REASON}", "--summary-file", "${SUMMARY_FILE}", "--run-id", "${RUN_ID}"],
+      "returns": ["pr_number", "state", "reason"]
+    },
+    "publish_incomplete_outcome": {
+      "argv": ["publish", "outcome", "--pr", "${PR}", "--expected-head", "${EXPECTED_HEAD}", "--state", "maintainer:blocked", "--reason", "review-incomplete", "--summary-file", "${SUMMARY_FILE}", "--inventory-disposition-file", "${INVENTORY_DISPOSITION_FILE}", "--run-id", "${RUN_ID}"],
+      "returns": ["pr_number", "state", "reason"]
+    },
+    "publish_evidence_unavailable_outcome": {
+      "argv": ["publish", "outcome", "--pr", "${PR}", "--expected-head", "${EXPECTED_HEAD}", "--state", "maintainer:blocked", "--reason", "evidence-unavailable", "--summary-file", "${SUMMARY_FILE}", "--inventory-disposition-file", "${INVENTORY_DISPOSITION_FILE}", "--run-id", "${RUN_ID}"],
       "returns": ["pr_number", "state", "reason"]
     },
     "publish_state": {
@@ -410,6 +423,11 @@ not have to derive an invocation.
   exactly equals the prepare-time `base_head`.
 - `${TITLE_FILE}`, `${BODY_FILE}`, and `${SUMMARY_FILE}` are basenames returned
   by `publication-input create`, not caller-chosen paths.
+- `${INVENTORY_DISPOSITION_FILE}` is the basename returned by the curation-only
+  `publication_input_inventory_disposition` recipe. Its JSON has one final
+  unresolved item per record, including the exact missing fact, affected
+  targets, and direct source attempts. It is private workflow evidence and is
+  never copied to GitHub publication text.
 - `${STATE}`, `${OUTCOME_STATE}`, and `${OUTCOME_REASON}` are chosen only from
   the allowlisted state/reason combinations in the activation contract.
 
@@ -502,6 +520,16 @@ publication requires the marker and a local `HEAD` still equal to the marked
 head. The marker proves neither that the checklist was complete nor that the
 review conclusion was correct. If interrupted before this checkpoint, a later
 cycle starts with fresh preparation and review.
+
+Before a status-only incomplete terminal outcome, Codex creates the typed
+private `inventory-disposition` input through its registered recipe. The helper
+rejects a `review-incomplete` publication without a current report-only marker
+and at least one `inventory_missing` record. It rejects an
+`evidence-unavailable` publication unless a current curation generation exists
+and every record is `evidence_unavailable`. A mixed disposition uses
+`review-incomplete`. The helper validates record shape and source-attempt
+evidence; fresh independent review determines whether available evidence instead
+requires an actionable correction.
 
 The curation lifecycle scenarios freeze their high-risk sequence prefixes,
 including both bounded CI waits:
