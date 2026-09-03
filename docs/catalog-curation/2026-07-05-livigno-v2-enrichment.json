@@ -31,7 +31,8 @@
         "official_trail_map.season_label",
         "ski_day_apres_profile.availability",
         "ski_day_apres_profile.intensity",
-        "ski_day_apres_profile.season_label"
+        "ski_day_apres_profile.season_label",
+        "total_lift_count"
       ]
     },
     {
@@ -74,14 +75,6 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
-    },
-    {
-      "target_type": "ski_area_access",
-      "target_id": "livigno-livigno--livigno-ski-area",
-      "scope": "narrow",
-      "required_field_paths": [
-        "source_urls"
       ]
     },
     {
@@ -685,11 +678,11 @@
       "notes": "The official destination booking market retains the existing Livigno identity."
     },
     {
-      "target_type": "ski_area_access",
-      "target_id": "livigno-livigno--livigno-ski-area",
-      "field_path": "source_urls",
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_lift_count",
       "status": "reviewed-no-change",
-      "notes": "The existing access edge retains the official lift-and-slope source URL."
+      "notes": "The official operator inventory retains the current aggregate lift count."
     },
     {
       "target_type": "lift_pass_product",
@@ -848,25 +841,12 @@
       "boundary_target_ids": ["livigno-ski-area"],
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
-      "field_path": "official_trail_map.url",
+      "field_path": "total_lift_count",
       "source_type": "official",
       "source_url": "https://www.skipasslivigno.com/en/lifts-and-slopes/",
       "source_title": "Skipass Livigno lifts and slopes status",
-      "source_value": "115 km",
+      "source_value": 31,
       "evidence_summary": "The official operator publishes the Livigno lift and slope inventory and live status for the represented ski area.",
-      "normalization_note": "This evidence supports the ski-area boundary assessment; the map URL remains sourced by the separate official maps page."
-    },
-    {
-      "evidence_id": "normalization-livigno-access-provenance",
-      "boundary_target_ids": [],
-      "target_type": "ski_area_access",
-      "target_id": "livigno-livigno--livigno-ski-area",
-      "field_path": "source_urls",
-      "source_type": "official",
-      "source_url": "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-      "source_title": "Skipass Livigno lifts and slopes status",
-      "source_value": ["https://www.skipasslivigno.com/en/lifts-and-slopes/"],
-      "evidence_summary": "The official lift-and-slope source remains the provenance for the retained Livigno base-to-ski-area access relationship.",
       "normalization_note": null
     },
     {
@@ -1118,11 +1098,11 @@
       "candidate_name": "Livigno stay base",
       "candidate_kind": "stay_base",
       "disposition": "represented",
-      "signals": ["official_independent_identity", "distinct_access"],
-      "evidence_refs": ["normalization-livigno-destination-market", "normalization-livigno-access-provenance"],
+      "signals": ["official_independent_identity"],
+      "evidence_refs": ["normalization-livigno-destination-market"],
       "target_refs": [{"target_type": "stay_base", "target_id": "livigno-livigno"}],
       "backlog_ref": null,
-      "rationale": "The existing Livigno base remains the supported accommodation-and-access representation for the focus destination.",
+      "rationale": "The existing Livigno base remains the supported accommodation representation for the focus destination.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -1164,19 +1144,6 @@
       "graph_impact": "graph_blocking"
     },
     {
-      "candidate_id": "livigno-livigno--livigno-ski-area",
-      "candidate_name": "Livigno stay-base to ski-area access",
-      "candidate_kind": "ski_area_access",
-      "disposition": "represented",
-      "signals": ["direct_access_relationship"],
-      "evidence_refs": ["normalization-livigno-access-provenance"],
-      "target_refs": [{"target_type": "ski_area_access", "target_id": "livigno-livigno--livigno-ski-area"}],
-      "backlog_ref": null,
-      "rationale": "The retained access edge remains tied to the official Livigno lift-and-slope source without adding unsupported access details.",
-      "ski_area_boundary": null,
-      "graph_impact": "graph_blocking"
-    },
-    {
       "candidate_id": "livigno-skipass",
       "candidate_name": "Livigno Skipass",
       "candidate_kind": "lift_pass_product",
@@ -1204,16 +1171,31 @@
       "candidate_kinds": ["ski_area"]
     },
     {
-      "family_id": "livigno-access-provenance",
-      "source_kind": "access_transport",
-      "source_urls": ["https://www.skipasslivigno.com/en/lifts-and-slopes/"],
-      "candidate_kinds": ["ski_area_access"]
-    },
-    {
       "family_id": "livigno-pass-tariff",
       "source_kind": "pass_tariff",
       "source_urls": ["https://www.skipasslivigno.com/en/livigno-skipass-rates/"],
       "candidate_kinds": ["ski_area", "lift_pass_product"]
+    },
+    {
+      "family_id": "livigno-touched-ski-area-facts",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://www.skipasslivigno.com/en/maps/",
+        "https://www.livigno.eu/en/fun-relax-winter",
+        "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/"
+      ],
+      "candidate_kinds": ["ski_area"]
+    },
+    {
+      "family_id": "livigno-touched-stay-base-facts",
+      "source_kind": "other_official",
+      "source_urls": [
+        "https://webview.livigno.eu/en/news/a-shopping-paradise-at-1-800-metres",
+        "https://files.livigno.eu/dati/app/pag/en/liv-media-kit-eng-low.pdf",
+        "https://www.livigno.eu/en/home",
+        "https://www.livigno.eu/en/livigno-by-night"
+      ],
+      "candidate_kinds": ["stay_base"]
     }
   ],
   "boundary_decision_targets": ["livigno"],

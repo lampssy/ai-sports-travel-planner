@@ -22,12 +22,11 @@ flowchart LR
 
 | Target | Scope | Graph Role | Required Fields |
 | --- | --- | --- | --- |
-| `ski_area:livigno-ski-area` | `narrow` | `focus` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label` |
+| `ski_area:livigno-ski-area` | `narrow` | `focus` | `snowmaking.availability`, `snowmaking.coverage_pct`, `snowmaking.coverage_basis`, `snowmaking.season_label`, `glacier_terrain.availability`, `snow_park.availability`, `snow_park.park_count`, `snow_park.season_label`, `night_skiing.availability`, `night_skiing.season_label`, `marked_freeride_routes.availability`, `marked_freeride_routes.route_count`, `marked_freeride_routes.season_label`, `official_trail_map.url`, `official_trail_map.season_label`, `ski_day_apres_profile.availability`, `ski_day_apres_profile.intensity`, `ski_day_apres_profile.season_label`, `total_lift_count` |
 | `stay_base:livigno-livigno` | `narrow` | `focus` | `elevation_m`, `base_type`, `base_character.development_style`, `base_character.local_pace`, `local_apres_profile.availability`, `local_apres_profile.intensity`, `local_apres_profile.season_label` |
 | `trust_manifest:ski_areas:livigno-ski-area` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
 | `trust_manifest:stay_bases:livigno-livigno` | `narrow` | `focus` | `field_source_refs`, `field_statuses`, `notes` |
 | `stay_destination:livigno` | `narrow` | `focus` | `name` |
-| `ski_area_access:livigno-livigno--livigno-ski-area` | `narrow` | `focus` | `source_urls` |
 | `lift_pass_product:livigno-skipass` | `narrow` | `focus` | `valid_ski_area_ids` |
 
 ## Review Evidence Envelope
@@ -36,17 +35,17 @@ flowchart LR
 | --- | --- | --- | --- |
 | `livigno-destination-booking` | `destination_booking` | [https://booking.livigno.eu/en/](https://booking.livigno.eu/en/) | `stay_destination`, `stay_base` |
 | `livigno-ski-area-operator` | `ski_area_operator` | [https://www.skipasslivigno.com/en/lifts-and-slopes/](https://www.skipasslivigno.com/en/lifts-and-slopes/) | `ski_area` |
-| `livigno-access-provenance` | `access_transport` | [https://www.skipasslivigno.com/en/lifts-and-slopes/](https://www.skipasslivigno.com/en/lifts-and-slopes/) | `ski_area_access` |
 | `livigno-pass-tariff` | `pass_tariff` | [https://www.skipasslivigno.com/en/livigno-skipass-rates/](https://www.skipasslivigno.com/en/livigno-skipass-rates/) | `ski_area`, `lift_pass_product` |
+| `livigno-touched-ski-area-facts` | `other_official` | [https://www.skipasslivigno.com/en/maps/](https://www.skipasslivigno.com/en/maps/), [https://www.livigno.eu/en/fun-relax-winter](https://www.livigno.eu/en/fun-relax-winter), [https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/](https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/) | `ski_area` |
+| `livigno-touched-stay-base-facts` | `other_official` | [https://webview.livigno.eu/en/news/a-shopping-paradise-at-1-800-metres](https://webview.livigno.eu/en/news/a-shopping-paradise-at-1-800-metres), [https://files.livigno.eu/dati/app/pag/en/liv-media-kit-eng-low.pdf](https://files.livigno.eu/dati/app/pag/en/liv-media-kit-eng-low.pdf), [https://www.livigno.eu/en/home](https://www.livigno.eu/en/home), [https://www.livigno.eu/en/livigno-by-night](https://www.livigno.eu/en/livigno-by-night) | `stay_base` |
 
 ## Entity Scope Assessments
 
 | Candidate | Kind | Disposition | Signals | Catalog Targets | Evidence | Backlog | Graph Impact | Rationale |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `livigno` (Livigno) | `stay_destination` | `represented` | `independent_stay_market` | `stay_destination:livigno` | `normalization-livigno-destination-market` |  | `graph_blocking` | The official booking portal supports retaining Livigno as the named, independently presented accommodation market. |
-| `livigno-livigno` (Livigno stay base) | `stay_base` | `represented` | `official_independent_identity`, `distinct_access` | `stay_base:livigno-livigno` | `normalization-livigno-destination-market`, `normalization-livigno-access-provenance` |  | `graph_blocking` | The existing Livigno base remains the supported accommodation-and-access representation for the focus destination. |
+| `livigno-livigno` (Livigno stay base) | `stay_base` | `represented` | `official_independent_identity` | `stay_base:livigno-livigno` | `normalization-livigno-destination-market` |  | `graph_blocking` | The existing Livigno base remains the supported accommodation representation for the focus destination. |
 | `livigno-ski-area` (Livigno ski area) | `ski_area` | `represented` | `official_complete_lift_inventory`, `independent_status_or_schedule`, `full_local_pass` | `ski_area:livigno-ski-area` | `normalization-livigno-ski-area-operations`, `normalization-livigno-pass-coverage` |  | `graph_blocking` | The official operator inventory, status presentation, and full local pass support retaining one represented Livigno ski area. |
-| `livigno-livigno--livigno-ski-area` (Livigno stay-base to ski-area access) | `ski_area_access` | `represented` | `direct_access_relationship` | `ski_area_access:livigno-livigno--livigno-ski-area` | `normalization-livigno-access-provenance` |  | `graph_blocking` | The retained access edge remains tied to the official Livigno lift-and-slope source without adding unsupported access details. |
 | `livigno-skipass` (Livigno Skipass) | `lift_pass_product` | `represented` | `official_product_identity`, `full_local_pass` | `lift_pass_product:livigno-skipass` | `normalization-livigno-pass-coverage` |  | `graph_blocking` | The official rates page supports retaining the current Livigno Skipass coverage for the represented local ski area. |
 
 ## Ski-Area Boundary Assessments
@@ -112,7 +111,7 @@ flowchart LR
 | `trust_manifest:stay_bases:livigno-livigno` | `field_statuses` | `changed` | Trust metadata updated for the reviewed source-aware facts. |
 | `trust_manifest:stay_bases:livigno-livigno` | `notes` | `changed` | Trust metadata updated for the reviewed source-aware facts. |
 | `stay_destination:livigno` | `name` | `reviewed-no-change` | The official destination booking market retains the existing Livigno identity. |
-| `ski_area_access:livigno-livigno--livigno-ski-area` | `source_urls` | `reviewed-no-change` | The existing access edge retains the official lift-and-slope source URL. |
+| `ski_area:livigno-ski-area` | `total_lift_count` | `reviewed-no-change` | The official operator inventory retains the current aggregate lift count. |
 | `lift_pass_product:livigno-skipass` | `valid_ski_area_ids` | `reviewed-no-change` | The official pass continues to cover the represented Livigno ski area. |
 
 ## Evidence
@@ -130,8 +129,7 @@ flowchart LR
 | `stay_base:livigno-livigno` | `local_apres_profile.availability` | [Livigno official bars, pubs, and après-ski directory](https://www.livigno.eu/en/livigno-by-night) | `"available"` | The official directory lists ten bars, pubs, clubs, and après-ski venues. |  |
 | `stay_base:livigno-livigno` | `local_apres_profile.intensity` | [Livigno official bars, pubs, and après-ski directory](https://www.livigno.eu/en/livigno-by-night) | `"lively"` | The official directory includes multiple dedicated après-ski venues, bars, and discos alongside the broader winter offer. | The multi-venue bar and club inventory is mapped to lively. |
 | `stay_destination:livigno` | `name` | [Livigno official booking portal](https://booking.livigno.eu/en/) | `"Livigno"` | The official booking portal presents Livigno as one accommodation market with more than 200 hotels and apartments. |  |
-| `ski_area:livigno-ski-area` | `official_trail_map.url` | [Skipass Livigno lifts and slopes status](https://www.skipasslivigno.com/en/lifts-and-slopes/) | `"115 km"` | The official operator publishes the Livigno lift and slope inventory and live status for the represented ski area. | This evidence supports the ski-area boundary assessment; the map URL remains sourced by the separate official maps page. |
-| `ski_area_access:livigno-livigno--livigno-ski-area` | `source_urls` | [Skipass Livigno lifts and slopes status](https://www.skipasslivigno.com/en/lifts-and-slopes/) | `["https://www.skipasslivigno.com/en/lifts-and-slopes/"]` | The official lift-and-slope source remains the provenance for the retained Livigno base-to-ski-area access relationship. |  |
+| `ski_area:livigno-ski-area` | `total_lift_count` | [Skipass Livigno lifts and slopes status](https://www.skipasslivigno.com/en/lifts-and-slopes/) | `31` | The official operator publishes the Livigno lift and slope inventory and live status for the represented ski area. |  |
 | `lift_pass_product:livigno-skipass` | `valid_ski_area_ids` | [Skipass Livigno official rates](https://www.skipasslivigno.com/en/livigno-skipass-rates/) | `["livigno-ski-area"]` | The official pass is valid on both sides of the represented Livigno ski area. |  |
 | `ski_area:livigno-ski-area` | `snowmaking.availability` | [Skipass Livigno lifts and slopes status](https://www.skipasslivigno.com/en/lifts-and-slopes/) | `null` | The reviewed official operator material does not state a canonical ski-area snowmaking availability value. |  |
 | `ski_area:livigno-ski-area` | `snowmaking.coverage_pct` | [Skipass Livigno lifts and slopes status](https://www.skipasslivigno.com/en/lifts-and-slopes/) | `null` | The reviewed official operator material does not publish a snowmaking coverage percentage with a comparable denominator. |  |
