@@ -78,6 +78,7 @@ class CurationCheckpointStage(StrEnum):
 class CurationRecipeId(StrEnum):
     PREPARE = "prepare_curation"
     CHECKPOINT_DELTA = "checkpoint_curation_delta"
+    CHECKPOINT_INVENTORY_COMPLETION = "checkpoint_curation_inventory_completion"
     CHECKPOINT_REVIEWED = "checkpoint_curation_reviewed"
     VALIDATE = "validate_curation"
     PUBLISH_PUSH = "publish_push"
@@ -227,8 +228,23 @@ class CheckpointStartedEvent(_GenerationEvent):
     head: str = Field(pattern=_SHA_PATTERN)
     report_path: str = Field(pattern=_REPORT_PATTERN)
     validation_base: str = Field(pattern=_SHA_PATTERN)
+    inventory_completion: Literal[True] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     expected_checkpoint_ref: str = Field(pattern=_REF_PATTERN)
     expected_squash_ref: str = Field(pattern=_REF_PATTERN)
+
+    @model_validator(mode="after")
+    def validate_inventory_completion_stage(self) -> Self:
+        if (
+            self.inventory_completion
+            and self.stage is not CurationCheckpointStage.DELTA_VALIDATED
+        ):
+            raise ValueError(
+                "inventory completion is limited to delta-validated checkpoints"
+            )
+        return self
 
 
 class CheckpointCompletedEvent(_GenerationEvent):
@@ -414,6 +430,7 @@ class CurationGeneration(_StrictModel):
                     event.head,
                     event.report_path,
                     event.validation_base,
+                    inventory_completion=event.inventory_completion,
                 )
                 if event.transaction_id != expected_id:
                     raise ValueError("checkpoint transaction identity is invalid")
@@ -480,6 +497,11 @@ class CurationGenerationProjection(_StrictModel):
     reviewed_authority: ReviewedCurationAuthority | None = None
     validated_authority: ValidatedCurationAuthority | None = None
     validation_failure: CurationValidationFailure | None = None
+    inventory_completion_checkpointed: bool = False
+    inventory_completion_checkpoint_head: str | None = Field(
+        default=None,
+        pattern=_SHA_PATTERN,
+    )
     next_action: CurationNextAction | None = None
 
 
@@ -489,10 +511,14 @@ def checkpoint_transaction_id(
     head: str,
     report_path: str,
     validation_base: str,
+    *,
+    inventory_completion: Literal[True] | None = None,
 ) -> str:
-    payload = "\0".join(
-        (generation_id, stage.value, head, report_path, validation_base)
-    )
+    fields = [generation_id, stage.value, head, report_path, validation_base]
+    # Keep pre-marker transaction identities valid when reading existing state.
+    if inventory_completion:
+        fields.append("inventory-completion")
+    payload = "\0".join(fields)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -517,6 +543,8 @@ def project_generation(
     checkpoint: CurationCheckpointAuthority | None = None
     validated: ValidatedCurationAuthority | None = None
     validation_failure: CurationValidationFailure | None = None
+    inventory_completion_checkpointed = False
+    inventory_completion_checkpoint_head: str | None = None
     latest_report: str | None = generation.events[0].report_path
     latest_refs: tuple[str, str] | None = None
 
@@ -532,6 +560,12 @@ def project_generation(
             latest_report = started.report_path
             latest_refs = (event.checkpoint_ref, event.squash_ref)
             checkpoint = _checkpoint_authority(generation, started, event)
+            if (
+                started.stage is CurationCheckpointStage.DELTA_VALIDATED
+                and started.inventory_completion
+            ):
+                inventory_completion_checkpointed = True
+                inventory_completion_checkpoint_head = started.head
             validated = None
             validation_failure = None
             if started.stage is CurationCheckpointStage.REVIEWED:
@@ -641,6 +675,8 @@ def project_generation(
         reviewed_authority=reviewed,
         validated_authority=validated,
         validation_failure=validation_failure,
+        inventory_completion_checkpointed=inventory_completion_checkpointed,
+        inventory_completion_checkpoint_head=inventory_completion_checkpoint_head,
         next_action=next_action,
     )
 
@@ -682,11 +718,12 @@ def _checkpoint_action(
     generation: CurationGeneration,
     started: CheckpointStartedEvent,
 ) -> CurationNextAction:
-    recipe = (
-        CurationRecipeId.CHECKPOINT_REVIEWED
-        if started.stage is CurationCheckpointStage.REVIEWED
-        else CurationRecipeId.CHECKPOINT_DELTA
-    )
+    if started.stage is CurationCheckpointStage.REVIEWED:
+        recipe = CurationRecipeId.CHECKPOINT_REVIEWED
+    elif started.inventory_completion:
+        recipe = CurationRecipeId.CHECKPOINT_INVENTORY_COMPLETION
+    else:
+        recipe = CurationRecipeId.CHECKPOINT_DELTA
     return CurationNextAction(
         recipe_id=recipe,
         substitutions=CurationActionSubstitutions(

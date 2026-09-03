@@ -34,8 +34,12 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   Each pass must shrink the unresolved checklist and is followed by fresh dual
   review on the exact new head.
 - Completion may change only the canonical curation report. Catalog and trust
-  payloads and object IDs remain unchanged, and no helper continuation or
-  cross-run authority is created from the local report commit.
+  payloads and object IDs remain unchanged. The helper verifies the direct
+  delta contains only the JSON/Markdown report pair and records only a
+  completed inventory-checkpoint marker. It also requires local `HEAD` still
+  equals that marker before `review-incomplete`; it never stores the checklist,
+  sources, report content, or review conclusion. This creates no helper
+  continuation or cross-run semantic authority.
 - Inventory completeness is a knowledge gate, not a correctness gate. Each
   checklist item becomes missing, verified complete, actionable, defensibly
   deferred, or blocked by concretely unavailable evidence. Actionable catalog,
@@ -55,9 +59,10 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - Triage exposes only the pass count, remaining unresolved count, and bounded
   stop reason so operators can diagnose convergence without persisting semantic
   evidence in helper state.
-- `review-incomplete` remains the safe outcome when evidence cannot be found,
-  progress stops, scope becomes unsafe, time expires, or two passes do not
-  complete the inventory.
+- `review-incomplete` requires that marker plus the fresh review after the
+  report-only pass. When a safe pass cannot start because every remaining
+  graph-critical item is already typed `evidence_unavailable` with attempted
+  official source families, use `evidence-unavailable` instead.
 
 ### User-facing content ownership
 

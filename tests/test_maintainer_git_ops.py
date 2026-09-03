@@ -51,6 +51,7 @@ SHA_B = "b" * 40
 ZERO_SHA = "0" * 40
 CANONICAL_REMOTE = "git@github.com:lampssy/ai-sports-travel-planner.git"
 REPORT_PATH = "docs/catalog-curation/alpha.json"
+REPORT_MARKDOWN_PATH = REPORT_PATH.removesuffix(".json") + ".md"
 CATALOG_PATH = "app/data/catalog.json"
 TRUST_MANIFEST_PATH = "app/data/resort_trust_manifest.json"
 
@@ -2133,6 +2134,60 @@ def test_generation_checkpoint_creates_exact_refs_and_restores_unchanged_head(
     assert (
         _git(local.checkout, "rev-parse", refs.checkpoint_ref) == prepared.rebased_head
     )
+
+
+def test_inventory_completion_requires_exact_report_pair(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path, target_report='{"status": "initial"}\n')
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    (local.checkout / REPORT_PATH).write_text(
+        '{"status": "inventory-complete"}\n',
+        encoding="utf-8",
+    )
+    (local.checkout / REPORT_MARKDOWN_PATH).write_text(
+        "# Inventory completion\n",
+        encoding="utf-8",
+    )
+    _git(local.checkout, "add", REPORT_PATH, REPORT_MARKDOWN_PATH)
+    _git(local.checkout, "commit", "-m", "complete report inventory")
+    inventory_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    repository.verify_report_only_inventory_completion(
+        prepared.rebased_head,
+        inventory_head,
+        REPORT_PATH,
+    )
+
+
+@pytest.mark.parametrize("extra_path", [CATALOG_PATH, TRUST_MANIFEST_PATH])
+def test_inventory_completion_rejects_catalog_or_trust_change(
+    tmp_path: Path,
+    extra_path: str,
+) -> None:
+    local = _local_repository(tmp_path, target_report='{"status": "initial"}\n')
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    (local.checkout / REPORT_PATH).write_text(
+        '{"status": "inventory-complete"}\n',
+        encoding="utf-8",
+    )
+    (local.checkout / REPORT_MARKDOWN_PATH).write_text(
+        "# Inventory completion\n",
+        encoding="utf-8",
+    )
+    extra = local.checkout / extra_path
+    extra.parent.mkdir(parents=True, exist_ok=True)
+    extra.write_text('{"unexpected": true}\n', encoding="utf-8")
+    _git(local.checkout, "add", REPORT_PATH, REPORT_MARKDOWN_PATH, extra_path)
+    _git(local.checkout, "commit", "-m", "change catalog during inventory")
+    inventory_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    with pytest.raises(RepositorySafetyError, match="only the canonical report"):
+        repository.verify_report_only_inventory_completion(
+            prepared.rebased_head,
+            inventory_head,
+            REPORT_PATH,
+        )
 
 
 def test_legacy_curation_refs_archive_atomically_and_idempotently(

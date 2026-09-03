@@ -590,9 +590,17 @@ prepare -> provisional evidence envelope -> dual inventory
    listed gaps and their immediate official-source neighborhood, updates exactly
    the canonical JSON report and deterministic Markdown companion, requires
    catalog and trust blobs and object IDs remain identical, and runs catalog
-   validation plus exact reconciliation and Markdown parity. It
-   does not consume a remediation cycle, cannot authorize catalog or trust
-   remediation, and creates no helper continuation or cross-run authority.
+   validation plus exact reconciliation and Markdown parity. It does not
+   consume a remediation cycle and cannot authorize catalog or trust
+   remediation. After its local report-only commit, Codex calls
+   `checkpoint_curation_inventory_completion`. The helper verifies the direct
+   delta contains only the canonical report pair, then records only that
+   completed checkpoint marker. It also requires local `HEAD` still equals the
+   marked head when `review-incomplete` is published. It does not store the
+   checklist, source evidence, report content, or review conclusion; the local
+   report commit remains
+   non-authoritative and creates no helper continuation or cross-run semantic
+   authority.
 
    Every completion commit receives fresh independent source-trust and
    graph-scope review on its exact head. The parent reconciles items by semantic
@@ -652,9 +660,14 @@ prepare -> provisional evidence envelope -> dual inventory
    `inventory_missing`, `evidence_unavailable`, or unreconciled item. Codex
    requests status-only `blocked/review-incomplete` on no measurable progress,
    evidence remains unavailable, an item-specific unsafe scope boundary, the
-   210-minute cutoff, or an incomplete second completion pass. An interrupted
-   local completion commit is non-authoritative; a later cycle starts from fresh
-   helper preparation and review. Terminal Triage reports the inventory-completion pass count,
+   210-minute cutoff, or an incomplete second completion pass only after a
+   completed `checkpoint_curation_inventory_completion` marker and its required
+   fresh dual review. When a safe report-only pass cannot start because every
+   remaining graph-critical item is already typed `evidence_unavailable` with
+   attempted official source families, Codex publishes
+   `blocked/evidence-unavailable` instead. An interrupted local completion
+   commit is non-authoritative; a later cycle starts from fresh helper
+   preparation and review. Terminal Triage reports the inventory-completion pass count,
    remaining unresolved checklist count, and bounded stop reason without raw
    evidence or checklist prose.
 7. Codex consolidates the two complete dispositions into one private candidate

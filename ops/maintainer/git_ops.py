@@ -871,6 +871,44 @@ class GitRepository:
             "validation remediation must descend from the reviewed head",
         )
 
+    def verify_report_only_inventory_completion(
+        self,
+        previous_head: str,
+        inventory_head: str,
+        report_path: str,
+    ) -> None:
+        """Require one inventory pass to change only its report JSON/Markdown pair."""
+        _validate_sha(previous_head)
+        _validate_sha(inventory_head)
+        valid_report_path = report_path.startswith(
+            "docs/catalog-curation/"
+        ) and report_path.endswith(".json")
+        if not valid_report_path:
+            raise RepositorySafetyError("inventory completion report path is invalid")
+        self.verify_repository()
+        self._verify_commit(previous_head)
+        self._verify_commit(inventory_head)
+        self._assert_ancestor(
+            previous_head,
+            inventory_head,
+            "inventory completion must descend from its previous checkpoint",
+        )
+        self._ensure_clean_preflight()
+        if self.current_head() != inventory_head:
+            raise RepositorySafetyError(
+                "current HEAD does not match inventory completion head"
+            )
+        expected_paths = frozenset(
+            {report_path, report_path.removesuffix(".json") + ".md"}
+        )
+        changed_paths = frozenset(
+            entry.path for entry in self.diff_entries(previous_head, inventory_head)
+        )
+        if changed_paths != expected_paths:
+            raise RepositorySafetyError(
+                "inventory completion must change only the canonical report pair"
+            )
+
     def checkpoint_curation_generation(
         self,
         pull_request: PullRequest,

@@ -396,8 +396,15 @@ The installed skill must:
   its immediate official-source neighborhood, updates exactly the canonical
   report path, requires catalog and trust blobs and object IDs remain
   identical, runs catalog validation plus exact reconciliation, and does not
-  consume a remediation cycle. The local report commit is non-authoritative and
-  creates no helper continuation;
+  consume a remediation cycle. Locally commit the report pair, then call
+  `checkpoint_curation_inventory_completion`. The helper records only that
+  completed checkpoint marker after verifying the direct delta contains only
+  the canonical report pair. It also requires local `HEAD` still equals that
+  marker when `review-incomplete` is published. It does not store the
+  checklist, source evidence, report content, or review conclusion; the local
+  report commit remains
+  non-authoritative and creates no helper continuation or cross-run semantic
+  authority;
 - after each inventory-completion pass, start fresh independent source-trust
   and graph-scope contexts on the exact new head. Reconcile items by semantic
   acceptance criterion, not wording or identifier changes. Each relevant lane
@@ -463,7 +470,12 @@ The installed skill must:
   evidence remains unavailable, an item-specific unsafe scope boundary prevents
   research, the 210-minute cutoff prevents another pass, or the second
   completion pass still contains `inventory_missing`, `evidence_unavailable`,
-  or unreconciled items;
+  or unreconciled items, but only after a completed
+  `checkpoint_curation_inventory_completion` marker and its required fresh dual
+  review. When a safe report-only pass cannot start because every remaining
+  graph-critical item is already typed `evidence_unavailable` with its
+  attempted official source families, publish
+  `blocked/evidence-unavailable` instead;
 - when inventory completion runs, include its inventory-completion pass count,
   remaining unresolved checklist count, and bounded stop reason in Triage
   without raw source evidence or checklist prose;
