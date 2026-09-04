@@ -63,6 +63,15 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   report-only pass. When a safe pass cannot start because every remaining
   graph-critical item is already typed `evidence_unavailable` with attempted
   official source families, use `evidence-unavailable` instead.
+- Every ordinary curation generation treats its focused stay destinations as
+  graph-discovery roots. A narrow reviewed target limits field coverage only;
+  it cannot turn a full destination graph review into an access- or ski-area-
+  only review.
+- Before delta or final validation, the helper requires reviewed-target and
+  scope-assessment coverage for the known resulting-graph closure, plus all six
+  discovery candidate kinds in the evidence envelope. This structural guard
+  complements, rather than replaces, independent research for unmodeled
+  candidates.
 
 ### User-facing content ownership
 

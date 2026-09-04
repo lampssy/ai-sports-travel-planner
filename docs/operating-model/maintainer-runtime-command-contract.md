@@ -506,6 +506,24 @@ candidate inventory, repeat streak, and convergence decision; the helper only
 checks objective command, state, head, scope, validation, and publication
 preconditions for the resulting requested action.
 
+### Primary-Destination Graph Inventory
+
+Every ordinary curation or proposal validation treats the normalized report's
+`resulting_graph.focus_stay_destination_ids` as mandatory graph-discovery
+roots. `reviewed_targets[].scope=narrow` limits reviewed field paths only; it
+does not limit graph discovery. Before a proposal, delta, or final validation,
+the helper requires both a reviewed graph target and a typed entity-scope assessment for
+every existing focused destination, stay base, ski-area access, ski area,
+terrain domain, and lift-pass product in the deterministic resulting-graph
+closure. A primary graph entity uses `resulting_graph_role=focus`; a ski area
+from another stay market that is included only through a shared terrain domain
+may use a narrow `linked_dependency` target. The evidence envelope must name
+all six corresponding candidate kinds, including a kind for which the current
+closure is empty. This is a structural
+guard: it proves the report covers the known graph and declares discovery across
+all graph classes. It does not replace the independent source/trust and
+graph/scope review required to find concrete unmodeled candidates.
+
 The run-local report-only `inventory-completion` phase is outside helper state
 except for one completed-checkpoint marker. The helper does not persist its
 checklist, pass count, source evidence, local report commit, or review

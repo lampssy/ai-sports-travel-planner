@@ -153,11 +153,35 @@ def _current_graph_report_payload() -> dict[str, object]:
         "resulting_graph": {"focus_stay_destination_ids": ["example"]},
         "reviewed_targets": [
             {
+                "target_type": "stay_destination",
+                "target_id": "example",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            },
+            {
+                "target_type": "stay_base",
+                "target_id": "example-village",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            },
+            {
+                "target_type": "ski_area",
+                "target_id": "example-area",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            },
+            {
                 "target_type": "ski_area_access",
                 "target_id": "example-village--example-area",
                 "scope": "narrow",
                 "required_field_paths": ["distance_m"],
-            }
+            },
+            {
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            },
         ],
         "changes": [
             {
@@ -171,15 +195,40 @@ def _current_graph_report_payload() -> dict[str, object]:
         ],
         "field_coverage": [
             {
+                "target_type": "stay_destination",
+                "target_id": "example",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+            {
+                "target_type": "stay_base",
+                "target_id": "example-village",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+            {
+                "target_type": "ski_area",
+                "target_id": "example-area",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+            {
                 "target_type": "ski_area_access",
                 "target_id": "example-village--example-area",
                 "field_path": "distance_m",
                 "status": "changed",
-            }
+            },
+            {
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
         ],
         "evidence": [
             {
                 "evidence_id": "example-access-scope",
+                "boundary_target_ids": ["example", "example-area"],
                 "target_type": "ski_area_access",
                 "target_id": "example-village--example-area",
                 "field_path": "source_urls",
@@ -191,6 +240,73 @@ def _current_graph_report_payload() -> dict[str, object]:
             }
         ],
         "entity_scope_assessments": [
+            {
+                "candidate_id": "example",
+                "candidate_name": "Example",
+                "candidate_kind": "stay_destination",
+                "disposition": "represented",
+                "signals": ["independent_stay_market"],
+                "evidence_refs": ["example-access-scope"],
+                "target_refs": [
+                    {"target_type": "stay_destination", "target_id": "example"}
+                ],
+                "rationale": "The stay market is represented explicitly.",
+                "graph_impact": "graph_blocking",
+            },
+            {
+                "candidate_id": "example-base",
+                "candidate_name": "Example Village",
+                "candidate_kind": "stay_base",
+                "disposition": "represented",
+                "signals": ["official_independent_identity"],
+                "evidence_refs": ["example-access-scope"],
+                "target_refs": [
+                    {"target_type": "stay_base", "target_id": "example-village"}
+                ],
+                "rationale": "The stay base is represented explicitly.",
+                "graph_impact": "graph_blocking",
+            },
+            {
+                "candidate_id": "example-area",
+                "candidate_name": "Example Area",
+                "candidate_kind": "ski_area",
+                "disposition": "represented",
+                "signals": [
+                    "official_independent_identity",
+                    "independent_weather_presentation",
+                ],
+                "evidence_refs": ["example-access-scope"],
+                "target_refs": [
+                    {"target_type": "ski_area", "target_id": "example-area"}
+                ],
+                "rationale": "The ski area is represented explicitly.",
+                "ski_area_boundary": {
+                    "parent_ski_area_id": None,
+                    "terrain_scope": "complete",
+                    "connectivity_to_parent": "not_applicable",
+                    "operational_scope": "unknown",
+                    "weather_scope": "independent",
+                    "pass_scope": "none",
+                    "provider_consensus": "separate",
+                    "separation_value": "material",
+                    "material_trip_consequences": [
+                        {
+                            "consequence_type": "weather_or_season",
+                            "decision_effect": "conditions_evidence_profile",
+                            "comparison_basis": "stay_market_baseline",
+                            "comparison_target_id": "example",
+                            "durability_basis": "recurring_season_pattern",
+                            "evidence_refs": ["example-access-scope"],
+                            "rationale": (
+                                "The area's recurring conditions affect a normal trip "
+                                "choice."
+                            ),
+                        }
+                    ],
+                    "evidence_refs": ["example-access-scope"],
+                },
+                "graph_impact": "graph_blocking",
+            },
             {
                 "candidate_id": "example-access",
                 "candidate_name": "Example access",
@@ -206,16 +322,84 @@ def _current_graph_report_payload() -> dict[str, object]:
                 ],
                 "rationale": "The access relationship is represented explicitly.",
                 "graph_impact": "graph_blocking",
-            }
+            },
+            {
+                "candidate_id": "example-pass",
+                "candidate_name": "Example Local Pass",
+                "candidate_kind": "lift_pass_product",
+                "disposition": "represented",
+                "signals": ["full_local_pass"],
+                "evidence_refs": ["example-access-scope"],
+                "target_refs": [
+                    {
+                        "target_type": "lift_pass_product",
+                        "target_id": "example-local-pass",
+                    }
+                ],
+                "rationale": "The pass is represented explicitly.",
+                "graph_impact": "graph_blocking",
+            },
         ],
         "review_evidence_envelope": [
+            {
+                "family_id": "example-destination",
+                "source_kind": "destination_booking",
+                "source_urls": ["https://example.com/access"],
+                "candidate_kinds": ["stay_destination", "stay_base"],
+            },
+            {
+                "family_id": "example-area",
+                "source_kind": "ski_area_operator",
+                "source_urls": ["https://example.com/access"],
+                "candidate_kinds": ["ski_area", "terrain_domain"],
+            },
             {
                 "family_id": "example-access",
                 "source_kind": "access_transport",
                 "source_urls": ["https://example.com/access"],
                 "candidate_kinds": ["ski_area_access"],
+            },
+            {
+                "family_id": "example-pass",
+                "source_kind": "pass_tariff",
+                "source_urls": ["https://example.com/access"],
+                "candidate_kinds": ["lift_pass_product"],
+            },
+        ],
+        "destination_boundary_assessments": [
+            {
+                "candidate_id": "example",
+                "gates": [
+                    {
+                        "gate_name": "complete_stay_market_scope",
+                        "status": "pass",
+                        "notes": "The stay market is complete.",
+                        "evidence_refs": ["example-access-scope"],
+                    },
+                    {
+                        "gate_name": "independent_stay_market_ownership",
+                        "status": "pass",
+                        "notes": "The stay market is independently owned.",
+                        "evidence_refs": ["example-access-scope"],
+                    },
+                    {
+                        "gate_name": "material_destination_level_separation_value",
+                        "status": "pass",
+                        "notes": "The stay market has material trip value.",
+                        "evidence_refs": ["example-access-scope"],
+                    },
+                ],
+                "identity_signals": [
+                    {
+                        "signal_type": "official_stay_market_treatment",
+                        "status": "pass",
+                        "notes": "The official source recognizes the stay market.",
+                        "evidence_refs": ["example-access-scope"],
+                    }
+                ],
             }
         ],
+        "boundary_decision_targets": ["example"],
     }
 
 
@@ -783,8 +967,69 @@ def test_validate_curation_rejects_incomplete_bounded_review_inventory(
             runner=RecordingRunner(),
         )
 
-    assert exc_info.value.check is ErrorCheck.POST_VALIDATION
+    assert exc_info.value.check is ErrorCheck.PREFLIGHT
     assert exc_info.value.kind is ErrorKind.MISMATCH
+
+
+def test_validate_curation_delta_rejects_missing_focus_graph_target(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    payload = _current_graph_report_payload()
+    payload["reviewed_targets"] = [
+        target
+        for target in payload["reviewed_targets"]  # type: ignore[index]
+        if target["target_id"] != "example-local-pass"
+    ]
+    payload["entity_scope_assessments"] = [
+        assessment
+        for assessment in payload["entity_scope_assessments"]  # type: ignore[index]
+        if assessment["candidate_id"] != "example-pass"
+    ]
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(payload)
+    runner = RecordingRunner()
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation_delta(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            remediation_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=runner,
+        )
+
+    assert exc_info.value.check is ErrorCheck.PREFLIGHT
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+    assert runner.calls == []
+
+
+def test_validate_curation_rejects_missing_discovery_candidate_kind(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    payload = _current_graph_report_payload()
+    payload["review_evidence_envelope"][1]["candidate_kinds"] = [  # type: ignore[index]
+        "ski_area"
+    ]
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(payload)
+    runner = RecordingRunner()
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            reviewed_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=runner,
+        )
+
+    assert exc_info.value.check is ErrorCheck.PREFLIGHT
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+    assert runner.calls == []
 
 
 def _regional_followup_report_payload() -> dict[str, object]:
@@ -861,7 +1106,7 @@ def test_validate_curation_rejects_missing_or_invalid_regional_followup_backlog(
             runner=RecordingRunner(),
         )
 
-    assert exc_info.value.check is ErrorCheck.POST_VALIDATION
+    assert exc_info.value.check is ErrorCheck.PREFLIGHT
     assert exc_info.value.kind is ErrorKind.MISMATCH
     assert "markdown" not in json.dumps(exc_info.value.payload())
 
@@ -887,7 +1132,7 @@ def test_validate_curation_rejects_oversized_regional_followup_backlog(
             runner=RecordingRunner(),
         )
 
-    assert exc_info.value.check is ErrorCheck.POST_VALIDATION
+    assert exc_info.value.check is ErrorCheck.PREFLIGHT
     assert "oversized" not in json.dumps(exc_info.value.payload())
 
 
@@ -913,7 +1158,7 @@ def test_validate_curation_rejects_ambiguous_regional_followup_anchor(
             runner=RecordingRunner(),
         )
 
-    assert exc_info.value.check is ErrorCheck.POST_VALIDATION
+    assert exc_info.value.check is ErrorCheck.PREFLIGHT
     assert exc_info.value.kind is ErrorKind.MISMATCH
 
 
@@ -1192,7 +1437,14 @@ def _report_payload(
                 "family_id": "nendaz-identity",
                 "source_kind": "destination_booking",
                 "source_urls": ["https://example.com/nendaz"],
-                "candidate_kinds": ["stay_destination"],
+                "candidate_kinds": [
+                    "stay_destination",
+                    "stay_base",
+                    "ski_area_access",
+                    "ski_area",
+                    "terrain_domain",
+                    "lift_pass_product",
+                ],
             }
         ],
         "destination_boundary_assessments": [
@@ -1543,6 +1795,11 @@ def _regional_report_payload(
     added_keys = _catalog_key_set(head_catalog) - _catalog_key_set(base_catalog)
     targets: list[tuple[str, str, object]] = []
     scope_entities: list[tuple[str, str, str]] = []
+    linked_focus_area_id = (
+        "example-area"
+        if "terrain_domain:sample-connected-domain" in added_keys
+        else None
+    )
     for section, id_field, kind in CATALOG_SECTIONS:
         for item in getattr(catalog, section):
             entity_id = getattr(item, id_field)
@@ -1582,6 +1839,15 @@ def _regional_report_payload(
                     "status": status,
                 }
             )
+    if linked_focus_area_id is not None:
+        coverage.append(
+            {
+                "target_type": "ski_area",
+                "target_id": linked_focus_area_id,
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            }
+        )
 
     evidence = [
         {
@@ -1657,7 +1923,10 @@ def _regional_report_payload(
     added_ski_area_ids = [area.ski_area_id for area in added_ski_areas]
     for item in evidence:
         if item["evidence_id"] == "sample-passes":
-            item["boundary_target_ids"] = added_ski_area_ids
+            item["boundary_target_ids"] = [
+                *added_ski_area_ids,
+                *([linked_focus_area_id] if linked_focus_area_id is not None else []),
+            ]
     for area in added_ski_areas:
         evidence.append(
             {
@@ -1775,6 +2044,58 @@ def _regional_report_payload(
                 "evidence_refs": ["sample-ski-areas", "sample-passes"],
             }
         scope_assessments.append(assessment)
+    if linked_focus_area_id is not None:
+        scope_assessments.append(
+            {
+                "candidate_id": linked_focus_area_id,
+                "candidate_name": "Example Area",
+                "candidate_kind": "ski_area",
+                "disposition": "represented",
+                "signals": [
+                    "official_independent_identity",
+                    "separate_operator",
+                    "independent_weather_presentation",
+                    "full_local_pass",
+                ],
+                "evidence_refs": ["sample-domain", "sample-passes"],
+                "target_refs": [
+                    {
+                        "target_type": "ski_area",
+                        "target_id": linked_focus_area_id,
+                    }
+                ],
+                "rationale": (
+                    "The existing ski area is reviewed as part of the connected "
+                    "domain closure."
+                ),
+                "ski_area_boundary": {
+                    "parent_ski_area_id": None,
+                    "terrain_scope": "complete",
+                    "connectivity_to_parent": "not_applicable",
+                    "operational_scope": "independent",
+                    "weather_scope": "independent",
+                    "pass_scope": "none",
+                    "provider_consensus": "separate",
+                    "separation_value": "material",
+                    "material_trip_consequences": [
+                        {
+                            "consequence_type": "pass_price_or_coverage",
+                            "decision_effect": "lift_pass_choice",
+                            "comparison_basis": "sibling_ski_area",
+                            "comparison_target_id": "sample-local-area",
+                            "durability_basis": "published_product_contract",
+                            "evidence_refs": ["sample-passes"],
+                            "rationale": (
+                                "The linked area's pass coverage remains a durable "
+                                "choice within the connected terrain domain."
+                            ),
+                        }
+                    ],
+                    "evidence_refs": ["sample-domain", "sample-passes"],
+                },
+                "graph_impact": "graph_blocking",
+            }
+        )
     scope_assessments.append(
         {
             "candidate_id": "sample-adjacent-market",
@@ -1802,7 +2123,20 @@ def _regional_report_payload(
         "reviewed_targets": [
             {"target_type": target_type, "target_id": target_id, "scope": "full"}
             for target_type, target_id, _ in targets
-        ],
+        ]
+        + (
+            [
+                {
+                    "target_type": "ski_area",
+                    "target_id": linked_focus_area_id,
+                    "scope": "narrow",
+                    "required_field_paths": ["name"],
+                    "resulting_graph_role": "linked_dependency",
+                }
+            ]
+            if linked_focus_area_id is not None
+            else []
+        ),
         "changes": changes,
         "field_coverage": coverage,
         "evidence": evidence,
@@ -1831,6 +2165,12 @@ def _regional_report_payload(
                 "source_kind": "pass_tariff",
                 "source_urls": [REGIONAL_SOURCE_URLS["pass"]],
                 "candidate_kinds": ["lift_pass_product"],
+            },
+            {
+                "family_id": "sample-terrain-domain-discovery",
+                "source_kind": "ski_area_operator",
+                "source_urls": [REGIONAL_SOURCE_URLS["ski_area"]],
+                "candidate_kinds": ["terrain_domain"],
             },
             {
                 "family_id": "sample-followup",
@@ -2210,6 +2550,59 @@ def test_validate_proposal_rejects_incomplete_bounded_review_inventory(
         payload.pop(missing)
     else:
         payload["entity_scope_assessments"][0].pop(missing)
+    repository.texts[(SHA_B, REPORT_PATH)] = json.dumps(payload)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_proposal(
+            candidate_key=CANDIDATE_KEY,
+            candidate_origin="external",
+            base=SHA_A,
+            head=SHA_B,
+            snapshot=snapshot,
+            discovery_inventory=inventory,
+            repository=repository,  # type: ignore[arg-type]
+        )
+
+    assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+
+
+def test_validate_proposal_rejects_missing_focus_graph_assessment(
+    regional_proposal_context: RegionalProposalContext,
+) -> None:
+    report = json.loads(
+        regional_proposal_context.repository.texts[
+            (regional_proposal_context.head, REGIONAL_REPORT_PATH)
+        ]
+    )
+    report["entity_scope_assessments"] = [
+        assessment
+        for assessment in report["entity_scope_assessments"]
+        if assessment["candidate_id"] != "sample-local-area"
+    ]
+    regional_proposal_context.repository.texts[
+        (regional_proposal_context.head, REGIONAL_REPORT_PATH)
+    ] = json.dumps(report)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_proposal(
+            candidate_key=REGIONAL_CANDIDATE_KEY,
+            candidate_origin="backlog",
+            base=regional_proposal_context.base,
+            head=regional_proposal_context.head,
+            snapshot=regional_proposal_context.snapshot,
+            discovery_inventory=regional_proposal_context.discovery_inventory,
+            repository=regional_proposal_context.repository,  # type: ignore[arg-type]
+        )
+
+    assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+
+
+def test_validate_proposal_rejects_missing_discovery_candidate_kind() -> None:
+    repository, snapshot, inventory = _proposal_dependencies()
+    payload = json.loads(repository.texts[(SHA_B, REPORT_PATH)])
+    payload["review_evidence_envelope"][0]["candidate_kinds"].remove("terrain_domain")
     repository.texts[(SHA_B, REPORT_PATH)] = json.dumps(payload)
 
     with pytest.raises(MaintainerError) as exc_info:
