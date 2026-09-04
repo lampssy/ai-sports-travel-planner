@@ -32,7 +32,8 @@
         "ski_day_apres_profile.availability",
         "ski_day_apres_profile.intensity",
         "ski_day_apres_profile.season_label"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "stay_base",
@@ -46,7 +47,8 @@
         "local_apres_profile.availability",
         "local_apres_profile.intensity",
         "local_apres_profile.season_label"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "trust_manifest",
@@ -57,6 +59,20 @@
         "field_statuses",
         "notes"
       ]
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "scope": "narrow",
+      "required_field_paths": ["access_mode"],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "scope": "narrow",
+      "required_field_paths": ["valid_ski_area_ids"],
+      "resulting_graph_role": "focus"
     },
     {
       "target_type": "trust_manifest",
@@ -74,7 +90,8 @@
       "scope": "narrow",
       "required_field_paths": [
         "name"
-      ]
+      ],
+      "resulting_graph_role": "focus"
     }
   ],
   "changes": [
@@ -667,6 +684,20 @@
       "field_path": "name",
       "status": "reviewed-no-change",
       "notes": "The official destination booking market retains the existing Livigno identity."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "The existing ski-bus access mode is retained; the official operator shows freebus stops across the current Livigno lift network."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "reviewed-no-change",
+      "notes": "The existing single-area pass coverage is retained; the official rate page describes one ticket valid across lifts on both sides of the ski area."
     }
   ],
   "evidence": [
@@ -1007,6 +1038,45 @@
       "source_value": null,
       "evidence_summary": "The reviewed directory supports the local venue profile but does not establish the canonical season label used by this field.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "normalization-livigno-ski-area-boundary",
+      "boundary_target_ids": ["livigno-ski-area"],
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/maps/",
+      "source_title": "Skipass Livigno official lift and slope maps",
+      "source_value": "Livigno ski area",
+      "evidence_summary": "The official map page describes Livigno ski area across both sides of the valley and provides its lift and slope map.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "normalization-livigno-access",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+      "source_title": "Skipass Livigno lifts and slopes status",
+      "source_value": "Livigno freebus stop near the Cassana gondola",
+      "evidence_summary": "The official operator lists Livigno freebus stops and identifies the Cassana gondola as a current Livigno ski-area lift, supporting the retained conservative local access relationship.",
+      "normalization_note": "The existing distance and duration values are not changed by this report-only graph normalization."
+    },
+    {
+      "evidence_id": "normalization-livigno-pass",
+      "boundary_target_ids": ["livigno-ski-area"],
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno rates",
+      "source_value": "A single ticket is valid to access all lifts on both sides of the Ski Area.",
+      "evidence_summary": "The official current rate page identifies one Livigno ticket covering all lifts on both sides of the ski area.",
+      "normalization_note": null
     }
   ],
   "destination_boundary_assessments": [
@@ -1069,6 +1139,88 @@
       "rationale": "The existing Livigno base remains the supported town accommodation representation for the focus destination.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "livigno-ski-area",
+      "candidate_name": "Livigno ski area",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_complete_lift_inventory",
+        "independent_status_or_schedule",
+        "full_local_pass"
+      ],
+      "evidence_refs": [
+        "normalization-livigno-ski-area-boundary",
+        "normalization-livigno-pass"
+      ],
+      "target_refs": [
+        {"target_type": "ski_area", "target_id": "livigno-ski-area"}
+      ],
+      "backlog_ref": null,
+      "rationale": "The official Livigno lift inventory and current single-ticket product support the existing complete local ski-area representation.",
+      "ski_area_boundary": {
+        "parent_ski_area_id": null,
+        "terrain_scope": "complete",
+        "connectivity_to_parent": "not_applicable",
+        "operational_scope": "independent",
+        "weather_scope": "unknown",
+        "pass_scope": "full_local",
+        "provider_consensus": "unknown",
+        "separation_value": "material",
+        "component_candidate_ids": [],
+        "coordination_evidence_refs": [],
+        "coordination_evidence_families": [],
+        "material_trip_consequences": [
+          {
+            "consequence_type": "pass_price_or_coverage",
+            "decision_effect": "lift_pass_choice",
+            "comparison_basis": "stay_market_baseline",
+            "comparison_target_id": "livigno",
+            "durability_basis": "published_product_contract",
+            "evidence_refs": ["normalization-livigno-pass"],
+            "rationale": "The official Livigno product is one ticket covering all lifts on both sides of the ski area, so it is the material local lift-pass choice for the Livigno stay market."
+          }
+        ],
+        "evidence_refs": [
+          "normalization-livigno-ski-area-boundary",
+          "normalization-livigno-pass"
+        ]
+      },
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "livigno-livigno--livigno-ski-area",
+      "candidate_name": "Livigno to Livigno ski area",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": ["direct_access_relationship"],
+      "evidence_refs": ["normalization-livigno-access"],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "livigno-livigno--livigno-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing Livigno access edge is retained with its current conservative ski-bus relationship and Cassana lift reference.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "livigno-skipass",
+      "candidate_name": "Livigno Skipass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": ["official_product_identity", "full_local_pass"],
+      "evidence_refs": ["normalization-livigno-pass"],
+      "target_refs": [
+        {"target_type": "lift_pass_product", "target_id": "livigno-skipass"}
+      ],
+      "backlog_ref": null,
+      "rationale": "The official current product is a single Livigno ticket valid across all lifts on both sides of the ski area.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     }
   ],
   "review_evidence_envelope": [
@@ -1082,7 +1234,7 @@
       "family_id": "livigno-ski-area-operator",
       "source_kind": "ski_area_operator",
       "source_urls": ["https://www.skipasslivigno.com/en/lifts-and-slopes/"],
-      "candidate_kinds": ["ski_area"]
+      "candidate_kinds": ["ski_area", "ski_area_access", "terrain_domain"]
     },
     {
       "family_id": "livigno-touched-ski-area-facts",
@@ -1104,6 +1256,12 @@
         "https://www.livigno.eu/en/livigno-by-night"
       ],
       "candidate_kinds": ["stay_base"]
+    },
+    {
+      "family_id": "livigno-pass-tariff",
+      "source_kind": "pass_tariff",
+      "source_urls": ["https://www.skipasslivigno.com/en/livigno-skipass-rates/"],
+      "candidate_kinds": ["lift_pass_product"]
     }
   ],
   "boundary_decision_targets": ["livigno"],
