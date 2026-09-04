@@ -645,6 +645,7 @@ def revalidate_curation_request(
         repository,
         base_repository,
         check=ErrorCheck.POST_VALIDATION,
+        require_graph_inventory=False,
     )
 
 
@@ -772,6 +773,7 @@ def _curation_plan(
     base_repository: GitRepository,
     *,
     check: ErrorCheck,
+    require_graph_inventory: bool = True,
 ) -> _CurationPlan:
     try:
         snapshot = repository.revalidate_prepared_result(
@@ -781,25 +783,26 @@ def _curation_plan(
         )
         base_repository.verify_validation_base(sync.base_head)
         require_single_curation_report_path(snapshot, report_path)
-        catalog_payload = json.loads(
-            repository.read_bounded_immutable_text(
-                reviewed_head,
-                CATALOG_PATH,
-                max_bytes=_PRIVATE_OBJECT_LIMIT,
+        if require_graph_inventory:
+            catalog_payload = json.loads(
+                repository.read_bounded_immutable_text(
+                    reviewed_head,
+                    CATALOG_PATH,
+                    max_bytes=_PRIVATE_OBJECT_LIMIT,
+                )
             )
-        )
-        report_payload = json.loads(
-            repository.read_bounded_immutable_text(
-                reviewed_head,
-                report_path,
-                max_bytes=_PRIVATE_OBJECT_LIMIT,
+            report_payload = json.loads(
+                repository.read_bounded_immutable_text(
+                    reviewed_head,
+                    report_path,
+                    max_bytes=_PRIVATE_OBJECT_LIMIT,
+                )
             )
-        )
-        catalog = CatalogSnapshot.model_validate(catalog_payload)
-        report = CatalogCurationReport.model_validate(report_payload)
-        _validate_finalized_report(repository, reviewed_head, report)
-        validate_catalog_resulting_graph(report, catalog, require=True)
-        _require_primary_destination_graph_inventory(report, catalog)
+            catalog = CatalogSnapshot.model_validate(catalog_payload)
+            report = CatalogCurationReport.model_validate(report_payload)
+            _validate_finalized_report(repository, reviewed_head, report)
+            validate_catalog_resulting_graph(report, catalog, require=True)
+            _require_primary_destination_graph_inventory(report, catalog)
         return _CurationPlan(
             report_path=report_path,
             base_dir=Path(base_repository.root),
