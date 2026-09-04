@@ -343,7 +343,6 @@ def test_select_active_ski_areas_resolves_destination_access_without_duplicates(
         "balme-le-tour-vallorcine",
         "brevent-flegere",
         "grands-montets",
-        "les-houches-saint-gervais",
     )
 
 
