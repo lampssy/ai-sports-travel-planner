@@ -72,6 +72,17 @@ _RETIRED_DISCOVERY_REGISTRY_PATH = (
 _PROCESS_GROUP_GRACE_SECONDS = 0.25
 _PROCESS_GROUP_CLEANUP_ERROR = "validation process-group cleanup failed"
 _VALIDATION_ENVIRONMENT_KEYS = ("LANG", "LC_ALL", "PATH", "TMPDIR")
+_PRIMARY_DESTINATION_GRAPH_TARGETS = (
+    ("stay_destination", "destination_ids"),
+    ("stay_base", "base_ids"),
+    ("ski_area_access", "access_ids"),
+    ("ski_area", "area_ids"),
+    ("terrain_domain", "domain_ids"),
+    ("lift_pass_product", "pass_ids"),
+)
+_PRIMARY_DESTINATION_DISCOVERY_KINDS = frozenset(
+    target_type for target_type, _ in _PRIMARY_DESTINATION_GRAPH_TARGETS
+)
 
 
 class _ValidationModel(BaseModel):
@@ -499,6 +510,7 @@ def immutable_resulting_graph_markdown(
     report = CatalogCurationReport.model_validate(report_payload)
     _validate_finalized_report(repository, revision, report)
     validate_catalog_resulting_graph(report, catalog, require=True)
+    _require_primary_destination_graph_inventory(report, catalog)
     return render_catalog_resulting_graph_markdown(report, catalog)
 
 
@@ -519,6 +531,71 @@ def _validate_finalized_report(
         require_bounded_review_inventory=True,
     )
     _require_regional_followup_backlog_anchors(repository, revision, report)
+
+
+def _require_primary_destination_graph_inventory(
+    report: CatalogCurationReport,
+    catalog: CatalogSnapshot,
+) -> None:
+    """Require graph coverage without expanding a target's field-review scope."""
+    if report.resulting_graph is None:
+        raise ValueError("curation report has no resulting graph")
+
+    graph_scope = catalog_resulting_graph_scope(
+        catalog,
+        frozenset(report.resulting_graph.focus_stay_destination_ids),
+    )
+    reviewed_focus_targets = {
+        target.target_key
+        for target in report.reviewed_targets
+        if target.resulting_graph_role == "focus"
+    }
+    assessed_targets = {
+        target.target_key
+        for assessment in report.entity_scope_assessments
+        for target in assessment.target_refs
+    }
+    required_targets = {
+        (target_type, target_id)
+        for target_type, scope_attribute in _PRIMARY_DESTINATION_GRAPH_TARGETS
+        for target_id in getattr(graph_scope, scope_attribute)
+    }
+    missing_reviewed_targets = sorted(required_targets - reviewed_focus_targets)
+    missing_assessed_targets = sorted(required_targets - assessed_targets)
+    discovered_candidate_kinds = {
+        candidate_kind
+        for family in report.review_evidence_envelope
+        for candidate_kind in family.candidate_kinds
+    }
+    missing_candidate_kinds = sorted(
+        _PRIMARY_DESTINATION_DISCOVERY_KINDS - discovered_candidate_kinds
+    )
+
+    issues: list[str] = []
+    if missing_reviewed_targets:
+        issues.append(
+            "missing focus reviewed targets: "
+            + ", ".join(
+                f"{target_type}:{target_id}"
+                for target_type, target_id in missing_reviewed_targets
+            )
+        )
+    if missing_assessed_targets:
+        issues.append(
+            "missing entity scope assessments: "
+            + ", ".join(
+                f"{target_type}:{target_id}"
+                for target_type, target_id in missing_assessed_targets
+            )
+        )
+    if missing_candidate_kinds:
+        issues.append(
+            "missing discovery candidate kinds: " + ", ".join(missing_candidate_kinds)
+        )
+    if issues:
+        raise ValueError(
+            "primary destination graph inventory incomplete: " + "; ".join(issues)
+        )
 
 
 def _require_regional_followup_backlog_anchors(
@@ -704,6 +781,25 @@ def _curation_plan(
         )
         base_repository.verify_validation_base(sync.base_head)
         require_single_curation_report_path(snapshot, report_path)
+        catalog_payload = json.loads(
+            repository.read_bounded_immutable_text(
+                reviewed_head,
+                CATALOG_PATH,
+                max_bytes=_PRIVATE_OBJECT_LIMIT,
+            )
+        )
+        report_payload = json.loads(
+            repository.read_bounded_immutable_text(
+                reviewed_head,
+                report_path,
+                max_bytes=_PRIVATE_OBJECT_LIMIT,
+            )
+        )
+        catalog = CatalogSnapshot.model_validate(catalog_payload)
+        report = CatalogCurationReport.model_validate(report_payload)
+        _validate_finalized_report(repository, reviewed_head, report)
+        validate_catalog_resulting_graph(report, catalog, require=True)
+        _require_primary_destination_graph_inventory(report, catalog)
         return _CurationPlan(
             report_path=report_path,
             base_dir=Path(base_repository.root),
