@@ -545,10 +545,10 @@ def _require_primary_destination_graph_inventory(
         catalog,
         frozenset(report.resulting_graph.focus_stay_destination_ids),
     )
-    reviewed_focus_targets = {
+    reviewed_graph_targets = {
         target.target_key
         for target in report.reviewed_targets
-        if target.resulting_graph_role == "focus"
+        if target.resulting_graph_role in {"focus", "linked_dependency"}
     }
     assessed_targets = {
         target.target_key
@@ -560,7 +560,7 @@ def _require_primary_destination_graph_inventory(
         for target_type, scope_attribute in _PRIMARY_DESTINATION_GRAPH_TARGETS
         for target_id in getattr(graph_scope, scope_attribute)
     }
-    missing_reviewed_targets = sorted(required_targets - reviewed_focus_targets)
+    missing_reviewed_targets = sorted(required_targets - reviewed_graph_targets)
     missing_assessed_targets = sorted(required_targets - assessed_targets)
     discovered_candidate_kinds = {
         candidate_kind
@@ -574,7 +574,7 @@ def _require_primary_destination_graph_inventory(
     issues: list[str] = []
     if missing_reviewed_targets:
         issues.append(
-            "missing focus reviewed targets: "
+            "missing graph reviewed targets: "
             + ", ".join(
                 f"{target_type}:{target_id}"
                 for target_type, target_id in missing_reviewed_targets
@@ -718,6 +718,7 @@ def validate_proposal(
                 head_catalog,
                 require=True,
             )
+            _require_primary_destination_graph_inventory(report, head_catalog)
             reconcile_catalog_curation_report(
                 report,
                 base_catalog_path=base_catalog_path,

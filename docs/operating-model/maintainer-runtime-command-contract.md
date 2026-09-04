@@ -508,15 +508,18 @@ preconditions for the resulting requested action.
 
 ### Primary-Destination Graph Inventory
 
-Every ordinary curation validation treats the normalized report's
+Every ordinary curation or proposal validation treats the normalized report's
 `resulting_graph.focus_stay_destination_ids` as mandatory graph-discovery
 roots. `reviewed_targets[].scope=narrow` limits reviewed field paths only; it
-does not limit graph discovery. Before a delta or final validation, the helper
-requires both a focus reviewed target and a typed entity-scope assessment for
+does not limit graph discovery. Before a proposal, delta, or final validation,
+the helper requires both a reviewed graph target and a typed entity-scope assessment for
 every existing focused destination, stay base, ski-area access, ski area,
 terrain domain, and lift-pass product in the deterministic resulting-graph
-closure. The evidence envelope must name all six corresponding candidate kinds,
-including a kind for which the current closure is empty. This is a structural
+closure. A primary graph entity uses `resulting_graph_role=focus`; a ski area
+from another stay market that is included only through a shared terrain domain
+may use a narrow `linked_dependency` target. The evidence envelope must name
+all six corresponding candidate kinds, including a kind for which the current
+closure is empty. This is a structural
 guard: it proves the report covers the known graph and declares discovery across
 all graph classes. It does not replace the independent source/trust and
 graph/scope review required to find concrete unmodeled candidates.

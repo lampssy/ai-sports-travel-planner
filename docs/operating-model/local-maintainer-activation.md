@@ -331,19 +331,22 @@ The installed skill must:
   weather/season, or dedicated-pass semantics through the ordinary
   separate-ski-area gates; assess or leave unresolved a possible complete area,
   but do not promote an internal feature solely because it is named;
-- for every ordinary curation generation, treat the normalized report's
+- for every ordinary curation generation or proposal, treat the normalized report's
   `resulting_graph.focus_stay_destination_ids` as mandatory graph-discovery
   roots. A `reviewed_targets[].scope=narrow` limits field coverage only; it
   never limits candidate discovery. Before the evidence envelope can freeze,
   the report must cover every existing focused destination, stay base,
   ski-area access, ski area, terrain domain, and pass in that deterministic
-  graph closure with both a focus reviewed target and a typed scope assessment.
-  Its evidence envelope must also name all six candidate kinds, including a
-  class with no currently modeled entity. This proves that discovery considered
-  possible new bases, areas, domains, and pass products; the independent lanes
-  still determine whether a concrete unmodeled candidate exists. The helper
-  enforces this graph-inventory shape before a delta or final validation, while
-  preserving deliberately narrow field reviews;
+  graph closure with both a reviewed graph target and a typed scope assessment.
+  Primary graph entities use `resulting_graph_role=focus`; a ski area from
+  another stay market that is included only through a shared terrain domain may
+  use a narrow `linked_dependency` target. Its evidence envelope must also name
+  all six candidate kinds, including a class with no currently modeled entity.
+  This proves that discovery considered possible new bases, areas, domains, and
+  pass products; the independent lanes still determine whether a concrete
+  unmodeled candidate exists. The helper enforces this graph-inventory shape
+  before a proposal, delta, or final validation, while preserving deliberately
+  narrow field reviews;
 - for every catalog entity absent from the exact base, apply the new-entity
   completeness gate before freezing the evidence envelope. Enumerate every
   canonical field and required graph relationship, then perform a bounded
