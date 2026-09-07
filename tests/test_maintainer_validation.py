@@ -19,6 +19,7 @@ from app.data.catalog_curation import (
     CANONICAL_FIELD_PATHS,
     CatalogCurationReport,
     catalog_weather_request_geometry,
+    render_catalog_curation_report_markdown,
 )
 from app.domain.catalog import CatalogSnapshot
 from app.domain.catalog_trust import FIELD_GROUPS
@@ -43,6 +44,7 @@ from ops.maintainer.validation import (
     _VALIDATION_DIAGNOSTIC_LIMIT,
     VALIDATION_COMMAND_TIMEOUT_SECONDS,
     DeltaValidationResult,
+    GraphDiscoveryValidationResult,
     ProposalValidationResult,
     ValidationResult,
     _SubprocessValidationRunner,
@@ -52,8 +54,11 @@ from ops.maintainer.validation import (
     _write_private_object,
     validate_curation,
     validate_curation_delta,
+    validate_curation_graph_discovery_checkpoint,
     validate_proposal,
 )
+from tests.test_catalog_curation import _schema_five_graph_report_payload
+from tests.test_catalog_curation_reconciliation import _trust_payload
 from tests.test_catalog_models import minimal_catalog_payload
 
 pytestmark = pytest.mark.db_free
@@ -147,7 +152,7 @@ def _intent(
 
 def _current_graph_report_payload() -> dict[str, object]:
     return {
-        "report_schema_version": 4,
+        "report_schema_version": 5,
         "title": "Example access review",
         "summary": "Reviews the exact access graph.",
         "resulting_graph": {"focus_stay_destination_ids": ["example"]},
@@ -366,6 +371,103 @@ def _current_graph_report_payload() -> dict[str, object]:
                 "candidate_kinds": ["lift_pass_product"],
             },
         ],
+        "graph_discovery": {
+            "status": "complete",
+            "coverage": [
+                {
+                    "focus_stay_destination_id": "example",
+                    "candidate_kind": "stay_destination",
+                    "coverage_state": "complete",
+                    "candidate_ids": ["example"],
+                    "source_family_ids": ["example-destination"],
+                    "evidence_refs": ["example-access-scope"],
+                    "rationale": "The destination source was exhaustively reviewed.",
+                },
+                {
+                    "focus_stay_destination_id": "example",
+                    "candidate_kind": "stay_base",
+                    "coverage_state": "complete",
+                    "candidate_ids": ["example-base"],
+                    "source_family_ids": ["example-destination"],
+                    "evidence_refs": ["example-access-scope"],
+                    "rationale": "The stay-base source was exhaustively reviewed.",
+                },
+                {
+                    "focus_stay_destination_id": "example",
+                    "candidate_kind": "ski_area",
+                    "coverage_state": "complete",
+                    "candidate_ids": ["example-area"],
+                    "source_family_ids": ["example-area"],
+                    "evidence_refs": ["example-access-scope"],
+                    "rationale": "The operator source was exhaustively reviewed.",
+                },
+                {
+                    "focus_stay_destination_id": "example",
+                    "candidate_kind": "ski_area_access",
+                    "coverage_state": "complete",
+                    "candidate_ids": ["example-access"],
+                    "source_family_ids": ["example-access"],
+                    "evidence_refs": ["example-access-scope"],
+                    "rationale": "The access source was exhaustively reviewed.",
+                },
+                {
+                    "focus_stay_destination_id": "example",
+                    "candidate_kind": "terrain_domain",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["example-area"],
+                    "evidence_refs": ["example-access-scope"],
+                    "rationale": "The source presents no terrain domain.",
+                },
+                {
+                    "focus_stay_destination_id": "example",
+                    "candidate_kind": "lift_pass_product",
+                    "coverage_state": "complete",
+                    "candidate_ids": ["example-pass"],
+                    "source_family_ids": ["example-pass"],
+                    "evidence_refs": ["example-access-scope"],
+                    "rationale": "The pass source was exhaustively reviewed.",
+                },
+            ],
+            "relationships": [
+                {
+                    "relationship_type": "stay_destination_contains_stay_base",
+                    "from_candidate_id": "example",
+                    "to_candidate_id": "example-base",
+                    "evidence_refs": ["example-access-scope"],
+                },
+                {
+                    "relationship_type": "ski_area_access_originates_at_stay_base",
+                    "from_candidate_id": "example-access",
+                    "to_candidate_id": "example-base",
+                    "evidence_refs": ["example-access-scope"],
+                },
+                {
+                    "relationship_type": "ski_area_access_reaches_ski_area",
+                    "from_candidate_id": "example-access",
+                    "to_candidate_id": "example-area",
+                    "evidence_refs": ["example-access-scope"],
+                },
+                {
+                    "relationship_type": "lift_pass_available_from_stay_destination",
+                    "from_candidate_id": "example-pass",
+                    "to_candidate_id": "example",
+                    "evidence_refs": ["example-access-scope"],
+                },
+                {
+                    "relationship_type": "lift_pass_default_for_stay_destination",
+                    "from_candidate_id": "example-pass",
+                    "to_candidate_id": "example",
+                    "evidence_refs": ["example-access-scope"],
+                },
+                {
+                    "relationship_type": "lift_pass_covers_ski_area",
+                    "from_candidate_id": "example-pass",
+                    "to_candidate_id": "example-area",
+                    "evidence_refs": ["example-access-scope"],
+                },
+            ],
+        },
         "destination_boundary_assessments": [
             {
                 "candidate_id": "example",
@@ -697,6 +799,127 @@ def _curation_dependencies(
     return reviewed, base
 
 
+def _write_graph_discovery_checkpoint_fixture(
+    reviewed: FakeLiveRepository,
+    base: FakeLiveRepository,
+    *,
+    status: Literal["in_progress", "complete"],
+) -> None:
+    catalog_payload = minimal_catalog_payload()
+    report_payload = _schema_five_graph_report_payload()
+    report_payload["graph_discovery"]["status"] = status
+    if status == "in_progress":
+        report_payload["graph_discovery"]["coverage"][0]["coverage_state"] = (
+            "in_progress"
+        )
+    report = CatalogCurationReport.model_validate(report_payload)
+    catalog = CatalogSnapshot.model_validate(catalog_payload)
+    for repository in (reviewed, base):
+        (repository.root / "app/data").mkdir(parents=True)
+        (repository.root / "docs/catalog-curation").mkdir(parents=True)
+        (repository.root / CATALOG_PATH).write_text(
+            json.dumps(catalog_payload),
+            encoding="utf-8",
+        )
+        (repository.root / TRUST_PATH).write_text(
+            json.dumps(_trust_payload(catalog_payload)),
+            encoding="utf-8",
+        )
+    (reviewed.root / REPORT_PATH).write_text(
+        json.dumps(report_payload),
+        encoding="utf-8",
+    )
+    (reviewed.root / REPORT_PATH.removesuffix(".json")).with_suffix(".md").write_text(
+        render_catalog_curation_report_markdown(report, catalog),
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.parametrize("status", ["in_progress", "complete"])
+def test_validate_graph_discovery_checkpoint_accepts_partial_or_complete_report(
+    tmp_path: Path,
+    status: Literal["in_progress", "complete"],
+) -> None:
+    report_paths = frozenset({REPORT_PATH, REPORT_PATH.removesuffix(".json") + ".md"})
+    reviewed = FakeLiveRepository(
+        tmp_path / "reviewed", _intent(changed_paths=report_paths)
+    )
+    base = FakeLiveRepository(tmp_path / "base", _intent(changed_paths=report_paths))
+    reviewed.root.mkdir()
+    base.root.mkdir()
+    _write_graph_discovery_checkpoint_fixture(reviewed, base, status=status)
+
+    result = validate_curation_graph_discovery_checkpoint(
+        pull_request=_pull_request(changed_paths=report_paths),
+        sync=_sync(),
+        discovery_head=SHA_B,
+        report_path=REPORT_PATH,
+        repository=reviewed,  # type: ignore[arg-type]
+        base_repository=base,  # type: ignore[arg-type]
+    )
+
+    assert isinstance(result, GraphDiscoveryValidationResult)
+    assert result.status == status
+    assert result.covered_pairs == result.required_pairs == 6
+    assert result.candidate_count == 5
+
+
+def test_validate_graph_discovery_checkpoint_rejects_candidate_loss(
+    tmp_path: Path,
+) -> None:
+    report_paths = frozenset({REPORT_PATH, REPORT_PATH.removesuffix(".json") + ".md"})
+    reviewed = FakeLiveRepository(
+        tmp_path / "reviewed", _intent(changed_paths=report_paths)
+    )
+    base = FakeLiveRepository(tmp_path / "base", _intent(changed_paths=report_paths))
+    reviewed.root.mkdir()
+    base.root.mkdir()
+    _write_graph_discovery_checkpoint_fixture(reviewed, base, status="in_progress")
+
+    previous_payload = _schema_five_graph_report_payload()
+    previous_payload["graph_discovery"]["status"] = "in_progress"
+    previous_payload["graph_discovery"]["coverage"][2]["coverage_state"] = "in_progress"
+    current_payload = deepcopy(previous_payload)
+    current_payload["graph_discovery"]["coverage"][2]["candidate_ids"] = []
+    current_payload["entity_scope_assessments"] = [
+        assessment
+        for assessment in current_payload["entity_scope_assessments"]
+        if assessment["candidate_id"] != "example-area"
+    ]
+    current_payload["graph_discovery"]["relationships"] = [
+        relationship
+        for relationship in current_payload["graph_discovery"]["relationships"]
+        if relationship["to_candidate_id"] != "example-area"
+    ]
+    current_report = CatalogCurationReport.model_validate(current_payload)
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+    (reviewed.root / REPORT_PATH).write_text(
+        json.dumps(current_payload),
+        encoding="utf-8",
+    )
+    (reviewed.root / REPORT_PATH.removesuffix(".json")).with_suffix(".md").write_text(
+        render_catalog_curation_report_markdown(current_report, catalog),
+        encoding="utf-8",
+    )
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(previous_payload)
+
+    with pytest.raises(MaintainerError) as error:
+        validate_curation_graph_discovery_checkpoint(
+            pull_request=_pull_request(changed_paths=report_paths),
+            sync=_sync(),
+            discovery_head=SHA_C,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            previous_discovery_head=SHA_B,
+            previous_report_path=REPORT_PATH,
+        )
+
+    assert error.value.reason is ErrorReason.VALIDATION_FAILED
+    assert error.value.check is ErrorCheck.CURATION_RECONCILIATION
+    assert error.value.kind is ErrorKind.MISMATCH
+
+
 def test_validate_curation_runs_fixed_commands_for_one_exact_head(
     tmp_path: Path,
 ) -> None:
@@ -722,7 +945,7 @@ def test_validate_curation_runs_fixed_commands_for_one_exact_head(
     assert "app.data.validate_catalog" in commands[0]
     assert "app.data.validate_catalog_curation" in commands[1]
     schema_flag = commands[1].index("--require-report-schema-version")
-    assert commands[1][schema_flag + 1] == "4"
+    assert commands[1][schema_flag + 1] == "5"
     markdown_flag = commands[1].index("--require-markdown-path")
     assert commands[1][markdown_flag + 1] == REPORT_PATH.removesuffix(".json") + ".md"
     assert "--skip-product-backlog-validation" in commands[1]
@@ -1032,6 +1255,60 @@ def test_validate_curation_rejects_missing_discovery_candidate_kind(
     assert runner.calls == []
 
 
+def test_validate_curation_rejects_six_kind_labels_without_graph_discovery(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    payload = _current_graph_report_payload()
+    del payload["graph_discovery"]
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(payload)
+    runner = RecordingRunner()
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            reviewed_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=runner,
+        )
+
+    assert exc_info.value.check is ErrorCheck.PREFLIGHT
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+    assert runner.calls == []
+
+
+@pytest.mark.parametrize("coverage_state", ["in_progress", "evidence_unavailable"])
+def test_validate_curation_rejects_non_finalizable_graph_discovery(
+    tmp_path: Path,
+    coverage_state: Literal["in_progress", "evidence_unavailable"],
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    payload = _current_graph_report_payload()
+    payload["graph_discovery"]["coverage"][0]["coverage_state"] = coverage_state
+    if coverage_state == "in_progress":
+        payload["graph_discovery"]["status"] = "in_progress"
+    reviewed.immutable_texts[REPORT_PATH] = json.dumps(payload)
+    runner = RecordingRunner()
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            reviewed_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=runner,
+        )
+
+    assert exc_info.value.check is ErrorCheck.PREFLIGHT
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+    assert runner.calls == []
+
+
 def _regional_followup_report_payload() -> dict[str, object]:
     payload = _current_graph_report_payload()
     payload["entity_scope_assessments"].append(  # type: ignore[index]
@@ -1047,6 +1324,9 @@ def _regional_followup_report_payload() -> dict[str, object]:
             "rationale": "A bounded regional followup remains necessary.",
             "graph_impact": "regional_followup",
         }
+    )
+    payload["graph_discovery"]["coverage"][0]["candidate_ids"].append(  # type: ignore[index]
+        "regional-followup"
     )
     return payload
 
@@ -1389,7 +1669,7 @@ def _report_payload(
                 }
             )
     return {
-        "report_schema_version": 4,
+        "report_schema_version": 5,
         "title": "Nendaz Village onboarding",
         "summary": "Adds a separately represented stay base.",
         "resulting_graph": {
@@ -1413,7 +1693,40 @@ def _report_payload(
                 "source_title": "Official Nendaz",
                 "source_value": "nendaz",
                 "evidence_summary": "Confirms the independently tracked destination.",
-            }
+            },
+            {
+                "evidence_id": "nendaz-terrain-inventory",
+                "target_type": "stay_destination",
+                "target_id": "nendaz",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/nendaz/ski",
+                "source_title": "Official Nendaz ski presentation",
+                "source_value": "Nendaz",
+                "evidence_summary": "The bounded source presents no local ski area.",
+            },
+            {
+                "evidence_id": "nendaz-access-inventory",
+                "target_type": "stay_destination",
+                "target_id": "nendaz",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/nendaz/access",
+                "source_title": "Official Nendaz access guide",
+                "source_value": "Nendaz",
+                "evidence_summary": "The bounded source presents no modeled access.",
+            },
+            {
+                "evidence_id": "nendaz-pass-inventory",
+                "target_type": "stay_destination",
+                "target_id": "nendaz",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/nendaz/pass",
+                "source_title": "Official Nendaz pass presentation",
+                "source_value": "Nendaz",
+                "evidence_summary": "The bounded source presents no modeled pass.",
+            },
         ],
         "entity_scope_assessments": [
             {
@@ -1437,16 +1750,87 @@ def _report_payload(
                 "family_id": "nendaz-identity",
                 "source_kind": "destination_booking",
                 "source_urls": ["https://example.com/nendaz"],
-                "candidate_kinds": [
-                    "stay_destination",
-                    "stay_base",
-                    "ski_area_access",
-                    "ski_area",
-                    "terrain_domain",
-                    "lift_pass_product",
-                ],
-            }
+                "candidate_kinds": ["stay_destination", "stay_base"],
+            },
+            {
+                "family_id": "nendaz-terrain",
+                "source_kind": "ski_area_operator",
+                "source_urls": ["https://example.com/nendaz/ski"],
+                "candidate_kinds": ["ski_area", "terrain_domain"],
+            },
+            {
+                "family_id": "nendaz-access",
+                "source_kind": "access_transport",
+                "source_urls": ["https://example.com/nendaz/access"],
+                "candidate_kinds": ["ski_area_access"],
+            },
+            {
+                "family_id": "nendaz-pass",
+                "source_kind": "pass_tariff",
+                "source_urls": ["https://example.com/nendaz/pass"],
+                "candidate_kinds": ["lift_pass_product"],
+            },
         ],
+        "graph_discovery": {
+            "status": "complete",
+            "coverage": [
+                {
+                    "focus_stay_destination_id": "nendaz",
+                    "candidate_kind": "stay_destination",
+                    "coverage_state": "complete",
+                    "candidate_ids": ["nendaz"],
+                    "source_family_ids": ["nendaz-identity"],
+                    "evidence_refs": ["nendaz-identity"],
+                    "rationale": "The destination source was exhaustively reviewed.",
+                },
+                {
+                    "focus_stay_destination_id": "nendaz",
+                    "candidate_kind": "stay_base",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["nendaz-identity"],
+                    "evidence_refs": ["nendaz-identity"],
+                    "rationale": "No separate stay base was presented.",
+                },
+                {
+                    "focus_stay_destination_id": "nendaz",
+                    "candidate_kind": "ski_area",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["nendaz-terrain"],
+                    "evidence_refs": ["nendaz-terrain-inventory"],
+                    "rationale": "No local ski area was presented.",
+                },
+                {
+                    "focus_stay_destination_id": "nendaz",
+                    "candidate_kind": "ski_area_access",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["nendaz-access"],
+                    "evidence_refs": ["nendaz-access-inventory"],
+                    "rationale": "No local access edge was presented.",
+                },
+                {
+                    "focus_stay_destination_id": "nendaz",
+                    "candidate_kind": "terrain_domain",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["nendaz-terrain"],
+                    "evidence_refs": ["nendaz-terrain-inventory"],
+                    "rationale": "No local terrain domain was presented.",
+                },
+                {
+                    "focus_stay_destination_id": "nendaz",
+                    "candidate_kind": "lift_pass_product",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["nendaz-pass"],
+                    "evidence_refs": ["nendaz-pass-inventory"],
+                    "rationale": "No local pass was presented.",
+                },
+            ],
+            "relationships": [],
+        },
         "destination_boundary_assessments": [
             {
                 "candidate_id": "nendaz",
@@ -1800,6 +2184,9 @@ def _regional_report_payload(
         if "terrain_domain:sample-connected-domain" in added_keys
         else None
     )
+    linked_focus_destination_id = (
+        "example" if linked_focus_area_id is not None else None
+    )
     for section, id_field, kind in CATALOG_SECTIONS:
         for item in getattr(catalog, section):
             entity_id = getattr(item, id_field)
@@ -1844,6 +2231,14 @@ def _regional_report_payload(
             {
                 "target_type": "ski_area",
                 "target_id": linked_focus_area_id,
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            }
+        )
+        coverage.append(
+            {
+                "target_type": "stay_destination",
+                "target_id": linked_focus_destination_id,
                 "field_path": "name",
                 "status": "reviewed-no-change",
             }
@@ -1961,6 +2356,22 @@ def _regional_report_payload(
                 "evidence_summary": (
                     "Shows the focus area and linked pre-existing area as one "
                     "ski-connected terrain domain."
+                ),
+            }
+        )
+        evidence.append(
+            {
+                "evidence_id": "sample-linked-destination",
+                "target_type": "stay_destination",
+                "target_id": linked_focus_destination_id,
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": REGIONAL_SOURCE_URLS["followup"],
+                "source_title": "Official adjacent-market directory",
+                "source_value": "Example",
+                "evidence_summary": (
+                    "Identifies the stay destination owning access to the linked "
+                    "pre-existing ski area."
                 ),
             }
         )
@@ -2096,6 +2507,28 @@ def _regional_report_payload(
                 "graph_impact": "graph_blocking",
             }
         )
+        scope_assessments.append(
+            {
+                "candidate_id": linked_focus_destination_id,
+                "candidate_name": "Example",
+                "candidate_kind": "stay_destination",
+                "disposition": "deferred",
+                "signals": ["independent_stay_market"],
+                "evidence_refs": ["sample-linked-destination"],
+                "target_refs": [
+                    {
+                        "target_type": "stay_destination",
+                        "target_id": linked_focus_destination_id,
+                    }
+                ],
+                "backlog_ref": REGIONAL_BACKLOG_REF,
+                "rationale": (
+                    "The linked area's owning stay market is recorded one hop "
+                    "without expanding its internal graph in this proposal."
+                ),
+                "graph_impact": "regional_followup",
+            }
+        )
     scope_assessments.append(
         {
             "candidate_id": "sample-adjacent-market",
@@ -2111,8 +2544,184 @@ def _regional_report_payload(
         }
     )
 
+    focus_ids = (
+        focus_destination_ids
+        if focus_destination_ids is not None
+        else ["sample-valley"]
+    )
+    candidates_by_kind = {
+        candidate_kind: [
+            str(assessment["candidate_id"])
+            for assessment in scope_assessments
+            if assessment["candidate_kind"] == candidate_kind
+        ]
+        for candidate_kind in (
+            "stay_destination",
+            "stay_base",
+            "ski_area",
+            "ski_area_access",
+            "terrain_domain",
+            "lift_pass_product",
+        )
+    }
+    discovery_sources = {
+        "stay_destination": (
+            ["sample-destination", "sample-followup"],
+            [
+                "sample-destination",
+                "sample-followup",
+                *(
+                    ["sample-linked-destination"]
+                    if linked_focus_destination_id is not None
+                    else []
+                ),
+            ],
+        ),
+        "stay_base": (["sample-destination"], ["sample-destination"]),
+        "ski_area": (
+            ["sample-ski-areas"],
+            [
+                "sample-ski-areas",
+                "sample-passes",
+                *(
+                    ["sample-domain"]
+                    if "terrain_domain:sample-connected-domain" in added_keys
+                    else []
+                ),
+            ],
+        ),
+        "ski_area_access": (["sample-access"], ["sample-access"]),
+        "terrain_domain": (
+            [
+                "sample-domain"
+                if "terrain_domain:sample-connected-domain" in added_keys
+                else "sample-terrain-domain-discovery"
+            ],
+            [
+                "sample-domain"
+                if "terrain_domain:sample-connected-domain" in added_keys
+                else "sample-ski-areas"
+            ],
+        ),
+        "lift_pass_product": (["sample-passes"], ["sample-passes"]),
+    }
+    graph_coverage = [
+        {
+            "focus_stay_destination_id": focus_id,
+            "candidate_kind": candidate_kind,
+            "coverage_state": "complete",
+            "candidate_ids": candidates_by_kind[candidate_kind],
+            "source_family_ids": discovery_sources[candidate_kind][0],
+            "evidence_refs": discovery_sources[candidate_kind][1],
+            "rationale": "The bounded source neighborhood was exhaustively reviewed.",
+        }
+        for focus_id in focus_ids
+        for candidate_kind in (
+            "stay_destination",
+            "stay_base",
+            "ski_area",
+            "ski_area_access",
+            "terrain_domain",
+            "lift_pass_product",
+        )
+    ]
+    candidate_ids = {
+        str(assessment["candidate_id"]) for assessment in scope_assessments
+    }
+    graph_relationships: list[dict[str, object]] = []
+    for base in catalog.stay_bases:
+        if (
+            base.stay_destination_id in candidate_ids
+            and base.stay_base_id in candidate_ids
+        ):
+            graph_relationships.append(
+                {
+                    "relationship_type": "stay_destination_contains_stay_base",
+                    "from_candidate_id": base.stay_destination_id,
+                    "to_candidate_id": base.stay_base_id,
+                    "evidence_refs": ["sample-destination"],
+                }
+            )
+    for access in catalog.ski_area_access:
+        if access.ski_area_access_id not in candidate_ids:
+            continue
+        graph_relationships.extend(
+            [
+                {
+                    "relationship_type": ("ski_area_access_originates_at_stay_base"),
+                    "from_candidate_id": access.ski_area_access_id,
+                    "to_candidate_id": access.stay_base_id,
+                    "evidence_refs": ["sample-access"],
+                },
+                {
+                    "relationship_type": "ski_area_access_reaches_ski_area",
+                    "from_candidate_id": access.ski_area_access_id,
+                    "to_candidate_id": access.ski_area_id,
+                    "evidence_refs": ["sample-access"],
+                },
+            ]
+        )
+    for domain in catalog.terrain_domains:
+        if domain.terrain_domain_id not in candidate_ids:
+            continue
+        for ski_area_id in domain.ski_area_ids:
+            if ski_area_id in candidate_ids:
+                graph_relationships.append(
+                    {
+                        "relationship_type": "terrain_domain_contains_ski_area",
+                        "from_candidate_id": domain.terrain_domain_id,
+                        "to_candidate_id": ski_area_id,
+                        "evidence_refs": ["sample-domain"],
+                    }
+                )
+    for product in catalog.lift_pass_products:
+        if product.lift_pass_product_id not in candidate_ids:
+            continue
+        for destination_id in product.available_from_stay_destination_ids:
+            if destination_id in candidate_ids:
+                graph_relationships.append(
+                    {
+                        "relationship_type": (
+                            "lift_pass_available_from_stay_destination"
+                        ),
+                        "from_candidate_id": product.lift_pass_product_id,
+                        "to_candidate_id": destination_id,
+                        "evidence_refs": ["sample-passes"],
+                    }
+                )
+        for destination_id in product.default_for_stay_destination_ids:
+            if destination_id in candidate_ids:
+                graph_relationships.append(
+                    {
+                        "relationship_type": ("lift_pass_default_for_stay_destination"),
+                        "from_candidate_id": product.lift_pass_product_id,
+                        "to_candidate_id": destination_id,
+                        "evidence_refs": ["sample-passes"],
+                    }
+                )
+        for ski_area_id in product.valid_ski_area_ids:
+            if ski_area_id in candidate_ids:
+                graph_relationships.append(
+                    {
+                        "relationship_type": "lift_pass_covers_ski_area",
+                        "from_candidate_id": product.lift_pass_product_id,
+                        "to_candidate_id": ski_area_id,
+                        "evidence_refs": ["sample-passes"],
+                    }
+                )
+        for terrain_domain_id in product.terrain_domain_ids:
+            if terrain_domain_id in candidate_ids:
+                graph_relationships.append(
+                    {
+                        "relationship_type": "lift_pass_covers_terrain_domain",
+                        "from_candidate_id": product.lift_pass_product_id,
+                        "to_candidate_id": terrain_domain_id,
+                        "evidence_refs": ["sample-passes"],
+                    }
+                )
+
     return {
-        "report_schema_version": 4,
+        "report_schema_version": 5,
         "title": "Sample Valley regional catalog proposal",
         "summary": "Adds one coherent multi-entity destination graph slice.",
         "resulting_graph": {
@@ -2132,7 +2741,14 @@ def _regional_report_payload(
                     "scope": "narrow",
                     "required_field_paths": ["name"],
                     "resulting_graph_role": "linked_dependency",
-                }
+                },
+                {
+                    "target_type": "stay_destination",
+                    "target_id": linked_focus_destination_id,
+                    "scope": "narrow",
+                    "required_field_paths": ["name"],
+                    "resulting_graph_role": "linked_dependency",
+                },
             ]
             if linked_focus_area_id is not None
             else []
@@ -2191,6 +2807,11 @@ def _regional_report_payload(
                 else []
             ),
         ],
+        "graph_discovery": {
+            "status": "complete",
+            "coverage": graph_coverage,
+            "relationships": graph_relationships,
+        },
         "destination_boundary_assessments": [
             {
                 "candidate_id": "sample-valley",
@@ -2409,6 +3030,60 @@ def test_proposal_accepts_domain_linked_preexisting_area() -> None:
         "Terrain domain<br/>Sample Connected Domain" in result.resulting_graph_markdown
     )
     assert "Ski area<br/>Example Area" in result.resulting_graph_markdown
+    assert "Stay destination<br/>Example" in result.resulting_graph_markdown
+    assert "Stay base<br/>Example Village" not in result.resulting_graph_markdown
+
+
+def test_proposal_rejects_missing_owner_of_domain_linked_preexisting_area() -> None:
+    context = _make_regional_proposal_context(include_cross_owner_domain=True)
+    payload = json.loads(context.repository.texts[(context.head, REGIONAL_REPORT_PATH)])
+    payload["entity_scope_assessments"] = [
+        assessment
+        for assessment in payload["entity_scope_assessments"]
+        if assessment["candidate_id"] != "example"
+    ]
+    for coverage in payload["graph_discovery"]["coverage"]:
+        coverage["candidate_ids"] = [
+            candidate_id
+            for candidate_id in coverage["candidate_ids"]
+            if candidate_id != "example"
+        ]
+    payload["reviewed_targets"] = [
+        target
+        for target in payload["reviewed_targets"]
+        if not (
+            target["target_type"] == "stay_destination"
+            and target["target_id"] == "example"
+        )
+    ]
+    payload["field_coverage"] = [
+        coverage
+        for coverage in payload["field_coverage"]
+        if not (
+            coverage["target_type"] == "stay_destination"
+            and coverage["target_id"] == "example"
+        )
+    ]
+    payload["evidence"] = [
+        evidence
+        for evidence in payload["evidence"]
+        if evidence["evidence_id"] != "sample-linked-destination"
+    ]
+    context.repository.texts[(context.head, REGIONAL_REPORT_PATH)] = json.dumps(payload)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_proposal(
+            candidate_key=REGIONAL_CANDIDATE_KEY,
+            candidate_origin="backlog",
+            base=context.base,
+            head=context.head,
+            snapshot=context.snapshot,
+            discovery_inventory=context.discovery_inventory,
+            repository=context.repository,  # type: ignore[arg-type]
+        )
+
+    assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
 
 
 @pytest.mark.parametrize(
@@ -2451,7 +3126,7 @@ def test_backlog_destination_scope_rejects_entities_outside_graph_closure(
                 "validity_scope": "single_ski_area",
                 "available_from_stay_destination_ids": ["example"],
                 "default_for_stay_destination_ids": [],
-                "valid_ski_area_ids": ["sample-local-area"],
+                "valid_ski_area_ids": ["example-area"],
                 "terrain_domain_ids": [],
                 "prices": [],
             }
@@ -2602,7 +3277,7 @@ def test_validate_proposal_rejects_missing_focus_graph_assessment(
 def test_validate_proposal_rejects_missing_discovery_candidate_kind() -> None:
     repository, snapshot, inventory = _proposal_dependencies()
     payload = json.loads(repository.texts[(SHA_B, REPORT_PATH)])
-    payload["review_evidence_envelope"][0]["candidate_kinds"].remove("terrain_domain")
+    payload["review_evidence_envelope"][1]["candidate_kinds"].remove("terrain_domain")
     repository.texts[(SHA_B, REPORT_PATH)] = json.dumps(payload)
 
     with pytest.raises(MaintainerError) as exc_info:
@@ -2614,6 +3289,42 @@ def test_validate_proposal_rejects_missing_discovery_candidate_kind() -> None:
             snapshot=snapshot,
             discovery_inventory=inventory,
             repository=repository,  # type: ignore[arg-type]
+        )
+
+    assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+
+
+def test_validate_proposal_rejects_disconnected_graph_candidate(
+    regional_proposal_context: RegionalProposalContext,
+) -> None:
+    payload = json.loads(
+        regional_proposal_context.repository.texts[
+            (regional_proposal_context.head, REGIONAL_REPORT_PATH)
+        ]
+    )
+    payload["graph_discovery"]["relationships"] = [
+        relationship
+        for relationship in payload["graph_discovery"]["relationships"]
+        if "sample-hamlet"
+        not in {
+            relationship["from_candidate_id"],
+            relationship["to_candidate_id"],
+        }
+    ]
+    regional_proposal_context.repository.texts[
+        (regional_proposal_context.head, REGIONAL_REPORT_PATH)
+    ] = json.dumps(payload)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_proposal(
+            candidate_key=REGIONAL_CANDIDATE_KEY,
+            candidate_origin="backlog",
+            base=regional_proposal_context.base,
+            head=regional_proposal_context.head,
+            snapshot=regional_proposal_context.snapshot,
+            discovery_inventory=regional_proposal_context.discovery_inventory,
+            repository=regional_proposal_context.repository,  # type: ignore[arg-type]
         )
 
     assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
@@ -2636,6 +3347,9 @@ def test_validate_proposal_accepts_exact_head_regional_followup_anchor() -> None
             "rationale": "A bounded regional followup remains necessary.",
             "graph_impact": "regional_followup",
         }
+    )
+    payload["graph_discovery"]["coverage"][0]["candidate_ids"].append(
+        "regional-followup"
     )
     repository.texts[(SHA_B, REPORT_PATH)] = json.dumps(payload)
     repository.texts[(SHA_B, BACKLOG_PATH)] = (

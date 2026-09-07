@@ -13,6 +13,7 @@ from app.data.catalog_curation import (
     CatalogReviewedTarget,
     CatalogValidationError,
     render_catalog_resulting_graph_markdown,
+    validate_catalog_graph_discovery,
 )
 from app.data.catalog_curation_reconciliation import (
     _derived_weather_geometry,
@@ -21,6 +22,7 @@ from app.data.catalog_curation_reconciliation import (
 from app.data.validate_catalog_curation import main as validate_curation_main
 from app.domain.catalog import CatalogSnapshot
 from app.domain.catalog_trust import FIELD_GROUPS
+from tests.test_catalog_curation import _schema_five_graph_report_payload
 from tests.test_catalog_models import minimal_catalog_payload
 
 pytestmark = pytest.mark.db_free
@@ -144,6 +146,132 @@ def _write_snapshot(
         encoding="utf-8",
     )
     return catalog_path, trust_path
+
+
+def _schema_five_report_with_pending_stay_base() -> CatalogCurationReport:
+    payload = _schema_five_graph_report_payload()
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "stay_base",
+            "target_id": "prospective-village",
+            "scope": "narrow",
+            "required_field_paths": ["name"],
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "stay_base",
+            "target_id": "prospective-village",
+            "field_path": "name",
+            "status": "reviewed-no-change",
+        }
+    )
+    payload["evidence"].append(
+        {
+            "evidence_id": "prospective-stay-base",
+            "target_type": "stay_base",
+            "target_id": "prospective-village",
+            "field_path": "name",
+            "source_type": "official",
+            "source_url": "https://example.com/stays",
+            "source_title": "Official accommodation directory",
+            "source_value": "Prospective Village",
+            "evidence_summary": "Lists another bookable base in the stay market.",
+        }
+    )
+    payload["entity_scope_assessments"].append(
+        {
+            "candidate_id": "prospective-village",
+            "candidate_name": "Prospective Village",
+            "candidate_kind": "stay_base",
+            "disposition": "add_entity",
+            "signals": ["independent_stay_market"],
+            "evidence_refs": ["prospective-stay-base"],
+            "target_refs": [
+                {"target_type": "stay_base", "target_id": "prospective-village"}
+            ],
+            "rationale": "The official directory identifies another stay base.",
+            "graph_impact": "graph_blocking",
+        }
+    )
+    stay_base_coverage = payload["graph_discovery"]["coverage"][1]
+    stay_base_coverage["candidate_ids"].append("prospective-village")
+    stay_base_coverage["evidence_refs"].append("prospective-stay-base")
+    payload["graph_discovery"]["relationships"].append(
+        {
+            "relationship_type": "stay_destination_contains_stay_base",
+            "from_candidate_id": "example",
+            "to_candidate_id": "prospective-village",
+            "evidence_refs": ["prospective-stay-base"],
+        }
+    )
+    return CatalogCurationReport.model_validate(payload)
+
+
+def test_graph_discovery_reconciliation_allows_pending_sourced_entity(
+    tmp_path: Path,
+) -> None:
+    catalog_path, trust_path = _write_snapshot(
+        tmp_path,
+        "discovery",
+        minimal_catalog_payload(),
+    )
+
+    result = reconcile_catalog_curation_report(
+        _schema_five_report_with_pending_stay_base(),
+        base_catalog_path=catalog_path,
+        current_catalog_path=catalog_path,
+        base_trust_manifest_path=trust_path,
+        current_trust_manifest_path=trust_path,
+        phase="graph_discovery",
+    )
+
+    assert result.delta_count == 0
+
+
+def test_complete_discovery_rejects_disconnected_pending_entity() -> None:
+    report = _schema_five_report_with_pending_stay_base()
+    payload = report.model_dump(mode="json")
+    payload["graph_discovery"]["relationships"] = [
+        relationship
+        for relationship in payload["graph_discovery"]["relationships"]
+        if relationship["to_candidate_id"] != "prospective-village"
+    ]
+    disconnected = CatalogCurationReport.model_validate(payload)
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="prospective-village: graph candidate is not connected to focus root",
+    ):
+        validate_catalog_graph_discovery(
+            disconnected,
+            catalog,
+            require_complete=True,
+            allow_pending_scope_changes=True,
+        )
+
+
+def test_final_reconciliation_rejects_pending_sourced_entity(
+    tmp_path: Path,
+) -> None:
+    catalog_path, trust_path = _write_snapshot(
+        tmp_path,
+        "final",
+        minimal_catalog_payload(),
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="add_entity requires a matching identity-field creation change",
+    ):
+        reconcile_catalog_curation_report(
+            _schema_five_report_with_pending_stay_base(),
+            base_catalog_path=catalog_path,
+            current_catalog_path=catalog_path,
+            base_trust_manifest_path=trust_path,
+            current_trust_manifest_path=trust_path,
+        )
 
 
 def _relationship_change_report(*, include_endpoints: bool) -> CatalogCurationReport:
@@ -1166,6 +1294,79 @@ def test_typed_cli_accepts_required_schema_version_four(
 
     assert exit_code == 0
     assert "report_schema_version=4" in capsys.readouterr().out
+
+
+def test_typed_cli_requires_current_catalog_for_schema_five(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    report_path = tmp_path / "report-v5.json"
+    report_path.write_text(
+        json.dumps(_schema_five_graph_report_payload()),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "typed",
+            str(report_path),
+            "--require-report-schema-version",
+            "5",
+        ]
+    )
+
+    assert exit_code == 1
+    assert "schema-v5 validation requires --current-catalog-path" in (
+        capsys.readouterr().out
+    )
+
+
+def test_typed_cli_schema_five_parse_only_is_explicitly_non_final(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    report_path = tmp_path / "report-v5.json"
+    report_path.write_text(
+        json.dumps(_schema_five_graph_report_payload()),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_curation_main(["typed", str(report_path), "--parse-only"])
+
+    assert exit_code == 0
+    output = capsys.readouterr().out
+    assert "[catalog-curation-parsed]" in output
+    assert "[catalog-curation-valid]" not in output
+
+
+def test_typed_cli_validates_schema_five_against_current_catalog(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    report_path = tmp_path / "report-v5.json"
+    catalog_path = tmp_path / "catalog.json"
+    report_path.write_text(
+        json.dumps(_schema_five_graph_report_payload()),
+        encoding="utf-8",
+    )
+    catalog_path.write_text(
+        json.dumps(minimal_catalog_payload()),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "typed",
+            str(report_path),
+            "--current-catalog-path",
+            str(catalog_path),
+            "--require-report-schema-version",
+            "5",
+        ]
+    )
+
+    assert exit_code == 0
+    assert "[catalog-curation-valid]" in capsys.readouterr().out
 
 
 def test_typed_cli_requires_resulting_graph_for_current_schema_three(

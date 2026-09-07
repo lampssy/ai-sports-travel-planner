@@ -260,7 +260,11 @@ Material catalog changes use a typed CatalogCurationReport. A report must:
 - record normalization notes;
 - assess destination boundaries and weather request geometry when relevant;
 - declare focus stay destinations for a deterministic resulting graph in
-  current schema-v4 work;
+  current schema-v5 work;
+- record per-root graph-discovery coverage, source neighborhoods, candidate
+  assessments, and evidence-backed relationships before semantic review;
+- retain established graph-discovery rows and candidates across partial
+  checkpoints, with only forward coverage-state transitions;
 - record every material ski-area consequence as a typed item with its affected
   decision, durability basis, direct evidence refs, and parent-relative
   rationale; each cited item includes the candidate in `boundary_target_ids`;

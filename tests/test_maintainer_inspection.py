@@ -12,6 +12,7 @@ from ops.maintainer.curation_state import (
     CheckpointStartedEvent,
     CurationCheckpointStage,
     CurationGeneration,
+    CurationGraphDiscoveryCheckpoint,
     GenerationClosedEvent,
     GenerationPreparedEvent,
     ValidationFailedEvent,
@@ -637,9 +638,7 @@ def test_inspect_discovery_conflicting_routing_labels_fail_closed(
     assert inventory.can_create_proposal is False
 
 
-def test_curation_inventory_exposes_current_generation_and_suppresses_eligibility() -> (
-    None
-):
+def test_curation_inventory_routes_legacy_generation_to_schema_upgrade() -> None:
     generation = _generation()
 
     inventory = inspect_curation(
@@ -659,7 +658,7 @@ def test_curation_inventory_exposes_current_generation_and_suppresses_eligibilit
         "retryable": True,
         "availability_reason": "available",
         "next_action": {
-            "recipe_id": "validate_curation",
+            "recipe_id": "prepare_curation",
             "substitutions": {
                 "pr": 42,
                 "generation_id": GENERATION_ID,
@@ -671,6 +670,73 @@ def test_curation_inventory_exposes_current_generation_and_suppresses_eligibilit
         },
     }
     assert [candidate.number for candidate in inventory.eligible] == [43]
+
+
+def test_curation_inventory_exposes_resumable_graph_discovery_progress() -> None:
+    legacy = _generation()
+    report_path = "docs/catalog-curation/pr-42.json"
+    transaction_id = checkpoint_transaction_id(
+        GENERATION_ID,
+        CurationCheckpointStage.GRAPH_DISCOVERY,
+        SHA_B,
+        report_path,
+        SHA_C,
+    )
+    prefix = (
+        f"refs/snowcast-maintainer/curation/pr-42/{GENERATION_ID}/{transaction_id}/"
+    )
+    generation = legacy.model_copy(
+        update={
+            "events": (
+                legacy.events[0],
+                CheckpointStartedEvent(
+                    sequence=2,
+                    recorded_at=NOW + timedelta(seconds=1),
+                    transaction_id=transaction_id,
+                    stage=CurationCheckpointStage.GRAPH_DISCOVERY,
+                    head=SHA_B,
+                    report_path=report_path,
+                    validation_base=SHA_C,
+                    graph_discovery=CurationGraphDiscoveryCheckpoint(
+                        status="in_progress",
+                        covered_pairs=4,
+                        required_pairs=6,
+                        candidate_count=8,
+                        unavailable_pairs=1,
+                    ),
+                    expected_checkpoint_ref=prefix + "checkpoint",
+                    expected_squash_ref=prefix + "replay",
+                ),
+                CheckpointCompletedEvent(
+                    sequence=3,
+                    recorded_at=NOW + timedelta(seconds=2),
+                    transaction_id=transaction_id,
+                    checkpoint_ref=prefix + "checkpoint",
+                    squash_ref=prefix + "replay",
+                ),
+            )
+        }
+    )
+
+    inventory = inspect_curation(
+        (_pull_request(),),
+        {},
+        generations=(generation,),
+    )
+
+    summary = inventory.generations[0]
+    assert summary.stage == "graph-discovery"
+    assert summary.graph_discovery is not None
+    assert summary.graph_discovery.model_dump(mode="json") == {
+        "status": "in_progress",
+        "covered_pairs": 4,
+        "required_pairs": 6,
+        "candidate_count": 8,
+        "unavailable_pairs": 1,
+    }
+    assert summary.graph_discovery_checkpointed_at == NOW + timedelta(seconds=1)
+    assert summary.next_action is not None
+    assert summary.next_action.recipe_id.value == "prepare_curation"
 
 
 def test_curation_inventory_exposes_failed_validation_remediation() -> None:

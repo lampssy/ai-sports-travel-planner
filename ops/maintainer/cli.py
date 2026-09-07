@@ -28,10 +28,13 @@ from ops.maintainer.inspection import (
 from ops.maintainer.intent import CATALOG_PATH
 from ops.maintainer.validation import (
     DeltaValidationResult,
+    GraphDiscoveryValidationResult,
     ProposalValidationResult,
     ValidationResult,
     validate_curation,
     validate_curation_delta,
+    validate_curation_evidence_unavailable_report,
+    validate_curation_graph_discovery_checkpoint,
     validate_proposal,
 )
 
@@ -127,7 +130,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     publication_input_create.add_argument(
         "--kind",
-        choices=("title", "body", "summary", "inventory-disposition"),
+        choices=("title", "body", "summary"),
         required=True,
     )
     _add_run_id(publication_input_create)
@@ -177,13 +180,13 @@ def _parser() -> argparse.ArgumentParser:
     checkpoint_curation.add_argument("--report", required=True)
     checkpoint_curation.add_argument(
         "--stage",
-        choices=("delta-validated", "reviewed"),
+        choices=("graph-discovery", "delta-validated", "reviewed"),
         required=True,
     )
     checkpoint_curation.add_argument(
         "--inventory-completion",
         action="store_true",
-        help="mark a report-only inventory-completion delta checkpoint",
+        help=argparse.SUPPRESS,
     )
     checkpoint_curation.add_argument(
         "--base-dir",
@@ -271,7 +274,7 @@ def _parser() -> argparse.ArgumentParser:
         required=True,
     )
     outcome.add_argument("--summary-file", required=True)
-    outcome.add_argument("--inventory-disposition-file")
+    outcome.add_argument("--inventory-disposition-file", help=argparse.SUPPRESS)
     _add_run_id(outcome)
     state = publish_commands.add_parser("state")
     state.add_argument("--pr", type=int, required=True)
@@ -307,6 +310,10 @@ def _compose_dependencies(
     base_repository: object | None,
     curation_validator: Callable[..., ValidationResult],
     curation_delta_validator: Callable[..., DeltaValidationResult],
+    curation_graph_discovery_validator: Callable[..., GraphDiscoveryValidationResult],
+    curation_unavailable_evidence_validator: Callable[
+        ..., GraphDiscoveryValidationResult
+    ],
     proposal_validator: Callable[..., ProposalValidationResult],
     catalog_keys_provider: Callable[[], frozenset[str]] | None,
     repository_root: Path | None,
@@ -354,6 +361,10 @@ def _compose_dependencies(
         base_repository=base_repository,
         curation_validator=curation_validator,
         curation_delta_validator=curation_delta_validator,
+        curation_graph_discovery_validator=curation_graph_discovery_validator,
+        curation_unavailable_evidence_validator=(
+            curation_unavailable_evidence_validator
+        ),
         proposal_validator=proposal_validator,
         catalog_keys_provider=selected_catalog_keys_provider,
         repository_root=root,
@@ -376,6 +387,12 @@ def main(
     curation_delta_validator: (
         Callable[..., DeltaValidationResult]
     ) = validate_curation_delta,
+    curation_graph_discovery_validator: (
+        Callable[..., GraphDiscoveryValidationResult]
+    ) = validate_curation_graph_discovery_checkpoint,
+    curation_unavailable_evidence_validator: (
+        Callable[..., GraphDiscoveryValidationResult]
+    ) = validate_curation_evidence_unavailable_report,
     proposal_validator: Callable[..., ProposalValidationResult] = validate_proposal,
     catalog_keys_provider: Callable[[], frozenset[str]] | None = None,
     repository_root: Path | None = None,
@@ -395,6 +412,10 @@ def main(
                 base_repository=base_repository,
                 curation_validator=curation_validator,
                 curation_delta_validator=curation_delta_validator,
+                curation_graph_discovery_validator=(curation_graph_discovery_validator),
+                curation_unavailable_evidence_validator=(
+                    curation_unavailable_evidence_validator
+                ),
                 proposal_validator=proposal_validator,
                 catalog_keys_provider=catalog_keys_provider,
                 repository_root=repository_root,

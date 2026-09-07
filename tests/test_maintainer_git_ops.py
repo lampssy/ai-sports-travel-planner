@@ -2136,31 +2136,98 @@ def test_generation_checkpoint_creates_exact_refs_and_restores_unchanged_head(
     )
 
 
-def test_inventory_completion_requires_exact_report_pair(tmp_path: Path) -> None:
+def test_prepare_curation_checkpoint_retry_restores_unfinished_local_head(
+    tmp_path: Path,
+) -> None:
     local = _local_repository(tmp_path, target_report='{"status": "initial"}\n')
     repository = _integration_repository(local)
     prepared = repository.prepare_guarded_sync(local.pull_request)
     (local.checkout / REPORT_PATH).write_text(
-        '{"status": "inventory-complete"}\n',
+        '{"status": "discovery-in-progress"}\n',
         encoding="utf-8",
     )
     (local.checkout / REPORT_MARKDOWN_PATH).write_text(
-        "# Inventory completion\n",
+        "# Graph discovery\n",
         encoding="utf-8",
     )
     _git(local.checkout, "add", REPORT_PATH, REPORT_MARKDOWN_PATH)
-    _git(local.checkout, "commit", "-m", "complete report inventory")
-    inventory_head = _git(local.checkout, "rev-parse", "HEAD")
+    _git(local.checkout, "commit", "-m", "record unfinished graph discovery")
+    checkpoint_head = _git(local.checkout, "rev-parse", "HEAD")
+    _git(local.checkout, "switch", "--detach", local.target_sha)
 
-    repository.verify_report_only_inventory_completion(
+    snapshot = repository.prepare_curation_checkpoint_retry(
+        local.pull_request,
+        prepared,
+        checkpoint_head,
+    )
+
+    assert snapshot.changed_paths
+    assert repository.current_head() == checkpoint_head
+
+
+def test_graph_discovery_requires_exact_report_pair(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path, target_report='{"status": "initial"}\n')
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    (local.checkout / REPORT_PATH).write_text(
+        '{"status": "discovery-in-progress"}\n',
+        encoding="utf-8",
+    )
+    (local.checkout / REPORT_MARKDOWN_PATH).write_text(
+        "# Graph discovery\n",
+        encoding="utf-8",
+    )
+    _git(local.checkout, "add", REPORT_PATH, REPORT_MARKDOWN_PATH)
+    _git(local.checkout, "commit", "-m", "checkpoint graph discovery")
+    discovery_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    repository.verify_report_only_graph_discovery(
         prepared.rebased_head,
-        inventory_head,
+        discovery_head,
         REPORT_PATH,
     )
 
 
-@pytest.mark.parametrize("extra_path", [CATALOG_PATH, TRUST_MANIFEST_PATH])
-def test_inventory_completion_rejects_catalog_or_trust_change(
+def test_graph_discovery_accepts_explicit_unchanged_initial_report(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path, target_report='{"status": "complete"}\n')
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+
+    repository.verify_report_only_graph_discovery(
+        prepared.rebased_head,
+        prepared.rebased_head,
+        REPORT_PATH,
+        allow_unchanged=True,
+    )
+
+
+def test_graph_discovery_rejects_unchanged_report_without_explicit_authority(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path, target_report='{"status": "complete"}\n')
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+
+    with pytest.raises(RepositorySafetyError, match="canonical report pair"):
+        repository.verify_report_only_graph_discovery(
+            prepared.rebased_head,
+            prepared.rebased_head,
+            REPORT_PATH,
+        )
+
+
+@pytest.mark.parametrize(
+    "extra_path",
+    [
+        CATALOG_PATH,
+        TRUST_MANIFEST_PATH,
+        "docs/product-backlog.md",
+        "tests/test_catalog_models.py",
+    ],
+)
+def test_graph_discovery_rejects_any_non_report_change(
     tmp_path: Path,
     extra_path: str,
 ) -> None:
@@ -2168,24 +2235,99 @@ def test_inventory_completion_rejects_catalog_or_trust_change(
     repository = _integration_repository(local)
     prepared = repository.prepare_guarded_sync(local.pull_request)
     (local.checkout / REPORT_PATH).write_text(
-        '{"status": "inventory-complete"}\n',
+        '{"status": "discovery-complete"}\n',
         encoding="utf-8",
     )
     (local.checkout / REPORT_MARKDOWN_PATH).write_text(
-        "# Inventory completion\n",
+        "# Graph discovery\n",
         encoding="utf-8",
     )
     extra = local.checkout / extra_path
     extra.parent.mkdir(parents=True, exist_ok=True)
     extra.write_text('{"unexpected": true}\n', encoding="utf-8")
     _git(local.checkout, "add", REPORT_PATH, REPORT_MARKDOWN_PATH, extra_path)
-    _git(local.checkout, "commit", "-m", "change catalog during inventory")
-    inventory_head = _git(local.checkout, "rev-parse", "HEAD")
+    _git(local.checkout, "commit", "-m", "change data during discovery")
+    discovery_head = _git(local.checkout, "rev-parse", "HEAD")
 
     with pytest.raises(RepositorySafetyError, match="only the canonical report"):
-        repository.verify_report_only_inventory_completion(
+        repository.verify_report_only_graph_discovery(
             prepared.rebased_head,
-            inventory_head,
+            discovery_head,
+            REPORT_PATH,
+        )
+
+
+def test_graph_discovery_rejects_head_movement_after_report_commit(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path, target_report='{"status": "initial"}\n')
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    (local.checkout / REPORT_PATH).write_text(
+        '{"status": "discovery-complete"}\n',
+        encoding="utf-8",
+    )
+    (local.checkout / REPORT_MARKDOWN_PATH).write_text(
+        "# Graph discovery\n",
+        encoding="utf-8",
+    )
+    _git(local.checkout, "add", REPORT_PATH, REPORT_MARKDOWN_PATH)
+    _git(local.checkout, "commit", "-m", "checkpoint graph discovery")
+    discovery_head = _git(local.checkout, "rev-parse", "HEAD")
+    _git(local.checkout, "switch", "--detach", prepared.rebased_head)
+
+    with pytest.raises(RepositorySafetyError, match="current HEAD"):
+        repository.verify_report_only_graph_discovery(
+            prepared.rebased_head,
+            discovery_head,
+            REPORT_PATH,
+        )
+
+
+def test_graph_discovery_rejects_missing_markdown_companion(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path, target_report='{"status": "initial"}\n')
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    (local.checkout / REPORT_PATH).write_text(
+        '{"status": "discovery-in-progress"}\n',
+        encoding="utf-8",
+    )
+    _git(local.checkout, "add", REPORT_PATH)
+    _git(local.checkout, "commit", "-m", "checkpoint partial discovery")
+    discovery_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    with pytest.raises(RepositorySafetyError, match="only the canonical report"):
+        repository.verify_report_only_graph_discovery(
+            prepared.rebased_head,
+            discovery_head,
+            REPORT_PATH,
+        )
+
+
+def test_graph_discovery_rejects_dirty_worktree(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path, target_report='{"status": "initial"}\n')
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    (local.checkout / REPORT_PATH).write_text(
+        '{"status": "discovery-complete"}\n',
+        encoding="utf-8",
+    )
+    (local.checkout / REPORT_MARKDOWN_PATH).write_text(
+        "# Graph discovery\n",
+        encoding="utf-8",
+    )
+    _git(local.checkout, "add", REPORT_PATH, REPORT_MARKDOWN_PATH)
+    _git(local.checkout, "commit", "-m", "checkpoint graph discovery")
+    discovery_head = _git(local.checkout, "rev-parse", "HEAD")
+    (local.checkout / REPORT_PATH).write_text(
+        '{"status": "uncommitted"}\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RepositorySafetyError, match="clean"):
+        repository.verify_report_only_graph_discovery(
+            prepared.rebased_head,
+            discovery_head,
             REPORT_PATH,
         )
 
@@ -2297,11 +2439,49 @@ def test_revalidate_allows_safe_non_production_scope_expansion(
 
 def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) -> None:
     project_root = Path(__file__).resolve().parents[1]
-    prepared_catalog = (project_root / CATALOG_PATH).read_text(encoding="utf-8")
-    prepared_trust = (project_root / TRUST_MANIFEST_PATH).read_text(encoding="utf-8")
-    destination = json.loads(prepared_catalog)["stay_destinations"][0]
+    catalog_payload = json.loads(
+        (project_root / CATALOG_PATH).read_text(encoding="utf-8")
+    )
+    trust_payload = json.loads(
+        (project_root / TRUST_MANIFEST_PATH).read_text(encoding="utf-8")
+    )
+    destination = catalog_payload["stay_destinations"][0]
     destination_id = destination["stay_destination_id"]
     destination_name = destination["name"]
+    catalog_payload["ski_regions"] = [
+        region
+        for region in catalog_payload["ski_regions"]
+        if region["ski_region_id"] == destination["trip_market_region_id"]
+    ]
+    catalog_payload["stay_destinations"] = [destination]
+    for section in (
+        "stay_bases",
+        "ski_areas",
+        "ski_area_access",
+        "terrain_domains",
+        "lift_pass_products",
+        "rental_display_facts",
+    ):
+        catalog_payload[section] = []
+    prepared_catalog = json.dumps(catalog_payload, indent=2) + "\n"
+    trust_payload["entities"]["ski_regions"] = {
+        destination["trip_market_region_id"]: trust_payload["entities"]["ski_regions"][
+            destination["trip_market_region_id"]
+        ]
+    }
+    trust_payload["entities"]["stay_destinations"] = {
+        destination_id: trust_payload["entities"]["stay_destinations"][destination_id]
+    }
+    for section in (
+        "stay_bases",
+        "ski_areas",
+        "ski_area_access",
+        "terrain_domains",
+        "lift_pass_products",
+        "rental_display_facts",
+    ):
+        trust_payload["entities"][section] = {}
+    prepared_trust = json.dumps(trust_payload, indent=2) + "\n"
     legacy_report = json.dumps(
         {
             "report_schema_version": 1,
@@ -2323,7 +2503,7 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
 
     prepared = repository.prepare_guarded_sync(local.pull_request)
     normalized_report = {
-        "report_schema_version": 4,
+        "report_schema_version": 5,
         "title": "Normalized destination report",
         "summary": "Rebuilds the legacy input before independent review.",
         "resulting_graph": {"focus_stay_destination_ids": [destination_id]},
@@ -2350,6 +2530,7 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
                     }
                 ],
                 "rationale": "Official evidence confirms the represented stay market.",
+                "graph_impact": "graph_blocking",
             }
         ],
         "evidence": [
@@ -2400,6 +2581,32 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
                 ],
             }
         ],
+        "review_evidence_envelope": [
+            {
+                "family_id": "official-booking-directory",
+                "source_kind": "destination_booking",
+                "source_urls": ["https://example.com/destination"],
+                "candidate_kinds": ["stay_destination"],
+            }
+        ],
+        "graph_discovery": {
+            "status": "in_progress",
+            "coverage": [
+                {
+                    "focus_stay_destination_id": destination_id,
+                    "candidate_kind": "stay_destination",
+                    "coverage_state": "in_progress",
+                    "candidate_ids": [destination_id],
+                    "source_family_ids": ["official-booking-directory"],
+                    "evidence_refs": ["destination-scope"],
+                    "rationale": (
+                        "The normalized report records the established stay market "
+                        "while the remaining graph neighborhoods are investigated."
+                    ),
+                }
+            ],
+            "relationships": [],
+        },
         "boundary_decision_targets": [destination_id],
     }
     (local.checkout / REPORT_PATH).write_text(
@@ -2467,6 +2674,7 @@ def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) ->
         current_catalog_path=current_catalog_path,
         base_trust_manifest_path=base_trust_path,
         current_trust_manifest_path=current_trust_path,
+        phase="graph_discovery",
     )
 
     assert REPORT_PATH in reviewed.changed_paths

@@ -17,12 +17,16 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.data.catalog_curation import (
     CATALOG_BACKLOG_REF_PREFIX,
+    CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS,
     CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION,
     CatalogCurationReport,
     catalog_resulting_graph_scope,
     load_catalog_curation_report,
+    render_catalog_curation_report_markdown,
     render_catalog_resulting_graph_markdown,
     validate_catalog_curation_report,
+    validate_catalog_graph_discovery,
+    validate_catalog_graph_discovery_progression,
     validate_catalog_resulting_graph,
 )
 from app.data.catalog_curation_backlog import markdown_heading_anchor
@@ -72,17 +76,6 @@ _RETIRED_DISCOVERY_REGISTRY_PATH = (
 _PROCESS_GROUP_GRACE_SECONDS = 0.25
 _PROCESS_GROUP_CLEANUP_ERROR = "validation process-group cleanup failed"
 _VALIDATION_ENVIRONMENT_KEYS = ("LANG", "LC_ALL", "PATH", "TMPDIR")
-_PRIMARY_DESTINATION_GRAPH_TARGETS = (
-    ("stay_destination", "destination_ids"),
-    ("stay_base", "base_ids"),
-    ("ski_area_access", "access_ids"),
-    ("ski_area", "area_ids"),
-    ("terrain_domain", "domain_ids"),
-    ("lift_pass_product", "pass_ids"),
-)
-_PRIMARY_DESTINATION_DISCOVERY_KINDS = frozenset(
-    target_type for target_type, _ in _PRIMARY_DESTINATION_GRAPH_TARGETS
-)
 
 
 class _ValidationModel(BaseModel):
@@ -123,6 +116,16 @@ class DeltaValidationResult(_ValidationModel):
         if len(self.observations) != self.commands_completed:
             raise ValueError("command observations must cover every command")
         return self
+
+
+class GraphDiscoveryValidationResult(_ValidationModel):
+    discovery_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    report_path: str = Field(pattern=_REPORT_PATH.pattern)
+    status: Literal["in_progress", "complete"]
+    covered_pairs: int = Field(ge=0)
+    required_pairs: int = Field(ge=1)
+    candidate_count: int = Field(ge=0)
+    unavailable_pairs: int = Field(ge=0)
 
 
 class ProposalValidationResult(_ValidationModel):
@@ -418,6 +421,195 @@ def validate_curation_delta(
     )
 
 
+def validate_curation_graph_discovery_checkpoint(
+    *,
+    pull_request: PullRequest,
+    sync: GuardedSyncResult,
+    discovery_head: str,
+    report_path: str,
+    repository: GitRepository,
+    base_repository: GitRepository,
+    previous_discovery_head: str | None = None,
+    previous_report_path: str | None = None,
+) -> GraphDiscoveryValidationResult:
+    """Validate one exact, possibly partial, report-only discovery checkpoint."""
+    try:
+        _curation_plan(
+            pull_request,
+            sync,
+            discovery_head,
+            report_path,
+            repository,
+            base_repository,
+            check=ErrorCheck.CURATION_RECONCILIATION,
+            require_graph_inventory=False,
+        )
+        report = load_catalog_curation_report(Path(repository.root) / report_path)
+        if (
+            report.report_schema_version
+            != CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION
+        ):
+            raise ValueError("graph discovery checkpoint requires current schema")
+        catalog = load_catalog_from_path(Path(repository.root) / CATALOG_PATH)
+        validate_catalog_curation_report(
+            report,
+            require_resulting_graph=True,
+            require_current_destination_policy=True,
+            allow_pending_scope_changes=True,
+        )
+        validate_catalog_resulting_graph(report, catalog, require=True)
+        validate_catalog_graph_discovery(
+            report,
+            catalog,
+            require_complete=False,
+            allow_pending_scope_changes=True,
+        )
+        if (previous_discovery_head is None) != (previous_report_path is None):
+            raise ValueError(
+                "previous graph discovery head and report path must be paired"
+            )
+        if previous_discovery_head is not None and previous_report_path is not None:
+            previous_payload = json.loads(
+                repository.read_bounded_immutable_text(
+                    previous_discovery_head,
+                    previous_report_path,
+                    max_bytes=_PRIVATE_OBJECT_LIMIT,
+                )
+            )
+            previous_report = CatalogCurationReport.model_validate(previous_payload)
+            validate_catalog_graph_discovery_progression(previous_report, report)
+        reconcile_catalog_curation_report(
+            report,
+            base_catalog_path=Path(base_repository.root) / CATALOG_PATH,
+            current_catalog_path=Path(repository.root) / CATALOG_PATH,
+            base_trust_manifest_path=(Path(base_repository.root) / TRUST_MANIFEST_PATH),
+            current_trust_manifest_path=(Path(repository.root) / TRUST_MANIFEST_PATH),
+            phase="graph_discovery",
+        )
+        markdown_path = (
+            Path(repository.root) / report_path.removesuffix(".json")
+        ).with_suffix(".md")
+        if markdown_path.read_text(encoding="utf-8") != (
+            render_catalog_curation_report_markdown(report, catalog)
+        ):
+            raise ValueError("graph discovery Markdown is not deterministic")
+        discovery = report.graph_discovery
+        assert discovery is not None
+        required_pairs = len(report.resulting_graph.focus_stay_destination_ids) * len(
+            CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS
+        )
+        candidate_ids = {
+            candidate_id
+            for coverage in discovery.coverage
+            for candidate_id in coverage.candidate_ids
+        }
+        unavailable_pairs = sum(
+            coverage.coverage_state == "evidence_unavailable"
+            for coverage in discovery.coverage
+        )
+        return GraphDiscoveryValidationResult(
+            discovery_head=discovery_head,
+            report_path=report_path,
+            status=discovery.status,
+            covered_pairs=len(discovery.coverage),
+            required_pairs=required_pairs,
+            candidate_count=len(candidate_ids),
+            unavailable_pairs=unavailable_pairs,
+        )
+    except MaintainerError:
+        raise
+    except Exception:
+        raise _validation_error(
+            ErrorCheck.CURATION_RECONCILIATION,
+            ErrorKind.MISMATCH,
+            "Graph discovery checkpoint validation failed",
+        ) from None
+
+
+def validate_curation_evidence_unavailable_report(
+    *,
+    repository: GitRepository,
+    discovery_head: str,
+    report_path: str,
+) -> GraphDiscoveryValidationResult:
+    """Revalidate terminal unavailable evidence from one immutable report head."""
+    try:
+        catalog_payload = json.loads(
+            repository.read_bounded_immutable_text(
+                discovery_head,
+                CATALOG_PATH,
+                max_bytes=_PRIVATE_OBJECT_LIMIT,
+            )
+        )
+        report_payload = json.loads(
+            repository.read_bounded_immutable_text(
+                discovery_head,
+                report_path,
+                max_bytes=_PRIVATE_OBJECT_LIMIT,
+            )
+        )
+        markdown = repository.read_bounded_immutable_text(
+            discovery_head,
+            report_path.removesuffix(".json") + ".md",
+            max_bytes=_PRIVATE_OBJECT_LIMIT,
+        )
+        catalog = CatalogSnapshot.model_validate(catalog_payload)
+        report = CatalogCurationReport.model_validate(report_payload)
+        if (
+            report.report_schema_version
+            != CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION
+        ):
+            raise ValueError("unavailable evidence requires current report schema")
+        validate_catalog_curation_report(
+            report,
+            require_resulting_graph=True,
+            require_current_destination_policy=True,
+            allow_pending_scope_changes=True,
+        )
+        validate_catalog_resulting_graph(report, catalog, require=True)
+        validate_catalog_graph_discovery(
+            report,
+            catalog,
+            require_complete=True,
+            allow_pending_scope_changes=True,
+        )
+        discovery = report.graph_discovery
+        assert discovery is not None and report.resulting_graph is not None
+        unavailable_pairs = sum(
+            coverage.coverage_state == "evidence_unavailable"
+            for coverage in discovery.coverage
+        )
+        if unavailable_pairs == 0:
+            raise ValueError("report has no unavailable graph discovery evidence")
+        if markdown != render_catalog_curation_report_markdown(report, catalog):
+            raise ValueError("graph discovery Markdown is not deterministic")
+        candidate_ids = {
+            candidate_id
+            for coverage in discovery.coverage
+            for candidate_id in coverage.candidate_ids
+        }
+        return GraphDiscoveryValidationResult(
+            discovery_head=discovery_head,
+            report_path=report_path,
+            status=discovery.status,
+            covered_pairs=len(discovery.coverage),
+            required_pairs=(
+                len(report.resulting_graph.focus_stay_destination_ids)
+                * len(CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS)
+            ),
+            candidate_count=len(candidate_ids),
+            unavailable_pairs=unavailable_pairs,
+        )
+    except MaintainerError:
+        raise
+    except Exception:
+        raise _validation_error(
+            ErrorCheck.CURATION_RECONCILIATION,
+            ErrorKind.MISMATCH,
+            "Unavailable graph discovery evidence is invalid",
+        ) from None
+
+
 def _run_curation_commands(
     initial: _CurationPlan,
     *,
@@ -510,7 +702,7 @@ def immutable_resulting_graph_markdown(
     report = CatalogCurationReport.model_validate(report_payload)
     _validate_finalized_report(repository, revision, report)
     validate_catalog_resulting_graph(report, catalog, require=True)
-    _require_primary_destination_graph_inventory(report, catalog)
+    _require_finalizable_catalog_graph_discovery(report, catalog)
     return render_catalog_resulting_graph_markdown(report, catalog)
 
 
@@ -533,68 +725,29 @@ def _validate_finalized_report(
     _require_regional_followup_backlog_anchors(repository, revision, report)
 
 
-def _require_primary_destination_graph_inventory(
+def _require_finalizable_catalog_graph_discovery(
     report: CatalogCurationReport,
     catalog: CatalogSnapshot,
 ) -> None:
-    """Require graph coverage without expanding a target's field-review scope."""
-    if report.resulting_graph is None:
-        raise ValueError("curation report has no resulting graph")
-
-    graph_scope = catalog_resulting_graph_scope(
+    validate_catalog_graph_discovery(
+        report,
         catalog,
-        frozenset(report.resulting_graph.focus_stay_destination_ids),
+        require_complete=True,
+        allow_pending_scope_changes=False,
     )
-    reviewed_graph_targets = {
-        target.target_key
-        for target in report.reviewed_targets
-        if target.resulting_graph_role in {"focus", "linked_dependency"}
-    }
-    assessed_targets = {
-        target.target_key
-        for assessment in report.entity_scope_assessments
-        for target in assessment.target_refs
-    }
-    required_targets = {
-        (target_type, target_id)
-        for target_type, scope_attribute in _PRIMARY_DESTINATION_GRAPH_TARGETS
-        for target_id in getattr(graph_scope, scope_attribute)
-    }
-    missing_reviewed_targets = sorted(required_targets - reviewed_graph_targets)
-    missing_assessed_targets = sorted(required_targets - assessed_targets)
-    discovered_candidate_kinds = {
-        candidate_kind
-        for family in report.review_evidence_envelope
-        for candidate_kind in family.candidate_kinds
-    }
-    missing_candidate_kinds = sorted(
-        _PRIMARY_DESTINATION_DISCOVERY_KINDS - discovered_candidate_kinds
-    )
-
-    issues: list[str] = []
-    if missing_reviewed_targets:
-        issues.append(
-            "missing graph reviewed targets: "
-            + ", ".join(
-                f"{target_type}:{target_id}"
-                for target_type, target_id in missing_reviewed_targets
-            )
+    assert report.graph_discovery is not None
+    unavailable = [
+        coverage
+        for coverage in report.graph_discovery.coverage
+        if coverage.coverage_state == "evidence_unavailable"
+    ]
+    if unavailable:
+        rendered = ", ".join(
+            f"{coverage.focus_stay_destination_id}:{coverage.candidate_kind}"
+            for coverage in unavailable
         )
-    if missing_assessed_targets:
-        issues.append(
-            "missing entity scope assessments: "
-            + ", ".join(
-                f"{target_type}:{target_id}"
-                for target_type, target_id in missing_assessed_targets
-            )
-        )
-    if missing_candidate_kinds:
-        issues.append(
-            "missing discovery candidate kinds: " + ", ".join(missing_candidate_kinds)
-        )
-    if issues:
         raise ValueError(
-            "primary destination graph inventory incomplete: " + "; ".join(issues)
+            "finalized graph discovery contains unavailable evidence: " + rendered
         )
 
 
@@ -718,7 +871,7 @@ def validate_proposal(
                 head_catalog,
                 require=True,
             )
-            _require_primary_destination_graph_inventory(report, head_catalog)
+            _require_finalizable_catalog_graph_discovery(report, head_catalog)
             reconcile_catalog_curation_report(
                 report,
                 base_catalog_path=base_catalog_path,
@@ -803,7 +956,7 @@ def _curation_plan(
             report = CatalogCurationReport.model_validate(report_payload)
             _validate_finalized_report(repository, reviewed_head, report)
             validate_catalog_resulting_graph(report, catalog, require=True)
-            _require_primary_destination_graph_inventory(report, catalog)
+            _require_finalizable_catalog_graph_discovery(report, catalog)
         return _CurationPlan(
             report_path=report_path,
             base_dir=Path(base_repository.root),

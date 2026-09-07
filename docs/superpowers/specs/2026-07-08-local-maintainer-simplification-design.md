@@ -30,6 +30,20 @@ the same lease, performs no semantic work, and treats a confirmed second CI
 failure as terminal. The maintainer still does not execute target-PR
 `tests/test_*.py` locally and never approves or merges.
 
+### Graph Discovery Amendment
+
+ADR 0024 and
+`docs/superpowers/specs/2026-09-07-maintainer-full-graph-discovery-design.md`
+supersede this document's reactive inventory-completion, private inventory-
+disposition, and `review-incomplete` sections for new generations. Those
+sections remain historical rationale only. Current work normalizes its active
+report to schema v5, performs durable report-owned full graph discovery before
+semantic review, checkpoints partial progress without a GitHub blocked label,
+and permits exact `evidence-unavailable` publication only from the immutable
+completed discovery checkpoint. The deprecated inventory checkpoint can appear
+only as helper-authorized recovery for a transaction already started under the
+old contract.
+
 ## User Outcome
 
 Snowcast should have two local Codex workers that reduce the owner's repeated

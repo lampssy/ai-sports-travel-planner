@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 import pytest
 
@@ -21,6 +23,11 @@ from ops.maintainer.errors import (
 )
 
 pytestmark = pytest.mark.db_free
+
+
+@contextmanager
+def _passthrough_context() -> Iterator[None]:
+    yield
 
 
 def test_maintainer_error_emits_only_allowlisted_fields() -> None:
@@ -76,6 +83,19 @@ def test_maintainer_error_allows_optional_diagnostic_fields_to_be_absent() -> No
         "reason": "lock-busy",
         "stage": "lock",
     }
+
+
+def test_maintainer_error_survives_context_manager_cleanup() -> None:
+    with pytest.raises(MaintainerError) as exc_info:
+        with _passthrough_context():
+            raise MaintainerError(
+                reason=ErrorReason.VALIDATION_FAILED,
+                stage=ErrorStage.VALIDATE,
+                check=ErrorCheck.CURATION_RECONCILIATION,
+                kind=ErrorKind.MISMATCH,
+            )
+
+    assert exc_info.value.reason is ErrorReason.VALIDATION_FAILED
 
 
 def test_validation_failure_emits_typed_bounded_diagnostic() -> None:

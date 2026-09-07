@@ -17,6 +17,7 @@ from ops.maintainer.curation_state import (
     CurationCheckpointStage,
     CurationGeneration,
     CurationGenerationStore,
+    CurationGraphDiscoveryCheckpoint,
     CurationMigrationError,
     CurationValidationDiagnostic,
     CurationValidationFailure,
@@ -134,6 +135,7 @@ def _completed_checkpoint(
     head: str,
     recorded_at: datetime,
     inventory_completion: bool = False,
+    graph_discovery: CurationGraphDiscoveryCheckpoint | None = None,
 ) -> tuple[CheckpointStartedEvent, CheckpointCompletedEvent]:
     transaction_id = checkpoint_transaction_id(
         GENERATION_ID,
@@ -151,6 +153,7 @@ def _completed_checkpoint(
         head=head,
         report_path=REPORT,
         validation_base=SHA_4,
+        graph_discovery=graph_discovery,
         inventory_completion=True if inventory_completion else None,
         expected_checkpoint_ref=(
             f"refs/snowcast-maintainer/curation/pr-42/{GENERATION_ID}/"
@@ -169,6 +172,22 @@ def _completed_checkpoint(
         squash_ref=started.expected_squash_ref,
     )
     return started, completed
+
+
+def _graph_discovery_summary(
+    *,
+    status: str,
+    covered_pairs: int,
+    candidate_count: int = 4,
+    unavailable_pairs: int = 0,
+) -> CurationGraphDiscoveryCheckpoint:
+    return CurationGraphDiscoveryCheckpoint(
+        status=status,
+        covered_pairs=covered_pairs,
+        required_pairs=6,
+        candidate_count=candidate_count,
+        unavailable_pairs=unavailable_pairs,
+    )
 
 
 def _write_private_model(path: Path, model: object) -> bytes:
@@ -431,20 +450,30 @@ def test_legacy_migration_refuses_unresolved_push_without_changing_it(
 
 
 def test_newer_delta_checkpoint_supersedes_reviewed_head_within_generation() -> None:
-    first = _completed_checkpoint(
+    discovery = _completed_checkpoint(
         sequence=2,
-        stage=CurationCheckpointStage.REVIEWED,
+        stage=CurationCheckpointStage.GRAPH_DISCOVERY,
         head=SHA_2,
         recorded_at=NOW + timedelta(seconds=1),
+        graph_discovery=_graph_discovery_summary(
+            status="complete",
+            covered_pairs=6,
+        ),
     )
-    second = _completed_checkpoint(
+    first = _completed_checkpoint(
         sequence=4,
-        stage=CurationCheckpointStage.DELTA_VALIDATED,
-        head=SHA_3,
+        stage=CurationCheckpointStage.REVIEWED,
+        head=SHA_2,
         recorded_at=NOW + timedelta(seconds=2),
     )
+    second = _completed_checkpoint(
+        sequence=6,
+        stage=CurationCheckpointStage.DELTA_VALIDATED,
+        head=SHA_3,
+        recorded_at=NOW + timedelta(seconds=3),
+    )
 
-    projection = project_generation(_generation(*first, *second))
+    projection = project_generation(_generation(*discovery, *first, *second))
 
     assert projection.latest_head == SHA_3
     assert projection.latest_stage is CurationCheckpointStage.DELTA_VALIDATED
@@ -458,7 +487,104 @@ def test_newer_delta_checkpoint_supersedes_reviewed_head_within_generation() -> 
     assert projection.next_action.recipe_id == "checkpoint_curation_reviewed"
 
 
-def test_inventory_completion_checkpoint_is_a_durable_minimal_marker() -> None:
+def test_prepared_generation_requires_graph_discovery_checkpoint() -> None:
+    projection = project_generation(_generation())
+
+    assert projection.latest_stage == "prepared"
+    assert projection.graph_discovery is None
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "checkpoint_curation_graph_discovery"
+    assert projection.next_action.substitutions.head == SHA_2
+
+
+def test_in_progress_graph_discovery_checkpoint_resumes_through_prepare() -> None:
+    discovery = _completed_checkpoint(
+        sequence=2,
+        stage=CurationCheckpointStage.GRAPH_DISCOVERY,
+        head=SHA_2,
+        recorded_at=NOW + timedelta(seconds=1),
+        graph_discovery=_graph_discovery_summary(
+            status="in_progress",
+            covered_pairs=3,
+            candidate_count=5,
+        ),
+    )
+
+    projection = project_generation(_generation(*discovery))
+
+    assert projection.latest_stage is CurationCheckpointStage.GRAPH_DISCOVERY
+    assert projection.graph_discovery is not None
+    assert projection.graph_discovery.status == "in_progress"
+    assert projection.graph_discovery.covered_pairs == 3
+    assert projection.graph_discovery.candidate_count == 5
+    assert projection.graph_discovery_checkpointed_at == NOW + timedelta(seconds=1)
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "prepare_curation"
+    assert projection.next_action.substitutions.head == SHA_2
+    assert projection.next_action.substitutions.report == REPORT
+
+
+def test_complete_graph_discovery_checkpoint_allows_semantic_review() -> None:
+    discovery = _completed_checkpoint(
+        sequence=2,
+        stage=CurationCheckpointStage.GRAPH_DISCOVERY,
+        head=SHA_2,
+        recorded_at=NOW + timedelta(seconds=1),
+        graph_discovery=_graph_discovery_summary(
+            status="complete",
+            covered_pairs=6,
+        ),
+    )
+
+    projection = project_generation(_generation(*discovery))
+
+    assert projection.graph_discovery is not None
+    assert projection.graph_discovery.status == "complete"
+    assert projection.graph_discovery.unavailable_pairs == 0
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "checkpoint_curation_reviewed"
+
+
+def test_complete_graph_discovery_with_unavailable_evidence_routes_to_terminal() -> (
+    None
+):
+    discovery = _completed_checkpoint(
+        sequence=2,
+        stage=CurationCheckpointStage.GRAPH_DISCOVERY,
+        head=SHA_2,
+        recorded_at=NOW + timedelta(seconds=1),
+        graph_discovery=_graph_discovery_summary(
+            status="complete",
+            covered_pairs=6,
+            unavailable_pairs=1,
+        ),
+    )
+
+    projection = project_generation(_generation(*discovery))
+
+    assert projection.graph_discovery is not None
+    assert projection.graph_discovery.unavailable_pairs == 1
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "publish_evidence_unavailable_outcome"
+    assert projection.next_action.substitutions.head == SHA_2
+
+
+def test_graph_discovery_checkpoint_requires_derived_summary() -> None:
+    with pytest.raises(ValidationError, match="graph discovery summary"):
+        CheckpointStartedEvent(
+            sequence=2,
+            recorded_at=NOW + timedelta(seconds=1),
+            transaction_id="a" * 64,
+            stage=CurationCheckpointStage.GRAPH_DISCOVERY,
+            head=SHA_2,
+            report_path=REPORT,
+            validation_base=SHA_4,
+            expected_checkpoint_ref="refs/snowcast-maintainer/checkpoint",
+            expected_squash_ref="refs/snowcast-maintainer/replay",
+        )
+
+
+def test_completed_legacy_inventory_checkpoint_routes_to_graph_discovery() -> None:
     inventory = _completed_checkpoint(
         sequence=2,
         stage=CurationCheckpointStage.DELTA_VALIDATED,
@@ -469,10 +595,9 @@ def test_inventory_completion_checkpoint_is_a_durable_minimal_marker() -> None:
 
     projection = project_generation(_generation(*inventory))
 
-    assert projection.inventory_completion_checkpointed is True
-    assert projection.inventory_completion_checkpoint_head == SHA_2
+    assert projection.latest_head == SHA_2
     assert projection.next_action is not None
-    assert projection.next_action.recipe_id == "checkpoint_curation_reviewed"
+    assert projection.next_action.recipe_id == "prepare_curation"
 
 
 def test_inventory_completion_checkpoint_uses_a_distinct_transaction_identity() -> None:
@@ -495,7 +620,60 @@ def test_inventory_completion_checkpoint_uses_a_distinct_transaction_identity() 
     assert ordinary != inventory
 
 
-def test_later_delta_does_not_reuse_an_inventory_completion_marker() -> None:
+def test_incomplete_legacy_inventory_transaction_projects_exact_recovery() -> None:
+    started, _ = _completed_checkpoint(
+        sequence=2,
+        stage=CurationCheckpointStage.DELTA_VALIDATED,
+        head=SHA_2,
+        recorded_at=NOW + timedelta(seconds=1),
+        inventory_completion=True,
+    )
+
+    projection = project_generation(_generation(started))
+
+    assert projection.incomplete_transaction == started.transaction_id
+    assert projection.next_action is not None
+    assert (
+        projection.next_action.recipe_id == "checkpoint_curation_inventory_completion"
+    )
+    assert projection.next_action.substitutions.head == SHA_2
+
+
+def test_repeated_partial_graph_discovery_checkpoint_keeps_latest_progress() -> None:
+    first = _completed_checkpoint(
+        sequence=2,
+        stage=CurationCheckpointStage.GRAPH_DISCOVERY,
+        head=SHA_2,
+        recorded_at=NOW + timedelta(seconds=1),
+        graph_discovery=_graph_discovery_summary(
+            status="in_progress",
+            covered_pairs=2,
+            candidate_count=2,
+        ),
+    )
+    second = _completed_checkpoint(
+        sequence=4,
+        stage=CurationCheckpointStage.GRAPH_DISCOVERY,
+        head=SHA_3,
+        recorded_at=NOW + timedelta(seconds=2),
+        graph_discovery=_graph_discovery_summary(
+            status="in_progress",
+            covered_pairs=5,
+            candidate_count=7,
+        ),
+    )
+
+    projection = project_generation(_generation(*first, *second))
+
+    assert projection.latest_head == SHA_3
+    assert projection.graph_discovery is not None
+    assert projection.graph_discovery.covered_pairs == 5
+    assert projection.graph_discovery.candidate_count == 7
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "prepare_curation"
+
+
+def test_later_legacy_delta_still_routes_to_graph_discovery() -> None:
     inventory = _completed_checkpoint(
         sequence=2,
         stage=CurationCheckpointStage.DELTA_VALIDATED,
@@ -512,9 +690,9 @@ def test_later_delta_does_not_reuse_an_inventory_completion_marker() -> None:
 
     projection = project_generation(_generation(*inventory, *later_delta))
 
-    assert projection.inventory_completion_checkpointed is True
-    assert projection.inventory_completion_checkpoint_head == SHA_2
     assert projection.latest_head == SHA_3
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "prepare_curation"
 
 
 def test_inventory_completion_cannot_mark_a_reviewed_checkpoint() -> None:
