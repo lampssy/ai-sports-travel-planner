@@ -126,7 +126,7 @@ def validate_safe_detail(detail: str) -> str:
     return detail
 
 
-@dataclass(frozen=True)
+@dataclass
 class MaintainerError(Exception):
     reason: ErrorReason
     stage: ErrorStage

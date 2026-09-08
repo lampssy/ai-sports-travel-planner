@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ValidationError
 
@@ -17,6 +17,7 @@ from app.data.catalog_curation import (
     catalog_weather_request_geometry,
     json_values_equal,
     validate_catalog_curation_report,
+    validate_catalog_graph_discovery,
 )
 from app.data.catalog_loader import load_catalog_from_path
 from app.domain.catalog import CatalogSnapshot, SkiArea, SkiAreaAccess
@@ -25,6 +26,7 @@ from app.domain.catalog_trust import CatalogTrustManifest
 TargetKey = tuple[CatalogTargetType, str]
 DeltaKey = tuple[CatalogTargetType, str, str]
 _MISSING = object()
+CatalogCurationReconciliationPhase = Literal["final", "graph_discovery"]
 
 
 @dataclass(frozen=True)
@@ -393,8 +395,13 @@ def reconcile_catalog_curation_report(
     current_catalog_path: Path,
     base_trust_manifest_path: Path,
     current_trust_manifest_path: Path,
+    phase: CatalogCurationReconciliationPhase = "final",
 ) -> CatalogCurationReconciliationResult:
-    validate_catalog_curation_report(report)
+    allow_pending_scope_changes = phase == "graph_discovery"
+    validate_catalog_curation_report(
+        report,
+        allow_pending_scope_changes=allow_pending_scope_changes,
+    )
     base = _load_snapshot(
         catalog_path=base_catalog_path,
         trust_manifest_path=base_trust_manifest_path,
@@ -405,6 +412,24 @@ def reconcile_catalog_curation_report(
         trust_manifest_path=current_trust_manifest_path,
         label="current",
     )
+    if report.report_schema_version >= 5:
+        validate_catalog_graph_discovery(
+            report,
+            current.catalog,
+            require_complete=not allow_pending_scope_changes,
+            allow_pending_scope_changes=allow_pending_scope_changes,
+        )
+        if not allow_pending_scope_changes:
+            assert report.graph_discovery is not None
+            unavailable = [
+                coverage
+                for coverage in report.graph_discovery.coverage
+                if coverage.coverage_state == "evidence_unavailable"
+            ]
+            if unavailable:
+                raise CatalogValidationError(
+                    ["final graph discovery contains unavailable evidence"]
+                )
     deltas = _derive_deltas(base, current)
     issues: list[str] = []
     _validate_delta_parity(report, deltas, issues)

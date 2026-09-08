@@ -80,7 +80,6 @@ _PUBLICATION_TEXT_LIMITS = {
     "title": 256,
     "body": 65_536,
     "summary": 16_384,
-    "inventory-disposition": 32_768,
 }
 
 _PUBLICATION_INPUT_CREATE_ATTEMPTS = 8
@@ -113,7 +112,7 @@ class PublicationInputError(RuntimeError):
 def create_publication_text(
     lease: RunLease,
     *,
-    kind: Literal["title", "body", "summary", "inventory-disposition"],
+    kind: Literal["title", "body", "summary"],
     payload: bytes,
 ) -> str:
     """Create one private, lease-bound publication input and return its basename."""
@@ -849,7 +848,7 @@ def read_publication_text(
     state_dir: str | Path,
     supplied_path: str | Path,
     *,
-    kind: Literal["title", "body", "summary", "inventory-disposition"],
+    kind: Literal["title", "body", "summary"],
 ) -> str:
     if (
         type(kind) is not str

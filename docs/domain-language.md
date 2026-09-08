@@ -688,6 +688,33 @@ It names the official source families, catalog relationships, concrete
 candidates, and linked dependencies that the curation review must account for;
 it does not make source meaning or candidate existence a deterministic claim.
 
+**Graph discovery coverage**
+
+The canonical schema-v5 record of how completely each focused stay
+destination has been investigated for stay destinations, stay bases, ski
+areas, access edges, terrain domains, and lift-pass products. It keeps
+candidate identities separate from `complete`, `in_progress`, or
+`evidence_unavailable` coverage state and records evidence-backed prospective
+relationships before catalog mutation.
+Successive checkpoints retain established rows and candidates; a later research
+pass may strengthen coverage but cannot silently forget prior discoveries.
+
+**Graph discovery checkpoint**
+
+An exact-head, report-only maintainer checkpoint that preserves complete or
+partial graph research while keeping catalog and trust data unchanged. Partial
+discovery resumes from this checkpoint; semantic source-trust and graph-scope
+review begins only after discovery is complete.
+
+**Source neighborhood**
+
+The bounded set of authoritative source families appropriate to one candidate
+kind, such as destination booking sources for stay bases, operator sources for
+ski areas, access sources for access edges, and tariff sources for pass
+products. Deterministic validation checks that the neighborhood and direct
+evidence are present; semantic reviewers decide whether they are authoritative
+and exhaustive.
+
 **Graph blocker**
 
 A source-backed omission or contradiction that can make the selected resulting
@@ -698,7 +725,7 @@ until fixed or routed through an explicit evidence or owner-decision gate.
 **Regional follow-up**
 
 An additive adjacent catalog opportunity whose omission does not make the
-selected graph incorrect. It is recorded in the current schema-v4 report and merged
+selected graph incorrect. It is recorded in the current schema-v5 report and merged
 product backlog for discovery; it does not by itself make curation
 non-converging.
 

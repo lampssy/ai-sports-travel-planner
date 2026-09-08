@@ -20,11 +20,14 @@ from app.data.catalog_curation import (
     CatalogSkiAreaTripConsequence,
     CatalogValidationError,
     CatalogWeatherRequestGeometry,
+    catalog_resulting_graph_scope,
     catalog_weather_request_geometry,
     load_catalog_curation_report,
     render_catalog_curation_report_markdown,
     render_catalog_resulting_graph_markdown,
     validate_catalog_curation_report,
+    validate_catalog_graph_discovery,
+    validate_catalog_graph_discovery_progression,
     validate_catalog_resulting_graph,
 )
 from app.data.catalog_policy import catalog_policy_issues
@@ -168,6 +171,317 @@ def _bounded_review_report(*, missing: str | None = None) -> CatalogCurationRepo
     if missing != "graph_impact":
         payload["entity_scope_assessments"][0]["graph_impact"] = "graph_blocking"
     return CatalogCurationReport.model_validate(payload)
+
+
+def _schema_five_graph_report_payload() -> dict:
+    payload = _current_destination_scope_report().model_dump(mode="json")
+    payload["report_schema_version"] = 5
+    payload["reviewed_targets"].extend(
+        [
+            {
+                "target_type": "stay_base",
+                "target_id": "example-village",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            },
+            {
+                "target_type": "ski_area",
+                "target_id": "example-area",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            },
+            {
+                "target_type": "ski_area_access",
+                "target_id": "example-village--example-area",
+                "scope": "narrow",
+                "required_field_paths": ["source_urls"],
+            },
+            {
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            },
+        ]
+    )
+    payload["field_coverage"].extend(
+        [
+            {
+                "target_type": "stay_base",
+                "target_id": "example-village",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+            {
+                "target_type": "ski_area",
+                "target_id": "example-area",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+            {
+                "target_type": "ski_area_access",
+                "target_id": "example-village--example-area",
+                "field_path": "source_urls",
+                "status": "reviewed-no-change",
+            },
+            {
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+        ]
+    )
+    payload["evidence"].extend(
+        [
+            {
+                "evidence_id": "example-stay-base",
+                "target_type": "stay_base",
+                "target_id": "example-village",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/stays",
+                "source_title": "Official accommodation directory",
+                "source_value": "Example Village",
+                "evidence_summary": "Lists the stay base in the destination market.",
+            },
+            {
+                "evidence_id": "example-ski-area",
+                "boundary_target_ids": ["example-area"],
+                "target_type": "ski_area",
+                "target_id": "example-area",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/ski-map",
+                "source_title": "Official ski map",
+                "source_value": "Example Area",
+                "evidence_summary": "Identifies the lift-served ski area.",
+            },
+            {
+                "evidence_id": "example-access",
+                "target_type": "ski_area_access",
+                "target_id": "example-village--example-area",
+                "field_path": "source_urls",
+                "source_type": "official",
+                "source_url": "https://example.com/ski-map",
+                "source_title": "Official ski map",
+                "source_value": ["https://example.com/ski-map"],
+                "evidence_summary": "Shows direct access from the village.",
+            },
+            {
+                "evidence_id": "example-pass",
+                "target_type": "lift_pass_product",
+                "target_id": "example-local-pass",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/pass",
+                "source_title": "Official lift-pass tariff",
+                "source_value": "Example Local Pass",
+                "evidence_summary": "Names the local pass and its covered area.",
+            },
+        ]
+    )
+    payload["entity_scope_assessments"].extend(
+        [
+            {
+                "candidate_id": "example-village",
+                "candidate_name": "Example Village",
+                "candidate_kind": "stay_base",
+                "disposition": "represented",
+                "signals": ["independent_stay_market"],
+                "evidence_refs": ["example-stay-base"],
+                "target_refs": [
+                    {"target_type": "stay_base", "target_id": "example-village"}
+                ],
+                "rationale": "The official directory identifies the stay base.",
+                "graph_impact": "graph_blocking",
+            },
+            {
+                "candidate_id": "example-area",
+                "candidate_name": "Example Area",
+                "candidate_kind": "ski_area",
+                "disposition": "represented",
+                "signals": [
+                    "official_independent_identity",
+                    "independent_weather_presentation",
+                ],
+                "evidence_refs": ["example-ski-area"],
+                "target_refs": [
+                    {"target_type": "ski_area", "target_id": "example-area"}
+                ],
+                "rationale": "The official map identifies the complete ski area.",
+                "ski_area_boundary": _ski_area_boundary_payload(
+                    weather_scope="independent",
+                    material_trip_consequences=[
+                        _material_trip_consequence_payload(
+                            consequence_type="weather_or_season",
+                            decision_effect="conditions_evidence_profile",
+                            comparison_basis="stay_market_baseline",
+                            comparison_target_id="example",
+                            durability_basis="recurring_season_pattern",
+                            evidence_refs=["example-ski-area"],
+                        )
+                    ],
+                    evidence_refs=["example-ski-area"],
+                ),
+                "graph_impact": "graph_blocking",
+            },
+            {
+                "candidate_id": "example-village--example-area",
+                "candidate_name": "Example Village to Example Area",
+                "candidate_kind": "ski_area_access",
+                "disposition": "represented",
+                "signals": ["direct_access_relationship"],
+                "evidence_refs": ["example-access"],
+                "target_refs": [
+                    {
+                        "target_type": "ski_area_access",
+                        "target_id": "example-village--example-area",
+                    }
+                ],
+                "rationale": "The official map shows direct lift access.",
+                "graph_impact": "graph_blocking",
+            },
+            {
+                "candidate_id": "example-local-pass",
+                "candidate_name": "Example Local Pass",
+                "candidate_kind": "lift_pass_product",
+                "disposition": "represented",
+                "signals": ["official_product_identity"],
+                "evidence_refs": ["example-pass"],
+                "target_refs": [
+                    {
+                        "target_type": "lift_pass_product",
+                        "target_id": "example-local-pass",
+                    }
+                ],
+                "rationale": "The official tariff defines the local pass.",
+                "graph_impact": "graph_blocking",
+            },
+        ]
+    )
+    payload["entity_scope_assessments"][0]["graph_impact"] = "graph_blocking"
+    payload["review_evidence_envelope"] = [
+        {
+            "family_id": "official-booking-directory",
+            "source_kind": "destination_booking",
+            "source_urls": ["https://example.com/stays"],
+            "candidate_kinds": ["stay_destination", "stay_base"],
+        },
+        {
+            "family_id": "official-ski-map",
+            "source_kind": "ski_area_operator",
+            "source_urls": ["https://example.com/ski-map"],
+            "candidate_kinds": ["ski_area", "ski_area_access", "terrain_domain"],
+        },
+        {
+            "family_id": "official-pass-tariff",
+            "source_kind": "pass_tariff",
+            "source_urls": ["https://example.com/pass"],
+            "candidate_kinds": ["lift_pass_product", "terrain_domain"],
+        },
+    ]
+    payload["graph_discovery"] = {
+        "status": "complete",
+        "coverage": [
+            {
+                "focus_stay_destination_id": "example",
+                "candidate_kind": "stay_destination",
+                "coverage_state": "complete",
+                "candidate_ids": ["example"],
+                "source_family_ids": ["official-booking-directory"],
+                "evidence_refs": ["example-stay-market"],
+                "rationale": "The destination directory was exhaustively reviewed.",
+            },
+            {
+                "focus_stay_destination_id": "example",
+                "candidate_kind": "stay_base",
+                "coverage_state": "complete",
+                "candidate_ids": ["example-village"],
+                "source_family_ids": ["official-booking-directory"],
+                "evidence_refs": ["example-stay-base"],
+                "rationale": "The accommodation directory was exhaustively reviewed.",
+            },
+            {
+                "focus_stay_destination_id": "example",
+                "candidate_kind": "ski_area",
+                "coverage_state": "complete",
+                "candidate_ids": ["example-area"],
+                "source_family_ids": ["official-ski-map"],
+                "evidence_refs": ["example-ski-area"],
+                "rationale": "The operator map was exhaustively reviewed.",
+            },
+            {
+                "focus_stay_destination_id": "example",
+                "candidate_kind": "ski_area_access",
+                "coverage_state": "complete",
+                "candidate_ids": ["example-village--example-area"],
+                "source_family_ids": ["official-ski-map"],
+                "evidence_refs": ["example-access"],
+                "rationale": "The direct access inventory was exhaustively reviewed.",
+            },
+            {
+                "focus_stay_destination_id": "example",
+                "candidate_kind": "terrain_domain",
+                "coverage_state": "complete",
+                "candidate_ids": [],
+                "source_family_ids": [
+                    "official-ski-map",
+                    "official-pass-tariff",
+                ],
+                "evidence_refs": ["example-ski-area", "example-pass"],
+                "rationale": "No terrain domain was presented by either source.",
+            },
+            {
+                "focus_stay_destination_id": "example",
+                "candidate_kind": "lift_pass_product",
+                "coverage_state": "complete",
+                "candidate_ids": ["example-local-pass"],
+                "source_family_ids": ["official-pass-tariff"],
+                "evidence_refs": ["example-pass"],
+                "rationale": "The official tariff was exhaustively reviewed.",
+            },
+        ],
+        "relationships": [
+            {
+                "relationship_type": "stay_destination_contains_stay_base",
+                "from_candidate_id": "example",
+                "to_candidate_id": "example-village",
+                "evidence_refs": ["example-stay-base"],
+            },
+            {
+                "relationship_type": "ski_area_access_originates_at_stay_base",
+                "from_candidate_id": "example-village--example-area",
+                "to_candidate_id": "example-village",
+                "evidence_refs": ["example-access"],
+            },
+            {
+                "relationship_type": "ski_area_access_reaches_ski_area",
+                "from_candidate_id": "example-village--example-area",
+                "to_candidate_id": "example-area",
+                "evidence_refs": ["example-access"],
+            },
+            {
+                "relationship_type": "lift_pass_available_from_stay_destination",
+                "from_candidate_id": "example-local-pass",
+                "to_candidate_id": "example",
+                "evidence_refs": ["example-pass"],
+            },
+            {
+                "relationship_type": "lift_pass_default_for_stay_destination",
+                "from_candidate_id": "example-local-pass",
+                "to_candidate_id": "example",
+                "evidence_refs": ["example-pass"],
+            },
+            {
+                "relationship_type": "lift_pass_covers_ski_area",
+                "from_candidate_id": "example-local-pass",
+                "to_candidate_id": "example-area",
+                "evidence_refs": ["example-pass"],
+            },
+        ],
+    }
+    return payload
 
 
 def _access_distance_report(*, status: str = "estimated") -> CatalogCurationReport:
@@ -806,6 +1120,419 @@ def test_existing_report_defaults_to_schema_version_one() -> None:
 
     assert report.report_schema_version == 1
     validate_catalog_curation_report(report)
+
+
+def test_schema_five_report_accepts_complete_graph_discovery() -> None:
+    report = CatalogCurationReport.model_validate(_schema_five_graph_report_payload())
+
+    validate_catalog_curation_report(report, require_resulting_graph=True)
+
+    assert report.report_schema_version == 5
+    assert report.graph_discovery is not None
+    assert report.graph_discovery.status == "complete"
+
+
+def test_schema_five_report_requires_graph_discovery() -> None:
+    payload = _schema_five_graph_report_payload()
+    del payload["graph_discovery"]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="schema version 5 requires graph_discovery",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_graph_discovery_rejects_duplicate_root_kind_coverage() -> None:
+    payload = _schema_five_graph_report_payload()
+    payload["graph_discovery"]["coverage"].append(
+        deepcopy(payload["graph_discovery"]["coverage"][0])
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="duplicate graph-discovery coverage",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_graph_discovery_in_progress_retains_established_candidates() -> None:
+    payload = _schema_five_graph_report_payload()
+    payload["graph_discovery"]["status"] = "in_progress"
+    payload["graph_discovery"]["coverage"][2]["coverage_state"] = "in_progress"
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_curation_report(report, require_resulting_graph=True)
+
+    assert report.graph_discovery is not None
+    area_coverage = next(
+        coverage
+        for coverage in report.graph_discovery.coverage
+        if coverage.candidate_kind == "ski_area"
+    )
+    assert area_coverage.candidate_ids == ["example-area"]
+
+
+def test_graph_discovery_checkpoint_accepts_genuinely_partial_known_graph() -> None:
+    payload = _schema_five_graph_report_payload()
+    payload["graph_discovery"] = {
+        "status": "in_progress",
+        "coverage": [payload["graph_discovery"]["coverage"][0]],
+        "relationships": [],
+    }
+    payload["entity_scope_assessments"] = [
+        assessment
+        for assessment in payload["entity_scope_assessments"]
+        if assessment["candidate_id"] == "example"
+    ]
+    payload["reviewed_targets"] = payload["reviewed_targets"][:1]
+    payload["field_coverage"] = payload["field_coverage"][:1]
+    payload["evidence"] = payload["evidence"][:1]
+    payload["review_evidence_envelope"] = [payload["review_evidence_envelope"][0]]
+    report = CatalogCurationReport.model_validate(payload)
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    validate_catalog_graph_discovery(
+        report,
+        catalog,
+        require_complete=False,
+        allow_pending_scope_changes=True,
+    )
+
+
+def test_graph_discovery_rejects_wrong_source_neighborhood() -> None:
+    payload = _schema_five_graph_report_payload()
+    area_coverage = payload["graph_discovery"]["coverage"][2]
+    area_coverage["source_family_ids"] = ["official-booking-directory"]
+    area_coverage["evidence_refs"] = ["example-stay-market"]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="ski_area coverage requires a ski_area_operator source family",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_graph_discovery_rejects_candidate_without_shared_coverage_evidence() -> None:
+    payload = _schema_five_graph_report_payload()
+    payload["graph_discovery"]["coverage"][2]["evidence_refs"] = ["example-access"]
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="example-area: graph-discovery coverage must share evidence",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_graph_discovery_rejects_candidate_evidence_outside_declared_families() -> None:
+    payload = _schema_five_graph_report_payload()
+    payload["evidence"].append(
+        {
+            "evidence_id": "outside-area-source",
+            "target_type": "stay_base",
+            "target_id": "example-village",
+            "field_path": "name",
+            "source_type": "official",
+            "source_url": "https://outside.example/area",
+            "source_title": "Unrelated operator page",
+            "source_value": "Example Village",
+            "evidence_summary": "Names the base outside the declared family.",
+        }
+    )
+    area_assessment = next(
+        assessment
+        for assessment in payload["entity_scope_assessments"]
+        if assessment["candidate_id"] == "example-village"
+    )
+    area_assessment["evidence_refs"] = ["outside-area-source"]
+    area_coverage = payload["graph_discovery"]["coverage"][1]
+    area_coverage["evidence_refs"].append("outside-area-source")
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "example-village: candidate evidence is outside allowed "
+            "graph-discovery source"
+        ),
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_graph_discovery_rejects_candidate_evidence_from_supplemental_family() -> None:
+    payload = _schema_five_graph_report_payload()
+    payload["review_evidence_envelope"].append(
+        {
+            "family_id": "supplemental-destination-page",
+            "source_kind": "other_official",
+            "source_urls": ["https://example.com/supplemental"],
+            "candidate_kinds": ["stay_base"],
+        }
+    )
+    payload["evidence"].append(
+        {
+            "evidence_id": "supplemental-stay-base",
+            "target_type": "stay_base",
+            "target_id": "example-village",
+            "field_path": "name",
+            "source_type": "official",
+            "source_url": "https://example.com/supplemental",
+            "source_title": "Supplemental destination page",
+            "source_value": "Example Village",
+            "evidence_summary": "Mentions the village without enumerating stays.",
+        }
+    )
+    assessment = next(
+        item
+        for item in payload["entity_scope_assessments"]
+        if item["candidate_id"] == "example-village"
+    )
+    assessment["evidence_refs"] = ["supplemental-stay-base"]
+    coverage = payload["graph_discovery"]["coverage"][1]
+    coverage["source_family_ids"].append("supplemental-destination-page")
+    coverage["evidence_refs"].append("supplemental-stay-base")
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "example-village: candidate evidence is outside allowed "
+            "graph-discovery source families"
+        ),
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_graph_discovery_progression_retains_prior_rows_and_candidates() -> None:
+    previous_payload = _schema_five_graph_report_payload()
+    previous_payload["graph_discovery"]["status"] = "in_progress"
+    previous_payload["graph_discovery"]["coverage"][2]["coverage_state"] = "in_progress"
+    current_payload = deepcopy(previous_payload)
+    current_payload["graph_discovery"]["coverage"] = [
+        coverage
+        for coverage in current_payload["graph_discovery"]["coverage"]
+        if coverage["candidate_kind"] != "ski_area"
+    ]
+    current_payload["graph_discovery"]["relationships"] = [
+        relationship
+        for relationship in current_payload["graph_discovery"]["relationships"]
+        if relationship["to_candidate_id"] != "example-area"
+    ]
+    current_payload["entity_scope_assessments"] = [
+        assessment
+        for assessment in current_payload["entity_scope_assessments"]
+        if assessment["candidate_id"] != "example-area"
+    ]
+
+    previous = CatalogCurationReport.model_validate(previous_payload)
+    current = CatalogCurationReport.model_validate(current_payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="graph discovery removed prior ski_area coverage",
+    ):
+        validate_catalog_graph_discovery_progression(previous, current)
+
+
+def test_graph_discovery_progression_rejects_candidate_loss() -> None:
+    previous_payload = _schema_five_graph_report_payload()
+    previous_payload["graph_discovery"]["status"] = "in_progress"
+    previous_payload["graph_discovery"]["coverage"][2]["coverage_state"] = "in_progress"
+    current_payload = deepcopy(previous_payload)
+    current_payload["graph_discovery"]["coverage"][2]["candidate_ids"] = []
+    current_payload["entity_scope_assessments"] = [
+        assessment
+        for assessment in current_payload["entity_scope_assessments"]
+        if assessment["candidate_id"] != "example-area"
+    ]
+    current_payload["graph_discovery"]["relationships"] = [
+        relationship
+        for relationship in current_payload["graph_discovery"]["relationships"]
+        if relationship["to_candidate_id"] != "example-area"
+    ]
+
+    previous = CatalogCurationReport.model_validate(previous_payload)
+    current = CatalogCurationReport.model_validate(current_payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="graph discovery removed established candidate example-area",
+    ):
+        validate_catalog_graph_discovery_progression(previous, current)
+
+
+def test_graph_discovery_rejects_wrong_relationship_endpoint_kind() -> None:
+    payload = _schema_five_graph_report_payload()
+    relationship = payload["graph_discovery"]["relationships"][0]
+    relationship["to_candidate_id"] = "example-area"
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="stay_destination_contains_stay_base requires .* -> stay_base",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_graph_discovery_markdown_is_rendered_before_evidence_envelope() -> None:
+    report = CatalogCurationReport.model_validate(_schema_five_graph_report_payload())
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    rendered = render_catalog_curation_report_markdown(report, catalog)
+
+    assert "## Graph Discovery" in rendered
+    assert rendered.index("## Graph Discovery") < rendered.index(
+        "## Review Evidence Envelope"
+    )
+    assert "Example Area (`example-area`)" in rendered
+    assert "`lift_pass_covers_ski_area`" in rendered
+
+
+def test_complete_graph_discovery_covers_known_catalog_graph_per_root() -> None:
+    report = CatalogCurationReport.model_validate(_schema_five_graph_report_payload())
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    validate_catalog_graph_discovery(
+        report,
+        catalog,
+        require_complete=True,
+        allow_pending_scope_changes=False,
+    )
+
+
+def test_complete_graph_discovery_rejects_missing_known_candidate() -> None:
+    payload = _schema_five_graph_report_payload()
+    pass_coverage = payload["graph_discovery"]["coverage"][-1]
+    pass_coverage["candidate_ids"] = []
+    payload["entity_scope_assessments"] = [
+        assessment
+        for assessment in payload["entity_scope_assessments"]
+        if assessment["candidate_id"] != "example-local-pass"
+    ]
+    payload["graph_discovery"]["relationships"] = [
+        relationship
+        for relationship in payload["graph_discovery"]["relationships"]
+        if relationship["from_candidate_id"] != "example-local-pass"
+    ]
+    report = CatalogCurationReport.model_validate(payload)
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="example: lift_pass_product coverage omits known catalog target "
+        "example-local-pass",
+    ):
+        validate_catalog_graph_discovery(
+            report,
+            catalog,
+            require_complete=True,
+            allow_pending_scope_changes=False,
+        )
+
+
+def test_complete_graph_discovery_rejects_candidates_swapped_between_roots() -> None:
+    catalog_payload = minimal_catalog_payload()
+    add_second_destination_base_with_access(catalog_payload)
+    catalog = CatalogSnapshot.model_validate(catalog_payload)
+    payload = _schema_five_graph_report_payload()
+    payload["resulting_graph"]["focus_stay_destination_ids"].append("other-destination")
+    payload["graph_discovery"]["coverage"].extend(
+        [
+            {
+                **deepcopy(coverage),
+                "focus_stay_destination_id": "other-destination",
+            }
+            for coverage in payload["graph_discovery"]["coverage"]
+        ]
+    )
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="other-destination: stay_destination coverage omits known catalog "
+        "target other-destination",
+    ):
+        validate_catalog_graph_discovery(
+            report,
+            catalog,
+            require_complete=True,
+            allow_pending_scope_changes=False,
+        )
+
+
+def test_resulting_graph_scope_includes_pass_that_directly_covers_local_area() -> None:
+    payload = minimal_catalog_payload()
+    add_second_destination_base_with_access(payload)
+    covering_pass = deepcopy(payload["lift_pass_products"][0])
+    covering_pass.update(
+        {
+            "lift_pass_product_id": "area-covering-pass",
+            "name": "Area Covering Pass",
+            "available_from_stay_destination_ids": ["other-destination"],
+            "default_for_stay_destination_ids": [],
+        }
+    )
+    payload["lift_pass_products"].append(covering_pass)
+    catalog = CatalogSnapshot.model_validate(payload)
+
+    scope = catalog_resulting_graph_scope(catalog, {"example"})
+
+    assert "area-covering-pass" in scope.pass_ids
+
+
+def test_resulting_graph_scope_stops_after_one_shared_domain_hop() -> None:
+    payload = minimal_catalog_payload()
+    add_second_destination_base_with_access(payload)
+    for area_id in ("one-hop-area", "two-hop-area"):
+        area = deepcopy(payload["ski_areas"][0])
+        area.update({"ski_area_id": area_id, "name": area_id.replace("-", " ")})
+        payload["ski_areas"].append(area)
+        access = deepcopy(payload["ski_area_access"][-1])
+        access.update(
+            {
+                "ski_area_access_id": f"other-village--{area_id}",
+                "ski_area_id": area_id,
+            }
+        )
+        payload["ski_area_access"].append(access)
+    payload["terrain_domains"] = [
+        {
+            "terrain_domain_id": "direct-domain",
+            "name": "Direct Domain",
+            "ski_area_ids": ["example-area", "one-hop-area"],
+            "source_urls": ["https://example.com/direct-domain"],
+        },
+        {
+            "terrain_domain_id": "chained-domain",
+            "name": "Chained Domain",
+            "ski_area_ids": ["one-hop-area", "two-hop-area"],
+            "source_urls": ["https://example.com/chained-domain"],
+        },
+    ]
+    catalog = CatalogSnapshot.model_validate(payload)
+
+    scope = catalog_resulting_graph_scope(catalog, {"example"})
+
+    assert "direct-domain" in scope.domain_ids
+    assert "one-hop-area" in scope.area_ids
+    assert "chained-domain" not in scope.domain_ids
+    assert "two-hop-area" not in scope.area_ids
+
+
+def test_resulting_graph_scope_includes_one_hop_neighbor_destination_only() -> None:
+    payload = minimal_catalog_payload()
+    add_second_destination_base_with_access(payload)
+    catalog = CatalogSnapshot.model_validate(payload)
+
+    scope = catalog_resulting_graph_scope(catalog, {"example"})
+
+    assert scope.destination_ids == frozenset({"example", "other-destination"})
+    assert scope.base_ids == frozenset({"example-village"})
+    assert scope.access_ids == frozenset({"example-village--example-area"})
 
 
 def test_current_destination_boundary_policy_is_required_for_current_workflow() -> None:
@@ -3732,7 +4459,9 @@ def test_resulting_graph_requires_destinations_owning_reviewed_graph_targets() -
     validate_catalog_resulting_graph(report, catalog, require=True)
 
 
-def test_resulting_graph_excludes_linked_dependency_review_targets() -> None:
+def test_resulting_graph_renders_one_hop_destination_without_its_internal_graph() -> (
+    None
+):
     catalog_payload = minimal_catalog_payload()
     add_second_destination_base_with_access(catalog_payload)
     catalog = CatalogSnapshot.model_validate(catalog_payload)
@@ -3793,7 +4522,8 @@ def test_resulting_graph_excludes_linked_dependency_review_targets() -> None:
     validate_catalog_resulting_graph(report, catalog, require=True)
     rendered = render_catalog_curation_report_markdown(report, catalog)
 
-    assert "Stay destination<br/>Other Destination" not in rendered
+    assert "Stay destination<br/>Other Destination" in rendered
+    assert "Stay base<br/>Other Village" not in rendered
     assert "`linked_dependency`" in rendered
 
 

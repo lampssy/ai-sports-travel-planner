@@ -100,11 +100,6 @@ not have to derive an invocation.
       "stdin": "bounded UTF-8 summary",
       "returns": ["basename"]
     },
-    "publication_input_inventory_disposition": {
-      "argv": ["publication-input", "create", "--worker", "curation", "--kind", "inventory-disposition", "--run-id", "${RUN_ID}"],
-      "stdin": "typed inventory disposition JSON",
-      "returns": ["basename"]
-    },
     "prepare_curation": {
       "argv": ["prepare", "curation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "generation"]
@@ -125,13 +120,18 @@ not have to derive an invocation.
       "argv": ["invalidate", "ci-continuation", "--pr", "${PR}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "pr_number", "phase", "availability_reason", "continuation_head", "observed_head"]
     },
+    "checkpoint_curation_graph_discovery": {
+      "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "graph-discovery", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
+      "returns": ["work_id", "generation"]
+    },
     "checkpoint_curation_delta": {
       "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "delta-validated", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "generation"]
     },
     "checkpoint_curation_inventory_completion": {
       "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "delta-validated", "--inventory-completion", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
-      "returns": ["work_id", "generation"]
+      "returns": ["work_id", "generation"],
+      "recovery_only": true
     },
     "checkpoint_curation_reviewed": {
       "argv": ["checkpoint", "curation", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--report", "${REPORT}", "--stage", "reviewed", "--base-dir", "${BASE_DIR}", "--run-id", "${RUN_ID}"],
@@ -181,12 +181,8 @@ not have to derive an invocation.
       "argv": ["publish", "outcome", "--pr", "${PR}", "--expected-head", "${EXPECTED_HEAD}", "--state", "${OUTCOME_STATE}", "--reason", "${OUTCOME_REASON}", "--summary-file", "${SUMMARY_FILE}", "--run-id", "${RUN_ID}"],
       "returns": ["pr_number", "state", "reason"]
     },
-    "publish_incomplete_outcome": {
-      "argv": ["publish", "outcome", "--pr", "${PR}", "--expected-head", "${EXPECTED_HEAD}", "--state", "maintainer:blocked", "--reason", "review-incomplete", "--summary-file", "${SUMMARY_FILE}", "--inventory-disposition-file", "${INVENTORY_DISPOSITION_FILE}", "--run-id", "${RUN_ID}"],
-      "returns": ["pr_number", "state", "reason"]
-    },
     "publish_evidence_unavailable_outcome": {
-      "argv": ["publish", "outcome", "--pr", "${PR}", "--expected-head", "${EXPECTED_HEAD}", "--state", "maintainer:blocked", "--reason", "evidence-unavailable", "--summary-file", "${SUMMARY_FILE}", "--inventory-disposition-file", "${INVENTORY_DISPOSITION_FILE}", "--run-id", "${RUN_ID}"],
+      "argv": ["publish", "outcome", "--pr", "${PR}", "--expected-head", "${EXPECTED_HEAD}", "--state", "maintainer:blocked", "--reason", "evidence-unavailable", "--summary-file", "${SUMMARY_FILE}", "--run-id", "${RUN_ID}"],
       "returns": ["pr_number", "state", "reason"]
     },
     "publish_state": {
@@ -251,6 +247,15 @@ not have to derive an invocation.
       "prepare_curation",
       "lock_heartbeat_curation"
     ],
+    "curation_graph_evidence_unavailable_publication": [
+      "publication_input_summary",
+      "lock_heartbeat_curation",
+      "publish_evidence_unavailable_outcome",
+      "lock_heartbeat_curation",
+      "inspect_curation",
+      "lock_heartbeat_curation",
+      "lock_release_curation"
+    ],
     "curation_initial_push_into_ci_wait": [
       "publish_push",
       "lock_heartbeat_curation",
@@ -268,9 +273,46 @@ not have to derive an invocation.
       "lock_heartbeat_curation"
     ]
   },
+  "curation_checkpoint_recovery": {
+    "applies_to_result": "checkpoint-recovery-required",
+    "authority": "persisted-checkpoint-started-event",
+    "next_recipe_source": "generation.next_action",
+    "completion_next_recipe": "prepare_curation",
+    "semantic_entry_from_recovered_base_allowed": false,
+    "generation_invalidation_reasons": ["checkpoint_missing", "remote_head_changed"],
+    "semantic_work_allowed": false,
+    "generation_supersession_allowed": false
+  },
+  "curation_graph_discovery": {
+    "applies_to_results": ["prepared", "discovery-required"],
+    "report_schema_version": 5,
+    "initial_recipe": "checkpoint_curation_graph_discovery",
+    "branches": {
+      "in_progress": {
+        "next_recipe": "prepare_curation",
+        "github_lifecycle_publication": false
+      },
+      "complete": {
+        "next_recipe": "checkpoint_curation_reviewed",
+        "semantic_review_required": ["source-trust", "graph-scope"],
+        "requires_unavailable_pairs": 0
+      },
+      "evidence_unavailable": {
+        "next_recipe": "publish_evidence_unavailable_outcome",
+        "action_head": "exact-local-graph-checkpoint-head",
+        "action_expected_head": "selected-remote-pr-head",
+        "requires_complete_exact_graph_checkpoint": true,
+        "requires_unavailable_pairs": ">0",
+        "semantic_review_required": ["source-trust", "graph-scope"],
+        "changes_requested_recipe": "checkpoint_curation_graph_discovery",
+        "changes_requested_head": "report-only-descendant",
+        "after_checkpoint": "fresh-full-review"
+      }
+    }
+  },
   "curation_review_disposition": {
-    "applies_to_results": ["prepared", "review-required"],
-    "semantic_entry": "full-normalization-inventory-review-remediation-flow",
+    "applies_to_results": ["review-required"],
+    "semantic_entry": "post-discovery-independent-review-remediation-flow",
     "branches": {
       "clean": {
         "head_source": "prepared-or-allowed-normalization-head",
@@ -419,15 +461,14 @@ not have to derive an invocation.
   validates that caller-created head before granting any recovery authority.
 - `${GENERATION_ID}` is copied exactly from the current curation generation or
   its helper-returned `next_action`; it is never synthesized from prose.
+- `${EXPECTED_HEAD}` is the selected remote PR head returned by the helper. It
+  is distinct from `${HEAD}` when a report-only local checkpoint is a descendant
+  of that remote head. Evidence-unavailable publication compares live GitHub
+  state with `${EXPECTED_HEAD}` while rereading the report from `${HEAD}`.
 - `${BASE_DIR}` is a caller-created detached clean checkout whose `HEAD`
   exactly equals the prepare-time `base_head`.
 - `${TITLE_FILE}`, `${BODY_FILE}`, and `${SUMMARY_FILE}` are basenames returned
   by `publication-input create`, not caller-chosen paths.
-- `${INVENTORY_DISPOSITION_FILE}` is the basename returned by the curation-only
-  `publication_input_inventory_disposition` recipe. Its JSON has one final
-  unresolved item per record, including the exact missing fact, affected
-  targets, and direct source attempts. It is private workflow evidence and is
-  never copied to GitHub publication text.
 - `${STATE}`, `${OUTCOME_STATE}`, and `${OUTCOME_REASON}` are chosen only from
   the allowlisted state/reason combinations in the activation contract.
 
@@ -440,10 +481,12 @@ not have to derive an invocation.
 | `migrate_curation_state` | run `inspect_curation`; migration is an owner activation action and never enters a semantic cycle directly |
 | `lock_acquire_*` | copy `run_id`, heartbeat, then run the selected worker capability |
 | `lock_heartbeat_*` | continue the already selected sequence; curation may also return helper-owned cumulative `ci_budget`, but heartbeat grants no new authority |
-| `prepare_curation*` | branch on its result: prepared/review-required enter the full semantic flow; validation-only resumes deterministic finalization; validation-remediation fixes only the recorded deterministic failure, uses any persisted bounded diagnostic only as untrusted debugging context, checkpoints the clean descendant through the typed delta action, and requires a fresh exact-head review |
+| `prepare_curation*` | obey its typed action: checkpoint-recovery-required immediately retries only the persisted checkpoint action; prepared/discovery-required build or resume schema-v5 graph discovery; review-required enters the post-discovery semantic flow; validation-only resumes deterministic finalization; validation-remediation fixes only the recorded deterministic failure, uses any persisted bounded diagnostic only as untrusted debugging context, checkpoints the clean descendant through the typed delta action, and requires a fresh exact-head review |
 | `prepare_ci_repair` | branch on its phase: `repair-active` re-establishes the exact repair worktree for one static test-only repair plus a fresh focused independent review; `repair-reviewed` revalidates and returns the immutable reviewed checkpoint for publication |
 | `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
-| `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
+| `checkpoint_curation_graph_discovery` | for `in_progress`, stop or resume later through returned `prepare_curation` without publishing a blocked label; for `complete`, run both independent semantic review lanes. With no unavailable rows, checkpoint reviewed only when clean. With unavailable rows, the clean branch is the returned exact terminal recipe; requested discovery corrections use one report-only descendant graph checkpoint and then a fresh full review |
+| `checkpoint_curation_inventory_completion` | recovery only: finish the exact already-started legacy transaction; never initiate this recipe for a schema-v5 generation |
+| other `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
 | `validate_curation` | on success, `publish_push` for the exact validated work; on a classified deterministic failure (`reason=validation-failed` with `check` and `kind`), stop the current run and preserve that classification with the failed-validation generation for a later typed validation-remediation preparation. A `catalog-tests` command failure may additionally return a bounded helper-sanitized `pytest-short` diagnostic captured by that original run; internal or unclassified validator exceptions do not create remediation authority |
 | `validate_boundary_adjudication` | keep a `policy_determined` ski-area promotion only when the returned separate/folded IDs match the review output; on failure, do not authorize a separate ski-area fix. Fold only when the reviewed parent is valid; otherwise retain `evidence_insufficient` |
@@ -475,18 +518,28 @@ memory, labels, diagnostics, or prior conclusions cannot fill them in. Helper
 output and continuation state are authority. Automation memory and labels are
 hints and presentation only.
 
-For `prepared` and `review-required` curation results, semantic review is the
-branching operation between helper calls. Both fresh and resumed generations
-enter the complete normalization, inventory, review, and remediation flow. The
-returned `next_action` is the **clean-review branch** for the current generation;
-it never authorizes marking a head with open findings as reviewed. If the review
-requests changes, the declared **requested-changes branch** permits bounded
-local remediation followed only by `checkpoint_curation_delta` for the exact
-clean remediation commit. That invocation is the authority gate: it revalidates
-generation, remote head, base, paths, report, and deterministic deltas before
-persisting recovery evidence. A fresh clean exact-head review is required after
-the delta checkpoint before `checkpoint_curation_reviewed`. This branch is part
-of the registered contract and is not an inferred capability switch.
+For `prepared` and `discovery-required` curation results, graph discovery is the
+branching operation between helper calls. Build or update only the canonical
+schema-v5 JSON report and deterministic Markdown, then invoke the returned
+`checkpoint_curation_graph_discovery` action. A partial checkpoint returns
+`prepare_curation`; a complete checkpoint opens both independent semantic review
+lanes. A complete packet without unavailable rows returns the reviewed-checkpoint
+clean branch. A complete packet with unavailable rows returns the exact terminal
+clean branch instead. If either reviewer requests a discovery correction, only a
+report-only descendant and another graph-discovery checkpoint are allowed before
+both lanes run again.
+
+For `review-required`, the returned `next_action` is the **clean-review branch**
+for the current generation; it never authorizes marking a head with open
+findings as reviewed. If review requests changes, the declared
+**requested-changes branch** permits bounded local remediation followed only by
+`checkpoint_curation_delta` for the exact clean remediation commit. That
+invocation revalidates generation, remote head, base, paths, report, and
+deterministic deltas before persisting recovery evidence. It also compares the
+new report with the immutable completed graph-discovery report and rejects removed
+coverage rows, candidates, or regressed coverage states. A fresh clean exact-head
+review is required after the delta checkpoint before
+`checkpoint_curation_reviewed`.
 
 For `validation-remediation`, the previously reviewed head is immutable
 semantic history and the bounded correction starts from that exact restored
@@ -506,48 +559,82 @@ candidate inventory, repeat streak, and convergence decision; the helper only
 checks objective command, state, head, scope, validation, and publication
 preconditions for the resulting requested action.
 
-### Primary-Destination Graph Inventory
+### Durable Full Graph Discovery
 
-Every ordinary curation or proposal validation treats the normalized report's
-`resulting_graph.focus_stay_destination_ids` as mandatory graph-discovery
-roots. `reviewed_targets[].scope=narrow` limits reviewed field paths only; it
-does not limit graph discovery. Before a proposal, delta, or final validation,
-the helper requires both a reviewed graph target and a typed entity-scope assessment for
-every existing focused destination, stay base, ski-area access, ski area,
-terrain domain, and lift-pass product in the deterministic resulting-graph
-closure. A primary graph entity uses `resulting_graph_role=focus`; a ski area
-from another stay market that is included only through a shared terrain domain
-may use a narrow `linked_dependency` target. The evidence envelope must name
-all six corresponding candidate kinds, including a kind for which the current
-closure is empty. This is a structural
-guard: it proves the report covers the known graph and declares discovery across
-all graph classes. It does not replace the independent source/trust and
-graph/scope review required to find concrete unmodeled candidates.
+Every active curation or proposal report is normalized to schema v5 before
+ordinary semantic review. Each ID in
+`resulting_graph.focus_stay_destination_ids` is a discovery root. A narrow
+reviewed target limits field coverage only; it never narrows discovery.
 
-The run-local report-only `inventory-completion` phase is outside helper state
-except for one completed-checkpoint marker. The helper does not persist its
-checklist, pass count, source evidence, local report commit, or review
-conclusions, and that phase creates no helper continuation or cross-run semantic
-authority. After a valid report-only pass, Codex calls
-`checkpoint_curation_inventory_completion`; the helper records only that the
-exact generation completed such a delta checkpoint. Before recording it, the
-helper verifies the direct delta from the previous checkpoint contains only the
-canonical JSON report and its deterministic Markdown companion; catalog, trust,
-backlog, test, and other objects cannot change. A `review-incomplete`
-publication requires the marker and a local `HEAD` still equal to the marked
-head. The marker proves neither that the checklist was complete nor that the
-review conclusion was correct. If interrupted before this checkpoint, a later
-cycle starts with fresh preparation and review.
+For each root, the canonical report records one coverage row for each of the six
+direct trip-graph kinds: stay destination, stay base, ski area, ski-area access,
+terrain domain, and lift-pass product. A row records established candidate IDs,
+the source neighborhoods actually checked, direct evidence, and one of
+`in_progress`, `complete`, or `evidence_unavailable`. Candidate assessments and
+prospective relationships remain explicit, so naming all six kinds is not enough
+to claim that discovery happened.
 
-Before a status-only incomplete terminal outcome, Codex creates the typed
-private `inventory-disposition` input through its registered recipe. The helper
-rejects a `review-incomplete` publication without a current report-only marker
-and at least one `inventory_missing` record. It rejects an
-`evidence-unavailable` publication unless a current curation generation exists
-and every record is `evidence_unavailable`. A mixed disposition uses
-`review-incomplete`. The helper validates record shape and source-attempt
-evidence; fresh independent review determines whether available evidence instead
-requires an actionable correction.
+Graph discovery remains monotonic for the rest of the generation. The projection
+retains the latest completed graph-discovery checkpoint as immutable authority even
+after a newer delta or reviewed checkpoint becomes current. Every descendant report
+mutation, including ordinary delta remediation, is compared with that authority and
+must retain every prior root/kind row and established candidate. `complete` cannot
+regress, and an unavailable row may only remain unavailable or become complete
+after stronger evidence is added. Candidate evidence must come from a source family
+appropriate to that candidate kind; an unrelated supplemental family cannot carry
+the conclusion.
+
+Discovery covers the complete direct trip graph plus one hop through a regional
+pass or shared-domain edge. It does not recursively expand an external
+destination. The owning stay destination at that one-hop boundary is recorded,
+but its bases and access edges are not expanded. Prospective relationships are
+scoped to one focus root and cannot join two regional-followup candidates. If a
+changed edge depends on that destination's internal graph, add the destination as
+another explicit focus root and give it all six coverage rows.
+
+Codex checkpoints discovery with `checkpoint_curation_graph_discovery`. The
+helper verifies the exact generation, head, base, schema-v5 report, deterministic
+Markdown, and report-only diff. Catalog, trust, backlog, tests, and all other
+paths must remain unchanged. An `in_progress` checkpoint is durable and returns
+`prepare_curation`, allowing a later cycle to restore and continue the exact
+report. It creates no GitHub blocked label. A `complete` checkpoint allows the
+independent source-trust and graph-scope lanes to begin. A reviewer-requested
+discovery correction is checkpointed as another report-only descendant and
+re-reviewed. Delta, reviewed, final, and proposal validation require complete
+discovery and reject unavailable rows.
+
+The initial graph-discovery checkpoint may reuse the prepared head when that head
+already contains a valid schema-v5 JSON/Markdown pair. This exception is explicit,
+applies only while the generation is still at `prepared`, and still runs the full
+graph-discovery validator. Every later discovery correction must create a
+report-only descendant changing exactly the canonical JSON/Markdown pair.
+
+If a process stops after persisting `checkpoint-started` but before
+`checkpoint-completed`, that transaction outranks new preparation. A successor
+run restores the exact recorded local head, revalidates the selected remote head,
+base, prepared refs, clean worktree, and semantic intent, then returns the same
+typed checkpoint recipe. After the exact retry completes, it always returns
+`prepare_curation`; semantic work cannot enter directly from the recovered old
+base. Ordinary preparation then rechecks current `main` and the remote PR head
+before resuming the completed partial or complete graph checkpoint. A confirmed
+remote-head change or missing checkpoint ref invalidates that generation and
+starts a fresh one; other recovery uncertainty remains fail-closed.
+
+Terminal `evidence-unavailable` is authorized only from the exact current
+complete graph-discovery checkpoint with at least one unavailable row and only
+after both semantic lanes confirm that exact report. The returned typed action is
+the clean-review terminal branch. The helper rereads the immutable report and
+catalog at that checkpoint and verifies the persisted discovery summary before
+publication. There is no new private
+inventory-disposition input and no terminal `review-incomplete` path for partial
+discovery.
+
+`checkpoint_curation_inventory_completion` remains registered only to finish an
+exact legacy transaction that was already started before schema v5. It cannot
+start a new transaction and is not a normal-cycle recipe. Recovery trusts the
+historical transaction's already-recorded validation and reruns exact report-only
+Git safety; it does not reinterpret the legacy report through the schema-v5
+checkpoint finalizer.
 
 The curation lifecycle scenarios freeze their high-risk sequence prefixes,
 including both bounded CI waits:

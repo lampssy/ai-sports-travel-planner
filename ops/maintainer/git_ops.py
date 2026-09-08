@@ -871,43 +871,60 @@ class GitRepository:
             "validation remediation must descend from the reviewed head",
         )
 
+    def verify_report_only_graph_discovery(
+        self,
+        previous_head: str,
+        discovery_head: str,
+        report_path: str,
+        *,
+        allow_unchanged: bool = False,
+    ) -> None:
+        """Require discovery progress to change only its report JSON/Markdown pair."""
+        _validate_sha(previous_head)
+        _validate_sha(discovery_head)
+        valid_report_path = report_path.startswith(
+            "docs/catalog-curation/"
+        ) and report_path.endswith(".json")
+        if not valid_report_path:
+            raise RepositorySafetyError("graph discovery report path is invalid")
+        self.verify_repository()
+        self._verify_commit(previous_head)
+        self._verify_commit(discovery_head)
+        self._assert_ancestor(
+            previous_head,
+            discovery_head,
+            "graph discovery must descend from its previous checkpoint",
+        )
+        self._ensure_clean_preflight()
+        if self.current_head() != discovery_head:
+            raise RepositorySafetyError(
+                "current HEAD does not match graph discovery head"
+            )
+        expected_paths = frozenset(
+            {report_path, report_path.removesuffix(".json") + ".md"}
+        )
+        changed_paths = frozenset(
+            entry.path for entry in self.diff_entries(previous_head, discovery_head)
+        )
+        if allow_unchanged and previous_head == discovery_head and not changed_paths:
+            return
+        if changed_paths != expected_paths:
+            raise RepositorySafetyError(
+                "graph discovery must change only the canonical report pair"
+            )
+
     def verify_report_only_inventory_completion(
         self,
         previous_head: str,
         inventory_head: str,
         report_path: str,
     ) -> None:
-        """Require one inventory pass to change only its report JSON/Markdown pair."""
-        _validate_sha(previous_head)
-        _validate_sha(inventory_head)
-        valid_report_path = report_path.startswith(
-            "docs/catalog-curation/"
-        ) and report_path.endswith(".json")
-        if not valid_report_path:
-            raise RepositorySafetyError("inventory completion report path is invalid")
-        self.verify_repository()
-        self._verify_commit(previous_head)
-        self._verify_commit(inventory_head)
-        self._assert_ancestor(
+        """Recover a legacy inventory transaction using report-only safety."""
+        self.verify_report_only_graph_discovery(
             previous_head,
             inventory_head,
-            "inventory completion must descend from its previous checkpoint",
+            report_path,
         )
-        self._ensure_clean_preflight()
-        if self.current_head() != inventory_head:
-            raise RepositorySafetyError(
-                "current HEAD does not match inventory completion head"
-            )
-        expected_paths = frozenset(
-            {report_path, report_path.removesuffix(".json") + ".md"}
-        )
-        changed_paths = frozenset(
-            entry.path for entry in self.diff_entries(previous_head, inventory_head)
-        )
-        if changed_paths != expected_paths:
-            raise RepositorySafetyError(
-                "inventory completion must change only the canonical report pair"
-            )
 
     def checkpoint_curation_generation(
         self,
@@ -1036,6 +1053,49 @@ class GitRepository:
             pull_request,
             recovery.sync,
             base_head,
+        )
+
+    def prepare_curation_checkpoint_retry(
+        self,
+        pull_request: PullRequest,
+        sync: GuardedSyncResult,
+        checkpoint_head: str,
+        *,
+        restart_interrupted: bool = False,
+    ) -> IntentSnapshot:
+        """Restore an exact local head for an unfinished checkpoint transaction."""
+        _validate_pull_request(pull_request)
+        _validate_sha(checkpoint_head)
+        self.verify_repository()
+        if restart_interrupted:
+            self._abort_cherry_pick_if_active()
+        if self._cherry_pick_in_progress():
+            raise RepositorySafetyError("pre-existing Git operation blocks prepare")
+        self._ensure_clean_preflight()
+        self.fetch_for_pr(pull_request.head_ref_name)
+        fetched_head = self._rev_parse(
+            f"refs/remotes/origin/{pull_request.head_ref_name}"
+        )
+        if fetched_head != pull_request.head_sha or fetched_head != sync.original_head:
+            raise StaleRemoteHeadError(
+                "remote PR head changed during checkpoint recovery"
+            )
+        self._verify_commit(checkpoint_head)
+        self._assert_ancestor(
+            sync.rebased_head,
+            checkpoint_head,
+            "unfinished checkpoint must descend from the prepared head",
+        )
+        switch = self._git("switch", "--detach", checkpoint_head)
+        if switch.returncode != 0:
+            raise CurationCheckpointIntegrityError(
+                "cannot restore unfinished curation checkpoint"
+            )
+        return self._revalidate_prepared_result(
+            pull_request,
+            sync,
+            checkpoint_head,
+            builder=build_preparation_intent_snapshot,
         )
 
     def continue_curation_conflict(

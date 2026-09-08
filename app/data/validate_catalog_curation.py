@@ -13,6 +13,7 @@ from app.data.catalog_curation import (
     load_catalog_curation_report,
     render_catalog_curation_report_markdown,
     validate_catalog_curation_report,
+    validate_catalog_graph_discovery,
     validate_catalog_resulting_graph,
 )
 from app.data.catalog_curation_backlog import (
@@ -70,6 +71,14 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         "--current-catalog-path",
         type=Path,
         help="Current normalized catalog used to derive the resulting graph.",
+    )
+    typed_parser.add_argument(
+        "--parse-only",
+        action="store_true",
+        help=(
+            "Parse and structurally validate a partial report without claiming "
+            "current-catalog or final graph validation."
+        ),
     )
     _add_report_schema_version_argument(typed_parser)
     _add_product_backlog_argument(typed_parser)
@@ -167,10 +176,25 @@ def main(argv: list[str] | None = None) -> int:
             args.require_report_schema_version is not None
             and args.require_report_schema_version >= 3
         )
+        parse_only = bool(getattr(args, "parse_only", False))
+        if (
+            args.command == "typed"
+            and report.report_schema_version >= 5
+            and args.current_catalog_path is None
+            and not parse_only
+        ):
+            raise CatalogValidationError(
+                ["schema-v5 validation requires --current-catalog-path"]
+            )
+        if parse_only and args.current_catalog_path is not None:
+            raise CatalogValidationError(
+                ["--parse-only cannot be combined with --current-catalog-path"]
+            )
         validate_catalog_curation_report(
             report,
             require_resulting_graph=require_resulting_graph,
             require_current_destination_policy=require_resulting_graph,
+            allow_pending_scope_changes=parse_only,
         )
         if not getattr(args, "skip_product_backlog_validation", False):
             validate_catalog_curation_backlog_refs(report, args.product_backlog_path)
@@ -197,6 +221,21 @@ def main(argv: list[str] | None = None) -> int:
                 current_catalog,
                 require=require_resulting_graph,
             )
+            if report.report_schema_version >= 5:
+                validate_catalog_graph_discovery(
+                    report,
+                    current_catalog,
+                    require_complete=True,
+                    allow_pending_scope_changes=False,
+                )
+                assert report.graph_discovery is not None
+                if any(
+                    coverage.coverage_state == "evidence_unavailable"
+                    for coverage in report.graph_discovery.coverage
+                ):
+                    raise CatalogValidationError(
+                        ["final graph discovery contains unavailable evidence"]
+                    )
         if args.require_markdown_path is not None:
             _validate_markdown_report(
                 report,
@@ -212,8 +251,13 @@ def main(argv: list[str] | None = None) -> int:
         _print_invalid(error.issues)
         return 1
 
+    result_label = (
+        "catalog-curation-parsed"
+        if bool(getattr(args, "parse_only", False))
+        else "catalog-curation-valid"
+    )
     summary = (
-        f"[catalog-curation-valid] mode={args.command} "
+        f"[{result_label}] mode={args.command} "
         f"report_schema_version={report.report_schema_version} "
         f"changes={len(report.changes)} coverage={len(report.field_coverage)} "
         f"evidence={len(report.evidence)}"

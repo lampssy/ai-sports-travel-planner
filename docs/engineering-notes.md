@@ -24,54 +24,46 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - Missing or positive mutation status, uncertain execution, a non-dispatch
   error, an ambiguous recipe, or a second rejection still stops fail-closed.
 
-### Maintainer evidence inventory completion
+### Durable maintainer graph discovery
 
-- The initial catalog review evidence envelope is provisional until independent
-  source-trust and graph-scope lanes both return complete dispositions.
-- An incomplete lane produces a structured missing-item checklist instead of
-  immediately authorizing a catalog fix or ending an otherwise productive run.
-- The maintainer may perform at most two report-only inventory-completion passes.
-  Each pass must shrink the unresolved checklist and is followed by fresh dual
-  review on the exact new head.
-- Completion may change only the canonical curation report. Catalog and trust
-  payloads and object IDs remain unchanged. The helper verifies the direct
-  delta contains only the JSON/Markdown report pair and records only a
-  completed inventory-checkpoint marker. It also requires local `HEAD` still
-  equals that marker before `review-incomplete`; it never stores the checklist,
-  sources, report content, or review conclusion. This creates no helper
-  continuation or cross-run semantic authority.
-- Inventory completeness is a knowledge gate, not a correctness gate. Each
-  checklist item becomes missing, verified complete, actionable, defensibly
-  deferred, or blocked by concretely unavailable evidence. Actionable catalog,
-  trust, backlog, rendered-report, and focused-test defects move into ordinary
-  remediation rather than keeping the review incomplete.
-- Missing exact evidence for an optional scalar fact is actionable whenever the
-  value can be safely qualified as a proxy, downgraded, or removed. Unavailable
-  evidence blocks inventory only for graph-critical identity, ownership,
-  access, or pass-validity facts with no conservative graph-safe disposition.
-- A graph-blocking deferral closes the knowledge gap but creates a graph-safety
-  finding; only a regional follow-up can defer without remediation. Conflicting
-  lane outcomes remain missing until a focused exact-head reconciliation.
-- A first pass that strictly shrinks the checklist receives the second permitted
-  pass before the 210-minute cutoff. Unavailable items are excluded without
-  cancelling research for other missing items, and predicted non-completion is
-  not a stop condition.
-- Triage exposes only the pass count, remaining unresolved count, and bounded
-  stop reason so operators can diagnose convergence without persisting semantic
-  evidence in helper state.
-- `review-incomplete` requires that marker plus the fresh review after the
-  report-only pass. When a safe pass cannot start because every remaining
-  graph-critical item is already typed `evidence_unavailable` with attempted
-  official source families, use `evidence-unavailable` instead.
-- Every ordinary curation generation treats its focused stay destinations as
-  graph-discovery roots. A narrow reviewed target limits field coverage only;
-  it cannot turn a full destination graph review into an access- or ski-area-
-  only review.
-- Before delta or final validation, the helper requires reviewed-target and
-  scope-assessment coverage for the known resulting-graph closure, plus all six
-  discovery candidate kinds in the evidence envelope. This structural guard
-  complements, rather than replaces, independent research for unmodeled
-  candidates.
+- Schema-v5 curation reports own graph discovery before semantic review. For
+  each focused stay destination they record one coverage row for every stay
+  destination, stay base, ski area, access edge, terrain domain, and lift-pass
+  product candidate kind.
+- Candidate IDs are separate from coverage state. A complete empty row is an
+  explicit none-found result; `in_progress` and `evidence_unavailable` retain
+  candidates already established instead of discarding partial truth.
+- Coverage rows point to typed source neighborhoods and direct evidence. Every
+  candidate cross-links to the existing same-kind scope assessment, and
+  prospective relationships are recorded explicitly before catalog mutation.
+- The helper structurally validates per-root current-catalog closure and exact
+  report-only safety. Independent source-trust and graph-scope reviews still
+  decide source authority, meaning, and real-world completeness.
+- Full discovery is bounded to the focus destination's direct trip graph plus
+  one-hop regional dependencies. The boundary records the neighboring owning stay
+  destination but does not expand its bases/access graph. Relationships remain
+  root-scoped and cannot chain regional follow-ups. An external graph becomes
+  another focus root only when the selected diff creates or changes an edge that
+  depends on it.
+- Partial checkpoints are monotonic: prior rows and candidates cannot disappear,
+  coverage states cannot regress, and candidate conclusions require evidence from
+  an allowed source family for that candidate kind.
+- A partial report is checkpointed without a GitHub blocked label and resumes
+  from its exact head in a later cycle. Semantic review starts only after every
+  required row leaves `in_progress`.
+- Interrupted checkpoint completion returns through ordinary preparation so the
+  helper rechecks current `main` and the remote PR head before semantic work. A
+  missing checkpoint ref or confirmed remote-head drift invalidates the stale
+  generation; already-started legacy inventory recovery retains only its original
+  report-only safety contract.
+- Exhausted graph-critical evidence is recorded directly in the report. After both
+  semantic review lanes confirm the exact checkpoint, it can authorize only an
+  exact `evidence-unavailable` terminal outcome, never catalog mutation, proposal
+  publication, or final validation. A reviewer-requested correction is another
+  report-only graph checkpoint followed by fresh review.
+- The previous private inventory checklist, disposition file, two-pass loop,
+  and `review-incomplete` terminal path are retired for new generations. Only
+  an already-started legacy transaction may expose its recovery-only recipe.
 
 ### User-facing content ownership
 
@@ -870,11 +862,11 @@ blob IDs, path set, or catalog targets. Catalog data, non-control-plane
 documentation, and tests may change during remediation; production code,
 operational code, the maintainer's own instructions, unsafe file modes, and
 empty diffs fail closed. Before the initial dual review, a legacy, malformed,
-graph-less refreshed, incomplete, or non-reconciling report receives one
-`maintainer-managed` structural normalization pass. It reads the exact prepared
+graph-less refreshed, incomplete, or non-reconciling report enters one
+`maintainer-managed` graph-discovery phase. It reads the exact prepared
 base/current catalog and trust snapshots, rebuilds and locally commits the
-single schema-v4 report, then yields to review without claiming semantic
-resolution or consuming a remediation cycle. It validates those snapshots
+single schema-v5 report, then checkpoints complete or partial discovery without
+claiming semantic resolution or consuming a remediation cycle. It validates those snapshots
 before edits, stops without edits when catalog/trust validation fails, asserts
 the catalog/trust object IDs remain identical, and permits only the report path
 in its local commit. Catalog/trust semantic changes begin only after the
@@ -882,8 +874,9 @@ dual-review ledger and consume a normal remediation cycle. Normalization and
 remediation run catalog validation, exact reconciliation, and finding-related
 focused tests; the fixed broad catalog suite remains final helper-validation
 work.
-Validation-backed push and readiness still require one canonical schema-v4
-report reconciled to the exact reviewed catalog and trust changes.
+Validation-backed push and readiness require one canonical schema-v5 report
+with complete available graph discovery reconciled to the exact reviewed
+catalog and trust changes.
 
 Ski-area-access catalog `source_urls` are the entity-level union of the trust
 manifest's independent `relationship` and `access_mode_distance` source refs.
@@ -1076,7 +1069,7 @@ catalog for the live "already represented" check, while GitHub remains the
 authority for open proposal identity. Reading the modified worktree for this
 gate would make every valid addition appear to duplicate itself.
 
-For curation readiness, the checked-in schema-v4 report is the complete source
+For curation readiness, the checked-in schema-v5 report is the complete source
 of truth and the PR body is only a concise human synopsis. Both `waiting-ci` and
 `ready` require that synopsis. Legacy unmarked bodies are replaced only through
 an explicit helper adoption flag on an already-authorized automation-owned PR;
@@ -1085,8 +1078,8 @@ body publication as well as the label and canonical comment, so a recovered PR
 cannot become ready with its original discovery-era description still shown.
 
 Schema-v3 and later reports may declare `resulting_graph.focus_stay_destination_ids`.
-Historical v3 reports remain readable without it, but current schema-v4 maintainer
-validation requires it. The renderer derives regions, destinations, stay bases,
+Historical v3 and v4 reports remain readable, but current schema-v5 maintainer
+validation requires focus roots and graph discovery. The renderer derives regions, destinations, stay bases,
 access edges, ski areas, terrain domains, and lift-pass coverage from the exact
 normalized catalog head and emits one canonical Mermaid section. Validation
 also derives every final-catalog destination reached by the report's reviewed
@@ -1634,12 +1627,12 @@ before validation can run again. This preserves expensive semantic progress
 without allowing failed tests to become general mutation authority.
 
 Curation report mutations are atomic at the review-artifact boundary: the
-canonical schema-v4 JSON report and its deterministic Markdown companion move
+canonical schema-v5 JSON report and its deterministic Markdown companion move
 together before any delta or reviewed checkpoint. Boundary evidence also names
 every assessment candidate explicitly through `boundary_target_ids`; an
 evidence target alone does not establish boundary ownership. These mechanical
-invariants are corrected in the same fixer pass and are not semantic
-`review-incomplete` outcomes.
+invariants are corrected in the same fixer pass and are not semantic source or
+graph findings.
 
 Legacy reviewed/remediation continuations are archived once through the
 lease-free `migrate curation-state --archive-legacy` capability. Migration

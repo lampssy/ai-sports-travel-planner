@@ -53,8 +53,8 @@ CatalogFieldCoverageStatus = Literal[
 CatalogIssueSeverity = Literal["error", "warning"]
 CatalogReviewScope = Literal["full", "narrow"]
 CatalogResultingGraphRole = Literal["focus", "linked_dependency"]
-CatalogReportSchemaVersion = Literal[1, 2, 3, 4]
-CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION = 4
+CatalogReportSchemaVersion = Literal[1, 2, 3, 4, 5]
+CURRENT_CATALOG_CURATION_REPORT_SCHEMA_VERSION = 5
 CatalogScopeCandidateKind = Literal[
     "stay_destination",
     "stay_base",
@@ -62,6 +62,30 @@ CatalogScopeCandidateKind = Literal[
     "ski_area_access",
     "terrain_domain",
     "lift_pass_product",
+]
+CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS: tuple[CatalogScopeCandidateKind, ...] = (
+    "stay_destination",
+    "stay_base",
+    "ski_area",
+    "ski_area_access",
+    "terrain_domain",
+    "lift_pass_product",
+)
+CatalogGraphDiscoveryCoverageState = Literal[
+    "complete",
+    "in_progress",
+    "evidence_unavailable",
+]
+CatalogGraphDiscoveryStatus = Literal["in_progress", "complete"]
+CatalogGraphRelationshipType = Literal[
+    "stay_destination_contains_stay_base",
+    "ski_area_access_originates_at_stay_base",
+    "ski_area_access_reaches_ski_area",
+    "terrain_domain_contains_ski_area",
+    "lift_pass_available_from_stay_destination",
+    "lift_pass_default_for_stay_destination",
+    "lift_pass_covers_ski_area",
+    "lift_pass_covers_terrain_domain",
 ]
 CatalogScopeDisposition = Literal[
     "represented",
@@ -80,6 +104,48 @@ CatalogReviewSourceKind = Literal[
     "linked_pr_dependency",
     "other_official",
 ]
+GRAPH_DISCOVERY_SOURCE_KINDS: Mapping[
+    CatalogScopeCandidateKind, frozenset[CatalogReviewSourceKind]
+] = MappingProxyType(
+    {
+        "stay_destination": frozenset({"destination_booking"}),
+        "stay_base": frozenset({"destination_booking"}),
+        "ski_area": frozenset({"ski_area_operator"}),
+        "ski_area_access": frozenset({"access_transport", "ski_area_operator"}),
+        "terrain_domain": frozenset({"ski_area_operator", "pass_tariff"}),
+        "lift_pass_product": frozenset({"pass_tariff"}),
+    }
+)
+GRAPH_DISCOVERY_RELATIONSHIP_ENDPOINT_KINDS: Mapping[
+    CatalogGraphRelationshipType,
+    tuple[CatalogScopeCandidateKind, CatalogScopeCandidateKind],
+] = MappingProxyType(
+    {
+        "stay_destination_contains_stay_base": (
+            "stay_destination",
+            "stay_base",
+        ),
+        "ski_area_access_originates_at_stay_base": (
+            "ski_area_access",
+            "stay_base",
+        ),
+        "ski_area_access_reaches_ski_area": ("ski_area_access", "ski_area"),
+        "terrain_domain_contains_ski_area": ("terrain_domain", "ski_area"),
+        "lift_pass_available_from_stay_destination": (
+            "lift_pass_product",
+            "stay_destination",
+        ),
+        "lift_pass_default_for_stay_destination": (
+            "lift_pass_product",
+            "stay_destination",
+        ),
+        "lift_pass_covers_ski_area": ("lift_pass_product", "ski_area"),
+        "lift_pass_covers_terrain_domain": (
+            "lift_pass_product",
+            "terrain_domain",
+        ),
+    }
+)
 CatalogScopeSignalType = Literal[
     "official_independent_identity",
     "separate_operator",
@@ -694,6 +760,65 @@ class CatalogReviewSourceFamily(CatalogCurationContractModel):
         return values
 
 
+class CatalogGraphDiscoveryCoverage(CatalogCurationContractModel):
+    focus_stay_destination_id: str = Field(min_length=1)
+    candidate_kind: CatalogScopeCandidateKind
+    coverage_state: CatalogGraphDiscoveryCoverageState
+    candidate_ids: list[str] = Field(default_factory=list)
+    source_family_ids: list[str] = Field(min_length=1)
+    evidence_refs: list[str] = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+
+    @field_validator("focus_stay_destination_id", "rationale")
+    @classmethod
+    def validate_text_fields(cls, value: str, info: ValidationInfo) -> str:
+        return _validate_non_blank_string(value, info.field_name)
+
+    @field_validator("candidate_ids", "source_family_ids", "evidence_refs")
+    @classmethod
+    def validate_reference_lists(
+        cls,
+        values: list[str],
+        info: ValidationInfo,
+    ) -> list[str]:
+        return _validate_string_list(values, info.field_name)
+
+    @property
+    def coverage_key(self) -> tuple[str, CatalogScopeCandidateKind]:
+        return self.focus_stay_destination_id, self.candidate_kind
+
+
+class CatalogGraphDiscoveryRelationship(CatalogCurationContractModel):
+    relationship_type: CatalogGraphRelationshipType
+    from_candidate_id: str = Field(min_length=1)
+    to_candidate_id: str = Field(min_length=1)
+    evidence_refs: list[str] = Field(min_length=1)
+
+    @field_validator("from_candidate_id", "to_candidate_id")
+    @classmethod
+    def validate_candidate_ids(cls, value: str, info: ValidationInfo) -> str:
+        return _validate_non_blank_string(value, info.field_name)
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
+        return _validate_string_list(values, "relationship evidence_refs")
+
+    @property
+    def relationship_key(self) -> tuple[str, str, str]:
+        return (
+            self.relationship_type,
+            self.from_candidate_id,
+            self.to_candidate_id,
+        )
+
+
+class CatalogGraphDiscovery(CatalogCurationContractModel):
+    status: CatalogGraphDiscoveryStatus
+    coverage: list[CatalogGraphDiscoveryCoverage] = Field(default_factory=list)
+    relationships: list[CatalogGraphDiscoveryRelationship] = Field(default_factory=list)
+
+
 class CatalogValidationIssue(CatalogCurationContractModel):
     severity: CatalogIssueSeverity
     message: str = Field(min_length=1)
@@ -1285,6 +1410,7 @@ class CatalogCurationReport(CatalogCurationContractModel):
     review_evidence_envelope: list[CatalogReviewSourceFamily] = Field(
         default_factory=list
     )
+    graph_discovery: CatalogGraphDiscovery | None = None
     boundary_decision_targets: list[str] = Field(default_factory=list)
     weather_request_geometry_targets: list[str] = Field(default_factory=list)
     weather_request_geometry_assessments: list[
@@ -1335,18 +1461,302 @@ def load_catalog_curation_report(path: Path) -> CatalogCurationReport:
     return CatalogCurationReport.model_validate(payload)
 
 
+def _validate_graph_discovery_contract(
+    report: CatalogCurationReport,
+    evidence_by_id: Mapping[str, CatalogEvidenceItem],
+    issues: list[str],
+) -> None:
+    discovery = report.graph_discovery
+    if discovery is None:
+        return
+
+    focus_ids = (
+        set(report.resulting_graph.focus_stay_destination_ids)
+        if report.resulting_graph is not None
+        else set()
+    )
+    source_families = {
+        family.family_id: family for family in report.review_evidence_envelope
+    }
+    assessments = {
+        assessment.candidate_id: assessment
+        for assessment in report.entity_scope_assessments
+    }
+    coverage_by_key: dict[
+        tuple[str, CatalogScopeCandidateKind], CatalogGraphDiscoveryCoverage
+    ] = {}
+    covered_candidate_ids: set[str] = set()
+
+    for coverage in discovery.coverage:
+        if coverage.coverage_key in coverage_by_key:
+            issues.append(
+                f"{coverage.focus_stay_destination_id}: duplicate graph-discovery "
+                f"coverage for {coverage.candidate_kind}"
+            )
+        coverage_by_key[coverage.coverage_key] = coverage
+        if coverage.focus_stay_destination_id not in focus_ids:
+            issues.append(
+                f"{coverage.focus_stay_destination_id}: graph-discovery root is "
+                "not a resulting-graph focus destination"
+            )
+
+        referenced_families: list[CatalogReviewSourceFamily] = []
+        for family_id in coverage.source_family_ids:
+            family = source_families.get(family_id)
+            if family is None:
+                issues.append(
+                    f"{coverage.focus_stay_destination_id}:{coverage.candidate_kind}: "
+                    f"unknown graph-discovery source family {family_id}"
+                )
+                continue
+            referenced_families.append(family)
+            if coverage.candidate_kind not in family.candidate_kinds:
+                issues.append(
+                    f"{family_id}: graph-discovery family does not declare "
+                    f"candidate kind {coverage.candidate_kind}"
+                )
+
+        allowed_source_kinds = GRAPH_DISCOVERY_SOURCE_KINDS[coverage.candidate_kind]
+        if not any(
+            family.source_kind in allowed_source_kinds for family in referenced_families
+        ):
+            expected = " or ".join(sorted(allowed_source_kinds))
+            issues.append(
+                f"{coverage.candidate_kind} coverage requires a {expected} "
+                "source family"
+            )
+
+        coverage_evidence: list[CatalogEvidenceItem] = []
+        for evidence_id in coverage.evidence_refs:
+            evidence = evidence_by_id.get(evidence_id)
+            if evidence is None:
+                issues.append(
+                    f"{coverage.focus_stay_destination_id}:{coverage.candidate_kind}: "
+                    f"unknown graph-discovery evidence {evidence_id}"
+                )
+                continue
+            coverage_evidence.append(evidence)
+        coverage_urls = {evidence.source_url for evidence in coverage_evidence}
+        for family in referenced_families:
+            if not coverage_urls.intersection(family.source_urls):
+                issues.append(
+                    f"{coverage.focus_stay_destination_id}:{coverage.candidate_kind}: "
+                    f"source family {family.family_id} has no direct coverage evidence"
+                )
+
+        for candidate_id in coverage.candidate_ids:
+            covered_candidate_ids.add(candidate_id)
+            assessment = assessments.get(candidate_id)
+            if assessment is None:
+                issues.append(
+                    f"{candidate_id}: graph-discovery candidate has no scope assessment"
+                )
+                continue
+            if assessment.candidate_kind != coverage.candidate_kind:
+                issues.append(
+                    f"{candidate_id}: graph-discovery candidate kind "
+                    f"{coverage.candidate_kind} does not match assessment kind "
+                    f"{assessment.candidate_kind}"
+                )
+            shared_evidence_ids = set(assessment.evidence_refs).intersection(
+                coverage.evidence_refs
+            )
+            if not shared_evidence_ids:
+                issues.append(
+                    f"{candidate_id}: graph-discovery coverage must share evidence "
+                    "with its scope assessment"
+                )
+            else:
+                allowed_family_urls = {
+                    source_url
+                    for family in referenced_families
+                    if family.source_kind in allowed_source_kinds
+                    for source_url in family.source_urls
+                }
+                if not any(
+                    evidence_id in evidence_by_id
+                    and evidence_by_id[evidence_id].source_url in allowed_family_urls
+                    for evidence_id in shared_evidence_ids
+                ):
+                    issues.append(
+                        f"{candidate_id}: candidate evidence is outside allowed "
+                        "graph-discovery source families"
+                    )
+
+    if discovery.status == "complete":
+        expected_keys = {
+            (focus_id, candidate_kind)
+            for focus_id in focus_ids
+            for candidate_kind in CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS
+        }
+        for focus_id, candidate_kind in sorted(expected_keys - set(coverage_by_key)):
+            issues.append(
+                f"{focus_id}: complete graph discovery is missing "
+                f"{candidate_kind} coverage"
+            )
+        for coverage in discovery.coverage:
+            if coverage.coverage_state == "in_progress":
+                issues.append(
+                    f"{coverage.focus_stay_destination_id}: complete graph discovery "
+                    f"contains in-progress {coverage.candidate_kind} coverage"
+                )
+    elif discovery.coverage and all(
+        coverage.coverage_state != "in_progress" for coverage in discovery.coverage
+    ):
+        expected_count = len(focus_ids) * len(CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS)
+        if len(coverage_by_key) == expected_count:
+            issues.append(
+                "in-progress graph discovery must have a missing or in-progress "
+                "root/kind coverage row"
+            )
+
+    for candidate_id in sorted(set(assessments) - covered_candidate_ids):
+        issues.append(
+            f"{candidate_id}: scope assessment is not linked from graph discovery"
+        )
+    relationship_keys = [
+        relationship.relationship_key for relationship in discovery.relationships
+    ]
+    if len(relationship_keys) != len(set(relationship_keys)):
+        issues.append("graph discovery contains a duplicate relationship")
+
+    coverage_by_candidate: dict[str, list[CatalogGraphDiscoveryCoverage]] = {}
+    for coverage in discovery.coverage:
+        for candidate_id in coverage.candidate_ids:
+            coverage_by_candidate.setdefault(candidate_id, []).append(coverage)
+
+    for relationship in discovery.relationships:
+        from_assessment = assessments.get(relationship.from_candidate_id)
+        to_assessment = assessments.get(relationship.to_candidate_id)
+        expected_from_kind, expected_to_kind = (
+            GRAPH_DISCOVERY_RELATIONSHIP_ENDPOINT_KINDS[relationship.relationship_type]
+        )
+        if from_assessment is None or to_assessment is None:
+            issues.append(
+                f"{relationship.relationship_type}: relationship endpoints must "
+                "resolve to scope assessments"
+            )
+            continue
+        if (
+            from_assessment.candidate_kind != expected_from_kind
+            or to_assessment.candidate_kind != expected_to_kind
+        ):
+            issues.append(
+                f"{relationship.relationship_type} requires "
+                f"{expected_from_kind} -> {expected_to_kind} endpoints"
+            )
+
+        endpoint_coverage = [
+            *coverage_by_candidate.get(relationship.from_candidate_id, []),
+            *coverage_by_candidate.get(relationship.to_candidate_id, []),
+        ]
+        for evidence_id in relationship.evidence_refs:
+            evidence = evidence_by_id.get(evidence_id)
+            if evidence is None:
+                issues.append(
+                    f"{relationship.relationship_type}: unknown relationship "
+                    f"evidence {evidence_id}"
+                )
+                continue
+            matching_rows = [
+                coverage
+                for coverage in endpoint_coverage
+                if evidence_id in coverage.evidence_refs
+            ]
+            if not matching_rows:
+                issues.append(
+                    f"{relationship.relationship_type}: relationship evidence "
+                    f"{evidence_id} is not included by endpoint coverage"
+                )
+                continue
+            if not any(
+                evidence.source_url
+                in {
+                    source_url
+                    for family_id in coverage.source_family_ids
+                    for family in [source_families.get(family_id)]
+                    if family is not None
+                    for source_url in family.source_urls
+                }
+                for coverage in matching_rows
+            ):
+                issues.append(
+                    f"{relationship.relationship_type}: relationship evidence "
+                    f"{evidence_id} is outside endpoint source families"
+                )
+
+
+def validate_catalog_graph_discovery_progression(
+    previous: CatalogCurationReport,
+    current: CatalogCurationReport,
+) -> None:
+    """Require durable discovery packets to retain established work."""
+    previous_discovery = previous.graph_discovery
+    current_discovery = current.graph_discovery
+    if previous_discovery is None or current_discovery is None:
+        raise CatalogValidationError(
+            ["graph discovery progression requires two schema-v5 reports"]
+        )
+
+    previous_by_key = {
+        coverage.coverage_key: coverage for coverage in previous_discovery.coverage
+    }
+    current_by_key = {
+        coverage.coverage_key: coverage for coverage in current_discovery.coverage
+    }
+    issues: list[str] = []
+    state_transitions = {
+        "in_progress": {"in_progress", "complete", "evidence_unavailable"},
+        "complete": {"complete"},
+        "evidence_unavailable": {"complete", "evidence_unavailable"},
+    }
+    for key, previous_coverage in previous_by_key.items():
+        focus_id, candidate_kind = key
+        current_coverage = current_by_key.get(key)
+        if current_coverage is None:
+            issues.append(
+                f"{focus_id}: graph discovery removed prior {candidate_kind} coverage"
+            )
+            continue
+        if (
+            current_coverage.coverage_state
+            not in state_transitions[previous_coverage.coverage_state]
+        ):
+            issues.append(
+                f"{focus_id}: {candidate_kind} coverage regressed from "
+                f"{previous_coverage.coverage_state} to "
+                f"{current_coverage.coverage_state}"
+            )
+        removed_candidates = set(previous_coverage.candidate_ids) - set(
+            current_coverage.candidate_ids
+        )
+        for candidate_id in sorted(removed_candidates):
+            issues.append(
+                f"{focus_id}: {candidate_kind} graph discovery removed "
+                f"established candidate {candidate_id}"
+            )
+
+    if issues:
+        raise CatalogValidationError(issues)
+
+
 def validate_catalog_curation_report(
     report: CatalogCurationReport,
     *,
     require_resulting_graph: bool = False,
     require_current_destination_policy: bool = False,
     require_bounded_review_inventory: bool = False,
+    allow_pending_scope_changes: bool = False,
 ) -> None:
     issues: list[str] = []
     if require_bounded_review_inventory and not report.review_evidence_envelope:
         issues.append("bounded review inventory requires review_evidence_envelope")
     if report.resulting_graph is not None and report.report_schema_version < 3:
         issues.append("resulting_graph requires report schema version 3")
+    if report.graph_discovery is not None and report.report_schema_version < 5:
+        issues.append("graph_discovery requires report schema version 5")
+    if report.report_schema_version >= 5 and report.graph_discovery is None:
+        issues.append("schema version 5 requires graph_discovery")
     if report.report_schema_version < 3 and any(
         target.resulting_graph_role == "linked_dependency"
         for target in report.reviewed_targets
@@ -1457,6 +1867,8 @@ def validate_catalog_curation_report(
                     "by evidence"
                 )
 
+    _validate_graph_discovery_contract(report, evidence_by_id, issues)
+
     for assessment in report.entity_scope_assessments:
         if assessment.graph_impact == "regional_followup" and (
             assessment.disposition not in BACKLOG_REQUIRED_SCOPE_DISPOSITIONS
@@ -1492,6 +1904,7 @@ def validate_catalog_curation_report(
         evidence_by_id,
         issues,
         require_current_destination_policy=require_current_destination_policy,
+        allow_pending_scope_changes=allow_pending_scope_changes,
     )
 
     unresolved_keys = {
@@ -1515,6 +1928,23 @@ def validate_catalog_curation_report(
         for assessment in report.weather_request_geometry_assessments
         for evidence_id in assessment.evidence_refs
     }
+    discovery_evidence_ids = {
+        evidence_id
+        for coverage in (
+            report.graph_discovery.coverage
+            if report.graph_discovery is not None
+            else []
+        )
+        for evidence_id in coverage.evidence_refs
+    } | {
+        evidence_id
+        for relationship in (
+            report.graph_discovery.relationships
+            if report.graph_discovery is not None
+            else []
+        )
+        for evidence_id in relationship.evidence_refs
+    }
     for evidence in report.evidence:
         if (
             evidence.target_key not in changes_by_key
@@ -1522,6 +1952,7 @@ def validate_catalog_curation_report(
             and evidence.evidence_id not in boundary_evidence_ids
             and evidence.evidence_id not in scope_evidence_ids
             and evidence.evidence_id not in geometry_evidence_ids
+            and evidence.evidence_id not in discovery_evidence_ids
         ):
             issues.append(
                 f"{evidence.target_type}:{evidence.target_id} "
@@ -2243,6 +2674,7 @@ def _validate_entity_scope_assessments(
     issues: list[str],
     *,
     require_current_destination_policy: bool = False,
+    allow_pending_scope_changes: bool = False,
 ) -> None:
     assessments = report.entity_scope_assessments
     if report.report_schema_version >= 2 and not assessments:
@@ -2321,7 +2753,10 @@ def _validate_entity_scope_assessments(
                     f"{target_ref.target_type}:{target_ref.target_id}: "
                     "scope target is not reviewed"
                 )
-            if assessment.disposition == "add_entity":
+            if (
+                assessment.disposition == "add_entity"
+                and not allow_pending_scope_changes
+            ):
                 identity_change = changes_by_key.get(
                     (
                         target_ref.target_type,
@@ -2900,15 +3335,11 @@ def catalog_resulting_graph_scope(
         domain.terrain_domain_id: domain for domain in catalog.terrain_domains
     }
 
-    destination_ids = frozenset(focus_destination_ids)
-    region_ids = frozenset(
-        destinations_by_id[destination_id].trip_market_region_id
-        for destination_id in destination_ids
-    )
+    root_destination_ids = frozenset(focus_destination_ids)
     base_ids = frozenset(
         base.stay_base_id
         for base in catalog.stay_bases
-        if base.stay_destination_id in destination_ids
+        if base.stay_destination_id in root_destination_ids
     )
     access_ids = frozenset(
         access.ski_area_access_id
@@ -2920,51 +3351,490 @@ def catalog_resulting_graph_scope(
         for access in catalog.ski_area_access
         if access.ski_area_access_id in access_ids
     }
-    pass_ids = frozenset(
+    locally_available_pass_ids = {
         product.lift_pass_product_id
         for product in catalog.lift_pass_products
-        if destination_ids
+        if root_destination_ids
         & (
             set(product.available_from_stay_destination_ids)
             | set(product.default_for_stay_destination_ids)
         )
-    )
-    domain_ids = {
+    }
+    direct_domain_ids = {
+        domain.terrain_domain_id
+        for domain in catalog.terrain_domains
+        if area_ids & set(domain.ski_area_ids)
+    }
+    directly_covering_pass_ids = {
+        product.lift_pass_product_id
+        for product in catalog.lift_pass_products
+        if area_ids & set(product.valid_ski_area_ids)
+        or direct_domain_ids & set(product.terrain_domain_ids)
+    }
+    pass_ids = frozenset(locally_available_pass_ids | directly_covering_pass_ids)
+    domain_ids = direct_domain_ids | {
         domain_id
         for pass_id in pass_ids
         for domain_id in passes_by_id[pass_id].terrain_domain_ids
     }
-    area_ids.update(
+    one_hop_area_ids = set(area_ids)
+    one_hop_area_ids.update(
         area_id
         for pass_id in pass_ids
         for area_id in passes_by_id[pass_id].valid_ski_area_ids
     )
-
-    while True:
-        expanded_domain_ids = domain_ids | {
-            domain.terrain_domain_id
-            for domain in catalog.terrain_domains
-            if area_ids & set(domain.ski_area_ids)
-        }
-        expanded_area_ids = area_ids | {
-            area_id
-            for domain_id in expanded_domain_ids
-            for area_id in domains_by_id[domain_id].ski_area_ids
-        }
-        if expanded_domain_ids == domain_ids and expanded_area_ids == area_ids:
-            break
-        domain_ids = expanded_domain_ids
-        area_ids = expanded_area_ids
+    one_hop_area_ids.update(
+        area_id
+        for domain_id in domain_ids
+        for area_id in domains_by_id[domain_id].ski_area_ids
+    )
+    destination_by_base = {
+        base.stay_base_id: base.stay_destination_id for base in catalog.stay_bases
+    }
+    one_hop_destination_ids = {
+        destination_by_base[access.stay_base_id]
+        for access in catalog.ski_area_access
+        if access.ski_area_id in one_hop_area_ids
+    }
+    one_hop_destination_ids.update(
+        destination_id
+        for pass_id in pass_ids
+        for destination_id in (
+            set(passes_by_id[pass_id].available_from_stay_destination_ids)
+            | set(passes_by_id[pass_id].default_for_stay_destination_ids)
+        )
+    )
+    destination_ids = frozenset(root_destination_ids | one_hop_destination_ids)
+    region_ids = frozenset(
+        destinations_by_id[destination_id].trip_market_region_id
+        for destination_id in destination_ids
+    )
 
     return CatalogResultingGraphScope(
         destination_ids=destination_ids,
         region_ids=region_ids,
         base_ids=base_ids,
         access_ids=access_ids,
-        area_ids=frozenset(area_ids),
+        area_ids=frozenset(one_hop_area_ids),
         domain_ids=frozenset(domain_ids),
         pass_ids=pass_ids,
     )
+
+
+def validate_catalog_graph_discovery(
+    report: CatalogCurationReport,
+    catalog: CatalogSnapshot,
+    *,
+    require_complete: bool,
+    allow_pending_scope_changes: bool,
+) -> None:
+    """Validate durable graph discovery against each focused catalog root."""
+    validate_catalog_curation_report(
+        report,
+        require_resulting_graph=True,
+        require_current_destination_policy=True,
+        allow_pending_scope_changes=allow_pending_scope_changes,
+    )
+    discovery = report.graph_discovery
+    graph = report.resulting_graph
+    if discovery is None or graph is None:
+        raise CatalogValidationError(
+            ["schema-v5 graph discovery and resulting graph are required"]
+        )
+    if require_complete and discovery.status != "complete":
+        raise CatalogValidationError(
+            ["complete graph discovery is required for this validation stage"]
+        )
+
+    known_destination_ids = {
+        destination.stay_destination_id for destination in catalog.stay_destinations
+    }
+    unknown_roots = sorted(
+        set(graph.focus_stay_destination_ids) - known_destination_ids
+    )
+    if unknown_roots:
+        raise CatalogValidationError(
+            [
+                f"unknown focus stay destination {destination_id}"
+                for destination_id in unknown_roots
+            ]
+        )
+
+    assessments = {
+        assessment.candidate_id: assessment
+        for assessment in report.entity_scope_assessments
+    }
+    coverage_by_key = {
+        coverage.coverage_key: coverage for coverage in discovery.coverage
+    }
+
+    def candidate_target_ids(
+        coverage: CatalogGraphDiscoveryCoverage,
+    ) -> set[str]:
+        return {
+            target.target_id
+            for candidate_id in coverage.candidate_ids
+            for assessment in [assessments.get(candidate_id)]
+            if assessment is not None
+            for target in assessment.target_refs
+            if target.target_type == coverage.candidate_kind
+        }
+
+    def relationship_matches(
+        relationship_type: CatalogGraphRelationshipType,
+        from_target_id: str,
+        to_target_id: str,
+        root_candidate_ids: set[str],
+    ) -> bool:
+        for relationship in discovery.relationships:
+            if relationship.relationship_type != relationship_type:
+                continue
+            if not {
+                relationship.from_candidate_id,
+                relationship.to_candidate_id,
+            }.issubset(root_candidate_ids):
+                continue
+            from_assessment = assessments.get(relationship.from_candidate_id)
+            to_assessment = assessments.get(relationship.to_candidate_id)
+            if from_assessment is None or to_assessment is None:
+                continue
+            if from_target_id not in {
+                target.target_id for target in from_assessment.target_refs
+            }:
+                continue
+            if to_target_id in {
+                target.target_id for target in to_assessment.target_refs
+            }:
+                return True
+        return False
+
+    bases_by_id = {base.stay_base_id: base for base in catalog.stay_bases}
+    accesses_by_id = {
+        access.ski_area_access_id: access for access in catalog.ski_area_access
+    }
+    domains_by_id = {
+        domain.terrain_domain_id: domain for domain in catalog.terrain_domains
+    }
+    passes_by_id = {
+        product.lift_pass_product_id: product for product in catalog.lift_pass_products
+    }
+
+    def catalog_relationship_exists(
+        relationship_type: CatalogGraphRelationshipType,
+        from_target_id: str,
+        to_target_id: str,
+    ) -> bool:
+        if relationship_type == "stay_destination_contains_stay_base":
+            base = bases_by_id.get(to_target_id)
+            return base is not None and base.stay_destination_id == from_target_id
+        if relationship_type == "ski_area_access_originates_at_stay_base":
+            access = accesses_by_id.get(from_target_id)
+            return access is not None and access.stay_base_id == to_target_id
+        if relationship_type == "ski_area_access_reaches_ski_area":
+            access = accesses_by_id.get(from_target_id)
+            return access is not None and access.ski_area_id == to_target_id
+        if relationship_type == "terrain_domain_contains_ski_area":
+            domain = domains_by_id.get(from_target_id)
+            return domain is not None and to_target_id in domain.ski_area_ids
+        product = passes_by_id.get(from_target_id)
+        if product is None:
+            return False
+        if relationship_type == "lift_pass_available_from_stay_destination":
+            return to_target_id in product.available_from_stay_destination_ids
+        if relationship_type == "lift_pass_default_for_stay_destination":
+            return to_target_id in product.default_for_stay_destination_ids
+        if relationship_type == "lift_pass_covers_ski_area":
+            return to_target_id in product.valid_ski_area_ids
+        return to_target_id in product.terrain_domain_ids
+
+    issues: list[str] = []
+    scope_attributes: Mapping[CatalogScopeCandidateKind, str] = MappingProxyType(
+        {
+            "stay_destination": "destination_ids",
+            "stay_base": "base_ids",
+            "ski_area": "area_ids",
+            "ski_area_access": "access_ids",
+            "terrain_domain": "domain_ids",
+            "lift_pass_product": "pass_ids",
+        }
+    )
+
+    if not allow_pending_scope_changes:
+        for relationship in discovery.relationships:
+            expected_from_kind, expected_to_kind = (
+                GRAPH_DISCOVERY_RELATIONSHIP_ENDPOINT_KINDS[
+                    relationship.relationship_type
+                ]
+            )
+            from_assessment = assessments[relationship.from_candidate_id]
+            to_assessment = assessments[relationship.to_candidate_id]
+            from_target_ids = {
+                target.target_id
+                for target in from_assessment.target_refs
+                if target.target_type == expected_from_kind
+            }
+            to_target_ids = {
+                target.target_id
+                for target in to_assessment.target_refs
+                if target.target_type == expected_to_kind
+            }
+            if not any(
+                catalog_relationship_exists(
+                    relationship.relationship_type,
+                    from_target_id,
+                    to_target_id,
+                )
+                for from_target_id in from_target_ids
+                for to_target_id in to_target_ids
+            ):
+                issues.append(
+                    f"{relationship.relationship_type}: prospective relationship "
+                    "is not materialized in the current catalog"
+                )
+
+    candidate_ids_by_root = {
+        focus_id: {
+            candidate_id
+            for candidate_kind in CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS
+            for coverage in [coverage_by_key.get((focus_id, candidate_kind))]
+            if coverage is not None
+            for candidate_id in coverage.candidate_ids
+        }
+        for focus_id in graph.focus_stay_destination_ids
+    }
+    for relationship in discovery.relationships:
+        if not any(
+            {
+                relationship.from_candidate_id,
+                relationship.to_candidate_id,
+            }.issubset(root_candidate_ids)
+            for root_candidate_ids in candidate_ids_by_root.values()
+        ):
+            issues.append(
+                f"{relationship.relationship_type}: relationship crosses "
+                "graph-discovery focus roots"
+            )
+
+    for focus_id in graph.focus_stay_destination_ids:
+        scope = catalog_resulting_graph_scope(catalog, {focus_id})
+        covered_targets_by_kind: dict[CatalogScopeCandidateKind, set[str]] = {}
+        for candidate_kind in CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS:
+            coverage = coverage_by_key.get((focus_id, candidate_kind))
+            if coverage is None:
+                if require_complete:
+                    issues.append(
+                        f"{focus_id}: missing {candidate_kind} discovery coverage"
+                    )
+                continue
+            if coverage.coverage_state == "in_progress":
+                continue
+            expected_target_ids = set(getattr(scope, scope_attributes[candidate_kind]))
+            represented_target_ids = candidate_target_ids(coverage)
+            covered_targets_by_kind[candidate_kind] = represented_target_ids
+            for target_id in sorted(expected_target_ids - represented_target_ids):
+                issues.append(
+                    f"{focus_id}: {candidate_kind} coverage omits known catalog "
+                    f"target {target_id}"
+                )
+
+        destination_targets = covered_targets_by_kind.get("stay_destination", set())
+        base_targets = covered_targets_by_kind.get("stay_base", set())
+        access_targets = covered_targets_by_kind.get("ski_area_access", set())
+        area_targets = covered_targets_by_kind.get("ski_area", set())
+        domain_targets = covered_targets_by_kind.get("terrain_domain", set())
+        pass_targets = covered_targets_by_kind.get("lift_pass_product", set())
+
+        root_candidate_ids = candidate_ids_by_root[focus_id]
+        root_candidates = {
+            candidate_id
+            for candidate_id in (
+                coverage_by_key.get((focus_id, "stay_destination")).candidate_ids
+                if coverage_by_key.get((focus_id, "stay_destination")) is not None
+                else []
+            )
+            for assessment in [assessments.get(candidate_id)]
+            if assessment is not None
+            if any(
+                target.target_type == "stay_destination"
+                and target.target_id == focus_id
+                for target in assessment.target_refs
+            )
+        }
+        graph_blocking_candidates = {
+            candidate_id
+            for candidate_id in root_candidate_ids
+            for assessment in [assessments.get(candidate_id)]
+            if assessment is not None
+            and assessment.graph_impact == "graph_blocking"
+            and assessment.disposition in {"represented", "add_entity"}
+        }
+        root_adjacency: dict[str, set[str]] = {}
+        for relationship in discovery.relationships:
+            if not {
+                relationship.from_candidate_id,
+                relationship.to_candidate_id,
+            }.issubset(root_candidate_ids):
+                continue
+            root_adjacency.setdefault(relationship.from_candidate_id, set()).add(
+                relationship.to_candidate_id
+            )
+            root_adjacency.setdefault(relationship.to_candidate_id, set()).add(
+                relationship.from_candidate_id
+            )
+        reachable_candidates = set(root_candidates)
+        pending_candidates = list(root_candidates)
+        while pending_candidates:
+            candidate_id = pending_candidates.pop()
+            for adjacent_id in root_adjacency.get(candidate_id, set()):
+                if adjacent_id not in graph_blocking_candidates:
+                    continue
+                if adjacent_id not in reachable_candidates:
+                    reachable_candidates.add(adjacent_id)
+                    pending_candidates.append(adjacent_id)
+        for candidate_kind in CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS:
+            coverage = coverage_by_key.get((focus_id, candidate_kind))
+            if coverage is None:
+                continue
+            for candidate_id in coverage.candidate_ids:
+                assessment = assessments.get(candidate_id)
+                if (
+                    assessment is not None
+                    and assessment.disposition in {"represented", "add_entity"}
+                    and assessment.graph_impact == "graph_blocking"
+                    and candidate_id not in reachable_candidates
+                ):
+                    issues.append(
+                        f"{candidate_id}: graph candidate is not connected to "
+                        f"focus root {focus_id}"
+                    )
+        regional_followup_candidates = {
+            candidate_id
+            for candidate_id in root_candidate_ids
+            for assessment in [assessments.get(candidate_id)]
+            if assessment is not None and assessment.graph_impact == "regional_followup"
+        }
+        for relationship in discovery.relationships:
+            endpoints = {
+                relationship.from_candidate_id,
+                relationship.to_candidate_id,
+            }
+            if endpoints.issubset(root_candidate_ids) and endpoints.issubset(
+                regional_followup_candidates
+            ):
+                issues.append(
+                    f"{focus_id}: regional-followup candidates cannot expand "
+                    "another regional-followup graph"
+                )
+
+        for base_id in set(scope.base_ids) & base_targets:
+            if focus_id in destination_targets and not relationship_matches(
+                "stay_destination_contains_stay_base",
+                focus_id,
+                base_id,
+                root_candidate_ids,
+            ):
+                issues.append(
+                    f"{focus_id}: graph discovery omits known relationship "
+                    f"stay_destination_contains_stay_base:{focus_id}->{base_id}"
+                )
+        for access_id in set(scope.access_ids) & access_targets:
+            access = accesses_by_id[access_id]
+            if access.stay_base_id in base_targets and not relationship_matches(
+                "ski_area_access_originates_at_stay_base",
+                access_id,
+                access.stay_base_id,
+                root_candidate_ids,
+            ):
+                issues.append(
+                    f"{focus_id}: graph discovery omits known relationship "
+                    "ski_area_access_originates_at_stay_base:"
+                    f"{access_id}->{access.stay_base_id}"
+                )
+            if access.ski_area_id in area_targets and not relationship_matches(
+                "ski_area_access_reaches_ski_area",
+                access_id,
+                access.ski_area_id,
+                root_candidate_ids,
+            ):
+                issues.append(
+                    f"{focus_id}: graph discovery omits known relationship "
+                    f"ski_area_access_reaches_ski_area:{access_id}->"
+                    f"{access.ski_area_id}"
+                )
+        for domain_id in set(scope.domain_ids) & domain_targets:
+            domain = domains_by_id[domain_id]
+            for area_id in set(domain.ski_area_ids) & area_targets:
+                if not relationship_matches(
+                    "terrain_domain_contains_ski_area",
+                    domain_id,
+                    area_id,
+                    root_candidate_ids,
+                ):
+                    issues.append(
+                        f"{focus_id}: graph discovery omits known relationship "
+                        f"terrain_domain_contains_ski_area:{domain_id}->{area_id}"
+                    )
+        for pass_id in set(scope.pass_ids) & pass_targets:
+            product = passes_by_id[pass_id]
+            if (
+                focus_id in destination_targets
+                and focus_id in product.available_from_stay_destination_ids
+                and not (
+                    relationship_matches(
+                        "lift_pass_available_from_stay_destination",
+                        pass_id,
+                        focus_id,
+                        root_candidate_ids,
+                    )
+                )
+            ):
+                issues.append(
+                    f"{focus_id}: graph discovery omits known relationship "
+                    "lift_pass_available_from_stay_destination:"
+                    f"{pass_id}->{focus_id}"
+                )
+            if (
+                focus_id in destination_targets
+                and focus_id in product.default_for_stay_destination_ids
+                and not (
+                    relationship_matches(
+                        "lift_pass_default_for_stay_destination",
+                        pass_id,
+                        focus_id,
+                        root_candidate_ids,
+                    )
+                )
+            ):
+                issues.append(
+                    f"{focus_id}: graph discovery omits known relationship "
+                    "lift_pass_default_for_stay_destination:"
+                    f"{pass_id}->{focus_id}"
+                )
+            for area_id in set(product.valid_ski_area_ids) & area_targets:
+                if not relationship_matches(
+                    "lift_pass_covers_ski_area",
+                    pass_id,
+                    area_id,
+                    root_candidate_ids,
+                ):
+                    issues.append(
+                        f"{focus_id}: graph discovery omits known relationship "
+                        f"lift_pass_covers_ski_area:{pass_id}->{area_id}"
+                    )
+            for domain_id in set(product.terrain_domain_ids) & domain_targets:
+                if not relationship_matches(
+                    "lift_pass_covers_terrain_domain",
+                    pass_id,
+                    domain_id,
+                    root_candidate_ids,
+                ):
+                    issues.append(
+                        f"{focus_id}: graph discovery omits known relationship "
+                        f"lift_pass_covers_terrain_domain:{pass_id}->{domain_id}"
+                    )
+
+    if issues:
+        raise CatalogValidationError(sorted(set(issues)))
 
 
 def _required_resulting_graph_destination_ids(
@@ -3271,6 +4141,124 @@ def render_catalog_resulting_graph_markdown(
     return "\n".join(lines)
 
 
+def render_catalog_graph_discovery_markdown(
+    report: CatalogCurationReport,
+) -> str:
+    discovery = report.graph_discovery
+    if discovery is None:
+        return ""
+
+    candidate_order = {
+        candidate_kind: index
+        for index, candidate_kind in enumerate(CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS)
+    }
+    assessments = {
+        assessment.candidate_id: assessment
+        for assessment in report.entity_scope_assessments
+    }
+    evidence_by_id = {evidence.evidence_id: evidence for evidence in report.evidence}
+    coverage_rows = sorted(
+        discovery.coverage,
+        key=lambda coverage: (
+            coverage.focus_stay_destination_id,
+            candidate_order[coverage.candidate_kind],
+        ),
+    )
+    lines = [
+        "## Graph Discovery",
+        "",
+        f"Status: {_code_cell(discovery.status)}",
+        "",
+        "| Focus Destination | Candidate Kind | Coverage | Candidates | "
+        "Source Families | Direct Evidence | Rationale |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for coverage in coverage_rows:
+        rendered_candidates: list[str] = []
+        for candidate_id in coverage.candidate_ids:
+            assessment = assessments.get(candidate_id)
+            if assessment is None:
+                rendered_candidates.append(_code_cell(candidate_id))
+                continue
+            impact = (
+                f"; {_code_cell(assessment.graph_impact)}"
+                if assessment.graph_impact is not None
+                else ""
+            )
+            rendered_candidates.append(
+                f"{_markdown_cell(assessment.candidate_name)} "
+                f"({_code_cell(candidate_id)}): "
+                f"{_code_cell(assessment.disposition)}{impact}"
+            )
+        rendered_evidence = []
+        for evidence_id in coverage.evidence_refs:
+            evidence = evidence_by_id.get(evidence_id)
+            rendered_evidence.append(
+                _markdown_link(evidence_id, evidence.source_url)
+                if evidence is not None
+                else _code_cell(evidence_id)
+            )
+        lines.append(
+            f"| {_code_cell(coverage.focus_stay_destination_id)} | "
+            f"{_code_cell(coverage.candidate_kind)} | "
+            f"{_code_cell(coverage.coverage_state)} | "
+            f"{'<br>'.join(rendered_candidates) or 'None found'} | "
+            f"{', '.join(_code_cell(item) for item in coverage.source_family_ids)} | "
+            f"{', '.join(rendered_evidence)} | "
+            f"{_markdown_cell(coverage.rationale)} |"
+        )
+
+    if discovery.relationships:
+        lines.extend(
+            [
+                "",
+                "### Prospective Relationships",
+                "",
+                "| Relationship | From | To | Direct Evidence |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+        for relationship in sorted(
+            discovery.relationships,
+            key=lambda item: item.relationship_key,
+        ):
+            rendered_evidence = []
+            for evidence_id in relationship.evidence_refs:
+                evidence = evidence_by_id.get(evidence_id)
+                rendered_evidence.append(
+                    _markdown_link(evidence_id, evidence.source_url)
+                    if evidence is not None
+                    else _code_cell(evidence_id)
+                )
+            lines.append(
+                f"| {_code_cell(relationship.relationship_type)} | "
+                f"{_code_cell(relationship.from_candidate_id)} | "
+                f"{_code_cell(relationship.to_candidate_id)} | "
+                f"{', '.join(rendered_evidence)} |"
+            )
+
+    unavailable = [
+        coverage
+        for coverage in coverage_rows
+        if coverage.coverage_state == "evidence_unavailable"
+    ]
+    if unavailable:
+        lines.extend(
+            [
+                "",
+                "### Unavailable Evidence",
+                "",
+                *[
+                    f"- {_code_cell(coverage.focus_stay_destination_id)} / "
+                    f"{_code_cell(coverage.candidate_kind)}: "
+                    f"{_markdown_cell(coverage.rationale)}"
+                    for coverage in unavailable
+                ],
+            ]
+        )
+    return "\n".join(lines)
+
+
 def render_catalog_curation_report_markdown(
     report: CatalogCurationReport,
     catalog: CatalogSnapshot | None = None,
@@ -3307,6 +4295,10 @@ def render_catalog_curation_report_markdown(
             f"| {_code_cell(f'{target.target_type}:{target.target_id}')} | "
             f"{_code_cell(target.scope)} | "
             f"{_code_cell(target.resulting_graph_role)} | {required} |"
+        )
+    if report.graph_discovery is not None:
+        lines.extend(
+            ["", *render_catalog_graph_discovery_markdown(report).splitlines()]
         )
     if report.review_evidence_envelope:
         lines.extend(

@@ -79,11 +79,11 @@ mismatch that cannot be resolved from the concise runtime source set.
    working directory, schedule, prompt, skill reference, project-scoped GitHub
    profile, and that no credential content is embedded. Compare the installed
    maintainer, catalog-curation, and catalog-review skills with the merged
-   inventory decision table. Require all five inventory outcomes, the graph-
-   impact deferral transition, the lane-conflict aggregation rule, the mixed
-   unavailable/researchable second-pass rule, and the optional-scalar
-   disposition rule. On any mismatch, keep both schedules paused as
-   contract-mismatch.
+   schema-v5 graph-discovery contract. Require six per-root candidate kinds,
+   candidate/source/evidence closure, prospective relationships, partial
+   checkpoint resumption, bounded one-hop regional expansion, exact unavailable-
+   evidence publication, and semantic review only after complete discovery. On
+   any mismatch, keep both schedules paused as contract-mismatch.
 8. Run disabled/manual curation and discovery smoke cycles. Confirm curation can
    distinguish post-push CI, one current generation, and ordinary recovery, and
    discovery uses regional backlog work before external scanning without
@@ -236,12 +236,11 @@ The installed skill must:
 - `publish ci-repair` completes the canonical waiting-CI body, comment, and
   label handoff and marks the repair push journal `PUBLISHED` before
   second-wait inspection can expose the continuation;
-- keep preparation schema-independent, but before the first semantic review of
-  any fresh or resumed prepared/review-required generation run one
-  maintainer-managed structural normalization pass when the single report is
-  legacy, malformed, graph-less after refresh, incomplete, or non-reconciling;
-  use the exact prepared base/current catalog and trust snapshots to rebuild
-  the canonical schema-v4 JSON report and deterministic Markdown companion.
+- keep preparation schema-independent, but before semantic review of any fresh
+  or resumed generation normalize its single active report to schema v5. Use
+  the exact prepared base/current catalog and trust snapshots to rebuild the
+  canonical JSON report and deterministic Markdown companion, then complete
+  the report-owned graph-discovery phase described below.
   Validate those snapshots before edit and stop without edits if either fails;
   assert catalog/trust object IDs remain identical and locally commit a diff
   containing only that report pair. For every evidence item referenced by a
@@ -273,7 +272,8 @@ The installed skill must:
   connected pass-only category remain insufficient. Reject
   coordinated scope or metadata in report schema versions 1 and 2.
   Schema-version-3 reports retain `direct_component_parent_assignment`;
-  schema-version-4 reports require `component_parent_assignment`. The current
+  schema-version-4 and schema-version-5 reports require
+  `component_parent_assignment`. The current
   family may use an explicit assignment or a reproducible derivation from an
   official complete parent map or inventory, candidate-specific installation
   placement, the exhaustive roster, and the addressable operations view. The
@@ -282,10 +282,10 @@ The installed skill must:
   only on pass coverage, branding, association membership, or proximity.
   `weather_scope` remains independently constrained by ADR 0021 and cannot be
   inferred from coordinated operations. A shared pass alone is insufficient.
-  Run schema-v4 reconciliation and regenerate/compare the Markdown companion
+  Run schema-v5 reconciliation and regenerate/compare the Markdown companion
   before any delta or reviewed checkpoint. Fix missing boundary metadata or
   stale Markdown in the same fixer pass rather than converting a mechanical
-  report defect into semantic `review-incomplete`. Do not claim semantic
+  report defect into a semantic finding. Do not claim semantic
   resolution or consume a remediation cycle; catalog/trust changes begin only
   after the dual-review ledger as ordinary remediation. A
   finalized report requires a non-empty evidence envelope and graph impact on
@@ -293,7 +293,7 @@ The installed skill must:
   heading that exists in the exact-head product backlog. The helper checks only
   anchor existence, never backlog meaning, priority, or status;
 - after each remediation, first require the canonical JSON report and
-  deterministic Markdown companion to pass schema-v4 reconciliation and
+  deterministic Markdown companion to pass schema-v5 reconciliation and
   rendering parity, including the `boundary_target_ids` invariant above. Fix a
   mechanical report failure in the same fixer pass. Then call
   `checkpoint_curation_delta` once. That single invocation runs bounded
@@ -313,9 +313,10 @@ The installed skill must:
   prepared catalog/trust paths only through the helper-derived data root and a
   fresh private `HOME`; never collect or import PR-supplied Python locally.
   Changes under `tests/` remain eligible for CI and owner review;
-- run complementary independent source/trust and graph/scope reviews in
-  parallel on the normalized prepared head against an exact-head provisional
-  evidence envelope, then consolidate complete lane dispositions into one first
+- only after a complete exact-head graph-discovery checkpoint, run
+  complementary independent source/trust and graph/scope reviews in parallel on
+  that head against its evidence envelope, then consolidate complete lane
+  dispositions into one first
   fix and private finding
   ledger. Source/trust must enumerate every
   applicable canonical `FIELD_GROUPS` trust field group with its status, direct
@@ -331,22 +332,34 @@ The installed skill must:
   weather/season, or dedicated-pass semantics through the ordinary
   separate-ski-area gates; assess or leave unresolved a possible complete area,
   but do not promote an internal feature solely because it is named;
-- for every ordinary curation generation or proposal, treat the normalized report's
-  `resulting_graph.focus_stay_destination_ids` as mandatory graph-discovery
+- for every ordinary curation generation or proposal, treat the normalized
+  report's `resulting_graph.focus_stay_destination_ids` as mandatory discovery
   roots. A `reviewed_targets[].scope=narrow` limits field coverage only; it
-  never limits candidate discovery. Before the evidence envelope can freeze,
-  the report must cover every existing focused destination, stay base,
-  ski-area access, ski area, terrain domain, and pass in that deterministic
-  graph closure with both a reviewed graph target and a typed scope assessment.
-  Primary graph entities use `resulting_graph_role=focus`; a ski area from
-  another stay market that is included only through a shared terrain domain may
-  use a narrow `linked_dependency` target. Its evidence envelope must also name
-  all six candidate kinds, including a class with no currently modeled entity.
-  This proves that discovery considered possible new bases, areas, domains, and
-  pass products; the independent lanes still determine whether a concrete
-  unmodeled candidate exists. The helper enforces this graph-inventory shape
-  before a proposal, delta, or final validation, while preserving deliberately
-  narrow field reviews;
+  never limits candidate discovery. For each root, record exactly one
+  `graph_discovery.coverage` row for each of the six candidate kinds:
+  `stay_destination`, `stay_base`, `ski_area`, `ski_area_access`,
+  `terrain_domain`, and `lift_pass_product`. Candidate IDs are separate from
+  the row's `complete`, `in_progress`, or `evidence_unavailable` state. An
+  empty complete row is the explicit none-found conclusion, not an omitted
+  search. Every candidate has one same-kind scope assessment and shares direct
+  evidence with the coverage row. Record evidence-backed prospective edges in
+  `graph_discovery.relationships`; do not encode them only in prose. Include
+  every existing focused destination, stay base, ski-area access, ski area,
+  terrain domain, pass, and direct relationship in the independently computed
+  catalog closure for that root. Primary graph entities use
+  `resulting_graph_role=focus`; an entity from another stay market reached only
+  through a regional pass, marketing umbrella, or shared domain remains a
+  non-recursive `linked_dependency` regional follow-up. If the selected diff
+  creates or changes an edge that depends on that external graph, make its stay
+  destination another explicit focus root and complete all six rows;
+- bound source research to the focus root's direct trip graph: its bookable
+  stay market, primary lift-served ski options, access edges, containing terrain
+  domains, and locally available/default or directly covering passes. Follow
+  each admitted edge one hop to assess its other endpoint. Every coverage row
+  references the appropriate authoritative source neighborhood and direct
+  evidence. The helper validates structure and current-catalog closure; the
+  independent reviewers remain responsible for deciding whether the source is
+  authoritative and the real-world enumeration is complete;
 - for every catalog entity absent from the exact base, apply the new-entity
   completeness gate before freezing the evidence envelope. Enumerate every
   canonical field and required graph relationship, then perform a bounded
@@ -402,116 +415,51 @@ The installed skill must:
   A broader official status or pass source is acceptable only when each
   component is exactly addressable; a shared pass alone is insufficient.
   Evaluate `weather_scope` and ADR 0021 independently;
-- when either initial lane is incomplete, consolidate its omissions into one
-  run-local inventory-completion checklist before any catalog or trust fix. Each
-  entry has `missing_item_id`, `category`, `candidate_keys`,
-  `missing_evidence`, `acceptance_criterion`, `scope_class`, and
-  `graph_impact`. Invoke `snowcast-catalog-curation` in report-only
-  `inventory-completion` submode for at most two inventory-completion passes in
-  the same semantic-time budget. Each pass researches only that checklist and
-  its immediate official-source neighborhood, updates exactly the canonical
-  report path, requires catalog and trust blobs and object IDs remain
-  identical, runs catalog validation plus exact reconciliation, and does not
-  consume a remediation cycle. Locally commit the report pair, then call
-  `checkpoint_curation_inventory_completion`. The helper records only that
-  completed checkpoint marker after verifying the direct delta contains only
-  the canonical report pair. It also requires local `HEAD` still equals that
-  marker when `review-incomplete` is published. It does not store the
-  checklist, source evidence, report content, or review conclusion; the local
-  report commit remains
-  non-authoritative and creates no helper continuation or cross-run semantic
-  authority;
-- after each inventory-completion pass, start fresh independent source-trust
-  and graph-scope contexts on the exact new head. Reconcile items by semantic
-  acceptance criterion, not wording or identifier changes. Each relevant lane
-  assigns one `inventory_outcome` from this decision table. Every potential gap
-  begins as a `research_required_candidate`: investigate its bounded
-  authoritative-source neighborhood before choosing an outcome. Do not call an
-  unresearched candidate actionable, and do not call it unavailable merely
-  because the report-only pass cannot edit the eventual catalog, trust, or
-  backlog correction:
-
-  | Outcome | Required evidence | Inventory transition | Remediation transition |
-  | --- | --- | --- | --- |
-  | `inventory_missing` | The concrete candidate, relevant source, or verification-capable disposition is still unknown. | Keep on the unresolved checklist. | None yet. |
-  | `verified_complete` | Direct evidence proves the current representation is correct or the candidate is not applicable. | Remove from the missing-inventory checklist. | No finding. |
-  | `actionable_finding` | Candidate and evidence are known well enough to state one exact defect and acceptance criterion. | Remove from the missing-inventory checklist. | Promote it to the finding ledger. |
-  | `defensible_deferred` | Direct evidence supports a typed deferral with its concrete prerequisite and canonical backlog reference. | Remove from the missing-inventory checklist. | Apply the graph-impact rule below. |
-  | `evidence_unavailable` | Bounded research documents absent or contradictory evidence for the exact required graph fact, and no defensible disposition is possible. | Keep as an unresolved fail-closed item. | None can be authorized. |
-
-  For inventory outcomes, an optional scalar fact such as a representative
-  price, count, or descriptive attribute must be `actionable_finding` when the
-  candidate and available evidence support a safe conservative remediation.
-  The acceptance criterion may replace it with exact evidence, retain it as a
-  clearly labeled proxy with `verified_with_adjustment` trust and an explicit
-  limitation caveat, downgrade its trust, or remove or clear the unsupported
-  value. Such an item must not be `evidence_unavailable` and does not block
-  evidence-envelope freeze. Reserve `evidence_unavailable` for a graph-critical
-  identity, ownership, access, or pass-validity fact when no graph-safe
-  conservative representation or defensible typed deferral is possible. Stale
-  rendered Markdown is likewise an `actionable_finding`: regenerate it during
-  ordinary remediation; it does not make review incomplete.
-
-  An `evidence_unavailable` outcome requires a completed bounded research
-  record: the exact missing fact, affected target IDs, attempted source
-  families and URLs, and a `not_found`, `insufficient`, or `contradictory`
-  result. If the investigation establishes an exact correction and acceptance
-  criterion, promote it to `actionable_finding` instead; a fixer must never
-  infer the missing graph from a shared pass, proximity, or an unsupported
-  parent choice.
-
-  A regional-followup defensible deferral requires no remediation finding
-  because omitting it leaves the selected graph correct. A graph-blocking
-  defensible deferral closes the knowledge checklist but must also create an
-  actionable graph-safety finding. Its acceptance criterion is to make the
-  selected graph internally valid without the deferred dependency; when that
-  cannot be done safely, stop `blocked/review-incomplete`. That an item requires
-  a catalog, trust, backlog, rendered-report, or focused-test change does not by
-  itself make review incomplete; those changes belong to subsequent remediation
-  and remain forbidden only inside the report-only completion pass;
-- for `verified_complete`, `actionable_finding`, and `defensible_deferred`,
-  remove it from the missing-inventory checklist after applying the remediation
-  transition above;
-- the parent aggregates both fresh lane outcomes without silently overriding
-  either lane. Any relevant `inventory_missing` or `evidence_unavailable`
-  outcome keeps the aggregate unresolved. Compatible complete outcomes may
-  close it. Conflicting inventory outcomes or graph-impact classifications
-  require one focused exact-head reconciliation and the item remains
-  `inventory_missing` until reconciled. A new actionable graph blocker enters
-  the finding ledger and does not prevent the second inventory-completion pass;
-  only newly discovered `inventory_missing` or `evidence_unavailable` items
-  alter the unresolved checklist;
-- when a first pass resolves at least one prior item and leaves a strictly
-  smaller unresolved checklist containing `inventory_missing` items, Codex must
-  run the second inventory-completion pass when it can start before the
-  210-minute new-work cutoff. Exclude `evidence_unavailable` items from further
-  research; one such item does not cancel the second pass for
-  `inventory_missing` items. The only scope exception requires an item-specific
-  unsafe scope boundary naming what would be crossed. A prediction that the
-  second pass will not complete every item is not a stop condition. Freeze the
-  evidence envelope only after both fresh lanes have no `inventory_missing`,
-  `evidence_unavailable`, or unreconciled outcome; `verified_complete`,
-  actionable findings, and correctly transitioned defensible deferrals are
-  complete knowledge dispositions. Inventory completion cannot authorize
-  catalog or trust remediation; the resulting complete dual review does so by
-  promoting actionable findings into the ordinary remediation loop. Before a
-  status-only terminal publication, create a private helper-owned
-  `inventory-disposition` input with one record for every final unresolved
-  item. It names the missing item, exact missing fact, affected target IDs, and
-  source attempts with their direct URLs and `not_found`, `insufficient`, or
-  `contradictory` results. `blocked/review-incomplete` requires the current
-  report-only marker and at least one remaining `inventory_missing` record.
-  `blocked/evidence-unavailable` is allowed only when every final record is
-  `evidence_unavailable`; it requires a current curation generation but no
-  report-only marker. A mixed set remains `review-incomplete`. This input is
-  private workflow evidence, not catalog/report schema data or publication
-  content. When evidence remains unavailable after the documented research,
-  publish only after the required fresh dual review. The same terminal
-  classification applies on no measurable progress, an item-specific unsafe
-  scope expansion, or an incomplete second completion pass;
-- when inventory completion runs, include its inventory-completion pass count,
-  remaining unresolved checklist count, and bounded stop reason in Triage
-  without raw source evidence or checklist prose;
+- perform graph discovery before either semantic review lane. Start every
+  unknown candidate kind as `in_progress`, research its bounded source
+  neighborhood, and update the canonical report rather than a private
+  checklist. If the cycle reaches its time boundary while any row is still
+  `in_progress`, commit only the canonical report pair and call
+  `checkpoint_curation_graph_discovery`. The helper verifies the actual head,
+  exact base, unchanged catalog/trust objects, schema-v5 discovery-mode
+  reconciliation, and Markdown parity. The generation then resumes through its
+  typed `prepare_curation` action on a later cycle; do not publish a blocked
+  lifecycle state merely because discovery is partial;
+- preserve discovery monotonically across report-only checkpoints. Never remove
+  a previously recorded root/kind row or established candidate merely because a
+  later source is inconclusive. A complete row cannot regress. Candidate evidence
+  must come from an appropriate source neighborhood for that candidate kind;
+  supplemental dependency evidence alone is insufficient;
+- mark a coverage row `complete` only after its required source neighborhood
+  has been investigated and all established candidates and prospective direct
+  edges are recorded. If bounded authoritative research instead ends with a
+  graph-critical fact that is absent, insufficient, or contradictory and has no
+  conservative graph-safe disposition, use `evidence_unavailable`. Record the
+  attempted source families and direct evidence in the schema-v5 report. Do not
+  use unavailable for optional scalar data that can safely be omitted,
+  qualified, downgraded, or turned into an ordinary actionable finding;
+- after all rows leave `in_progress`, checkpoint the complete graph-discovery
+  report and run the independent source-trust and graph-scope reviews. Those
+  reviewers may return verified completeness,
+  actionable findings, or defensible regional deferrals; actionable catalog,
+  trust, backlog, rendered-report, and focused-test defects enter ordinary
+  remediation only after unavailable rows have been resolved. A packet containing
+  an unavailable row cannot enter mutation or final/proposal validation. If either
+  review requests a discovery correction, checkpoint only a report-only descendant
+  and rerun both lanes. Publish `blocked/evidence-unavailable` only when both lanes
+  confirm the exact report and through the helper's typed action from that immutable
+  complete checkpoint;
+- aggregate both independent review lanes without silently overriding either.
+  Conflicting source meaning, candidate disposition, or graph-impact conclusions
+  require one focused exact-head reconciliation. A newly discovered plausible
+  candidate means the report's discovery record was incomplete: return to the
+  report-only graph-discovery checkpoint, add the candidate and evidence, and
+  complete the affected source neighborhood before resuming semantic review;
+- retain `checkpoint_curation_inventory_completion` only when inspection returns
+  that exact recovery-only recipe for a transaction already started by the old
+  contract. Never initiate a new inventory-completion transaction, create a
+  private inventory-disposition payload, or publish `review-incomplete` for a
+  schema-v5 generation;
 - classify every omission as `graph_blocking` or `regional_followup`. Only an
   omission capable of making the selected graph wrong blocks curation. This
   graph correctness boundary sends additive coverage to the report and merged
@@ -600,20 +548,21 @@ The installed skill must:
   convergence. The repeat streak is run-local untrusted semantic context, not
   helper or automation-memory authority. A terminal blocked label prevents
   scheduled retry; deliberate owner removal starts a newly bounded attempt.
-  The fresh reviewer independently verifies the frozen candidates and complete
-  resulting graph without restarting unrestricted regional research. A newly
-  discovered graph blocker may expand the frozen inventory once, while
-  additive adjacent coverage is a regional follow-up;
+  The fresh reviewer independently verifies the checkpointed candidates and
+  complete resulting graph without restarting unrestricted regional research.
+  A newly discovered plausible graph candidate returns the generation to its
+  report-only graph-discovery stage, while additive adjacent coverage remains a
+  regional follow-up;
 - recheck current-main mergeability before every fix and adaptive review and
   once more before final manual-check or validation/push; start no boundary
   adjudication at or after minute 180, stop new semantic work at 210 minutes,
   and at 240 interrupt semantic work while allowing at most 30 active minutes
   of exact-state validation, publication, recovery, and cleanup;
 - bind a complete review disposition to the exact reviewed head; use
-  `manual-check` only for a complete scope-safe reviewed handoff, route an
-  incomplete review through the bounded inventory-completion phase before
-  status-only `blocked/review-incomplete`, and reserve `owner-decision` for a
-  real owner/model choice;
+  `manual-check` only for a complete scope-safe reviewed handoff. A partial
+  discovery receives a report-only graph checkpoint and later resumption; exact
+  exhausted evidence uses `blocked/evidence-unavailable`; reserve
+  `owner-decision` for a real owner/model choice;
 - after every final clean exact-head independent review, call the helper-returned
   `checkpoint_curation_reviewed` recipe with the exact generation, head,
   report, and prepare-time base; then call `validate_curation` only when the
@@ -636,7 +585,7 @@ The installed skill must:
   clean descendant correction, then require a fresh full exact-head review and
   reviewed checkpoint before validation. Every prepared or
   review-required generation, including resumed work, enters the same complete
-  normalization, inventory, review, and remediation flow as ordinary work. Its
+  normalization, graph-discovery, review, and remediation flow as ordinary work. Its
   returned reviewed-checkpoint action is valid only for the clean-review branch;
   requested changes use the registered delta-checkpoint branch before another
   fresh full review;
@@ -663,13 +612,13 @@ The installed skill must:
   mechanically valid, scope-safe reviewed head when the cycle or semantic-time
   bound is reached with remaining findings that are only bounded in-model work;
   never push it directly or represent it as validated; an unresolved finding,
-  active residual or repeat, regression, incomplete inventory, incomplete
-  review, or unsafe scope remains status-only blocked;
+  active residual or repeat, regression, unavailable discovery evidence,
+  incomplete semantic review, or unsafe scope remains status-only blocked;
 - before any safe terminal status for an unpublished mechanically valid local
   head, retain its current generation checkpoint. A blocked or owner-hold label
   prevents scheduled resumption but does not invalidate the checkpoint;
 - use `publish outcome` for safe PR-specific terminal conflict, CI, deadline,
-  non-convergence, validation, review-incomplete, or owner-decision stops; bind
+  non-convergence, validation, evidence-unavailable, or owner-decision stops; bind
   it to the exact unchanged remote head, update only the lifecycle label and
   canonical comment, and keep its outcome record separate from review evidence;
 - use discovery order `journal recovery -> preferred retry -> merged regional
@@ -689,7 +638,7 @@ The installed skill must:
   the applicable bases, access, ski-area/pass ownership, weather/migration
   implications, complete source families and dispositions, canonical graph,
   exclusions, backlog anchor, caveats, owner decisions, and rollback;
-- use GitHub proposal identity and the merged schema-v4 report as durable
+- use GitHub proposal identity and the merged schema-v5 report as durable
   proposal authority. The proposal marks its backlog item `proposed`. After the
   owner accepts it by removing the proposal label, normal curation on that same
   PR must mark the item `completed`, or narrow it to the remaining gaps and mark
@@ -879,35 +828,33 @@ For each schedule, confirm:
 - a pressure scenario where two prior findings are verified resolved and three
   concrete, source-backed, in-model, bounded findings are newly discovered
   continues when cycle and time remain; raw count growth alone does not stop it;
-- an initial incomplete lane returns the structured inventory-completion
-  checklist, changes exactly the canonical JSON report and deterministic
-  Markdown companion while catalog/trust blobs and object IDs remain identical,
-  and receives fresh independent source-trust and graph-scope review before any
+- a legacy schema-v1 through schema-v4 report is normalized to schema v5 before
+  semantic review, with catalog/trust blobs and object IDs unchanged;
+- a partial discovery records established candidates, prospective edges, source
+  neighborhoods, and `in_progress` coverage in the canonical JSON/Markdown
+  pair; its report-only checkpoint resumes on a later cycle without a GitHub
+  blocked label;
+- a complete discovery has exactly one row for every focus root and candidate
+  kind, including explicit complete empty rows, and cannot swap candidates or
+  known relationships between focus roots;
+- a complete packet with no unavailable rows enters fresh independent
+  source-trust and graph-scope review; a reviewer that discovers another
+  plausible candidate returns the packet to graph discovery before ordinary
   remediation;
-- an inventory-completion scenario permits at most two passes, requires the
-  semantically reconciled unresolved checklist to become strictly smaller after
-  each pass, and publishes `blocked/review-incomplete` on no measurable
-  progress, unavailable evidence, unsafe scope expansion, deadline, or an
-  incomplete second pass;
-- an inventory-completion scenario that discovers a concrete catalog, trust,
-  backlog, rendered-report, or focused-test defect classifies it as
-  `actionable_finding`, removes it from the missing checklist, and enters
-  ordinary remediation after the dual review completes; a source-backed current
-  or not-applicable disposition classifies as `verified_complete`;
-- a `regional_followup` defensible deferral exits inventory without a finding,
-  while a `graph_blocking` defensible deferral creates the required graph-safety
-  finding or stops review-incomplete when the graph cannot be made internally
-  valid without the dependency;
-- conflicting lane outcomes remain fail-closed until one focused exact-head
-  reconciliation, and an incomplete lane cannot be overridden by a complete one;
-- an inventory-completion scenario whose first pass strictly shrinks the
-  checklist runs its permitted second pass before the 210-minute cutoff for all
-  remaining `inventory_missing` items. An `evidence_unavailable` item is excluded
-  but does not cancel research for the other items; predicted inability to
-  finish is not an accepted stop reason;
-- a newly actionable graph blocker enters the finding ledger and does not stop
-  the second inventory pass; only a new missing or unavailable item changes the
-  unresolved checklist;
+- a complete packet with an `evidence_unavailable` row cannot authorize a delta,
+  reviewed checkpoint, proposal publication, or final validation. Only the
+  exact immutable graph checkpoint can authorize the bounded unavailable-
+  evidence outcome;
+- a one-hop regional pass, marketing umbrella, or shared-domain dependency is
+  recorded with its owning stay destination, without recursively expanding that
+  destination's bases or access graph unless the selected diff creates or changes
+  an edge that depends on that graph. Prospective edges stay within one focus root
+  and cannot chain two regional-followup candidates;
+- a prospective `add_entity` candidate and its evidence-backed edges pass the
+  report-only discovery checkpoint but fail strict delta/final validation until
+  ordinary remediation materializes them; and
+- a private inventory-disposition input, a new legacy inventory-completion
+  attempt, or `review-incomplete` publication is rejected for schema-v5 work;
 - a narrower residual and the first two consecutive exact repeats can continue
   only through bounded materially different fixes; the third consecutive exact
   repeat, any regression, or unsafe scope expansion stops as non-converging;
@@ -928,9 +875,9 @@ For each schedule, confirm:
   boundary cutoff, 150-minute semantic cutoff, 180-minute hard deadline, or old
   fewer/lower/narrower and non-narrowing-count convergence rule;
 - activation rejects an installed maintainer, catalog-curation, or catalog-
-  review skill that lacks all five inventory outcomes, the graph-impact deferral
-  transition, the lane-conflict aggregation rule, the mixed unavailable/
-  researchable second-pass rule, or the optional-scalar disposition rule, and
+  review skill that lacks schema-v5 per-root graph discovery, the report-only
+  partial-checkpoint lifecycle, the graph-impact deferral transition, the
+  lane-conflict aggregation rule, or the optional-scalar disposition rule, and
   keeps both schedules paused as contract-mismatch;
 - a legacy, malformed, graph-less refreshed, incomplete, or non-reconciling
   report is normalized before initial dual review, without consuming a
@@ -954,11 +901,10 @@ For each schedule, confirm:
    matching unresolved push journal or terminal-publication intent. Before
    restoring a pre-change helper, use a compatible helper and confirm every
    active CI continuation is completed or safely terminalized, with its
-   matching recovery authority settled. Also use the new helper to complete or
-   quarantine every open report that uses
-   `review_evidence_envelope` or `graph_impact`, or retain a helper that remains
-   compatible with those fields. Quarantine is a helper-owned non-selectable
-   state; do not delete, rewrite, relabel, or reset private state manually.
+   matching recovery authority settled. Also complete every started generation
+   checkpoint with the helper version that created or understands it. Do not
+   delete, rewrite, relabel, or reset private state manually.
+   Do not restore an older helper while any active CI continuation remains.
 5. While schedules remain disabled, run a manual compatibility smoke against
    the real remaining inventories and private state. Confirm the proposed
    rollback helper can inspect every open head and safely recognize or ignore
@@ -970,16 +916,19 @@ For each schedule, confirm:
    or fail closed without selection, budget reset, publication, or branch
    mutation. Any unclear head, report, journal, continuation, or compatibility
    result keeps both schedules disabled.
-6. Restore the snapshotted installed skills and both prompts atomically while
-   schedules remain paused. Do not restore or re-enable a pre-change helper or
-   older orchestrator while any active CI continuation remains; complete or
-   safely terminalize it with the helper version that created or understands it
-   first. Do not downgrade across an unresolved terminal-publication intent.
-   Once any generation exists after migration, do not restore the archived
-   legacy pre-push state or an older continuation-based helper. Continue with
-   the generation-aware helper or ship a reviewed forward fix.
-7. Revert the repository helper through normal Git history and a reviewed PR.
-   Do not use plain `git push --force` and do not execute the superseded Task 10.
+6. Choose the rollback boundary from observed state:
+   - before any schema-v5 report or graph-discovery event exists, revert the
+     repository change through normal Git history and restore the snapshotted
+     installed skills and prompts while schedules remain paused;
+   - after any schema-v5 report or graph-discovery event exists, keep schedules
+     paused and ship a reviewed forward repair that preserves schema-v5 and event
+     parsing while correcting generation, projection, or recipe behavior. There
+     is no separate runtime kill switch for graph discovery, and an older helper
+     is not a valid rollback target.
+7. Apply the matching installed skills and prompts only after the compatibility
+   helper is merged. Do not downgrade across an unresolved checkpoint,
+   terminal-publication intent, push journal, or CI continuation. Do not use a
+   force push or manually alter private state.
 8. Keep schedules disabled until the reverted or corrected merged version has
    passed the same post-merge review and the owner explicitly re-approves
    enablement.

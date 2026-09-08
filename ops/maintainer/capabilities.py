@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import secrets
 import sys
 from collections.abc import Callable, Iterator, Sequence
@@ -23,8 +22,9 @@ from ops.maintainer.curation_state import (
     CurationCheckpointAuthority,
     CurationCheckpointStage,
     CurationGeneration,
+    CurationGenerationProjection,
     CurationGenerationStore,
-    CurationInventoryDisposition,
+    CurationGraphDiscoveryCheckpoint,
     CurationMigrationError,
     CurationNextAction,
     CurationRecipeId,
@@ -117,6 +117,7 @@ from ops.maintainer.state import (
 )
 from ops.maintainer.validation import (
     DeltaValidationResult,
+    GraphDiscoveryValidationResult,
     ProposalValidationResult,
     ValidationResult,
     immutable_resulting_graph_markdown,
@@ -173,6 +174,10 @@ class Dependencies:
     base_repository: object | None
     curation_validator: Callable[..., ValidationResult]
     curation_delta_validator: Callable[..., DeltaValidationResult]
+    curation_graph_discovery_validator: Callable[..., GraphDiscoveryValidationResult]
+    curation_unavailable_evidence_validator: Callable[
+        ..., GraphDiscoveryValidationResult
+    ]
     proposal_validator: Callable[..., ProposalValidationResult]
     catalog_keys_provider: Callable[[], frozenset[str]]
     repository_root: Path
@@ -456,6 +461,88 @@ def handle_prepare_curation(
             generation_number=current.generation_number + 1,
         )
 
+    incomplete_checkpoint = _incomplete_checkpoint_start(current, projection)
+    if incomplete_checkpoint is not None:
+        if args.continue_conflict:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PREPARE,
+            )
+        existing_work = store.load_work(work_id)
+        if existing_work is not None and existing_work.run_id == lease.run_id:
+            raise MaintainerError(
+                ErrorReason.LOCAL_RECOVERY_REQUIRED,
+                ErrorStage.PREPARE,
+                retryable=True,
+                next_action=projection.next_action,
+            )
+        selected = _begin_selected_curation_work(
+            pull_request,
+            lease,
+            store,
+            dependencies,
+        )
+        try:
+            dependencies.repository.prepare_curation_checkpoint_retry(
+                pull_request,
+                current.sync,
+                incomplete_checkpoint.head,
+                restart_interrupted=(
+                    existing_work is not None and existing_work.run_id != lease.run_id
+                ),
+            )
+        except CurationCheckpointIntegrityError:
+            _close_generation(
+                generation_store,
+                current,
+                lease,
+                dependencies,
+                kind="generation-invalidated",
+                reason="checkpoint_missing",
+            )
+            return _prepare_new_curation_generation(
+                pull_request=pull_request,
+                lease=lease,
+                store=store,
+                generation_store=generation_store,
+                dependencies=dependencies,
+                generation_number=current.generation_number + 1,
+                selected=selected,
+            )
+        except StaleRemoteHeadError:
+            _close_generation(
+                generation_store,
+                current,
+                lease,
+                dependencies,
+                kind="generation-invalidated",
+                reason="remote_head_changed",
+            )
+            raise MaintainerError(
+                ErrorReason.STALE_HEAD,
+                ErrorStage.PREPARE,
+            ) from None
+        prepared_work = _advance_work(
+            store,
+            lease,
+            selected,
+            dependencies,
+            WorkPhase.PREPARED,
+            prepared_head=current.sync.rebased_head,
+            backup_ref=current.sync.backup_ref,
+            sync=current.sync,
+        )
+        dependencies.tracker.last_phase = prepared_work.phase
+        dependencies.tracker.terminal_reason = "checkpoint-recovery-required"
+        return {
+            "work_id": work_id,
+            "generation": _generation_result(
+                current,
+                result="checkpoint-recovery-required",
+                next_action=projection.next_action,
+            ),
+        }
+
     checkpoint = projection.checkpoint_authority
     if checkpoint is None:
         _close_generation(
@@ -565,9 +652,17 @@ def handle_prepare_curation(
     )
     if replay.result == "unchanged":
         result = "review-required"
-        if checkpoint.stage is CurationCheckpointStage.REVIEWED:
+        next_action = projection.next_action
+        if projection.graph_discovery is None or (
+            checkpoint.stage is CurationCheckpointStage.GRAPH_DISCOVERY
+            and projection.graph_discovery.status == "in_progress"
+        ):
+            result = "discovery-required"
+            next_action = _graph_discovery_checkpoint_action(current)
+        elif checkpoint.stage is CurationCheckpointStage.REVIEWED:
             if projection.latest_stage == "validation-failed":
                 result = "validation-remediation"
+                next_action = _validation_remediation_action(current)
             else:
                 prepared_work = _advance_work(
                     store,
@@ -585,11 +680,7 @@ def handle_prepare_curation(
             "generation": _generation_result(
                 current,
                 result=result,
-                next_action=(
-                    _validation_remediation_action(current)
-                    if result == "validation-remediation"
-                    else projection.next_action
-                ),
+                next_action=next_action,
             ),
         }
 
@@ -610,10 +701,10 @@ def handle_prepare_curation(
     generation_store.start_generation(generation, lease)
     dependencies.tracker.mutation_occurred = True
     dependencies.tracker.last_phase = WorkPhase.PREPARED
-    dependencies.tracker.terminal_reason = "generation-review-required"
+    dependencies.tracker.terminal_reason = "generation-discovery-required"
     return {
         "work_id": work_id,
-        "generation": _generation_result(generation, result="review-required"),
+        "generation": _generation_result(generation, result="discovery-required"),
         "prepared": replay.sync.model_dump(mode="json"),
     }
 
@@ -760,6 +851,24 @@ def _generation_recovery(
     )
 
 
+def _incomplete_checkpoint_start(
+    generation: CurationGeneration,
+    projection: CurationGenerationProjection,
+) -> CheckpointStartedEvent | None:
+    transaction_id = projection.incomplete_transaction
+    if transaction_id is None:
+        return None
+    matches = tuple(
+        event
+        for event in generation.events
+        if isinstance(event, CheckpointStartedEvent)
+        and event.transaction_id == transaction_id
+    )
+    if len(matches) != 1:
+        raise CurationStateError("incomplete checkpoint transaction is ambiguous")
+    return matches[0]
+
+
 def _continue_conflict_action(
     generation: CurationGeneration,
 ) -> CurationNextAction:
@@ -771,6 +880,25 @@ def _continue_conflict_action(
             head=project_generation(generation).latest_head,
             validation_base=generation.sync.base_head,
             continue_conflict=True,
+        ),
+    )
+
+
+def _prepare_generation_action(
+    generation: CurationGeneration,
+) -> CurationNextAction:
+    projection = project_generation(generation)
+    checkpoint = projection.checkpoint_authority
+    if checkpoint is None:
+        raise CurationStateError("generation prepare action lost checkpoint authority")
+    return CurationNextAction(
+        recipe_id=CurationRecipeId.PREPARE,
+        substitutions=CurationActionSubstitutions(
+            pr=generation.pr_number,
+            generation_id=generation.generation_id,
+            head=projection.latest_head,
+            report=checkpoint.report_path,
+            validation_base=generation.sync.base_head,
         ),
     )
 
@@ -793,6 +921,29 @@ def _validation_remediation_action(
             generation_id=generation.generation_id,
             head=reviewed.reviewed_head,
             report=reviewed.report_path,
+            validation_base=generation.sync.base_head,
+        ),
+        caller_created_descendant_head=True,
+    )
+
+
+def _graph_discovery_checkpoint_action(
+    generation: CurationGeneration,
+) -> CurationNextAction:
+    projection = project_generation(generation)
+    checkpoint = projection.checkpoint_authority
+    if checkpoint is None or (
+        projection.graph_discovery is not None
+        and projection.graph_discovery.status != "in_progress"
+    ):
+        raise CurationStateError("required graph discovery lost checkpoint authority")
+    return CurationNextAction(
+        recipe_id=CurationRecipeId.CHECKPOINT_GRAPH_DISCOVERY,
+        substitutions=CurationActionSubstitutions(
+            pr=generation.pr_number,
+            generation_id=generation.generation_id,
+            head=checkpoint.reviewed_head,
+            report=checkpoint.report_path,
             validation_base=generation.sync.base_head,
         ),
         caller_created_descendant_head=True,
@@ -902,7 +1053,36 @@ def handle_checkpoint_curation(
             ErrorReason.CHECKPOINT_CONFLICT,
             ErrorStage.VALIDATE,
         )
-    if projection.latest_stage == "validation-failed":
+    if inventory_completion and projection.incomplete_transaction is None:
+        raise MaintainerError(
+            ErrorReason.CHECKPOINT_CONFLICT,
+            ErrorStage.VALIDATE,
+        )
+    discovery_ready_for_remediation = (
+        projection.graph_discovery is not None
+        and projection.graph_discovery.status == "complete"
+        and projection.graph_discovery.unavailable_pairs == 0
+    )
+    legacy_inventory_recovery = (
+        inventory_completion and projection.incomplete_transaction is not None
+    )
+    if (
+        stage
+        in {
+            CurationCheckpointStage.DELTA_VALIDATED,
+            CurationCheckpointStage.REVIEWED,
+        }
+        and not discovery_ready_for_remediation
+        and not legacy_inventory_recovery
+    ):
+        raise MaintainerError(
+            ErrorReason.CHECKPOINT_CONFLICT,
+            ErrorStage.VALIDATE,
+        )
+    if (
+        projection.latest_stage == "validation-failed"
+        and stage is not CurationCheckpointStage.GRAPH_DISCOVERY
+    ):
         if inventory_completion:
             raise MaintainerError(
                 ErrorReason.CHECKPOINT_CONFLICT,
@@ -924,6 +1104,47 @@ def handle_checkpoint_curation(
             projection.latest_head,
             args.head,
         )
+    if stage is CurationCheckpointStage.GRAPH_DISCOVERY:
+        continuing_partial = (
+            projection.latest_stage is CurationCheckpointStage.GRAPH_DISCOVERY
+            and projection.graph_discovery is not None
+            and projection.graph_discovery.status == "in_progress"
+        )
+        completed_exact_retry = (
+            projection.latest_stage is CurationCheckpointStage.GRAPH_DISCOVERY
+            and projection.checkpoint_authority is not None
+            and projection.checkpoint_authority.stage
+            is CurationCheckpointStage.GRAPH_DISCOVERY
+            and projection.checkpoint_authority.reviewed_head == args.head
+            and projection.checkpoint_authority.report_path == args.report
+        )
+        review_requested_revision = (
+            projection.latest_stage is CurationCheckpointStage.GRAPH_DISCOVERY
+            and projection.graph_discovery is not None
+            and projection.graph_discovery.status == "complete"
+            and args.head != projection.latest_head
+        )
+        normal_start = projection.latest_stage == "prepared"
+        legacy_start = (
+            projection.graph_discovery is None
+            and projection.latest_stage
+            in {
+                CurationCheckpointStage.DELTA_VALIDATED,
+                CurationCheckpointStage.REVIEWED,
+                "validation-failed",
+            }
+        )
+        if not (
+            normal_start
+            or continuing_partial
+            or completed_exact_retry
+            or review_requested_revision
+            or legacy_start
+        ):
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.VALIDATE,
+            )
     transaction_id = checkpoint_transaction_id(
         generation.generation_id,
         stage,
@@ -982,7 +1203,23 @@ def handle_checkpoint_curation(
             ErrorReason.CHECKPOINT_CONFLICT,
             ErrorStage.VALIDATE,
         ) from None
-    if inventory_completion:
+    if stage is CurationCheckpointStage.GRAPH_DISCOVERY:
+        try:
+            dependencies.repository.verify_report_only_graph_discovery(
+                projection.latest_head,
+                args.head,
+                args.report,
+                allow_unchanged=(
+                    projection.latest_stage == "prepared"
+                    and args.head == projection.latest_head
+                ),
+            )
+        except RepositorySafetyError:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.VALIDATE,
+            ) from None
+    elif inventory_completion:
         try:
             dependencies.repository.verify_report_only_inventory_completion(
                 projection.latest_head,
@@ -997,16 +1234,82 @@ def handle_checkpoint_curation(
     base_repository = dependencies.base_repository or GitRepository(
         args.base_dir.resolve()
     )
-    delta = dependencies.curation_delta_validator(
-        pull_request=pull_request,
-        sync=generation.sync,
-        remediation_head=args.head,
-        report_path=args.report,
-        repository=dependencies.repository,
-        base_repository=base_repository,
-    )
-    if delta.remediation_head != args.head:
-        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.VALIDATE)
+    graph_discovery: CurationGraphDiscoveryCheckpoint | None = None
+    if stage is CurationCheckpointStage.GRAPH_DISCOVERY:
+        previous_graph_checkpoint = (
+            authority
+            if authority is not None
+            and authority.stage is CurationCheckpointStage.GRAPH_DISCOVERY
+            and authority.reviewed_head != args.head
+            else None
+        )
+        discovery = dependencies.curation_graph_discovery_validator(
+            pull_request=pull_request,
+            sync=generation.sync,
+            discovery_head=args.head,
+            report_path=args.report,
+            repository=dependencies.repository,
+            base_repository=base_repository,
+            previous_discovery_head=(
+                previous_graph_checkpoint.reviewed_head
+                if previous_graph_checkpoint is not None
+                else None
+            ),
+            previous_report_path=(
+                previous_graph_checkpoint.report_path
+                if previous_graph_checkpoint is not None
+                else None
+            ),
+        )
+        if (
+            discovery.discovery_head != args.head
+            or discovery.report_path != args.report
+        ):
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.VALIDATE,
+            )
+        graph_discovery = CurationGraphDiscoveryCheckpoint(
+            status=discovery.status,
+            covered_pairs=discovery.covered_pairs,
+            required_pairs=discovery.required_pairs,
+            candidate_count=discovery.candidate_count,
+            unavailable_pairs=discovery.unavailable_pairs,
+        )
+        incomplete_start = _incomplete_checkpoint_start(generation, projection)
+        if (
+            incomplete_start is not None
+            and incomplete_start.graph_discovery != graph_discovery
+        ):
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.VALIDATE,
+            )
+    elif not (inventory_completion and incomplete is not None):
+        discovery_authority = projection.graph_discovery_authority
+        if (
+            discovery_authority is None
+            or discovery_authority.stage is not CurationCheckpointStage.GRAPH_DISCOVERY
+            or not discovery_ready_for_remediation
+        ):
+            raise CurationStateError(
+                "delta checkpoint lost completed graph discovery authority"
+            )
+        delta = dependencies.curation_delta_validator(
+            pull_request=pull_request,
+            sync=generation.sync,
+            remediation_head=args.head,
+            report_path=args.report,
+            previous_discovery_head=discovery_authority.reviewed_head,
+            previous_report_path=discovery_authority.report_path,
+            repository=dependencies.repository,
+            base_repository=base_repository,
+        )
+        if delta.remediation_head != args.head:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.VALIDATE,
+            )
 
     if incomplete is None:
         generation = generation_store.append_event(
@@ -1020,6 +1323,7 @@ def handle_checkpoint_curation(
                 head=args.head,
                 report_path=args.report,
                 validation_base=generation.sync.base_head,
+                graph_discovery=graph_discovery,
                 inventory_completion=True if inventory_completion else None,
                 expected_checkpoint_ref=expected_refs.checkpoint_ref,
                 expected_squash_ref=expected_refs.squash_ref,
@@ -1061,12 +1365,17 @@ def handle_checkpoint_curation(
         )
     dependencies.tracker.last_phase = work.phase
     dependencies.tracker.terminal_reason = "curation-checkpointed"
+    next_action = (
+        _prepare_generation_action(generation)
+        if incomplete is not None
+        else project_generation(generation).next_action
+    )
     return {
         "work_id": work_id,
         "generation": _generation_result(
             generation,
             result="completed",
-            next_action=project_generation(generation).next_action,
+            next_action=next_action,
         ),
     }
 
@@ -3150,47 +3459,6 @@ def handle_publish_outcome(
         args.summary_file,
         kind="summary",
     )
-    if args.reason == "evidence-unavailable":
-        inventory_disposition = _load_inventory_disposition(args, required=True)
-        assert inventory_disposition is not None
-        if not inventory_disposition.all_evidence_unavailable:
-            raise _inventory_disposition_error()
-        generation = generation_store.load_current(work_id)
-        if generation is None or generation.selected_head != args.expected_head:
-            raise MaintainerError(
-                ErrorReason.CHECKPOINT_CONFLICT,
-                ErrorStage.PUBLISH,
-            )
-        projection = project_generation(generation)
-        if dependencies.repository.current_head() != projection.latest_head:
-            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
-    elif args.reason == "review-incomplete":
-        generation = generation_store.load_current(work_id)
-        if generation is None or generation.selected_head != args.expected_head:
-            raise MaintainerError(
-                ErrorReason.CHECKPOINT_CONFLICT,
-                ErrorStage.PUBLISH,
-            )
-        projection = project_generation(generation)
-        if (
-            not projection.inventory_completion_checkpointed
-            or projection.inventory_completion_checkpoint_head != projection.latest_head
-        ):
-            raise MaintainerError(
-                ErrorReason.CHECKPOINT_CONFLICT,
-                ErrorStage.PUBLISH,
-            )
-        if (
-            dependencies.repository.current_head()
-            != projection.inventory_completion_checkpoint_head
-        ):
-            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
-        inventory_disposition = _load_inventory_disposition(args, required=True)
-        assert inventory_disposition is not None
-        if not inventory_disposition.has_inventory_missing:
-            raise _inventory_disposition_error()
-    elif args.inventory_disposition_file is not None:
-        raise _inventory_disposition_error()
     terminal_publications = store.list_unresolved_terminal_publications()
     if terminal_publications:
         if (
@@ -3223,6 +3491,55 @@ def handle_publish_outcome(
             "state": completed.target_state.value,
             "reason": completed.reason,
         }
+    if args.inventory_disposition_file is not None:
+        raise _inventory_disposition_error()
+    if args.reason == "evidence-unavailable":
+        generation = generation_store.load_current(work_id)
+        if generation is None or generation.selected_head != args.expected_head:
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PUBLISH,
+            )
+        projection = project_generation(generation)
+        checkpoint = projection.checkpoint_authority
+        discovery = projection.graph_discovery
+        if (
+            projection.latest_stage is not CurationCheckpointStage.GRAPH_DISCOVERY
+            or checkpoint is None
+            or checkpoint.stage is not CurationCheckpointStage.GRAPH_DISCOVERY
+            or discovery is None
+            or discovery.status != "complete"
+            or discovery.unavailable_pairs == 0
+        ):
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PUBLISH,
+            )
+        if dependencies.repository.current_head() != projection.latest_head:
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
+        validated = dependencies.curation_unavailable_evidence_validator(
+            repository=dependencies.repository,
+            discovery_head=projection.latest_head,
+            report_path=checkpoint.report_path,
+        )
+        if (
+            validated.discovery_head != projection.latest_head
+            or validated.report_path != checkpoint.report_path
+            or validated.status != discovery.status
+            or validated.covered_pairs != discovery.covered_pairs
+            or validated.required_pairs != discovery.required_pairs
+            or validated.candidate_count != discovery.candidate_count
+            or validated.unavailable_pairs != discovery.unavailable_pairs
+        ):
+            raise MaintainerError(
+                ErrorReason.CHECKPOINT_CONFLICT,
+                ErrorStage.PUBLISH,
+            )
+    elif args.reason == "review-incomplete":
+        raise MaintainerError(
+            ErrorReason.CHECKPOINT_CONFLICT,
+            ErrorStage.PUBLISH,
+        )
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request.head_sha != args.expected_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
@@ -3436,41 +3753,11 @@ def _inventory_disposition_error() -> MaintainerError:
     )
 
 
-def _parse_inventory_disposition(payload: str | bytes) -> CurationInventoryDisposition:
-    try:
-        return CurationInventoryDisposition.model_validate_json(payload)
-    except (TypeError, ValueError, json.JSONDecodeError, ValidationError):
-        raise _inventory_disposition_error() from None
-
-
-def _load_inventory_disposition(
-    args: argparse.Namespace,
-    *,
-    required: bool,
-) -> CurationInventoryDisposition | None:
-    supplied_file = args.inventory_disposition_file
-    if supplied_file is None:
-        if required:
-            raise _inventory_disposition_error()
-        return None
-    try:
-        payload = read_publication_text(
-            args.state_dir,
-            supplied_file,
-            kind="inventory-disposition",
-        )
-    except PublicationInputError:
-        raise _inventory_disposition_error() from None
-    return _parse_inventory_disposition(payload)
-
-
 def handle_publication_input_create(
     args: argparse.Namespace,
     dependencies: Dependencies,
 ) -> dict[str, object]:
     validate_publication_state_directory(args.state_dir)
-    if args.kind == "inventory-disposition" and args.worker != "curation":
-        raise PublicationInputError("publication input is unsafe")
     try:
         lease = _owned_lease(args, args.worker, dependencies)
     except RunLeaseError as exc:
@@ -3479,8 +3766,6 @@ def handle_publication_input_create(
         ) from exc
     dependencies.tracker.stage = ErrorStage.PUBLISH
     payload = _read_publication_stdin()
-    if args.kind == "inventory-disposition":
-        _parse_inventory_disposition(payload)
     basename = create_publication_text(
         lease,
         kind=args.kind,

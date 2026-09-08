@@ -100,10 +100,10 @@ def _catalog(**rows: list[dict[str, object]]) -> str:
 
 def _valid_full_report() -> dict[str, object]:
     return {
-        "report_schema_version": 4,
+        "report_schema_version": 5,
         "title": "Alpha full curation",
         "summary": "Reviews Alpha against its official source.",
-        "resulting_graph": {"focus_stay_destination_ids": ["alpha"]},
+        "resulting_graph": {"focus_stay_destination_ids": ["alpha-destination"]},
         "reviewed_targets": [
             {
                 "target_type": "ski_area",
@@ -139,6 +139,7 @@ def _valid_full_report() -> dict[str, object]:
                     {"target_type": "ski_area", "target_id": "alpha"},
                 ],
                 "rationale": "The official source confirms the represented entity.",
+                "graph_impact": "graph_blocking",
                 "ski_area_boundary": {
                     "parent_ski_area_id": None,
                     "terrain_scope": "complete",
@@ -180,8 +181,93 @@ def _valid_full_report() -> dict[str, object]:
                     }
                 ],
                 "rationale": "The source identifies the represented stay market.",
+                "graph_impact": "graph_blocking",
             },
         ],
+        "review_evidence_envelope": [
+            {
+                "family_id": "alpha-booking",
+                "source_kind": "destination_booking",
+                "source_urls": ["https://example.com/alpha"],
+                "candidate_kinds": ["stay_destination", "stay_base"],
+            },
+            {
+                "family_id": "alpha-operator",
+                "source_kind": "ski_area_operator",
+                "source_urls": ["https://example.com/alpha"],
+                "candidate_kinds": [
+                    "ski_area",
+                    "ski_area_access",
+                    "terrain_domain",
+                ],
+            },
+            {
+                "family_id": "alpha-pass",
+                "source_kind": "pass_tariff",
+                "source_urls": ["https://example.com/alpha"],
+                "candidate_kinds": ["terrain_domain", "lift_pass_product"],
+            },
+        ],
+        "graph_discovery": {
+            "status": "complete",
+            "coverage": [
+                {
+                    "focus_stay_destination_id": "alpha-destination",
+                    "candidate_kind": "stay_destination",
+                    "coverage_state": "complete",
+                    "candidate_ids": ["alpha-destination"],
+                    "source_family_ids": ["alpha-booking"],
+                    "evidence_refs": ["alpha-scope"],
+                    "rationale": "The stay-market source was fully reviewed.",
+                },
+                {
+                    "focus_stay_destination_id": "alpha-destination",
+                    "candidate_kind": "stay_base",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["alpha-booking"],
+                    "evidence_refs": ["alpha-scope"],
+                    "rationale": "No separate stay base was presented.",
+                },
+                {
+                    "focus_stay_destination_id": "alpha-destination",
+                    "candidate_kind": "ski_area",
+                    "coverage_state": "complete",
+                    "candidate_ids": ["alpha"],
+                    "source_family_ids": ["alpha-operator"],
+                    "evidence_refs": ["alpha-scope"],
+                    "rationale": "The operator source was fully reviewed.",
+                },
+                {
+                    "focus_stay_destination_id": "alpha-destination",
+                    "candidate_kind": "ski_area_access",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["alpha-operator"],
+                    "evidence_refs": ["alpha-scope"],
+                    "rationale": "No access edge was presented in this fixture.",
+                },
+                {
+                    "focus_stay_destination_id": "alpha-destination",
+                    "candidate_kind": "terrain_domain",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["alpha-operator", "alpha-pass"],
+                    "evidence_refs": ["alpha-scope"],
+                    "rationale": "No terrain domain was presented.",
+                },
+                {
+                    "focus_stay_destination_id": "alpha-destination",
+                    "candidate_kind": "lift_pass_product",
+                    "coverage_state": "complete",
+                    "candidate_ids": [],
+                    "source_family_ids": ["alpha-pass"],
+                    "evidence_refs": ["alpha-scope"],
+                    "rationale": "No lift-pass product was presented.",
+                },
+            ],
+            "relationships": [],
+        },
         "evidence": [
             {
                 "evidence_id": "alpha-scope",
@@ -368,7 +454,7 @@ def test_catalog_comparison_requires_schema_version_two() -> None:
         build_intent_snapshot(repository, "base", "head")
 
 
-def test_full_schema_v4_report_collects_reviewed_scope_and_trust_targets() -> None:
+def test_full_schema_v5_report_collects_reviewed_scope_and_trust_targets() -> None:
     path = "docs/catalog-curation/alpha.json"
     report = _valid_full_report()
     repository = FakeIntentRepository(
@@ -388,10 +474,10 @@ def test_full_schema_v4_report_collects_reviewed_scope_and_trust_targets() -> No
     assert repository.show_calls == [("head", path)]
 
 
-def test_schema_v4_report_without_graph_remains_admissible_review_input() -> None:
+def test_schema_v5_report_without_discovery_remains_preparation_input() -> None:
     report_path = "docs/catalog-curation/alpha.json"
     report = _valid_full_report()
-    report.pop("resulting_graph")
+    report.pop("graph_discovery")
     repository = FakeIntentRepository(
         [report_path],
         {
@@ -400,9 +486,11 @@ def test_schema_v4_report_without_graph_remains_admissible_review_input() -> Non
         },
     )
 
-    snapshot = build_intent_snapshot(repository, "base", "head")
+    snapshot = build_preparation_intent_snapshot(repository, "base", "head")
 
-    assert "ski_area:alpha" in snapshot.report_targets
+    assert snapshot.report_targets == frozenset()
+    with pytest.raises(IntentValidationError, match="graph_discovery"):
+        build_intent_snapshot(repository, "base", "head")
     assert repository.show_calls == [("head", report_path)]
 
 
@@ -425,10 +513,10 @@ def test_report_target_can_be_declared_by_review_and_scope_without_drift() -> No
     )
 
 
-def test_incomplete_schema_v4_report_is_rejected_with_path_context() -> None:
+def test_incomplete_schema_v5_report_is_rejected_with_path_context() -> None:
     path = "docs/catalog-curation/incomplete.json"
     report = {
-        "report_schema_version": 4,
+        "report_schema_version": 5,
         "reviewed_targets": [],
         "entity_scope_assessments": [],
     }
@@ -448,13 +536,14 @@ def test_incomplete_schema_v4_report_is_rejected_with_path_context() -> None:
     ("content", "canonical_error"),
     [
         ("not-json", "invalid JSON"),
-        (json.dumps({"report_schema_version": 1}), "report_schema_version must be 4"),
-        (json.dumps({"report_schema_version": 2}), "report_schema_version must be 4"),
-        (json.dumps({"report_schema_version": 3}), "report_schema_version must be 4"),
+        (json.dumps({"report_schema_version": 1}), "report_schema_version must be 5"),
+        (json.dumps({"report_schema_version": 2}), "report_schema_version must be 5"),
+        (json.dumps({"report_schema_version": 3}), "report_schema_version must be 5"),
+        (json.dumps({"report_schema_version": 4}), "report_schema_version must be 5"),
         (
             json.dumps(
                 {
-                    "report_schema_version": 4,
+                    "report_schema_version": 5,
                     "title": "Incomplete current report",
                     "summary": "Requires pre-review normalization.",
                 }
@@ -496,7 +585,7 @@ def test_preparation_treats_noncanonical_report_content_as_review_input(
                     "entity_scope_assessments": [],
                 }
             ),
-            "report_schema_version must be 4",
+            "report_schema_version must be 5",
         ),
     ],
 )

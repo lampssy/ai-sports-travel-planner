@@ -12,7 +12,6 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Literal, Protocol, Self
-from urllib.parse import urlparse
 
 from pydantic import (
     BaseModel,
@@ -72,102 +71,24 @@ class CurationMigrationError(CurationStateError):
 
 
 class CurationCheckpointStage(StrEnum):
+    GRAPH_DISCOVERY = "graph-discovery"
     DELTA_VALIDATED = "delta-validated"
     REVIEWED = "reviewed"
 
 
 class CurationRecipeId(StrEnum):
     PREPARE = "prepare_curation"
+    CHECKPOINT_GRAPH_DISCOVERY = "checkpoint_curation_graph_discovery"
     CHECKPOINT_DELTA = "checkpoint_curation_delta"
     CHECKPOINT_INVENTORY_COMPLETION = "checkpoint_curation_inventory_completion"
     CHECKPOINT_REVIEWED = "checkpoint_curation_reviewed"
     VALIDATE = "validate_curation"
     PUBLISH_PUSH = "publish_push"
+    PUBLISH_EVIDENCE_UNAVAILABLE = "publish_evidence_unavailable_outcome"
 
 
 class _StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
-
-
-class CurationInventorySourceAttempt(_StrictModel):
-    """One bounded source-family attempt for an unresolved inventory item."""
-
-    source_family: str = Field(
-        min_length=1,
-        max_length=128,
-        pattern=_ID_PATTERN.pattern,
-    )
-    source_urls: list[str] = Field(min_length=1, max_length=12)
-    outcome: Literal["not_found", "insufficient", "contradictory"]
-
-    @field_validator("source_urls")
-    @classmethod
-    def validate_source_urls(cls, values: list[str]) -> list[str]:
-        if len(values) != len(set(values)):
-            raise ValueError("source attempt URLs must be unique")
-        for value in values:
-            if type(value) is not str or len(value) > 2_048:
-                raise ValueError("source attempt URL is invalid")
-            parsed = urlparse(value)
-            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-                raise ValueError("source attempt URL must be absolute HTTP(S)")
-        return values
-
-
-class CurationInventoryDispositionItem(_StrictModel):
-    """Typed proof that one final inventory item was researched."""
-
-    missing_item_id: str = Field(
-        min_length=1,
-        max_length=128,
-        pattern=_ID_PATTERN.pattern,
-    )
-    affected_target_ids: list[str] = Field(min_length=1, max_length=32)
-    missing_fact: str = Field(min_length=1, max_length=512)
-    source_attempts: list[CurationInventorySourceAttempt] = Field(
-        min_length=1,
-        max_length=16,
-    )
-    outcome: Literal["inventory_missing", "evidence_unavailable"]
-
-    @field_validator("affected_target_ids")
-    @classmethod
-    def validate_affected_target_ids(cls, values: list[str]) -> list[str]:
-        if len(values) != len(set(values)):
-            raise ValueError("affected target IDs must be unique")
-        for value in values:
-            if type(value) is not str or not _ID_PATTERN.fullmatch(value):
-                raise ValueError("affected target ID is invalid")
-        return values
-
-    @field_validator("missing_fact")
-    @classmethod
-    def validate_missing_fact(cls, value: str) -> str:
-        normalized = value.strip()
-        if not normalized:
-            raise ValueError("missing fact cannot be blank")
-        return normalized
-
-
-class CurationInventoryDisposition(_StrictModel):
-    """Private terminal inventory evidence for an incomplete curation review."""
-
-    items: list[CurationInventoryDispositionItem] = Field(min_length=1, max_length=64)
-
-    @model_validator(mode="after")
-    def validate_unique_items(self) -> Self:
-        item_ids = [item.missing_item_id for item in self.items]
-        if len(item_ids) != len(set(item_ids)):
-            raise ValueError("inventory disposition item IDs must be unique")
-        return self
-
-    @property
-    def has_inventory_missing(self) -> bool:
-        return any(item.outcome == "inventory_missing" for item in self.items)
-
-    @property
-    def all_evidence_unavailable(self) -> bool:
-        return all(item.outcome == "evidence_unavailable" for item in self.items)
 
 
 class CurationStateFormat(_StrictModel):
@@ -260,6 +181,11 @@ class CurationActionSubstitutions(_StrictModel):
     pr: int = Field(ge=1)
     generation_id: str = Field(pattern=_GENERATION_ID_PATTERN)
     head: str = Field(pattern=_SHA_PATTERN)
+    expected_head: str | None = Field(
+        default=None,
+        pattern=_SHA_PATTERN,
+        exclude_if=lambda value: value is None,
+    )
     report: str | None = Field(default=None, pattern=_REPORT_PATTERN)
     validation_base: str | None = Field(default=None, pattern=_SHA_PATTERN)
     continue_conflict: bool = False
@@ -275,12 +201,12 @@ class CurationNextAction(_StrictModel):
 
     @model_validator(mode="after")
     def validate_caller_created_head(self) -> Self:
-        if (
-            self.caller_created_descendant_head
-            and self.recipe_id is not CurationRecipeId.CHECKPOINT_DELTA
-        ):
+        if self.caller_created_descendant_head and self.recipe_id not in {
+            CurationRecipeId.CHECKPOINT_DELTA,
+            CurationRecipeId.CHECKPOINT_GRAPH_DISCOVERY,
+        }:
             raise ValueError(
-                "caller-created descendant is limited to delta checkpoints"
+                "caller-created descendant is limited to mutable checkpoint recipes"
             )
         return self
 
@@ -303,6 +229,24 @@ class GenerationPreparedEvent(_GenerationEvent):
     report_path: str | None = Field(default=None, pattern=_REPORT_PATTERN)
 
 
+class CurationGraphDiscoveryCheckpoint(_StrictModel):
+    status: Literal["in_progress", "complete"]
+    covered_pairs: int = Field(ge=0)
+    required_pairs: int = Field(ge=1)
+    candidate_count: int = Field(ge=0)
+    unavailable_pairs: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_counts(self) -> Self:
+        if self.covered_pairs > self.required_pairs:
+            raise ValueError("covered graph discovery pairs exceed required pairs")
+        if self.unavailable_pairs > self.covered_pairs:
+            raise ValueError("unavailable pairs exceed covered pairs")
+        if self.status == "complete" and self.covered_pairs != self.required_pairs:
+            raise ValueError("complete graph discovery must cover every required pair")
+        return self
+
+
 class CheckpointStartedEvent(_GenerationEvent):
     kind: Literal["checkpoint-started"] = "checkpoint-started"
     transaction_id: str = Field(pattern=_TRANSACTION_ID_PATTERN)
@@ -310,6 +254,10 @@ class CheckpointStartedEvent(_GenerationEvent):
     head: str = Field(pattern=_SHA_PATTERN)
     report_path: str = Field(pattern=_REPORT_PATTERN)
     validation_base: str = Field(pattern=_SHA_PATTERN)
+    graph_discovery: CurationGraphDiscoveryCheckpoint | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     inventory_completion: Literal[True] | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
@@ -318,7 +266,7 @@ class CheckpointStartedEvent(_GenerationEvent):
     expected_squash_ref: str = Field(pattern=_REF_PATTERN)
 
     @model_validator(mode="after")
-    def validate_inventory_completion_stage(self) -> Self:
+    def validate_checkpoint_kind(self) -> Self:
         if (
             self.inventory_completion
             and self.stage is not CurationCheckpointStage.DELTA_VALIDATED
@@ -326,6 +274,15 @@ class CheckpointStartedEvent(_GenerationEvent):
             raise ValueError(
                 "inventory completion is limited to delta-validated checkpoints"
             )
+        if self.stage is CurationCheckpointStage.GRAPH_DISCOVERY:
+            if self.graph_discovery is None:
+                raise ValueError("graph discovery summary is required")
+        elif self.graph_discovery is not None:
+            raise ValueError(
+                "graph discovery summary is limited to graph-discovery checkpoints"
+            )
+        if self.inventory_completion and self.graph_discovery is not None:
+            raise ValueError("legacy inventory and graph discovery cannot be combined")
         return self
 
 
@@ -550,8 +507,12 @@ class CurationGeneration(_StrictModel):
                     raise ValueError("validation does not match reviewed authority")
                 continue
             if isinstance(event, GenerationClosedEvent):
-                if active_started is not None:
+                if active_started is not None and not (
+                    event.kind == "generation-invalidated"
+                    and event.reason in {"checkpoint_missing", "remote_head_changed"}
+                ):
                     raise ValueError("generation cannot close during a checkpoint")
+                active_started = None
                 closed = True
         return self
 
@@ -579,11 +540,9 @@ class CurationGenerationProjection(_StrictModel):
     reviewed_authority: ReviewedCurationAuthority | None = None
     validated_authority: ValidatedCurationAuthority | None = None
     validation_failure: CurationValidationFailure | None = None
-    inventory_completion_checkpointed: bool = False
-    inventory_completion_checkpoint_head: str | None = Field(
-        default=None,
-        pattern=_SHA_PATTERN,
-    )
+    graph_discovery_authority: CurationCheckpointAuthority | None = None
+    graph_discovery: CurationGraphDiscoveryCheckpoint | None = None
+    graph_discovery_checkpointed_at: datetime | None = None
     next_action: CurationNextAction | None = None
 
 
@@ -625,8 +584,9 @@ def project_generation(
     checkpoint: CurationCheckpointAuthority | None = None
     validated: ValidatedCurationAuthority | None = None
     validation_failure: CurationValidationFailure | None = None
-    inventory_completion_checkpointed = False
-    inventory_completion_checkpoint_head: str | None = None
+    graph_discovery_authority: CurationCheckpointAuthority | None = None
+    graph_discovery: CurationGraphDiscoveryCheckpoint | None = None
+    graph_discovery_checkpointed_at: datetime | None = None
     latest_report: str | None = generation.events[0].report_path
     latest_refs: tuple[str, str] | None = None
 
@@ -642,12 +602,10 @@ def project_generation(
             latest_report = started.report_path
             latest_refs = (event.checkpoint_ref, event.squash_ref)
             checkpoint = _checkpoint_authority(generation, started, event)
-            if (
-                started.stage is CurationCheckpointStage.DELTA_VALIDATED
-                and started.inventory_completion
-            ):
-                inventory_completion_checkpointed = True
-                inventory_completion_checkpoint_head = started.head
+            if started.stage is CurationCheckpointStage.GRAPH_DISCOVERY:
+                graph_discovery_authority = checkpoint
+                graph_discovery = started.graph_discovery
+                graph_discovery_checkpointed_at = started.recorded_at
             validated = None
             validation_failure = None
             if started.stage is CurationCheckpointStage.REVIEWED:
@@ -675,14 +633,60 @@ def project_generation(
             validation_failure = None
         elif isinstance(event, GenerationClosedEvent):
             latest_stage = event.kind.removeprefix("generation-")
+            incomplete = None
             checkpoint = None
             reviewed = None
             validated = None
             validation_failure = None
+            graph_discovery_authority = None
 
     next_action: CurationNextAction | None = None
     if incomplete is not None:
         next_action = _checkpoint_action(generation, incomplete)
+    elif graph_discovery is None and (
+        latest_stage
+        in {
+            CurationCheckpointStage.DELTA_VALIDATED,
+            CurationCheckpointStage.REVIEWED,
+        }
+        or (latest_stage == "validation-failed" and validation_failure is not None)
+    ):
+        assert latest_report is not None
+        next_action = CurationNextAction(
+            recipe_id=CurationRecipeId.PREPARE,
+            substitutions=CurationActionSubstitutions(
+                pr=generation.pr_number,
+                generation_id=generation.generation_id,
+                head=latest_head,
+                report=latest_report,
+                validation_base=generation.sync.base_head,
+            ),
+        )
+    elif latest_stage is CurationCheckpointStage.GRAPH_DISCOVERY:
+        assert latest_report is not None
+        if graph_discovery is None:
+            raise CurationStateError("graph discovery checkpoint lost its summary")
+        if graph_discovery.status == "in_progress":
+            recipe = CurationRecipeId.PREPARE
+        elif graph_discovery.unavailable_pairs:
+            recipe = CurationRecipeId.PUBLISH_EVIDENCE_UNAVAILABLE
+        else:
+            recipe = CurationRecipeId.CHECKPOINT_REVIEWED
+        next_action = CurationNextAction(
+            recipe_id=recipe,
+            substitutions=CurationActionSubstitutions(
+                pr=generation.pr_number,
+                generation_id=generation.generation_id,
+                head=latest_head,
+                expected_head=(
+                    generation.selected_head
+                    if recipe is CurationRecipeId.PUBLISH_EVIDENCE_UNAVAILABLE
+                    else None
+                ),
+                report=latest_report,
+                validation_base=generation.sync.base_head,
+            ),
+        )
     elif latest_stage is CurationCheckpointStage.DELTA_VALIDATED:
         assert latest_report is not None
         next_action = CurationNextAction(
@@ -712,7 +716,7 @@ def project_generation(
         recipe = (
             CurationRecipeId.VALIDATE
             if reviewed is not None
-            else CurationRecipeId.CHECKPOINT_REVIEWED
+            else CurationRecipeId.CHECKPOINT_GRAPH_DISCOVERY
         )
         next_action = CurationNextAction(
             recipe_id=recipe,
@@ -722,6 +726,9 @@ def project_generation(
                 head=latest_head,
                 report=report,
                 validation_base=generation.sync.base_head,
+            ),
+            caller_created_descendant_head=(
+                True if recipe is CurationRecipeId.CHECKPOINT_GRAPH_DISCOVERY else None
             ),
         )
     elif latest_stage == "fully-validated":
@@ -740,6 +747,7 @@ def project_generation(
 
     if latest_refs is None and latest_stage in {
         CurationCheckpointStage.DELTA_VALIDATED,
+        CurationCheckpointStage.GRAPH_DISCOVERY,
         CurationCheckpointStage.REVIEWED,
         "validation-failed",
         "fully-validated",
@@ -757,8 +765,9 @@ def project_generation(
         reviewed_authority=reviewed,
         validated_authority=validated,
         validation_failure=validation_failure,
-        inventory_completion_checkpointed=inventory_completion_checkpointed,
-        inventory_completion_checkpoint_head=inventory_completion_checkpoint_head,
+        graph_discovery_authority=graph_discovery_authority,
+        graph_discovery=graph_discovery,
+        graph_discovery_checkpointed_at=graph_discovery_checkpointed_at,
         next_action=next_action,
     )
 
@@ -802,6 +811,8 @@ def _checkpoint_action(
 ) -> CurationNextAction:
     if started.stage is CurationCheckpointStage.REVIEWED:
         recipe = CurationRecipeId.CHECKPOINT_REVIEWED
+    elif started.stage is CurationCheckpointStage.GRAPH_DISCOVERY:
+        recipe = CurationRecipeId.CHECKPOINT_GRAPH_DISCOVERY
     elif started.inventory_completion:
         recipe = CurationRecipeId.CHECKPOINT_INVENTORY_COMPLETION
     else:

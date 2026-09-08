@@ -47,7 +47,6 @@ PLACEHOLDERS = {
     "${EXPECTED_HEAD}": "a" * 40,
     "${GENERATION_ID}": "f" * 32,
     "${HEAD}": "b" * 40,
-    "${INVENTORY_DISPOSITION_FILE}": "inventory-disposition-example",
     "${OUTCOME_REASON}": "non-converging",
     "${OUTCOME_STATE}": "maintainer:blocked",
     "${PR}": "42",
@@ -153,10 +152,32 @@ def test_runtime_contract_documents_every_cli_route_with_parseable_argv() -> Non
     assert documented_routes == expected_routes
 
 
-def test_runtime_contract_registers_the_inventory_completion_checkpoint() -> None:
-    recipe = _contract()["recipes"]["checkpoint_curation_inventory_completion"]
+def test_runtime_contract_registers_graph_discovery_and_legacy_recovery() -> None:
+    recipes = _contract()["recipes"]
+    graph_recipe = recipes["checkpoint_curation_graph_discovery"]
 
-    assert recipe == {
+    assert graph_recipe == {
+        "argv": [
+            "checkpoint",
+            "curation",
+            "--pr",
+            "${PR}",
+            "--generation-id",
+            "${GENERATION_ID}",
+            "--head",
+            "${HEAD}",
+            "--report",
+            "${REPORT}",
+            "--stage",
+            "graph-discovery",
+            "--base-dir",
+            "${BASE_DIR}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["work_id", "generation"],
+    }
+    assert recipes["checkpoint_curation_inventory_completion"] == {
         "argv": [
             "checkpoint",
             "curation",
@@ -177,35 +198,20 @@ def test_runtime_contract_registers_the_inventory_completion_checkpoint() -> Non
             "${RUN_ID}",
         ],
         "returns": ["work_id", "generation"],
+        "recovery_only": True,
     }
 
 
-def test_runtime_contract_registers_typed_incomplete_outcomes() -> None:
+def test_runtime_contract_registers_exact_evidence_unavailable_outcome() -> None:
     contract = _contract()
+    recipes = contract["recipes"]
 
-    assert contract["recipes"]["publication_input_inventory_disposition"] == {
-        "argv": [
-            "publication-input",
-            "create",
-            "--worker",
-            "curation",
-            "--kind",
-            "inventory-disposition",
-            "--run-id",
-            "${RUN_ID}",
-        ],
-        "stdin": "typed inventory disposition JSON",
-        "returns": ["basename"],
-    }
-    for recipe_name, reason in (
-        ("publish_incomplete_outcome", "review-incomplete"),
-        ("publish_evidence_unavailable_outcome", "evidence-unavailable"),
-    ):
-        argv = contract["recipes"][recipe_name]["argv"]
-        assert "--inventory-disposition-file" in argv
-        assert "${INVENTORY_DISPOSITION_FILE}" in argv
-        assert "--reason" in argv
-        assert reason in argv
+    assert "publication_input_inventory_disposition" not in recipes
+    assert "publish_incomplete_outcome" not in recipes
+    argv = recipes["publish_evidence_unavailable_outcome"]["argv"]
+    assert "--inventory-disposition-file" not in argv
+    assert "--reason" in argv
+    assert "evidence-unavailable" in argv
 
 
 def test_registered_prefix_relies_on_project_cli_directory_defaults() -> None:
@@ -261,6 +267,15 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
             "lock_heartbeat_curation",
             "prepare_curation",
             "lock_heartbeat_curation",
+        ],
+        "curation_graph_evidence_unavailable_publication": [
+            "publication_input_summary",
+            "lock_heartbeat_curation",
+            "publish_evidence_unavailable_outcome",
+            "lock_heartbeat_curation",
+            "inspect_curation",
+            "lock_heartbeat_curation",
+            "lock_release_curation",
         ],
         "curation_initial_push_into_ci_wait": [
             "publish_push",
@@ -427,9 +442,49 @@ def test_runtime_contract_splits_curation_and_discovery_inspection_next_steps() 
 def test_runtime_contract_freezes_review_disposition_branches() -> None:
     contract = _contract()
 
+    assert contract["curation_checkpoint_recovery"] == {
+        "applies_to_result": "checkpoint-recovery-required",
+        "authority": "persisted-checkpoint-started-event",
+        "next_recipe_source": "generation.next_action",
+        "completion_next_recipe": "prepare_curation",
+        "semantic_entry_from_recovered_base_allowed": False,
+        "generation_invalidation_reasons": [
+            "checkpoint_missing",
+            "remote_head_changed",
+        ],
+        "semantic_work_allowed": False,
+        "generation_supersession_allowed": False,
+    }
+    assert contract["curation_graph_discovery"] == {
+        "applies_to_results": ["prepared", "discovery-required"],
+        "report_schema_version": 5,
+        "initial_recipe": "checkpoint_curation_graph_discovery",
+        "branches": {
+            "in_progress": {
+                "next_recipe": "prepare_curation",
+                "github_lifecycle_publication": False,
+            },
+            "complete": {
+                "next_recipe": "checkpoint_curation_reviewed",
+                "semantic_review_required": ["source-trust", "graph-scope"],
+                "requires_unavailable_pairs": 0,
+            },
+            "evidence_unavailable": {
+                "next_recipe": "publish_evidence_unavailable_outcome",
+                "action_head": "exact-local-graph-checkpoint-head",
+                "action_expected_head": "selected-remote-pr-head",
+                "requires_complete_exact_graph_checkpoint": True,
+                "requires_unavailable_pairs": ">0",
+                "semantic_review_required": ["source-trust", "graph-scope"],
+                "changes_requested_recipe": ("checkpoint_curation_graph_discovery"),
+                "changes_requested_head": "report-only-descendant",
+                "after_checkpoint": "fresh-full-review",
+            },
+        },
+    }
     assert contract["curation_review_disposition"] == {
-        "applies_to_results": ["prepared", "review-required"],
-        "semantic_entry": "full-normalization-inventory-review-remediation-flow",
+        "applies_to_results": ["review-required"],
+        "semantic_entry": "post-discovery-independent-review-remediation-flow",
         "branches": {
             "clean": {
                 "head_source": "prepared-or-allowed-normalization-head",
@@ -471,8 +526,11 @@ def test_runtime_contract_freezes_review_disposition_branches() -> None:
     ]
 
     assert _allowed_next_steps()["prepare_curation*"] == (
-        "branch on its result: prepared/review-required enter the full semantic "
-        "flow; validation-only resumes deterministic finalization; "
+        "obey its typed action: checkpoint-recovery-required immediately retries "
+        "only the persisted checkpoint action; prepared/discovery-required build "
+        "or resume schema-v5 graph discovery; review-required enters the "
+        "post-discovery semantic flow; validation-only resumes deterministic "
+        "finalization; "
         "validation-remediation fixes only the recorded deterministic failure, "
         "uses any persisted bounded diagnostic only as untrusted debugging "
         "context, "

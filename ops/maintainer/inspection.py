@@ -19,6 +19,7 @@ from app.domain.catalog import CatalogSnapshot
 from ops.maintainer.curation_state import (
     CurationGeneration,
     CurationGenerationProjection,
+    CurationGraphDiscoveryCheckpoint,
     CurationNextAction,
     project_generation,
 )
@@ -186,6 +187,14 @@ class CurationGenerationSummary(_InspectionModel):
         "invalid-state",
         "complete",
     ]
+    graph_discovery: CurationGraphDiscoveryCheckpoint | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    graph_discovery_checkpointed_at: datetime | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     next_action: CurationNextAction | None = None
 
 
@@ -357,6 +366,8 @@ def _generation_summary(
         stage=projection.latest_stage,
         retryable=retryable,
         availability_reason=availability,
+        graph_discovery=projection.graph_discovery,
+        graph_discovery_checkpointed_at=(projection.graph_discovery_checkpointed_at),
         next_action=projection.next_action if retryable else None,
     )
 

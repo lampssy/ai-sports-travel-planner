@@ -17,6 +17,7 @@ from ops.maintainer.curation_state import (
     CurationCheckpointStage,
     CurationGeneration,
     CurationGenerationStore,
+    CurationGraphDiscoveryCheckpoint,
     CurationValidationDiagnostic,
     GenerationPreparedEvent,
     ValidationFailedEvent,
@@ -74,6 +75,7 @@ from ops.maintainer.state import (
 )
 from ops.maintainer.validation import (
     DeltaValidationResult,
+    GraphDiscoveryValidationResult,
     ProposalValidationResult,
     ValidationCommandObservation,
     ValidationResult,
@@ -196,8 +198,52 @@ def _sync() -> GuardedSyncResult:
     )
 
 
-def _curation_generation() -> CurationGeneration:
+def _curation_generation(*, with_graph_discovery: bool = False) -> CurationGeneration:
     report = "docs/catalog-curation/nendaz.json"
+    events: list[object] = []
+    next_sequence = 2
+    if with_graph_discovery:
+        discovery_transaction_id = checkpoint_transaction_id(
+            GENERATION_ID,
+            CurationCheckpointStage.GRAPH_DISCOVERY,
+            SHA_C,
+            report,
+            SHA_D,
+        )
+        discovery_prefix = (
+            f"refs/snowcast-maintainer/curation/pr-42/{GENERATION_ID}/"
+            f"{discovery_transaction_id}/"
+        )
+        events.extend(
+            [
+                CheckpointStartedEvent(
+                    sequence=next_sequence,
+                    recorded_at=NOW + timedelta(seconds=1),
+                    transaction_id=discovery_transaction_id,
+                    stage=CurationCheckpointStage.GRAPH_DISCOVERY,
+                    head=SHA_C,
+                    report_path=report,
+                    validation_base=SHA_D,
+                    graph_discovery=CurationGraphDiscoveryCheckpoint(
+                        status="complete",
+                        covered_pairs=6,
+                        required_pairs=6,
+                        candidate_count=4,
+                        unavailable_pairs=0,
+                    ),
+                    expected_checkpoint_ref=discovery_prefix + "checkpoint",
+                    expected_squash_ref=discovery_prefix + "replay",
+                ),
+                CheckpointCompletedEvent(
+                    sequence=next_sequence + 1,
+                    recorded_at=NOW + timedelta(seconds=2),
+                    transaction_id=discovery_transaction_id,
+                    checkpoint_ref=discovery_prefix + "checkpoint",
+                    squash_ref=discovery_prefix + "replay",
+                ),
+            ]
+        )
+        next_sequence += 2
     transaction_id = checkpoint_transaction_id(
         GENERATION_ID,
         CurationCheckpointStage.REVIEWED,
@@ -230,9 +276,10 @@ def _curation_generation() -> CurationGeneration:
                 recorded_at=NOW,
                 prepared_head=sync.rebased_head,
             ),
+            *events,
             CheckpointStartedEvent(
-                sequence=2,
-                recorded_at=NOW + timedelta(seconds=1),
+                sequence=next_sequence,
+                recorded_at=NOW + timedelta(seconds=next_sequence - 1),
                 transaction_id=transaction_id,
                 stage=CurationCheckpointStage.REVIEWED,
                 head=SHA_C,
@@ -242,8 +289,8 @@ def _curation_generation() -> CurationGeneration:
                 expected_squash_ref=squash_ref,
             ),
             CheckpointCompletedEvent(
-                sequence=3,
-                recorded_at=NOW + timedelta(seconds=2),
+                sequence=next_sequence + 1,
+                recorded_at=NOW + timedelta(seconds=next_sequence),
                 transaction_id=transaction_id,
                 checkpoint_ref=checkpoint_ref,
                 squash_ref=squash_ref,
@@ -514,6 +561,9 @@ class FakeRepository:
     curation_recovery_calls: list[tuple[CurationRecoveryCheckpoint, bool]] = field(
         default_factory=list
     )
+    curation_checkpoint_retry_calls: list[tuple[GuardedSyncResult, str, bool]] = field(
+        default_factory=list
+    )
     curation_continue_calls: list[CurationRecoveryCheckpoint] = field(
         default_factory=list
     )
@@ -522,6 +572,11 @@ class FakeRepository:
         default_factory=list
     )
     inventory_completion_scope_error: Exception | None = None
+    graph_discovery_scope_calls: list[tuple[str, str, str]] = field(
+        default_factory=list
+    )
+    graph_discovery_allow_unchanged_calls: list[bool] = field(default_factory=list)
+    graph_discovery_scope_error: Exception | None = None
     validation_remediation_descendant_calls: list[tuple[str, str]] = field(
         default_factory=list
     )
@@ -632,6 +687,23 @@ class FakeRepository:
             sync=recovery.sync,
         )
 
+    def prepare_curation_checkpoint_retry(
+        self,
+        pull_request: PullRequest,
+        sync: GuardedSyncResult,
+        checkpoint_head: str,
+        *,
+        restart_interrupted: bool = False,
+    ) -> IntentSnapshot:
+        assert pull_request.number == 42
+        self.curation_checkpoint_retry_calls.append(
+            (sync, checkpoint_head, restart_interrupted)
+        )
+        if self.curation_recovery_error is not None:
+            raise self.curation_recovery_error
+        self.head = checkpoint_head
+        return self.snapshot
+
     def continue_curation_conflict(
         self,
         pull_request: PullRequest,
@@ -675,6 +747,22 @@ class FakeRepository:
         )
         if self.inventory_completion_scope_error is not None:
             raise self.inventory_completion_scope_error
+
+    def verify_report_only_graph_discovery(
+        self,
+        previous_head: str,
+        discovery_head: str,
+        report_path: str,
+        *,
+        allow_unchanged: bool = False,
+    ) -> None:
+        assert discovery_head == self.head
+        self.graph_discovery_scope_calls.append(
+            (previous_head, discovery_head, report_path)
+        )
+        self.graph_discovery_allow_unchanged_calls.append(allow_unchanged)
+        if self.graph_discovery_scope_error is not None:
+            raise self.graph_discovery_scope_error
 
     def revalidate_validation_remediation_descendant(
         self,
@@ -833,37 +921,6 @@ def _private_text(state_dir: Path, name: str, text: str) -> str:
     return name
 
 
-def _inventory_disposition(
-    state_dir: Path,
-    *,
-    outcome: str,
-    name: str = "inventory-disposition.json",
-) -> str:
-    return _private_text(
-        state_dir,
-        name,
-        json.dumps(
-            {
-                "items": [
-                    {
-                        "missing_item_id": "livigno-west-ownership",
-                        "affected_target_ids": ["ski_area:livigno-west"],
-                        "missing_fact": "Complete operator ownership assignment.",
-                        "source_attempts": [
-                            {
-                                "source_family": "ski_area_operator",
-                                "source_urls": ["https://example.test/operator"],
-                                "outcome": "insufficient",
-                            }
-                        ],
-                        "outcome": outcome,
-                    }
-                ]
-            }
-        ),
-    )
-
-
 def _invoke(
     capsys: pytest.CaptureFixture[str],
     argv: list[str],
@@ -873,6 +930,12 @@ def _invoke(
     base_repository: FakeRepository | None = None,
     curation_validator: Callable[..., ValidationResult] | None = None,
     delta_validator: Callable[..., DeltaValidationResult] | None = None,
+    graph_discovery_validator: (
+        Callable[..., GraphDiscoveryValidationResult] | None
+    ) = None,
+    unavailable_evidence_validator: (
+        Callable[..., GraphDiscoveryValidationResult] | None
+    ) = None,
     proposal_validator: Callable[..., ProposalValidationResult] | None = None,
     catalog_keys_provider: Callable[[], frozenset[str]] | None = None,
     repository_root: Path | None = None,
@@ -884,6 +947,8 @@ def _invoke(
         base_repository=base_repository,
         curation_validator=curation_validator,
         curation_delta_validator=delta_validator,
+        curation_graph_discovery_validator=graph_discovery_validator,
+        curation_unavailable_evidence_validator=unavailable_evidence_validator,
         proposal_validator=proposal_validator,
         catalog_keys_provider=catalog_keys_provider,
         repository_root=repository_root,
@@ -4846,7 +4911,7 @@ def test_inspect_curation_exposes_ci_continuation_before_ordinary_selection(
     assert not (state_dir / "run.lock").exists()
 
 
-def test_inspect_curation_exposes_generation_retry_action(
+def test_inspect_curation_routes_legacy_reviewed_generation_to_discovery(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -4877,7 +4942,7 @@ def test_inspect_curation_exposes_generation_retry_action(
             "retryable": True,
             "availability_reason": "available",
             "next_action": {
-                "recipe_id": "validate_curation",
+                "recipe_id": "prepare_curation",
                 "substitutions": {
                     "pr": 42,
                     "generation_id": GENERATION_ID,
@@ -5095,7 +5160,7 @@ def test_prepare_curation_persists_one_phase_record_for_requested_safe_pr(
     assert generation.generation_number == 1
     assert generation.selected_head == SHA_A
     assert payload["generation"]["next_action"] == {
-        "recipe_id": "checkpoint_curation_reviewed",
+        "recipe_id": "checkpoint_curation_graph_discovery",
         "substitutions": {
             "pr": 42,
             "generation_id": generation.generation_id,
@@ -5104,6 +5169,7 @@ def test_prepare_curation_persists_one_phase_record_for_requested_safe_pr(
             "validation_base": SHA_D,
             "continue_conflict": False,
         },
+        "caller_created_descendant_head": True,
     }
     work = StateStore(state_dir).load_work("curation-pr-42")
     assert work is not None
@@ -5199,7 +5265,7 @@ def test_prepare_curation_rejects_before_sync_when_another_ci_continuation_is_ac
     assert store.load_work("curation-pr-43") is None
 
 
-def test_prepare_curation_restores_reviewed_generation_for_validation_only(
+def test_prepare_curation_routes_legacy_reviewed_generation_to_discovery(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -5231,9 +5297,9 @@ def test_prepare_curation_restores_reviewed_generation_for_validation_only(
 
     assert code == 0, payload
     assert payload["generation"]["generation_number"] == 1
-    assert payload["generation"]["result"] == "validation-only"
+    assert payload["generation"]["result"] == "discovery-required"
     assert payload["generation"]["next_action"] == {
-        "recipe_id": "validate_curation",
+        "recipe_id": "checkpoint_curation_graph_discovery",
         "substitutions": {
             "pr": 42,
             "generation_id": GENERATION_ID,
@@ -5242,14 +5308,15 @@ def test_prepare_curation_restores_reviewed_generation_for_validation_only(
             "validation_base": SHA_D,
             "continue_conflict": False,
         },
+        "caller_created_descendant_head": True,
     }
     assert len(repository.curation_recovery_calls) == 1
     work = StateStore(state_dir).load_work("curation-pr-42")
-    assert work is not None and work.phase is WorkPhase.REVIEWED
-    assert work.reviewed_head == SHA_C
+    assert work is not None and work.phase is WorkPhase.PREPARED
+    assert work.reviewed_head is None
 
 
-def test_prepare_curation_restores_failed_validation_for_bounded_remediation(
+def test_prepare_curation_routes_legacy_failed_validation_to_discovery(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -5288,9 +5355,9 @@ def test_prepare_curation_restores_failed_validation_for_bounded_remediation(
     )
 
     assert code == 0, payload
-    assert payload["generation"]["result"] == "validation-remediation"
+    assert payload["generation"]["result"] == "discovery-required"
     assert payload["generation"]["next_action"] == {
-        "recipe_id": "checkpoint_curation_delta",
+        "recipe_id": "checkpoint_curation_graph_discovery",
         "substitutions": {
             "pr": 42,
             "generation_id": GENERATION_ID,
@@ -5355,10 +5422,10 @@ def test_failed_validation_remediation_reuses_generation_through_review(
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     origin = RunLease.acquire(state_dir, "curation", now=NOW)
-    generation = _curation_generation()
+    generation = _curation_generation(with_graph_discovery=True)
     failed = ValidationFailedEvent(
-        sequence=4,
-        recorded_at=NOW + timedelta(seconds=3),
+        sequence=len(generation.events) + 1,
+        recorded_at=NOW + timedelta(seconds=5),
         head=SHA_C,
         report_path="docs/catalog-curation/nendaz.json",
         failure={"check": "catalog-tests", "kind": "command-failed"},
@@ -5428,10 +5495,10 @@ def test_failed_validation_rejects_delta_checkpoint_without_a_correction(
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     origin = RunLease.acquire(state_dir, "curation", now=NOW)
-    generation = _curation_generation()
+    generation = _curation_generation(with_graph_discovery=True)
     failed = ValidationFailedEvent(
-        sequence=4,
-        recorded_at=NOW + timedelta(seconds=3),
+        sequence=len(generation.events) + 1,
+        recorded_at=NOW + timedelta(seconds=5),
         head=SHA_C,
         report_path="docs/catalog-curation/nendaz.json",
         failure={"check": "catalog-tests", "kind": "command-failed"},
@@ -5508,10 +5575,10 @@ def test_prepare_curation_replays_same_pr_head_into_new_generation(
 
     assert code == 0, payload
     assert payload["generation"]["generation_number"] == 2
-    assert payload["generation"]["result"] == "review-required"
+    assert payload["generation"]["result"] == "discovery-required"
     generations = generation_store.list_generations("curation-pr-42")
     assert payload["generation"]["next_action"] == {
-        "recipe_id": "checkpoint_curation_reviewed",
+        "recipe_id": "checkpoint_curation_graph_discovery",
         "substitutions": {
             "pr": 42,
             "generation_id": generations[1].generation_id,
@@ -5520,6 +5587,7 @@ def test_prepare_curation_replays_same_pr_head_into_new_generation(
             "validation_base": SHA_C,
             "continue_conflict": False,
         },
+        "caller_created_descendant_head": True,
     }
     assert generations[0].selected_head == generations[1].selected_head == SHA_A
     assert generations[0].sync.base_head != generations[1].sync.base_head
@@ -5715,9 +5783,54 @@ def _checkpoint_curation_generation(
     stage: str,
     head: str = SHA_B,
     inventory_completion: bool = False,
+    graph_discovery_status: str = "complete",
+    unavailable_pairs: int = 0,
 ) -> tuple[int, dict[str, object]]:
-    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    generation_store = CurationGenerationStore(state_dir)
+    generation = generation_store.load_current("curation-pr-42")
     assert generation is not None
+    if (
+        stage != "graph-discovery"
+        and project_generation(generation).graph_discovery is None
+    ):
+        discovery_code, discovery_payload = _invoke(
+            capsys,
+            [
+                "--state-dir",
+                str(state_dir),
+                "checkpoint",
+                "curation",
+                "--pr",
+                "42",
+                "--generation-id",
+                generation.generation_id,
+                "--head",
+                head,
+                "--report",
+                "docs/catalog-curation/nendaz.json",
+                "--stage",
+                "graph-discovery",
+                "--base-dir",
+                str(tmp_path),
+                "--run-id",
+                run_id,
+            ],
+            github=github,
+            repository=repository,
+            base_repository=FakeRepository(),
+            graph_discovery_validator=lambda **_kwargs: GraphDiscoveryValidationResult(
+                discovery_head=head,
+                report_path="docs/catalog-curation/nendaz.json",
+                status="complete",
+                covered_pairs=6,
+                required_pairs=6,
+                candidate_count=4,
+                unavailable_pairs=0,
+            ),
+        )
+        assert discovery_code == 0, discovery_payload
+        generation = generation_store.load_current("curation-pr-42")
+        assert generation is not None
     return _invoke(
         capsys,
         [
@@ -5747,7 +5860,511 @@ def _checkpoint_curation_generation(
         delta_validator=lambda **_kwargs: _delta_validation_result().model_copy(
             update={"remediation_head": head}
         ),
+        graph_discovery_validator=lambda **_kwargs: GraphDiscoveryValidationResult(
+            discovery_head=head,
+            report_path="docs/catalog-curation/nendaz.json",
+            status=graph_discovery_status,
+            covered_pairs=3 if graph_discovery_status == "in_progress" else 6,
+            required_pairs=6,
+            candidate_count=4,
+            unavailable_pairs=unavailable_pairs,
+        ),
     )
+
+
+def _start_legacy_inventory_checkpoint(
+    state_dir: Path,
+    run_id: str,
+) -> CurationGeneration:
+    generation_store = CurationGenerationStore(state_dir)
+    generation = generation_store.load_current("curation-pr-42")
+    assert generation is not None
+    transaction_id = checkpoint_transaction_id(
+        generation.generation_id,
+        CurationCheckpointStage.DELTA_VALIDATED,
+        SHA_B,
+        "docs/catalog-curation/nendaz.json",
+        SHA_D,
+        inventory_completion=True,
+    )
+    prefix = (
+        "refs/snowcast-maintainer/curation/pr-42/"
+        f"{generation.generation_id}/{transaction_id}/"
+    )
+    return generation_store.append_event(
+        "curation-pr-42",
+        generation.generation_id,
+        CheckpointStartedEvent(
+            sequence=2,
+            recorded_at=NOW + timedelta(seconds=1),
+            transaction_id=transaction_id,
+            stage=CurationCheckpointStage.DELTA_VALIDATED,
+            head=SHA_B,
+            report_path="docs/catalog-curation/nendaz.json",
+            validation_base=SHA_D,
+            inventory_completion=True,
+            expected_checkpoint_ref=prefix + "checkpoint",
+            expected_squash_ref=prefix + "replay",
+        ),
+        RunLease.load_owner(state_dir, "curation", run_id),
+    )
+
+
+@pytest.mark.parametrize(
+    ("status", "unavailable_pairs", "expected_recipe"),
+    [
+        ("in_progress", 0, "prepare_curation"),
+        ("complete", 0, "checkpoint_curation_reviewed"),
+        ("complete", 1, "publish_evidence_unavailable_outcome"),
+    ],
+)
+def test_graph_discovery_checkpoint_is_report_only_and_returns_typed_action(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    status: str,
+    unavailable_pairs: int,
+    expected_recipe: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+
+    code, payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        graph_discovery_status=status,
+        unavailable_pairs=unavailable_pairs,
+    )
+
+    assert code == 0, payload
+    assert repository.graph_discovery_scope_calls == [
+        (SHA_B, SHA_C, "docs/catalog-curation/nendaz.json")
+    ]
+    assert payload["generation"]["next_action"]["recipe_id"] == expected_recipe
+    substitutions = payload["generation"]["next_action"]["substitutions"]
+    if unavailable_pairs:
+        assert substitutions["expected_head"] == SHA_A
+        assert substitutions["head"] == SHA_C
+    else:
+        assert "expected_head" not in substitutions
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    projection = project_generation(generation)
+    assert projection.graph_discovery is not None
+    assert projection.graph_discovery.status == status
+    assert projection.graph_discovery.candidate_count == 4
+
+
+def test_unavailable_graph_discovery_retry_keeps_terminal_typed_action(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+
+    first_code, first = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        unavailable_pairs=1,
+    )
+    retry_code, retry = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        unavailable_pairs=1,
+    )
+
+    assert first_code == retry_code == 0
+    assert first["generation"]["result"] == "completed"
+    assert retry["generation"]["result"] == "already-completed"
+    assert first["generation"]["next_action"] == retry["generation"]["next_action"]
+    assert (
+        retry["generation"]["next_action"]["recipe_id"]
+        == "publish_evidence_unavailable_outcome"
+    )
+
+
+def test_unavailable_graph_discovery_rejects_delta_checkpoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    discovery_code, discovery = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        unavailable_pairs=1,
+    )
+    repository.head = SHA_E
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    delta_calls = 0
+
+    def validate_delta(**_kwargs: object) -> DeltaValidationResult:
+        nonlocal delta_calls
+        delta_calls += 1
+        return _delta_validation_result().model_copy(update={"remediation_head": SHA_E})
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "curation",
+            "--pr",
+            "42",
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            SHA_E,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--stage",
+            "delta-validated",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        delta_validator=validate_delta,
+    )
+
+    assert discovery_code == 0, discovery
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+    assert delta_calls == 0
+    assert len(repository.curation_checkpoint_calls) == 1
+    projection = project_generation(generation)
+    assert projection.graph_discovery is not None
+    assert projection.graph_discovery.unavailable_pairs == 1
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "publish_evidence_unavailable_outcome"
+
+
+def test_complete_graph_discovery_can_checkpoint_a_review_requested_revision(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    first_code, first = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        unavailable_pairs=1,
+    )
+    repository.head = SHA_E
+
+    revised_code, revised = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_E,
+    )
+
+    assert first_code == revised_code == 0, (first, revised)
+    assert repository.graph_discovery_scope_calls[-1] == (
+        SHA_C,
+        SHA_E,
+        "docs/catalog-curation/nendaz.json",
+    )
+    assert revised["generation"]["next_action"]["recipe_id"] == (
+        "checkpoint_curation_reviewed"
+    )
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    projection = project_generation(generation)
+    assert projection.latest_head == SHA_E
+    assert projection.graph_discovery is not None
+    assert projection.graph_discovery.unavailable_pairs == 0
+
+
+def test_initial_valid_graph_discovery_can_checkpoint_without_an_artificial_edit(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    code, payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_B,
+    )
+
+    assert code == 0, payload
+    assert repository.graph_discovery_scope_calls == [
+        (SHA_B, SHA_B, "docs/catalog-curation/nendaz.json")
+    ]
+    assert repository.graph_discovery_allow_unchanged_calls == [True]
+
+
+def test_prepare_resumes_partial_graph_discovery_with_checkpoint_authority(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    checkpoint_code, checkpoint = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        graph_discovery_status="in_progress",
+    )
+    release_code, release = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            run_id,
+        ],
+    )
+    successor_run_id = _acquire(capsys, state_dir, "curation")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor_run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert checkpoint_code == 0, checkpoint
+    assert release_code == 0, release
+    assert code == 0, payload
+    assert payload["generation"]["result"] == "discovery-required"
+    next_action = payload["generation"]["next_action"]
+    assert next_action["recipe_id"] == "checkpoint_curation_graph_discovery"
+    assert next_action["caller_created_descendant_head"] is True
+    assert next_action["substitutions"] == {
+        "pr": 42,
+        "generation_id": next_action["substitutions"]["generation_id"],
+        "head": SHA_C,
+        "report": "docs/catalog-curation/nendaz.json",
+        "validation_base": SHA_D,
+        "continue_conflict": False,
+    }
+
+
+@pytest.mark.parametrize(
+    ("unavailable_pairs", "expected_recipe"),
+    [
+        (0, "checkpoint_curation_reviewed"),
+        (2, "publish_evidence_unavailable_outcome"),
+    ],
+)
+def test_prepare_resumes_complete_graph_discovery_at_semantic_review(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    unavailable_pairs: int,
+    expected_recipe: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    checkpoint_code, checkpoint = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        unavailable_pairs=unavailable_pairs,
+    )
+    release_code, release = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            run_id,
+        ],
+    )
+    successor_run_id = _acquire(capsys, state_dir, "curation")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor_run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert checkpoint_code == 0, checkpoint
+    assert release_code == 0, release
+    assert code == 0, payload
+    assert payload["generation"]["result"] == "review-required"
+    assert payload["generation"]["next_action"]["recipe_id"] == expected_recipe
+    if unavailable_pairs:
+        assert (
+            payload["generation"]["next_action"]["substitutions"]["expected_head"]
+            == SHA_A
+        )
+
+
+def test_graph_discovery_checkpoint_rejects_non_report_only_scope(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(
+        graph_discovery_scope_error=RepositorySafetyError(
+            "graph discovery changed catalog data"
+        )
+    )
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+
+    code, payload = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+    assert repository.curation_checkpoint_calls == []
+
+
+@pytest.mark.parametrize("stage", ["delta-validated", "reviewed"])
+def test_checkpoint_curation_cannot_bypass_required_graph_discovery(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    stage: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "curation",
+            "--pr",
+            "42",
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--stage",
+            stage,
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        delta_validator=lambda **_kwargs: _delta_validation_result(),
+    )
+
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+    assert repository.curation_checkpoint_calls == []
 
 
 def test_checkpoint_curation_completes_delta_review_and_idempotent_retry(
@@ -5822,7 +6439,7 @@ def test_checkpoint_curation_completes_delta_review_and_idempotent_retry(
     assert projection.reviewed_authority is not None
 
 
-def test_inventory_completion_checkpoint_is_recorded_and_resumable(
+def test_delta_checkpoint_uses_completed_graph_discovery_as_authority(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -5831,30 +6448,159 @@ def test_inventory_completion_checkpoint_is_recorded_and_resumable(
     repository = FakeRepository()
     run_id = _prepare_curation(capsys, state_dir, github, repository)
     repository.head = SHA_C
-
-    code, payload = _checkpoint_curation_generation(
+    discovery_code, discovery = _checkpoint_curation_generation(
         capsys,
         tmp_path,
         state_dir,
         run_id,
         github,
         repository,
-        stage="delta-validated",
+        stage="graph-discovery",
         head=SHA_C,
-        inventory_completion=True,
+    )
+    repository.head = SHA_E
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    validator_arguments: dict[str, object] = {}
+
+    def validate_delta(**kwargs: object) -> DeltaValidationResult:
+        validator_arguments.update(kwargs)
+        return _delta_validation_result().model_copy(update={"remediation_head": SHA_E})
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "curation",
+            "--pr",
+            "42",
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            SHA_E,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--stage",
+            "delta-validated",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        delta_validator=validate_delta,
+    )
+
+    assert discovery_code == 0, discovery
+    assert code == 0, payload
+    assert validator_arguments["previous_discovery_head"] == SHA_C
+    assert (
+        validator_arguments["previous_report_path"]
+        == "docs/catalog-curation/nendaz.json"
+    )
+
+
+def test_new_inventory_completion_checkpoint_is_rejected(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "curation",
+            "--pr",
+            "42",
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--stage",
+            "delta-validated",
+            "--inventory-completion",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+    assert repository.inventory_completion_scope_calls == []
+
+
+def test_started_legacy_inventory_checkpoint_can_finish_exact_transaction(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    generation = _start_legacy_inventory_checkpoint(state_dir, run_id)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "curation",
+            "--pr",
+            "42",
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--stage",
+            "delta-validated",
+            "--inventory-completion",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        delta_validator=lambda **_kwargs: pytest.fail(
+            "persisted legacy checkpoint must not enter schema-v5 delta validation"
+        ),
     )
 
     assert code == 0, payload
     assert repository.inventory_completion_scope_calls == [
-        (SHA_B, SHA_C, "docs/catalog-curation/nendaz.json")
+        (SHA_B, SHA_B, "docs/catalog-curation/nendaz.json")
     ]
-    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
-    assert generation is not None
-    projection = project_generation(generation)
-    assert projection.inventory_completion_checkpointed is True
+    completed = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert completed is not None
+    projection = project_generation(completed)
+    assert projection.incomplete_transaction is None
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id.value == "prepare_curation"
 
 
-def test_inventory_completion_checkpoint_rejects_a_reviewed_stage(
+def test_legacy_inventory_completion_flag_rejects_a_reviewed_stage(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -5878,7 +6624,7 @@ def test_inventory_completion_checkpoint_rejects_a_reviewed_stage(
     assert payload["reason"] == "checkpoint-conflict"
 
 
-def test_inventory_completion_checkpoint_rejects_non_report_only_scope(
+def test_started_legacy_inventory_checkpoint_keeps_report_only_safety(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -5890,18 +6636,37 @@ def test_inventory_completion_checkpoint_rejects_non_report_only_scope(
         )
     )
     run_id = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
+    generation = _start_legacy_inventory_checkpoint(state_dir, run_id)
 
-    code, payload = _checkpoint_curation_generation(
+    code, payload = _invoke(
         capsys,
-        tmp_path,
-        state_dir,
-        run_id,
-        github,
-        repository,
-        stage="delta-validated",
-        head=SHA_C,
-        inventory_completion=True,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "curation",
+            "--pr",
+            "42",
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--stage",
+            "delta-validated",
+            "--inventory-completion",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        delta_validator=lambda **_kwargs: _delta_validation_result().model_copy(
+            update={"remediation_head": SHA_B}
+        ),
     )
 
     assert code == 2
@@ -5909,7 +6674,7 @@ def test_inventory_completion_checkpoint_rejects_non_report_only_scope(
     assert repository.curation_checkpoint_calls == []
 
 
-def test_review_incomplete_outcome_requires_inventory_completion_checkpoint(
+def test_review_incomplete_outcome_is_retired(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -5954,7 +6719,7 @@ def test_review_incomplete_outcome_requires_inventory_completion_checkpoint(
     assert github.label_writes == 0
 
 
-def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
+def test_review_incomplete_outcome_is_rejected_after_graph_discovery(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -5970,19 +6735,59 @@ def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
         run_id,
         github,
         repository,
-        stage="delta-validated",
+        stage="graph-discovery",
         head=SHA_C,
-        inventory_completion=True,
+        graph_discovery_status="complete",
     )
     summary = _private_text(
         state_dir,
         "outcome-summary.md",
         "Review remains incomplete.",
     )
-    disposition = _inventory_disposition(
-        state_dir,
-        outcome="inventory_missing",
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "review-incomplete",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
     )
+
+    assert checkpoint_code == 0, checkpoint
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+    assert github.label_writes == 0
+
+
+def test_review_incomplete_outcome_rejects_obsolete_private_input(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Review remains incomplete.",
+    )
+    disposition = _private_text(state_dir, "inventory-disposition.json", "{}")
 
     code, payload = _invoke(
         capsys,
@@ -6010,70 +6815,13 @@ def test_review_incomplete_outcome_accepts_completed_inventory_checkpoint(
         repository=repository,
     )
 
-    assert checkpoint_code == 0, checkpoint
-    assert code == 0, payload
-    assert payload["reason"] == "review-incomplete"
-    assert github.label_writes == 1
-
-
-def test_review_incomplete_outcome_requires_typed_research_record(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    state_dir = _private_state_dir(tmp_path)
-    github = FakeGitHub()
-    repository = FakeRepository()
-    run_id = _prepare_curation(capsys, state_dir, github, repository)
-    repository.head = SHA_C
-    checkpoint_code, checkpoint = _checkpoint_curation_generation(
-        capsys,
-        tmp_path,
-        state_dir,
-        run_id,
-        github,
-        repository,
-        stage="delta-validated",
-        head=SHA_C,
-        inventory_completion=True,
-    )
-    summary = _private_text(
-        state_dir,
-        "outcome-summary.md",
-        "Review remains incomplete.",
-    )
-
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "publish",
-            "outcome",
-            "--pr",
-            "42",
-            "--expected-head",
-            SHA_A,
-            "--state",
-            "maintainer:blocked",
-            "--reason",
-            "review-incomplete",
-            "--summary-file",
-            summary,
-            "--run-id",
-            run_id,
-        ],
-        github=github,
-        repository=repository,
-    )
-
-    assert checkpoint_code == 0, checkpoint
     assert code == 2
     assert payload["reason"] == "publication-input-invalid"
     assert github.comment_creates == 0
     assert github.label_writes == 0
 
 
-def test_review_incomplete_outcome_requires_current_checkpoint_head(
+def test_evidence_unavailable_outcome_requires_current_graph_checkpoint_head(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -6089,18 +6837,15 @@ def test_review_incomplete_outcome_requires_current_checkpoint_head(
         run_id,
         github,
         repository,
-        stage="delta-validated",
+        stage="graph-discovery",
         head=SHA_C,
-        inventory_completion=True,
+        graph_discovery_status="complete",
+        unavailable_pairs=1,
     )
     summary = _private_text(
         state_dir,
         "outcome-summary.md",
-        "Review remains incomplete.",
-    )
-    disposition = _inventory_disposition(
-        state_dir,
-        outcome="inventory_missing",
+        "Official sources cannot establish the required graph fact.",
     )
     repository.head = SHA_D
 
@@ -6118,11 +6863,9 @@ def test_review_incomplete_outcome_requires_current_checkpoint_head(
             "--state",
             "maintainer:blocked",
             "--reason",
-            "review-incomplete",
+            "evidence-unavailable",
             "--summary-file",
             summary,
-            "--inventory-disposition-file",
-            disposition,
             "--run-id",
             run_id,
         ],
@@ -6137,7 +6880,7 @@ def test_review_incomplete_outcome_requires_current_checkpoint_head(
     assert github.label_writes == 0
 
 
-def test_evidence_unavailable_outcome_needs_no_inventory_checkpoint(
+def test_evidence_unavailable_outcome_uses_exact_graph_checkpoint(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -6145,16 +6888,24 @@ def test_evidence_unavailable_outcome_needs_no_inventory_checkpoint(
     github = FakeGitHub()
     repository = FakeRepository()
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    checkpoint_code, checkpoint = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        graph_discovery_status="complete",
+        unavailable_pairs=1,
+    )
     summary = _private_text(
         state_dir,
         "outcome-summary.md",
         "Official sources cannot establish the required graph fact.",
     )
-    disposition = _inventory_disposition(
-        state_dir,
-        outcome="evidence_unavailable",
-    )
-
     code, payload = _invoke(
         capsys,
         [
@@ -6172,21 +6923,29 @@ def test_evidence_unavailable_outcome_needs_no_inventory_checkpoint(
             "evidence-unavailable",
             "--summary-file",
             summary,
-            "--inventory-disposition-file",
-            disposition,
             "--run-id",
             run_id,
         ],
         github=github,
         repository=repository,
+        unavailable_evidence_validator=lambda **_kwargs: GraphDiscoveryValidationResult(
+            discovery_head=SHA_C,
+            report_path="docs/catalog-curation/nendaz.json",
+            status="complete",
+            covered_pairs=6,
+            required_pairs=6,
+            candidate_count=4,
+            unavailable_pairs=1,
+        ),
     )
 
+    assert checkpoint_code == 0, checkpoint
     assert code == 0, payload
     assert payload["reason"] == "evidence-unavailable"
     assert github.label_writes == 1
 
 
-def test_evidence_unavailable_outcome_requires_typed_research_record(
+def test_evidence_unavailable_outcome_requires_graph_discovery_checkpoint(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -6225,12 +6984,12 @@ def test_evidence_unavailable_outcome_requires_typed_research_record(
     )
 
     assert code == 2
-    assert payload["reason"] == "publication-input-invalid"
+    assert payload["reason"] == "checkpoint-conflict"
     assert github.comment_creates == 0
     assert github.label_writes == 0
 
 
-def test_evidence_unavailable_rejects_an_unresolved_inventory_item(
+def test_evidence_unavailable_rejects_complete_discovery_without_unavailable_pair(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -6238,16 +6997,23 @@ def test_evidence_unavailable_rejects_an_unresolved_inventory_item(
     github = FakeGitHub()
     repository = FakeRepository()
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    checkpoint_code, checkpoint = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        graph_discovery_status="complete",
+    )
     summary = _private_text(
         state_dir,
         "outcome-summary.md",
         "Official sources cannot establish the required graph fact.",
     )
-    disposition = _inventory_disposition(
-        state_dir,
-        outcome="inventory_missing",
-    )
-
     code, payload = _invoke(
         capsys,
         [
@@ -6265,8 +7031,6 @@ def test_evidence_unavailable_rejects_an_unresolved_inventory_item(
             "evidence-unavailable",
             "--summary-file",
             summary,
-            "--inventory-disposition-file",
-            disposition,
             "--run-id",
             run_id,
         ],
@@ -6274,13 +7038,14 @@ def test_evidence_unavailable_rejects_an_unresolved_inventory_item(
         repository=repository,
     )
 
+    assert checkpoint_code == 0, checkpoint
     assert code == 2
-    assert payload["reason"] == "publication-input-invalid"
+    assert payload["reason"] == "checkpoint-conflict"
     assert github.comment_creates == 0
     assert github.label_writes == 0
 
 
-def test_evidence_unavailable_rejects_a_record_without_source_attempts(
+def test_evidence_unavailable_revalidates_the_immutable_report_summary(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -6288,56 +7053,60 @@ def test_evidence_unavailable_rejects_a_record_without_source_attempts(
     github = FakeGitHub()
     repository = FakeRepository()
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    checkpoint_code, checkpoint = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        graph_discovery_status="complete",
+        unavailable_pairs=1,
+    )
     summary = _private_text(
         state_dir,
         "outcome-summary.md",
         "Official sources cannot establish the required graph fact.",
     )
-    disposition = _private_text(
-        state_dir,
-        "inventory-disposition.json",
-        json.dumps(
-            {
-                "items": [
-                    {
-                        "missing_item_id": "livigno-west-ownership",
-                        "affected_target_ids": ["ski_area:livigno-west"],
-                        "missing_fact": "Complete operator ownership assignment.",
-                        "outcome": "evidence_unavailable",
-                    }
-                ]
-            }
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "evidence-unavailable",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        unavailable_evidence_validator=lambda **_kwargs: GraphDiscoveryValidationResult(
+            discovery_head=SHA_C,
+            report_path="docs/catalog-curation/nendaz.json",
+            status="complete",
+            covered_pairs=6,
+            required_pairs=6,
+            candidate_count=4,
+            unavailable_pairs=2,
         ),
     )
 
-    code, payload = _invoke(
-        capsys,
-        [
-            "--state-dir",
-            str(state_dir),
-            "publish",
-            "outcome",
-            "--pr",
-            "42",
-            "--expected-head",
-            SHA_A,
-            "--state",
-            "maintainer:blocked",
-            "--reason",
-            "evidence-unavailable",
-            "--summary-file",
-            summary,
-            "--inventory-disposition-file",
-            disposition,
-            "--run-id",
-            run_id,
-        ],
-        github=github,
-        repository=repository,
-    )
-
+    assert checkpoint_code == 0, checkpoint
     assert code == 2
-    assert payload["reason"] == "publication-input-invalid"
+    assert payload["reason"] == "checkpoint-conflict"
     assert github.comment_creates == 0
     assert github.label_writes == 0
 
@@ -6387,10 +7156,19 @@ def test_checkpoint_curation_resumes_after_started_event(
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     github = FakeGitHub()
-    repository = FakeRepository(
-        curation_checkpoint_error=RepositorySafetyError("interrupted")
-    )
+    repository = FakeRepository()
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    discovery_code, discovery = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+    )
+    assert discovery_code == 0, discovery
+    repository.curation_checkpoint_error = RepositorySafetyError("interrupted")
 
     first_code, first = _checkpoint_curation_generation(
         capsys,
@@ -6417,6 +7195,300 @@ def test_checkpoint_curation_resumes_after_started_event(
     assert first["outcome"]["mutation_occurred"] is True
     assert retry_code == 0, retry
     assert retry["generation"]["result"] == "completed"
+    assert retry["generation"]["next_action"]["recipe_id"] == "prepare_curation"
+
+
+def test_successor_graph_checkpoint_rejects_changed_persisted_summary(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    repository.curation_checkpoint_error = RepositorySafetyError("interrupted")
+    first_code, first = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        graph_discovery_status="in_progress",
+    )
+    repository.curation_checkpoint_error = None
+
+    retry_code, retry = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        graph_discovery_status="complete",
+    )
+
+    assert first_code == 2
+    assert first["reason"] == "unsafe-repository"
+    assert retry_code == 2
+    assert retry["reason"] == "checkpoint-conflict"
+    assert len(repository.curation_checkpoint_calls) == 1
+
+
+def test_remote_head_change_invalidates_started_checkpoint_generation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    repository.curation_checkpoint_error = RepositorySafetyError("interrupted")
+    first_code, first = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+    )
+    release_code, release = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            run_id,
+        ],
+    )
+    successor_run_id = _acquire(capsys, state_dir, "curation")
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"head_sha": SHA_E}
+    )
+    repository.prepared = repository.prepared.model_copy(
+        update={"original_head": SHA_E}
+    )
+    prepare_code, prepared = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor_run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert first_code == 2
+    assert first["reason"] == "unsafe-repository"
+    assert release_code == 0, release
+    assert prepare_code == 0, prepared
+    assert prepared["generation"]["generation_number"] == 2
+    assert prepared["generation"]["selected_head"] == SHA_E
+
+
+def test_missing_started_checkpoint_head_starts_fresh_generation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    repository.curation_checkpoint_error = RepositorySafetyError("interrupted")
+    first_code, first = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+    )
+    release_code, release = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            run_id,
+        ],
+    )
+    successor_run_id = _acquire(capsys, state_dir, "curation")
+    repository.curation_recovery_error = CurationCheckpointIntegrityError(
+        "checkpoint commit is unavailable"
+    )
+
+    prepare_code, prepared = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor_run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert first_code == 2
+    assert first["reason"] == "unsafe-repository"
+    assert release_code == 0, release
+    assert prepare_code == 0, prepared
+    assert prepared["generation"]["generation_number"] == 2
+    assert prepared["generation"]["result"] == "prepared"
+
+
+def test_successor_run_restores_and_completes_started_graph_checkpoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    repository.curation_checkpoint_error = RepositorySafetyError("interrupted")
+    first_code, first = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+    )
+    release_code, release = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            run_id,
+        ],
+    )
+    successor_run_id = _acquire(capsys, state_dir, "curation")
+    repository.curation_checkpoint_error = None
+
+    prepare_code, prepared = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor_run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    retry_code, retry = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        successor_run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+    )
+
+    assert first_code == 2
+    assert first["reason"] == "unsafe-repository"
+    assert release_code == 0, release
+    assert prepare_code == 0, prepared
+    assert prepared["generation"]["result"] == "checkpoint-recovery-required"
+    assert prepared["generation"]["next_action"]["recipe_id"] == (
+        "checkpoint_curation_graph_discovery"
+    )
+    assert repository.curation_checkpoint_retry_calls == [
+        (repository.prepared, SHA_C, True)
+    ]
+    assert retry_code == 0, retry
+    assert retry["generation"]["result"] == "completed"
+
+
+def test_successor_run_preserves_started_legacy_inventory_checkpoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    generation = _start_legacy_inventory_checkpoint(state_dir, run_id)
+    release_code, release = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            run_id,
+        ],
+    )
+    successor_run_id = _acquire(capsys, state_dir, "curation")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            successor_run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert release_code == 0, release
+    assert code == 0, payload
+    assert payload["generation"]["generation_id"] == generation.generation_id
+    assert payload["generation"]["result"] == "checkpoint-recovery-required"
+    assert payload["generation"]["next_action"]["recipe_id"] == (
+        "checkpoint_curation_inventory_completion"
+    )
+    assert repository.curation_checkpoint_retry_calls == [
+        (repository.prepared, SHA_B, True)
+    ]
 
 
 def test_checkpoint_curation_incomplete_transaction_fences_different_request(
@@ -6425,10 +7497,19 @@ def test_checkpoint_curation_incomplete_transaction_fences_different_request(
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     github = FakeGitHub()
-    repository = FakeRepository(
-        curation_checkpoint_error=RepositorySafetyError("interrupted")
-    )
+    repository = FakeRepository()
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    discovery_code, discovery = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+    )
+    assert discovery_code == 0, discovery
+    repository.curation_checkpoint_error = RepositorySafetyError("interrupted")
     _checkpoint_curation_generation(
         capsys,
         tmp_path,
@@ -7362,7 +8443,7 @@ def test_publish_manual_check_pushes_reviewed_unvalidated_head(
 
     assert code == 0
     assert repository.push_calls == 1
-    assert repository.revalidate_calls == 2
+    assert repository.revalidate_calls == 3
     assert github.pull_requests[42].head_sha == SHA_B
     assert MaintainerState.MANUAL_CHECK.value in github.pull_requests[42].labels
     machine = trusted_machine_state(github.list_issue_comments(42))
@@ -7482,7 +8563,7 @@ def test_publish_manual_check_reuses_head_recorded_before_validation_failure(
     )
 
     assert code == 0
-    assert repository.revalidate_calls == 2
+    assert repository.revalidate_calls == 3
     machine = trusted_machine_state(github.list_issue_comments(42))
     assert machine is not None and machine.last_operation == "reviewed"
 
@@ -7551,12 +8632,19 @@ def test_publish_manual_check_revalidation_failure_prevents_push_authorization(
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     github = FakeGitHub()
-    repository = FakeRepository(
-        github=github,
-        revalidate_error=RepositorySafetyError("untrusted local detail"),
-    )
+    repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
     repository.head = SHA_C
+    checkpoint_code, checkpoint = _checkpoint_reviewed(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        reviewed_head=SHA_C,
+    )
+    assert checkpoint_code == 0, checkpoint
+    repository.revalidate_error = RepositorySafetyError("untrusted local detail")
 
     code, payload = _publish_manual_check(
         capsys,
@@ -7572,7 +8660,7 @@ def test_publish_manual_check_revalidation_failure_prevents_push_authorization(
     assert repository.push_calls == 0
     assert StateStore(state_dir).load_push("curation-pr-42") is None
     work = StateStore(state_dir).load_work("curation-pr-42")
-    assert work is not None and work.phase is WorkPhase.PREPARED
+    assert work is not None and work.phase is WorkPhase.REVIEWED
     assert "untrusted" not in json.dumps(payload)
 
 
