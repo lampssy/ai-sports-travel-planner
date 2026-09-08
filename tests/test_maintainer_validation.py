@@ -20,6 +20,7 @@ from app.data.catalog_curation import (
     CatalogCurationReport,
     catalog_weather_request_geometry,
     render_catalog_curation_report_markdown,
+    validate_catalog_graph_discovery,
 )
 from app.domain.catalog import CatalogSnapshot
 from app.domain.catalog_trust import FIELD_GROUPS
@@ -517,6 +518,7 @@ class FakeLiveRepository:
             REPORT_PATH: json.dumps(_current_graph_report_payload()),
         }
         self.immutable_sizes: dict[str, int] = {}
+        self.immutable_revision_texts: dict[tuple[str, str], str] = {}
         self.immutable_calls: list[tuple[str, str, int]] = []
 
     def revalidate_prepared_result(
@@ -545,8 +547,10 @@ class FakeLiveRepository:
         max_bytes: int,
     ) -> str:
         self.immutable_calls.append((revision, path, max_bytes))
-        assert revision == SHA_B
-        value = self.immutable_texts.get(path)
+        value = self.immutable_revision_texts.get((revision, path))
+        if value is None:
+            assert revision == SHA_B
+            value = self.immutable_texts.get(path)
         if value is None:
             raise RepositorySafetyError("unexpected immutable object")
         size = self.immutable_sizes.get(path, len(value.encode("utf-8")))
@@ -796,6 +800,9 @@ def _curation_dependencies(
     base = FakeLiveRepository(tmp_path / "base", _intent())
     reviewed.root.mkdir()
     base.root.mkdir()
+    reviewed.immutable_revision_texts[(SHA_A, REPORT_PATH)] = json.dumps(
+        _current_graph_report_payload()
+    )
     return reviewed, base
 
 
@@ -1099,6 +1106,8 @@ def test_validate_curation_delta_runs_only_the_two_non_pytest_commands(
         sync=_sync(),
         remediation_head=SHA_B,
         report_path=REPORT_PATH,
+        previous_discovery_head=SHA_A,
+        previous_report_path=REPORT_PATH,
         repository=reviewed,  # type: ignore[arg-type]
         base_repository=base,  # type: ignore[arg-type]
         runner=runner,
@@ -1139,6 +1148,8 @@ def test_validate_curation_delta_preserves_structured_command_failures(
             sync=_sync(),
             remediation_head=SHA_B,
             report_path=REPORT_PATH,
+            previous_discovery_head=SHA_A,
+            previous_report_path=REPORT_PATH,
             repository=reviewed,  # type: ignore[arg-type]
             base_repository=base,  # type: ignore[arg-type]
             runner=runner,
@@ -1157,6 +1168,8 @@ def test_validate_curation_delta_rejects_plan_drift(tmp_path: Path) -> None:
             sync=_sync(),
             remediation_head=SHA_B,
             report_path=REPORT_PATH,
+            previous_discovery_head=SHA_A,
+            previous_report_path=REPORT_PATH,
             repository=reviewed,  # type: ignore[arg-type]
             base_repository=base,  # type: ignore[arg-type]
             runner=RecordingRunner(mutate_after=1, repository=reviewed),
@@ -1218,12 +1231,70 @@ def test_validate_curation_delta_rejects_missing_focus_graph_target(
             sync=_sync(),
             remediation_head=SHA_B,
             report_path=REPORT_PATH,
+            previous_discovery_head=SHA_A,
+            previous_report_path=REPORT_PATH,
             repository=reviewed,  # type: ignore[arg-type]
             base_repository=base,  # type: ignore[arg-type]
             runner=runner,
         )
 
     assert exc_info.value.check is ErrorCheck.PREFLIGHT
+    assert exc_info.value.kind is ErrorKind.MISMATCH
+    assert runner.calls == []
+
+
+def test_validate_curation_delta_rejects_removing_discovered_candidate(
+    tmp_path: Path,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    previous_payload = deepcopy(_current_graph_report_payload())
+    stay_base_coverage = next(
+        coverage
+        for coverage in previous_payload["graph_discovery"]["coverage"]
+        if coverage["candidate_kind"] == "stay_base"
+    )
+    stay_base_coverage["candidate_ids"].append("example-hamlet")
+    previous_payload["entity_scope_assessments"].append(
+        {
+            "candidate_id": "example-hamlet",
+            "candidate_name": "Example Hamlet",
+            "candidate_kind": "stay_base",
+            "disposition": "not_separate",
+            "signals": ["official_independent_identity"],
+            "evidence_refs": ["example-access-scope"],
+            "target_refs": [
+                {"target_type": "stay_base", "target_id": "example-village"}
+            ],
+            "rationale": "The official source identifies a folded stay locality.",
+            "graph_impact": "graph_blocking",
+        }
+    )
+    previous_report = CatalogCurationReport.model_validate(previous_payload)
+    validate_catalog_graph_discovery(
+        previous_report,
+        CatalogSnapshot.model_validate(minimal_catalog_payload()),
+        require_complete=True,
+        allow_pending_scope_changes=False,
+    )
+    reviewed.immutable_revision_texts[(SHA_A, REPORT_PATH)] = json.dumps(
+        previous_payload
+    )
+    runner = RecordingRunner()
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation_delta(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            remediation_head=SHA_B,
+            report_path=REPORT_PATH,
+            previous_discovery_head=SHA_A,
+            previous_report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=runner,
+        )
+
+    assert exc_info.value.check is ErrorCheck.CURATION_RECONCILIATION
     assert exc_info.value.kind is ErrorKind.MISMATCH
     assert runner.calls == []
 

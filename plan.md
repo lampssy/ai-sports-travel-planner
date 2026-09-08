@@ -553,7 +553,9 @@ After a complete graph-discovery checkpoint:
 5. For an unavailable packet, correct discovery only through a report-only
    descendant graph checkpoint and rerun both lanes.
 6. Once no unavailable rows remain, apply catalog/report/trust/backlog changes
-   through the existing delta checkpoint and fresh-review loop.
+   through the existing delta checkpoint and fresh-review loop. Every delta is
+   compared with the immutable completed graph-discovery report, so remediation
+   cannot remove a discovered root/kind row or candidate.
 
 There is no third inventory review lane. Discovery completeness is a prerequisite;
 semantic correctness remains the responsibility of the existing two lanes.
@@ -980,6 +982,8 @@ mechanical and do not require another checkpoint.
 - [DONE] Run Ruff and broader database-free catalog/maintainer tests.
 - [DONE] Run full tests where local infrastructure permits and document any external limitation.
 - [DONE] Run advisory feature review and address actionable findings.
+- [DONE] Preserve completed graph-discovery authority across ordinary remediation
+  and reject descendant reports that remove established discovery.
 - [DONE] Re-run exact verification, `git diff --check`, and worktree inspection.
 - [DONE] Prepare a PR-ready implementation handoff without changing installed global skills.
 - [ ] After merge, inspect helper state, update all three installed skills together, verify parity, and smoke-test activation.

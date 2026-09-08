@@ -342,7 +342,6 @@ def validate_curation(
         base_repository=base_repository,
         runner=runner,
     )
-
     final = _curation_plan(
         pull_request,
         sync,
@@ -386,6 +385,8 @@ def validate_curation_delta(
     sync: GuardedSyncResult,
     remediation_head: str,
     report_path: str,
+    previous_discovery_head: str,
+    previous_report_path: str,
     repository: GitRepository,
     base_repository: GitRepository,
     runner: ValidationCommandRunner | None = None,
@@ -398,6 +399,13 @@ def validate_curation_delta(
         repository,
         base_repository,
         check=ErrorCheck.PREFLIGHT,
+    )
+    _require_preserved_graph_discovery(
+        repository=repository,
+        previous_discovery_head=previous_discovery_head,
+        previous_report_path=previous_report_path,
+        remediation_head=remediation_head,
+        report_path=report_path,
     )
     observations = _run_curation_commands(
         plan,
@@ -419,6 +427,47 @@ def validate_curation_delta(
         commands_completed=2,
         observations=observations,
     )
+
+
+def _require_preserved_graph_discovery(
+    *,
+    repository: GitRepository,
+    previous_discovery_head: str,
+    previous_report_path: str,
+    remediation_head: str,
+    report_path: str,
+) -> None:
+    try:
+        if previous_report_path != report_path:
+            raise ValueError("curation report path changed after graph discovery")
+        previous_payload = json.loads(
+            repository.read_bounded_immutable_text(
+                previous_discovery_head,
+                previous_report_path,
+                max_bytes=_PRIVATE_OBJECT_LIMIT,
+            )
+        )
+        current_payload = json.loads(
+            repository.read_bounded_immutable_text(
+                remediation_head,
+                report_path,
+                max_bytes=_PRIVATE_OBJECT_LIMIT,
+            )
+        )
+        previous_report = CatalogCurationReport.model_validate(previous_payload)
+        current_report = CatalogCurationReport.model_validate(current_payload)
+        validate_catalog_graph_discovery_progression(
+            previous_report,
+            current_report,
+        )
+    except MaintainerError:
+        raise
+    except Exception:
+        raise _validation_error(
+            ErrorCheck.CURATION_RECONCILIATION,
+            ErrorKind.MISMATCH,
+            "Remediation did not preserve completed graph discovery",
+        ) from None
 
 
 def validate_curation_graph_discovery_checkpoint(

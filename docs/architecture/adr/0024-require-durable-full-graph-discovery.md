@@ -68,11 +68,14 @@ The existing assessment remains the sole owner of representation, addition,
 folding, external context, deferral, unresolved status, boundary evidence, graph
 impact, and backlog handling.
 
-Discovery checkpoint progression is monotonic. A later checkpoint cannot remove a
-prior root/kind row or established candidate, complete coverage cannot regress, and
-unavailable coverage may only remain unavailable or advance to complete. Shared
-candidate evidence must come from a source family allowed for that candidate kind,
-not only from a supplemental dependency source.
+Discovery progression is monotonic for the rest of the generation. The helper
+retains the latest completed graph-discovery checkpoint as separate immutable
+authority and compares every descendant report mutation, including ordinary delta
+remediation, with that report. A later report cannot remove a prior root/kind row
+or established candidate, complete coverage cannot regress, and unavailable
+coverage may only remain unavailable or advance to complete. Shared candidate
+evidence must come from a source family allowed for that candidate kind, not only
+from a supplemental dependency source.
 
 The discovery packet also records a minimal closed set of evidence-backed
 prospective relationships: destination/base membership, access origin and target,

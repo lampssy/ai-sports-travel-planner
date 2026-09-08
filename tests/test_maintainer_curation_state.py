@@ -483,6 +483,13 @@ def test_newer_delta_checkpoint_supersedes_reviewed_head_within_generation() -> 
     assert (
         projection.checkpoint_authority.stage is CurationCheckpointStage.DELTA_VALIDATED
     )
+    assert projection.graph_discovery_authority is not None
+    assert (
+        projection.graph_discovery_authority.stage
+        is CurationCheckpointStage.GRAPH_DISCOVERY
+    )
+    assert projection.graph_discovery_authority.reviewed_head == SHA_2
+    assert projection.graph_discovery_authority.report_path == REPORT
     assert projection.next_action is not None
     assert projection.next_action.recipe_id == "checkpoint_curation_reviewed"
 

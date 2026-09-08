@@ -6369,6 +6369,71 @@ def test_checkpoint_curation_completes_delta_review_and_idempotent_retry(
     assert projection.reviewed_authority is not None
 
 
+def test_delta_checkpoint_uses_completed_graph_discovery_as_authority(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    discovery_code, discovery = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+    )
+    repository.head = SHA_E
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    validator_arguments: dict[str, object] = {}
+
+    def validate_delta(**kwargs: object) -> DeltaValidationResult:
+        validator_arguments.update(kwargs)
+        return _delta_validation_result().model_copy(update={"remediation_head": SHA_E})
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "curation",
+            "--pr",
+            "42",
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            SHA_E,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--stage",
+            "delta-validated",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        delta_validator=validate_delta,
+    )
+
+    assert discovery_code == 0, discovery
+    assert code == 0, payload
+    assert validator_arguments["previous_discovery_head"] == SHA_C
+    assert (
+        validator_arguments["previous_report_path"]
+        == "docs/catalog-curation/nendaz.json"
+    )
+
+
 def test_new_inventory_completion_checkpoint_is_rejected(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

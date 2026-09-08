@@ -540,6 +540,7 @@ class CurationGenerationProjection(_StrictModel):
     reviewed_authority: ReviewedCurationAuthority | None = None
     validated_authority: ValidatedCurationAuthority | None = None
     validation_failure: CurationValidationFailure | None = None
+    graph_discovery_authority: CurationCheckpointAuthority | None = None
     graph_discovery: CurationGraphDiscoveryCheckpoint | None = None
     graph_discovery_checkpointed_at: datetime | None = None
     next_action: CurationNextAction | None = None
@@ -583,6 +584,7 @@ def project_generation(
     checkpoint: CurationCheckpointAuthority | None = None
     validated: ValidatedCurationAuthority | None = None
     validation_failure: CurationValidationFailure | None = None
+    graph_discovery_authority: CurationCheckpointAuthority | None = None
     graph_discovery: CurationGraphDiscoveryCheckpoint | None = None
     graph_discovery_checkpointed_at: datetime | None = None
     latest_report: str | None = generation.events[0].report_path
@@ -601,6 +603,7 @@ def project_generation(
             latest_refs = (event.checkpoint_ref, event.squash_ref)
             checkpoint = _checkpoint_authority(generation, started, event)
             if started.stage is CurationCheckpointStage.GRAPH_DISCOVERY:
+                graph_discovery_authority = checkpoint
                 graph_discovery = started.graph_discovery
                 graph_discovery_checkpointed_at = started.recorded_at
             validated = None
@@ -635,6 +638,7 @@ def project_generation(
             reviewed = None
             validated = None
             validation_failure = None
+            graph_discovery_authority = None
 
     next_action: CurationNextAction | None = None
     if incomplete is not None:
@@ -761,6 +765,7 @@ def project_generation(
         reviewed_authority=reviewed,
         validated_authority=validated,
         validation_failure=validation_failure,
+        graph_discovery_authority=graph_discovery_authority,
         graph_discovery=graph_discovery,
         graph_discovery_checkpointed_at=graph_discovery_checkpointed_at,
         next_action=next_action,

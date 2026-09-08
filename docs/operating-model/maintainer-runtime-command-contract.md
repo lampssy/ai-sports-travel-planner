@@ -535,8 +535,10 @@ findings as reviewed. If review requests changes, the declared
 **requested-changes branch** permits bounded local remediation followed only by
 `checkpoint_curation_delta` for the exact clean remediation commit. That
 invocation revalidates generation, remote head, base, paths, report, and
-deterministic deltas before persisting recovery evidence. A fresh clean
-exact-head review is required after the delta checkpoint before
+deterministic deltas before persisting recovery evidence. It also compares the
+new report with the immutable completed graph-discovery report and rejects removed
+coverage rows, candidates, or regressed coverage states. A fresh clean exact-head
+review is required after the delta checkpoint before
 `checkpoint_curation_reviewed`.
 
 For `validation-remediation`, the previously reviewed head is immutable
@@ -572,11 +574,15 @@ the source neighborhoods actually checked, direct evidence, and one of
 prospective relationships remain explicit, so naming all six kinds is not enough
 to claim that discovery happened.
 
-Every later partial checkpoint is monotonic. It retains every prior root/kind row
-and every established candidate. `complete` cannot regress, and an unavailable
-row may only remain unavailable or become complete after stronger evidence is
-added. Candidate evidence must come from a source family appropriate to that
-candidate kind; an unrelated supplemental family cannot carry the conclusion.
+Graph discovery remains monotonic for the rest of the generation. The projection
+retains the latest completed graph-discovery checkpoint as immutable authority even
+after a newer delta or reviewed checkpoint becomes current. Every descendant report
+mutation, including ordinary delta remediation, is compared with that authority and
+must retain every prior root/kind row and established candidate. `complete` cannot
+regress, and an unavailable row may only remain unavailable or become complete
+after stronger evidence is added. Candidate evidence must come from a source family
+appropriate to that candidate kind; an unrelated supplemental family cannot carry
+the conclusion.
 
 Discovery covers the complete direct trip graph plus one hop through a regional
 pass or shared-domain edge. It does not recursively expand an external

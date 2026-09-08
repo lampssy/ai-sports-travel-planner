@@ -1285,11 +1285,23 @@ def handle_checkpoint_curation(
                 ErrorStage.VALIDATE,
             )
     elif not (inventory_completion and incomplete is not None):
+        discovery_authority = projection.graph_discovery_authority
+        if (
+            discovery_authority is None
+            or discovery_authority.stage is not CurationCheckpointStage.GRAPH_DISCOVERY
+            or projection.graph_discovery is None
+            or projection.graph_discovery.status != "complete"
+        ):
+            raise CurationStateError(
+                "delta checkpoint lost completed graph discovery authority"
+            )
         delta = dependencies.curation_delta_validator(
             pull_request=pull_request,
             sync=generation.sync,
             remediation_head=args.head,
             report_path=args.report,
+            previous_discovery_head=discovery_authority.reviewed_head,
+            previous_report_path=discovery_authority.report_path,
             repository=dependencies.repository,
             base_repository=base_repository,
         )

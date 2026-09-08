@@ -269,11 +269,14 @@ the checkpoint-start event but stops before checkpoint completion, a successor
 restores the recorded local head and retries that same typed transaction before it
 may prepare or supersede any generation.
 
-Successive graph checkpoints are monotonic: established root/kind rows and
-candidates cannot disappear, complete coverage cannot regress, and unavailable
-coverage can only stay unavailable or be replaced by complete coverage backed by
-stronger evidence. Candidate conclusions must share direct evidence with a source
-family allowed for their own candidate kind.
+Graph discovery remains monotonic after its checkpoint. The generation projection
+retains the latest completed graph-discovery checkpoint independently of newer
+delta and reviewed checkpoints. Every descendant report mutation, including an
+ordinary remediation delta, is compared with that immutable discovery report:
+established root/kind rows and candidates cannot disappear, complete coverage
+cannot regress, and unavailable coverage can only stay unavailable or be replaced
+by complete coverage backed by stronger evidence. Candidate conclusions must share
+direct evidence with a source family allowed for their own candidate kind.
 
 The one-hop boundary includes the stay destination that owns access to a linked
 area, but not that destination's internal bases or access edges. Relationships are
