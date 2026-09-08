@@ -6006,6 +6006,76 @@ def test_unavailable_graph_discovery_retry_keeps_terminal_typed_action(
     )
 
 
+def test_unavailable_graph_discovery_rejects_delta_checkpoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    discovery_code, discovery = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+        unavailable_pairs=1,
+    )
+    repository.head = SHA_E
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    delta_calls = 0
+
+    def validate_delta(**_kwargs: object) -> DeltaValidationResult:
+        nonlocal delta_calls
+        delta_calls += 1
+        return _delta_validation_result().model_copy(update={"remediation_head": SHA_E})
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "curation",
+            "--pr",
+            "42",
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            SHA_E,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--stage",
+            "delta-validated",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        delta_validator=validate_delta,
+    )
+
+    assert discovery_code == 0, discovery
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+    assert delta_calls == 0
+    assert len(repository.curation_checkpoint_calls) == 1
+    projection = project_generation(generation)
+    assert projection.graph_discovery is not None
+    assert projection.graph_discovery.unavailable_pairs == 1
+    assert projection.next_action is not None
+    assert projection.next_action.recipe_id == "publish_evidence_unavailable_outcome"
+
+
 def test_complete_graph_discovery_can_checkpoint_a_review_requested_revision(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

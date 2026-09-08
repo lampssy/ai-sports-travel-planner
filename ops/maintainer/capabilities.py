@@ -1058,9 +1058,10 @@ def handle_checkpoint_curation(
             ErrorReason.CHECKPOINT_CONFLICT,
             ErrorStage.VALIDATE,
         )
-    complete_discovery = (
+    discovery_ready_for_remediation = (
         projection.graph_discovery is not None
         and projection.graph_discovery.status == "complete"
+        and projection.graph_discovery.unavailable_pairs == 0
     )
     legacy_inventory_recovery = (
         inventory_completion and projection.incomplete_transaction is not None
@@ -1071,7 +1072,7 @@ def handle_checkpoint_curation(
             CurationCheckpointStage.DELTA_VALIDATED,
             CurationCheckpointStage.REVIEWED,
         }
-        and not complete_discovery
+        and not discovery_ready_for_remediation
         and not legacy_inventory_recovery
     ):
         raise MaintainerError(
@@ -1289,8 +1290,7 @@ def handle_checkpoint_curation(
         if (
             discovery_authority is None
             or discovery_authority.stage is not CurationCheckpointStage.GRAPH_DISCOVERY
-            or projection.graph_discovery is None
-            or projection.graph_discovery.status != "complete"
+            or not discovery_ready_for_remediation
         ):
             raise CurationStateError(
                 "delta checkpoint lost completed graph discovery authority"

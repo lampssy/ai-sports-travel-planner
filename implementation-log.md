@@ -60,6 +60,9 @@ Branch: `codex/maintainer-full-graph-flow`
 - Closed the post-discovery lifecycle bypass by retaining the completed discovery
   checkpoint as separate generation authority and applying the same monotonic
   progression check to every ordinary delta remediation.
+- Closed the unavailable-evidence lifecycle bypass by requiring completed graph
+  discovery with zero unavailable pairs before delta or reviewed checkpoints;
+  evidence recovery must pass through a new graph-discovery checkpoint.
 - Separated local checkpoint `head` from remote publication `expected_head`, forced
   interrupted checkpoint recovery back through ordinary preparation, added safe
   invalidation for confirmed remote drift or missing refs, and kept legacy
@@ -91,13 +94,13 @@ Branch: `codex/maintainer-full-graph-flow`
   passed.
 - Post-review focused recovery, graph-closure, proposal-parity, and rollback tests:
   23 tests passed across the targeted slices.
-- Final affected catalog/maintainer suite: 1,331 tests passed.
+- Final affected catalog/maintainer suite: 1,332 tests passed.
 - Repository-wide database-free suite: 2,712 tests passed and 430 tests
   deselected by marker or the explicit PostgreSQL-opening test exclusion.
 - Final maintainer-validation/error/runtime-contract regression slice after
   replacing the literal graph-kind count with the shared contract constant:
   144 tests passed.
-- Post-discovery authority and delta-remediation regression slice: 365 tests
+- Post-discovery authority and delta-remediation regression slice: 366 tests
   passed across maintainer state, validation, and CLI behavior.
 - Ruff passed for every touched Python module and test.
 - Database-backed verification is unavailable because the local Docker daemon is
