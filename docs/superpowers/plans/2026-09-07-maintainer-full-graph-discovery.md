@@ -6,7 +6,9 @@ Branch: `codex/maintainer-full-graph-flow`
 
 Classification: full design flow / review-gated
 
-Research: `research.md`
+Spec: `docs/superpowers/specs/2026-09-07-maintainer-full-graph-discovery-design.md`
+
+ADR: `docs/architecture/adr/0024-require-durable-full-graph-discovery.md`
 
 ## Objective
 
@@ -964,8 +966,7 @@ mechanical and do not require another checkpoint.
 - [DONE] Record the first plan approval and open the design-review gate.
 - [DONE] Create the schema-v5 feature spec and ADR 0024.
 - [DONE] Run advisory design review and incorporate its findings into the design.
-- [DONE] Obtain owner approval of the revised plan and return `.structured-dev-state`
-  to implementation.
+- [DONE] Obtain owner approval of the revised plan and resume implementation.
 - [DONE] Add failing schema-v5 graph-discovery model and rendering tests.
 - [DONE] Implement graph-discovery models, invariants, validation modes, and rendering.
 - [DONE] Add failing maintainer validation tests for curation and proposal paths.

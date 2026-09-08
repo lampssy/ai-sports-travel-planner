@@ -2,10 +2,9 @@
 
 ## Status
 
-- Status: accepted after advisory design review
+- Status: implemented and feature-reviewed; activation remains pending merge
 - Owner: solo-builder
-- Related research: `research.md`
-- Related plan: `plan.md`
+- Related plan: `docs/superpowers/plans/2026-09-07-maintainer-full-graph-discovery.md`
 - Related ADR: `docs/architecture/adr/0024-require-durable-full-graph-discovery.md`
 - Existing boundary ADRs:
   - `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md`
@@ -334,7 +333,8 @@ obsolete semantic or mutation authority.
 - Advisory feature review:
   - reviewers: backend/API, data trust/source integrity, observability/ops, and
     release/change management;
-  - status: planned.
+  - status: completed; actionable findings were addressed and focused re-review
+    found no remaining Blocker, High, or Medium issue.
 
 ## Developer Decision Checkpoints
 
@@ -447,23 +447,27 @@ obsolete semantic or mutation authority.
 
 ## Verification
 
-- Unit tests for schema-v5 models, validation invariants, and rendering.
-- Reconciliation tests for exact base/current catalog and Markdown parity.
-- State/projection tests for initial, partial, complete, reviewed, validation, and
-  legacy-event paths.
-- CLI/capability tests for typed actions and report-only checkpoint safety.
-- Proposal-path tests preventing discovery bypass.
-- Focused and broad database-free maintainer/catalog suites plus Ruff.
-- Full repository tests when local PostgreSQL/storage prerequisites are healthy.
+- The final affected database-free catalog and maintainer suite passed 1,332
+  tests.
+- The repository-wide database-free suite passed 2,712 tests, with 430 tests
+  deselected by markers or the explicit PostgreSQL-opening test exclusion.
+- Schema-v5 model, rendering, reconciliation, state/projection, CLI/capability,
+  proposal-path, recovery, and lifecycle-bypass regressions passed.
+- Ruff check, Ruff format verification, and `git diff --check` passed.
+- PostgreSQL-backed verification was unavailable because the local Docker daemon
+  was not running. The database-opening search-v4 test was excluded from the
+  database-free run and separately confirmed to fail only on PostgreSQL connection
+  refusal.
 
 ## Advisory Review
 
 - Design reviewers: completed across Product / Strategy, Backend / API, Data Trust &
   Source Integrity, UI / UX, Security & Privacy, Observability / Ops, and Release /
   Change Management.
-- Blocking design findings: incorporated into this revision; owner reapproval is
-  required before runtime implementation.
-- Feature reviewers: planned on the exact completed diff.
+- Blocking design findings: incorporated into the approved revision before runtime
+  implementation.
+- Feature reviewers: completed on the exact implementation diff; actionable
+  findings were fixed and reverified.
 - Known residual risk: deterministic completeness remains structural; independent
   semantic review is still needed to catch an inappropriate or non-exhaustive source
   neighborhood.

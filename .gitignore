@@ -27,3 +27,9 @@ artifacts/
 .superdesign/
 .superpowers/
 .worktrees/
+
+# Local structured-development workflow artifacts
+/.structured-dev-state
+/implementation-log.md
+/plan.md
+/research.md
