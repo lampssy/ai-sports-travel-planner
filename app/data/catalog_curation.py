@@ -3276,10 +3276,12 @@ def validate_catalog_resulting_graph(
     catalog: CatalogSnapshot,
     *,
     require: bool = False,
+    allow_pending_scope_changes: bool = False,
 ) -> None:
     validate_catalog_curation_report(
         report,
         require_resulting_graph=require,
+        allow_pending_scope_changes=allow_pending_scope_changes,
     )
     graph = report.resulting_graph
     if graph is None:
@@ -3954,8 +3956,15 @@ def _mermaid_pass_label(
 def render_catalog_resulting_graph_markdown(
     report: CatalogCurationReport,
     catalog: CatalogSnapshot,
+    *,
+    allow_pending_scope_changes: bool = False,
 ) -> str:
-    validate_catalog_resulting_graph(report, catalog, require=True)
+    validate_catalog_resulting_graph(
+        report,
+        catalog,
+        require=True,
+        allow_pending_scope_changes=allow_pending_scope_changes,
+    )
     assert report.resulting_graph is not None
 
     destinations_by_id = {
@@ -4262,6 +4271,8 @@ def render_catalog_graph_discovery_markdown(
 def render_catalog_curation_report_markdown(
     report: CatalogCurationReport,
     catalog: CatalogSnapshot | None = None,
+    *,
+    allow_pending_scope_changes: bool = False,
 ) -> str:
     lines = [
         f"# {report.title}",
@@ -4274,7 +4285,14 @@ def render_catalog_curation_report_markdown(
                 ["current catalog is required to render resulting_graph"]
             )
         lines.extend(
-            ["", *render_catalog_resulting_graph_markdown(report, catalog).splitlines()]
+            [
+                "",
+                *render_catalog_resulting_graph_markdown(
+                    report,
+                    catalog,
+                    allow_pending_scope_changes=allow_pending_scope_changes,
+                ).splitlines(),
+            ]
         )
     lines.extend(
         [

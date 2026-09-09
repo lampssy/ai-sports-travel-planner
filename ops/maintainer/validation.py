@@ -506,7 +506,12 @@ def validate_curation_graph_discovery_checkpoint(
             require_current_destination_policy=True,
             allow_pending_scope_changes=True,
         )
-        validate_catalog_resulting_graph(report, catalog, require=True)
+        validate_catalog_resulting_graph(
+            report,
+            catalog,
+            require=True,
+            allow_pending_scope_changes=True,
+        )
         validate_catalog_graph_discovery(
             report,
             catalog,
@@ -539,7 +544,11 @@ def validate_curation_graph_discovery_checkpoint(
             Path(repository.root) / report_path.removesuffix(".json")
         ).with_suffix(".md")
         if markdown_path.read_text(encoding="utf-8") != (
-            render_catalog_curation_report_markdown(report, catalog)
+            render_catalog_curation_report_markdown(
+                report,
+                catalog,
+                allow_pending_scope_changes=True,
+            )
         ):
             raise ValueError("graph discovery Markdown is not deterministic")
         discovery = report.graph_discovery
@@ -615,7 +624,12 @@ def validate_curation_evidence_unavailable_report(
             require_current_destination_policy=True,
             allow_pending_scope_changes=True,
         )
-        validate_catalog_resulting_graph(report, catalog, require=True)
+        validate_catalog_resulting_graph(
+            report,
+            catalog,
+            require=True,
+            allow_pending_scope_changes=True,
+        )
         validate_catalog_graph_discovery(
             report,
             catalog,
@@ -630,7 +644,11 @@ def validate_curation_evidence_unavailable_report(
         )
         if unavailable_pairs == 0:
             raise ValueError("report has no unavailable graph discovery evidence")
-        if markdown != render_catalog_curation_report_markdown(report, catalog):
+        if markdown != render_catalog_curation_report_markdown(
+            report,
+            catalog,
+            allow_pending_scope_changes=True,
+        ):
             raise ValueError("graph discovery Markdown is not deterministic")
         candidate_ids = {
             candidate_id

@@ -274,6 +274,25 @@ def test_final_reconciliation_rejects_pending_sourced_entity(
         )
 
 
+def test_pending_scope_resulting_graph_rendering_requires_explicit_opt_in() -> None:
+    report = _schema_five_report_with_pending_stay_base()
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="add_entity requires a matching identity-field creation change",
+    ):
+        render_catalog_resulting_graph_markdown(report, catalog)
+
+    rendered = render_catalog_resulting_graph_markdown(
+        report,
+        catalog,
+        allow_pending_scope_changes=True,
+    )
+
+    assert rendered.startswith("## Resulting Graph")
+
+
 def _relationship_change_report(*, include_endpoints: bool) -> CatalogCurationReport:
     reviewed_targets = [
         CatalogReviewedTarget(

@@ -59,7 +59,10 @@ from ops.maintainer.validation import (
     validate_proposal,
 )
 from tests.test_catalog_curation import _schema_five_graph_report_payload
-from tests.test_catalog_curation_reconciliation import _trust_payload
+from tests.test_catalog_curation_reconciliation import (
+    _schema_five_report_with_pending_stay_base,
+    _trust_payload,
+)
 from tests.test_catalog_models import minimal_catalog_payload
 
 pytestmark = pytest.mark.db_free
@@ -811,9 +814,14 @@ def _write_graph_discovery_checkpoint_fixture(
     base: FakeLiveRepository,
     *,
     status: Literal["in_progress", "complete"],
+    pending_entity: bool = False,
 ) -> None:
     catalog_payload = minimal_catalog_payload()
-    report_payload = _schema_five_graph_report_payload()
+    report_payload = (
+        _schema_five_report_with_pending_stay_base().model_dump(mode="json")
+        if pending_entity
+        else _schema_five_graph_report_payload()
+    )
     report_payload["graph_discovery"]["status"] = status
     if status == "in_progress":
         report_payload["graph_discovery"]["coverage"][0]["coverage_state"] = (
@@ -837,7 +845,11 @@ def _write_graph_discovery_checkpoint_fixture(
         encoding="utf-8",
     )
     (reviewed.root / REPORT_PATH.removesuffix(".json")).with_suffix(".md").write_text(
-        render_catalog_curation_report_markdown(report, catalog),
+        render_catalog_curation_report_markdown(
+            report,
+            catalog,
+            allow_pending_scope_changes=pending_entity,
+        ),
         encoding="utf-8",
     )
 
@@ -869,6 +881,36 @@ def test_validate_graph_discovery_checkpoint_accepts_partial_or_complete_report(
     assert result.status == status
     assert result.covered_pairs == result.required_pairs == 6
     assert result.candidate_count == 5
+
+
+def test_validate_graph_discovery_checkpoint_accepts_pending_sourced_entity(
+    tmp_path: Path,
+) -> None:
+    report_paths = frozenset({REPORT_PATH, REPORT_PATH.removesuffix(".json") + ".md"})
+    reviewed = FakeLiveRepository(
+        tmp_path / "reviewed", _intent(changed_paths=report_paths)
+    )
+    base = FakeLiveRepository(tmp_path / "base", _intent(changed_paths=report_paths))
+    reviewed.root.mkdir()
+    base.root.mkdir()
+    _write_graph_discovery_checkpoint_fixture(
+        reviewed,
+        base,
+        status="complete",
+        pending_entity=True,
+    )
+
+    result = validate_curation_graph_discovery_checkpoint(
+        pull_request=_pull_request(changed_paths=report_paths),
+        sync=_sync(),
+        discovery_head=SHA_B,
+        report_path=REPORT_PATH,
+        repository=reviewed,  # type: ignore[arg-type]
+        base_repository=base,  # type: ignore[arg-type]
+    )
+
+    assert result.status == "complete"
+    assert result.candidate_count == 6
 
 
 def test_validate_graph_discovery_checkpoint_rejects_candidate_loss(
