@@ -196,6 +196,10 @@ class CurationGenerationSummary(_InspectionModel):
         exclude_if=lambda value: value is None,
     )
     next_action: CurationNextAction | None = None
+    discovery_correction_action: CurationNextAction | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
 
 
 class ProposalSummary(_InspectionModel):
@@ -369,6 +373,9 @@ def _generation_summary(
         graph_discovery=projection.graph_discovery,
         graph_discovery_checkpointed_at=(projection.graph_discovery_checkpointed_at),
         next_action=projection.next_action if retryable else None,
+        discovery_correction_action=(
+            projection.discovery_correction_action if retryable else None
+        ),
     )
 
 

@@ -302,12 +302,16 @@ The installed skill must:
   helper validation after review;
 - route review disposition explicitly. A fresh clean exact-head review uses the
   **clean-review branch** and `checkpoint_curation_reviewed`. A review with
-  actionable findings uses the **requested-changes branch**: perform only the
-  bounded remediation authorized by this activation contract, commit the exact
-  clean local head, call `checkpoint_curation_delta`, and run another fresh full
-  review. The helper validates that caller-created remediation head on
-  invocation, so this branch is registered authority rather than an inferred
-  command;
+  ordinary actionable catalog/trust findings uses the **requested-changes
+  branch**: perform only the bounded remediation authorized by this activation
+  contract, commit the exact clean local head, call
+  `checkpoint_curation_delta`, and run another fresh full review. The helper
+  validates that caller-created remediation head on invocation, so this branch
+  is registered authority rather than an inferred command. A graph-discovery
+  finding instead uses only the returned `discovery_correction_action`: create
+  one report-only descendant, checkpoint graph discovery, and rerun both
+  source-trust and graph-scope lanes. The same branch is available after a delta
+  checkpoint when fresh review discovers a graph blocker;
 - for that final broad suite, execute only the clean exact-base uv project,
   pytest configuration, conftest, and fixed absolute test modules. Supply the
   prepared catalog/trust paths only through the helper-derived data root and a
@@ -455,10 +459,14 @@ The installed skill must:
   trust, backlog, rendered-report, and focused-test defects enter ordinary
   remediation only after unavailable rows have been resolved. A packet containing
   an unavailable row cannot enter mutation or final/proposal validation. If either
-  review requests a discovery correction, checkpoint only a report-only descendant
-  and rerun both lanes. Publish `blocked/evidence-unavailable` only when both lanes
-  confirm the exact report and through the helper's typed action from that immutable
-  complete checkpoint;
+  review requests a discovery correction, use only the helper-returned
+  `discovery_correction_action`, checkpoint one report-only descendant, and rerun
+  both lanes. Continue this branch in the same cycle while the lease, deadline,
+  and helper state remain valid; `discovery-correction-requested` alone is not a
+  terminal outcome. The action remains derivable for an exact persisted
+  generation through `inspect curation` and `prepare curation`. Publish
+  `blocked/evidence-unavailable` only when both lanes confirm the exact report and
+  through the helper's typed action from that immutable complete checkpoint;
 - aggregate both independent review lanes without silently overriding either.
   Conflicting source meaning, candidate disposition, or graph-impact conclusions
   require one focused exact-head reconciliation. A newly discovered plausible
