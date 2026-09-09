@@ -153,6 +153,14 @@ unavailable row must all match. A requested discovery correction is limited to a
 report-only descendant checkpoint followed by fresh review. The private disposition
 file is not replacement authority.
 
+A complete discovery checkpoint exposes two typed semantic branches: the normal
+clean-review or evidence-unavailable action, and a separate report-only discovery
+correction action. The correction action remains derivable from persisted events
+and is also available after a delta checkpoint when fresh review discovers a graph
+blocker. It replaces candidate dispositions or prospective relationships only by
+checkpointing a monotonic report descendant and rerunning both independent review
+lanes; it does not authorize catalog or trust mutation.
+
 The reactive private inventory-completion lifecycle is retired for new generations:
 
 - no normal inventory-completion CLI flag or recipe;

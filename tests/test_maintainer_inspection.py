@@ -737,6 +737,71 @@ def test_curation_inventory_exposes_resumable_graph_discovery_progress() -> None
     assert summary.graph_discovery_checkpointed_at == NOW + timedelta(seconds=1)
     assert summary.next_action is not None
     assert summary.next_action.recipe_id.value == "prepare_curation"
+    assert summary.discovery_correction_action is None
+
+
+def test_curation_inventory_exposes_graph_discovery_correction_action() -> None:
+    legacy = _generation()
+    report_path = "docs/catalog-curation/pr-42.json"
+    transaction_id = checkpoint_transaction_id(
+        GENERATION_ID,
+        CurationCheckpointStage.GRAPH_DISCOVERY,
+        SHA_B,
+        report_path,
+        SHA_C,
+    )
+    prefix = (
+        f"refs/snowcast-maintainer/curation/pr-42/{GENERATION_ID}/{transaction_id}/"
+    )
+    generation = legacy.model_copy(
+        update={
+            "events": (
+                legacy.events[0],
+                CheckpointStartedEvent(
+                    sequence=2,
+                    recorded_at=NOW + timedelta(seconds=1),
+                    transaction_id=transaction_id,
+                    stage=CurationCheckpointStage.GRAPH_DISCOVERY,
+                    head=SHA_B,
+                    report_path=report_path,
+                    validation_base=SHA_C,
+                    graph_discovery=CurationGraphDiscoveryCheckpoint(
+                        status="complete",
+                        covered_pairs=6,
+                        required_pairs=6,
+                        candidate_count=8,
+                        unavailable_pairs=0,
+                    ),
+                    expected_checkpoint_ref=prefix + "checkpoint",
+                    expected_squash_ref=prefix + "replay",
+                ),
+                CheckpointCompletedEvent(
+                    sequence=3,
+                    recorded_at=NOW + timedelta(seconds=2),
+                    transaction_id=transaction_id,
+                    checkpoint_ref=prefix + "checkpoint",
+                    squash_ref=prefix + "replay",
+                ),
+            )
+        }
+    )
+
+    inventory = inspect_curation(
+        (_pull_request(),),
+        {},
+        generations=(generation,),
+    )
+
+    summary = inventory.generations[0]
+    assert summary.next_action is not None
+    assert summary.next_action.recipe_id == "checkpoint_curation_reviewed"
+    assert summary.discovery_correction_action is not None
+    assert (
+        summary.discovery_correction_action.recipe_id
+        == "checkpoint_curation_graph_discovery"
+    )
+    assert summary.discovery_correction_action.caller_created_descendant_head is True
+    assert summary.discovery_correction_action.substitutions.head == SHA_B
 
 
 def test_curation_inventory_exposes_failed_validation_remediation() -> None:

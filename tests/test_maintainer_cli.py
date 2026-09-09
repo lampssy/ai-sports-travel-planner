@@ -88,6 +88,7 @@ SHA_B = "b" * 40
 SHA_C = "c" * 40
 SHA_D = "d" * 40
 SHA_E = "e" * 40
+SHA_F = "f" * 40
 NOW = datetime(2026, 7, 8, 10, tzinfo=UTC)
 CANDIDATE = "stay_destination:nendaz"
 CANONICAL_GRAPH = (
@@ -5955,6 +5956,22 @@ def test_graph_discovery_checkpoint_is_report_only_and_returns_typed_action(
         assert substitutions["head"] == SHA_C
     else:
         assert "expected_head" not in substitutions
+    correction_action = payload["generation"].get("discovery_correction_action")
+    if status == "complete":
+        assert correction_action == {
+            "recipe_id": "checkpoint_curation_graph_discovery",
+            "substitutions": {
+                "pr": 42,
+                "generation_id": payload["generation"]["generation_id"],
+                "head": SHA_C,
+                "report": "docs/catalog-curation/nendaz.json",
+                "validation_base": SHA_D,
+                "continue_conflict": False,
+            },
+            "caller_created_descendant_head": True,
+        }
+    else:
+        assert correction_action is None
     generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
     assert generation is not None
     projection = project_generation(generation)
@@ -6284,6 +6301,15 @@ def test_prepare_resumes_complete_graph_discovery_at_semantic_review(
     assert code == 0, payload
     assert payload["generation"]["result"] == "review-required"
     assert payload["generation"]["next_action"]["recipe_id"] == expected_recipe
+    assert payload["generation"]["discovery_correction_action"]["recipe_id"] == (
+        "checkpoint_curation_graph_discovery"
+    )
+    assert (
+        payload["generation"]["discovery_correction_action"][
+            "caller_created_descendant_head"
+        ]
+        is True
+    )
     if unavailable_pairs:
         assert (
             payload["generation"]["next_action"]["substitutions"]["expected_head"]
@@ -6501,6 +6527,99 @@ def test_delta_checkpoint_uses_completed_graph_discovery_as_authority(
     assert (
         validator_arguments["previous_report_path"]
         == "docs/catalog-curation/nendaz.json"
+    )
+    correction_action = payload["generation"]["discovery_correction_action"]
+    assert correction_action["recipe_id"] == "checkpoint_curation_graph_discovery"
+    assert correction_action["substitutions"]["head"] == SHA_E
+    assert correction_action["caller_created_descendant_head"] is True
+
+
+def test_delta_review_can_checkpoint_a_graph_discovery_correction(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository()
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
+    discovery_code, discovery = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="graph-discovery",
+        head=SHA_C,
+    )
+    repository.head = SHA_E
+    delta_code, delta = _checkpoint_curation_generation(
+        capsys,
+        tmp_path,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        stage="delta-validated",
+        head=SHA_E,
+    )
+    generation = CurationGenerationStore(state_dir).load_current("curation-pr-42")
+    assert generation is not None
+    validator_arguments: dict[str, object] = {}
+
+    def validate_discovery(**kwargs: object) -> GraphDiscoveryValidationResult:
+        validator_arguments.update(kwargs)
+        return GraphDiscoveryValidationResult(
+            discovery_head=SHA_F,
+            report_path="docs/catalog-curation/nendaz.json",
+            status="complete",
+            covered_pairs=6,
+            required_pairs=6,
+            candidate_count=5,
+            unavailable_pairs=0,
+        )
+
+    repository.head = SHA_F
+    correction_code, correction = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "checkpoint",
+            "curation",
+            "--pr",
+            "42",
+            "--generation-id",
+            generation.generation_id,
+            "--head",
+            SHA_F,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--stage",
+            "graph-discovery",
+            "--base-dir",
+            str(tmp_path),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        graph_discovery_validator=validate_discovery,
+    )
+
+    assert discovery_code == 0, discovery
+    assert delta_code == 0, delta
+    assert correction_code == 0, correction
+    assert repository.graph_discovery_scope_calls[-1] == (
+        SHA_E,
+        SHA_F,
+        "docs/catalog-curation/nendaz.json",
+    )
+    assert validator_arguments["previous_discovery_head"] == SHA_C
+    assert correction["generation"]["next_action"]["recipe_id"] == (
+        "checkpoint_curation_reviewed"
     )
 
 

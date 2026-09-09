@@ -957,6 +957,7 @@ def _generation_result(
     conflict_paths: Sequence[str] = (),
     next_action: CurationNextAction | None = None,
 ) -> dict[str, object]:
+    projection = project_generation(generation)
     payload: dict[str, object] = {
         "generation_id": generation.generation_id,
         "generation_number": generation.generation_number,
@@ -968,13 +969,20 @@ def _generation_result(
     if conflict_paths:
         payload["conflict_paths"] = list(conflict_paths)
     if next_action is None:
-        next_action = project_generation(generation).next_action
+        next_action = projection.next_action
     if next_action is not None:
         payload["next_action"] = next_action.model_dump(
             mode="json",
             exclude_none=True,
         )
-    validation_failure = project_generation(generation).validation_failure
+    if projection.discovery_correction_action is not None:
+        payload["discovery_correction_action"] = (
+            projection.discovery_correction_action.model_dump(
+                mode="json",
+                exclude_none=True,
+            )
+        )
+    validation_failure = projection.validation_failure
     if validation_failure is not None:
         payload["validation_failure"] = validation_failure.model_dump(
             mode="json",
@@ -1119,7 +1127,11 @@ def handle_checkpoint_curation(
             and projection.checkpoint_authority.report_path == args.report
         )
         review_requested_revision = (
-            projection.latest_stage is CurationCheckpointStage.GRAPH_DISCOVERY
+            projection.latest_stage
+            in {
+                CurationCheckpointStage.GRAPH_DISCOVERY,
+                CurationCheckpointStage.DELTA_VALIDATED,
+            }
             and projection.graph_discovery is not None
             and projection.graph_discovery.status == "complete"
             and args.head != projection.latest_head
@@ -1237,10 +1249,9 @@ def handle_checkpoint_curation(
     graph_discovery: CurationGraphDiscoveryCheckpoint | None = None
     if stage is CurationCheckpointStage.GRAPH_DISCOVERY:
         previous_graph_checkpoint = (
-            authority
-            if authority is not None
-            and authority.stage is CurationCheckpointStage.GRAPH_DISCOVERY
-            and authority.reviewed_head != args.head
+            projection.graph_discovery_authority
+            if projection.graph_discovery_authority is not None
+            and projection.graph_discovery_authority.reviewed_head != args.head
             else None
         )
         discovery = dependencies.curation_graph_discovery_validator(

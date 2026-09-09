@@ -466,6 +466,11 @@ def test_runtime_contract_freezes_review_disposition_branches() -> None:
             },
             "complete": {
                 "next_recipe": "checkpoint_curation_reviewed",
+                "discovery_correction_recipe": ("checkpoint_curation_graph_discovery"),
+                "discovery_correction_action_field": (
+                    "generation.discovery_correction_action"
+                ),
+                "discovery_correction_head": "report-only-descendant",
                 "semantic_review_required": ["source-trust", "graph-scope"],
                 "requires_unavailable_pairs": 0,
             },
@@ -494,6 +499,13 @@ def test_runtime_contract_freezes_review_disposition_branches() -> None:
                 "head_source": "allowed-remediation-head",
                 "next_recipe": "checkpoint_curation_delta",
                 "after_checkpoint": "fresh-full-review",
+            },
+            "graph_changes_requested": {
+                "head_source": "report-only-descendant",
+                "next_action_source": "generation.discovery_correction_action",
+                "next_recipe": "checkpoint_curation_graph_discovery",
+                "allowed_from_stages": ["graph-discovery", "delta-validated"],
+                "after_checkpoint": ("fresh-source-trust-and-graph-scope-review"),
             },
         },
         "reviewed_checkpoint_gate": "fresh-clean-exact-head-review",

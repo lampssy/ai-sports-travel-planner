@@ -51,6 +51,11 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - A partial report is checkpointed without a GitHub blocked label and resumes
   from its exact head in a later cycle. Semantic review starts only after every
   required row leaves `in_progress`.
+- A complete discovery checkpoint has separate typed clean-review and
+  graph-correction actions. Review-requested graph changes use a report-only
+  descendant and rerun both lanes, including when a later post-delta review
+  discovers the graph issue. Existing generation events derive this action, so
+  activation needs no state migration.
 - Interrupted checkpoint completion returns through ordinary preparation so the
   helper rechecks current `main` and the remote PR head before semantic work. A
   missing checkpoint ref or confirmed remote-head drift invalidates the stale

@@ -544,6 +544,7 @@ class CurationGenerationProjection(_StrictModel):
     graph_discovery: CurationGraphDiscoveryCheckpoint | None = None
     graph_discovery_checkpointed_at: datetime | None = None
     next_action: CurationNextAction | None = None
+    discovery_correction_action: CurationNextAction | None = None
 
 
 def checkpoint_transaction_id(
@@ -641,6 +642,7 @@ def project_generation(
             graph_discovery_authority = None
 
     next_action: CurationNextAction | None = None
+    discovery_correction_action: CurationNextAction | None = None
     if incomplete is not None:
         next_action = _checkpoint_action(generation, incomplete)
     elif graph_discovery is None and (
@@ -745,6 +747,29 @@ def project_generation(
             ),
         )
 
+    if (
+        incomplete is None
+        and graph_discovery is not None
+        and graph_discovery.status == "complete"
+        and latest_stage
+        in {
+            CurationCheckpointStage.GRAPH_DISCOVERY,
+            CurationCheckpointStage.DELTA_VALIDATED,
+        }
+    ):
+        assert latest_report is not None
+        discovery_correction_action = CurationNextAction(
+            recipe_id=CurationRecipeId.CHECKPOINT_GRAPH_DISCOVERY,
+            substitutions=CurationActionSubstitutions(
+                pr=generation.pr_number,
+                generation_id=generation.generation_id,
+                head=latest_head,
+                report=latest_report,
+                validation_base=generation.sync.base_head,
+            ),
+            caller_created_descendant_head=True,
+        )
+
     if latest_refs is None and latest_stage in {
         CurationCheckpointStage.DELTA_VALIDATED,
         CurationCheckpointStage.GRAPH_DISCOVERY,
@@ -769,6 +794,7 @@ def project_generation(
         graph_discovery=graph_discovery,
         graph_discovery_checkpointed_at=graph_discovery_checkpointed_at,
         next_action=next_action,
+        discovery_correction_action=discovery_correction_action,
     )
 
 

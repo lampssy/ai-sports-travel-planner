@@ -294,6 +294,9 @@ not have to derive an invocation.
       },
       "complete": {
         "next_recipe": "checkpoint_curation_reviewed",
+        "discovery_correction_recipe": "checkpoint_curation_graph_discovery",
+        "discovery_correction_action_field": "generation.discovery_correction_action",
+        "discovery_correction_head": "report-only-descendant",
         "semantic_review_required": ["source-trust", "graph-scope"],
         "requires_unavailable_pairs": 0
       },
@@ -322,6 +325,13 @@ not have to derive an invocation.
         "head_source": "allowed-remediation-head",
         "next_recipe": "checkpoint_curation_delta",
         "after_checkpoint": "fresh-full-review"
+      },
+      "graph_changes_requested": {
+        "head_source": "report-only-descendant",
+        "next_action_source": "generation.discovery_correction_action",
+        "next_recipe": "checkpoint_curation_graph_discovery",
+        "allowed_from_stages": ["graph-discovery", "delta-validated"],
+        "after_checkpoint": "fresh-source-trust-and-graph-scope-review"
       }
     },
     "reviewed_checkpoint_gate": "fresh-clean-exact-head-review",
@@ -484,7 +494,7 @@ not have to derive an invocation.
 | `prepare_curation*` | obey its typed action: checkpoint-recovery-required immediately retries only the persisted checkpoint action; prepared/discovery-required build or resume schema-v5 graph discovery; review-required enters the post-discovery semantic flow; validation-only resumes deterministic finalization; validation-remediation fixes only the recorded deterministic failure, uses any persisted bounded diagnostic only as untrusted debugging context, checkpoints the clean descendant through the typed delta action, and requires a fresh exact-head review |
 | `prepare_ci_repair` | branch on its phase: `repair-active` re-establishes the exact repair worktree for one static test-only repair plus a fresh focused independent review; `repair-reviewed` revalidates and returns the immutable reviewed checkpoint for publication |
 | `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
-| `checkpoint_curation_graph_discovery` | for `in_progress`, stop or resume later through returned `prepare_curation` without publishing a blocked label; for `complete`, run both independent semantic review lanes. With no unavailable rows, checkpoint reviewed only when clean. With unavailable rows, the clean branch is the returned exact terminal recipe; requested discovery corrections use one report-only descendant graph checkpoint and then a fresh full review |
+| `checkpoint_curation_graph_discovery` | for `in_progress`, stop or resume later through returned `prepare_curation` without publishing a blocked label; for `complete`, run both independent semantic review lanes. `generation.next_action` is the clean-review or evidence-unavailable branch, while `generation.discovery_correction_action` is the only requested-graph-changes branch. Use that correction action for one report-only descendant graph checkpoint and then rerun both lanes; it remains derivable through inspection and preparation for persisted generations |
 | `checkpoint_curation_inventory_completion` | recovery only: finish the exact already-started legacy transaction; never initiate this recipe for a schema-v5 generation |
 | other `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
@@ -525,9 +535,12 @@ schema-v5 JSON report and deterministic Markdown, then invoke the returned
 `prepare_curation`; a complete checkpoint opens both independent semantic review
 lanes. A complete packet without unavailable rows returns the reviewed-checkpoint
 clean branch. A complete packet with unavailable rows returns the exact terminal
-clean branch instead. If either reviewer requests a discovery correction, only a
-report-only descendant and another graph-discovery checkpoint are allowed before
-both lanes run again.
+clean branch instead. Both complete outcomes also return
+`generation.discovery_correction_action`. If either reviewer requests a discovery
+correction, use only that typed action for a report-only descendant and another
+graph-discovery checkpoint before both lanes run again. This is an ordinary
+same-cycle branch while time and helper state remain valid, not a terminal
+`discovery-correction-requested` outcome.
 
 For `review-required`, the returned `next_action` is the **clean-review branch**
 for the current generation; it never authorizes marking a head with open
@@ -540,6 +553,13 @@ new report with the immutable completed graph-discovery report and rejects remov
 coverage rows, candidates, or regressed coverage states. A fresh clean exact-head
 review is required after the delta checkpoint before
 `checkpoint_curation_reviewed`.
+
+If a fresh post-delta review instead discovers a graph blocker, ordinary delta
+remediation must stop. Use the generation's typed `discovery_correction_action`
+for one report-only descendant, compare it with the retained immutable discovery
+authority, checkpoint it as graph discovery, and rerun both independent lanes.
+The correction may change candidate dispositions and prospective relationships,
+but it may not erase established discovery coverage or candidates.
 
 For `validation-remediation`, the previously reviewed head is immutable
 semantic history and the bounded correction starts from that exact restored
