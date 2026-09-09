@@ -382,6 +382,16 @@ The installed skill must:
   page alone remains supporting evidence only. Before `evidence_unavailable`,
   record the exact source families attempted and why the combined evidence does
   not establish candidate-scoped operations;
+- when a destination-wide ski umbrella spans terrain joined only by transfer
+  and two or more named candidates occupy one lift- or piste-connected side,
+  enumerate every evidence-backed maximal connected cluster as a possible
+  `ski_area` parent before completing the ski-area discovery row. Research the
+  official area, map, current operations, weather or snow, and pass publication
+  neighborhood for each substantial named candidate. A cluster may use a
+  transparent normalized name when official topology and the complete component
+  packet establish its boundary. Compare members with that nearest cluster and
+  compare transfer-separated clusters as siblings. Do not aggregate candidates
+  merely because their individual classifications are difficult;
 - for a coordinated multi-operator ski-area boundary, graph-scope inventory
   completeness requires the five typed evidence families:
   `complete_terrain_lift_inventory`,
@@ -506,6 +516,12 @@ The installed skill must:
     transfer-required or disconnected. `not_separate`, `redundant`, coordinated
     or parent-owned declarations, and provider consensus do not override
     source-backed signals;
+  - before returning `evidence_insufficient` for parent assignment or member
+    materiality, verify that every plausible evidence-backed connected-cluster
+    parent was included in graph discovery and assessed. A missing cluster is a
+    report-only graph-discovery correction, not terminal evidence insufficiency.
+    A folded candidate's parent must appear in the same adjudication as an
+    assessed separate ski area;
   - do not return `owner_choice_required` merely because several legal operators
     publish one policy-valid coordinated area.
   A `policy_determined` result may authorize a separate ski area only after

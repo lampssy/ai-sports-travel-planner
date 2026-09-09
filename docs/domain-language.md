@@ -374,6 +374,17 @@ recognizable sector that fails these gates is `not_separate`; it may become a
 future ski sub-area if product needs justify that layer. Provider boundaries
 corroborate this assessment but do not determine it.
 
+When a destination-wide umbrella spans transfer-separated terrain and several
+named candidates occupy one lift- or piste-connected side, curation must assess
+that maximal connected cluster as a possible nearest-parent `SkiArea` before
+classifying its members or returning `evidence_insufficient`. The cluster may
+use a transparent Snowcast-normalized name when official topology establishes
+the boundary even though no single operator uses that exact name. Its members
+are then compared with the cluster, while transfer-separated clusters are
+compared as siblings. Uncertainty alone never creates an aggregate: the parent
+still needs complete terrain, coordinated or independent evidence ownership,
+reproducible component closure, and a material trip consequence.
+
 Evidence ownership may be `independent` or `coordinated`. Independent ownership
 uses the existing area-level operations, weather, or full-local-pass evidence.
 A coordinated multi-operator ski area requires an official complete lift or

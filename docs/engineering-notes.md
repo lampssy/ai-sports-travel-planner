@@ -1579,6 +1579,13 @@ including its durability basis, and a concrete comparison target for every
 promoted area. It verifies the review-to-fixer decision structure; it neither
 changes the curation-report schema nor replaces source-trust review.
 
+For a destination umbrella spanning transfer-separated terrain, discovery also
+tests evidence-backed maximal connected clusters as possible ski-area parents.
+This prevents operator domains from being compared only with an overly broad
+umbrella and therefore over-split. The aggregate is not a fallback for missing
+evidence: official topology and coordinated closure must establish it, and a
+folded component may target only a parent assessed in the same adjudication.
+
 A consequence declares `comparison_basis=parent_ski_area`,
 `sibling_ski_area`, or `stay_market_baseline`. The last basis gives a
 destination's sole root downhill area a real comparison between ski-terrain

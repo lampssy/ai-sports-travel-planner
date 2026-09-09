@@ -84,6 +84,30 @@ def test_policy_determined_accepts_separate_area_with_all_gates_and_folded_compo
     assert result.folded_candidate_ids == ("sitas",)
 
 
+@pytest.mark.parametrize("include_non_separate_parent", [False, True])
+def test_policy_determined_rejects_folded_candidate_without_separate_parent(
+    tmp_path: Path,
+    include_non_separate_parent: bool,
+) -> None:
+    payload = _valid_payload()
+    candidates = payload["candidates"]
+    assert isinstance(candidates, list)
+    folded_candidate = candidates[2]
+    payload["candidates"] = [folded_candidate]
+    if include_non_separate_parent:
+        parent = {
+            **folded_candidate,
+            "candidate_id": "livigno-west",
+            "parent_ski_area_id": "livigno",
+        }
+        payload["candidates"].insert(0, parent)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_boundary_adjudication(_write_payload(tmp_path, payload))
+
+    assert exc_info.value.check is ErrorCheck.BOUNDARY_ADJUDICATION
+
+
 def test_boundary_consequence_matches_the_canonical_curation_contract(
     tmp_path: Path,
 ) -> None:

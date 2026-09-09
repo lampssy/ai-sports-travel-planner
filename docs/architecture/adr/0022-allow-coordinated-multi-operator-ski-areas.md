@@ -123,6 +123,17 @@ website cannot establish a derived assignment without the complete terrain and
 component evidence above. If the topology cannot assign a component uniquely,
 the coordinated graph remains unresolved.
 
+Before treating several adjacent candidate components as individually
+unclassifiable, curation assesses every evidence-backed maximal lift- or
+piste-connected cluster that could be their nearest ski-area parent. This is
+required when a destination-wide umbrella spans transfer-separated terrain but
+official topology shows a coherent connected side. A normalized parent name is
+permitted under the same evidence constraints above. Each member is assessed
+against that cluster rather than only against the destination umbrella, and
+transfer-separated clusters are assessed as sibling ski areas. This rule does
+not permit aggregation from ambiguity, proximity, shared branding, or pass
+coverage alone.
+
 A substantial transfer-required, weather-distinct, or independently operated
 complete area remains a separate `SkiArea` only when it also has the durable
 material trip-level consequence required by ADR 0023. Those facts are owner or
@@ -172,6 +183,8 @@ independently; otherwise `weather_sampling_status` remains deferred.
 - Deterministic validation can verify declared component closure but cannot
   prove that internet research found every component; independent source review
   remains required.
+- Boundary adjudication cannot fold a component into a parent omitted from the
+  same adjudication; the aggregate parent must be assessed explicitly.
 - Existing weather history is not automatically moved or re-keyed when a
   coordinated area is introduced.
 

@@ -154,6 +154,13 @@ class BoundaryAdjudication(_StrictModel):
             )
 
         for candidate in self.candidates:
+            if candidate.decision == "fold_into_parent":
+                parent = candidates_by_id.get(candidate.parent_ski_area_id)
+                if parent is None or parent.decision != "separate_ski_area":
+                    raise ValueError(
+                        "folded candidate parent must be an assessed separate ski area"
+                    )
+
             consequence = candidate.material_trip_consequence
             if consequence is None:
                 continue
