@@ -312,6 +312,25 @@ The installed skill must:
   one report-only descendant, checkpoint graph discovery, and rerun both
   source-trust and graph-scope lanes. The same branch is available after a delta
   checkpoint when fresh review discovers a graph blocker;
+- before every discovery fixer, partition discovery findings from
+  ordinary-remediation findings. Pass only report-owned candidate, evidence,
+  relationship, source-neighborhood, and coverage corrections to the discovery
+  fixer. Retain every non-report finding as open in the finding ledger,
+  including catalog, trust, backlog, focused-test, and other owned-file work;
+  never ask the report-only fixer to implement or claim those fixes. A missing
+  backlog anchor is an ordinary-remediation finding even when discovery reveals
+  it; the report may retain the intended canonical reference until remediation.
+  Inspect every pending path, including staged, unstaged, and untracked paths,
+  before the discovery commit, then inspect the cumulative diff from the
+  helper-authoritative previous head before its
+  checkpoint, and require exactly the canonical JSON/Markdown report pair. If
+  either check exposes another path, do not invoke the checkpoint; regenerate
+  the correction in a clean checkout rooted at the authoritative head, carrying
+  only the report pair and preserving every non-report finding as open. Only
+  after the corrected checkpoint and both fresh review lanes may the retained
+  work enter ordinary remediation and `checkpoint_curation_delta`; use the
+  targeted regional-handoff delta path for additive regional report/backlog
+  follow-up;
 - for that final broad suite, execute only the clean exact-base uv project,
   pytest configuration, conftest, and fixed absolute test modules. Supply the
   prepared catalog/trust paths only through the helper-derived data root and a

@@ -263,6 +263,17 @@ sprint-sized, product-facing, high-risk, or otherwise `review-gated` changes.
 
 Small focused fast-path fixes can skip advisory review.
 
+For a maintainer graph-discovery correction, partition discovery findings from
+ordinary-remediation findings before dispatching the discovery fixer. Give that
+fixer only report-owned graph corrections, and retain every non-report finding
+as open for the later ordinary-remediation phase. A missing backlog anchor is an
+ordinary-remediation finding even when discovery exposes it. Before calling the
+graph-discovery checkpoint, inspect the cumulative diff from the
+helper-authoritative previous head: it must contain exactly the canonical
+JSON/Markdown report pair. After the helper accepts that checkpoint and both
+independent review lanes have completed, route the retained findings through
+normal remediation and `checkpoint_curation_delta`.
+
 For medium/high-risk changes, final handoff should include:
 
 - fast path or review-gated classification
