@@ -261,6 +261,22 @@ invoked only after both semantic review lanes confirm the checkpointed report.
 Reviewer-requested discovery corrections are limited to a report-only descendant,
 another graph-discovery checkpoint, and a fresh run of both lanes.
 
+Before every discovery fixer, the orchestrator must partition discovery findings
+from ordinary-remediation findings. Only report-owned candidate, evidence,
+relationship, source-neighborhood, and coverage defects enter the discovery fixer;
+it must retain every non-report finding as open for later remediation. A missing
+backlog anchor is an ordinary-remediation finding even when discovery reveals it;
+the report may carry the intended canonical reference while that finding remains
+open. Inspect every pending path, including staged, unstaged, and untracked paths,
+before the discovery commit. Before checkpointing, the cumulative diff from the
+helper-authoritative previous head must contain exactly the canonical JSON/Markdown
+report pair. A mismatched correction is regenerated in a clean checkout rooted at
+the authoritative head, carrying only the report pair and keeping every non-report
+finding open. After the report-only checkpoint and fresh source-trust and
+graph-scope lanes, catalog, trust, backlog, focused-test, and other owned-file work
+uses ordinary remediation and `checkpoint_curation_delta`; additive regional
+report/backlog follow-up uses the targeted delta handoff.
+
 An initial prepared head that already contains a valid schema-v5 report may receive
 its first graph-discovery checkpoint without an artificial report edit. This exact-
 head exception is not available after the first checkpoint. If a process persists

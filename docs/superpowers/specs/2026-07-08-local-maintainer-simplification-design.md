@@ -44,6 +44,23 @@ completed discovery checkpoint. The deprecated inventory checkpoint can appear
 only as helper-authorized recovery for a transaction already started under the
 old contract.
 
+The current orchestrator must also partition discovery findings from
+ordinary-remediation findings before every discovery fixer. It gives the fixer
+only report-owned discovery-packet corrections and must retain every non-report
+finding as open for later remediation. A missing backlog anchor is an
+ordinary-remediation finding even when discovery reveals it; the report may
+carry the intended canonical reference while that finding remains open. Every
+pending path, including staged, unstaged, and untracked paths, is checked before
+the discovery commit, and the cumulative diff from the helper-authoritative
+previous head must contain exactly the canonical JSON/Markdown report pair
+before checkpointing. A mismatched correction is regenerated in a clean checkout
+rooted at the authoritative head, carrying only the report pair and keeping
+every non-report finding open. After that checkpoint and both fresh review
+lanes, retained catalog, trust, backlog, focused-test, and other owned-file
+findings proceed through `checkpoint_curation_delta`. Additive regional
+report/backlog follow-up uses its existing targeted delta and consistency-review
+path.
+
 ## User Outcome
 
 Snowcast should have two local Codex workers that reduce the owner's repeated

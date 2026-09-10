@@ -29,6 +29,11 @@ GENERATION_DESIGN_PATH = (
     REPOSITORY_ROOT / "docs/superpowers/specs/"
     "2026-08-15-maintainer-curation-generation-checkpoints-design.md"
 )
+FULL_GRAPH_DISCOVERY_DESIGN_PATH = (
+    REPOSITORY_ROOT / "docs/superpowers/specs/"
+    "2026-09-07-maintainer-full-graph-discovery-design.md"
+)
+REVIEW_PLAYBOOK_PATH = REPOSITORY_ROOT / "docs/operating-model/review-playbook.md"
 ENGINEERING_NOTES_PATH = REPOSITORY_ROOT / "docs/engineering-notes.md"
 CONTRACT_PATTERN = re.compile(
     r"<!-- runtime-command-contract:start -->\s*"
@@ -933,6 +938,34 @@ def test_per_cycle_sources_use_the_short_runtime_contract() -> None:
     for source in (normalized_activation, normalized_design):
         assert "must execute exactly one corrected attempt" in source
         assert "second dispatch rejection" in source
+
+
+def test_checked_in_sources_separate_discovery_corrections_from_remediation() -> None:
+    sources = {
+        "runtime": CONTRACT_PATH.read_text(encoding="utf-8"),
+        "activation": ACTIVATION_PATH.read_text(encoding="utf-8"),
+        "design": DESIGN_PATH.read_text(encoding="utf-8"),
+        "graph_design": FULL_GRAPH_DISCOVERY_DESIGN_PATH.read_text(encoding="utf-8"),
+        "review_playbook": REVIEW_PLAYBOOK_PATH.read_text(encoding="utf-8"),
+    }
+    normalized = {
+        name: " ".join(text.replace("`", "").split()).lower()
+        for name, text in sources.items()
+    }
+
+    for name, text in normalized.items():
+        assert (
+            "partition discovery findings from ordinary-remediation findings" in text
+        ), name
+        assert "retain every non-report finding as open" in text, name
+        assert "cumulative diff from the helper-authoritative previous head" in text, (
+            name
+        )
+        assert "exactly the canonical json/markdown report pair" in text, name
+        assert "a missing backlog anchor is an ordinary-remediation finding" in text, (
+            name
+        )
+        assert "checkpoint_curation_delta" in text, name
 
 
 def test_curation_pr_synopsis_requires_an_exact_head_rendered_report_link() -> None:

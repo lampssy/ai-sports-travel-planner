@@ -542,6 +542,27 @@ graph-discovery checkpoint before both lanes run again. This is an ordinary
 same-cycle branch while time and helper state remain valid, not a terminal
 `discovery-correction-requested` outcome.
 
+Before every discovery fixer, partition discovery findings from
+ordinary-remediation findings. Give the discovery fixer only omissions or
+misclassifications in the report-owned candidate, evidence, relationship,
+source-neighborhood, or coverage packet. Retain every non-report finding as open
+in the finding ledger, including required catalog, trust, backlog, focused-test,
+or other owned-file changes; do not ask the discovery fixer to implement or
+claim those fixes. A missing backlog anchor is an ordinary-remediation finding,
+even when a discovery reviewer finds it; the report may record the intended
+canonical reference while the finding stays open. Before creating the discovery
+commit, inspect every pending path, including staged, unstaged, and untracked
+paths. After creating it and before invoking its typed checkpoint action,
+inspect the cumulative diff from the helper-authoritative previous head. It must
+contain exactly the canonical JSON/Markdown report pair. If either scope check
+fails, do not call the checkpoint; regenerate the correction in a clean checkout
+rooted at the authoritative head, carrying only the report pair and keeping
+every non-report finding open. After the corrected discovery checkpoint and both
+fresh review lanes, route those retained findings through ordinary remediation
+and `checkpoint_curation_delta`. Use the existing targeted regional-handoff
+delta path when the retained work is only additive regional report/backlog
+follow-up.
+
 For `review-required`, the returned `next_action` is the **clean-review branch**
 for the current generation; it never authorizes marking a head with open
 findings as reviewed. If review requests changes, the declared
