@@ -2,8 +2,9 @@
 
 ## Status
 
-- Status: implemented and activated; the 2026-09-11 focus-impact amendment is
-  implemented in the repository with post-merge skill activation pending
+- Status: implemented and activated; the 2026-09-11 focus-impact and
+  relationship-correction amendments are implemented in the repository with
+  post-merge skill activation pending
 - Owner: solo-builder
 - Related plan: `docs/superpowers/plans/2026-09-07-maintainer-full-graph-discovery.md`
 - Related ADR: `docs/architecture/adr/0024-require-durable-full-graph-discovery.md`
@@ -271,7 +272,8 @@ reviewed-checkpoint action. `complete` with unavailable rows projects to the exa
 evidence-unavailable publication recipe. Both are clean-review branches and may be
 invoked only after both semantic review lanes confirm the checkpointed report.
 Reviewer-requested discovery corrections are limited to a report-only descendant,
-another graph-discovery checkpoint, and a fresh run of both lanes.
+another graph-discovery checkpoint, and the targeted correction review or explicit
+full-review escalation defined below.
 
 Before every discovery fixer, the orchestrator must partition discovery findings
 from ordinary-remediation findings. Only report-owned candidate, evidence,
@@ -304,6 +306,32 @@ established root/kind rows and candidates cannot disappear, complete coverage
 cannot regress, and unavailable coverage can only stay unavailable or be replaced
 by complete coverage backed by stronger evidence. Candidate conclusions must share
 direct evidence with a source family allowed for their own candidate kind.
+
+Graph discovery is monotonic in discovery knowledge, not immutable in active
+topology. A checkpointed prospective relationship may be removed or replaced only
+through the generation's typed discovery correction action after a reviewer names
+the exact edge, or through typed delta remediation when the same change removes a
+materialized catalog edge. The report retains the root/kind rows, endpoint
+candidates, and evidence that supported or disproved the edge; records
+`disproved`, `superseded`, or `scope_reclassified` in the affected assessment
+rationale; adds a replacement relationship when superseded; and preserves
+validated current-catalog closure. Both independent review perspectives still
+apply. Uncertainty alone cannot authorize relationship removal. A focus-graph
+change remains graph-blocking until ordinary remediation makes the resulting graph
+valid.
+
+For a relationship-only correction whose endpoints and evidence already exist,
+the existing source-trust and graph-scope lanes perform a targeted correction
+review independently on the exact corrected head. They inspect only the changed
+relationships, their endpoint assessments, evidence, focus-graph impact, and
+current-catalog closure; they do not repeat unaffected candidate enumeration or
+source-neighborhood research. Escalate to a fresh full dual review if the
+correction adds a candidate or source neighborhood, changes a candidate's
+disposition, `graph_impact`, or boundary, changes focus-graph connectivity or a
+materialized catalog relationship, introduces a replacement with a new endpoint,
+causes lane disagreement, or exposes another plausible omission. The parent derives
+this scope from the exact report diff and finding, using the existing lanes and
+helper actions without adding a review state or schema field.
 
 Cross-boundary assessment stops after the external product or network, its direct
 focus relationship, authoritative evidence, and follow-up owner establish that it
@@ -374,6 +402,19 @@ obsolete semantic or mutation authority.
   - advisory feature review: data trust/source integrity completed with no
     remaining Blocker, High, or Medium finding; post-merge installed-skill
     activation remains the release boundary.
+- 2026-09-11 relationship-correction amendment review:
+  - owner decision: approved the general knowledge-monotonic rule using existing
+    typed correction paths and then narrowed re-review to the affected edge and
+    invariants, with no new schema field, helper command, review state, or
+    lifecycle;
+  - advisory feature review: backend/API, data trust/source integrity, and
+    release/change management completed with no Blocker or High finding;
+  - accepted residual risk: the correction reason and targeted-versus-full review
+    choice remain semantic review judgments rather than schema enums. Exact-head
+    diffs, retained evidence, targeted independent lanes, and explicit escalation
+    conditions keep the correction auditable without extra migration machinery;
+  - release boundary: merge the repository contract before updating all installed
+    maintainer skills together. Do not rerun the maintainer with mixed versions.
 
 ## Developer Decision Checkpoints
 
@@ -384,6 +425,7 @@ obsolete semantic or mutation authority.
 | Mixed | Review topology | Controls confidence and workflow complexity | Keep dual semantic review after discovery; adding a third lane duplicates work | Retain two lanes, remove inventory loop | Preserves semantic defense without another review layer | Runtime contract |
 | Technical | Migration | Controls compatibility and activation risk | Bulk rewrite is noisy; lazy normalization limits scope | Normalize active reports, parse v1-v4 | Appropriate for an internal pre-public product | Activation guide |
 | Product / Domain | Expansion boundary | Prevents both shallow local review and unbounded pass-network research | Full external member closure is exhaustive but can make an unrelated network block a focus PR; known-graph closure is too narrow | Complete direct trip graph, focus-impact cross-boundary assessment, explicit promotion when the selected PR changes or depends on the external entity | Gives “full graph” an objective, relevance-based stopping rule | ADR 0025 |
+| Technical | Relationship correction | Prevents an accepted but disproved edge from becoming permanent while preserving discovery auditability | A new tombstone schema is explicit but adds migration machinery; unrestricted deletion can hide blockers; full dual discovery repeats unaffected work | Reuse the existing typed discovery-correction and delta paths, retain rows/candidates/evidence, require an exact edge and evidence-backed reason, then run both lanes against the correction only unless an explicit scope/topology trigger requires full review | Preserves knowledge and independent scrutiny without freezing active topology or repeating unaffected discovery, with no new schema or lifecycle | ADR 0024 clarification |
 | Mixed | Partial evidence and topology | Determines whether the packet can represent known candidates and their proposed graph honestly | Exclusive outcomes lose partial facts; IDs alone hide topology | Separate coverage state from candidates and add typed evidence-backed edges | Adds the minimum structure needed for a reviewable graph | ADR 0024 |
 | Technical | Unavailable and legacy authority | Controls safe terminal publication, upgrade, and rollback | Skill-only prose is simpler but not recoverable | Exact checkpoint gate plus recovery-only legacy shim and forward-compatible repair | Preserves helper authority without retaining the old normal flow | Runtime contract |
 
@@ -480,6 +522,14 @@ obsolete semantic or mutation authority.
 - Source-named external membership may remain evidence and follow-up context;
   prospective relationships cannot cross focus roots or chain regional
   follow-ups.
+- A disproved, superseded, or scope-reclassified prospective relationship may
+  leave active topology only through the existing typed discovery-correction or
+  delta path. Its endpoints and evidence remain auditable, supersession adds a
+  replacement, current-catalog closure stays valid, and both lanes independently
+  review the changed edge and immediate invariants. A new candidate, source
+  neighborhood, boundary or graph-impact change, focus-topology or materialized
+  catalog change, new replacement endpoint, lane disagreement, or plausible
+  omission escalates to full dual review.
 - Curation and proposal validation use the same complete gate.
 - Partial report-only discovery can checkpoint and resume at the exact head.
 - Complete discovery permits existing dual review. With no unavailable rows it

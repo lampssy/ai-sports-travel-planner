@@ -78,6 +78,31 @@ coverage may only remain unavailable or advance to complete. Shared candidate
 evidence must come from a source family allowed for that candidate kind, not only
 from a supplemental dependency source.
 
+Graph discovery is monotonic in discovery knowledge, not immutable in active
+topology. A checkpointed prospective relationship may be removed or replaced only
+through the generation's typed discovery correction action after a reviewer names
+the exact edge, or through typed delta remediation when the same change removes a
+materialized catalog edge. The corrected report retains the root/kind rows,
+endpoint candidates, and evidence that supported or disproved the edge; records
+the evidence-backed reason as `disproved`, `superseded`, or `scope_reclassified`
+in the affected assessment rationale; includes a replacement edge when
+superseded; and preserves validated current-catalog closure. Both independent
+review perspectives still apply. Uncertainty alone cannot authorize relationship
+removal. A correction that changes the focus graph remains graph-blocking until
+ordinary remediation makes the resulting graph valid.
+
+For a relationship-only correction whose endpoints and evidence already exist,
+the existing source-trust and graph-scope lanes perform a targeted correction
+review independently on the exact corrected head. They inspect only the changed
+relationships, their endpoint assessments, evidence, focus-graph impact, and
+current-catalog closure; they do not repeat unaffected candidate enumeration or
+source-neighborhood research. Escalate to a fresh full dual review if the
+correction adds a candidate or source neighborhood, changes a candidate's
+disposition, `graph_impact`, or boundary, changes focus-graph connectivity or a
+materialized catalog relationship, introduces a replacement with a new endpoint,
+causes lane disagreement, or exposes another plausible omission. This uses the
+existing lanes and helper actions without adding a review state or schema field.
+
 The discovery packet also records a minimal closed set of evidence-backed
 prospective relationships: destination/base membership, access origin and target,
 domain/area membership, and pass availability/default/coverage. Relationship
@@ -151,16 +176,20 @@ completed graph-discovery checkpoint and after both semantic review lanes confir
 that report. The remote selected head, actual local head, checkpoint report path,
 immutable schema-v5 report, complete discovery status, and presence of at least one
 unavailable row must all match. A requested discovery correction is limited to a
-report-only descendant checkpoint followed by fresh review. The private disposition
-file is not replacement authority.
+report-only descendant checkpoint followed by the targeted correction review or
+its explicit full-review escalation. The private disposition file is not
+replacement authority.
 
 A complete discovery checkpoint exposes two typed semantic branches: the normal
 clean-review or evidence-unavailable action, and a separate report-only discovery
 correction action. The correction action remains derivable from persisted events
 and is also available after a delta checkpoint when fresh review discovers a graph
 blocker. It replaces candidate dispositions or prospective relationships only by
-checkpointing a monotonic report descendant and rerunning both independent review
-lanes; it does not authorize catalog or trust mutation.
+checkpointing a knowledge-monotonic report descendant and completing the targeted
+correction review or its explicit full-review escalation; it does not authorize
+catalog or trust mutation. A materialized relationship instead changes through the
+existing typed delta path that updates catalog and report together before the same
+fresh review gate.
 
 The reactive private inventory-completion lifecycle is retired for new generations:
 

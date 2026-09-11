@@ -511,7 +511,18 @@ Projection behavior becomes:
 discovery checkpoint. Repeated partial report-only checkpoints are allowed only on
 descendant heads within the same generation. After complete discovery, a
 reviewer-requested discovery correction may also create one report-only descendant
-checkpoint; both lanes then run again.
+checkpoint. Graph discovery is monotonic in discovery knowledge, not immutable in
+active topology: use only the typed discovery correction action for a prospective
+edge or typed delta remediation for a materialized edge, retain endpoints and
+evidence, and record `disproved`, `superseded`, or `scope_reclassified` in the
+assessment rationale. Uncertainty alone cannot authorize relationship removal.
+For a relationship-only change, the source-trust and graph-scope lanes perform a
+targeted correction review of the changed relationships, their endpoint
+assessments, evidence, focus-graph impact, and current-catalog closure without
+repeating unaffected discovery. Escalate to a fresh full dual review for a new
+candidate, source neighborhood, boundary, graph-impact, focus-topology,
+materialized-edge, or replacement-endpoint change, lane disagreement, or a
+plausible new omission.
 
 A time cutoff during discovery checkpoints partial progress and exits without a
 GitHub blocked label. A transport failure follows the existing helper recovery
@@ -553,7 +564,8 @@ After a complete graph-discovery checkpoint:
    that the declared candidates/results match the source meaning.
 4. Convert omissions or wrong dispositions into actionable finding families.
 5. For an unavailable packet, correct discovery only through a report-only
-   descendant graph checkpoint and rerun both lanes.
+   descendant graph checkpoint and rerun both lanes in full because unavailable
+   evidence is not a relationship-only correction.
 6. Once no unavailable rows remain, apply catalog/report/trust/backlog changes
    through the existing delta checkpoint and fresh-review loop. Every delta is
    compared with the immutable completed graph-discovery report, so remediation

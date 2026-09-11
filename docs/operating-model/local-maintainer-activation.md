@@ -309,9 +309,11 @@ The installed skill must:
   validates that caller-created remediation head on invocation, so this branch
   is registered authority rather than an inferred command. A graph-discovery
   finding instead uses only the returned `discovery_correction_action`: create
-  one report-only descendant, checkpoint graph discovery, and rerun both
-  source-trust and graph-scope lanes. The same branch is available after a delta
-  checkpoint when fresh review discovers a graph blocker;
+  one report-only descendant, checkpoint graph discovery, and run the targeted
+  independent source-trust and graph-scope correction review when only
+  established relationships changed. Escalate under the relationship-correction
+  rules below. The same branch is available after a delta checkpoint when fresh
+  review discovers a graph blocker;
 - before every discovery fixer, partition discovery findings from
   ordinary-remediation findings. Pass only report-owned candidate, evidence,
   relationship, source-neighborhood, and coverage corrections to the discovery
@@ -327,10 +329,10 @@ The installed skill must:
   either check exposes another path, do not invoke the checkpoint; regenerate
   the correction in a clean checkout rooted at the authoritative head, carrying
   only the report pair and preserving every non-report finding as open. Only
-  after the corrected checkpoint and both fresh review lanes may the retained
-  work enter ordinary remediation and `checkpoint_curation_delta`; use the
-  targeted regional-handoff delta path for additive regional report/backlog
-  follow-up;
+  after the corrected checkpoint and its required targeted or escalated review
+  may the retained work enter ordinary remediation and
+  `checkpoint_curation_delta`; use the targeted regional-handoff delta path for
+  additive regional report/backlog follow-up;
 - for that final broad suite, execute only the clean exact-base uv project,
   pytest configuration, conftest, and fixed absolute test modules. Supply the
   prepared catalog/trust paths only through the helper-derived data root and a
@@ -474,6 +476,29 @@ The installed skill must:
   later source is inconclusive. A complete row cannot regress. Candidate evidence
   must come from an appropriate source neighborhood for that candidate kind;
   supplemental dependency evidence alone is insufficient;
+- treat graph discovery as monotonic in discovery knowledge, not immutable in
+  active topology. A checkpointed prospective relationship may be removed or
+  replaced only through the generation's typed discovery correction action after
+  a reviewer names the exact edge, or through typed delta remediation when the
+  same change removes a materialized catalog edge. Retain the root/kind rows,
+  endpoint candidates, and evidence that supported or disproved the edge; record
+  `disproved`, `superseded`, or `scope_reclassified` in the affected assessment
+  rationale; include a replacement edge when superseded; and preserve validated
+  current-catalog closure. Both independent review perspectives still apply.
+  Uncertainty alone cannot authorize relationship removal. A focus-graph change
+  remains graph-blocking until ordinary remediation makes the resulting graph
+  valid. For a relationship-only correction whose endpoints and evidence already
+  exist, the existing source-trust and graph-scope lanes perform a targeted
+  correction review independently on the exact corrected head. They inspect only
+  the changed relationships, their endpoint assessments, evidence, focus-graph
+  impact, and current-catalog closure; they do not repeat unaffected candidate
+  enumeration or source-neighborhood research. Escalate to a fresh full dual
+  review if the correction adds a candidate or source neighborhood, changes a
+  candidate's disposition, `graph_impact`, or boundary, changes focus-graph
+  connectivity or a materialized catalog relationship, introduces a replacement
+  with a new endpoint, causes lane disagreement, or exposes another plausible
+  omission. The parent derives this scope from the exact report diff and finding;
+  do not add or infer another helper action, state, or schema field;
 - mark a coverage row `complete` only after its required source neighborhood
   has been investigated and all established candidates and prospective direct
   edges are recorded. If bounded authoritative research instead ends with a
@@ -490,8 +515,9 @@ The installed skill must:
   remediation only after unavailable rows have been resolved. A packet containing
   an unavailable row cannot enter mutation or final/proposal validation. If either
   review requests a discovery correction, use only the helper-returned
-  `discovery_correction_action`, checkpoint one report-only descendant, and rerun
-  both lanes. Continue this branch in the same cycle while the lease, deadline,
+  `discovery_correction_action`, checkpoint one report-only descendant, and run
+  the targeted relationship-correction review or its required full-review
+  escalation. Continue this branch in the same cycle while the lease, deadline,
   and helper state remain valid; `discovery-correction-requested` alone is not a
   terminal outcome. The action remains derivable for an exact persisted
   generation through `inspect curation` and `prepare curation`. Publish
@@ -908,6 +934,15 @@ For each schedule, confirm:
   changes it, the focus graph depends on it, or it remains unclear whether it
   belongs inside the focus graph. Prospective edges stay within one focus root
   and cannot chain regional-followup candidates;
+- relationship corrections preserve discovery knowledge rather than freezing
+  active topology: the exact edge changes only through a typed discovery-
+  correction or delta path, endpoints and evidence remain, the assessment names
+  an evidence-backed reason, supersession includes a replacement, catalog closure
+  stays valid, and both independent lanes perform the targeted exact-head
+  correction review. That review does not repeat unaffected enumeration or
+  research; any scope, topology, endpoint, or source-neighborhood change, lane
+  disagreement, or new plausible omission escalates to a fresh full dual review.
+  Inconclusive evidence cannot authorize removal;
 - a prospective `add_entity` candidate and its evidence-backed edges pass the
   report-only discovery checkpoint but fail strict delta/final validation until
   ordinary remediation materializes them; and

@@ -331,7 +331,7 @@ not have to derive an invocation.
         "next_action_source": "generation.discovery_correction_action",
         "next_recipe": "checkpoint_curation_graph_discovery",
         "allowed_from_stages": ["graph-discovery", "delta-validated"],
-        "after_checkpoint": "fresh-source-trust-and-graph-scope-review"
+        "after_checkpoint": "targeted-source-trust-and-graph-scope-correction-review"
       }
     },
     "reviewed_checkpoint_gate": "fresh-clean-exact-head-review",
@@ -494,7 +494,7 @@ not have to derive an invocation.
 | `prepare_curation*` | obey its typed action: checkpoint-recovery-required immediately retries only the persisted checkpoint action; prepared/discovery-required build or resume schema-v5 graph discovery; review-required enters the post-discovery semantic flow; validation-only resumes deterministic finalization; validation-remediation fixes only the recorded deterministic failure, uses any persisted bounded diagnostic only as untrusted debugging context, checkpoints the clean descendant through the typed delta action, and requires a fresh exact-head review |
 | `prepare_ci_repair` | branch on its phase: `repair-active` re-establishes the exact repair worktree for one static test-only repair plus a fresh focused independent review; `repair-reviewed` revalidates and returns the immutable reviewed checkpoint for publication |
 | `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
-| `checkpoint_curation_graph_discovery` | for `in_progress`, stop or resume later through returned `prepare_curation` without publishing a blocked label; for `complete`, run both independent semantic review lanes. `generation.next_action` is the clean-review or evidence-unavailable branch, while `generation.discovery_correction_action` is the only requested-graph-changes branch. Use that correction action for one report-only descendant graph checkpoint and then rerun both lanes; it remains derivable through inspection and preparation for persisted generations |
+| `checkpoint_curation_graph_discovery` | for `in_progress`, stop or resume later through returned `prepare_curation` without publishing a blocked label; for an initially `complete` packet, run both independent semantic review lanes. `generation.next_action` is the clean-review or evidence-unavailable branch, while `generation.discovery_correction_action` is the only requested-graph-changes branch. Use that correction action for one report-only descendant graph checkpoint and then run the targeted independent source-trust and graph-scope correction review, escalating under the rules below; the action remains derivable through inspection and preparation for persisted generations |
 | `checkpoint_curation_inventory_completion` | recovery only: finish the exact already-started legacy transaction; never initiate this recipe for a schema-v5 generation |
 | other `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
@@ -538,9 +538,10 @@ clean branch. A complete packet with unavailable rows returns the exact terminal
 clean branch instead. Both complete outcomes also return
 `generation.discovery_correction_action`. If either reviewer requests a discovery
 correction, use only that typed action for a report-only descendant and another
-graph-discovery checkpoint before both lanes run again. This is an ordinary
-same-cycle branch while time and helper state remain valid, not a terminal
-`discovery-correction-requested` outcome.
+graph-discovery checkpoint before the existing lanes perform the targeted or
+escalated review defined below. This is an ordinary same-cycle branch while time
+and helper state remain valid, not a terminal `discovery-correction-requested`
+outcome.
 
 Before every discovery fixer, partition discovery findings from
 ordinary-remediation findings. Give the discovery fixer only omissions or
@@ -557,11 +558,11 @@ inspect the cumulative diff from the helper-authoritative previous head. It must
 contain exactly the canonical JSON/Markdown report pair. If either scope check
 fails, do not call the checkpoint; regenerate the correction in a clean checkout
 rooted at the authoritative head, carrying only the report pair and keeping
-every non-report finding open. After the corrected discovery checkpoint and both
-fresh review lanes, route those retained findings through ordinary remediation
-and `checkpoint_curation_delta`. Use the existing targeted regional-handoff
-delta path when the retained work is only additive regional report/backlog
-follow-up.
+every non-report finding open. After the corrected discovery checkpoint and its
+required targeted or escalated review, route those retained findings through
+ordinary remediation and `checkpoint_curation_delta`. Use the existing targeted
+regional-handoff delta path when the retained work is only additive regional
+report/backlog follow-up.
 
 For `review-required`, the returned `next_action` is the **clean-review branch**
 for the current generation; it never authorizes marking a head with open
@@ -578,9 +579,11 @@ review is required after the delta checkpoint before
 If a fresh post-delta review instead discovers a graph blocker, ordinary delta
 remediation must stop. Use the generation's typed `discovery_correction_action`
 for one report-only descendant, compare it with the retained immutable discovery
-authority, checkpoint it as graph discovery, and rerun both independent lanes.
-The correction may change candidate dispositions and prospective relationships,
-but it may not erase established discovery coverage or candidates.
+authority, and checkpoint it as graph discovery. Run the targeted independent
+correction review when only established relationships changed; otherwise run the
+full review required below. The correction may change candidate dispositions and
+prospective relationships, but it may not erase established discovery coverage or
+candidates.
 
 For `validation-remediation`, the previously reviewed head is immutable
 semantic history and the bounded correction starts from that exact restored
@@ -625,13 +628,40 @@ after stronger evidence is added. Candidate evidence must come from a source fam
 appropriate to that candidate kind; an unrelated supplemental family cannot carry
 the conclusion.
 
-Discovery covers the complete direct trip graph plus one hop through a regional
-pass or shared-domain edge. It does not recursively expand an external
-destination. The owning stay destination at that one-hop boundary is recorded,
-but its bases and access edges are not expanded. Prospective relationships are
-scoped to one focus root and cannot join two regional-followup candidates. If a
-changed edge depends on that destination's internal graph, add the destination as
-another explicit focus root and give it all six coverage rows.
+Graph discovery is monotonic in discovery knowledge, not immutable in active
+topology. A checkpointed prospective relationship may be removed or replaced only
+through the generation's typed discovery correction action after a reviewer names
+the exact edge, or through typed delta remediation when the same change removes a
+materialized catalog edge. Retain the root/kind rows, endpoint candidates, and
+evidence that supported or disproved the edge; record `disproved`, `superseded`,
+or `scope_reclassified` in the affected assessment rationale; include a
+replacement edge when superseded; and preserve validated current-catalog closure.
+Both independent review perspectives still apply. Uncertainty alone cannot
+authorize relationship removal. A focus-graph change remains graph-blocking until
+ordinary remediation makes the resulting graph valid.
+
+For a relationship-only correction whose endpoints and evidence already exist,
+the existing source-trust and graph-scope lanes perform a targeted correction
+review independently on the exact corrected head. They inspect only the changed
+relationships, their endpoint assessments, evidence, focus-graph impact, and
+current-catalog closure; they do not repeat unaffected candidate enumeration or
+source-neighborhood research. Escalate to a fresh full dual review if the
+correction adds a candidate or source neighborhood, changes a candidate's
+disposition, `graph_impact`, or boundary, changes focus-graph connectivity or a
+materialized catalog relationship, introduces a replacement with a new endpoint,
+causes lane disagreement, or exposes another plausible omission. The parent derives
+this review scope from the exact report diff and reviewer finding; no helper action,
+state, or schema field is added.
+
+Follow cross-boundary pass, domain, or umbrella references only far enough to
+classify their effect on the selected focus graph. For an item classified
+`regional_followup`, record the external product or network, its direct
+relationship to the focus root, authoritative evidence, and a canonical follow-up
+owner. Do not require individual external members or their owning stay
+destinations. Promote an external entity into full discovery only when the selected
+PR changes it, the focus graph depends on it, or it remains unclear whether it
+belongs inside the focus graph. Prospective relationships remain scoped to one
+focus root and cannot join two regional-followup candidates.
 
 Codex checkpoints discovery with `checkpoint_curation_graph_discovery`. The
 helper verifies the exact generation, head, base, schema-v5 report, deterministic
@@ -640,9 +670,9 @@ paths must remain unchanged. An `in_progress` checkpoint is durable and returns
 `prepare_curation`, allowing a later cycle to restore and continue the exact
 report. It creates no GitHub blocked label. A `complete` checkpoint allows the
 independent source-trust and graph-scope lanes to begin. A reviewer-requested
-discovery correction is checkpointed as another report-only descendant and
-re-reviewed. Delta, reviewed, final, and proposal validation require complete
-discovery and reject unavailable rows.
+discovery correction is checkpointed as another report-only descendant and gets
+the targeted or escalated review above. Delta, reviewed, final, and proposal
+validation require complete discovery and reject unavailable rows.
 
 The initial graph-discovery checkpoint may reuse the prepared head when that head
 already contains a valid schema-v5 JSON/Markdown pair. This exception is explicit,

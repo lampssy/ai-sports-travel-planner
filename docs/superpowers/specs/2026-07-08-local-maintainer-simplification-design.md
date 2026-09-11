@@ -55,11 +55,31 @@ the discovery commit, and the cumulative diff from the helper-authoritative
 previous head must contain exactly the canonical JSON/Markdown report pair
 before checkpointing. A mismatched correction is regenerated in a clean checkout
 rooted at the authoritative head, carrying only the report pair and keeping
-every non-report finding open. After that checkpoint and both fresh review
-lanes, retained catalog, trust, backlog, focused-test, and other owned-file
-findings proceed through `checkpoint_curation_delta`. Additive regional
-report/backlog follow-up uses its existing targeted delta and consistency-review
-path.
+every non-report finding open. After that checkpoint and its required targeted
+or escalated review, retained catalog, trust, backlog, focused-test, and other
+owned-file findings proceed through `checkpoint_curation_delta`. Additive
+regional report/backlog follow-up uses its existing targeted delta and
+consistency-review path.
+
+Graph discovery is monotonic in discovery knowledge, not immutable in active
+topology. A checkpointed prospective relationship may be removed or replaced
+only through the generation's typed discovery correction action after a reviewer
+names the exact edge, or through typed delta remediation for a materialized
+catalog edge. Retain its endpoints and evidence; record `disproved`,
+`superseded`, or `scope_reclassified`; require a replacement when superseded;
+and preserve current-catalog closure. Uncertainty alone cannot authorize
+relationship removal. For a relationship-only correction whose endpoints and
+evidence already exist, the existing source-trust and graph-scope lanes perform a
+targeted correction review independently on the exact corrected head. They
+inspect only the changed relationships, their endpoint assessments, evidence,
+focus-graph impact, and current-catalog closure; they do not repeat unaffected
+candidate enumeration or source-neighborhood research. Escalate to a fresh full
+dual review if the correction adds a candidate or source neighborhood, changes a
+candidate's disposition, `graph_impact`, or boundary, changes focus-graph
+connectivity or a materialized catalog relationship, introduces a replacement
+with a new endpoint, causes lane disagreement, or exposes another plausible
+omission. This reuses the existing lanes and helper actions without another
+review state or schema field.
 
 ## User Outcome
 

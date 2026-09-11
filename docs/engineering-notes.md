@@ -46,17 +46,30 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   or owning stay destinations. An external entity becomes another focus root only
   when the selected PR changes it, the focus graph depends on it, or its membership
   in the focus graph remains unclear. ADR 0025 owns this boundary.
-- Partial checkpoints are monotonic: prior rows and candidates cannot disappear,
-  coverage states cannot regress, and candidate conclusions require evidence from
-  an allowed source family for that candidate kind.
+- Partial checkpoints are monotonic in discovery knowledge: prior rows and
+  candidates cannot disappear, coverage states cannot regress, and candidate
+  conclusions require evidence from an allowed source family for that candidate
+  kind. Active prospective relationships may still be corrected through the
+  existing typed discovery-correction or delta paths when the exact old edge,
+  evidence-backed `disproved`, `superseded`, or `scope_reclassified` rationale,
+  retained endpoints/evidence, replacement when applicable, catalog closure, and
+  an exact-head targeted correction review by the independent source-trust and
+  graph-scope lanes make the change auditable. That review inspects only the
+  changed relationships, their endpoint assessments, evidence, focus-graph impact,
+  and current-catalog closure. Escalate to a fresh full dual review only when scope,
+  topology, endpoints, or source neighborhoods change, the lanes disagree, or a
+  new omission appears. This avoids freezing a disproved topology or repeating
+  unaffected discovery without adding another report schema or helper lifecycle.
 - A partial report is checkpointed without a GitHub blocked label and resumes
   from its exact head in a later cycle. Semantic review starts only after every
   required row leaves `in_progress`.
 - A complete discovery checkpoint has separate typed clean-review and
   graph-correction actions. Review-requested graph changes use a report-only
-  descendant and rerun both lanes, including when a later post-delta review
-  discovers the graph issue. Existing generation events derive this action, so
-  activation needs no state migration.
+  descendant and run the targeted independent correction review, including when a
+  later post-delta review exposes the graph issue; use the full-review escalation
+  rules above when its diff changes more than the established relationship.
+  Existing generation events derive this action, so activation needs no state
+  migration.
 - Interrupted checkpoint completion returns through ordinary preparation so the
   helper rechecks current `main` and the remote PR head before semantic work. A
   missing checkpoint ref or confirmed remote-head drift invalidates the stale

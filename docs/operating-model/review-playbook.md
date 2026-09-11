@@ -274,6 +274,16 @@ JSON/Markdown report pair. After the helper accepts that checkpoint and both
 independent review lanes have completed, route the retained findings through
 normal remediation and `checkpoint_curation_delta`.
 
+When the correction changes only established relationships whose endpoints and
+evidence already exist, keep both lanes independent but use a targeted correction
+review. Inspect only the changed relationships, their endpoint assessments,
+evidence, focus-graph impact, and current-catalog closure instead of repeating
+unaffected enumeration or research. Escalate to a fresh full dual review if the
+correction adds a candidate or source neighborhood, changes a candidate's
+disposition, `graph_impact`, or boundary, changes focus-graph connectivity or a
+materialized catalog relationship, introduces a replacement with a new endpoint,
+causes lane disagreement, or exposes another plausible omission.
+
 For medium/high-risk changes, final handoff should include:
 
 - fast path or review-gated classification

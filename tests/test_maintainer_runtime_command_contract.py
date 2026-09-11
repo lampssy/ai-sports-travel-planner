@@ -33,6 +33,14 @@ FULL_GRAPH_DISCOVERY_DESIGN_PATH = (
     REPOSITORY_ROOT / "docs/superpowers/specs/"
     "2026-09-07-maintainer-full-graph-discovery-design.md"
 )
+FULL_GRAPH_DISCOVERY_PLAN_PATH = (
+    REPOSITORY_ROOT / "docs/superpowers/plans/"
+    "2026-09-07-maintainer-full-graph-discovery.md"
+)
+FULL_GRAPH_DISCOVERY_ADR_PATH = (
+    REPOSITORY_ROOT
+    / "docs/architecture/adr/0024-require-durable-full-graph-discovery.md"
+)
 FOCUS_IMPACT_BOUNDARY_ADR_PATH = (
     REPOSITORY_ROOT
     / "docs/architecture/adr/0025-bound-cross-boundary-discovery-by-focus-impact.md"
@@ -514,7 +522,9 @@ def test_runtime_contract_freezes_review_disposition_branches() -> None:
                 "next_action_source": "generation.discovery_correction_action",
                 "next_recipe": "checkpoint_curation_graph_discovery",
                 "allowed_from_stages": ["graph-discovery", "delta-validated"],
-                "after_checkpoint": ("fresh-source-trust-and-graph-scope-review"),
+                "after_checkpoint": (
+                    "targeted-source-trust-and-graph-scope-correction-review"
+                ),
             },
         },
         "reviewed_checkpoint_gate": "fresh-clean-exact-head-review",
@@ -946,6 +956,7 @@ def test_per_cycle_sources_use_the_short_runtime_contract() -> None:
 
 def test_cross_boundary_regional_followups_stop_at_focus_impact() -> None:
     sources = {
+        "runtime contract": CONTRACT_PATH,
         "activation": ACTIVATION_PATH,
         "simplification design": DESIGN_PATH,
         "full graph discovery design": FULL_GRAPH_DISCOVERY_DESIGN_PATH,
@@ -971,6 +982,61 @@ def test_cross_boundary_regional_followups_stop_at_focus_impact() -> None:
     ):
         text = " ".join(source.read_text(encoding="utf-8").split()).lower()
         assert "recorded with its owning stay destination" not in text, source
+
+
+def test_graph_relationship_corrections_preserve_knowledge_not_active_topology() -> (
+    None
+):
+    sources = {
+        "runtime contract": CONTRACT_PATH,
+        "activation": ACTIVATION_PATH,
+        "simplification design": DESIGN_PATH,
+        "full graph discovery design": FULL_GRAPH_DISCOVERY_DESIGN_PATH,
+        "full graph discovery plan": FULL_GRAPH_DISCOVERY_PLAN_PATH,
+        "full graph discovery ADR": FULL_GRAPH_DISCOVERY_ADR_PATH,
+        "focus-impact ADR": FOCUS_IMPACT_BOUNDARY_ADR_PATH,
+    }
+    required_policy = (
+        "monotonic in discovery knowledge, not immutable in active topology",
+        "typed discovery correction action",
+        "disproved, superseded, or scope_reclassified",
+        "uncertainty alone cannot authorize relationship removal",
+    )
+
+    for source, path in sources.items():
+        text = " ".join(
+            path.read_text(encoding="utf-8").replace("`", "").split()
+        ).lower()
+        for expected in required_policy:
+            assert expected in text, source
+
+
+def test_relationship_corrections_use_targeted_dual_review_with_full_escalation() -> (
+    None
+):
+    sources = {
+        "runtime contract": CONTRACT_PATH,
+        "activation": ACTIVATION_PATH,
+        "simplification design": DESIGN_PATH,
+        "full graph discovery design": FULL_GRAPH_DISCOVERY_DESIGN_PATH,
+        "full graph discovery plan": FULL_GRAPH_DISCOVERY_PLAN_PATH,
+        "full graph discovery ADR": FULL_GRAPH_DISCOVERY_ADR_PATH,
+        "focus-impact ADR": FOCUS_IMPACT_BOUNDARY_ADR_PATH,
+        "review playbook": REVIEW_PLAYBOOK_PATH,
+    }
+    required_policy = (
+        "targeted correction review",
+        "changed relationships, their endpoint assessments, evidence, focus-graph "
+        "impact, and current-catalog closure",
+        "escalate to a fresh full dual review",
+    )
+
+    for source, path in sources.items():
+        text = " ".join(
+            path.read_text(encoding="utf-8").replace("`", "").split()
+        ).lower()
+        for expected in required_policy:
+            assert expected in text, source
 
 
 def test_checked_in_sources_separate_discovery_corrections_from_remediation() -> None:

@@ -1365,6 +1365,49 @@ def test_graph_discovery_progression_rejects_candidate_loss() -> None:
         validate_catalog_graph_discovery_progression(previous, current)
 
 
+def test_graph_discovery_progression_allows_relationship_correction() -> None:
+    previous_payload = _schema_five_graph_report_payload()
+    current_payload = deepcopy(previous_payload)
+    removed_relationship = current_payload["graph_discovery"]["relationships"].pop()
+
+    previous = CatalogCurationReport.model_validate(previous_payload)
+    current = CatalogCurationReport.model_validate(current_payload)
+
+    assert (
+        removed_relationship not in current_payload["graph_discovery"]["relationships"]
+    )
+    assert (
+        current_payload["graph_discovery"]["coverage"]
+        == previous_payload["graph_discovery"]["coverage"]
+    )
+    validate_catalog_graph_discovery_progression(previous, current)
+
+
+def test_graph_discovery_rejects_relationship_between_regional_followups() -> None:
+    payload = _schema_five_graph_report_payload()
+    for assessment in payload["entity_scope_assessments"]:
+        if assessment["candidate_id"] not in {"example-area", "example-local-pass"}:
+            continue
+        assessment["disposition"] = "deferred"
+        assessment["graph_impact"] = "regional_followup"
+        assessment["backlog_ref"] = "docs/product-backlog.md#regional-network"
+        if assessment["candidate_kind"] == "ski_area":
+            assessment["ski_area_boundary"]["separation_value"] = "unresolved"
+    report = CatalogCurationReport.model_validate(payload)
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="regional-followup candidates cannot expand another regional-followup",
+    ):
+        validate_catalog_graph_discovery(
+            report,
+            catalog,
+            require_complete=True,
+            allow_pending_scope_changes=True,
+        )
+
+
 def test_graph_discovery_rejects_wrong_relationship_endpoint_kind() -> None:
     payload = _schema_five_graph_report_payload()
     relationship = payload["graph_discovery"]["relationships"][0]
