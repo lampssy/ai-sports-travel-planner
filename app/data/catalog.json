@@ -1756,14 +1756,14 @@
       "regional_data_ids": {
         "osm_relation_id": "47273"
       },
-      "elevation_m": null,
+      "elevation_m": 1816,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4183,8 +4183,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 4,
         "season_label": null
       },
       "night_skiing": {
@@ -4196,10 +4196,12 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.skipasslivigno.com/en/maps/"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
