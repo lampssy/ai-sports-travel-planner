@@ -215,6 +215,74 @@ The selected Val Gardena graph keeps shared 181 km/79-lift inventory on the
 modeled pass, not on the narrower weather-owning ski-area record. No Seiser Alm
 terrain domain or access edge is modeled until the linked graph is complete.
 
+### Chamonix Valley Catalog Follow-ups
+
+Status: candidate
+Area: Data Trust
+Source: Chamonix Valley graph and source-trust review; PR #33
+
+Next bounded slice:
+
+- Curate the six source-backed low-altitude beginner areas as one coordinated
+  regional batch, including each complete weather-owner boundary, its direct
+  stay-base access edge, and its exact local or partial-area pass product.
+
+Candidate inventory:
+
+- `ski_area:les-planards`, `ski_area:les-chosalets`, `ski_area:la-poya`,
+  `ski_area:la-vormaine`, and `ski_area:le-tourchet` have official complete-area
+  and local-product signals, but adding all five complete weather/access/pass
+  graphs would make the active Brévent-Flégère and stay-market migration
+  unmanageably broad.
+- `ski_area:le-savoy` requires a focused boundary review against Brévent because
+  the operator presents it as a low-altitude beginner area at the foot of the
+  Planpraz access rather than as an independently weather-owned area.
+- `stay_base:chamonix-mont-blanc-planards`,
+  `stay_base:chamonix-mont-blanc-chosalets`, `stay_base:vallorcine-le-buet`,
+  `stay_base:chamonix-mont-blanc-les-tines`, and
+  `stay_base:chamonix-mont-blanc-les-bossons` have direct official lodging or
+  locality evidence, but their complete stay-market ownership and ski-area
+  access provenance must be reviewed before any graph addition.
+- La Vormaine, Le Tourchet, and Le Savoy are not separate stay bases: official
+  location evidence assigns their access to the existing Le Tour, Les Houches,
+  and Chamonix stay bases respectively.
+- `ski_area_access:chamonix-mont-blanc-planards--les-planards`,
+  `ski_area_access:chamonix-mont-blanc-chosalets--les-chosalets`,
+  `ski_area_access:vallorcine-le-buet--la-poya`,
+  `ski_area_access:chamonix-mont-blanc-le-tour--la-vormaine`,
+  `ski_area_access:chamonix-mont-blanc-les-houches--le-tourchet`, and
+  `ski_area_access:chamonix-mont-blanc-chamonix--le-savoy` require exact
+  endpoint ownership and direct access provenance in the same future batch.
+- `lift_pass_product:les-planards-local`,
+  `lift_pass_product:les-chosalets-local`, `lift_pass_product:la-poya-local`,
+  `lift_pass_product:la-vormaine-local`,
+  `lift_pass_product:le-tourchet-local`, and
+  `lift_pass_product:le-savoy-local` need exact full-local versus limited-area
+  scope and representative tariff review; shared CHAMONIX Le Pass or MONT BLANC
+  Unlimited validity does not replace those product boundaries.
+- `stay_destination:saint-gervais`, `stay_base:saint-gervais-le-fayet`, and
+  `ski_area_access:saint-gervais-le-fayet--les-houches-saint-gervais` form a
+  separate accommodation/access graph whose internal Saint-Gervais topology
+  must not be absorbed into Chamonix or Les Houches.
+- `stay_destination:servoz` and `stay_base:servoz-servoz` have a source-backed
+  stay market, but no direct ski-area edge is yet established for an active
+  Snowcast graph.
+
+Weather handoff:
+
+- Every newly accepted small-area ski ID starts its own archive and climatology
+  history through scheduled Complete Historical Weather after merge; do not
+  migrate data from Balme, Brévent, Flégère, Grands Montets, or Les
+  Houches-Saint-Gervais merely because a beginner area is nearby.
+
+Not now:
+
+- Do not create a broad Chamonix terrain domain from pass-only coverage; only
+  the lift-connected Brévent-Flégère pair currently supports a connected
+  domain.
+- Keep Plateau 2000, the Flégère beginner sector, Plateau de Lognan, and the
+  Bellevue/Prarion sectors inside their reviewed parent ski-area owners.
+
 ### Alta Badia and Regional Catalog Refinements
 
 Status: parked
