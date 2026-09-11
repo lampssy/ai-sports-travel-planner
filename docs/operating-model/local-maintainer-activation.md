@@ -81,9 +81,9 @@ mismatch that cannot be resolved from the concise runtime source set.
    maintainer, catalog-curation, and catalog-review skills with the merged
    schema-v5 graph-discovery contract. Require six per-root candidate kinds,
    candidate/source/evidence closure, prospective relationships, partial
-   checkpoint resumption, bounded one-hop regional expansion, exact unavailable-
-   evidence publication, and semantic review only after complete discovery. On
-   any mismatch, keep both schedules paused as contract-mismatch.
+   checkpoint resumption, bounded focus-impact regional assessment, exact
+   unavailable-evidence publication, and semantic review only after complete
+   discovery. On any mismatch, keep both schedules paused as contract-mismatch.
 8. Run disabled/manual curation and discovery smoke cycles. Confirm curation can
    distinguish post-push CI, one current generation, and ordinary recovery, and
    discovery uses regional backlog work before external scanning without
@@ -372,17 +372,28 @@ The installed skill must:
   catalog closure for that root. Primary graph entities use
   `resulting_graph_role=focus`; an entity from another stay market reached only
   through a regional pass, marketing umbrella, or shared domain remains a
-  non-recursive `linked_dependency` regional follow-up. If the selected diff
-  creates or changes an edge that depends on that external graph, make its stay
-  destination another explicit focus root and complete all six rows;
+  non-recursive `linked_dependency` regional follow-up. Follow cross-boundary
+  pass, domain, or umbrella references only far enough to classify their effect
+  on the selected focus graph. For an item classified `regional_followup`,
+  record the external product or network, its direct relationship to the focus
+  root, authoritative evidence, and a canonical follow-up owner. Do not require
+  individual external members or their owning stay destinations. Promote an
+  external entity into full discovery only when the selected PR changes it, the
+  focus graph depends on it, or it remains unclear whether it belongs inside the
+  focus graph. A direct focus relationship is an allowed edge to the root or an
+  admitted focus entity, such as pass availability from the destination, pass
+  coverage of its ski area, or domain membership of its ski area;
 - bound source research to the focus root's direct trip graph: its bookable
   stay market, primary lift-served ski options, access edges, containing terrain
-  domains, and locally available/default or directly covering passes. Follow
-  each admitted edge one hop to assess its other endpoint. Every coverage row
-  references the appropriate authoritative source neighborhood and direct
-  evidence. The helper validates structure and current-catalog closure; the
-  independent reviewers remain responsible for deciding whether the source is
-  authoritative and the real-world enumeration is complete;
+  domains, and locally available/default or directly covering passes. Use a
+  cross-boundary source only to decide whether the adjacent item changes that
+  focus graph. A source-named regional member list may remain evidence and
+  follow-up context without becoming candidate assessments or prospective
+  relationships in the selected PR. Every coverage row references the
+  appropriate authoritative source neighborhood and direct evidence. The helper
+  validates structure and current-catalog closure; the independent reviewers
+  remain responsible for deciding whether the source is authoritative and the
+  focus-graph enumeration is complete;
 - for every catalog entity absent from the exact base, apply the new-entity
   completeness gate before freezing the evidence envelope. Enumerate every
   canonical field and required graph relationship, then perform a bounded
@@ -888,11 +899,15 @@ For each schedule, confirm:
   reviewed checkpoint, proposal publication, or final validation. Only the
   exact immutable graph checkpoint can authorize the bounded unavailable-
   evidence outcome;
-- a one-hop regional pass, marketing umbrella, or shared-domain dependency is
-  recorded with its owning stay destination, without recursively expanding that
-  destination's bases or access graph unless the selected diff creates or changes
-  an edge that depends on that graph. Prospective edges stay within one focus root
-  and cannot chain two regional-followup candidates;
+- cross-boundary pass, domain, or umbrella references are followed only far
+  enough to classify their effect on the selected focus graph. A
+  `regional_followup` records the external product or network, its direct focus
+  relationship, authoritative evidence, and canonical follow-up owner. Do not
+  require individual external members or their owning stay destinations.
+  Promote an external entity into full discovery only when the selected PR
+  changes it, the focus graph depends on it, or it remains unclear whether it
+  belongs inside the focus graph. Prospective edges stay within one focus root
+  and cannot chain regional-followup candidates;
 - a prospective `add_entity` candidate and its evidence-backed edges pass the
   report-only discovery checkpoint but fail strict delta/final validation until
   ordinary remediation materializes them; and

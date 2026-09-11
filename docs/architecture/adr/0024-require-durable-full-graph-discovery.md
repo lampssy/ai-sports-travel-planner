@@ -6,7 +6,8 @@ Date: 2026-09-07
 Supersedes: the reactive inventory-completion portion of
 `docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md`
 
-Superseded by: N/A
+Superseded by: ADR 0025 for the cross-boundary expansion rule; all other
+decisions remain accepted
 
 Related ADRs:
 

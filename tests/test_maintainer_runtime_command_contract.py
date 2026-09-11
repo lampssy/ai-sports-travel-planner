@@ -33,6 +33,10 @@ FULL_GRAPH_DISCOVERY_DESIGN_PATH = (
     REPOSITORY_ROOT / "docs/superpowers/specs/"
     "2026-09-07-maintainer-full-graph-discovery-design.md"
 )
+FOCUS_IMPACT_BOUNDARY_ADR_PATH = (
+    REPOSITORY_ROOT
+    / "docs/architecture/adr/0025-bound-cross-boundary-discovery-by-focus-impact.md"
+)
 REVIEW_PLAYBOOK_PATH = REPOSITORY_ROOT / "docs/operating-model/review-playbook.md"
 ENGINEERING_NOTES_PATH = REPOSITORY_ROOT / "docs/engineering-notes.md"
 CONTRACT_PATTERN = re.compile(
@@ -938,6 +942,35 @@ def test_per_cycle_sources_use_the_short_runtime_contract() -> None:
     for source in (normalized_activation, normalized_design):
         assert "must execute exactly one corrected attempt" in source
         assert "second dispatch rejection" in source
+
+
+def test_cross_boundary_regional_followups_stop_at_focus_impact() -> None:
+    sources = {
+        "activation": ACTIVATION_PATH,
+        "simplification design": DESIGN_PATH,
+        "full graph discovery design": FULL_GRAPH_DISCOVERY_DESIGN_PATH,
+        "focus-impact ADR": FOCUS_IMPACT_BOUNDARY_ADR_PATH,
+    }
+    required_policy = (
+        "only far enough to classify their effect on the selected focus graph",
+        "do not require individual external members or their owning stay destinations",
+        "promote an external entity into full discovery only when the selected pr "
+        "changes it, the focus graph depends on it, or it remains unclear whether "
+        "it belongs inside the focus graph",
+    )
+
+    for source, path in sources.items():
+        text = " ".join(path.read_text(encoding="utf-8").split()).lower()
+        for expected in required_policy:
+            assert expected in text, source
+
+    for source in (
+        ACTIVATION_PATH,
+        DESIGN_PATH,
+        FULL_GRAPH_DISCOVERY_DESIGN_PATH,
+    ):
+        text = " ".join(source.read_text(encoding="utf-8").split()).lower()
+        assert "recorded with its owning stay destination" not in text, source
 
 
 def test_checked_in_sources_separate_discovery_corrections_from_remediation() -> None:

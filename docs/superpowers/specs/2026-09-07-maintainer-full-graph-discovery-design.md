@@ -2,10 +2,13 @@
 
 ## Status
 
-- Status: implemented and feature-reviewed; activation remains pending merge
+- Status: implemented and activated; the 2026-09-11 focus-impact amendment is
+  implemented in the repository with post-merge skill activation pending
 - Owner: solo-builder
 - Related plan: `docs/superpowers/plans/2026-09-07-maintainer-full-graph-discovery.md`
 - Related ADR: `docs/architecture/adr/0024-require-durable-full-graph-discovery.md`
+- Expansion-boundary ADR:
+  `docs/architecture/adr/0025-bound-cross-boundary-discovery-by-focus-impact.md`
 - Existing boundary ADRs:
   - `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md`
   - `docs/architecture/adr/0016-require-evidence-owner-boundaries-for-ski-areas.md`
@@ -188,16 +191,25 @@ candidate enters that graph when an authoritative source presents it as:
 - a locally available/default pass or a pass directly covering an admitted area or
   domain.
 
-Each admitted edge is followed one hop to identify and assess its other endpoint.
-An external destination reached only through a regional pass, marketing umbrella,
-or shared domain is recorded as a non-recursive regional-follow-up candidate; its
-internal graph is not automatically expanded.
+Follow cross-boundary pass, domain, or umbrella references only far enough to
+classify their effect on the selected focus graph. For an item classified
+`regional_followup`, record the external product or network, its direct
+relationship to the focus root, authoritative evidence, and a canonical follow-up
+owner. Do not require individual external members or their owning stay
+destinations. Promote an external entity into full discovery only when the selected
+PR changes it, the focus graph depends on it, or it remains unclear whether it
+belongs inside the focus graph.
 
-If the selected PR creates or changes an edge whose validity depends on that
-external destination's internal graph, the external destination must become an
-explicit focus root and receive all six coverage rows. This separates complete
-local discovery from unbounded regional research while preventing new edges from
-depending on unreviewed graphs.
+The direct focus relationship is an allowed graph edge to the root destination or
+an admitted focus entity. Examples include pass availability from the destination,
+pass coverage of its ski area, or domain membership of its ski area.
+
+Source-named external members may be retained as evidence or follow-up context
+without becoming candidate assessments or prospective relationships in the
+selected PR. When an external entity is promoted, it becomes an explicit focus root
+and receives all six coverage rows. This separates complete local discovery from
+unbounded regional research while preventing selected graph edges from depending
+on unreviewed graphs.
 
 ## Source Neighborhoods
 
@@ -293,9 +305,11 @@ cannot regress, and unavailable coverage can only stay unavailable or be replace
 by complete coverage backed by stronger evidence. Candidate conclusions must share
 direct evidence with a source family allowed for their own candidate kind.
 
-The one-hop boundary includes the stay destination that owns access to a linked
-area, but not that destination's internal bases or access edges. Relationships are
-root-scoped and cannot chain two regional-followup candidates into a recursive
+Cross-boundary assessment stops after the external product or network, its direct
+focus relationship, authoritative evidence, and follow-up owner establish that it
+is a `regional_followup`. Individual external members and owning stay destinations
+are not required unless an entity is promoted into full discovery. Relationships
+remain root-scoped and cannot chain regional-followup candidates into a recursive
 external graph.
 
 A time cutoff during discovery preserves a partial checkpoint without publishing a
@@ -336,12 +350,13 @@ obsolete semantic or mutation authority.
   - resolved in first approval: canonical schema-v5 ownership, partial resumption,
     retained dual review, active-report normalization, and inventory-loop
     retirement;
-  - revised decisions approved: partial-candidate preservation, direct
-    one-hop expansion, typed topology/evidence closure, and explicit
-    unavailable/legacy/rollback authority;
+  - revised decisions approved: partial-candidate preservation, typed
+    topology/evidence closure, explicit unavailable/legacy/rollback authority,
+    and focus-impact cross-boundary assessment under ADR 0025;
   - accepted assumptions: historical reports remain read-only compatible;
   - unresolved: none.
-- ADR status: ADR 0024 accepted.
+- ADR status: ADR 0024 accepted; its cross-boundary expansion rule is superseded
+  by accepted ADR 0025.
 - Advisory design review:
   - reviewers: core panel, with emphasis on backend/API, data trust/source
     integrity, observability/ops, and release/change management;
@@ -351,6 +366,14 @@ obsolete semantic or mutation authority.
     release/change management;
   - status: completed; actionable findings were addressed and focused re-review
     found no remaining Blocker, High, or Medium issue.
+- 2026-09-11 focus-impact amendment review:
+  - owner decision: approved in conversation after comparing full one-hop owner
+    closure, focus-impact closure, and numeric caps;
+  - advisory design review: data trust/source integrity completed with the direct
+    focus-edge clarification incorporated;
+  - advisory feature review: data trust/source integrity completed with no
+    remaining Blocker, High, or Medium finding; post-merge installed-skill
+    activation remains the release boundary.
 
 ## Developer Decision Checkpoints
 
@@ -360,7 +383,7 @@ obsolete semantic or mutation authority.
 | Technical | Partial progress | Determines interruption recovery and repeat research | Durable partial checkpoint adds one stage; restart is simpler but wasteful | Durable `in_progress` checkpoint | Existing generation refs can safely carry the report-only state | ADR 0024 |
 | Mixed | Review topology | Controls confidence and workflow complexity | Keep dual semantic review after discovery; adding a third lane duplicates work | Retain two lanes, remove inventory loop | Preserves semantic defense without another review layer | Runtime contract |
 | Technical | Migration | Controls compatibility and activation risk | Bulk rewrite is noisy; lazy normalization limits scope | Normalize active reports, parse v1-v4 | Appropriate for an internal pre-public product | Activation guide |
-| Product / Domain | Expansion boundary | Prevents both shallow local review and unbounded pass-network research | Recursive regional closure is exhaustive but impractical; known-graph closure is too narrow | Complete direct trip graph, one-hop external assessment, explicit root promotion for edited dependent edges | Gives “full graph” an objective stopping rule | ADR 0024 |
+| Product / Domain | Expansion boundary | Prevents both shallow local review and unbounded pass-network research | Full external member closure is exhaustive but can make an unrelated network block a focus PR; known-graph closure is too narrow | Complete direct trip graph, focus-impact cross-boundary assessment, explicit promotion when the selected PR changes or depends on the external entity | Gives “full graph” an objective, relevance-based stopping rule | ADR 0025 |
 | Mixed | Partial evidence and topology | Determines whether the packet can represent known candidates and their proposed graph honestly | Exclusive outcomes lose partial facts; IDs alone hide topology | Separate coverage state from candidates and add typed evidence-backed edges | Adds the minimum structure needed for a reviewable graph | ADR 0024 |
 | Technical | Unavailable and legacy authority | Controls safe terminal publication, upgrade, and rollback | Skill-only prose is simpler but not recoverable | Exact checkpoint gate plus recovery-only legacy shim and forward-compatible repair | Preserves helper authority without retaining the old normal flow | Runtime contract |
 
@@ -371,10 +394,12 @@ obsolete semantic or mutation authority.
 - Discovery completion precedes ordinary semantic review.
 - Partial discovery is a report-only generation checkpoint.
 - Coverage state is independent from candidate enumeration.
-- The discovery boundary is the direct trip graph plus one-hop external assessment.
+- The discovery boundary is the direct trip graph plus focus-impact
+  cross-boundary assessment.
 - Prospective graph relationships and candidate evidence are typed.
 - Diff causality limits mutation and blocking scope, not discovery scope.
-- ADR required: `0024-require-durable-full-graph-discovery.md`.
+- ADRs required: `0024-require-durable-full-graph-discovery.md` and
+  `0025-bound-cross-boundary-discovery-by-focus-impact.md`.
 - Revisit if discovery becomes machine-acquired from a stable authoritative graph
   provider or report size becomes operationally material.
 
@@ -443,10 +468,18 @@ obsolete semantic or mutation authority.
 - Candidates, assessments, source families, direct evidence, and prospective edges
   form a complete typed cross-link.
 - Known catalog closure and direct topology remain mandatory separately per root.
-- Regional exploration follows the direct-trip one-hop stopping rule.
-- One-hop ownership includes the neighboring stay destination without recursively
-  importing its bases/access graph, and prospective relationships cannot cross
-  focus roots.
+- Regional exploration follows the focus-impact stopping rule.
+- Follow cross-boundary pass, domain, or umbrella references only far enough to
+  classify their effect on the selected focus graph. For an item classified
+  `regional_followup`, record the external product or network, its direct
+  relationship to the focus root, authoritative evidence, and a canonical
+  follow-up owner. Do not require individual external members or their owning
+  stay destinations. Promote an external entity into full discovery only when
+  the selected PR changes it, the focus graph depends on it, or it remains
+  unclear whether it belongs inside the focus graph.
+- Source-named external membership may remain evidence and follow-up context;
+  prospective relationships cannot cross focus roots or chain regional
+  follow-ups.
 - Curation and proposal validation use the same complete gate.
 - Partial report-only discovery can checkpoint and resume at the exact head.
 - Complete discovery permits existing dual review. With no unavailable rows it

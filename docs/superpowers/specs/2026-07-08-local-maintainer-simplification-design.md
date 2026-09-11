@@ -238,6 +238,14 @@ Out of scope:
   wrong from a `regional_followup` that only expands correct coverage. A
   follow-up is recorded in the report and merged product backlog, receives a
   targeted handoff review, and cannot by itself make curation non-converging.
+  Follow cross-boundary pass, domain, or umbrella references only far enough to
+  classify their effect on the selected focus graph. For an item classified
+  `regional_followup`, record the external product or network, its direct
+  relationship to the focus root, authoritative evidence, and a canonical
+  follow-up owner. Do not require individual external members or their owning
+  stay destinations. Promote an external entity into full discovery only when
+  the selected PR changes it, the focus graph depends on it, or it remains
+  unclear whether it belongs inside the focus graph.
 - Applies a diff-causality gate to linked dependencies. The exact base-to-head
   diff must create, remove, or change the linked relationship, or change a
   selected node's meaning so an unchanged relationship becomes semantically
@@ -587,6 +595,17 @@ prepare -> provisional evidence envelope -> dual inventory
    when its omission cannot misstate the selected graph; uncertainty that could
    invalidate ownership or an edge follows manual-check, owner-decision, or
    review-incomplete instead of being silently downgraded.
+
+   Follow cross-boundary pass, domain, or umbrella references only far enough to
+   classify their effect on the selected focus graph. For an item classified
+   `regional_followup`, record the external product or network, its direct
+   relationship to the focus root, authoritative evidence, and a canonical
+   follow-up owner. Do not require individual external members or their owning
+   stay destinations. Promote an external entity into full discovery only when
+   the selected PR changes it, the focus graph depends on it, or it remains
+   unclear whether it belongs inside the focus graph. Source-named external
+   membership may remain evidence and follow-up context without becoming
+   candidate assessments or prospective relationships in the selected PR.
 
    For a `linked_pr_dependency`, reviewers must additionally apply the
    diff-causality gate against the exact base-to-head diff. The dependency is

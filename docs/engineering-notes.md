@@ -39,12 +39,13 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - The helper structurally validates per-root current-catalog closure and exact
   report-only safety. Independent source-trust and graph-scope reviews still
   decide source authority, meaning, and real-world completeness.
-- Full discovery is bounded to the focus destination's direct trip graph plus
-  one-hop regional dependencies. The boundary records the neighboring owning stay
-  destination but does not expand its bases/access graph. Relationships remain
-  root-scoped and cannot chain regional follow-ups. An external graph becomes
-  another focus root only when the selected diff creates or changes an edge that
-  depends on it.
+- Full discovery is bounded to the focus destination's direct trip graph plus a
+  focus-impact assessment of cross-boundary passes, domains, and umbrellas. A
+  `regional_followup` records the external product or network, direct focus
+  relationship, evidence, and backlog owner without requiring its member entities
+  or owning stay destinations. An external entity becomes another focus root only
+  when the selected PR changes it, the focus graph depends on it, or its membership
+  in the focus graph remains unclear. ADR 0025 owns this boundary.
 - Partial checkpoints are monotonic: prior rows and candidates cannot disappear,
   coverage states cannot regress, and candidate conclusions require evidence from
   an allowed source family for that candidate kind.
