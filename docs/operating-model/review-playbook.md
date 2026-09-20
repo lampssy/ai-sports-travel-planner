@@ -284,6 +284,16 @@ disposition, `graph_impact`, or boundary, changes focus-graph connectivity or a
 materialized catalog relationship, introduces a replacement with a new endpoint,
 causes lane disagreement, or exposes another plausible omission.
 
+For final graph reconciliation, an evidence-backed edge is discovery-only
+relationship context only when exactly one endpoint is `regional_followup` with
+disposition `deferred` or `unresolved`, a canonical backlog owner, and no catalog
+target references. It does not require catalog materialization when the other
+endpoint maps to the materialized focus graph, but the relationship remains
+explicit in the report. Mapped regional entities remain subject to strict
+relationship reconciliation, as do ordinary `graph_blocking` relationships; an
+edge outside the materialized focus graph is not exempt, and a relationship between
+two regional-followup candidates remains forbidden.
+
 For medium/high-risk changes, final handoff should include:
 
 - fast path or review-gated classification

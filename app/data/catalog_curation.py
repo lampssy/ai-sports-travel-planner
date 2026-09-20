@@ -3560,6 +3560,62 @@ def validate_catalog_graph_discovery(
             "lift_pass_product": "pass_ids",
         }
     )
+    candidate_ids_by_root = {
+        focus_id: {
+            candidate_id
+            for candidate_kind in CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS
+            for coverage in [coverage_by_key.get((focus_id, candidate_kind))]
+            if coverage is not None
+            for candidate_id in coverage.candidate_ids
+        }
+        for focus_id in graph.focus_stay_destination_ids
+    }
+    scope_by_focus_id = {
+        focus_id: catalog_resulting_graph_scope(catalog, {focus_id})
+        for focus_id in graph.focus_stay_destination_ids
+    }
+
+    def is_deferred_regional_context_relationship(
+        relationship: CatalogGraphDiscoveryRelationship,
+        from_assessment: CatalogEntityScopeAssessment,
+        from_kind: CatalogScopeCandidateKind,
+        to_assessment: CatalogEntityScopeAssessment,
+        to_kind: CatalogScopeCandidateKind,
+    ) -> bool:
+        endpoints = (
+            (from_assessment, from_kind),
+            (to_assessment, to_kind),
+        )
+        deferred_regional_endpoint_indexes = [
+            index
+            for index, endpoint in enumerate(endpoints)
+            if endpoint[0].graph_impact == "regional_followup"
+            and endpoint[0].disposition in BACKLOG_REQUIRED_SCOPE_DISPOSITIONS
+            and endpoint[0].backlog_ref is not None
+            and not endpoint[0].target_refs
+        ]
+        if len(deferred_regional_endpoint_indexes) != 1:
+            return False
+        regional_endpoint_index = deferred_regional_endpoint_indexes[0]
+        focus_assessment, focus_kind = endpoints[1 - regional_endpoint_index]
+        focus_target_ids = {
+            target.target_id
+            for target in focus_assessment.target_refs
+            if target.target_type == focus_kind
+        }
+        relationship_candidate_ids = {
+            relationship.from_candidate_id,
+            relationship.to_candidate_id,
+        }
+        scope_attribute = scope_attributes[focus_kind]
+        return any(
+            relationship_candidate_ids.issubset(candidate_ids_by_root[focus_id])
+            and bool(
+                focus_target_ids
+                & set(getattr(scope_by_focus_id[focus_id], scope_attribute))
+            )
+            for focus_id in graph.focus_stay_destination_ids
+        )
 
     if not allow_pending_scope_changes:
         for relationship in discovery.relationships:
@@ -3570,6 +3626,14 @@ def validate_catalog_graph_discovery(
             )
             from_assessment = assessments[relationship.from_candidate_id]
             to_assessment = assessments[relationship.to_candidate_id]
+            if is_deferred_regional_context_relationship(
+                relationship,
+                from_assessment,
+                expected_from_kind,
+                to_assessment,
+                expected_to_kind,
+            ):
+                continue
             from_target_ids = {
                 target.target_id
                 for target in from_assessment.target_refs
@@ -3594,16 +3658,6 @@ def validate_catalog_graph_discovery(
                     "is not materialized in the current catalog"
                 )
 
-    candidate_ids_by_root = {
-        focus_id: {
-            candidate_id
-            for candidate_kind in CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS
-            for coverage in [coverage_by_key.get((focus_id, candidate_kind))]
-            if coverage is not None
-            for candidate_id in coverage.candidate_ids
-        }
-        for focus_id in graph.focus_stay_destination_ids
-    }
     for relationship in discovery.relationships:
         if not any(
             {
@@ -3618,7 +3672,7 @@ def validate_catalog_graph_discovery(
             )
 
     for focus_id in graph.focus_stay_destination_ids:
-        scope = catalog_resulting_graph_scope(catalog, {focus_id})
+        scope = scope_by_focus_id[focus_id]
         covered_targets_by_kind: dict[CatalogScopeCandidateKind, set[str]] = {}
         for candidate_kind in CATALOG_GRAPH_DISCOVERY_CANDIDATE_KINDS:
             coverage = coverage_by_key.get((focus_id, candidate_kind))

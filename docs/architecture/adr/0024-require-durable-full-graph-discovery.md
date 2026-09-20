@@ -171,6 +171,17 @@ reviewed, proposal publication, and final validation remain strict, require thos
 entities and edges to be materialized, require complete discovery, and reject every
 remaining unavailable row.
 
+ADR 0025 narrows that final materialization rule for deferred regional context.
+When exactly one relationship endpoint is `regional_followup` with disposition
+`deferred` or `unresolved`, a canonical backlog owner, and no catalog target
+references, its evidence-backed edge is discovery-only relationship context. It
+does not require catalog materialization when the other endpoint maps to the
+materialized focus graph. The relationship remains explicit in the report. Mapped
+regional entities remain subject to strict relationship reconciliation, as do
+ordinary `graph_blocking` relationships; an edge outside the materialized focus
+graph is not exempt, and a relationship between two regional-followup candidates
+remains forbidden.
+
 Terminal `evidence-unavailable` publication is authorized only from the exact latest
 completed graph-discovery checkpoint and after both semantic review lanes confirm
 that report. The remote selected head, actual local head, checkpoint report path,

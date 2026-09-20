@@ -47,6 +47,7 @@ FOCUS_IMPACT_BOUNDARY_ADR_PATH = (
 )
 REVIEW_PLAYBOOK_PATH = REPOSITORY_ROOT / "docs/operating-model/review-playbook.md"
 ENGINEERING_NOTES_PATH = REPOSITORY_ROOT / "docs/engineering-notes.md"
+DATA_TRUST_MODEL_PATH = REPOSITORY_ROOT / "docs/data-trust-model.md"
 CONTRACT_PATTERN = re.compile(
     r"<!-- runtime-command-contract:start -->\s*"
     r"```json\s*(?P<contract>\{.*?\})\s*```\s*"
@@ -982,6 +983,35 @@ def test_cross_boundary_regional_followups_stop_at_focus_impact() -> None:
     ):
         text = " ".join(source.read_text(encoding="utf-8").split()).lower()
         assert "recorded with its owning stay destination" not in text, source
+
+
+def test_deferred_regional_relationship_context_does_not_require_materialization() -> (
+    None
+):
+    sources = {
+        "runtime contract": CONTRACT_PATH,
+        "activation": ACTIVATION_PATH,
+        "simplification design": DESIGN_PATH,
+        "full graph discovery design": FULL_GRAPH_DISCOVERY_DESIGN_PATH,
+        "full graph discovery plan": FULL_GRAPH_DISCOVERY_PLAN_PATH,
+        "full graph discovery ADR": FULL_GRAPH_DISCOVERY_ADR_PATH,
+        "focus-impact ADR": FOCUS_IMPACT_BOUNDARY_ADR_PATH,
+        "review playbook": REVIEW_PLAYBOOK_PATH,
+        "engineering notes": ENGINEERING_NOTES_PATH,
+        "data trust model": DATA_TRUST_MODEL_PATH,
+    }
+    required_policy = (
+        "discovery-only relationship context",
+        "does not require catalog materialization",
+        "no catalog target references",
+        "other endpoint maps to the materialized focus graph",
+        "mapped regional entities remain subject to strict relationship reconciliation",
+    )
+
+    for source, path in sources.items():
+        text = " ".join(path.read_text(encoding="utf-8").split()).lower()
+        for expected in required_policy:
+            assert expected in text, source
 
 
 def test_graph_relationship_corrections_preserve_knowledge_not_active_topology() -> (

@@ -934,6 +934,15 @@ For each schedule, confirm:
   changes it, the focus graph depends on it, or it remains unclear whether it
   belongs inside the focus graph. Prospective edges stay within one focus root
   and cannot chain regional-followup candidates;
+- when exactly one relationship endpoint is `regional_followup` with disposition
+  `deferred` or `unresolved`, a canonical backlog owner, and no catalog target
+  references, its evidence-backed edge is discovery-only relationship context. It
+  does not require catalog materialization when the other endpoint maps to the
+  materialized focus graph. The relationship remains explicit in the report.
+  Mapped regional entities remain subject to strict relationship reconciliation,
+  as do ordinary `graph_blocking` relationships; an edge outside the materialized
+  focus graph is not exempt, and a relationship between two regional-followup
+  candidates remains forbidden;
 - relationship corrections preserve discovery knowledge rather than freezing
   active topology: the exact edge changes only through a typed discovery-
   correction or delta path, endpoints and evidence remain, the assessment names

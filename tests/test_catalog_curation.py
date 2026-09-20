@@ -484,6 +484,84 @@ def _schema_five_graph_report_payload() -> dict:
     return payload
 
 
+def _add_deferred_regional_pass_candidate(payload: dict) -> None:
+    candidate_id = "example-regional-pass"
+    evidence_id = "example-regional-pass-evidence"
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "lift_pass_product",
+            "target_id": candidate_id,
+            "scope": "narrow",
+            "required_field_paths": ["lift_pass_product_id"],
+            "resulting_graph_role": "linked_dependency",
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "lift_pass_product",
+            "target_id": candidate_id,
+            "field_path": "lift_pass_product_id",
+            "status": "reviewed-no-change",
+            "notes": "The regional product is deferred to its owning review.",
+        }
+    )
+    payload["evidence"].append(
+        {
+            "evidence_id": evidence_id,
+            "target_type": "lift_pass_product",
+            "target_id": candidate_id,
+            "field_path": "lift_pass_product_id",
+            "source_type": "official",
+            "source_url": "https://example.com/pass",
+            "source_title": "Official regional lift-pass tariff",
+            "source_value": "Example Regional Pass",
+            "evidence_summary": (
+                "Names the regional product and its availability from Example."
+            ),
+        }
+    )
+    payload["entity_scope_assessments"].append(
+        {
+            "candidate_id": candidate_id,
+            "candidate_name": "Example Regional Pass",
+            "candidate_kind": "lift_pass_product",
+            "disposition": "deferred",
+            "signals": ["official_product_identity"],
+            "evidence_refs": [evidence_id],
+            "target_refs": [],
+            "backlog_ref": "docs/product-backlog.md#regional-network",
+            "rationale": (
+                "The product is available from the focus destination, while its "
+                "complete regional graph belongs to a separate review."
+            ),
+            "graph_impact": "regional_followup",
+        }
+    )
+    pass_coverage = next(
+        coverage
+        for coverage in payload["graph_discovery"]["coverage"]
+        if coverage["candidate_kind"] == "lift_pass_product"
+    )
+    pass_coverage["candidate_ids"].append(candidate_id)
+    pass_coverage["evidence_refs"].append(evidence_id)
+    payload["graph_discovery"]["relationships"].extend(
+        [
+            {
+                "relationship_type": "lift_pass_available_from_stay_destination",
+                "from_candidate_id": candidate_id,
+                "to_candidate_id": "example",
+                "evidence_refs": [evidence_id],
+            },
+            {
+                "relationship_type": "lift_pass_covers_ski_area",
+                "from_candidate_id": candidate_id,
+                "to_candidate_id": "example-area",
+                "evidence_refs": [evidence_id],
+            },
+        ]
+    )
+
+
 def _access_distance_report(*, status: str = "estimated") -> CatalogCurationReport:
     return CatalogCurationReport(
         title="Example access review",
@@ -1445,6 +1523,86 @@ def test_complete_graph_discovery_covers_known_catalog_graph_per_root() -> None:
         require_complete=True,
         allow_pending_scope_changes=False,
     )
+
+
+def test_complete_graph_discovery_allows_deferred_regional_relationships() -> None:
+    payload = _schema_five_graph_report_payload()
+    _add_deferred_regional_pass_candidate(payload)
+    report = CatalogCurationReport.model_validate(payload)
+    catalog = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    validate_catalog_graph_discovery(
+        report,
+        catalog,
+        require_complete=True,
+        allow_pending_scope_changes=False,
+    )
+
+
+def test_complete_graph_discovery_requires_materialized_blocking_edges() -> None:
+    report = CatalogCurationReport.model_validate(_schema_five_graph_report_payload())
+    catalog_payload = minimal_catalog_payload()
+    local_pass = catalog_payload["lift_pass_products"][0]
+    local_pass["default_for_stay_destination_ids"] = []
+    catalog = CatalogSnapshot.model_validate(catalog_payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="prospective relationship is not materialized in the current catalog",
+    ):
+        validate_catalog_graph_discovery(
+            report,
+            catalog,
+            require_complete=True,
+            allow_pending_scope_changes=False,
+        )
+
+
+def test_complete_graph_discovery_requires_mapped_regional_relationships() -> None:
+    payload = _schema_five_graph_report_payload()
+    _add_deferred_regional_pass_candidate(payload)
+    regional_assessment = next(
+        assessment
+        for assessment in payload["entity_scope_assessments"]
+        if assessment["candidate_id"] == "example-regional-pass"
+    )
+    regional_assessment["target_refs"] = [
+        {
+            "target_type": "lift_pass_product",
+            "target_id": "example-regional-pass",
+        }
+    ]
+    payload["graph_discovery"]["relationships"].append(
+        {
+            "relationship_type": "lift_pass_default_for_stay_destination",
+            "from_candidate_id": "example-regional-pass",
+            "to_candidate_id": "example",
+            "evidence_refs": ["example-regional-pass-evidence"],
+        }
+    )
+    report = CatalogCurationReport.model_validate(payload)
+    catalog_payload = minimal_catalog_payload()
+    regional_pass = deepcopy(catalog_payload["lift_pass_products"][0])
+    regional_pass.update(
+        {
+            "lift_pass_product_id": "example-regional-pass",
+            "name": "Example Regional Pass",
+            "default_for_stay_destination_ids": [],
+        }
+    )
+    catalog_payload["lift_pass_products"].append(regional_pass)
+    catalog = CatalogSnapshot.model_validate(catalog_payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="prospective relationship is not materialized in the current catalog",
+    ):
+        validate_catalog_graph_discovery(
+            report,
+            catalog,
+            require_complete=True,
+            allow_pending_scope_changes=False,
+        )
 
 
 def test_complete_graph_discovery_rejects_missing_known_candidate() -> None:

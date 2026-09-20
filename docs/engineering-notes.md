@@ -46,6 +46,14 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   or owning stay destinations. An external entity becomes another focus root only
   when the selected PR changes it, the focus graph depends on it, or its membership
   in the focus graph remains unclear. ADR 0025 owns this boundary.
+- An evidence-backed edge with exactly one deferred or unresolved
+  `regional_followup` endpoint, a canonical backlog owner, and no catalog target
+  references is discovery-only relationship context. It does not require catalog
+  materialization when the other endpoint maps to the materialized focus graph,
+  but it remains explicit in the report. Mapped regional entities remain subject
+  to strict relationship reconciliation, as do ordinary `graph_blocking`
+  relationships; an edge outside the materialized focus graph is not exempt, and a
+  relationship between two regional-followup candidates remains forbidden.
 - Partial checkpoints are monotonic in discovery knowledge: prior rows and
   candidates cannot disappear, coverage states cannot regress, and candidate
   conclusions require evidence from an allowed source family for that candidate

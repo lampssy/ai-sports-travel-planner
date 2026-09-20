@@ -50,6 +50,16 @@ The direct focus relationship is an allowed graph edge to the root destination o
 an admitted focus entity. Examples include pass availability from the destination,
 pass coverage of its ski area, or domain membership of its ski area.
 
+When exactly one relationship endpoint is `regional_followup` with disposition
+`deferred` or `unresolved`, a canonical backlog owner, and no catalog target
+references, its evidence-backed edge is discovery-only relationship context. It
+does not require catalog materialization when the other endpoint maps to the
+materialized focus graph. The relationship remains explicit in the report. Mapped
+regional entities remain subject to strict relationship reconciliation, as do
+ordinary `graph_blocking` relationships; an edge outside the materialized focus
+graph is not exempt, and a relationship between two regional-followup candidates
+remains forbidden.
+
 A source-declared external member list may remain evidence or follow-up context. Its
 members do not become entity-scope assessments or prospective relationships in the
 selected PR merely because the list is reachable from an admitted product or

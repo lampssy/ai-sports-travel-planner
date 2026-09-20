@@ -322,6 +322,16 @@ Prospective additions may introduce new relationships without catalog deltas at 
 report-only checkpoint; final reconciliation requires those edges to be materialized
 or reclassified.
 
+One narrow final-reconciliation exception applies when exactly one relationship
+endpoint is `regional_followup` with disposition `deferred` or `unresolved`, a
+canonical backlog owner, and no catalog target references. Its evidence-backed edge
+is discovery-only relationship context and does not require catalog materialization
+when the other endpoint maps to the materialized focus graph. The relationship
+remains explicit in the report. Mapped regional entities remain subject to strict
+relationship reconciliation, as do ordinary `graph_blocking` relationships; an
+edge outside the materialized focus graph is not exempt, and a relationship between
+two regional-followup candidates remains forbidden.
+
 ### Discovery-phase versus final validation
 
 Graph discovery occurs before catalog remediation, so an assessment may correctly

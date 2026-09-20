@@ -39,6 +39,16 @@ explicit development/test operation.
 The catalog and trust manifest use coordinated schema version `2`. Mixed
 catalog/trust versions are invalid.
 
+A schema-v5 curation report may retain an evidence-backed edge as discovery-only
+relationship context when exactly one endpoint is a deferred or unresolved
+`regional_followup` with a canonical backlog owner and no catalog target
+references. It does not require catalog materialization when the other endpoint
+maps to the materialized focus graph, and it does not become catalog truth or
+planning input. Mapped regional entities remain subject to strict relationship
+reconciliation, as do ordinary `graph_blocking` relationships; an edge outside the
+materialized focus graph is not exempt, and a relationship between two
+regional-followup candidates remains forbidden.
+
 ### Coordinated Ski-Area Evidence
 
 A coordinated multi-operator ski area remains one complete terrain entity; its
