@@ -1,38 +1,37 @@
 {
   "report_schema_version": 5,
-  "title": "Livigno Catalog V2 Fact Enrichment",
-  "summary": "Reviews Livigno ski-area and stay-base facts against official Livigno tourism and lift-pass sources, with explicit distinctions between dedicated snowparks, mini parks, and secured ski-touring routes.",
+  "title": "Livigno Catalog Graph and Fact Enrichment",
+  "summary": "Materializes the reviewed Livigno destination graph with Trepalle, separate Mottolino and Carosello-Sitas ski-area owners, exact access and pass coverage, source-aware snowpark allocation, and explicit migration and regional backlog ownership.",
   "changed_entities": [
+    "lift_pass_product:livigno-point-card",
+    "lift_pass_product:livigno-skipass",
+    "ski_area:carosello-sitas-ski-area",
     "ski_area:livigno-ski-area",
+    "ski_area:mottolino-ski-area",
+    "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+    "ski_area_access:livigno-livigno--livigno-ski-area",
+    "ski_area_access:livigno-livigno--mottolino-ski-area",
+    "ski_area_access:livigno-trepalle--mottolino-ski-area",
     "stay_base:livigno-livigno",
+    "stay_base:livigno-trepalle",
+    "trust_manifest:lift_pass_products:livigno-point-card",
+    "trust_manifest:lift_pass_products:livigno-skipass",
+    "trust_manifest:ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+    "trust_manifest:ski_area_access:livigno-livigno--livigno-ski-area",
+    "trust_manifest:ski_area_access:livigno-livigno--mottolino-ski-area",
+    "trust_manifest:ski_area_access:livigno-trepalle--mottolino-ski-area",
+    "trust_manifest:ski_areas:carosello-sitas-ski-area",
     "trust_manifest:ski_areas:livigno-ski-area",
-    "trust_manifest:stay_bases:livigno-livigno"
+    "trust_manifest:ski_areas:mottolino-ski-area",
+    "trust_manifest:stay_bases:livigno-livigno",
+    "trust_manifest:stay_bases:livigno-trepalle"
   ],
   "reviewed_targets": [
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
-      "scope": "narrow",
-      "required_field_paths": [
-        "snowmaking.availability",
-        "snowmaking.coverage_pct",
-        "snowmaking.coverage_basis",
-        "snowmaking.season_label",
-        "glacier_terrain.availability",
-        "snow_park.availability",
-        "snow_park.park_count",
-        "snow_park.season_label",
-        "night_skiing.availability",
-        "night_skiing.season_label",
-        "marked_freeride_routes.availability",
-        "marked_freeride_routes.route_count",
-        "marked_freeride_routes.season_label",
-        "official_trail_map.url",
-        "official_trail_map.season_label",
-        "ski_day_apres_profile.availability",
-        "ski_day_apres_profile.intensity",
-        "ski_day_apres_profile.season_label"
-      ],
+      "scope": "full",
+      "required_field_paths": [],
       "resulting_graph_role": "focus"
     },
     {
@@ -92,29 +91,21 @@
     {
       "target_type": "trust_manifest",
       "target_id": "ski_areas:livigno-ski-area",
-      "scope": "narrow",
-      "required_field_paths": [
-        "field_source_refs",
-        "field_statuses",
-        "notes"
-      ]
+      "scope": "full",
+      "required_field_paths": []
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--livigno-ski-area",
-      "scope": "narrow",
-      "required_field_paths": [
-        "access_mode"
-      ],
+      "scope": "full",
+      "required_field_paths": [],
       "resulting_graph_role": "focus"
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "livigno-skipass",
-      "scope": "narrow",
-      "required_field_paths": [
-        "valid_ski_area_ids"
-      ],
+      "scope": "full",
+      "required_field_paths": [],
       "resulting_graph_role": "focus"
     },
     {
@@ -325,16 +316,474 @@
       "scope": "full",
       "required_field_paths": [],
       "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:carosello-sitas-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--mottolino-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-point-card",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--livigno-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-trepalle--mottolino-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-trepalle",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mottolino-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-skipass",
+      "scope": "full",
+      "required_field_paths": [],
+      "resulting_graph_role": "focus"
     }
   ],
   "changes": [
     {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-point-card",
+      "field_path": "available_from_stay_destination_ids",
+      "before": null,
+      "after": [
+        "livigno"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-point-card",
+      "field_path": "default_for_stay_destination_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-point-card",
+      "field_path": "lift_pass_product_id",
+      "before": null,
+      "after": "livigno-point-card",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-point-card",
+      "field_path": "name",
+      "before": null,
+      "after": "Livigno Point Card",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-point-card",
+      "field_path": "prices",
+      "before": null,
+      "after": [],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-point-card",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-point-card",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "mottolino-ski-area",
+        "carosello-sitas-ski-area"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-point-card",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "local_multi_area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-point-card",
+      "field_path": "validity_windows",
+      "before": null,
+      "after": [],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "pass_accessible_terrain",
+      "before": null,
+      "after": {
+        "metric_scope": "pass_accessible",
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        ],
+        "total_lift_count": 31,
+        "total_piste_km": 115.0
+      },
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "valid_ski_area_ids",
+      "before": [
+        "livigno-ski-area"
+      ],
+      "after": [
+        "mottolino-ski-area",
+        "carosello-sitas-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "validity_scope",
+      "before": "single_ski_area",
+      "after": "local_multi_area",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "base_elevation_m",
+      "before": null,
+      "after": 1817,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.5430491,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "longitude",
+      "before": null,
+      "after": 10.1175666,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "name",
+      "before": null,
+      "after": "Carosello-Sitas",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "night_skiing.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "season_end_month",
+      "before": null,
+      "after": 5,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "season_start_month",
+      "before": null,
+      "after": 11,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [],
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "carosello-sitas-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "snow_park.availability",
+      "before": null,
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 5,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "summit_elevation_m",
+      "before": null,
+      "after": 2797,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "supported_skill_levels",
+      "before": null,
+      "after": [],
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "weather_sampling_status",
+      "before": null,
+      "after": "active",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
-      "field_path": "official_trail_map.url",
-      "before": null,
-      "after": "https://www.skipasslivigno.com/en/maps/",
-      "trust_status": "verified",
+      "field_path": "base_elevation_m",
+      "before": 1816,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "before": "unknown",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "latitude",
+      "before": 46.5386,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "longitude",
+      "before": 10.1367,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "before": "unknown",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "name",
+      "before": "Livigno",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "night_skiing.availability",
+      "before": "unknown",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "season_end_month",
+      "before": 5,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "season_start_month",
+      "before": 11,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "season_windows",
+      "before": [
+        {
+          "end_date": "2027-05-02",
+          "season_label": "2026/2027",
+          "start_date": "2026-11-28",
+          "status": "planned"
+        }
+      ],
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_area_id",
+      "before": "livigno-ski-area",
+      "after": null,
+      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -342,17 +791,8 @@
       "target_id": "livigno-ski-area",
       "field_path": "ski_day_apres_profile.availability",
       "before": "unknown",
-      "after": "available",
-      "trust_status": "verified",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area",
-      "target_id": "livigno-ski-area",
-      "field_path": "ski_day_apres_profile.intensity",
-      "before": null,
-      "after": "moderate",
-      "trust_status": "verified_with_adjustment",
+      "after": null,
+      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -360,17 +800,600 @@
       "target_id": "livigno-ski-area",
       "field_path": "snow_park.availability",
       "before": "unknown",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "before": "unknown",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "summit_elevation_m",
+      "before": 2798,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "supported_skill_levels",
+      "before": [
+        "beginner",
+        "intermediate"
+      ],
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_lift_count",
+      "before": 31,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_piste_km",
+      "before": 115.0,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "weather_sampling_status",
+      "before": "active",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "base_elevation_m",
+      "before": null,
+      "after": 1816,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.5280739,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "longitude",
+      "before": null,
+      "after": 10.1627255,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "name",
+      "before": null,
+      "after": "Mottolino",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "night_skiing.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "season_end_month",
+      "before": null,
+      "after": 5,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "season_start_month",
+      "before": null,
+      "after": 11,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [],
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "mottolino-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "snow_park.availability",
+      "before": null,
       "after": "available",
       "trust_status": "verified",
       "ranking_relevant": false
     },
     {
       "target_type": "ski_area",
-      "target_id": "livigno-ski-area",
+      "target_id": "mottolino-ski-area",
       "field_path": "snow_park.park_count",
       "before": null,
-      "after": 4,
+      "after": 2,
       "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": null,
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "summit_elevation_m",
+      "before": null,
+      "after": 2708,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "supported_skill_levels",
+      "before": null,
+      "after": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 8,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 30.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "weather_sampling_status",
+      "before": null,
+      "after": "active",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "is_direct",
+      "before": null,
+      "after": true,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "near",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {},
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "ski_area_access_id",
+      "before": null,
+      "after": "livigno-livigno--carosello-sitas-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "carosello-sitas-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.carosello3000.com/en/winter/mountain-info/how-to-get-here",
+        "https://www.sitas.ski/come-raggiungerci/"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "livigno-livigno",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "access_mode",
+      "before": "ski_bus",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "distance_m",
+      "before": 1050,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "is_direct",
+      "before": false,
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "lift_distance",
+      "before": "medium",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": "Cassana",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "ski_area_access_id",
+      "before": "livigno-livigno--livigno-ski-area",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "ski_area_id",
+      "before": "livigno-ski-area",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "source_urls",
+      "before": [
+        "https://www.skipasslivigno.com/en/lifts-and-slopes/"
+      ],
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "stay_base_id",
+      "before": "livigno-livigno",
+      "after": null,
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--mottolino-ski-area",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--mottolino-ski-area",
+      "field_path": "is_direct",
+      "before": null,
+      "after": true,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--mottolino-ski-area",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "medium",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--mottolino-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Mottolino Gondola",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--mottolino-ski-area",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {},
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--mottolino-ski-area",
+      "field_path": "ski_area_access_id",
+      "before": null,
+      "after": "livigno-livigno--mottolino-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--mottolino-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "mottolino-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--mottolino-ski-area",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.skipasslivigno.com/en/skilink/"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--mottolino-ski-area",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "livigno-livigno",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-trepalle--mottolino-ski-area",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-trepalle--mottolino-ski-area",
+      "field_path": "is_direct",
+      "before": null,
+      "after": true,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-trepalle--mottolino-ski-area",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "near",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-trepalle--mottolino-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Trepalle chairlift",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-trepalle--mottolino-ski-area",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {},
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-trepalle--mottolino-ski-area",
+      "field_path": "ski_area_access_id",
+      "before": null,
+      "after": "livigno-trepalle--mottolino-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-trepalle--mottolino-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "mottolino-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-trepalle--mottolino-ski-area",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-trepalle--mottolino-ski-area",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "livigno-trepalle",
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -419,6 +1442,548 @@
       "ranking_relevant": false
     },
     {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "base_character.development_style",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "base_character.local_pace",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 2200,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "local_apres_profile.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "name",
+      "before": null,
+      "after": "Trepalle",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "price_max",
+      "before": null,
+      "after": 250.0,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "price_min",
+      "before": null,
+      "after": 170.0,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "price_range",
+      "before": null,
+      "after": "EUR 170-250",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "quality",
+      "before": null,
+      "after": "standard",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {},
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "livigno-trepalle",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-trepalle",
+      "field_path": "stay_destination_id",
+      "before": null,
+      "after": "livigno",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-point-card",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Livigno Point Card",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-point-card",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "coverage": [
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        ],
+        "identity_scope_availability": [
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        ],
+        "pass_accessible_terrain": [],
+        "prices": []
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-point-card",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "needs_source"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-point-card",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The official refundable pay-per-use Point Card is normalized as a non-default local multi-area product covering both replacement ski areas.",
+        "Per-lift point charges are not forced into the duration-based representative-price schema; prices remain empty and unresolved.",
+        "No separate aggregate terrain metric is copied onto this product."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-skipass",
+      "field_path": "field_source_refs",
+      "before": {
+        "coverage": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "identity_scope_availability": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "pass_accessible_terrain": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "prices": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ]
+      },
+      "after": {
+        "coverage": [
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        ],
+        "identity_scope_availability": [
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        ],
+        "pass_accessible_terrain": [
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        ],
+        "prices": [
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-skipass",
+      "field_path": "field_statuses",
+      "before": {
+        "coverage": "verified",
+        "identity_scope_availability": "verified",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "verified"
+      },
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified",
+        "pass_accessible_terrain": "verified",
+        "prices": "verified"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-skipass",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
+        "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
+        "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
+        "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
+      ],
+      "after": [
+        "The official Livigno product remains the destination default and covers both replacement ski areas.",
+        "The 115 km and 31-lift figures remain pass-accessible aggregate metrics and are not copied to either narrower ski-area owner.",
+        "Existing 2026/27 representative prices remain tied to the official tariff."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Livigno -> Carosello-Sitas",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "access_mode_distance": [
+          "https://www.carosello3000.com/en/winter/mountain-info/how-to-get-here",
+          "https://www.sitas.ski/come-raggiungerci/"
+        ],
+        "relationship": [
+          "https://www.carosello3000.com/en/winter/mountain-info/how-to-get-here",
+          "https://www.sitas.ski/come-raggiungerci/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The reviewed sources establish the candidate-exact stay-base-to-ski-area relationship.",
+        "Qualitative lift distance is conservative where the official source does not publish exact point geometry; no distance or duration is invented."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--livigno-ski-area",
+      "field_path": "display_name",
+      "before": "Livigno -> Livigno",
+      "after": null,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--livigno-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "access_mode_distance": [
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/"
+        ],
+        "relationship": [
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/"
+        ]
+      },
+      "after": null,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--livigno-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified_with_adjustment"
+      },
+      "after": null,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--livigno-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
+        "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
+        "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
+        "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
+      ],
+      "after": null,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--mottolino-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Livigno -> Mottolino",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--mottolino-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "access_mode_distance": [
+          "https://www.skipasslivigno.com/en/skilink/"
+        ],
+        "relationship": [
+          "https://www.skipasslivigno.com/en/skilink/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--mottolino-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--mottolino-ski-area",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The reviewed sources establish the candidate-exact stay-base-to-ski-area relationship.",
+        "Qualitative lift distance is conservative where the official source does not publish exact point geometry; no distance or duration is invented."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-trepalle--mottolino-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Trepalle -> Mottolino",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-trepalle--mottolino-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "access_mode_distance": [
+          "https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/"
+        ],
+        "relationship": [
+          "https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-trepalle--mottolino-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-trepalle--mottolino-ski-area",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The reviewed sources establish the candidate-exact stay-base-to-ski-area relationship.",
+        "Qualitative lift distance is conservative where the official source does not publish exact point geometry; no distance or duration is invented."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:carosello-sitas-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Carosello-Sitas",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:carosello-sitas-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "elevation_season": [
+          "https://www.carosello3000.com/en/winter/my3000-live/open-ski-lifts-livigno",
+          "https://www.sitas.ski/ski-area/impianti/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.openstreetmap.org/node/446186974",
+          "https://www.sitas.ski/estate/fooddrink/costaccia/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [],
+        "snow_park": [
+          "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
+          "https://www.skipasslivigno.com/en/snowpark/snowpark-amerikan/",
+          "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/",
+          "https://www.skipasslivigno.com/en/snowpark/snowpark-twenty/"
+        ],
+        "snowmaking": [],
+        "terrain_metrics": []
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:carosello-sitas-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "needs_source",
+        "snow_park": "verified_with_adjustment",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "needs_source"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:carosello-sitas-ski-area",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Carosello 3000 and Sitas are normalized as one ski-connected western ski area with coordinated component ownership.",
+        "The active weather point uses the official Costaccia hub matched to the exact OSM node; the reviewed combined lift-served range is 1817-2797 m.",
+        "Snowpark count 5 includes The Beach, Twenty, Amerikan, Mini Snowpark San Rocco, and Mini Snowpark Cassana; exact operator/lift locations keep those parks inside the western boundary.",
+        "Terrain totals, detailed skill profile, snowmaking allocation, official map ownership, and apres remain unresolved at this combined owner scope.",
+        "New active identity requires scheduled historical-weather completion after merge."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:livigno-ski-area",
+      "field_path": "display_name",
+      "before": "Livigno",
+      "after": null,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
       "target_type": "trust_manifest",
       "target_id": "ski_areas:livigno-ski-area",
       "field_path": "field_source_refs",
@@ -463,54 +2028,7 @@
           "https://www.skiresort.info/ski-resort/livigno/"
         ]
       },
-      "after": {
-        "elevation_season": [
-          "https://www.openstreetmap.org/relation/47273",
-          "https://www.openstreetmap.org/way/204017650",
-          "https://www.silenesport.it/en/rental-shop/",
-          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-          "https://www.skiresort.info/ski-resort/livigno/"
-        ],
-        "glacier_terrain": [],
-        "identity_coordinates": [
-          "https://www.openstreetmap.org/relation/47273",
-          "https://www.openstreetmap.org/way/204017650",
-          "https://www.silenesport.it/en/rental-shop/",
-          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-          "https://www.skiresort.info/ski-resort/livigno/"
-        ],
-        "marked_freeride_routes": [],
-        "night_skiing": [],
-        "official_documents": [
-          "https://www.skipasslivigno.com/en/maps/"
-        ],
-        "ski_day_apres": [
-          "https://www.livigno.eu/en/fun-relax-winter"
-        ],
-        "skill_fit": [
-          "https://www.openstreetmap.org/relation/47273",
-          "https://www.openstreetmap.org/way/204017650",
-          "https://www.silenesport.it/en/rental-shop/",
-          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-          "https://www.skiresort.info/ski-resort/livigno/"
-        ],
-        "snow_park": [
-          "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
-          "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/"
-        ],
-        "snowmaking": [],
-        "terrain_metrics": [
-          "https://www.openstreetmap.org/relation/47273",
-          "https://www.openstreetmap.org/way/204017650",
-          "https://www.silenesport.it/en/rental-shop/",
-          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-          "https://www.skiresort.info/ski-resort/livigno/"
-        ]
-      },
+      "after": null,
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -531,19 +2049,7 @@
         "snowmaking": "needs_source",
         "terrain_metrics": "verified_with_adjustment"
       },
-      "after": {
-        "elevation_season": "verified_with_adjustment",
-        "glacier_terrain": "needs_source",
-        "identity_coordinates": "verified_with_adjustment",
-        "marked_freeride_routes": "needs_source",
-        "night_skiing": "needs_source",
-        "official_documents": "verified",
-        "ski_day_apres": "verified_with_adjustment",
-        "skill_fit": "estimated",
-        "snow_park": "verified_with_adjustment",
-        "snowmaking": "needs_source",
-        "terrain_metrics": "verified_with_adjustment"
-      },
+      "after": null,
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -557,14 +2063,87 @@
         "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
         "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
       ],
+      "after": null,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mottolino-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Mottolino",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mottolino-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "elevation_season": [
+          "https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/",
+          "https://www.mottolino.com/estate/headquarters-mottolino/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.mottolino.com/en/winter/experiences/at-altitude-on-foot/",
+          "https://www.openstreetmap.org/node/443397630"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.mottolino.com/en/winter/ski-area/"
+        ],
+        "snow_park": [
+          "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
+          "https://www.skipasslivigno.com/en/snowpark/oakley-flow-park/"
+        ],
+        "snowmaking": [
+          "https://www.mottolino.com/en/winter/ski-area/"
+        ],
+        "terrain_metrics": [
+          "https://www.mottolino.com/en/winter/ski-area/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mottolino-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "verified_with_adjustment",
+        "snow_park": "verified_with_adjustment",
+        "snowmaking": "verified",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mottolino-ski-area",
+      "field_path": "notes",
+      "before": null,
       "after": [
-        "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
-        "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
-        "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
-        "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling.",
-        "Source-aware v2 enrichment reviewed official Livigno and Skipass Livigno material on 2026-07-05.",
-        "Secured ski-touring and snowshoe routes are not normalized as marked downhill freeride routes.",
-        "Dedicated snowpark count excludes the three mini snowparks and non-snowpark funslopes."
+        "Mottolino is a complete transfer-separated ski area with independent operations and weather presentation.",
+        "The active weather point uses the official M'Eating Point hub matched to the exact OSM node; the lift-served range is 1816-2708 m.",
+        "The conservative 30 km value normalizes the operator's more-than-30-km statement; the eight-lift count and three supported skill levels are operator-scoped.",
+        "Snowpark count 2 includes the current Oakley Flow Park and the operator-designated Mini Snowpark Mottolino; internal lines are not counted separately.",
+        "New active identity requires scheduled historical-weather completion after merge."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -691,6 +2270,66 @@
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-trepalle",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Trepalle",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-trepalle",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [],
+        "elevation": [
+          "https://www.livigno.eu/en/hotel-list/hotel/la-tea"
+        ],
+        "identity_ownership": [
+          "https://www.livigno.eu/en/hotel-list/hotel/la-tea"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": []
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-trepalle",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "needs_source",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-trepalle",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Trepalle is normalized as a distinct stay base inside the Livigno accommodation market, not as a separate stay destination.",
+        "The official accommodation listing supports the Trepalle identity and 2200 m elevation; exact coordinates, base type, character, and local apres remain unresolved.",
+        "The Livigno destination-level lodging range and quality tier are retained as estimates until Trepalle-specific price sampling is available."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
     }
   ],
   "field_coverage": [
@@ -698,127 +2337,127 @@
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "snowmaking.availability",
-      "status": "unresolved",
-      "notes": "The official map at https://www.skipasslivigno.com/en/maps/ reports aggregate programmed-snow coverage, but it does not assign availability to the three future SkiArea owners; resolution requires owner-scoped coverage or an explicit allocation policy during semantic remediation."
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "snowmaking.coverage_pct",
-      "status": "unresolved",
-      "notes": "The official map at https://www.skipasslivigno.com/en/maps/ gives a 70-80 percent aggregate range without an owner-specific denominator; resolution requires comparable per-area piste coverage or a documented policy for retaining the aggregate."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "snowmaking.coverage_basis",
-      "status": "unresolved",
-      "notes": "The official map at https://www.skipasslivigno.com/en/maps/ does not state whether its 70-80 percent uses piste kilometres, surface, or another denominator; resolution requires a source-defined denominator or catalog normalization policy."
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "snowmaking.season_label",
-      "status": "unresolved",
-      "notes": "The official map at https://www.skipasslivigno.com/en/maps/ supports aggregate programmed snow but no canonical season label; resolution requires an owner-scoped seasonal source or a policy-derived label tied to a dated source."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "glacier_terrain.availability",
-      "status": "unresolved",
-      "notes": "The official lift inventory at https://www.skipasslivigno.com/en/lifts-and-slopes/ neither identifies glacier terrain nor states its absence; resolution requires an official terrain statement or map legend explicitly addressing glacier skiing."
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "snow_park.availability",
       "status": "changed",
-      "notes": "The official operator documents multiple dedicated snowparks across Livigno's ski area."
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "snow_park.park_count",
-      "status": "changed",
-      "notes": "The official page identifies Snowpark The Beach and links three other full snowparks: Oakley Flow Park, Snowpark Twenty, and Snowpark Amerikan."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "snow_park.season_label",
-      "status": "unresolved",
-      "notes": "The official park page at https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/ establishes the facilities but not a canonical season label; resolution requires dated operating-period evidence for the owning areas."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "night_skiing.availability",
-      "status": "unresolved",
-      "notes": "The official map at https://www.skipasslivigno.com/en/maps/ publishes recurring night-skiing presentations but the legacy umbrella is being split; resolution requires assigning each scheduled lift and piste to its future SkiArea owner."
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "night_skiing.season_label",
-      "status": "unresolved",
-      "notes": "The official map at https://www.skipasslivigno.com/en/maps/ publishes recurring night sessions without the catalog's canonical season label per future owner; resolution requires owner-scoped dates and label normalization."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "marked_freeride_routes.availability",
-      "status": "unresolved",
-      "notes": "The official winter guide at https://www.livigno.eu/en/fun-relax-winter covers secured ski-touring and snowshoe routes, not marked downhill freeride routes; resolution requires an official downhill-route inventory or explicit absence statement."
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "marked_freeride_routes.route_count",
-      "status": "unresolved",
-      "notes": "The official winter guide at https://www.livigno.eu/en/fun-relax-winter provides no marked downhill freeride-route count; resolution requires an official counted downhill inventory with owning-area scope."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "marked_freeride_routes.season_label",
-      "status": "unresolved",
-      "notes": "The official winter guide at https://www.livigno.eu/en/fun-relax-winter does not establish marked downhill freeride routes or their operating season; resolution requires an official owner-scoped route schedule."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "official_trail_map.url",
-      "status": "changed",
-      "notes": "The official lift-pass site provides the current online and downloadable Livigno ski map."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "official_trail_map.season_label",
-      "status": "unresolved",
-      "notes": "The official page at https://www.skipasslivigno.com/en/maps/ links the current map but its page metadata does not provide the canonical season label; resolution requires a dated map title or document metadata."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "ski_day_apres_profile.availability",
       "status": "changed",
-      "notes": "Official tourism documents après-ski bars and traditional mountain cabins used after skiing."
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "ski_day_apres_profile.intensity",
-      "status": "changed",
-      "notes": "The official ski-day description combines many sunset aperitivo options with traditional mountain-cabin stops rather than only party venues."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "ski_area",
       "target_id": "livigno-ski-area",
       "field_path": "ski_day_apres_profile.season_label",
-      "status": "unresolved",
-      "notes": "The official winter guide at https://www.livigno.eu/en/fun-relax-winter supports the après offer but gives no canonical season label; resolution requires a dated winter operating window for the on-mountain venues."
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
     },
     {
       "target_type": "stay_base",
@@ -832,7 +2471,7 @@
       "target_id": "livigno-livigno",
       "field_path": "elevation_m",
       "status": "changed",
-      "notes": "Official tourism consistently gives Livigno at 1,816 m."
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
@@ -846,28 +2485,28 @@
       "target_id": "livigno-livigno",
       "field_path": "base_character.development_style",
       "status": "changed",
-      "notes": "Livigno combines Alpine-style and traditional settings with modern structures, 250 shops, international brands, and mature resort infrastructure."
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-livigno",
       "field_path": "base_character.local_pace",
       "status": "changed",
-      "notes": "The official guide describes Livigno's evolution from a calm rural village into a lively tourism destination."
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-livigno",
       "field_path": "local_apres_profile.availability",
       "status": "changed",
-      "notes": "The official directory lists multiple bars, clubs, and après-ski venues."
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-livigno",
       "field_path": "local_apres_profile.intensity",
       "status": "changed",
-      "notes": "The official directory includes multiple dedicated après-ski venues, bars, and discos alongside the broader winter offer."
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
@@ -881,42 +2520,42 @@
       "target_id": "ski_areas:livigno-ski-area",
       "field_path": "field_source_refs",
       "status": "changed",
-      "notes": "Trust metadata updated for the reviewed source-aware facts."
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "trust_manifest",
       "target_id": "ski_areas:livigno-ski-area",
       "field_path": "field_statuses",
       "status": "changed",
-      "notes": "Trust metadata updated for the reviewed source-aware facts."
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "trust_manifest",
       "target_id": "ski_areas:livigno-ski-area",
       "field_path": "notes",
       "status": "changed",
-      "notes": "Trust metadata updated for the reviewed source-aware facts."
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "trust_manifest",
       "target_id": "stay_bases:livigno-livigno",
       "field_path": "field_source_refs",
       "status": "changed",
-      "notes": "Trust metadata updated for the reviewed source-aware facts."
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
     },
     {
       "target_type": "trust_manifest",
       "target_id": "stay_bases:livigno-livigno",
       "field_path": "field_statuses",
       "status": "changed",
-      "notes": "Trust metadata updated for the reviewed source-aware facts."
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
     },
     {
       "target_type": "trust_manifest",
       "target_id": "stay_bases:livigno-livigno",
       "field_path": "notes",
       "status": "changed",
-      "notes": "Trust metadata updated for the reviewed source-aware facts."
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
     },
     {
       "target_type": "stay_destination",
@@ -929,15 +2568,15 @@
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--livigno-ski-area",
       "field_path": "access_mode",
-      "status": "reviewed-no-change",
-      "notes": "The existing ski-bus access mode is retained; the official operator shows freebus stops across the current Livigno lift network."
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "livigno-skipass",
       "field_path": "valid_ski_area_ids",
-      "status": "reviewed-no-change",
-      "notes": "The existing single-area pass coverage is retained; the official rate page describes one ticket valid across lifts on both sides of the ski area."
+      "status": "changed",
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
     },
     {
       "target_type": "ski_area_access",
@@ -1090,15 +2729,15 @@
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "base_character.development_style",
-      "status": "unresolved",
-      "notes": "The field-specific review of Livigno official accommodation directory - Hotel La Tea at https://www.livigno.eu/en/hotel-list/hotel/la-tea did not publish an exact candidate-scoped base_character.development_style value for livigno-trepalle. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "base_character.local_pace",
-      "status": "unresolved",
-      "notes": "The field-specific review of Livigno official accommodation directory - Hotel La Tea at https://www.livigno.eu/en/hotel-list/hotel/la-tea did not publish an exact candidate-scoped base_character.local_pace value for livigno-trepalle. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
@@ -1111,8 +2750,8 @@
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "elevation_m",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective elevation_m=2200; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
@@ -1125,8 +2764,8 @@
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Livigno official accommodation directory - Hotel La Tea at https://www.livigno.eu/en/hotel-list/hotel/la-tea did not publish an exact candidate-scoped local_apres_profile.availability value for livigno-trepalle. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
@@ -1153,92 +2792,92 @@
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "name",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective name='Trepalle'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "price_max",
-      "status": "unresolved",
-      "notes": "The field-specific review of Livigno official accommodation directory - Hotel La Tea at https://www.livigno.eu/en/hotel-list/hotel/la-tea did not publish an exact candidate-scoped price_max value for livigno-trepalle. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "price_min",
-      "status": "unresolved",
-      "notes": "The field-specific review of Livigno official accommodation directory - Hotel La Tea at https://www.livigno.eu/en/hotel-list/hotel/la-tea did not publish an exact candidate-scoped price_min value for livigno-trepalle. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "price_range",
-      "status": "unresolved",
-      "notes": "The field-specific review of Livigno official accommodation directory - Hotel La Tea at https://www.livigno.eu/en/hotel-list/hotel/la-tea did not publish an exact candidate-scoped price_range value for livigno-trepalle. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "quality",
-      "status": "unresolved",
-      "notes": "The field-specific review of Livigno official accommodation directory - Hotel La Tea at https://www.livigno.eu/en/hotel-list/hotel/la-tea did not publish an exact candidate-scoped quality value for livigno-trepalle. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "regional_data_ids",
-      "status": "unresolved",
-      "notes": "The field-specific review of Livigno official accommodation directory - Hotel La Tea at https://www.livigno.eu/en/hotel-list/hotel/la-tea did not publish an exact candidate-scoped regional_data_ids value for livigno-trepalle. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "stay_base_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective stay_base_id='livigno-trepalle'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "stay_base",
       "target_id": "livigno-trepalle",
       "field_path": "stay_destination_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective stay_destination_id='livigno'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "base_elevation_m",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official geometry review supports prospective base_elevation_m=1816 from the Mottolino headquarters at the gondola departure; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "glacier_terrain.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino Ski Area at https://www.mottolino.com/en/winter/ski-area/ did not publish an exact candidate-scoped glacier_terrain.availability value for mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "latitude",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official-hub and exact-OSM-feature review supports prospective latitude=46.5280739; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "longitude",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official-hub and exact-OSM-feature review supports prospective longitude=10.1627255; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "marked_freeride_routes.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino Ski Area at https://www.mottolino.com/en/winter/ski-area/ did not publish an exact candidate-scoped marked_freeride_routes.availability value for mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1258,15 +2897,15 @@
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "name",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective name='Mottolino'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "night_skiing.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino Ski Area at https://www.mottolino.com/en/winter/ski-area/ did not publish an exact candidate-scoped night_skiing.availability value for mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1314,36 +2953,36 @@
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "season_end_month",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino Ski Area at https://www.mottolino.com/en/winter/ski-area/ did not publish an exact candidate-scoped season_end_month value for mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "season_start_month",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino Ski Area at https://www.mottolino.com/en/winter/ski-area/ did not publish an exact candidate-scoped season_start_month value for mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "season_windows",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino Ski Area at https://www.mottolino.com/en/winter/ski-area/ did not publish an exact candidate-scoped season_windows value for mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "ski_area_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective ski_area_id='mottolino-ski-area'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "ski_day_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino Ski Area at https://www.mottolino.com/en/winter/ski-area/ did not publish an exact candidate-scoped ski_day_apres_profile.availability value for mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1363,15 +3002,15 @@
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "snow_park.availability",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective snow_park.availability='available'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "snow_park.park_count",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino Ski Area at https://www.mottolino.com/en/winter/ski-area/ did not publish an exact candidate-scoped snow_park.park_count value for mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1384,15 +3023,15 @@
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "snowmaking.availability",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective snowmaking.availability='available'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "snowmaking.coverage_basis",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino Ski Area at https://www.mottolino.com/en/winter/ski-area/ did not publish an exact candidate-scoped snowmaking.coverage_basis value for mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1412,71 +3051,71 @@
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "summit_elevation_m",
-      "status": "reviewed-no-change",
-      "notes": "The complete official Mottolino lift inventory supports prospective summit_elevation_m=2708; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "supported_skill_levels",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective supported_skill_levels=['beginner', 'intermediate', 'advanced']; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "total_lift_count",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective total_lift_count=8; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "total_piste_km",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective total_piste_km='more than 30 km'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "mottolino-ski-area",
       "field_path": "weather_sampling_status",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective weather_sampling_status='active'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "base_elevation_m",
-      "status": "reviewed-no-change",
-      "notes": "The bounded Sitas Costaccia and official lift-drop review supports prospective base_elevation_m=1817 for the combined western area; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "glacier_terrain.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped glacier_terrain.availability value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "latitude",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official-hub and exact-OSM-feature review supports prospective latitude=46.5430491; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "longitude",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official-hub and exact-OSM-feature review supports prospective longitude=10.1175666; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "marked_freeride_routes.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped marked_freeride_routes.availability value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1496,15 +3135,15 @@
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "name",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective name='Carosello-Sitas'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "night_skiing.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped night_skiing.availability value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1552,36 +3191,36 @@
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "season_end_month",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped season_end_month value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "season_start_month",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped season_start_month value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "season_windows",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped season_windows value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "ski_area_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective ski_area_id='carosello-sitas-ski-area'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "ski_day_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped ski_day_apres_profile.availability value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1601,15 +3240,15 @@
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "snow_park.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped snow_park.availability value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "snow_park.park_count",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped snow_park.park_count value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1622,15 +3261,15 @@
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "snowmaking.availability",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped snowmaking.availability value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "snowmaking.coverage_basis",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped snowmaking.coverage_basis value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1650,15 +3289,15 @@
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "summit_elevation_m",
-      "status": "reviewed-no-change",
-      "notes": "The complete official Carosello lift inventory supports prospective summit_elevation_m=2797 for the combined western area; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "supported_skill_levels",
-      "status": "unresolved",
-      "notes": "The field-specific review of Carosello 3000 Livigno ski pistes at https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes did not publish an exact candidate-scoped supported_skill_levels value for carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area",
@@ -1678,15 +3317,15 @@
       "target_type": "ski_area",
       "target_id": "carosello-sitas-ski-area",
       "field_path": "weather_sampling_status",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective weather_sampling_status='active'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--mottolino-ski-area",
       "field_path": "access_mode",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective access_mode='walk, free bus, or Skilink to the Mottolino gondola access'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
@@ -1706,64 +3345,64 @@
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--mottolino-ski-area",
       "field_path": "is_direct",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective is_direct=True; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--mottolino-ski-area",
       "field_path": "lift_distance",
-      "status": "unresolved",
-      "notes": "The field-specific review of Skipass Livigno Skilink at https://www.skipasslivigno.com/en/skilink/ did not publish an exact candidate-scoped lift_distance value for livigno-livigno--mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--mottolino-ski-area",
       "field_path": "nearest_lift_name",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective nearest_lift_name='Mottolino Gondola'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--mottolino-ski-area",
       "field_path": "regional_data_ids",
-      "status": "unresolved",
-      "notes": "The field-specific review of Skipass Livigno Skilink at https://www.skipasslivigno.com/en/skilink/ did not publish an exact candidate-scoped regional_data_ids value for livigno-livigno--mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--mottolino-ski-area",
       "field_path": "ski_area_access_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective ski_area_access_id='livigno-livigno--mottolino-ski-area'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--mottolino-ski-area",
       "field_path": "ski_area_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective ski_area_id='mottolino-ski-area'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--mottolino-ski-area",
       "field_path": "source_urls",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective source_urls=['https://www.skipasslivigno.com/en/skilink/']; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--mottolino-ski-area",
       "field_path": "stay_base_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective stay_base_id='livigno-livigno'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--carosello-sitas-ski-area",
       "field_path": "access_mode",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective access_mode='walk, free bus, or gondola access through the western entry points'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
@@ -1783,15 +3422,15 @@
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--carosello-sitas-ski-area",
       "field_path": "is_direct",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective is_direct=True; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--carosello-sitas-ski-area",
       "field_path": "lift_distance",
-      "status": "unresolved",
-      "notes": "The field-specific review of Sitas access and connections at https://www.sitas.ski/come-raggiungerci/ did not publish an exact candidate-scoped lift_distance value for livigno-livigno--carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
@@ -1804,43 +3443,43 @@
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--carosello-sitas-ski-area",
       "field_path": "regional_data_ids",
-      "status": "unresolved",
-      "notes": "The field-specific review of Sitas access and connections at https://www.sitas.ski/come-raggiungerci/ did not publish an exact candidate-scoped regional_data_ids value for livigno-livigno--carosello-sitas-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--carosello-sitas-ski-area",
       "field_path": "ski_area_access_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective ski_area_access_id='livigno-livigno--carosello-sitas-ski-area'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--carosello-sitas-ski-area",
       "field_path": "ski_area_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective ski_area_id='carosello-sitas-ski-area'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--carosello-sitas-ski-area",
       "field_path": "source_urls",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective source_urls=['https://www.carosello3000.com/en/winter/mountain-info/how-to-get-here', 'https://www.sitas.ski/come-raggiungerci/']; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-livigno--carosello-sitas-ski-area",
       "field_path": "stay_base_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective stay_base_id='livigno-livigno'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-trepalle--mottolino-ski-area",
       "field_path": "access_mode",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective access_mode='direct local lift access'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
@@ -1860,71 +3499,71 @@
       "target_type": "ski_area_access",
       "target_id": "livigno-trepalle--mottolino-ski-area",
       "field_path": "is_direct",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective is_direct=True; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-trepalle--mottolino-ski-area",
       "field_path": "lift_distance",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino complete lift inventory at https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/ did not publish an exact candidate-scoped lift_distance value for livigno-trepalle--mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-trepalle--mottolino-ski-area",
       "field_path": "nearest_lift_name",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective nearest_lift_name='Trepalle chairlift'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-trepalle--mottolino-ski-area",
       "field_path": "regional_data_ids",
-      "status": "unresolved",
-      "notes": "The field-specific review of Mottolino complete lift inventory at https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/ did not publish an exact candidate-scoped regional_data_ids value for livigno-trepalle--mottolino-ski-area. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-trepalle--mottolino-ski-area",
       "field_path": "ski_area_access_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective ski_area_access_id='livigno-trepalle--mottolino-ski-area'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-trepalle--mottolino-ski-area",
       "field_path": "ski_area_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective ski_area_id='mottolino-ski-area'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-trepalle--mottolino-ski-area",
       "field_path": "source_urls",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective source_urls=['https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/']; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "ski_area_access",
       "target_id": "livigno-trepalle--mottolino-ski-area",
       "field_path": "stay_base_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective stay_base_id='livigno-trepalle'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "livigno-point-card",
       "field_path": "available_from_stay_destination_ids",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective available_from_stay_destination_ids=['livigno']; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "livigno-point-card",
       "field_path": "default_for_stay_destination_ids",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective default_for_stay_destination_ids=[]; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "lift_pass_product",
@@ -1937,15 +3576,15 @@
       "target_type": "lift_pass_product",
       "target_id": "livigno-point-card",
       "field_path": "lift_pass_product_id",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective lift_pass_product_id='livigno-point-card'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "livigno-point-card",
       "field_path": "name",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective name='Livigno Point Card'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "lift_pass_product",
@@ -1958,36 +3597,547 @@
       "target_type": "lift_pass_product",
       "target_id": "livigno-point-card",
       "field_path": "prices",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective prices='refundable card deposit plus the official per-lift tariff'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "livigno-point-card",
       "field_path": "terrain_domain_ids",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective terrain_domain_ids=[]; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "livigno-point-card",
       "field_path": "valid_ski_area_ids",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective valid_ski_area_ids=['mottolino-ski-area', 'carosello-sitas-ski-area']; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "livigno-point-card",
       "field_path": "validity_scope",
-      "status": "reviewed-no-change",
-      "notes": "The bounded official field review supports prospective validity_scope='local Livigno pay-per-use product'; catalog materialization remains ordinary remediation."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
     },
     {
       "target_type": "lift_pass_product",
       "target_id": "livigno-point-card",
       "field_path": "validity_windows",
-      "status": "unresolved",
-      "notes": "The field-specific review of Livigno official pass tariff at https://www.skipasslivigno.com/en/livigno-skipass-rates/ did not publish an exact candidate-scoped validity_windows value for livigno-point-card. Resolve with an official boundary-specific value, a verification-capable structured source, or a policy-approved derivation; do not infer false precision."
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "pass_accessible_terrain",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "base_elevation_m",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "name",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "season_end_month",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "season_start_month",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_area_id",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "summit_elevation_m",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "supported_skill_levels",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "weather_sampling_status",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "distance_m",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "is_direct",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "ski_area_id",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-point-card",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-point-card",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-point-card",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-point-card",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-skipass",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-skipass",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-skipass",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Updated to match the reviewed source scope and resulting Livigno graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--carosello-sitas-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--livigno-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--livigno-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--livigno-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--livigno-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--mottolino-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--mottolino-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--mottolino-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-livigno--mottolino-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-trepalle--mottolino-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-trepalle--mottolino-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-trepalle--mottolino-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:livigno-trepalle--mottolino-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:carosello-sitas-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:carosello-sitas-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:carosello-sitas-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:carosello-sitas-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:livigno-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Retired atomically under the reviewed non-overlapping Livigno graph migration."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mottolino-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mottolino-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mottolino-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mottolino-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-trepalle",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-trepalle",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-trepalle",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-trepalle",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Materialized from the helper-checkpointed discovery evidence and reviewed resulting graph."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "livigno-livigno--livigno-ski-area",
+      "field_path": "duration_minutes",
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed in the bounded remediation; no additional catalog delta is supported."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed in the bounded remediation; no additional catalog delta is supported."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "external_validity_summary",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed in the bounded remediation; no additional catalog delta is supported."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed in the bounded remediation; no additional catalog delta is supported."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed in the bounded remediation; no additional catalog delta is supported."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed in the bounded remediation; no additional catalog delta is supported."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "terrain_domain_ids",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed in the bounded remediation; no additional catalog delta is supported."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "validity_windows",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed in the bounded remediation; no additional catalog delta is supported."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "status": "not-applicable",
+      "notes": "The reviewed graph retires the legacy entity; this field is absent from the post-migration catalog."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:livigno-skipass",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed in the bounded remediation; no additional catalog delta is supported."
     }
   ],
   "evidence": [
@@ -2015,7 +4165,7 @@
       "source_title": "Livigno official winter fun and après guide",
       "source_value": "available",
       "evidence_summary": "Official tourism documents après-ski bars and traditional mountain cabins used after skiing.",
-      "normalization_note": null
+      "normalization_note": "The reviewed graph retires this legacy field; the cited value remains provenance for the migration record rather than the post-migration catalog value."
     },
     {
       "evidence_id": "v2-enrichment-003-livigno-ski-area-ski-day-apres-profile-intensity",
@@ -2041,7 +4191,7 @@
       "source_title": "Skipass Livigno official Snowpark The Beach guide",
       "source_value": "available",
       "evidence_summary": "The official operator documents multiple dedicated snowparks across Livigno's ski area.",
-      "normalization_note": null
+      "normalization_note": "The reviewed graph retires this legacy field; the cited value remains provenance for the migration record rather than the post-migration catalog value."
     },
     {
       "evidence_id": "v2-enrichment-005-livigno-ski-area-snow-park-park-count",
@@ -2068,8 +4218,8 @@
       "source_url": "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
       "source_title": "Skipass Livigno official Mini Snowparks guide",
       "source_value": "Three mini snowparks: Mottolino, San Rocco, and Cassana",
-      "evidence_summary": "The official page presents Mini Snowpark Mottolino, Mini Snowpark San Rocco, and Mini Snowpark Cassana as beginner playgrounds rather than dedicated full snowparks.",
-      "normalization_note": "The three mini snowparks are excluded from the canonical park_count=4 normalization, which counts the separately documented dedicated snowparks."
+      "evidence_summary": "The official page explicitly designates Mini Snowpark Mottolino, Mini Snowpark San Rocco, and Mini Snowpark Cassana as snowparks and locates each by lift.",
+      "normalization_note": "The prior beginner-focus exclusion is retired. The three operator-designated mini snowparks count under the canonical snow-park policy and are allocated to the materialized ski-area owners by their published lift locations."
     },
     {
       "evidence_id": "v2-enrichment-006-livigno-livigno-base-character-development-style",
@@ -2359,7 +4509,7 @@
       "source_title": "Skipass Livigno official lift and slope maps",
       "source_value": "Livigno ski area",
       "evidence_summary": "The official map page describes Livigno ski area across both sides of the valley and provides its lift and slope map.",
-      "normalization_note": null
+      "normalization_note": "The reviewed graph retires this legacy field; the cited value remains provenance for the migration record rather than the post-migration catalog value."
     },
     {
       "evidence_id": "normalization-livigno-access",
@@ -2387,7 +4537,7 @@
       "source_title": "Skipass Livigno rates",
       "source_value": "A single ticket is valid to access all lifts on both sides of the Ski Area.",
       "evidence_summary": "The official current rate page identifies one Livigno ticket covering all lifts on both sides of the ski area.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "graph-livigno-complete-lift-inventory",
@@ -2503,7 +4653,7 @@
       "source_title": "Skipass Livigno rates",
       "source_value": "One ticket valid for all lifts on both sides of the ski area",
       "evidence_summary": "The official tariff establishes full Livigno pass coverage across every roster-assigned lift component.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "graph-livigno-side-transfer",
@@ -2550,7 +4700,7 @@
       "source_title": "Mottolino weather and webcams",
       "source_value": "Mottolino-owned weather, snow, and webcam presentation",
       "evidence_summary": "The operator publishes a dedicated conditions presentation for the Mottolino terrain scope.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "graph-livigno-west-connected-cluster",
@@ -2594,7 +4744,7 @@
       "source_title": "Sitas ski-area lifts",
       "source_value": "Sitas gondolas and Valandrea Vetta are linked by pistes to Fontane Vetta and the adjacent western terrain",
       "evidence_summary": "The official Sitas inventory supplies the cross-operator piste connection needed to close the western-side parent boundary.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "graph-livigno-trepalle-stay-base",
@@ -3193,7 +5343,7 @@
       "source_title": "Livigno official accommodation directory - Hotel La Tea",
       "source_value": "No exact candidate-scoped canonical base_character.development_style value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for base_character.development_style and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-stay-base-livigno-trepalle-base-character-local-pace",
@@ -3208,7 +5358,7 @@
       "source_title": "Livigno official accommodation directory - Hotel La Tea",
       "source_value": "No exact candidate-scoped canonical base_character.local_pace value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for base_character.local_pace and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-stay-base-livigno-trepalle-base-type",
@@ -3268,7 +5418,7 @@
       "source_title": "Livigno official accommodation directory - Hotel La Tea",
       "source_value": "No exact candidate-scoped canonical local_apres_profile.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for local_apres_profile.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-stay-base-livigno-trepalle-local-apres-profile-intensity",
@@ -3343,7 +5493,7 @@
       "source_title": "Livigno official accommodation directory - Hotel La Tea",
       "source_value": "No exact candidate-scoped canonical price_max value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for price_max and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-stay-base-livigno-trepalle-price-min",
@@ -3358,7 +5508,7 @@
       "source_title": "Livigno official accommodation directory - Hotel La Tea",
       "source_value": "No exact candidate-scoped canonical price_min value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for price_min and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-stay-base-livigno-trepalle-price-range",
@@ -3373,7 +5523,7 @@
       "source_title": "Livigno official accommodation directory - Hotel La Tea",
       "source_value": "No exact candidate-scoped canonical price_range value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for price_range and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-stay-base-livigno-trepalle-quality",
@@ -3388,7 +5538,7 @@
       "source_title": "Livigno official accommodation directory - Hotel La Tea",
       "source_value": "No exact candidate-scoped canonical quality value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for quality and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-stay-base-livigno-trepalle-regional-data-ids",
@@ -3403,7 +5553,7 @@
       "source_title": "Livigno official accommodation directory - Hotel La Tea",
       "source_value": "No exact candidate-scoped canonical regional_data_ids value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for regional_data_ids and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-stay-base-livigno-trepalle-stay-base-id",
@@ -3463,7 +5613,7 @@
       "source_title": "Mottolino Ski Area",
       "source_value": "No exact candidate-scoped canonical glacier_terrain.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for glacier_terrain.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-mottolino-ski-area-latitude",
@@ -3508,7 +5658,7 @@
       "source_title": "Mottolino Ski Area",
       "source_value": "No exact candidate-scoped canonical marked_freeride_routes.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for marked_freeride_routes.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-mottolino-ski-area-marked-freeride-routes-route-count",
@@ -3568,7 +5718,7 @@
       "source_title": "Mottolino Ski Area",
       "source_value": "No exact candidate-scoped canonical night_skiing.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for night_skiing.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-mottolino-ski-area-night-skiing-season-label",
@@ -3673,7 +5823,7 @@
       "source_title": "Mottolino Ski Area",
       "source_value": "No exact candidate-scoped canonical season_end_month value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for season_end_month and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-mottolino-ski-area-season-start-month",
@@ -3688,7 +5838,7 @@
       "source_title": "Mottolino Ski Area",
       "source_value": "No exact candidate-scoped canonical season_start_month value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for season_start_month and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-mottolino-ski-area-season-windows",
@@ -3703,7 +5853,7 @@
       "source_title": "Mottolino Ski Area",
       "source_value": "No exact candidate-scoped canonical season_windows value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for season_windows and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-mottolino-ski-area-ski-area-id",
@@ -3733,7 +5883,7 @@
       "source_title": "Mottolino Ski Area",
       "source_value": "No exact candidate-scoped canonical ski_day_apres_profile.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for ski_day_apres_profile.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-mottolino-ski-area-ski-day-apres-profile-intensity",
@@ -3793,7 +5943,7 @@
       "source_title": "Mottolino Ski Area",
       "source_value": "No exact candidate-scoped canonical snow_park.park_count value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for snow_park.park_count and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-mottolino-ski-area-snow-park-season-label",
@@ -3838,7 +5988,7 @@
       "source_title": "Mottolino Ski Area",
       "source_value": "No exact candidate-scoped canonical snowmaking.coverage_basis value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for snowmaking.coverage_basis and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-mottolino-ski-area-snowmaking-coverage-pct",
@@ -3981,7 +6131,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical glacier_terrain.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for glacier_terrain.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-latitude",
@@ -4026,7 +6176,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical marked_freeride_routes.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for marked_freeride_routes.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-marked-freeride-routes-route-count",
@@ -4086,7 +6236,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical night_skiing.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for night_skiing.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-night-skiing-season-label",
@@ -4191,7 +6341,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical season_end_month value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for season_end_month and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-season-start-month",
@@ -4206,7 +6356,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical season_start_month value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for season_start_month and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-season-windows",
@@ -4221,7 +6371,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical season_windows value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for season_windows and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-ski-area-id",
@@ -4251,7 +6401,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical ski_day_apres_profile.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for ski_day_apres_profile.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-ski-day-apres-profile-intensity",
@@ -4296,7 +6446,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical snow_park.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for snow_park.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-snow-park-park-count",
@@ -4311,7 +6461,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical snow_park.park_count value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for snow_park.park_count and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-snow-park-season-label",
@@ -4341,7 +6491,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical snowmaking.availability value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for snowmaking.availability and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-snowmaking-coverage-basis",
@@ -4356,7 +6506,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical snowmaking.coverage_basis value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for snowmaking.coverage_basis and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-snowmaking-coverage-pct",
@@ -4416,7 +6566,7 @@
       "source_title": "Carosello 3000 Livigno ski pistes",
       "source_value": "No exact candidate-scoped canonical supported_skill_levels value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for supported_skill_levels and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-carosello-sitas-ski-area-total-lift-count",
@@ -4536,7 +6686,7 @@
       "source_title": "Skipass Livigno Skilink",
       "source_value": "No exact candidate-scoped canonical lift_distance value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for lift_distance and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-access-livigno-livigno-mottolino-ski-area-nearest-lift-name",
@@ -4566,7 +6716,7 @@
       "source_title": "Skipass Livigno Skilink",
       "source_value": "No exact candidate-scoped canonical regional_data_ids value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for regional_data_ids and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-access-livigno-livigno-mottolino-ski-area-ski-area-access-id",
@@ -4703,7 +6853,7 @@
       "source_title": "Sitas access and connections",
       "source_value": "No exact candidate-scoped canonical lift_distance value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for lift_distance and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-access-livigno-livigno-carosello-sitas-ski-area-nearest-lift-name",
@@ -4733,7 +6883,7 @@
       "source_title": "Sitas access and connections",
       "source_value": "No exact candidate-scoped canonical regional_data_ids value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for regional_data_ids and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-access-livigno-livigno-carosello-sitas-ski-area-ski-area-access-id",
@@ -4871,7 +7021,7 @@
       "source_title": "Mottolino complete lift inventory",
       "source_value": "No exact candidate-scoped canonical lift_distance value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for lift_distance and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-access-livigno-trepalle-mottolino-ski-area-nearest-lift-name",
@@ -4901,7 +7051,7 @@
       "source_title": "Mottolino complete lift inventory",
       "source_value": "No exact candidate-scoped canonical regional_data_ids value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for regional_data_ids and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "completion-ski-area-access-livigno-trepalle-mottolino-ski-area-ski-area-access-id",
@@ -5133,7 +7283,7 @@
       "source_title": "Livigno official pass tariff",
       "source_value": "No exact candidate-scoped canonical validity_windows value is published by this bounded official source.",
       "evidence_summary": "The bounded official source was checked for validity_windows and is insufficient for an exact canonical value; the coverage note records the concrete resolution requirement.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "weather-geometry-mottolino-official-hub",
@@ -5167,7 +7317,7 @@
         "elevation_m": 2402
       },
       "evidence_summary": "Exact OSM feature geometry matches the official named Mottolino central hub.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "weather-geometry-mottolino-lift-range",
@@ -5216,7 +7366,7 @@
         "elevation_m": 2358
       },
       "evidence_summary": "Exact OSM station geometry matches the official Costaccia hub.",
-      "normalization_note": null
+      "normalization_note": "The source does not publish a more specific canonical value; the materialized record uses the conservative schema representation while the field remains explicitly source-limited."
     },
     {
       "evidence_id": "weather-geometry-west-lift-range",
@@ -5232,6 +7382,97 @@
       "source_value": 2797,
       "evidence_summary": "The official Carosello inventory supplies the highest lift-served arrival elevation in the connected western area.",
       "normalization_note": "The lower Sitas bound is recorded separately; weather mid and upper bands use the canonical Snowcast formula."
+    },
+    {
+      "evidence_id": "remediation-mottolino-oakley-flow-park",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/snowpark/oakley-flow-park/",
+      "source_title": "Skipass Livigno official Oakley Flow Park guide",
+      "source_value": 1,
+      "evidence_summary": "The official park page identifies the Oakley Flow Park at Mottolino's Planon lift.",
+      "normalization_note": "This is one of the two operator-designated snowparks counted for Mottolino; the other is Mini Snowpark Mottolino."
+    },
+    {
+      "evidence_id": "remediation-mottolino-mini-snowpark",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mottolino-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
+      "source_title": "Skipass Livigno official Mini Snowparks guide",
+      "source_value": 1,
+      "evidence_summary": "The official page explicitly designates Mini Snowpark Mottolino beside lift 7 and gives Mottolino operator contact details.",
+      "normalization_note": "The operator-designated mini snowpark is counted under the same snow-park policy; internal lines and obstacles are not separate parks."
+    },
+    {
+      "evidence_id": "remediation-west-the-beach",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/",
+      "source_title": "Skipass Livigno official Snowpark The Beach guide",
+      "source_value": 1,
+      "evidence_summary": "The official page locates The Beach at the Carosello 3000 gondola and Baby Lac Salin lift.",
+      "normalization_note": "This is one of five operator-designated parks counted inside the combined western ski-area boundary."
+    },
+    {
+      "evidence_id": "remediation-west-twenty",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/snowpark/snowpark-twenty/",
+      "source_title": "Skipass Livigno official Snowpark Twenty guide",
+      "source_value": 1,
+      "evidence_summary": "The official page locates Snowpark Twenty at lift 20 Ski School Area in the western connected boundary.",
+      "normalization_note": "This is one of five operator-designated parks counted inside the combined western ski-area boundary."
+    },
+    {
+      "evidence_id": "remediation-west-amerikan",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/snowpark/snowpark-amerikan/",
+      "source_title": "Skipass Livigno official Snowpark Amerikan guide",
+      "source_value": 1,
+      "evidence_summary": "The official page locates Snowpark Amerikan at lift 10 Amerikan in the western connected boundary.",
+      "normalization_note": "This is one of five operator-designated parks counted inside the combined western ski-area boundary."
+    },
+    {
+      "evidence_id": "remediation-west-mini-snowparks",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
+      "source_title": "Skipass Livigno official Mini Snowparks guide",
+      "source_value": 2,
+      "evidence_summary": "The official page explicitly designates Mini Snowpark San Rocco at lifts 17a/b and Mini Snowpark Cassana at lift 30, both inside the western boundary.",
+      "normalization_note": "The two operator-designated mini snowparks are counted with the three named full parks; internal obstacles are not separate parks."
+    },
+    {
+      "evidence_id": "remediation-west-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "carosello-sitas-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/",
+      "source_title": "Skipass Livigno official Snowpark The Beach guide",
+      "source_value": "available",
+      "evidence_summary": "The current official guide establishes a named snowpark inside the combined western ski area.",
+      "normalization_note": null
     }
   ],
   "destination_boundary_assessments": [
@@ -5379,16 +7620,44 @@
         "graph-livigno-operator-roster",
         "graph-livigno-component-map",
         "graph-livigno-all-lifts-pass",
-        "graph-livigno-three-ski-domains"
+        "graph-livigno-three-ski-domains",
+        "v2-enrichment-001-livigno-ski-area-official-trail-map-url",
+        "v2-enrichment-003-livigno-ski-area-ski-day-apres-profile-intensity",
+        "v2-enrichment-005-livigno-ski-area-snow-park-park-count",
+        "v2-enrichment-005-livigno-ski-area-snow-park-mini-parks-exclusion",
+        "v2-enrichment-002-livigno-ski-area-ski-day-apres-profile-availability",
+        "v2-enrichment-004-livigno-ski-area-snow-park-availability",
+        "normalization-livigno-unresolved-snowmaking-availability",
+        "normalization-livigno-unresolved-snowmaking-coverage-pct",
+        "normalization-livigno-unresolved-snowmaking-coverage-basis",
+        "normalization-livigno-unresolved-snowmaking-season-label",
+        "normalization-livigno-unresolved-glacier-terrain",
+        "normalization-livigno-unresolved-snow-park-season-label",
+        "normalization-livigno-unresolved-night-skiing-availability",
+        "normalization-livigno-unresolved-night-skiing-season-label",
+        "normalization-livigno-unresolved-marked-freeride-availability",
+        "normalization-livigno-unresolved-marked-freeride-route-count",
+        "normalization-livigno-unresolved-marked-freeride-season-label",
+        "normalization-livigno-unresolved-trail-map-season-label",
+        "normalization-livigno-unresolved-ski-day-apres-season-label",
+        "graph-livigno-side-transfer"
       ],
       "target_refs": [
         {
           "target_type": "ski_area",
           "target_id": "livigno-ski-area"
+        },
+        {
+          "target_type": "ski_area",
+          "target_id": "mottolino-ski-area"
+        },
+        {
+          "target_type": "ski_area",
+          "target_id": "carosello-sitas-ski-area"
         }
       ],
-      "backlog_ref": "docs/product-backlog.md#ski-sub-areas-and-terrain-sectors",
-      "rationale": "Official sources establish Livigno as the destination umbrella over the transfer-separated Mottolino and ski-connected western terrain, not as a child of either future SkiArea. The existing key remains an explicit unresolved migration source until ordinary remediation defines retirement, replacement targets, weather/history handoff, merge order, and rollback without overlapping the two prospective SkiAreas.",
+      "backlog_ref": "docs/product-backlog.md#livigno-ski-area-identity-migration",
+      "rationale": "The legacy Livigno umbrella overlaps the two policy-determined replacement SkiAreas and is retired from the static catalog. Its historical weather rows remain soft-retired and auditable rather than being re-keyed; the two new active IDs receive scheduled completion after merge. The canonical migration backlog owns merge order, rollback, and the remaining Sitas subset-pass limitation.",
       "ski_area_boundary": {
         "parent_ski_area_id": null,
         "terrain_scope": "complete",
@@ -5464,7 +7733,9 @@
         "completion-ski-area-mottolino-ski-area-weather-sampling-status",
         "weather-geometry-mottolino-official-hub",
         "weather-geometry-mottolino-osm-hub",
-        "weather-geometry-mottolino-lift-range"
+        "weather-geometry-mottolino-lift-range",
+        "remediation-mottolino-oakley-flow-park",
+        "remediation-mottolino-mini-snowpark"
       ],
       "target_refs": [
         {
@@ -5562,7 +7833,12 @@
         "completion-ski-area-carosello-sitas-ski-area-weather-sampling-status",
         "weather-geometry-west-official-hub",
         "weather-geometry-west-osm-hub",
-        "weather-geometry-west-lift-range"
+        "weather-geometry-west-lift-range",
+        "remediation-west-the-beach",
+        "remediation-west-twenty",
+        "remediation-west-amerikan",
+        "remediation-west-mini-snowparks",
+        "remediation-west-snow-park-availability"
       ],
       "target_refs": [
         {
@@ -6260,7 +8536,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "This existing edge terminates at the umbrella migration-source SkiArea and therefore is not part of the prospective graph. Catalog remediation must retire it atomically with the umbrella while preserving its evidence in the Mottolino and Carosello-Sitas access edges.",
+      "rationale": "The legacy umbrella edge is retired with its overlapping endpoint and is superseded by the two candidate-exact Livigno-town access edges.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -7655,6 +9931,7 @@
   "unresolved_caveats": [
     "The official secured-route inventory covers ski touring and snowshoeing, not marked downhill freeride routes, so the marked-freeride fact remains unknown.",
     "The official map publishes a 70-80 percent programmed-snow range, but its denominator and allocation across the prospective SkiArea owners remain unresolved.",
-    "Mini snowparks and funslopes are excluded from the dedicated snowpark count."
+    "Operator-designated mini snowparks are included in the snowpark total; internal lines, obstacles, and funslopes are not counted as additional parks.",
+    "The legacy Livigno weather identity is soft-retired without re-keying history; the two new active ski-area IDs require scheduled historical-weather completion after merge."
   ]
 }

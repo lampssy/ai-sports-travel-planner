@@ -6208,6 +6208,36 @@
           "Official Mayrhofen-Hippach village material establishes Schwendau as a named village base and publishes its elevation; the shared booking source supports membership in the destination market.",
           "Coordinates, lodging price and quality, base character and local apres remain unresolved or estimated rather than inferred from the destination-level sources."
         ]
+      },
+      "livigno-trepalle": {
+        "display_name": "Trepalle",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "needs_source",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "needs_source",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.livigno.eu/en/hotel-list/hotel/la-tea"
+          ],
+          "coordinates": [],
+          "elevation": [
+            "https://www.livigno.eu/en/hotel-list/hotel/la-tea"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Trepalle is normalized as a distinct stay base inside the Livigno accommodation market, not as a separate stay destination.",
+          "The official accommodation listing supports the Trepalle identity and 2200 m elevation; exact coordinates, base type, character, and local apres remain unresolved.",
+          "The Livigno destination-level lodging range and quality tier are retained as estimates until Trepalle-specific price sampling is available."
+        ]
       }
     },
     "ski_areas": {
@@ -7782,79 +7812,6 @@
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
         ]
       },
-      "livigno-ski-area": {
-        "display_name": "Livigno",
-        "field_statuses": {
-          "identity_coordinates": "verified_with_adjustment",
-          "elevation_season": "verified_with_adjustment",
-          "terrain_metrics": "verified_with_adjustment",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "verified_with_adjustment",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "verified_with_adjustment",
-          "official_documents": "verified"
-        },
-        "field_source_refs": {
-          "identity_coordinates": [
-            "https://www.openstreetmap.org/relation/47273",
-            "https://www.openstreetmap.org/way/204017650",
-            "https://www.silenesport.it/en/rental-shop/",
-            "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-            "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-            "https://www.skiresort.info/ski-resort/livigno/"
-          ],
-          "elevation_season": [
-            "https://www.openstreetmap.org/relation/47273",
-            "https://www.openstreetmap.org/way/204017650",
-            "https://www.silenesport.it/en/rental-shop/",
-            "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-            "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-            "https://www.skiresort.info/ski-resort/livigno/"
-          ],
-          "terrain_metrics": [
-            "https://www.openstreetmap.org/relation/47273",
-            "https://www.openstreetmap.org/way/204017650",
-            "https://www.silenesport.it/en/rental-shop/",
-            "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-            "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-            "https://www.skiresort.info/ski-resort/livigno/"
-          ],
-          "skill_fit": [
-            "https://www.openstreetmap.org/relation/47273",
-            "https://www.openstreetmap.org/way/204017650",
-            "https://www.silenesport.it/en/rental-shop/",
-            "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-            "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-            "https://www.skiresort.info/ski-resort/livigno/"
-          ],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [
-            "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
-            "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/"
-          ],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [
-            "https://www.livigno.eu/en/fun-relax-winter"
-          ],
-          "official_documents": [
-            "https://www.skipasslivigno.com/en/maps/"
-          ]
-        },
-        "notes": [
-          "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
-          "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
-          "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
-          "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling.",
-          "Source-aware v2 enrichment reviewed official Livigno and Skipass Livigno material on 2026-07-05.",
-          "Secured ski-touring and snowshoe routes are not normalized as marked downhill freeride routes.",
-          "Dedicated snowpark count excludes the three mini snowparks and non-snowpark funslopes."
-        ]
-      },
       "madonna-di-campiglio-ski-area": {
         "display_name": "Madonna di Campiglio",
         "field_statuses": {
@@ -9087,6 +9044,104 @@
           "Aggregate terrain is owned by the local pass-accessible scope and the official 2025/26 piste map establishes Lagazuoi coverage under the Alta Badia local pass; no terrain-domain membership is inferred.",
           "The new ski-area ID is handed to scheduled historical-weather completion after merge."
         ]
+      },
+      "mottolino-ski-area": {
+        "display_name": "Mottolino",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "verified",
+          "glacier_terrain": "needs_source",
+          "snow_park": "verified_with_adjustment",
+          "night_skiing": "needs_source",
+          "marked_freeride_routes": "needs_source",
+          "ski_day_apres": "needs_source",
+          "official_documents": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://www.mottolino.com/en/winter/experiences/at-altitude-on-foot/",
+            "https://www.openstreetmap.org/node/443397630"
+          ],
+          "elevation_season": [
+            "https://www.mottolino.com/estate/headquarters-mottolino/",
+            "https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/"
+          ],
+          "terrain_metrics": [
+            "https://www.mottolino.com/en/winter/ski-area/"
+          ],
+          "skill_fit": [
+            "https://www.mottolino.com/en/winter/ski-area/"
+          ],
+          "snowmaking": [
+            "https://www.mottolino.com/en/winter/ski-area/"
+          ],
+          "glacier_terrain": [],
+          "snow_park": [
+            "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
+            "https://www.skipasslivigno.com/en/snowpark/oakley-flow-park/"
+          ],
+          "night_skiing": [],
+          "marked_freeride_routes": [],
+          "ski_day_apres": [],
+          "official_documents": []
+        },
+        "notes": [
+          "Mottolino is a complete transfer-separated ski area with independent operations and weather presentation.",
+          "The active weather point uses the official M'Eating Point hub matched to the exact OSM node; the lift-served range is 1816-2708 m.",
+          "The conservative 30 km value normalizes the operator's more-than-30-km statement; the eight-lift count and three supported skill levels are operator-scoped.",
+          "Snowpark count 2 includes the current Oakley Flow Park and the operator-designated Mini Snowpark Mottolino; internal lines are not counted separately.",
+          "New active identity requires scheduled historical-weather completion after merge."
+        ]
+      },
+      "carosello-sitas-ski-area": {
+        "display_name": "Carosello-Sitas",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "needs_source",
+          "skill_fit": "needs_source",
+          "snowmaking": "needs_source",
+          "glacier_terrain": "needs_source",
+          "snow_park": "verified_with_adjustment",
+          "night_skiing": "needs_source",
+          "marked_freeride_routes": "needs_source",
+          "ski_day_apres": "needs_source",
+          "official_documents": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://www.sitas.ski/estate/fooddrink/costaccia/",
+            "https://www.openstreetmap.org/node/446186974"
+          ],
+          "elevation_season": [
+            "https://www.sitas.ski/ski-area/impianti/",
+            "https://www.carosello3000.com/en/winter/my3000-live/open-ski-lifts-livigno"
+          ],
+          "terrain_metrics": [],
+          "skill_fit": [],
+          "snowmaking": [],
+          "glacier_terrain": [],
+          "snow_park": [
+            "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
+            "https://www.skipasslivigno.com/en/snowpark/snowpark-amerikan/",
+            "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/",
+            "https://www.skipasslivigno.com/en/snowpark/snowpark-twenty/"
+          ],
+          "night_skiing": [],
+          "marked_freeride_routes": [],
+          "ski_day_apres": [],
+          "official_documents": []
+        },
+        "notes": [
+          "Carosello 3000 and Sitas are normalized as one ski-connected western ski area with coordinated component ownership.",
+          "The active weather point uses the official Costaccia hub matched to the exact OSM node; the reviewed combined lift-served range is 1817-2797 m.",
+          "Snowpark count 5 includes The Beach, Twenty, Amerikan, Mini Snowpark San Rocco, and Mini Snowpark Cassana; exact operator/lift locations keep those parks inside the western boundary.",
+          "Terrain totals, detailed skill profile, snowmaking allocation, official map ownership, and apres remain unresolved at this combined owner scope.",
+          "New active identity requires scheduled historical-weather completion after merge."
+        ]
       }
     },
     "ski_area_access": {
@@ -9890,27 +9945,6 @@
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
-        ]
-      },
-      "livigno-livigno--livigno-ski-area": {
-        "display_name": "Livigno -> Livigno",
-        "field_statuses": {
-          "relationship": "verified_with_adjustment",
-          "access_mode_distance": "verified_with_adjustment"
-        },
-        "field_source_refs": {
-          "relationship": [
-            "https://www.skipasslivigno.com/en/lifts-and-slopes/"
-          ],
-          "access_mode_distance": [
-            "https://www.skipasslivigno.com/en/lifts-and-slopes/"
-          ]
-        },
-        "notes": [
-          "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
-          "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
-          "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
-          "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
         ]
       },
       "madonna-di-campiglio-madonna-di-campiglio--madonna-di-campiglio-ski-area": {
@@ -11297,6 +11331,65 @@
           "First-party Mayrhofen-Hippach material supports a ski-bus relationship to the Mayrhofen lift network.",
           "The coarse ski_bus/far normalization is conservative; no exact route distance or duration is asserted."
         ]
+      },
+      "livigno-livigno--mottolino-ski-area": {
+        "display_name": "Livigno -> Mottolino",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.skipasslivigno.com/en/skilink/"
+          ],
+          "access_mode_distance": [
+            "https://www.skipasslivigno.com/en/skilink/"
+          ]
+        },
+        "notes": [
+          "The reviewed sources establish the candidate-exact stay-base-to-ski-area relationship.",
+          "Qualitative lift distance is conservative where the official source does not publish exact point geometry; no distance or duration is invented."
+        ]
+      },
+      "livigno-trepalle--mottolino-ski-area": {
+        "display_name": "Trepalle -> Mottolino",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/"
+          ],
+          "access_mode_distance": [
+            "https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/"
+          ]
+        },
+        "notes": [
+          "The reviewed sources establish the candidate-exact stay-base-to-ski-area relationship.",
+          "Qualitative lift distance is conservative where the official source does not publish exact point geometry; no distance or duration is invented."
+        ]
+      },
+      "livigno-livigno--carosello-sitas-ski-area": {
+        "display_name": "Livigno -> Carosello-Sitas",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.carosello3000.com/en/winter/mountain-info/how-to-get-here",
+            "https://www.sitas.ski/come-raggiungerci/"
+          ],
+          "access_mode_distance": [
+            "https://www.carosello3000.com/en/winter/mountain-info/how-to-get-here",
+            "https://www.sitas.ski/come-raggiungerci/"
+          ]
+        },
+        "notes": [
+          "The reviewed sources establish the candidate-exact stay-base-to-ski-area relationship.",
+          "Qualitative lift distance is conservative where the official source does not publish exact point geometry; no distance or duration is invented."
+        ]
       }
     },
     "terrain_domains": {
@@ -12287,49 +12380,30 @@
         "display_name": "Livigno Skipass",
         "field_statuses": {
           "identity_scope_availability": "verified",
-          "coverage": "verified",
+          "coverage": "verified_with_adjustment",
           "prices": "verified",
-          "pass_accessible_terrain": "needs_source"
+          "pass_accessible_terrain": "verified"
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://www.openstreetmap.org/relation/47273",
-            "https://www.openstreetmap.org/way/204017650",
-            "https://www.silenesport.it/en/rental-shop/",
-            "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-            "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-            "https://www.skiresort.info/ski-resort/livigno/"
+            "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
           ],
           "coverage": [
-            "https://www.openstreetmap.org/relation/47273",
-            "https://www.openstreetmap.org/way/204017650",
-            "https://www.silenesport.it/en/rental-shop/",
             "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-            "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-            "https://www.skiresort.info/ski-resort/livigno/"
+            "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
           ],
           "prices": [
-            "https://www.openstreetmap.org/relation/47273",
-            "https://www.openstreetmap.org/way/204017650",
-            "https://www.silenesport.it/en/rental-shop/",
-            "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-            "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-            "https://www.skiresort.info/ski-resort/livigno/"
+            "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
           ],
           "pass_accessible_terrain": [
-            "https://www.openstreetmap.org/relation/47273",
-            "https://www.openstreetmap.org/way/204017650",
-            "https://www.silenesport.it/en/rental-shop/",
             "https://www.skipasslivigno.com/en/lifts-and-slopes/",
-            "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
-            "https://www.skiresort.info/ski-resort/livigno/"
+            "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
           ]
         },
         "notes": [
-          "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
-          "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
-          "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
-          "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
+          "The official Livigno product remains the destination default and covers both replacement ski areas.",
+          "The 115 km and 31-lift figures remain pass-accessible aggregate metrics and are not copied to either narrower ski-area owner.",
+          "Existing 2026/27 representative prices remain tied to the official tariff."
         ]
       },
       "misurina-passo-tre-croci-skipass": {
@@ -13318,6 +13392,30 @@
           "The identity_scope_availability group is verified_with_adjustment because Snowcast normalizes the tariff into a stable local-product identity, Tignes availability, no default assignment, and three planned pass-validity windows. These pass windows do not replace ski-area operating dates.",
           "The prices group directly preserves the tariff’s audience, duration, amount, currency, and exact seasonal date-band labels.",
           "No run-level pass-accessible-terrain list is asserted."
+        ]
+      },
+      "livigno-point-card": {
+        "display_name": "Livigno Point Card",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "needs_source",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+          ],
+          "coverage": [
+            "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+          ],
+          "prices": [],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "The official refundable pay-per-use Point Card is normalized as a non-default local multi-area product covering both replacement ski areas.",
+          "Per-lift point charges are not forced into the duration-based representative-price schema; prices remain empty and unresolved.",
+          "No separate aggregate terrain metric is copied onto this product."
         ]
       }
     },

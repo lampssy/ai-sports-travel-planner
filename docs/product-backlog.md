@@ -120,6 +120,39 @@ historical data, migration/backfill handoff, merge order, and rollback. Actual
 database migrations, catalog-schema changes, and production-code changes remain
 separate work and block readiness rather than proposal creation.
 
+### Livigno Ski-Area Identity Migration
+
+Status: active
+Area: Data Trust
+Source: Livigno graph discovery and remediation; PR #36
+
+Migration ownership:
+
+- `ski_area:livigno-ski-area` is the legacy overlapping umbrella. PR #36 atomically retires that static catalog key and its old access edge while adding the non-overlapping Mottolino and Carosello-Sitas ski-area owners.
+- Existing weather, archive, conditions, and climatology rows on the legacy ID remain soft-retired and auditable. They are not re-keyed to either replacement because the old umbrella geometry and evidence scope are not equivalent to either child.
+- The new active IDs start with empty weather history and use the scheduled Complete Historical Weather workflow after merge. Merge order is catalog/trust replacement first, then scheduled completion; rollback restores the prior matching catalog/application snapshot without destructive weather deletion.
+- `lift_pass_product:sitas-single-journey-card` remains deferred until the catalog can represent Sitas-only lift-subset entitlement without falsely granting the full Carosello-Sitas ski-area scope.
+
+The current PR owns the replacement/retirement and weather-history handoff. The bounded follow-up owns only the Sitas subset-coverage product contract.
+
+### Lombardia Regional Pass Network
+
+Status: parked
+Area: Data Trust
+Source: Livigno graph discovery regional follow-up; PR #36
+
+Next bounded slice:
+
+- Review one coherent Lombardia pass network without expanding the selected Livigno graph.
+
+Candidate inventory:
+
+- Passes: `lift_pass_product:alta-valtellina-skipass`, `lift_pass_product:lombardia-skipass`, and `lift_pass_product:skin-lombardia-pay-per-use`.
+- Stay destinations: `stay_destination:bormio`, `stay_destination:santa-caterina-valfurva`, `stay_destination:valdidentro`, and `stay_destination:valdisotto`.
+- Ski areas: `ski_area:bormio-ski-area`, `ski_area:santa-caterina-valfurva-ski-area`, and `ski_area:cima-piazzi-san-colombano-ski-area`.
+
+The next slice must establish each destination's bases, direct access, local-pass ownership, ski-area/weather ownership, and exact regional availability before materializing any regional product or coverage edge. The current Livigno graph remains complete without those additive nodes.
+
 ### Val d'Isere Accommodation Base Refinements
 
 Status: active
