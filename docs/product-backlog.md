@@ -180,6 +180,54 @@ Crouze remains within Le Lac and Les Boisses remains the locality represented
 by Tignes 1800. Do not create off-base access edges from shuttle-stop identity
 or stale private-directory evidence.
 
+### Campiglio Dolomiti Regional Catalog Extensions
+
+Status: candidate
+
+The accepted Campiglio destination graph is complete for the current Folgarida,
+Marilleva-Mezzana, Commezzadura, Madonna di Campiglio, and Pinzolo slice. Keep
+the following post-freeze additions outside that graph until each candidate can
+be promoted as one coherent, source-backed regional slice.
+
+- Adjacent accommodation candidates: `stay_base:campo-carlo-magno`,
+  `stay_base:carisolo`, `stay_base:giustino`, and `stay_base:massimeno`.
+  Official place and winter-transport sources establish useful candidate
+  identity, but the next pass must prove the complete lodging boundary, choose
+  the owning stay destination, curate new-entity fields, and add an explicit
+  source-backed ski-area access edge. Campo Carlo Magno is likely related to
+  Madonna di Campiglio; Carisolo, Giustino, and Massimeno are likely related to
+  Pinzolo. Those likely parents are research hypotheses, not catalog ownership.
+- Genuine commercial-product candidates:
+  `lift_pass_product:madonna-di-campiglio-local-pass`,
+  `lift_pass_product:superskirama`, and `lift_pass_product:starpass`. A future
+  pass slice must establish exact current product identity, stay-market
+  availability/default policy, modeled ski-area and terrain-domain coverage,
+  tariff semantics, and trust ownership. Starpass is pay-per-use and requires
+  an explicit decision that its thresholds can be represented without false
+  fixed-price precision.
+- Product-variant and add-on candidates:
+  `lift_pass_product:campiglio-five-of-seven` is a flexible-duration variant,
+  while `lift_pass_product:campiglio-daily-upgrade` is an add-on to a local
+  product rather than a stand-alone terrain entitlement. Do not create either
+  entity until product-selection policy establishes that it is independently
+  useful and the current catalog contract can represent its semantics.
+- External context: `lift_pass_product:pejo-external-pass-context` records that
+  Pejo appears in genuine regional products while remaining outside the
+  ski-connected Campiglio terrain domain. Keep it as disconnected validity
+  context unless a complete Pejo destination/area/access slice is curated.
+- Night-skiing evidence for `ski_area:folgarida-marilleva-ski-area` remains a
+  source gap on `night_skiing.availability`. The official FAQ and piste map are
+  discovery evidence only; promote the field only after a current recurring or
+  season-scheduled lift-served downhill timetable, tariff, or operating notice
+  is directly reproducible for the same ski-area scope.
+
+Not now: do not add these stay bases or pass products, do not broaden the
+accepted Resulting Graph, do not treat Pejo as connected terrain, and do not
+upgrade Folgarida-Marilleva night skiing from `unknown`. Promotion is triggered
+when one bounded candidate group has complete identity, ownership,
+relationship, field-sweep, and trust evidence and can be added without a schema
+change or reopening the accepted Campiglio graph.
+
 ### Val Gardena Regional Catalog Refinements
 
 Status: parked

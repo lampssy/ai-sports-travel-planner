@@ -402,15 +402,43 @@
       }
     },
     {
-      "stay_destination_id": "folgarida-marilleva",
-      "name": "Folgarida-Marilleva",
+      "stay_destination_id": "folgarida",
+      "name": "Folgarida",
       "country": "Italy",
       "region": "Trentino",
       "price_level": "medium",
       "latitude": 46.3030712,
       "longitude": 10.8656079,
       "trip_market_region_id": "campiglio-dolomiti-di-brenta",
-      "regional_data_ids": {}
+      "regional_data_ids": {
+        "osm_node_id": "327580361"
+      }
+    },
+    {
+      "stay_destination_id": "marilleva-mezzana",
+      "name": "Marilleva-Mezzana",
+      "country": "Italy",
+      "region": "Trentino",
+      "price_level": "medium",
+      "latitude": 46.3179384,
+      "longitude": 10.800938,
+      "trip_market_region_id": "campiglio-dolomiti-di-brenta",
+      "regional_data_ids": {
+        "osm_relation_id": "47086"
+      }
+    },
+    {
+      "stay_destination_id": "commezzadura",
+      "name": "Commezzadura",
+      "country": "Italy",
+      "region": "Trentino",
+      "price_level": "medium",
+      "latitude": 46.31299,
+      "longitude": 10.8328315,
+      "trip_market_region_id": "campiglio-dolomiti-di-brenta",
+      "regional_data_ids": {
+        "osm_relation_id": "47088"
+      }
     },
     {
       "stay_destination_id": "grindelwald",
@@ -1151,7 +1179,7 @@
     },
     {
       "stay_base_id": "folgarida-marilleva-daolasa",
-      "stay_destination_id": "folgarida-marilleva",
+      "stay_destination_id": "commezzadura",
       "name": "Daolasa",
       "price_range": "EUR 110-180",
       "price_min": 110.0,
@@ -1159,7 +1187,7 @@
       "quality": "standard",
       "latitude": 46.3195236,
       "longitude": 10.8398851,
-      "base_type": "resort_station",
+      "base_type": "hamlet",
       "regional_data_ids": {
         "osm_node_id": "6043719130"
       },
@@ -1176,7 +1204,7 @@
     },
     {
       "stay_base_id": "folgarida-marilleva-folgarida",
-      "stay_destination_id": "folgarida-marilleva",
+      "stay_destination_id": "folgarida",
       "name": "Folgarida",
       "price_range": "EUR 130-210",
       "price_min": 130.0,
@@ -1188,9 +1216,9 @@
       "regional_data_ids": {
         "osm_node_id": "327580361"
       },
-      "elevation_m": null,
+      "elevation_m": 1300,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "planned_resort",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
@@ -1201,7 +1229,7 @@
     },
     {
       "stay_base_id": "folgarida-marilleva-marilleva-1400",
-      "stay_destination_id": "folgarida-marilleva",
+      "stay_destination_id": "marilleva-mezzana",
       "name": "Marilleva 1400",
       "price_range": "EUR 120-190",
       "price_min": 120.0,
@@ -1213,9 +1241,9 @@
       "regional_data_ids": {
         "osm_node_id": "331259364"
       },
-      "elevation_m": null,
+      "elevation_m": 1400,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "planned_resort",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
@@ -1226,7 +1254,7 @@
     },
     {
       "stay_base_id": "folgarida-marilleva-marilleva-900",
-      "stay_destination_id": "folgarida-marilleva",
+      "stay_destination_id": "marilleva-mezzana",
       "name": "Marilleva 900",
       "price_range": "EUR 100-170",
       "price_min": 100.0,
@@ -1238,7 +1266,29 @@
       "regional_data_ids": {
         "osm_node_id": "331259493"
       },
-      "elevation_m": null,
+      "elevation_m": 900,
+      "base_character": {
+        "development_style": "planned_resort",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "marilleva-mezzana-mezzana",
+      "stay_destination_id": "marilleva-mezzana",
+      "name": "Mezzana",
+      "price_range": "EUR 100-170",
+      "price_min": 100.0,
+      "price_max": 170.0,
+      "quality": "standard",
+      "latitude": 46.3173162,
+      "longitude": 10.8010074,
+      "elevation_m": 940,
+      "base_type": "village",
       "base_character": {
         "development_style": "unknown",
         "local_pace": "unknown"
@@ -1247,6 +1297,9 @@
         "availability": "unknown",
         "intensity": null,
         "season_label": null
+      },
+      "regional_data_ids": {
+        "osm_node_id": "64776621"
       }
     },
     {
@@ -1777,18 +1830,18 @@
       "quality": "standard",
       "latitude": 46.2269942,
       "longitude": 10.8270157,
-      "base_type": "town",
+      "base_type": "resort_station",
       "regional_data_ids": {
         "osm_node_id": "1796357582"
       },
-      "elevation_m": null,
+      "elevation_m": 1550,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -1971,14 +2024,14 @@
       "regional_data_ids": {
         "osm_node_id": "4311362989"
       },
-      "elevation_m": null,
+      "elevation_m": 774,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "mixed",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "low_key",
         "season_label": null
       }
     },
@@ -3514,8 +3567,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -4232,8 +4285,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 2,
         "season_label": null
       },
       "night_skiing": {
@@ -4247,8 +4300,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4443,8 +4496,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -5590,6 +5643,21 @@
       "source_urls": [
         "https://www.openstreetmap.org/node/8662539441",
         "https://www.ski.it/en/skiarea/folgarida-marilleva"
+      ]
+    },
+    {
+      "ski_area_access_id": "marilleva-mezzana-mezzana--folgarida-marilleva-ski-area",
+      "stay_base_id": "marilleva-mezzana-mezzana",
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Marilleva 900",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.visitvaldisole.it/website_files/cataloghi/ski+train+bus.pdf"
       ]
     },
     {
@@ -7002,7 +7070,9 @@
         "https://www.campigliodolomiti.it/en/ski-area",
         "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
       ],
-      "official_trail_map": null
+      "official_trail_map": {
+        "url": "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf"
+      }
     },
     {
       "terrain_domain_id": "kitzsteinhorn-maiskogel",
@@ -7241,12 +7311,16 @@
       "name": "Campiglio Dolomiti di Brenta Skiarea Skipass",
       "validity_scope": "regional_network",
       "available_from_stay_destination_ids": [
-        "folgarida-marilleva",
+        "folgarida",
+        "marilleva-mezzana",
+        "commezzadura",
         "madonna-di-campiglio",
         "pinzolo"
       ],
       "default_for_stay_destination_ids": [
-        "folgarida-marilleva",
+        "folgarida",
+        "marilleva-mezzana",
+        "commezzadura",
         "madonna-di-campiglio",
         "pinzolo"
       ],
@@ -7611,7 +7685,9 @@
       "name": "Folgarida Marilleva Skipass",
       "validity_scope": "single_ski_area",
       "available_from_stay_destination_ids": [
-        "folgarida-marilleva"
+        "folgarida",
+        "marilleva-mezzana",
+        "commezzadura"
       ],
       "default_for_stay_destination_ids": [],
       "valid_ski_area_ids": [
@@ -9301,8 +9377,8 @@
     },
     {
       "rental_display_fact_id": "folgarida-marilleva-ski-point",
-      "stay_destination_id": "folgarida-marilleva",
-      "stay_base_id": null,
+      "stay_destination_id": "folgarida",
+      "stay_base_id": "folgarida-marilleva-folgarida",
       "name": "Ski Point",
       "price_range": "EUR 30-45",
       "price_min": 30.0,
