@@ -2874,7 +2874,7 @@
       "source_title": "Sitas rates and offers",
       "source_value": "Sitas card valid only for individual journeys on Sitas lifts",
       "evidence_summary": "The Sitas-only card is an individual-journey fare rather than a complete downhill ski-area pass product.",
-      "normalization_note": "It remains explicit external product context and creates no pass-coverage relationship."
+      "normalization_note": "The source establishes a concrete Sitas-only subset entitlement. Catalog materialization is deferred until the model can express lift-level subset coverage without creating a false full-west coverage relationship."
     },
     {
       "evidence_id": "graph-livigno-point-card",
@@ -6580,7 +6580,7 @@
       "candidate_id": "sitas-single-journey-card",
       "candidate_name": "Sitas single-journey card",
       "candidate_kind": "lift_pass_product",
-      "disposition": "external_pass_context",
+      "disposition": "deferred",
       "signals": [
         "official_product_identity",
         "limited_area_ticket"
@@ -6589,10 +6589,10 @@
         "graph-sitas-card-context"
       ],
       "target_refs": [],
-      "backlog_ref": null,
-      "rationale": "The official Sitas card is limited to individual lift journeys rather than full ski-area validity, so it remains external fare context and creates no coverage edge.",
+      "backlog_ref": "docs/product-backlog.md#livigno-ski-area-identity-migration",
+      "rationale": "The official tariff establishes a concrete Sitas-only individual-journey product, but the prospective catalog currently models one normalized western SkiArea rather than lift-level coverage. Materializing the card therefore requires a subset-coverage contract that can represent its Sitas-lift entitlement without falsely granting full Carosello-Sitas coverage. It remains a regional follow-up under the Livigno identity-migration backlog and creates no coverage edge until that prerequisite is resolved.",
       "ski_area_boundary": null,
-      "graph_impact": "graph_blocking"
+      "graph_impact": "regional_followup"
     },
     {
       "candidate_id": "livigno-point-card",
@@ -7262,7 +7262,7 @@
           "graph-lombardia-skipass",
           "graph-skin-lombardia-pay-per-use"
         ],
-        "rationale": "The official tariffs present the default Livigno downhill pass, a distinct pay-per-ride Point Card, and a same-entitlement One4Family variant. They also present the current Alta Valtellina Ski Pass, Lombardia Skipass, and Ski'n Lombardia Pay per Use as distinct non-default regional products available from Livigno; their established Livigno focus-graph coverage is recorded while wider regional member catalogs remain deferred. Carosello Sunpass and the Sitas journey card remain limited fare context, while Engadin and San Bernardino are reciprocal purchase discounts without Livigno coverage edges."
+        "rationale": "The official tariffs present the default Livigno downhill pass, a distinct pay-per-ride Point Card, and a same-entitlement One4Family variant. They also present the current Alta Valtellina Ski Pass, Lombardia Skipass, and Ski'n Lombardia Pay per Use as distinct non-default regional products available from Livigno; their established Livigno focus-graph coverage is recorded while wider regional member catalogs remain deferred. Carosello Sunpass remains non-skier fare context, while the Sitas journey card is deferred until subset-coverage semantics can represent its lift-specific entitlement without inventing full-west coverage. Engadin and San Bernardino are reciprocal purchase discounts without Livigno coverage edges."
       }
     ],
     "relationships": [
