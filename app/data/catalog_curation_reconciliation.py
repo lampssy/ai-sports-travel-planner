@@ -27,6 +27,15 @@ TargetKey = tuple[CatalogTargetType, str]
 DeltaKey = tuple[CatalogTargetType, str, str]
 _MISSING = object()
 CatalogCurationReconciliationPhase = Literal["final", "graph_discovery"]
+PENDING_WEATHER_GEOMETRY_FIELD_PATHS = frozenset(
+    {
+        "weather_sampling_status",
+        "latitude",
+        "longitude",
+        "base_elevation_m",
+        "summit_elevation_m",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -316,18 +325,45 @@ def _derived_weather_geometry(
     return derived
 
 
+def _pending_new_ski_area_ids(
+    report: CatalogCurationReport,
+    base: _CatalogSnapshot,
+    current: _CatalogSnapshot,
+) -> set[str]:
+    return {
+        target.target_id
+        for assessment in report.entity_scope_assessments
+        if assessment.candidate_kind == "ski_area"
+        and assessment.disposition == "add_entity"
+        for target in assessment.target_refs
+        if target.target_type == "ski_area"
+        and target.target_id not in base.ski_areas
+        and target.target_id not in current.ski_areas
+    }
+
+
 def _validate_weather_geometry(
     report: CatalogCurationReport,
     base: _CatalogSnapshot,
     current: _CatalogSnapshot,
     issues: list[str],
+    *,
+    allow_pending_scope_changes: bool,
 ) -> None:
     derived = _derived_weather_geometry(base, current)
     declared = set(report.weather_request_geometry_targets)
-    if set(derived) != declared:
+    pending = (
+        _pending_new_ski_area_ids(report, base, current)
+        if allow_pending_scope_changes and report.report_schema_version >= 5
+        else set()
+    )
+    expected = set(derived) | pending
+    if expected != declared:
         issues.append(
-            "weather_request_geometry_targets must exactly match retained ski-area "
-            f"geometry changes: derived={sorted(derived)} report={sorted(declared)}"
+            "weather_request_geometry_targets must exactly match catalog ski-area "
+            "geometry changes and allowed pending new ski areas: "
+            f"derived={sorted(derived)} pending={sorted(pending)} "
+            f"report={sorted(declared)}"
         )
     assessments = {
         assessment.ski_area_id: assessment
@@ -341,6 +377,23 @@ def _validate_weather_geometry(
             issues.append(
                 f"{ski_area_id}: weather geometry assessment does not match snapshots"
             )
+    coverage_by_key = {
+        coverage.target_key: coverage for coverage in report.field_coverage
+    }
+    for ski_area_id in sorted(pending):
+        assessment = assessments.get(ski_area_id)
+        if assessment is not None and assessment.before is not None:
+            issues.append(
+                f"{ski_area_id}: pending new ski-area weather geometry requires "
+                "before=null"
+            )
+        for field_path in sorted(PENDING_WEATHER_GEOMETRY_FIELD_PATHS):
+            coverage = coverage_by_key.get(("ski_area", ski_area_id, field_path))
+            if coverage is None or coverage.status != "reviewed-no-change":
+                issues.append(
+                    f"ski_area:{ski_area_id} {field_path}: pending weather geometry "
+                    "requires status=reviewed-no-change during graph discovery"
+                )
 
 
 def _validate_pass_validity_window_trust(
@@ -435,7 +488,13 @@ def reconcile_catalog_curation_report(
     _validate_delta_parity(report, deltas, issues)
     _validate_access_link_endpoints(report, deltas, base, current, issues)
     _validate_full_access_mode_resolution(report, current, issues)
-    _validate_weather_geometry(report, base, current, issues)
+    _validate_weather_geometry(
+        report,
+        base,
+        current,
+        issues,
+        allow_pending_scope_changes=allow_pending_scope_changes,
+    )
     _validate_pass_validity_window_trust(report, current, issues)
     if issues:
         raise CatalogValidationError(sorted(set(issues)))

@@ -107,7 +107,13 @@ handoff. A retained ID with changed coordinates or elevation bands records a
 targeted forced-refetch and climatology-rebuild handoff; when sampling remains
 deferred, that handoff occurs after activation.
 Catalog reconciliation derives the required target set, including new IDs, so
-report prose cannot waive the assessment.
+report prose cannot waive the assessment. During schema-v5 graph discovery,
+that set also includes a prospective ski-area ID when its typed scope assessment
+uses `add_entity` and the ID is absent from both catalog snapshots. Its geometry
+assessment uses `before=null`, records the post-merge handoff, and keeps the
+corresponding report-only field coverage resolved. Final reconciliation removes
+this pending allowance and still requires the catalog entity and matching
+geometry to be materialized.
 
 Retained IDs with unchanged terrain boundaries may preserve an already
 defensible sampling geometry. Catalog curation records the operational handoff

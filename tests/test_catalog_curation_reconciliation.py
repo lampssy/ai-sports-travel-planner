@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Literal
@@ -208,6 +209,143 @@ def _schema_five_report_with_pending_stay_base() -> CatalogCurationReport:
     return CatalogCurationReport.model_validate(payload)
 
 
+def _schema_five_report_with_pending_ski_area() -> CatalogCurationReport:
+    payload = _schema_five_graph_report_payload()
+    ski_area_id = "prospective-area"
+    identity_evidence_id = "prospective-ski-area"
+    geometry_evidence_id = "prospective-weather-geometry"
+    reviewed_field_paths = (
+        "name",
+        "weather_sampling_status",
+        "latitude",
+        "longitude",
+        "base_elevation_m",
+        "summit_elevation_m",
+    )
+    payload["reviewed_targets"].append(
+        {
+            "target_type": "ski_area",
+            "target_id": ski_area_id,
+            "scope": "narrow",
+            "required_field_paths": list(reviewed_field_paths),
+        }
+    )
+    payload["field_coverage"].extend(
+        [
+            {
+                "target_type": "ski_area",
+                "target_id": ski_area_id,
+                "field_path": field_path,
+                "status": "reviewed-no-change",
+            }
+            for field_path in reviewed_field_paths
+        ]
+    )
+    payload["evidence"].extend(
+        [
+            {
+                "evidence_id": identity_evidence_id,
+                "boundary_target_ids": [ski_area_id],
+                "target_type": "ski_area",
+                "target_id": ski_area_id,
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/ski-map",
+                "source_title": "Official prospective ski-area map",
+                "source_value": "Prospective Area",
+                "evidence_summary": "Identifies the prospective ski area.",
+            },
+            {
+                "evidence_id": geometry_evidence_id,
+                "boundary_target_ids": [ski_area_id],
+                "target_type": "ski_area",
+                "target_id": ski_area_id,
+                "field_path": "latitude",
+                "source_type": "official",
+                "source_url": "https://example.com/ski-map",
+                "source_title": "Official prospective terrain map",
+                "source_value": "complete terrain footprint",
+                "evidence_summary": "Supports the proposed weather geometry.",
+            },
+        ]
+    )
+    represented_area = next(
+        assessment
+        for assessment in payload["entity_scope_assessments"]
+        if assessment["candidate_kind"] == "ski_area"
+    )
+    represented_area["ski_area_boundary"]["material_trip_consequences"][0].update(
+        {
+            "comparison_basis": "sibling_ski_area",
+            "comparison_target_id": ski_area_id,
+        }
+    )
+    prospective_area = deepcopy(represented_area)
+    prospective_area.update(
+        {
+            "candidate_id": ski_area_id,
+            "candidate_name": "Prospective Area",
+            "disposition": "add_entity",
+            "evidence_refs": [identity_evidence_id, geometry_evidence_id],
+            "target_refs": [{"target_type": "ski_area", "target_id": ski_area_id}],
+            "rationale": "The official map identifies another complete ski area.",
+        }
+    )
+    prospective_area["ski_area_boundary"]["evidence_refs"] = [
+        identity_evidence_id,
+        geometry_evidence_id,
+    ]
+    prospective_area["ski_area_boundary"]["material_trip_consequences"][0][
+        "evidence_refs"
+    ] = [identity_evidence_id]
+    prospective_area["ski_area_boundary"]["material_trip_consequences"][0].update(
+        {
+            "comparison_basis": "sibling_ski_area",
+            "comparison_target_id": "example-area",
+        }
+    )
+    payload["entity_scope_assessments"].append(prospective_area)
+    ski_area_coverage = next(
+        coverage
+        for coverage in payload["graph_discovery"]["coverage"]
+        if coverage["candidate_kind"] == "ski_area"
+    )
+    ski_area_coverage["candidate_ids"].append(ski_area_id)
+    ski_area_coverage["evidence_refs"].extend(
+        [identity_evidence_id, geometry_evidence_id]
+    )
+    payload["graph_discovery"]["relationships"].append(
+        {
+            "relationship_type": "lift_pass_covers_ski_area",
+            "from_candidate_id": "example-local-pass",
+            "to_candidate_id": ski_area_id,
+            "evidence_refs": [identity_evidence_id],
+        }
+    )
+    payload["weather_request_geometry_targets"] = [ski_area_id]
+    payload["weather_request_geometry_assessments"] = [
+        {
+            "ski_area_id": ski_area_id,
+            "before": None,
+            "after": {
+                "weather_sampling_status": "active",
+                "latitude": 45.01,
+                "longitude": 6.01,
+                "base_elevation_m": 1200,
+                "mid_elevation_m": 1800,
+                "upper_elevation_m": 2280,
+            },
+            "coordinate_derivation_method": "official_terrain_medoid",
+            "elevation_derivation_method": "official_lift_served_range",
+            "geometry_completeness": "complete",
+            "derivation_status": "verified",
+            "evidence_refs": [geometry_evidence_id],
+            "post_merge_handoff": "scheduled_completion",
+        }
+    ]
+    return CatalogCurationReport.model_validate(payload)
+
+
 def test_graph_discovery_reconciliation_allows_pending_sourced_entity(
     tmp_path: Path,
 ) -> None:
@@ -227,6 +365,151 @@ def test_graph_discovery_reconciliation_allows_pending_sourced_entity(
     )
 
     assert result.delta_count == 0
+
+
+def test_graph_discovery_reconciliation_allows_pending_ski_area_weather_geometry(
+    tmp_path: Path,
+) -> None:
+    catalog_path, trust_path = _write_snapshot(
+        tmp_path,
+        "discovery",
+        minimal_catalog_payload(),
+    )
+
+    result = reconcile_catalog_curation_report(
+        _schema_five_report_with_pending_ski_area(),
+        base_catalog_path=catalog_path,
+        current_catalog_path=catalog_path,
+        base_trust_manifest_path=trust_path,
+        current_trust_manifest_path=trust_path,
+        phase="graph_discovery",
+    )
+
+    assert result.delta_count == 0
+
+
+def test_graph_discovery_reconciliation_rejects_unresolved_pending_weather_field(
+    tmp_path: Path,
+) -> None:
+    catalog_path, trust_path = _write_snapshot(
+        tmp_path,
+        "discovery",
+        minimal_catalog_payload(),
+    )
+    payload = _schema_five_report_with_pending_ski_area().model_dump(mode="json")
+    latitude_coverage = next(
+        coverage
+        for coverage in payload["field_coverage"]
+        if coverage["target_type"] == "ski_area"
+        and coverage["target_id"] == "prospective-area"
+        and coverage["field_path"] == "latitude"
+    )
+    latitude_coverage.update(
+        {
+            "status": "unresolved",
+            "notes": "The prospective coordinate is not resolved.",
+        }
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "ski_area:prospective-area latitude: pending weather geometry "
+            "requires status=reviewed-no-change"
+        ),
+    ):
+        reconcile_catalog_curation_report(
+            CatalogCurationReport.model_validate(payload),
+            base_catalog_path=catalog_path,
+            current_catalog_path=catalog_path,
+            base_trust_manifest_path=trust_path,
+            current_trust_manifest_path=trust_path,
+            phase="graph_discovery",
+        )
+
+
+def test_graph_discovery_reconciliation_requires_null_pending_weather_before(
+    tmp_path: Path,
+) -> None:
+    catalog_path, trust_path = _write_snapshot(
+        tmp_path,
+        "discovery",
+        minimal_catalog_payload(),
+    )
+    payload = _schema_five_report_with_pending_ski_area().model_dump(mode="json")
+    assessment = payload["weather_request_geometry_assessments"][0]
+    assessment["before"] = deepcopy(assessment["after"])
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            "prospective-area: pending new ski-area weather geometry requires "
+            "before=null"
+        ),
+    ):
+        reconcile_catalog_curation_report(
+            CatalogCurationReport.model_validate(payload),
+            base_catalog_path=catalog_path,
+            current_catalog_path=catalog_path,
+            base_trust_manifest_path=trust_path,
+            current_trust_manifest_path=trust_path,
+            phase="graph_discovery",
+        )
+
+
+def test_graph_discovery_reconciliation_rejects_non_additive_weather_target(
+    tmp_path: Path,
+) -> None:
+    catalog_path, trust_path = _write_snapshot(
+        tmp_path,
+        "discovery",
+        minimal_catalog_payload(),
+    )
+    payload = _schema_five_report_with_pending_ski_area().model_dump(mode="json")
+    assessment = next(
+        assessment
+        for assessment in payload["entity_scope_assessments"]
+        if assessment["candidate_id"] == "prospective-area"
+    )
+    assessment["disposition"] = "represented"
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=(
+            r"allowed pending new ski areas: derived=\[\] pending=\[\] "
+            r"report=\['prospective-area'\]"
+        ),
+    ):
+        reconcile_catalog_curation_report(
+            CatalogCurationReport.model_validate(payload),
+            base_catalog_path=catalog_path,
+            current_catalog_path=catalog_path,
+            base_trust_manifest_path=trust_path,
+            current_trust_manifest_path=trust_path,
+            phase="graph_discovery",
+        )
+
+
+def test_final_reconciliation_rejects_pending_ski_area_weather_geometry(
+    tmp_path: Path,
+) -> None:
+    catalog_path, trust_path = _write_snapshot(
+        tmp_path,
+        "final",
+        minimal_catalog_payload(),
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="add_entity requires a matching identity-field creation change",
+    ):
+        reconcile_catalog_curation_report(
+            _schema_five_report_with_pending_ski_area(),
+            base_catalog_path=catalog_path,
+            current_catalog_path=catalog_path,
+            base_trust_manifest_path=trust_path,
+            current_trust_manifest_path=trust_path,
+        )
 
 
 def test_complete_discovery_rejects_disconnected_pending_entity() -> None:
