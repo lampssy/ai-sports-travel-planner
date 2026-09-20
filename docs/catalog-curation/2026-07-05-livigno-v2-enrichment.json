@@ -2057,6 +2057,21 @@
       "normalization_note": "Three separately documented mini snowparks and non-snowpark funslopes are excluded from the dedicated count."
     },
     {
+      "evidence_id": "v2-enrichment-005-livigno-ski-area-snow-park-mini-parks-exclusion",
+      "boundary_target_ids": [
+        "livigno-ski-area"
+      ],
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
+      "source_title": "Skipass Livigno official Mini Snowparks guide",
+      "source_value": "Three mini snowparks: Mottolino, San Rocco, and Cassana",
+      "evidence_summary": "The official page presents Mini Snowpark Mottolino, Mini Snowpark San Rocco, and Mini Snowpark Cassana as beginner playgrounds rather than dedicated full snowparks.",
+      "normalization_note": "The three mini snowparks are excluded from the canonical park_count=4 normalization, which counts the separately documented dedicated snowparks."
+    },
+    {
       "evidence_id": "v2-enrichment-006-livigno-livigno-base-character-development-style",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -6988,6 +7003,7 @@
         "https://www.skipasslivigno.com/en/skilink/",
         "https://www.mottolino.com/en/winter/ski-area/",
         "https://www.mottolino.com/en/winter/ski-area/lifts-and-slopes/lifts/",
+        "https://www.mottolino.com/estate/headquarters-mottolino/",
         "https://www.mottolino.com/en/weather-livigno/",
         "https://www.carosello3000.com/en/winter/pistes-and-fun-parks/livigno-ski-pistes",
         "https://www.carosello3000.com/en/winter/my3000-live/open-ski-lifts-livigno",
@@ -7013,6 +7029,7 @@
       "source_urls": [
         "https://www.skipasslivigno.com/en/maps/",
         "https://www.livigno.eu/en/fun-relax-winter",
+        "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
         "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/"
       ],
       "candidate_kinds": [
