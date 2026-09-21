@@ -6217,7 +6217,7 @@
           "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -6230,12 +6230,16 @@
           ],
           "lodging_price_quality": [],
           "base_type": [],
-          "base_character": [],
+          "base_character": [
+            "https://files.livigno.eu/dati/app/pag/en/liv-media-kit-eng-low.pdf",
+            "https://www.livignese.it/trepalle.php"
+          ],
           "local_apres": []
         },
         "notes": [
           "Trepalle is normalized as a distinct stay base inside the Livigno accommodation market, not as a separate stay destination.",
-          "The official accommodation listing supports the Trepalle identity and 2200 m elevation; exact coordinates, base type, character, and local apres remain unresolved.",
+          "The official accommodation listing supports the Trepalle identity and 2200 m elevation; exact coordinates, base type, and local apres remain unresolved.",
+          "The official Livigno media kit establishes Trepalle as a long-standing high-altitude district, while the reviewed locality profile describes its dispersed linear settlement and tranquil setting; these are normalized to traditional development and a quiet local pace.",
           "The Livigno destination-level lodging range and quality tier are retained as estimates until Trepalle-specific price sampling is available."
         ]
       }
@@ -9057,7 +9061,7 @@
           "snow_park": "verified_with_adjustment",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
+          "ski_day_apres": "verified_with_adjustment",
           "official_documents": "needs_source"
         },
         "field_source_refs": {
@@ -9085,7 +9089,10 @@
           ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
+          "ski_day_apres": [
+            "https://www.mottolino.com/en/winter/food-drinks/apres-ski/",
+            "https://www.mottolino.com/en/winter/food-drinks/camanel-di-planon/"
+          ],
           "official_documents": []
         },
         "notes": [
@@ -9093,6 +9100,7 @@
           "The active weather point uses the official M'Eating Point hub matched to the exact OSM node; the lift-served range is 1816-2708 m.",
           "The conservative 30 km value normalizes the operator's more-than-30-km statement; the eight-lift count and three supported skill levels are operator-scoped.",
           "Snowpark count 2 includes the current Oakley Flow Park and the operator-designated Mini Snowpark Mottolino; internal lines are not counted separately.",
+          "Kosmo establishes candidate-bound apres-ski availability, while Camanel's daily themed shows and afternoon music support a lively ski-day profile; no exact season label is published.",
           "New active identity requires scheduled historical-weather completion after merge."
         ]
       },
@@ -9108,7 +9116,7 @@
           "snow_park": "verified_with_adjustment",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
+          "ski_day_apres": "verified_with_adjustment",
           "official_documents": "needs_source"
         },
         "field_source_refs": {
@@ -9132,14 +9140,18 @@
           ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
+          "ski_day_apres": [
+            "https://www.carosello3000.com/en/winter/livigno-restaurants/stalet-restaurant",
+            "https://www.carosello3000.com/en/winter/entertainment?Itemid=561"
+          ],
           "official_documents": []
         },
         "notes": [
           "Carosello 3000 and Sitas are normalized as one ski-connected western ski area with coordinated component ownership.",
           "The active weather point uses the official Costaccia hub matched to the exact OSM node; the reviewed combined lift-served range is 1817-2797 m.",
           "Snowpark count 5 includes The Beach, Twenty, Amerikan, Mini Snowpark San Rocco, and Mini Snowpark Cassana; exact operator/lift locations keep those parks inside the western boundary.",
-          "Terrain totals, detailed skill profile, snowmaking allocation, official map ownership, and apres remain unresolved at this combined owner scope.",
+          "Terrain totals, detailed skill profile, snowmaking allocation, and official map ownership remain unresolved at this combined owner scope.",
+          "The operator places Stalet at the Carosello 3000 gondola base and describes it as the resort's largest, vibrant apres-ski venue; the recurring entertainment programme supports a lively ski-day profile, while no exact season label is published.",
           "New active identity requires scheduled historical-weather completion after merge."
         ]
       }

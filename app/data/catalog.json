@@ -1780,8 +1780,8 @@
       "elevation_m": 2200,
       "base_type": null,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -4215,8 +4215,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4260,8 +4260,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
