@@ -2315,10 +2315,12 @@ def _regional_report_payload(
 
     changes: list[dict[str, object]] = []
     coverage: list[dict[str, object]] = []
+    unresolved_fields: list[tuple[str, str, str]] = []
     for target_type, target_id, payload in targets:
         for field_path in sorted(CANONICAL_FIELD_PATHS[target_type]):
             after = _nested(payload, field_path)
             status = "reviewed-no-change"
+            notes = None
             if after is not None:
                 changes.append(
                     {
@@ -2330,15 +2332,21 @@ def _regional_report_payload(
                         "trust_status": "estimated",
                     }
                 )
-                status = "changed"
-            coverage.append(
-                {
-                    "target_type": target_type,
-                    "target_id": target_id,
-                    "field_path": field_path,
-                    "status": status,
-                }
-            )
+                if after == "unknown":
+                    status = "unresolved"
+                    notes = "The bounded official sources do not establish a value."
+                    unresolved_fields.append((target_type, target_id, field_path))
+                else:
+                    status = "changed"
+            coverage_item = {
+                "target_type": target_type,
+                "target_id": target_id,
+                "field_path": field_path,
+                "status": status,
+            }
+            if notes is not None:
+                coverage_item["notes"] = notes
+            coverage.append(coverage_item)
     if linked_focus_area_id is not None:
         coverage.append(
             {
@@ -2423,6 +2431,41 @@ def _regional_report_payload(
             "evidence_summary": "Records one examined adjacent stay market.",
         },
     ]
+    unresolved_source_keys = {
+        "stay_destination": "destination",
+        "stay_base": "destination",
+        "ski_area": "ski_area",
+        "ski_area_access": "access",
+        "terrain_domain": "ski_area",
+        "lift_pass_product": "pass",
+        "ski_region": "ski_area",
+        "rental_display_fact": "destination",
+        "trust_manifest": "destination",
+    }
+    for index, (target_type, target_id, field_path) in enumerate(
+        unresolved_fields,
+        start=1,
+    ):
+        source_key = unresolved_source_keys[target_type]
+        evidence.append(
+            {
+                "evidence_id": f"sample-unresolved-{index}",
+                "target_type": target_type,
+                "target_id": target_id,
+                "field_path": field_path,
+                "source_type": "official",
+                "source_url": REGIONAL_SOURCE_URLS[source_key],
+                "source_title": "Official Sample Valley source review",
+                "source_value": "No sufficiently specific value was published.",
+                "evidence_summary": (
+                    "The bounded official source review supports retaining unknown."
+                ),
+                "normalization_note": (
+                    "The absence of a sufficiently specific published value is "
+                    "normalized to unknown."
+                ),
+            }
+        )
     added_ski_areas = tuple(
         area
         for area in catalog.ski_areas

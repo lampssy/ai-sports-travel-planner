@@ -1210,6 +1210,108 @@ def test_schema_five_report_accepts_complete_graph_discovery() -> None:
     assert report.graph_discovery.status == "complete"
 
 
+def _schema_five_unknown_field_change_payload(
+    *,
+    coverage_status: str,
+    include_evidence: bool,
+) -> dict:
+    payload = _schema_five_graph_report_payload()
+    stay_base_target = next(
+        target
+        for target in payload["reviewed_targets"]
+        if target["target_type"] == "stay_base"
+        and target["target_id"] == "example-village"
+    )
+    stay_base_target["required_field_paths"].append("base_character.development_style")
+    payload["changes"].append(
+        {
+            "target_type": "stay_base",
+            "target_id": "example-village",
+            "field_path": "base_character.development_style",
+            "before": None,
+            "after": "unknown",
+            "trust_status": "needs_source",
+            "ranking_relevant": False,
+        }
+    )
+    payload["field_coverage"].append(
+        {
+            "target_type": "stay_base",
+            "target_id": "example-village",
+            "field_path": "base_character.development_style",
+            "status": coverage_status,
+            "notes": (
+                "The municipal history and official accommodation directory "
+                "were checked but did not establish the settlement form. An "
+                "official planning or heritage source would resolve the field."
+            ),
+        }
+    )
+    if include_evidence:
+        payload["evidence"].append(
+            {
+                "evidence_id": "example-stay-base-development-style",
+                "target_type": "stay_base",
+                "target_id": "example-village",
+                "field_path": "base_character.development_style",
+                "source_type": "official",
+                "source_url": "https://example.com/stays",
+                "source_title": "Official accommodation directory",
+                "source_value": "No settlement-form description is published.",
+                "evidence_summary": (
+                    "The source was checked but cannot establish a canonical "
+                    "development style."
+                ),
+                "normalization_note": (
+                    "The unsupported field remains unknown rather than being "
+                    "inferred from generic destination marketing."
+                ),
+            }
+        )
+    return payload
+
+
+def test_schema_five_report_rejects_unknown_change_as_completed_change() -> None:
+    report = CatalogCurationReport.model_validate(
+        _schema_five_unknown_field_change_payload(
+            coverage_status="changed",
+            include_evidence=True,
+        )
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="unknown result must use status=unresolved",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_schema_five_report_requires_evidence_for_unresolved_field() -> None:
+    report = CatalogCurationReport.model_validate(
+        _schema_five_unknown_field_change_payload(
+            coverage_status="unresolved",
+            include_evidence=False,
+        )
+    )
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="unresolved field coverage requires matching evidence",
+    ):
+        validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
+def test_schema_five_report_accepts_researched_unknown_change() -> None:
+    report = CatalogCurationReport.model_validate(
+        _schema_five_unknown_field_change_payload(
+            coverage_status="unresolved",
+            include_evidence=True,
+        )
+    )
+
+    validate_catalog_curation_report(report, require_resulting_graph=True)
+
+
 def test_schema_five_report_requires_graph_discovery() -> None:
     payload = _schema_five_graph_report_payload()
     del payload["graph_discovery"]

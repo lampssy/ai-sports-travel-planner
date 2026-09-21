@@ -618,6 +618,16 @@ the source neighborhoods actually checked, direct evidence, and one of
 prospective relationships remain explicit, so naming all six kinds is not enough
 to claim that discovery happened.
 
+Schema-v5 validation keeps delta accounting separate from research disposition.
+Any changed field whose result is the explicit `"unknown"` sentinel must use
+`field_coverage.status=unresolved` and matching field-specific evidence; it may
+not pass as an ordinary completed `changed` field. The existing source-trust lane
+challenges each such row against the bounded source neighborhood, and audits the
+complete canonical field set for every entity absent from the exact base. A
+discoverable value becomes an ordinary-remediation finding, while an honestly
+researched unknown may remain without creating another review phase. Managed
+curation PR synopses list the researched unknowns retained on new entities.
+
 Graph discovery remains monotonic for the rest of the generation. The projection
 retains the latest completed graph-discovery checkpoint as immutable authority even
 after a newer delta or reviewed checkpoint becomes current. Every descendant report

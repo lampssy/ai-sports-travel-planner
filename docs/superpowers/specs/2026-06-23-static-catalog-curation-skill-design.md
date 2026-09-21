@@ -311,8 +311,11 @@ The model should enforce:
 - nonblank target IDs and field paths;
 - typed field coverage decisions: `changed`, `reviewed-no-change`,
   `unresolved`, or `not-applicable`;
-- every changed field has matching field coverage with `status=changed`;
-- unresolved field coverage includes a note explaining the blocker;
+- every changed field has matching field coverage; schema-v5 changes whose
+  resulting value is the explicit `"unknown"` sentinel use `status=unresolved`,
+  while other changes use `status=changed`;
+- schema-v5 unresolved field coverage includes a note explaining the blocker
+  and matching field-specific evidence;
 - allowed source types;
 - valid source URLs;
 - nonblank evidence summaries for source-backed changes;
@@ -362,8 +365,10 @@ Trust validation should enforce:
 For catalog PRs, validate the curation report:
 
 - field coverage rows use typed review statuses;
-- every changed field is represented in typed field coverage with
-  `status=changed`;
+- every changed field is represented in typed field coverage, using
+  `status=unresolved` for an explicit schema-v5 `"unknown"` result and
+  `status=changed` otherwise;
+- every schema-v5 unresolved field has matching field-specific evidence;
 - every changed high-impact field has a matching evidence item;
 - each evidence item points at the correct target entity;
 - source URLs are clickable and syntactically valid;

@@ -407,7 +407,15 @@ The installed skill must:
   field. Absence from the provisional or frozen envelope is not itself a valid
   unresolved reason. A new active stay base also requires at least one reviewed
   applicable ski-area access assessment; exact distance remains optional without
-  defensible base-point and lift-endpoint geometry;
+  defensible base-point and lift-endpoint geometry. In a schema-v5 report, any
+  catalog delta whose resulting value is the explicit `"unknown"` sentinel is
+  still semantically unresolved: record `field_coverage.status=unresolved`, not
+  `changed`, and attach matching field-specific evidence. The source-trust lane
+  must challenge every such row, with the complete audit mandatory for a new
+  entity. Discoverable values become ordinary-remediation findings; only a
+  researched unresolved disposition may survive publication. This audit uses
+  the existing review lane and does not add another maintainer phase or
+  graph-scope rerun;
 - for an operations-ownership gap, the evidence envelope and completion pass
   must inspect the candidate's official publication neighborhood: destination
   or resort page, operator or consortium member directory and candidate member
@@ -751,6 +759,7 @@ The installed skill must:
   or print the publication text;
 - write a concise current PR-body synopsis for every waiting-CI or ready
   request, including recovery and lightweight readiness runs, and explicitly
+  list any researched unresolved `"unknown"` fields retained on new entities;
   adopt an unmarked legacy body only through the helper's `--adopt-body`
   permission;
 - tolerate bounded GitHub PR-head propagation only after an exact journaled

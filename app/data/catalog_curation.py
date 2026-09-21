@@ -1835,6 +1835,13 @@ def validate_catalog_curation_report(
                 f"{change.target_type}:{change.target_id} {change.field_path}: "
                 "missing changed field coverage"
             )
+        elif report.report_schema_version >= 5 and change.after == "unknown":
+            if coverage.status != "unresolved":
+                issues.append(
+                    f"{change.target_type}:{change.target_id} "
+                    f"{change.field_path}: unknown result must use "
+                    "status=unresolved"
+                )
         elif coverage.status != "changed":
             issues.append(
                 f"{change.target_type}:{change.target_id} {change.field_path}: "
@@ -1853,6 +1860,18 @@ def validate_catalog_curation_report(
                 f"{evidence.target_type}:{evidence.target_id}: evidence target is "
                 "not declared in reviewed_targets"
             )
+
+    if report.report_schema_version >= 5:
+        for coverage in report.field_coverage:
+            if (
+                coverage.status == "unresolved"
+                and coverage.target_key not in evidence_by_key
+            ):
+                issues.append(
+                    f"{coverage.target_type}:{coverage.target_id} "
+                    f"{coverage.field_path}: unresolved field coverage requires "
+                    "matching evidence"
+                )
 
     family_ids = [item.family_id for item in report.review_evidence_envelope]
     if len(family_ids) != len(set(family_ids)):
