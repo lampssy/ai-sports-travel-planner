@@ -477,6 +477,12 @@ def test_runtime_contract_freezes_review_disposition_branches() -> None:
         "applies_to_results": ["prepared", "discovery-required"],
         "report_schema_version": 5,
         "initial_recipe": "checkpoint_curation_graph_discovery",
+        "checkpoint_head_policy": {
+            "requires_action_flag": "caller_created_descendant_head",
+            "allowed_substitution": "head-only",
+            "head_source": "exact-clean-discovery-commit",
+            "preflight": "submitted-head-equals-worktree-head",
+        },
         "branches": {
             "in_progress": {
                 "next_recipe": "prepare_curation",

@@ -287,6 +287,12 @@ not have to derive an invocation.
     "applies_to_results": ["prepared", "discovery-required"],
     "report_schema_version": 5,
     "initial_recipe": "checkpoint_curation_graph_discovery",
+    "checkpoint_head_policy": {
+      "requires_action_flag": "caller_created_descendant_head",
+      "allowed_substitution": "head-only",
+      "head_source": "exact-clean-discovery-commit",
+      "preflight": "submitted-head-equals-worktree-head"
+    },
     "branches": {
       "in_progress": {
         "next_recipe": "prepare_curation",
@@ -472,13 +478,15 @@ not have to derive an invocation.
 - `${PR}`, report path, work ID, candidate identity, and branch come from the
   current helper inventory or the result of the immediately preceding helper
   capability. `${HEAD}` normally does too. For the explicit curation
-  review-disposition branches and the typed validation-remediation branch only,
-  `${HEAD}` may instead be the exact clean commit produced by allowed
-  pre-review normalization or bounded remediation. Validation remediation is
-  authorized only when the returned next action sets
+  review-disposition branches, `${HEAD}` may instead be the exact clean commit
+  produced by allowed pre-review normalization or bounded remediation. For a
+  graph-discovery checkpoint or typed validation-remediation action, this
+  substitution is authorized only when the returned action sets
   `caller_created_descendant_head=true`; only `${HEAD}` may change, and it must
-  be a clean descendant of the returned reviewed head. The checkpoint helper
-  validates that caller-created head before granting any recovery authority.
+  be the branch-authorized clean commit. Immediately before invoking any such
+  substituted action, verify that the worktree's actual `HEAD` equals the value
+  passed as `--head`. The checkpoint helper validates that caller-created head
+  before granting any recovery authority.
 - `${GENERATION_ID}` is copied exactly from the current curation generation or
   its helper-returned `next_action`; it is never synthesized from prose.
 - `${EXPECTED_HEAD}` is the selected remote PR head returned by the helper. It
@@ -714,7 +722,10 @@ The initial graph-discovery checkpoint may reuse the prepared head when that hea
 already contains a valid schema-v5 JSON/Markdown pair. This exception is explicit,
 applies only while the generation is still at `prepared`, and still runs the full
 graph-discovery validator. Every later discovery correction must create a
-report-only descendant changing exactly the canonical JSON/Markdown pair.
+report-only descendant changing exactly the canonical JSON/Markdown pair. When
+the returned action sets `caller_created_descendant_head=true`, replace only its
+`${HEAD}` substitution with that exact clean discovery commit and verify that the
+worktree `HEAD` equals the submitted value immediately before checkpointing.
 
 If a process stops after persisting `checkpoint-started` but before
 `checkpoint-completed`, that transaction outranks new preparation. A successor

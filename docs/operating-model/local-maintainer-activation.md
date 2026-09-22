@@ -476,7 +476,12 @@ The installed skill must:
   pair and calling `checkpoint_curation_graph_discovery`; do this before a time
   boundary if it creates a useful recovery point. The helper verifies the actual
   head, exact base, unchanged catalog/trust objects, schema-v5 discovery-mode
-  reconciliation, and Markdown parity. After an accepted `in_progress`
+  reconciliation, and Markdown parity. When the returned checkpoint action sets
+  `caller_created_descendant_head=true`, replace only its head with the exact
+  clean discovery commit and immediately verify that the worktree `HEAD` equals
+  the value submitted as `--head`. Reuse the returned head only when no new
+  discovery commit was created and it remains the actual worktree `HEAD`. After
+  an accepted `in_progress`
   checkpoint, immediately invoke its exact typed `prepare_curation` action under
   the same lease while the checkpoint made progress, the lease, heartbeat, and
   exact heads remain valid, and the semantic clock is before minute 210. Leave

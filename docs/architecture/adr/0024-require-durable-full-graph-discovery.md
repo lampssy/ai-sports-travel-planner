@@ -164,7 +164,10 @@ and deterministic rendering.
 
 The initial checkpoint may use the prepared head without an artificial edit when
 that exact head already contains a valid schema-v5 report pair. Later discovery
-updates require a report-only descendant. A persisted checkpoint-start event is
+updates require a report-only descendant. A checkpoint action carrying
+`caller_created_descendant_head=true` authorizes replacing only its head with the
+exact clean discovery commit; the submitted head must equal the worktree `HEAD`
+immediately before invocation. A persisted checkpoint-start event is
 durable recovery authority: successor preparation restores and completes that exact
 transaction instead of closing or replacing its generation.
 
