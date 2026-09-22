@@ -68,9 +68,11 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   topology, endpoints, or source neighborhoods change, the lanes disagree, or a
   new omission appears. This avoids freezing a disproved topology or repeating
   unaffected discovery without adding another report schema or helper lifecycle.
-- A partial report is checkpointed without a GitHub blocked label and resumes
-  from its exact head in a later cycle. Semantic review starts only after every
-  required row leaves `in_progress`.
+- A partial report is checkpointed without a GitHub blocked label and immediately
+  resumes from its exact head in the same cycle while its lease, exact-head,
+  progress, and semantic-budget guards remain valid. The checkpoint remains the
+  later-cycle recovery point when a guard stops continuation. Semantic review
+  starts only after every required row leaves `in_progress`.
 - A complete discovery checkpoint has separate typed clean-review and
   graph-correction actions. Review-requested graph changes use a report-only
   descendant and run the targeted independent correction review, including when a

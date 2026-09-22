@@ -472,13 +472,17 @@ The installed skill must:
 - perform graph discovery before either semantic review lane. Start every
   unknown candidate kind as `in_progress`, research its bounded source
   neighborhood, and update the canonical report rather than a private
-  checklist. If the cycle reaches its time boundary while any row is still
-  `in_progress`, commit only the canonical report pair and call
-  `checkpoint_curation_graph_discovery`. The helper verifies the actual head,
-  exact base, unchanged catalog/trust objects, schema-v5 discovery-mode
-  reconciliation, and Markdown parity. The generation then resumes through its
-  typed `prepare_curation` action on a later cycle; do not publish a blocked
-  lifecycle state merely because discovery is partial;
+  checklist. Persist bounded progress by committing only the canonical report
+  pair and calling `checkpoint_curation_graph_discovery`; do this before a time
+  boundary if it creates a useful recovery point. The helper verifies the actual
+  head, exact base, unchanged catalog/trust objects, schema-v5 discovery-mode
+  reconciliation, and Markdown parity. After an accepted `in_progress`
+  checkpoint, immediately invoke its exact typed `prepare_curation` action under
+  the same lease while the checkpoint made progress, the lease, heartbeat, and
+  exact heads remain valid, and the semantic clock is before minute 210. Leave
+  it for later-cycle recovery only at that cutoff, on an unchanged repeated
+  state, invalid lease or heartbeat, head or remote drift, or helper failure. Do
+  not publish a blocked lifecycle state merely because discovery is partial;
 - preserve discovery monotonically across report-only checkpoints. Never remove
   a previously recorded root/kind row or established candidate merely because a
   later source is inconclusive. A complete row cannot regress. Candidate evidence
@@ -648,7 +652,9 @@ The installed skill must:
   of exact-state validation, publication, recovery, and cleanup;
 - bind a complete review disposition to the exact reviewed head; use
   `manual-check` only for a complete scope-safe reviewed handoff. A partial
-  discovery receives a report-only graph checkpoint and later resumption; exact
+  discovery receives a report-only graph checkpoint and immediate guarded
+  same-cycle continuation, or later recovery when a continuation stop condition
+  applies; exact
   exhausted evidence uses `blocked/evidence-unavailable`; reserve
   `owner-decision` for a real owner/model choice;
 - after every final clean exact-head independent review, call the helper-returned
@@ -921,8 +927,9 @@ For each schedule, confirm:
   semantic review, with catalog/trust blobs and object IDs unchanged;
 - a partial discovery records established candidates, prospective edges, source
   neighborhoods, and `in_progress` coverage in the canonical JSON/Markdown
-  pair; its report-only checkpoint resumes on a later cycle without a GitHub
-  blocked label;
+  pair; its report-only checkpoint continues immediately through the returned
+  typed preparation action while the continuation guards remain valid, and is
+  retained for later recovery otherwise, without a GitHub blocked label;
 - a complete discovery has exactly one row for every focus root and candidate
   kind, including explicit complete empty rows, and cannot swap candidates or
   known relationships between focus roots;

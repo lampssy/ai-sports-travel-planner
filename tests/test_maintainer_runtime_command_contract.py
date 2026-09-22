@@ -480,6 +480,16 @@ def test_runtime_contract_freezes_review_disposition_branches() -> None:
         "branches": {
             "in_progress": {
                 "next_recipe": "prepare_curation",
+                "continuation": "same-cycle-while-safe-before-semantic-cutoff",
+                "continuation_action_source": "generation.next_action",
+                "requires_monotonic_progress": True,
+                "stop_conditions": [
+                    "semantic-cutoff",
+                    "unchanged-repeated-state",
+                    "lease-or-heartbeat-invalid",
+                    "exact-head-or-remote-drift",
+                    "helper-error",
+                ],
                 "github_lifecycle_publication": False,
             },
             "complete": {

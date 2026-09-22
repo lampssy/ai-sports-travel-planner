@@ -149,7 +149,11 @@ membership.
 
 The maintainer adds a report-only `graph-discovery` generation checkpoint:
 
-- `in_progress` preserves valid partial coverage and resumes on a later cycle;
+- `in_progress` preserves valid partial coverage and immediately resumes through
+  the helper-returned preparation action in the same cycle while the lease,
+  exact heads, monotonic progress, and semantic budget remain valid; the durable
+  checkpoint supports later-cycle recovery only when a continuation guard stops
+  the current cycle;
 - `complete` permits the existing independent semantic review lanes to run; and
 - a cycle cutoff during discovery does not publish terminal `review-incomplete`.
 

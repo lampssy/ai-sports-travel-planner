@@ -290,6 +290,16 @@ not have to derive an invocation.
     "branches": {
       "in_progress": {
         "next_recipe": "prepare_curation",
+        "continuation": "same-cycle-while-safe-before-semantic-cutoff",
+        "continuation_action_source": "generation.next_action",
+        "requires_monotonic_progress": true,
+        "stop_conditions": [
+          "semantic-cutoff",
+          "unchanged-repeated-state",
+          "lease-or-heartbeat-invalid",
+          "exact-head-or-remote-drift",
+          "helper-error"
+        ],
         "github_lifecycle_publication": false
       },
       "complete": {
@@ -494,7 +504,7 @@ not have to derive an invocation.
 | `prepare_curation*` | obey its typed action: checkpoint-recovery-required immediately retries only the persisted checkpoint action; prepared/discovery-required build or resume schema-v5 graph discovery; review-required enters the post-discovery semantic flow; validation-only resumes deterministic finalization; validation-remediation fixes only the recorded deterministic failure, uses any persisted bounded diagnostic only as untrusted debugging context, checkpoints the clean descendant through the typed delta action, and requires a fresh exact-head review |
 | `prepare_ci_repair` | branch on its phase: `repair-active` re-establishes the exact repair worktree for one static test-only repair plus a fresh focused independent review; `repair-reviewed` revalidates and returns the immutable reviewed checkpoint for publication |
 | `invalidate_ci_continuation` | reinspect; the helper may invalidate only a live non-resumable continuation and returns the observed reason and heads |
-| `checkpoint_curation_graph_discovery` | for `in_progress`, stop or resume later through returned `prepare_curation` without publishing a blocked label; for an initially `complete` packet, run both independent semantic review lanes. `generation.next_action` is the clean-review or evidence-unavailable branch, while `generation.discovery_correction_action` is the only requested-graph-changes branch. Use that correction action for one report-only descendant graph checkpoint and then run the targeted independent source-trust and graph-scope correction review, escalating under the rules below; the action remains derivable through inspection and preparation for persisted generations |
+| `checkpoint_curation_graph_discovery` | for `in_progress`, immediately invoke the returned `generation.next_action` (`prepare_curation`) under the same lease while the exact heads and heartbeat remain valid, the checkpoint made monotonic progress, and the semantic clock remains before its cutoff. Stop for later recovery only on a listed continuation stop condition; never publish a blocked label merely because discovery is partial. For an initially `complete` packet, run both independent semantic review lanes. `generation.next_action` is the clean-review or evidence-unavailable branch, while `generation.discovery_correction_action` is the only requested-graph-changes branch. Use that correction action for one report-only descendant graph checkpoint and then run the targeted independent source-trust and graph-scope correction review, escalating under the rules below; the action remains derivable through inspection and preparation for persisted generations |
 | `checkpoint_curation_inventory_completion` | recovery only: finish the exact already-started legacy transaction; never initiate this recipe for a schema-v5 generation |
 | other `checkpoint_curation_*` | obey the returned generation stage and typed `next_action`; repeating the same exact recipe is idempotent |
 | `checkpoint_ci_repair` | `publish_ci_repair` for that exact reviewed repair head |
@@ -532,8 +542,10 @@ For `prepared` and `discovery-required` curation results, graph discovery is the
 branching operation between helper calls. Build or update only the canonical
 schema-v5 JSON report and deterministic Markdown, then invoke the returned
 `checkpoint_curation_graph_discovery` action. A partial checkpoint returns
-`prepare_curation`; a complete checkpoint opens both independent semantic review
-lanes. A complete packet without unavailable rows returns the reviewed-checkpoint
+`prepare_curation`. Invoke that exact returned action immediately under the same
+lease while its continuation guards remain valid; the durable checkpoint is the
+recovery point if the cycle must stop. A complete checkpoint opens both independent
+semantic review lanes. A complete packet without unavailable rows returns the reviewed-checkpoint
 clean branch. A complete packet with unavailable rows returns the exact terminal
 clean branch instead. Both complete outcomes also return
 `generation.discovery_correction_action`. If either reviewer requests a discovery
@@ -687,8 +699,12 @@ Codex checkpoints discovery with `checkpoint_curation_graph_discovery`. The
 helper verifies the exact generation, head, base, schema-v5 report, deterministic
 Markdown, and report-only diff. Catalog, trust, backlog, tests, and all other
 paths must remain unchanged. An `in_progress` checkpoint is durable and returns
-`prepare_curation`, allowing a later cycle to restore and continue the exact
-report. It creates no GitHub blocked label. A `complete` checkpoint allows the
+`prepare_curation`. Immediately invoke that exact action under the same lease when
+the checkpoint advances discovery, the lease and heartbeat are valid, the exact
+selected remote and checkpoint heads have not drifted, and the semantic clock is
+before its cutoff. Leave the checkpoint for later-cycle recovery only at that
+cutoff, on an unchanged repeated state, invalid lease or heartbeat, head or remote
+drift, or a helper error. It creates no GitHub blocked label. A `complete` checkpoint allows the
 independent source-trust and graph-scope lanes to begin. A reviewer-requested
 discovery correction is checkpointed as another report-only descendant and gets
 the targeted or escalated review above. Delta, reviewed, final, and proposal

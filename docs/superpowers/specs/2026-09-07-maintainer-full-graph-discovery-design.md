@@ -350,9 +350,13 @@ are not required unless an entity is promoted into full discovery. Relationships
 remain root-scoped and cannot chain regional-followup candidates into a recursive
 external graph.
 
-A time cutoff during discovery preserves a partial checkpoint without publishing a
-GitHub blocked label. Helper transport and mutation failures retain existing
-recovery semantics.
+An accepted partial checkpoint immediately continues through the exact returned
+preparation action under the same lease while it advances discovery, the lease,
+heartbeat, and exact heads remain valid, and the semantic clock is before its
+cutoff. A time cutoff, unchanged repeated state, invalid lease or heartbeat, head
+or remote drift, or helper failure preserves that checkpoint for later recovery
+without publishing a GitHub blocked label. Helper transport and mutation failures
+retain existing recovery semantics.
 
 Strict delta, reviewed, final, and proposal validation requires a complete packet
 without unavailable rows. Terminal `evidence-unavailable` publication instead
