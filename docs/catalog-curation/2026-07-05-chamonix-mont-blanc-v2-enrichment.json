@@ -1,7 +1,7 @@
 {
   "report_schema_version": 5,
   "title": "Chamonix Valley Catalog Graph Remediation",
-  "summary": "Reconciles the exact prepared Chamonix Valley stay, access, terrain, pass, and trust graph. The retained Brévent-Flégère ski-area identity remains the connected weather and terrain owner, while Brévent and Flégère remain explicit operator sectors.",
+  "summary": "Reconciles the exact prepared Chamonix Valley stay, access, terrain, pass, and trust graph. The completed schema-v5 discovery now records the full current Chamonix locality neighborhood, the prospective Argentière stay-destination boundary, the folded Le Savoy sector, and all permitted focus-to-regional context edges while leaving ordinary catalog remediation open.",
   "changed_entities": [
     "lift_pass_product:chamonix-le-pass",
     "lift_pass_product:les-houches-saint-gervais-skipass",
@@ -489,6 +489,13 @@
         "field_statuses",
         "notes"
       ],
+      "resulting_graph_role": "focus"
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "scope": "full",
+      "required_field_paths": [],
       "resulting_graph_role": "focus"
     }
   ],
@@ -5532,7 +5539,7 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "latitude",
       "status": "unresolved",
-      "notes": "The reviewed same-name OSM object is a hiking guidepost, not representative settlement geometry; latitude remains unresolved."
+      "notes": "Exact OSM hamlet node 277928675 is now captured as live structured evidence, but applying latitude to catalog and trust remains open ordinary remediation."
     },
     {
       "target_type": "stay_base",
@@ -5560,7 +5567,7 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "longitude",
       "status": "unresolved",
-      "notes": "The reviewed same-name OSM object is a hiking guidepost, not representative settlement geometry; longitude remains unresolved."
+      "notes": "Exact OSM hamlet node 277928675 is now captured as live structured evidence, but applying longitude to catalog and trust remains open ordinary remediation."
     },
     {
       "target_type": "stay_base",
@@ -6926,6 +6933,69 @@
       "field_path": "notes",
       "status": "changed",
       "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "regional_data_ids",
+      "status": "reviewed-no-change",
+      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "trip_market_region_id",
+      "status": "reviewed-no-change",
+      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
     }
   ],
   "evidence": [
@@ -8553,8 +8623,8 @@
       "source_url": "https://en.chamonix.com/sites/default/files/media/brochures/RG%20HANDI%20GB_0.pdf",
       "source_title": "Official Chamonix accessibility guide",
       "source_value": "https://en.chamonix.com/sites/default/files/media/brochures/RG%20HANDI%20GB_0.pdf",
-      "evidence_summary": "Enumerates the Chamonix commune localities Les Bossons, Chamonix, Les Praz, Les Tines, Le Lavancher, Argentiere, Montroc, and Le Tour, bounding the locality-level stay-base discovery neighborhood.",
-      "normalization_note": "The guide bounds candidate discovery but does not by itself establish independent stay-market ownership or a complete ski-access graph."
+      "evidence_summary": "The accessibility guide names several Chamonix commune localities but is explicitly an accessibility overview rather than an exhaustive locality inventory.",
+      "normalization_note": "Retained as direct legacy locality evidence only; the current municipal village-committee roster plus current transport and booking sources now bound the systematic stay-base neighborhood."
     },
     {
       "evidence_id": "inventory-stay-base-le-lavancher",
@@ -8803,8 +8873,8 @@
         "candidate_id": "le-savoy",
         "operator_presentation": "Compagnie du Mont-Blanc explicitly lists Le Savoy among the Chamonix beginner areas it operates."
       },
-      "evidence_summary": "The operator's company page explicitly names Le Savoy in the same Chamonix portfolio that includes Brévent, establishing the operator while preserving the parent-linked context.",
-      "normalization_note": "The shared operator does not by itself prove a separate ski-area boundary or independent weather ownership."
+      "evidence_summary": "The operator page places Le Savoy in Compagnie du Mont-Blanc's Chamonix beginner-area portfolio; it does not establish an independent operator owner.",
+      "normalization_note": "Combined with the connected piste and parent product evidence, the shared operator supports parent ownership under Brévent-Flégère."
     },
     {
       "evidence_id": "inventory-beginner-savoy-status",
@@ -8821,8 +8891,8 @@
         "candidate_id": "le-savoy",
         "opening_presentation": "19 December 2026 to 28 March 2027; dates to be confirmed and subject to snow"
       },
-      "evidence_summary": "The official destination listing gives Le Savoy's candidate-specific lifts, local tariffs, 2026-2027 opening dates, and the piste link from central Chamonix to Brévent.",
-      "normalization_note": "This supports an independently addressable schedule within a shared Compagnie du Mont-Blanc operator context; weather and full-local-pass ownership remain unestablished."
+      "evidence_summary": "The official listing gives Le Savoy's lifts, local rates and schedule, and directly states that the connected piste links central Chamonix to Brévent.",
+      "normalization_note": "Candidate-specific presentation does not override the connected sector terrain and parent-owned operator, weather, and shared-pass boundary."
     },
     {
       "evidence_id": "inventory-skiing",
@@ -8848,7 +8918,14 @@
       "evidence_id": "inventory-lepass",
       "boundary_target_ids": [
         "brevent",
-        "flegere"
+        "flegere",
+        "le-savoy",
+        "les-planards",
+        "les-chosalets",
+        "la-vormaine",
+        "la-poya",
+        "plateau-2000",
+        "plateau-de-lognan"
       ],
       "target_type": "ski_region",
       "target_id": "chamonix-valley",
@@ -8856,9 +8933,20 @@
       "source_type": "official",
       "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
       "source_title": "Official CHAMONIX Le Pass",
-      "source_value": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-      "evidence_summary": "Supports the complete Chamonix Valley candidate inventory and boundary assessment.",
-      "normalization_note": null
+      "source_value": {
+        "product": "CHAMONIX Le Pass",
+        "beginner_areas": [
+          "La Vormaine",
+          "Les Chosalets",
+          "Le Savoy",
+          "Plateau 2000",
+          "Plateau de Lognan",
+          "Les Planards",
+          "La Poya"
+        ]
+      },
+      "evidence_summary": "The official product page identifies CHAMONIX Le Pass and directly lists its covered beginner-area contexts, including La Vormaine, Les Chosalets, Le Savoy, Les Planards, and La Poya.",
+      "normalization_note": "Candidate-specific relationships are recorded without promoting deferred beginner areas to catalog entities."
     },
     {
       "evidence_id": "inventory-altitudes",
@@ -8963,9 +9051,12 @@
       "source_type": "official",
       "source_url": "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts/argentiere",
       "source_title": "Official Argentiere village-resort stay page",
-      "source_value": "chamonix-mont-blanc",
-      "evidence_summary": "The official page presents Argentiere as a village-resort inside Chamonix-Mont-Blanc Valley and routes accommodation search through the broader official destination choices rather than a separate Argentiere stay market.",
-      "normalization_note": "The village is retained as a stay base under the existing Chamonix Mont-Blanc destination; this is a negative destination-boundary assessment, not a new entity."
+      "source_value": {
+        "locality": "Argentière",
+        "parent_valley": "Chamonix-Mont-Blanc Valley"
+      },
+      "evidence_summary": "The official village-resort page establishes Argentière's identity inside the Chamonix-Mont-Blanc Valley; it is contextual parentage evidence and does not exhaust the current official booking market.",
+      "normalization_note": "Current direct booking evidence is assessed separately under ADR 0018 and supersedes the earlier negative inference from this page alone."
     },
     {
       "evidence_id": "remediation-base-character-argentiere-development",
@@ -9976,11 +10067,11 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "latitude",
       "source_type": "open_data",
-      "source_url": "https://www.openstreetmap.org/node/12425654481",
+      "source_url": "https://www.openstreetmap.org/node/277928675",
       "source_title": "Field-specific stay-base source check",
-      "source_value": null,
-      "evidence_summary": "Checked https://www.openstreetmap.org/node/12425654481 and https://www.chamonix.fr/fiche-touristique/telecabine-de-la-flegere/. The exact same-name open-data object is a hiking guidepost, not a representative settlement point; the municipal lift page supplies the Flégère station address, not settlement geometry or representative base elevation. An official GIS place point or a correctly typed OSM hamlet node/relation, plus a named settlement elevation source, would resolve these fields. The coordinate remains null until a defensible representative settlement geometry source is found.",
-      "normalization_note": "This report-only inventory search records source scope and insufficiency without changing the catalog or trust value."
+      "source_value": 45.9404532,
+      "evidence_summary": "OpenStreetMap node 277928675 is directly typed as the Les Praz de Chamonix hamlet and supplies live structured latitude evidence.",
+      "normalization_note": "The graph-discovery correction captures the exact source but does not apply the coordinate; catalog and trust remediation remain open ordinary work."
     },
     {
       "evidence_id": "inventory-pass1-chamonix-mont-blanc-les-praz-local-apres-profile-intensity",
@@ -9989,10 +10080,10 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "local_apres_profile.intensity",
       "source_type": "official",
-      "source_url": "https://jeparticipe.chamonix.fr/blog/actu-vie-de-villages-les-praz",
+      "source_url": "https://booking.chamonix.com/en/hotel-123-les-lanchers?id-intuitiv=14177274",
       "source_title": "Field-specific stay-base source check",
       "source_value": null,
-      "evidence_summary": "Checked https://jeparticipe.chamonix.fr/blog/actu-vie-de-villages-les-praz and https://www.chamonix.fr/fiche-touristique/telecabine-de-la-flegere/. The municipal village and Flégère-gondola pages establish Les Praz and its lift access but do not publish a current local après programme or enough venue breadth, frequency, and duration to normalize intensity or a season. A direct current official local after-ski presentation with enough breadth, frequency, duration, and wording would resolve controlled intensity.",
+      "evidence_summary": "Checked the current official Les Lanchers booking listing and the official Flégère-gondola page. They establish Les Praz identity and lift access but do not publish a current local après programme or enough venue breadth, frequency, and duration to normalize intensity.",
       "normalization_note": "This report-only inventory search records source scope and insufficiency without changing the catalog or trust value."
     },
     {
@@ -10002,10 +10093,10 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "local_apres_profile.season_label",
       "source_type": "official",
-      "source_url": "https://jeparticipe.chamonix.fr/blog/actu-vie-de-villages-les-praz",
+      "source_url": "https://booking.chamonix.com/en/hotel-123-les-lanchers?id-intuitiv=14177274",
       "source_title": "Field-specific stay-base source check",
       "source_value": null,
-      "evidence_summary": "Checked https://jeparticipe.chamonix.fr/blog/actu-vie-de-villages-les-praz and https://www.chamonix.fr/fiche-touristique/telecabine-de-la-flegere/. The municipal village and Flégère-gondola pages establish Les Praz and its lift access but do not publish a current local après programme or enough venue breadth, frequency, and duration to normalize intensity or a season. A dated official local after-ski programme or operating presentation would resolve the season label.",
+      "evidence_summary": "Checked the current official Les Lanchers booking listing and the official Flégère-gondola page. They establish Les Praz identity and lift access but do not publish a dated local après programme or operating presentation sufficient to normalize a season label.",
       "normalization_note": "This report-only inventory search records source scope and insufficiency without changing the catalog or trust value."
     },
     {
@@ -10015,11 +10106,11 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "longitude",
       "source_type": "open_data",
-      "source_url": "https://www.openstreetmap.org/node/12425654481",
+      "source_url": "https://www.openstreetmap.org/node/277928675",
       "source_title": "Field-specific stay-base source check",
-      "source_value": null,
-      "evidence_summary": "Checked https://www.openstreetmap.org/node/12425654481 and https://www.chamonix.fr/fiche-touristique/telecabine-de-la-flegere/. The exact same-name open-data object is a hiking guidepost, not a representative settlement point; the municipal lift page supplies the Flégère station address, not settlement geometry or representative base elevation. An official GIS place point or a correctly typed OSM hamlet node/relation, plus a named settlement elevation source, would resolve these fields. The coordinate remains null until a defensible representative settlement geometry source is found.",
-      "normalization_note": "This report-only inventory search records source scope and insufficiency without changing the catalog or trust value."
+      "source_value": 6.8865884,
+      "evidence_summary": "OpenStreetMap node 277928675 is directly typed as the Les Praz de Chamonix hamlet and supplies live structured longitude evidence.",
+      "normalization_note": "The graph-discovery correction captures the exact source but does not apply the coordinate; catalog and trust remediation remain open ordinary work."
     },
     {
       "evidence_id": "inventory-pass1-vallorcine-vallorcine-elevation-m",
@@ -10450,7 +10541,7 @@
         "coverage": "Les Houches - Saint-Gervais",
         "adult_price_range_eur": [
           35.3,
-          59.0
+          59
         ]
       },
       "evidence_summary": "The official product page presents Pass 1 Day Ski as the one-day adult duration offer for the same Les Houches-Saint-Gervais coverage, with dynamic pricing from EUR 35.30 to EUR 59.00.",
@@ -10561,10 +10652,10 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "base_character.development_style",
       "source_type": "official",
-      "source_url": "https://jeparticipe.chamonix.fr/blog/actu-vie-de-villages-les-praz",
+      "source_url": "https://booking.chamonix.com/en/hotel-123-les-lanchers?id-intuitiv=14177274",
       "source_title": "Official source reviewed for unresolved field",
       "source_value": "unknown",
-      "evidence_summary": "The bounded official source family did not establish this candidate-scoped value. A direct operator or destination source naming the field would resolve it.",
+      "evidence_summary": "The current official Les Praz accommodation identity confirms the locality but does not establish a candidate-scoped development-style value; the ordinary remediation finding remains open.",
       "normalization_note": null
     },
     {
@@ -10574,10 +10665,10 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "base_character.local_pace",
       "source_type": "official",
-      "source_url": "https://jeparticipe.chamonix.fr/blog/actu-vie-de-villages-les-praz",
+      "source_url": "https://booking.chamonix.com/en/hotel-123-les-lanchers?id-intuitiv=14177274",
       "source_title": "Official source reviewed for unresolved field",
       "source_value": "unknown",
-      "evidence_summary": "The bounded official source family did not establish this candidate-scoped value. A direct operator or destination source naming the field would resolve it.",
+      "evidence_summary": "The current official Les Praz accommodation identity confirms the locality but does not establish a candidate-scoped local-pace value; the ordinary remediation finding remains open.",
       "normalization_note": null
     },
     {
@@ -10587,10 +10678,10 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "local_apres_profile.availability",
       "source_type": "official",
-      "source_url": "https://jeparticipe.chamonix.fr/blog/actu-vie-de-villages-les-praz",
+      "source_url": "https://booking.chamonix.com/en/hotel-123-les-lanchers?id-intuitiv=14177274",
       "source_title": "Official source reviewed for unresolved field",
       "source_value": "unknown",
-      "evidence_summary": "The bounded official source family did not establish this candidate-scoped value. A direct operator or destination source naming the field would resolve it.",
+      "evidence_summary": "The current official Les Praz accommodation identity confirms the locality but does not establish candidate-scoped local-après availability; the ordinary remediation finding remains open.",
       "normalization_note": null
     },
     {
@@ -10626,11 +10717,15 @@
       "target_id": "chamonix-mont-blanc-les-praz",
       "field_path": "stay_destination_id",
       "source_type": "official",
-      "source_url": "https://jeparticipe.chamonix.fr/blog/actu-vie-de-villages-les-praz",
-      "source_title": "Official Les Praz village page",
-      "source_value": "chamonix-mont-blanc-les-praz",
-      "evidence_summary": "Supports Les Praz as a village stay base within the Chamonix-Mont-Blanc destination context.",
-      "normalization_note": "The source identity is normalized to the catalog stay-destination relationship."
+      "source_url": "https://booking.chamonix.com/en/hotel-123-les-lanchers?id-intuitiv=14177274",
+      "source_title": "Official Les Praz accommodation identity",
+      "source_value": {
+        "stay_base_id": "chamonix-mont-blanc-les-praz",
+        "locality": "Les Praz",
+        "destination_context": "Chamonix-Mont-Blanc"
+      },
+      "evidence_summary": "The current official booking listing identifies Hôtel Les Lanchers in the village of Les Praz, 3 km from Chamonix, directly supporting the represented Les Praz base within the Chamonix-Mont-Blanc destination.",
+      "normalization_note": "The direct locality identity is normalized to the catalog stay-destination containment relationship."
     },
     {
       "evidence_id": "graph-saint-gervais-stay-market",
@@ -10706,6 +10801,150 @@
       "source_value": 1,
       "evidence_summary": "The official presentation names one snowpark in the Brévent sector of the connected Brévent-Flégère area.",
       "normalization_note": "The sector-scoped feature is stored on the retained combined ski-area owner."
+    },
+    {
+      "evidence_id": "graph-chamonix-systematic-locality-neighborhood",
+      "boundary_target_ids": [],
+      "target_type": "ski_region",
+      "target_id": "chamonix-valley",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.chamonix.fr/la-commune/vie-municipale/comites-de-village/",
+      "source_title": "Current official Chamonix village-committee locality roster",
+      "source_value": {
+        "published_roster": "2024 village committees",
+        "clusters": [
+          [
+            "Argentière",
+            "La Joux",
+            "Les Iles",
+            "Les Grassonnets",
+            "Les Chosalets",
+            "Montroc",
+            "Le Tour"
+          ],
+          [
+            "Les Praz",
+            "Les Bois",
+            "Les Tines",
+            "Le Lavancher"
+          ],
+          [
+            "Chamonix Centre",
+            "Les Moussoux",
+            "Les Pècles"
+          ],
+          [
+            "Les Mouilles",
+            "La Frasse",
+            "Les Nants",
+            "Les Plans"
+          ],
+          [
+            "Les Pèlerins",
+            "Les Favrands",
+            "Les Gaillands",
+            "Les Barrats"
+          ],
+          [
+            "Les Bossons",
+            "Taconnaz"
+          ]
+        ]
+      },
+      "evidence_summary": "The current municipal roster systematically enumerates the concrete Chamonix commune locality clusters used to exhaust the stay-base neighborhood.",
+      "normalization_note": "Committee grouping is locality evidence, not independent stay-market ownership; each locality is assessed against an existing represented base."
+    },
+    {
+      "evidence_id": "graph-chamonix-systematic-transport-neighborhood",
+      "boundary_target_ids": [],
+      "target_type": "ski_region",
+      "target_id": "chamonix-valley",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://en.chamonix.com/sites/default/files/media/brochures/Guide-Hiver-Chamonix-2025-2026.pdf",
+      "source_title": "Official Chamonix 2025-2026 winter transport guide",
+      "source_value": {
+        "locality_service_examples": [
+          "Chamonix Sud",
+          "Les Bois",
+          "Les Tines",
+          "Le Lavancher",
+          "Les Chosalets",
+          "Les Iles",
+          "Les Grassonnets",
+          "Les Moussoux",
+          "Les Pècles",
+          "Les Gaillands",
+          "Les Bossons",
+          "Taconnaz"
+        ]
+      },
+      "evidence_summary": "The current official winter transport guide independently confirms service geography for the municipal locality roster and explicitly includes Chamonix Sud and Les Bois.",
+      "normalization_note": "Transport naming establishes concrete access localities but not independent stay-market ownership."
+    },
+    {
+      "evidence_id": "graph-chamonix-sud-booking-neighborhood",
+      "boundary_target_ids": [],
+      "target_type": "ski_region",
+      "target_id": "chamonix-valley",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://booking.chamonix.com/en/apartments-and-chalets",
+      "source_title": "Official Chamonix accommodation collection",
+      "source_value": {
+        "candidate_id": "chamonix-mont-blanc-chamonix-sud",
+        "booking_locality": "Chamonix Sud"
+      },
+      "evidence_summary": "The official booking collection directly lists accommodation in Chamonix Sud, confirming it as a concrete lodging locality in the systematic neighborhood.",
+      "normalization_note": "The collection does not expose independent stay-market ownership; Chamonix Sud remains under the represented Chamonix base."
+    },
+    {
+      "evidence_id": "graph-argentiere-official-booking-scope",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://booking.chamonix.com/en/our-destinations/argentiere",
+      "source_title": "Official Argentière booking destination",
+      "source_value": "argentiere",
+      "evidence_summary": "The current official booking service presents Argentière as its own destination and supplies a dedicated bookable apartment-and-chalet neighborhood suitable for a complete multi-night stay.",
+      "normalization_note": "The prospective stable ID is normalized from the official destination label; catalog materialization remains ordinary remediation."
+    },
+    {
+      "evidence_id": "graph-argentiere-material-separation",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://booking.chamonix.com/en/our-destinations/argentiere",
+      "source_title": "Official Argentière destination character and access",
+      "source_value": "Argentière",
+      "evidence_summary": "The official destination page distinguishes Argentière through a traditional village atmosphere, local services, and direct Grands Montets access, materially changing stay character and ski access from central Chamonix.",
+      "normalization_note": "This is direct destination-level separation evidence under ADR 0018, not an invented owner preference."
+    },
+    {
+      "evidence_id": "graph-stay-base-les-praz-osm-identity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "chamonix-mont-blanc-les-praz",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/277928675",
+      "source_title": "OpenStreetMap Les Praz hamlet node 277928675",
+      "source_value": {
+        "openstreetmap_node": "277928675",
+        "place": "hamlet",
+        "name": "Les Praz"
+      },
+      "evidence_summary": "The exact structured OpenStreetMap hamlet node supplies live Les Praz identity and geometry corroboration for the existing stay-base containment.",
+      "normalization_note": "Captured as report evidence only; coordinates and regional-data catalog materialization remain an open ordinary-remediation finding."
     }
   ],
   "destination_boundary_assessments": [
@@ -10828,6 +11067,54 @@
         }
       ],
       "failure_route": null
+    },
+    {
+      "candidate_id": "argentiere",
+      "gates": [
+        {
+          "gate_name": "complete_stay_market_scope",
+          "status": "pass",
+          "notes": "The official booking service exposes a bounded Argentière apartment-and-chalet inventory suitable for an independently selectable multi-night stay.",
+          "evidence_refs": [
+            "graph-argentiere-official-booking-scope"
+          ]
+        },
+        {
+          "gate_name": "independent_stay_market_ownership",
+          "status": "pass",
+          "notes": "The official booking service owns a dedicated Argentière destination page and accommodation collection.",
+          "evidence_refs": [
+            "graph-argentiere-official-booking-scope"
+          ]
+        },
+        {
+          "gate_name": "material_destination_level_separation_value",
+          "status": "pass",
+          "notes": "Official material distinguishes Argentière through traditional village character, local services, and direct Grands Montets access.",
+          "evidence_refs": [
+            "graph-argentiere-material-separation"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_stay_market_treatment",
+          "status": "pass",
+          "notes": "The official booking service directly presents Argentière as a destination.",
+          "evidence_refs": [
+            "graph-argentiere-official-booking-scope"
+          ]
+        },
+        {
+          "signal_type": "independent_accommodation_inventory",
+          "status": "pass",
+          "notes": "The dedicated page exposes a separately bookable apartment-and-chalet market.",
+          "evidence_refs": [
+            "graph-argentiere-official-booking-scope"
+          ]
+        }
+      ],
+      "failure_route": null
     }
   ],
   "entity_scope_assessments": [
@@ -10841,7 +11128,8 @@
         "full_local_pass"
       ],
       "evidence_refs": [
-        "scope-target-lift-pass-product-chamonix-le-pass"
+        "scope-target-lift-pass-product-chamonix-le-pass",
+        "inventory-lepass"
       ],
       "target_refs": [
         {
@@ -11409,7 +11697,8 @@
       "evidence_refs": [
         "graph-stay-base-les-praz-market",
         "inventory-villages",
-        "scope-target-stay-base-chamonix-mont-blanc-les-praz"
+        "scope-target-stay-base-chamonix-mont-blanc-les-praz",
+        "graph-stay-base-les-praz-osm-identity"
       ],
       "target_refs": [
         {
@@ -11418,7 +11707,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The complete source-backed graph requires this new normalized entity.",
+      "rationale": "Current official accommodation identity and structured hamlet evidence support the source-backed Les Praz base and its Chamonix-Mont-Blanc containment; coordinates and OSM catalog materialization remain ordinary remediation.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -12102,29 +12391,34 @@
       "candidate_id": "le-savoy",
       "candidate_name": "le savoy",
       "candidate_kind": "ski_area",
-      "disposition": "deferred",
+      "disposition": "not_separate",
       "signals": [
-        "official_independent_identity",
-        "independent_status_or_schedule",
-        "ski_connected_terrain"
+        "official_map_sector",
+        "ski_connected_terrain",
+        "limited_area_ticket"
       ],
       "evidence_refs": [
         "inventory-easy",
         "inventory-beginner-savoy-operator",
         "inventory-beginner-savoy-status"
       ],
-      "target_refs": [],
-      "backlog_ref": "docs/product-backlog.md#chamonix-valley-catalog-follow-ups",
-      "rationale": "Compagnie du Mont-Blanc identifies Le Savoy in the same operator portfolio as Brévent, while the official destination listing publishes a candidate-specific 2026-2027 schedule and states that the piste links central Chamonix to Brévent. This supports the retained mixed, parent-linked operations disposition but does not establish independent weather or full-local-pass ownership.",
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "brevent-flegere"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Le Savoy is a connected low-altitude sector at the foot of Brévent with parent-owned Compagnie du Mont-Blanc operations, no independent weather owner, and shared CHAMONIX Le Pass coverage. Candidate-specific lifts, schedule, and local rates do not create material separation, so it folds under Brévent-Flégère.",
       "ski_area_boundary": {
         "parent_ski_area_id": "brevent-flegere",
         "terrain_scope": "sector",
         "connectivity_to_parent": "connected",
-        "operational_scope": "mixed",
-        "weather_scope": "unknown",
-        "pass_scope": "limited",
-        "provider_consensus": "mixed",
-        "separation_value": "unresolved",
+        "operational_scope": "parent_owned",
+        "weather_scope": "parent_owned",
+        "pass_scope": "shared_only",
+        "provider_consensus": "aggregated",
+        "separation_value": "redundant",
         "component_candidate_ids": [],
         "coordination_evidence_refs": [],
         "coordination_evidence_families": [],
@@ -12135,7 +12429,7 @@
           "inventory-beginner-savoy-status"
         ]
       },
-      "graph_impact": "regional_followup"
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "chamonix-mont-blanc-planards",
@@ -12159,19 +12453,26 @@
       "candidate_id": "chamonix-mont-blanc-chosalets",
       "candidate_name": "Les Chosalets",
       "candidate_kind": "stay_base",
-      "disposition": "unresolved",
+      "disposition": "not_separate",
       "signals": [
         "distinct_access"
       ],
       "evidence_refs": [
         "inventory-stay-base-chosalets",
-        "inventory-villages"
+        "inventory-villages",
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
       ],
-      "target_refs": [],
-      "backlog_ref": "docs/product-backlog.md#chamonix-valley-catalog-follow-ups",
-      "rationale": "Official lodging evidence identifies a Les Chosalets address and access stop, but the current source packet does not resolve independent stay-market ownership or a complete access graph.",
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-argentiere"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The current municipal locality roster groups Les Chosalets with Argentière and the current transport neighborhood confirms direct service; without independent stay-market ownership it is locality context under the represented Argentière base.",
       "ski_area_boundary": null,
-      "graph_impact": "regional_followup"
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "vallorcine-le-buet",
@@ -12264,37 +12565,51 @@
       "candidate_id": "chamonix-mont-blanc-les-tines",
       "candidate_name": "Les Tines",
       "candidate_kind": "stay_base",
-      "disposition": "unresolved",
+      "disposition": "not_separate",
       "signals": [
         "distinct_access"
       ],
       "evidence_refs": [
         "inventory-stay-base-les-tines",
-        "inventory-villages"
+        "inventory-villages",
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
       ],
-      "target_refs": [],
-      "backlog_ref": "docs/product-backlog.md#chamonix-valley-catalog-follow-ups",
-      "rationale": "Official lodging evidence identifies Les Tines as a candidate hamlet, but the current source packet does not resolve complete stay-market ownership or ski-area access provenance.",
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-les-praz"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The current municipal locality roster groups Les Tines with Les Praz and the current transport neighborhood confirms direct service; without independent stay-market ownership it is locality context under the represented Les Praz base.",
       "ski_area_boundary": null,
-      "graph_impact": "regional_followup"
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "chamonix-mont-blanc-les-bossons",
       "candidate_name": "Les Bossons",
       "candidate_kind": "stay_base",
-      "disposition": "unresolved",
+      "disposition": "not_separate",
       "signals": [
         "distinct_access"
       ],
       "evidence_refs": [
         "inventory-stay-base-les-bossons",
-        "inventory-villages"
+        "inventory-villages",
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
       ],
-      "target_refs": [],
-      "backlog_ref": "docs/product-backlog.md#chamonix-valley-catalog-follow-ups",
-      "rationale": "Official lodging evidence identifies Les Bossons as a candidate village, but the current source packet does not resolve complete stay-market ownership or ski-area access provenance.",
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The current municipal and transport neighborhood identifies Les Bossons as a Chamonix commune locality; without independent stay-market ownership it remains locality context under the represented Chamonix base.",
       "ski_area_boundary": null,
-      "graph_impact": "regional_followup"
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "chamonix-mont-blanc-le-lavancher",
@@ -12306,7 +12621,9 @@
       ],
       "evidence_refs": [
         "inventory-chamonix-commune-localities",
-        "inventory-stay-base-le-lavancher"
+        "inventory-stay-base-le-lavancher",
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
       ],
       "target_refs": [
         {
@@ -12329,7 +12646,9 @@
       ],
       "evidence_refs": [
         "inventory-chamonix-commune-localities",
-        "inventory-stay-base-montroc"
+        "inventory-stay-base-montroc",
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
       ],
       "target_refs": [
         {
@@ -12467,18 +12786,24 @@
       "candidate_id": "chamonix-mont-blanc-chamonix--le-savoy",
       "candidate_name": "Chamonix access to Le Savoy",
       "candidate_kind": "ski_area_access",
-      "disposition": "deferred",
+      "disposition": "not_separate",
       "signals": [
         "direct_access_relationship"
       ],
       "evidence_refs": [
-        "inventory-stay-base-le-savoy-location"
+        "inventory-stay-base-le-savoy-location",
+        "inventory-beginner-savoy-status"
       ],
-      "target_refs": [],
-      "backlog_ref": "docs/product-backlog.md#chamonix-valley-catalog-follow-ups",
-      "rationale": "Source-backed candidate retained for a bounded follow-up because its complete endpoint, weather-owner, or product graph is outside this remediation cycle.",
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "chamonix-mont-blanc-chamonix--brevent-flegere"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official source places Le Savoy in central Chamonix and connects it directly to Brévent, so this candidate duplicates the represented Chamonix-to-Brévent-Flégère access edge.",
       "ski_area_boundary": null,
-      "graph_impact": "regional_followup"
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "saint-gervais-le-fayet--les-houches-saint-gervais",
@@ -12587,18 +12912,25 @@
       "candidate_id": "le-savoy-local",
       "candidate_name": "le savoy local",
       "candidate_kind": "lift_pass_product",
-      "disposition": "deferred",
+      "disposition": "not_separate",
       "signals": [
-        "limited_area_ticket"
+        "limited_area_ticket",
+        "official_product_identity"
       ],
       "evidence_refs": [
-        "inventory-easy"
+        "inventory-easy",
+        "inventory-lepass"
       ],
-      "target_refs": [],
-      "backlog_ref": "docs/product-backlog.md#chamonix-valley-catalog-follow-ups",
-      "rationale": "The official beginner-area page supports only partial-area ticket or ticket-office discovery. An exact named product contract, tariff scope, availability market, and complete area/access graph are required before modeling a lift-pass product.",
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "chamonix-le-pass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The local beginner tariff is not an independently named complete pass product. The official product contract identifies CHAMONIX Le Pass as the product covering Le Savoy, so the retained candidate is normalized to that represented product.",
       "ski_area_boundary": null,
-      "graph_impact": "regional_followup"
+      "graph_impact": "graph_blocking"
     },
     {
       "candidate_id": "saint-gervais",
@@ -12673,23 +13005,27 @@
       "candidate_id": "argentiere",
       "candidate_name": "Argentiere as a separate stay destination",
       "candidate_kind": "stay_destination",
-      "disposition": "not_separate",
+      "disposition": "add_entity",
       "signals": [
-        "independent_stay_market"
+        "official_independent_identity",
+        "independent_stay_market",
+        "distinct_access"
       ],
       "evidence_refs": [
         "scope-argentiere-stay-destination-boundary",
         "scope-target-stay-base-chamonix-mont-blanc-argentiere",
-        "scope-target-stay-destination-chamonix-mont-blanc"
+        "scope-target-stay-destination-chamonix-mont-blanc",
+        "graph-argentiere-official-booking-scope",
+        "graph-argentiere-material-separation"
       ],
       "target_refs": [
         {
           "target_type": "stay_destination",
-          "target_id": "chamonix-mont-blanc"
+          "target_id": "argentiere"
         }
       ],
       "backlog_ref": null,
-      "rationale": "Official stay-market material presents Argentiere as a village-resort within the Chamonix Mont-Blanc destination. It supports a distinct stay base and direct ski access, but not a separate complete, independently owned accommodation market; the existing Chamonix destination therefore owns it.",
+      "rationale": "Current direct official booking evidence passes all ADR 0018 gates: Argentière has a complete dedicated accommodation market, direct official booking ownership, and material stay-character and Grands Montets access separation. The report therefore records a prospective separate stay destination without changing the catalog in graph-discovery correction.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -12940,6 +13276,366 @@
       "rationale": "The current catalog graph requires this source-backed access edge to the retained combined Brévent-Flégère ski area.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-chamonix-sud",
+      "candidate_name": "Chamonix Sud",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-sud-booking-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-bois",
+      "candidate_name": "Les Bois",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-les-praz"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-la-joux",
+      "candidate_name": "La Joux",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-argentiere"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-iles",
+      "candidate_name": "Les Iles",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-argentiere"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-grassonnets",
+      "candidate_name": "Les Grassonnets",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-argentiere"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-moussoux",
+      "candidate_name": "Les Moussoux",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-pecles",
+      "candidate_name": "Les Pècles",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-mouilles",
+      "candidate_name": "Les Mouilles",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-la-frasse",
+      "candidate_name": "La Frasse",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-nants",
+      "candidate_name": "Les Nants",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-plans",
+      "candidate_name": "Les Plans",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-pelerins",
+      "candidate_name": "Les Pèlerins",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-favrands",
+      "candidate_name": "Les Favrands",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-gaillands",
+      "candidate_name": "Les Gaillands",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-les-barrats",
+      "candidate_name": "Les Barrats",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
+      "candidate_id": "chamonix-mont-blanc-taconnaz",
+      "candidate_name": "Taconnaz",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood",
+        "graph-chamonix-systematic-transport-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
     }
   ],
   "review_evidence_envelope": [
@@ -12962,7 +13658,6 @@
         "https://en.chamonix.com/hotels-de-charme/hotel-jeu-de-paume",
         "https://en.chamonix.com/planifier-mon-sejour/hebergements/agences-immobilieres-locations/location-vacances-chamonix/chalet-scierie",
         "https://en.chamonix.com/sites/default/files/media/brochures/RG%20HANDI%20GB_0.pdf",
-        "https://jeparticipe.chamonix.fr/blog/actu-vie-de-villages-les-praz",
         "https://tourism.saintgervais.com/i-want-to/sleeping/all-accommodations/",
         "https://tourism.saintgervais.com/i-want-to/sleeping/hotels/planb-living-saint-gervais-saint-gervais-les-bains-en-5286972/",
         "https://www.chamonix.com/sites/default/files/media/brochures/Plan_Argentiere.pdf",
@@ -12972,7 +13667,13 @@
         "https://www.openstreetmap.org/relation/104826",
         "https://www.openstreetmap.org/relation/104836",
         "https://www.openstreetmap.org/relation/104843",
-        "https://www.vallorcine.fr/Commerces-artisans-restauration"
+        "https://www.vallorcine.fr/Commerces-artisans-restauration",
+        "https://booking.chamonix.com/en/apartments-and-chalets",
+        "https://booking.chamonix.com/en/hotel-123-les-lanchers?id-intuitiv=14177274",
+        "https://booking.chamonix.com/en/our-destinations/argentiere",
+        "https://en.chamonix.com/sites/default/files/media/brochures/Guide-Hiver-Chamonix-2025-2026.pdf",
+        "https://www.chamonix.fr/la-commune/vie-municipale/comites-de-village/",
+        "https://www.openstreetmap.org/node/277928675"
       ],
       "candidate_kinds": [
         "stay_destination",
@@ -13105,7 +13806,9 @@
           "scope-target-stay-base-chamonix-mont-blanc-argentiere",
           "scope-target-stay-destination-chamonix-mont-blanc",
           "scope-target-stay-destination-les-houches",
-          "scope-target-stay-destination-vallorcine"
+          "scope-target-stay-destination-vallorcine",
+          "graph-argentiere-official-booking-scope",
+          "graph-argentiere-material-separation"
         ],
         "rationale": "Complete because the registered official source neighborhoods for this focus root and candidate kind were exhausted; every found candidate and supported edge is recorded, so no expected candidate is omitted from this packet."
       },
@@ -13126,7 +13829,23 @@
           "chamonix-mont-blanc-les-bossons",
           "chamonix-mont-blanc-le-lavancher",
           "chamonix-mont-blanc-montroc",
-          "servoz-servoz"
+          "servoz-servoz",
+          "chamonix-mont-blanc-chamonix-sud",
+          "chamonix-mont-blanc-les-bois",
+          "chamonix-mont-blanc-la-joux",
+          "chamonix-mont-blanc-les-iles",
+          "chamonix-mont-blanc-les-grassonnets",
+          "chamonix-mont-blanc-les-moussoux",
+          "chamonix-mont-blanc-les-pecles",
+          "chamonix-mont-blanc-les-mouilles",
+          "chamonix-mont-blanc-la-frasse",
+          "chamonix-mont-blanc-les-nants",
+          "chamonix-mont-blanc-les-plans",
+          "chamonix-mont-blanc-les-pelerins",
+          "chamonix-mont-blanc-les-favrands",
+          "chamonix-mont-blanc-les-gaillands",
+          "chamonix-mont-blanc-les-barrats",
+          "chamonix-mont-blanc-taconnaz"
         ],
         "source_family_ids": [
           "chamonix-stay-market-sources"
@@ -13148,9 +13867,13 @@
           "scope-target-stay-base-chamonix-mont-blanc-argentiere",
           "scope-target-stay-base-chamonix-mont-blanc-chamonix",
           "scope-target-stay-base-chamonix-mont-blanc-le-tour",
-          "scope-target-stay-base-chamonix-mont-blanc-les-praz"
+          "scope-target-stay-base-chamonix-mont-blanc-les-praz",
+          "graph-chamonix-systematic-locality-neighborhood",
+          "graph-chamonix-systematic-transport-neighborhood",
+          "graph-chamonix-sud-booking-neighborhood",
+          "graph-stay-base-les-praz-osm-identity"
         ],
-        "rationale": "Complete because the registered official source neighborhoods for this focus root and candidate kind were exhausted; every found candidate and supported edge is recorded, so no expected candidate is omitted from this packet."
+        "rationale": "Complete because the current municipal village-committee roster, current winter transport guide, official booking collection, and direct represented-base sources were exhausted together; every concrete locality found, including Chamonix Sud and Les Bois, is assessed and every supported focus-graph edge is recorded."
       },
       {
         "focus_stay_destination_id": "chamonix-mont-blanc",
@@ -13841,14 +14564,6 @@
       {
         "relationship_type": "stay_destination_contains_stay_base",
         "from_candidate_id": "chamonix-mont-blanc",
-        "to_candidate_id": "chamonix-mont-blanc-argentiere",
-        "evidence_refs": [
-          "scope-target-stay-base-chamonix-mont-blanc-argentiere"
-        ]
-      },
-      {
-        "relationship_type": "stay_destination_contains_stay_base",
-        "from_candidate_id": "chamonix-mont-blanc",
         "to_candidate_id": "chamonix-mont-blanc-chamonix",
         "evidence_refs": [
           "scope-target-stay-base-chamonix-mont-blanc-chamonix"
@@ -13867,7 +14582,8 @@
         "from_candidate_id": "chamonix-mont-blanc",
         "to_candidate_id": "chamonix-mont-blanc-les-praz",
         "evidence_refs": [
-          "graph-stay-base-les-praz-market"
+          "graph-stay-base-les-praz-market",
+          "graph-stay-base-les-praz-osm-identity"
         ]
       },
       {
@@ -13903,13 +14619,294 @@
         "evidence_refs": [
           "scope-target-stay-base-vallorcine-vallorcine"
         ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "argentiere",
+        "to_candidate_id": "chamonix-mont-blanc-argentiere",
+        "evidence_refs": [
+          "graph-argentiere-official-booking-scope"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-chamonix-sud",
+        "evidence_refs": [
+          "graph-chamonix-sud-booking-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-bois",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-la-joux",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-iles",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-grassonnets",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-moussoux",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-pecles",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-mouilles",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-la-frasse",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-nants",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-plans",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-pelerins",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-favrands",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-gaillands",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-barrats",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-taconnaz",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-chosalets",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-tines",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-les-bossons",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-planards",
+        "evidence_refs": [
+          "inventory-stay-base-planards"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "vallorcine",
+        "to_candidate_id": "vallorcine-le-buet",
+        "evidence_refs": [
+          "inventory-stay-base-le-buet"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "chamonix-le-pass",
+        "to_candidate_id": "les-planards",
+        "evidence_refs": [
+          "inventory-lepass"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "chamonix-le-pass",
+        "to_candidate_id": "les-chosalets",
+        "evidence_refs": [
+          "inventory-lepass"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "chamonix-le-pass",
+        "to_candidate_id": "la-poya",
+        "evidence_refs": [
+          "inventory-lepass"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "chamonix-le-pass",
+        "to_candidate_id": "la-vormaine",
+        "evidence_refs": [
+          "inventory-lepass"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "chamonix-le-pass",
+        "to_candidate_id": "le-savoy",
+        "evidence_refs": [
+          "inventory-lepass"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "le-savoy-local",
+        "to_candidate_id": "le-savoy",
+        "evidence_refs": [
+          "inventory-lepass"
+        ]
+      },
+      {
+        "relationship_type": "ski_area_access_originates_at_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc-planards--les-planards",
+        "to_candidate_id": "chamonix-mont-blanc-chamonix",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "ski_area_access_originates_at_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc-chosalets--les-chosalets",
+        "to_candidate_id": "chamonix-mont-blanc-argentiere",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "ski_area_access_originates_at_stay_base",
+        "from_candidate_id": "vallorcine-le-buet--la-poya",
+        "to_candidate_id": "vallorcine-vallorcine",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "ski_area_access_originates_at_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc-le-tour--la-vormaine",
+        "to_candidate_id": "chamonix-mont-blanc-le-tour",
+        "evidence_refs": [
+          "inventory-stay-base-la-vormaine-location"
+        ]
+      },
+      {
+        "relationship_type": "ski_area_access_originates_at_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc-les-houches--le-tourchet",
+        "to_candidate_id": "chamonix-mont-blanc-les-houches",
+        "evidence_refs": [
+          "inventory-stay-base-le-tourchet-location"
+        ]
+      },
+      {
+        "relationship_type": "ski_area_access_originates_at_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc-chamonix--le-savoy",
+        "to_candidate_id": "chamonix-mont-blanc-chamonix",
+        "evidence_refs": [
+          "inventory-stay-base-le-savoy-location"
+        ]
+      },
+      {
+        "relationship_type": "ski_area_access_reaches_ski_area",
+        "from_candidate_id": "chamonix-mont-blanc-chamonix--le-savoy",
+        "to_candidate_id": "le-savoy",
+        "evidence_refs": [
+          "inventory-beginner-savoy-status"
+        ]
       }
     ]
   },
   "boundary_decision_targets": [
     "chamonix-mont-blanc",
     "les-houches",
-    "vallorcine"
+    "vallorcine",
+    "argentiere"
   ],
   "weather_request_geometry_targets": [],
   "weather_request_geometry_assessments": [],
@@ -13928,6 +14925,8 @@
   "ranking_impact_summary": "Stay-market ownership, direct access, pass availability, the Les Houches terrain correction, and refreshed Brévent-Flégère evidence can change eligible trip options and ranking inputs. No scoring policy changes.",
   "unresolved_caveats": [
     "Deferred beginner-area, access, stay-market, and local-pass candidates remain consolidated under the Chamonix Valley Catalog Follow-ups backlog item; exact product identity remains a prerequisite for each local-pass candidate.",
-    "Argentiere retains 1235 m with verified_with_adjustment trust because the same official PDF also labels 1253 m on its map."
+    "Argentiere retains 1235 m with verified_with_adjustment trust because the same official PDF also labels 1253 m on its map.",
+    "Argentière is policy-determined as a prospective separate stay destination in graph discovery; catalog creation and the associated relationship materialization remain ordinary remediation after checkpoint acceptance.",
+    "Les Praz live official and structured identity evidence is captured in the report, while coordinates and regional-data catalog materialization remain open ordinary remediation."
   ]
 }
