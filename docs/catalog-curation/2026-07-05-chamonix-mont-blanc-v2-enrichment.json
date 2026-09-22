@@ -6939,63 +6939,63 @@
       "target_id": "argentiere",
       "field_path": "country",
       "status": "reviewed-no-change",
-      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+      "notes": "The official Argentière booking destination and official Chamonix Valley village page were checked and place the prospective market in the French Chamonix-Mont-Blanc destination context; France is the source-backed prospective country, while catalog materialization remains ordinary remediation."
     },
     {
       "target_type": "stay_destination",
       "target_id": "argentiere",
       "field_path": "latitude",
       "status": "reviewed-no-change",
-      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+      "notes": "OpenStreetMap node 285882627 was checked as the exact structured Argentière settlement object and supports prospective representative latitude 45.9838; catalog materialization remains ordinary remediation."
     },
     {
       "target_type": "stay_destination",
       "target_id": "argentiere",
       "field_path": "longitude",
       "status": "reviewed-no-change",
-      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+      "notes": "OpenStreetMap node 285882627 was checked as the exact structured Argentière settlement object and supports prospective representative longitude 6.9299; catalog materialization remains ordinary remediation."
     },
     {
       "target_type": "stay_destination",
       "target_id": "argentiere",
       "field_path": "name",
       "status": "reviewed-no-change",
-      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+      "notes": "The official booking destination page directly names the independent prospective stay market Argentière; catalog materialization remains ordinary remediation."
     },
     {
       "target_type": "stay_destination",
       "target_id": "argentiere",
       "field_path": "price_level",
-      "status": "reviewed-no-change",
-      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+      "status": "unresolved",
+      "notes": "The official Argentière booking page was checked and exposes live per-stay examples, but it does not define a stable representative duration, season, or Snowcast price-level band. A bounded same-duration and same-season official accommodation sample mapped through the catalog price policy would resolve price_level."
     },
     {
       "target_type": "stay_destination",
       "target_id": "argentiere",
       "field_path": "region",
       "status": "reviewed-no-change",
-      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+      "notes": "The official Argentière and Chamonix Valley destination pages were checked together with the exact structured settlement object and place the prospective market in Haute-Savoie; catalog materialization remains ordinary remediation."
     },
     {
       "target_type": "stay_destination",
       "target_id": "argentiere",
       "field_path": "regional_data_ids",
       "status": "reviewed-no-change",
-      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+      "notes": "OpenStreetMap node 285882627 is the exact structured Argentière settlement identity and supports prospective regional_data_ids.osm_node_id; catalog materialization remains ordinary remediation."
     },
     {
       "target_type": "stay_destination",
       "target_id": "argentiere",
       "field_path": "stay_destination_id",
       "status": "reviewed-no-change",
-      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+      "notes": "The official booking service directly presents Argentière as an independent destination; the prospective stable ID argentiere is normalized from that official label and catalog materialization remains ordinary remediation."
     },
     {
       "target_type": "stay_destination",
       "target_id": "argentiere",
       "field_path": "trip_market_region_id",
       "status": "reviewed-no-change",
-      "notes": "Prospective graph-discovery target reviewed under ADR 0018; catalog materialization is intentionally deferred to ordinary remediation."
+      "notes": "The official booking page repeatedly identifies Argentière as part of the Chamonix Valley while treating it as an independent stay destination, supporting prospective trip_market_region_id chamonix-valley; catalog materialization remains ordinary remediation."
     }
   ],
   "evidence": [
@@ -10704,11 +10704,15 @@
       "target_id": "chamonix-mont-blanc-le-tour",
       "field_path": "stay_destination_id",
       "source_type": "official",
-      "source_url": "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts",
-      "source_title": "Official Chamonix Valley village-resort overview",
-      "source_value": "chamonix-mont-blanc-le-tour",
-      "evidence_summary": "Supports Le Tour as a stay base within the Chamonix-Mont-Blanc destination market.",
-      "normalization_note": "The source identity is normalized to the catalog stay-destination relationship."
+      "source_url": "https://booking.chamonix.com/en/product-962-apartment-chalet-le-tour",
+      "source_title": "Official booking listing for Apartment Chalet Le Tour",
+      "source_value": {
+        "stay_base_id": "chamonix-mont-blanc-le-tour",
+        "booking_destination": "Argentiere",
+        "locality": "Le Tour"
+      },
+      "evidence_summary": "The live official booking listing labels the property destination as Argentière and places the residence in the hamlet of Le Tour, 3 km from Argentière, directly supporting prospective Argentière ownership of the Le Tour stay base.",
+      "normalization_note": "The graph-discovery relationship is scope_reclassified from Chamonix-Mont-Blanc to the prospective Argentière stay destination; the existing materialized catalog parent remains an ordinary-remediation finding."
     },
     {
       "evidence_id": "graph-stay-base-les-praz-market",
@@ -10809,8 +10813,8 @@
       "target_id": "chamonix-valley",
       "field_path": "source_urls",
       "source_type": "official",
-      "source_url": "https://www.chamonix.fr/la-commune/vie-municipale/comites-de-village/",
-      "source_title": "Current official Chamonix village-committee locality roster",
+      "source_url": "https://www.chamonix.fr/actualites/comites-de-villages-2024/",
+      "source_title": "Live official Chamonix 2024 village-committee locality roster",
       "source_value": {
         "published_roster": "2024 village committees",
         "clusters": [
@@ -10852,8 +10856,8 @@
           ]
         ]
       },
-      "evidence_summary": "The current municipal roster systematically enumerates the concrete Chamonix commune locality clusters used to exhaust the stay-base neighborhood.",
-      "normalization_note": "Committee grouping is locality evidence, not independent stay-market ownership; each locality is assessed against an existing represented base."
+      "evidence_summary": "The live municipal 2024 roster confirms the 20 established locality candidates used by this packet and preserves the six reviewed committee neighborhoods from Les Bossons to Le Tour.",
+      "normalization_note": "Committee grouping is locality evidence, not independent stay-market ownership; the live replacement source preserves every previously assessed locality candidate and all 18 report-owned containment relationships."
     },
     {
       "evidence_id": "graph-chamonix-systematic-transport-neighborhood",
@@ -10928,6 +10932,158 @@
       "source_value": "Argentière",
       "evidence_summary": "The official destination page distinguishes Argentière through a traditional village atmosphere, local services, and direct Grands Montets access, materially changing stay character and ski access from central Chamonix.",
       "normalization_note": "This is direct destination-level separation evidence under ADR 0018, not an invented owner preference."
+    },
+    {
+      "evidence_id": "graph-argentiere-new-entity-country-research",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "country",
+      "source_type": "official",
+      "source_url": "https://en.chamonix.com/chamonix-mont-blanc-valley/geography-and-climate",
+      "source_title": "Official Chamonix Valley geography",
+      "source_value": "France",
+      "evidence_summary": "The official geography page places Argentière in the Chamonix-Mont-Blanc Valley on the French side of the France-Switzerland-Italy border context, supporting France as the prospective destination country.",
+      "normalization_note": "Prospective field evidence only; catalog materialization remains ordinary remediation."
+    },
+    {
+      "evidence_id": "graph-argentiere-new-entity-latitude",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/285882627",
+      "source_title": "OpenStreetMap Argentière settlement node 285882627",
+      "source_value": 45.9838,
+      "evidence_summary": "The exact structured Argentière settlement node supports the prospective representative stay-destination latitude.",
+      "normalization_note": "The settlement point is reused consistently with the represented Argentière stay base; catalog materialization remains ordinary remediation."
+    },
+    {
+      "evidence_id": "graph-argentiere-new-entity-longitude",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/285882627",
+      "source_title": "OpenStreetMap Argentière settlement node 285882627",
+      "source_value": 6.9299,
+      "evidence_summary": "The exact structured Argentière settlement node supports the prospective representative stay-destination longitude.",
+      "normalization_note": "The settlement point is reused consistently with the represented Argentière stay base; catalog materialization remains ordinary remediation."
+    },
+    {
+      "evidence_id": "graph-argentiere-new-entity-price-level-research",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "price_level",
+      "source_type": "official",
+      "source_url": "https://booking.chamonix.com/en/our-destinations/argentiere",
+      "source_title": "Official Argentière accommodation collection",
+      "source_value": null,
+      "evidence_summary": "The live collection was checked and exposes per-stay examples, but not a stable representative duration, season, or Snowcast price-level band. A bounded same-duration and same-season official accommodation sample mapped through the catalog price policy would resolve price_level.",
+      "normalization_note": "The field remains honestly unresolved rather than inferring a band from incomparable live offer totals."
+    },
+    {
+      "evidence_id": "graph-argentiere-new-entity-region-research",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "region",
+      "source_type": "official",
+      "source_url": "https://en.chamonix.com/chamonix-mont-blanc-valley/geography-and-climate",
+      "source_title": "Official Chamonix Valley geography",
+      "source_value": "Haute-Savoie",
+      "evidence_summary": "The official geography page places Argentière inside the Chamonix-Mont-Blanc Valley and names the upper-Savoy geography, supporting normalization to the existing Haute-Savoie catalog region.",
+      "normalization_note": "Prospective field evidence only; catalog materialization remains ordinary remediation."
+    },
+    {
+      "evidence_id": "graph-argentiere-new-entity-regional-data-ids",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/285882627",
+      "source_title": "OpenStreetMap Argentière settlement node 285882627",
+      "source_value": {
+        "osm_node_id": "285882627"
+      },
+      "evidence_summary": "The exact structured Argentière settlement object supplies the prospective regional-data identifier.",
+      "normalization_note": "Prospective field evidence only; catalog materialization remains ordinary remediation."
+    },
+    {
+      "evidence_id": "graph-argentiere-new-entity-trip-market-region",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "argentiere",
+      "field_path": "trip_market_region_id",
+      "source_type": "official",
+      "source_url": "https://booking.chamonix.com/en/our-destinations/argentiere",
+      "source_title": "Official Argentière booking destination",
+      "source_value": "chamonix-valley",
+      "evidence_summary": "The official booking page repeatedly identifies Argentière as an independent destination within the Chamonix Valley, supporting the prospective trip-market region relationship.",
+      "normalization_note": "The official Chamonix Valley label is normalized to the existing ski-region ID chamonix-valley."
+    },
+    {
+      "evidence_id": "graph-argentiere-chamonix-le-pass-availability",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "available_from_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "Official CHAMONIX Le Pass coverage",
+      "source_value": "argentiere",
+      "evidence_summary": "The exact local product covers Grands Montets and all named Chamonix ski areas; combined with the independently verified Argentière booking market and its direct Grands Montets access, it supports prospective pass availability from Argentière.",
+      "normalization_note": "Availability is recorded without inferring default ownership."
+    },
+    {
+      "evidence_id": "graph-argentiere-mbu-availability",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "available_from_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+      "source_title": "Official MONT BLANC Unlimited coverage",
+      "source_value": "argentiere",
+      "evidence_summary": "The exact regional product covers Grands Montets and the Chamonix ski areas; combined with the independently verified Argentière booking market and its direct Grands Montets access, it supports prospective pass availability from Argentière.",
+      "normalization_note": "Availability is recorded without inferring default ownership."
+    },
+    {
+      "evidence_id": "graph-argentiere-pass-default-research",
+      "boundary_target_ids": [
+        "argentiere"
+      ],
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "default_for_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "Official Chamonix pass-product comparison",
+      "source_value": null,
+      "evidence_summary": "The CHAMONIX Le Pass, MONT BLANC Unlimited, and official Argentière booking pages were checked. Both products are available trip options from Argentière, but none declares one Snowcast default for that stay market; no prospective default relationship is asserted without product-policy evidence.",
+      "normalization_note": "A documented catalog default-selection policy or an exact official booking bundle that distinguishes the default product would resolve the prospective default relationship."
     },
     {
       "evidence_id": "graph-stay-base-les-praz-osm-identity",
@@ -11129,7 +11285,9 @@
       ],
       "evidence_refs": [
         "scope-target-lift-pass-product-chamonix-le-pass",
-        "inventory-lepass"
+        "inventory-lepass",
+        "graph-argentiere-chamonix-le-pass-availability",
+        "graph-argentiere-pass-default-research"
       ],
       "target_refs": [
         {
@@ -11221,7 +11379,9 @@
         "full_local_pass"
       ],
       "evidence_refs": [
-        "scope-target-lift-pass-product-mont-blanc-unlimited"
+        "scope-target-lift-pass-product-mont-blanc-unlimited",
+        "graph-argentiere-mbu-availability",
+        "graph-argentiere-pass-default-research"
       ],
       "target_refs": [
         {
@@ -11608,7 +11768,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The entity remains represented in the complete reviewed graph.",
+      "rationale": "scope_reclassified: the existing represented Argentière stay base remains the concrete endpoint, while current official booking evidence prospectively assigns its stay-market ownership to the new Argentière destination; the materialized catalog parent remains open for ordinary remediation.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -11657,7 +11817,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The complete source-backed graph requires this new normalized entity.",
+      "rationale": "scope_reclassified: the live official booking listing labels a Le Tour accommodation as Argentière and places Le Tour 3 km from Argentière, so the prospective containment edge moves from Chamonix-Mont-Blanc to Argentière while retaining this established endpoint and its evidence; the materialized catalog parent remains open for ordinary remediation.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -13016,7 +13176,18 @@
         "scope-target-stay-base-chamonix-mont-blanc-argentiere",
         "scope-target-stay-destination-chamonix-mont-blanc",
         "graph-argentiere-official-booking-scope",
-        "graph-argentiere-material-separation"
+        "graph-argentiere-material-separation",
+        "graph-argentiere-new-entity-country-research",
+        "graph-argentiere-new-entity-latitude",
+        "graph-argentiere-new-entity-longitude",
+        "graph-argentiere-new-entity-price-level-research",
+        "graph-argentiere-new-entity-region-research",
+        "graph-argentiere-new-entity-regional-data-ids",
+        "graph-argentiere-new-entity-trip-market-region",
+        "graph-stay-base-le-tour-market",
+        "graph-argentiere-chamonix-le-pass-availability",
+        "graph-argentiere-mbu-availability",
+        "graph-argentiere-pass-default-research"
       ],
       "target_refs": [
         {
@@ -13025,7 +13196,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "Current direct official booking evidence passes all ADR 0018 gates: Argentière has a complete dedicated accommodation market, direct official booking ownership, and material stay-character and Grands Montets access separation. The report therefore records a prospective separate stay destination without changing the catalog in graph-discovery correction.",
+      "rationale": "Current direct official booking evidence passes all ADR 0018 gates: Argentière has a complete dedicated accommodation market, direct official booking ownership, and material stay-character and Grands Montets access separation. The prospective new-entity field sweep records every canonical field, its represented Argentière base, scope_reclassified Le Tour ownership, both supported pass-availability edges, and an explicit no-default conclusion pending product-policy evidence; catalog materialization remains ordinary remediation.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -13672,7 +13843,8 @@
         "https://booking.chamonix.com/en/hotel-123-les-lanchers?id-intuitiv=14177274",
         "https://booking.chamonix.com/en/our-destinations/argentiere",
         "https://en.chamonix.com/sites/default/files/media/brochures/Guide-Hiver-Chamonix-2025-2026.pdf",
-        "https://www.chamonix.fr/la-commune/vie-municipale/comites-de-village/",
+        "https://www.chamonix.fr/actualites/comites-de-villages-2024/",
+        "https://booking.chamonix.com/en/product-962-apartment-chalet-le-tour",
         "https://www.openstreetmap.org/node/277928675"
       ],
       "candidate_kinds": [
@@ -13808,7 +13980,14 @@
           "scope-target-stay-destination-les-houches",
           "scope-target-stay-destination-vallorcine",
           "graph-argentiere-official-booking-scope",
-          "graph-argentiere-material-separation"
+          "graph-argentiere-material-separation",
+          "graph-argentiere-new-entity-country-research",
+          "graph-argentiere-new-entity-latitude",
+          "graph-argentiere-new-entity-longitude",
+          "graph-argentiere-new-entity-price-level-research",
+          "graph-argentiere-new-entity-region-research",
+          "graph-argentiere-new-entity-regional-data-ids",
+          "graph-argentiere-new-entity-trip-market-region"
         ],
         "rationale": "Complete because the registered official source neighborhoods for this focus root and candidate kind were exhausted; every found candidate and supported edge is recorded, so no expected candidate is omitted from this packet."
       },
@@ -14021,9 +14200,12 @@
           "remediation-flegere-beginner-ticket",
           "remediation-plateau-2000-beginner-ticket",
           "scope-target-lift-pass-product-chamonix-le-pass",
-          "scope-target-lift-pass-product-mont-blanc-unlimited"
+          "scope-target-lift-pass-product-mont-blanc-unlimited",
+          "graph-argentiere-chamonix-le-pass-availability",
+          "graph-argentiere-mbu-availability",
+          "graph-argentiere-pass-default-research"
         ],
-        "rationale": "Complete because the registered official source neighborhoods for this focus root and candidate kind were exhausted; every found candidate and supported edge is recorded, so no expected candidate is omitted from this packet."
+        "rationale": "Complete because the registered official pass neighborhoods were exhausted, every supported pass-coverage and availability edge is recorded, and the prospective Argentière market has both supported available products. The checked official product and booking sources do not select one Snowcast default for Argentière, so no unsupported default edge is asserted."
       },
       {
         "focus_stay_destination_id": "les-houches",
@@ -14571,7 +14753,7 @@
       },
       {
         "relationship_type": "stay_destination_contains_stay_base",
-        "from_candidate_id": "chamonix-mont-blanc",
+        "from_candidate_id": "argentiere",
         "to_candidate_id": "chamonix-mont-blanc-le-tour",
         "evidence_refs": [
           "graph-stay-base-le-tour-market"
@@ -14897,6 +15079,138 @@
         "from_candidate_id": "chamonix-mont-blanc-chamonix--le-savoy",
         "to_candidate_id": "le-savoy",
         "evidence_refs": [
+          "inventory-beginner-savoy-status"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_available_from_stay_destination",
+        "from_candidate_id": "chamonix-le-pass",
+        "to_candidate_id": "argentiere",
+        "evidence_refs": [
+          "graph-argentiere-official-booking-scope",
+          "graph-argentiere-chamonix-le-pass-availability"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_available_from_stay_destination",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "argentiere",
+        "evidence_refs": [
+          "graph-argentiere-official-booking-scope",
+          "graph-argentiere-mbu-availability"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "les-planards",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "les-chosalets",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "la-poya",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "la-vormaine",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "le-tourchet",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "les-houches-saint-gervais-skipass",
+        "to_candidate_id": "le-tourchet",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "ski_area_access_reaches_ski_area",
+        "from_candidate_id": "saint-gervais-le-fayet--les-houches-saint-gervais",
+        "to_candidate_id": "les-houches-saint-gervais",
+        "evidence_refs": [
+          "inventory-saint-gervais"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "chamonix-le-pass",
+        "to_candidate_id": "plateau-2000",
+        "evidence_refs": [
+          "inventory-easy",
+          "inventory-lepass"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "chamonix-le-pass",
+        "to_candidate_id": "plateau-de-lognan",
+        "evidence_refs": [
+          "inventory-lepass"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "chamonix-le-pass",
+        "to_candidate_id": "flegere-beginner-sector",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "plateau-2000",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "plateau-de-lognan",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "flegere-beginner-sector",
+        "evidence_refs": [
+          "inventory-easy"
+        ]
+      },
+      {
+        "relationship_type": "lift_pass_covers_ski_area",
+        "from_candidate_id": "mont-blanc-unlimited",
+        "to_candidate_id": "le-savoy",
+        "evidence_refs": [
+          "inventory-easy",
           "inventory-beginner-savoy-status"
         ]
       }
