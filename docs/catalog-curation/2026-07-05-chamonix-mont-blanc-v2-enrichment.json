@@ -10852,12 +10852,13 @@
           ],
           [
             "Les Bossons",
+            "Le Mont",
             "Taconnaz"
           ]
         ]
       },
-      "evidence_summary": "The live municipal 2024 roster confirms the 20 established locality candidates used by this packet and preserves the six reviewed committee neighborhoods from Les Bossons to Le Tour.",
-      "normalization_note": "Committee grouping is locality evidence, not independent stay-market ownership; the live replacement source preserves every previously assessed locality candidate and all 18 report-owned containment relationships."
+      "evidence_summary": "The live municipal 2024 roster confirms the 21 established locality candidates used by this packet and preserves the six reviewed committee neighborhoods from Les Bossons to Le Tour.",
+      "normalization_note": "Committee grouping is locality evidence, not independent stay-market ownership; the live replacement source preserves every previously assessed locality candidate and all 19 report-owned containment relationships."
     },
     {
       "evidence_id": "graph-chamonix-systematic-transport-neighborhood",
@@ -12630,7 +12631,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The current municipal locality roster groups Les Chosalets with Argentière and the current transport neighborhood confirms direct service; without independent stay-market ownership it is locality context under the represented Argentière base.",
+      "rationale": "scope_reclassified: the current municipal locality roster groups Les Chosalets with Argentière and the current transport neighborhood confirms direct service; its prospective containment moves from Chamonix-Mont-Blanc to Argentière while it remains normalized to the represented Argentière stay base.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -12772,6 +12773,28 @@
       "graph_impact": "graph_blocking"
     },
     {
+      "candidate_id": "chamonix-mont-blanc-le-mont",
+      "candidate_name": "Le Mont",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "graph-chamonix-systematic-locality-neighborhood"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "chamonix-mont-blanc-chamonix"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The live official municipal roster establishes Le Mont as a concrete locality in the Les Bossons, Le Mont, and Taconnaz committee neighborhood, but it does not establish independent stay-market or ski-access ownership; it is normalized to the represented Chamonix stay base.",
+      "ski_area_boundary": null,
+      "graph_impact": "graph_blocking"
+    },
+    {
       "candidate_id": "chamonix-mont-blanc-le-lavancher",
       "candidate_name": "Le Lavancher",
       "candidate_kind": "stay_base",
@@ -12817,7 +12840,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The official sources identify Montroc as a Chamonix-commune hamlet with lodging and direct transport near Le Tour, but do not establish independent stay-market or ski-access ownership; it remains locality context under the represented Le Tour stay base rather than a separate stay-base graph.",
+      "rationale": "scope_reclassified: the official locality roster places Montroc in the Argentière committee neighborhood, while existing lodging and transport evidence continues to normalize it to Le Tour; because Le Tour's prospective ownership is Argentière, Montroc's prospective containment moves from Chamonix-Mont-Blanc to Argentière without changing its target ref.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -13512,7 +13535,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "rationale": "scope_reclassified: the current official locality roster places La Joux in the Argentière committee neighborhood; its prospective containment moves from Chamonix-Mont-Blanc to Argentière while it remains normalized to the represented Argentière stay base.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -13535,7 +13558,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "rationale": "scope_reclassified: the current official locality roster places Les Iles in the Argentière committee neighborhood and the transport neighborhood confirms direct service; its prospective containment moves from Chamonix-Mont-Blanc to Argentière while it remains normalized to the represented Argentière stay base.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -13558,7 +13581,7 @@
         }
       ],
       "backlog_ref": null,
-      "rationale": "The bounded current official locality, transport, and booking neighborhood establishes this concrete Chamonix commune locality but no independent stay-market ownership; it is normalized to the represented parent stay base.",
+      "rationale": "scope_reclassified: the current official locality roster places Les Grassonnets in the Argentière committee neighborhood and the transport neighborhood confirms direct service; its prospective containment moves from Chamonix-Mont-Blanc to Argentière while it remains normalized to the represented Argentière stay base.",
       "ski_area_boundary": null,
       "graph_impact": "graph_blocking"
     },
@@ -14006,6 +14029,7 @@
           "chamonix-mont-blanc-le-savoy",
           "chamonix-mont-blanc-les-tines",
           "chamonix-mont-blanc-les-bossons",
+          "chamonix-mont-blanc-le-mont",
           "chamonix-mont-blanc-le-lavancher",
           "chamonix-mont-blanc-montroc",
           "servoz-servoz",
@@ -14027,7 +14051,8 @@
           "chamonix-mont-blanc-taconnaz"
         ],
         "source_family_ids": [
-          "chamonix-stay-market-sources"
+          "chamonix-stay-market-sources",
+          "chamonix-access-topology-sources"
         ],
         "evidence_refs": [
           "graph-saint-gervais-le-fayet-stay-base",
@@ -14052,7 +14077,7 @@
           "graph-chamonix-sud-booking-neighborhood",
           "graph-stay-base-les-praz-osm-identity"
         ],
-        "rationale": "Complete because the current municipal village-committee roster, current winter transport guide, official booking collection, and direct represented-base sources were exhausted together; every concrete locality found, including Chamonix Sud and Les Bois, is assessed and every supported focus-graph edge is recorded."
+        "rationale": "Complete because the current municipal village-committee roster, current winter transport guide, official booking collection, and direct represented-base sources were exhausted together; every concrete locality found, including Chamonix Sud, Les Bois, and Le Mont, is assessed and every supported focus-graph edge is recorded."
       },
       {
         "focus_stay_destination_id": "chamonix-mont-blanc",
@@ -14753,6 +14778,22 @@
       },
       {
         "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-argentiere",
+        "evidence_refs": [
+          "scope-target-stay-base-chamonix-mont-blanc-argentiere"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-le-tour",
+        "evidence_refs": [
+          "scope-target-stay-base-chamonix-mont-blanc-le-tour"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
         "from_candidate_id": "argentiere",
         "to_candidate_id": "chamonix-mont-blanc-le-tour",
         "evidence_refs": [
@@ -14779,7 +14820,7 @@
       },
       {
         "relationship_type": "stay_destination_contains_stay_base",
-        "from_candidate_id": "chamonix-mont-blanc",
+        "from_candidate_id": "argentiere",
         "to_candidate_id": "chamonix-mont-blanc-montroc",
         "evidence_refs": [
           "inventory-chamonix-commune-localities",
@@ -14828,7 +14869,7 @@
       },
       {
         "relationship_type": "stay_destination_contains_stay_base",
-        "from_candidate_id": "chamonix-mont-blanc",
+        "from_candidate_id": "argentiere",
         "to_candidate_id": "chamonix-mont-blanc-la-joux",
         "evidence_refs": [
           "graph-chamonix-systematic-locality-neighborhood"
@@ -14836,7 +14877,7 @@
       },
       {
         "relationship_type": "stay_destination_contains_stay_base",
-        "from_candidate_id": "chamonix-mont-blanc",
+        "from_candidate_id": "argentiere",
         "to_candidate_id": "chamonix-mont-blanc-les-iles",
         "evidence_refs": [
           "graph-chamonix-systematic-locality-neighborhood"
@@ -14844,7 +14885,7 @@
       },
       {
         "relationship_type": "stay_destination_contains_stay_base",
-        "from_candidate_id": "chamonix-mont-blanc",
+        "from_candidate_id": "argentiere",
         "to_candidate_id": "chamonix-mont-blanc-les-grassonnets",
         "evidence_refs": [
           "graph-chamonix-systematic-locality-neighborhood"
@@ -14940,7 +14981,7 @@
       },
       {
         "relationship_type": "stay_destination_contains_stay_base",
-        "from_candidate_id": "chamonix-mont-blanc",
+        "from_candidate_id": "argentiere",
         "to_candidate_id": "chamonix-mont-blanc-chosalets",
         "evidence_refs": [
           "graph-chamonix-systematic-locality-neighborhood"
@@ -14958,6 +14999,14 @@
         "relationship_type": "stay_destination_contains_stay_base",
         "from_candidate_id": "chamonix-mont-blanc",
         "to_candidate_id": "chamonix-mont-blanc-les-bossons",
+        "evidence_refs": [
+          "graph-chamonix-systematic-locality-neighborhood"
+        ]
+      },
+      {
+        "relationship_type": "stay_destination_contains_stay_base",
+        "from_candidate_id": "chamonix-mont-blanc",
+        "to_candidate_id": "chamonix-mont-blanc-le-mont",
         "evidence_refs": [
           "graph-chamonix-systematic-locality-neighborhood"
         ]
