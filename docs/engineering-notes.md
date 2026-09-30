@@ -1191,6 +1191,15 @@ outcomes do not echo untrusted prose, sources, command output, paths,
 environment values, or credentials. `mutation_occurred` describes the current
 invocation, including false for idempotent retries.
 
+An explicit owner request may preserve the exact current curation-generation
+checkpoint on
+`checkpoint-archive/snowcast/pr-<pr>/generation-<number>`. The helper validates
+the unchanged PR head and private checkpoint/replay refs, then uses a create-only
+lease; an exact existing head is idempotent and a conflicting head fails closed.
+This remote branch is portability evidence only. It is never read as selection,
+recovery, review, validation, publication, CI, or readiness authority, and it
+does not close or consume the generation.
+
 The maintainer never approves or merges. The repository implementation does not
 install the personal skill or schedules. Post-merge installation, review,
 enablement, and rollback are owned by

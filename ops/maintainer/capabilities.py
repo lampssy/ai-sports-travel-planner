@@ -2147,6 +2147,59 @@ def handle_publish_manual_check(
     return {"work_id": work_id, **result}
 
 
+def handle_publish_checkpoint_archive(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    _owned_lease(args, "curation", dependencies)
+    work_id = _work_id_for_pr(args.pr)
+    dependencies.tracker.work_id = work_id
+    dependencies.tracker.pr_number = args.pr
+    dependencies.tracker.stage = ErrorStage.PRE_PUSH
+
+    generation = CurationGenerationStore(args.state_dir).load_current(work_id)
+    if (
+        generation is None
+        or generation.pr_number != args.pr
+        or generation.generation_id != args.generation_id
+    ):
+        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.PRE_PUSH)
+    projection = project_generation(generation)
+    checkpoint = projection.checkpoint_authority
+    if (
+        checkpoint is None
+        or projection.latest_head != args.head
+        or checkpoint.reviewed_head != args.head
+    ):
+        raise MaintainerError(ErrorReason.CHECKPOINT_CONFLICT, ErrorStage.PRE_PUSH)
+
+    pull_request = dependencies.github.get_pull_request(args.pr)
+    if pull_request.head_sha != generation.selected_head:
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
+    branch = (
+        f"checkpoint-archive/snowcast/pr-{args.pr}/"
+        f"generation-{generation.generation_number}"
+    )
+    dependencies.tracker.stage = ErrorStage.PUSH
+    created = dependencies.repository.archive_curation_checkpoint(
+        pull_request,
+        _generation_recovery(generation, checkpoint),
+        branch,
+    )
+    dependencies.tracker.mutation_occurred = created
+    dependencies.tracker.terminal_reason = (
+        "checkpoint_archived" if created else "checkpoint_already_archived"
+    )
+    return {
+        "archive": {
+            "branch": branch,
+            "head": args.head,
+            "created": created,
+            "authoritative": False,
+        }
+    }
+
+
 def _terminal_publication_payload(
     intent: TerminalPublicationIntent,
 ) -> dict[str, object]:
@@ -3863,6 +3916,7 @@ HANDLERS: dict[tuple[str, str], Handler] = {
     ("publish", "push"): handle_publish_push,
     ("publish", "ci-repair"): handle_publish_ci_repair,
     ("publish", "manual-check"): handle_publish_manual_check,
+    ("publish", "checkpoint-archive"): handle_publish_checkpoint_archive,
     ("publish", "recover"): handle_publish_recover,
     ("publish", "proposal"): handle_publish_proposal,
     ("publish", "outcome"): handle_publish_outcome,

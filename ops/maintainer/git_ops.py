@@ -73,6 +73,9 @@ _BACKUP_REF = re.compile(
     r"^refs/snowcast-maintainer/backups/pr-[1-9][0-9]*/"
     r"[0-9]{8}T[0-9]{6}Z-(?P<prefix>[0-9a-f]{12})$"
 )
+_CHECKPOINT_ARCHIVE_BRANCH = re.compile(
+    r"^checkpoint-archive/snowcast/pr-[1-9][0-9]*/generation-[1-9][0-9]*$"
+)
 _PREPARED_REF = re.compile(
     r"^refs/snowcast-maintainer/prepared/pr-[1-9][0-9]*/"
     r"(?P<base>[0-9a-f]{12})-(?P<rebased>[0-9a-f]{12})$"
@@ -492,6 +495,14 @@ class GitRepository:
         allow_absent: bool,
     ) -> str | None:
         self._validate_target_branch(branch)
+        return self._lookup_remote_branch_ref(branch, allow_absent=allow_absent)
+
+    def _lookup_remote_branch_ref(
+        self,
+        branch: str,
+        *,
+        allow_absent: bool,
+    ) -> str | None:
         self.verify_repository()
         expected_ref = f"refs/heads/{branch}"
         result = self._git(
@@ -523,6 +534,58 @@ class GitRepository:
                 f"expected exactly one remote head for {branch}"
             )
         return parsed[0]
+
+    def archive_curation_checkpoint(
+        self,
+        pull_request: PullRequest,
+        recovery: CurationRecoveryCheckpoint,
+        branch: str,
+    ) -> bool:
+        """Create one non-authoritative remote archive for an exact checkpoint."""
+        _validate_pull_request(pull_request)
+        _validate_checkpoint_archive_branch(branch)
+        if (
+            recovery.pr_number != pull_request.number
+            or recovery.selected_head != pull_request.head_sha
+            or recovery.sync.target_branch != pull_request.head_ref_name
+        ):
+            raise StaleRemoteHeadError(
+                "curation checkpoint no longer matches the pull request"
+            )
+        if self.remote_head(pull_request.head_ref_name) != recovery.selected_head:
+            raise StaleRemoteHeadError(
+                "remote pull request head changed after checkpoint"
+            )
+        self._validate_curation_checkpoint(recovery)
+        return self.push_checkpoint_archive_create_only(
+            branch,
+            recovery.checkpoint_head,
+        )
+
+    def push_checkpoint_archive_create_only(
+        self,
+        branch: str,
+        checkpoint_head: str,
+    ) -> bool:
+        """Create an immutable remote checkpoint branch or confirm it already exists."""
+        _validate_checkpoint_archive_branch(branch)
+        _validate_sha(checkpoint_head)
+        self._verify_commit(checkpoint_head)
+        remote_head = self._lookup_remote_branch_ref(branch, allow_absent=True)
+        if remote_head == checkpoint_head:
+            return False
+        if remote_head is not None:
+            raise StaleRemoteHeadError("checkpoint archive branch is already occupied")
+        push = self._git(
+            "push",
+            f"--force-with-lease=refs/heads/{branch}:",
+            "origin",
+            f"{checkpoint_head}:refs/heads/{branch}",
+            network=True,
+        )
+        if push.returncode != 0:
+            _raise_sanitized_push_error(push.stderr)
+        return True
 
     def fetch_for_pr(self, branch: str) -> None:
         self._validate_target_branch(branch)
@@ -2065,6 +2128,13 @@ def _raise_sanitized_network_error(operation: str, stderr: str) -> None:
 def _validate_target_branch(branch: str) -> None:
     if not is_safe_codex_branch(branch):
         raise RepositorySafetyError("target branch must be a ref-safe codex/* branch")
+
+
+def _validate_checkpoint_archive_branch(branch: str) -> None:
+    if _CHECKPOINT_ARCHIVE_BRANCH.fullmatch(branch) is None:
+        raise RepositorySafetyError(
+            "checkpoint archive branch must use the fixed Snowcast namespace"
+        )
 
 
 def _validate_revision(revision: str) -> None:

@@ -81,6 +81,19 @@ with a new endpoint, causes lane disagreement, or exposes another plausible
 omission. This reuses the existing lanes and helper actions without another
 review state or schema field.
 
+### Checkpoint Archive Amendment
+
+An explicit owner request may preserve the exact current curation-generation
+checkpoint on the create-only branch
+`checkpoint-archive/snowcast/pr-<pr>/generation-<number>`. This is a portability
+and disaster-recovery reference only. The helper revalidates the current
+generation, unchanged selected PR head, and exact private checkpoint/replay refs
+before creating it with an empty expected-value lease. The same head is an
+idempotent success; a different existing head fails closed. The branch grants no
+selection, resume, review, validation, publication, CI, readiness, approval, or
+merge authority and never closes or consumes the generation. It is outside
+normal scheduled-cycle selection and is never read back as workflow state.
+
 When exactly one relationship endpoint is `regional_followup` with disposition
 `deferred` or `unresolved`, a canonical backlog owner, and no catalog target
 references, its evidence-backed edge is discovery-only relationship context. It
@@ -145,6 +158,8 @@ In scope:
   without any GitHub publication;
 - guarded rebase and exact-lease push for automation-owned `codex/*` catalog
   branches;
+- explicit owner-requested create-only archival of an accepted curation
+  checkpoint on the fixed non-authoritative checkpoint-archive namespace;
 - Codex-led review, source research, remediation, CI interpretation, backlog
   interpretation, and discovery selection;
 - deterministic catalog, trust, report, resulting-diff path/mode,
@@ -521,6 +536,14 @@ Publication can:
   against the exact unchanged remote head without pushing or editing the body;
 - publish `proposal`, `waiting-ci`, or `ready` only when their objective gates
   pass.
+
+An owner-requested checkpoint archive is the only publication capability that
+creates a non-`codex/*` branch. Its fixed branch name is derived from the exact
+current generation, it pushes the immutable checkpoint commit rather than the
+worktree `HEAD`, and it performs no GitHub PR, body, comment, or label mutation.
+It uses no push journal because an interrupted create-only attempt is safely
+classified on retry as absent, exact, or conflicting; none of those outcomes
+can grant workflow authority.
 
 Immediately before mutation it refetches the complete PR and rejects a changed
 head, repository, base, branch, lifecycle, or incompatible objective state.
@@ -1874,6 +1897,10 @@ replaced. It is history, not current operational instruction:
 - A PR becomes ready only for the unchanged Codex-reviewed,
   helper-validated, CI-green, mergeable head.
 - The branch and prospective merge with current `main` both pass verification.
+- An owner-requested checkpoint archive preserves only the exact current
+  generation checkpoint on its deterministic create-only branch, is idempotent
+  for the same head, rejects a conflicting head, leaves generation state
+  unchanged, and cannot satisfy any workflow gate.
 - Every intermediate refactor commit is runnable; one explicit atomic cutover
   commit is the pre-activation rollback unit.
 - The original cutover PR was merged only after its body described the final
@@ -1949,6 +1976,9 @@ replaced. It is history, not current operational instruction:
   creates a graph-safety finding. Still-missing, concretely unavailable, or
   unreconciled evidence blocks the transition. A shrinking first-pass checklist
   receives its second allowed pass before the objective new-work cutoff.
+  The owner subsequently chose a helper-backed, create-only checkpoint archive
+  for laptop migration and disaster-recovery reference, explicitly separate
+  from the PR branch and every workflow-authority surface.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
   No further ADR is needed for the convergence amendment because it changes
@@ -1958,7 +1988,9 @@ replaced. It is history, not current operational instruction:
   existing-candidate fact. Reviewed continuation also keeps that boundary:
   Codex resolves semantics, while the helper owns exact refs, state adoption,
   replay completion, scope checks, push authorization, and publication. No new
-  ADR is required.
+  ADR is required. The checkpoint archive likewise retains the accepted helper
+  boundary and adds no recovery authority or product semantics, so it does not
+  require a new ADR.
 - Advisory design review: complete for AI/LLM reliability, security/privacy,
   release/change management, and observability/ops. The reviews found no
   Blockers. Their High findings are resolved in this contract by atomic
@@ -2090,6 +2122,15 @@ replaced. It is history, not current operational instruction:
   No unresolved Blocker, High, or Medium finding remains. No new ADR is needed
   because the accepted Codex/helper authority boundary and persistent helper
   state model are unchanged.
+- Advisory checkpoint-archive feature review: complete for security/privacy,
+  observability/ops, and release/change management. No Blocker, High, or Medium
+  finding remains. The fixed derived namespace, exact generation and private-ref
+  revalidation, sanitized remote policy, empty expected-value lease, idempotent
+  exact-head retry, and explicit non-authority contract keep the branch from
+  becoming an alternate publication path. The accepted residual Low operational
+  cost is that repository CI runs once for this reference branch because the CI
+  workflow intentionally covers every push; production deploy remains limited
+  to `main`.
 - Implementation and activation: the base design is complete. Its feature work
   passed the recorded maintainer, focused catalog, lint/format, full-suite,
   prospective-merge, and CI checks before merge. The owner then approved and

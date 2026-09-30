@@ -594,6 +594,10 @@ class FakeRepository:
     push_exact_after_error: Exception | None = None
     legacy_refs: tuple[LegacyCurationRef, ...] = ()
     legacy_archive_calls: int = 0
+    checkpoint_archive_calls: list[
+        tuple[PullRequest, CurationRecoveryCheckpoint, str]
+    ] = field(default_factory=list)
+    checkpoint_archive_created: bool = True
 
     def legacy_curation_refs(
         self,
@@ -782,6 +786,17 @@ class FakeRepository:
     ) -> None:
         assert pull_request.number == recovery.pr_number
         assert recovery.sync == self.prepared
+
+    def archive_curation_checkpoint(
+        self,
+        pull_request: PullRequest,
+        recovery: CurationRecoveryCheckpoint,
+        branch: str,
+    ) -> bool:
+        assert pull_request.number == recovery.pr_number
+        assert recovery.sync == self.prepared
+        self.checkpoint_archive_calls.append((pull_request, recovery, branch))
+        return self.checkpoint_archive_created
 
     def push_with_lease(self, sync: GuardedSyncResult, reviewed_head: str) -> None:
         self.push_calls += 1
@@ -1030,6 +1045,7 @@ EXPECTED_HANDLERS = {
     ("publish", "push"),
     ("publish", "ci-repair"),
     ("publish", "manual-check"),
+    ("publish", "checkpoint-archive"),
     ("publish", "recover"),
     ("publish", "proposal"),
     ("publish", "outcome"),
@@ -1037,6 +1053,111 @@ EXPECTED_HANDLERS = {
     ("publish", "ensure-labels"),
     ("publication-input", "create"),
 }
+
+
+def test_publish_checkpoint_archive_preserves_current_generation_without_consuming_it(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    setup_lease = RunLease.acquire(state_dir, "curation", now=NOW)
+    generation_store = CurationGenerationStore(state_dir)
+    generation_store.start_generation(
+        _curation_generation(with_graph_discovery=True),
+        setup_lease,
+    )
+    setup_lease.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    repository = FakeRepository(head=SHA_C)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "checkpoint-archive",
+            "--pr",
+            "42",
+            "--generation-id",
+            GENERATION_ID,
+            "--head",
+            SHA_C,
+            "--run-id",
+            run_id,
+        ],
+        github=FakeGitHub(),
+        repository=repository,
+    )
+
+    assert code == 0, payload
+    assert payload["archive"] == {
+        "branch": "checkpoint-archive/snowcast/pr-42/generation-1",
+        "head": SHA_C,
+        "created": True,
+        "authoritative": False,
+    }
+    assert len(repository.checkpoint_archive_calls) == 1
+    archived_pr, archived_checkpoint, archived_branch = (
+        repository.checkpoint_archive_calls[0]
+    )
+    assert archived_pr.number == 42
+    assert archived_checkpoint.checkpoint_head == SHA_C
+    assert archived_branch == "checkpoint-archive/snowcast/pr-42/generation-1"
+    current = generation_store.load_current("curation-pr-42")
+    assert current is not None
+    assert project_generation(current).latest_stage is CurationCheckpointStage.REVIEWED
+    _assert_outcome(
+        payload,
+        worker="curation",
+        mutation=True,
+        run_id=run_id,
+    )
+
+
+def test_publish_checkpoint_archive_rejects_noncurrent_checkpoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    setup_lease = RunLease.acquire(state_dir, "curation", now=NOW)
+    CurationGenerationStore(state_dir).start_generation(
+        _curation_generation(with_graph_discovery=True),
+        setup_lease,
+    )
+    setup_lease.release()
+    run_id = _acquire(capsys, state_dir, "curation")
+    repository = FakeRepository(head=SHA_C)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "checkpoint-archive",
+            "--pr",
+            "42",
+            "--generation-id",
+            GENERATION_ID,
+            "--head",
+            SHA_B,
+            "--run-id",
+            run_id,
+        ],
+        github=FakeGitHub(),
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "checkpoint-conflict"
+    assert repository.checkpoint_archive_calls == []
+    _assert_outcome(
+        payload,
+        worker="curation",
+        mutation=False,
+        run_id=run_id,
+    )
 
 
 @pytest.mark.parametrize(

@@ -165,6 +165,10 @@ not have to derive an invocation.
       "argv": ["publish", "manual-check", "--pr", "${PR}", "--reviewed-head", "${REVIEWED_HEAD}", "--report", "${REPORT}", "--summary-file", "${SUMMARY_FILE}", "--body-file", "${BODY_FILE}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id", "pr_number", "state"]
     },
+    "publish_checkpoint_archive": {
+      "argv": ["publish", "checkpoint-archive", "--pr", "${PR}", "--generation-id", "${GENERATION_ID}", "--head", "${HEAD}", "--run-id", "${RUN_ID}"],
+      "returns": ["archive"]
+    },
     "publish_recover": {
       "argv": ["publish", "recover", "--work-id", "${WORK_ID}", "--run-id", "${RUN_ID}"],
       "returns": ["work_id"],
@@ -265,6 +269,17 @@ not have to derive an invocation.
       "lock_heartbeat_curation",
       "publish_state_adopt_body",
       "lock_heartbeat_curation"
+    ],
+    "curation_owner_requested_checkpoint_archive": [
+      "inspect_curation",
+      "inspect_discovery",
+      "lock_acquire_curation",
+      "lock_heartbeat_curation",
+      "publish_checkpoint_archive",
+      "lock_heartbeat_curation",
+      "inspect_curation",
+      "lock_heartbeat_curation",
+      "lock_release_curation"
     ],
     "curation_ci_successor_entry": [
       "lock_acquire_curation",
@@ -522,6 +537,7 @@ not have to derive an invocation.
 | `publication_input_*` | pass that basename only to its selected publication recipe |
 | `publish_push` | create fresh inputs, then publish exact-head lifecycle state |
 | `publish_ci_repair` | keep the same lease and begin the second exact-head CI wait |
+| `publish_checkpoint_archive` | heartbeat, reinspect the unchanged generation, heartbeat, and release; the archive branch grants no workflow authority and semantic work does not continue in this owner-requested operation |
 | `publish_recover` | obey its continuation/publication result; never select fresh work |
 | other `publish_*` | reinspect when required, then cleanup; never start semantic work |
 | `lock_release_*` | final Triage and private diagnostic recording only |
@@ -622,6 +638,18 @@ count candidate entries. Codex owns the assertion-level finding ledger,
 candidate inventory, repeat streak, and convergence decision; the helper only
 checks objective command, state, head, scope, validation, and publication
 preconditions for the resulting requested action.
+
+`publish checkpoint-archive` is an owner-requested preservation operation, not
+a normal scheduled-cycle branch. It accepts only the exact current generation
+checkpoint returned by inspection, revalidates the unchanged PR head and the
+private checkpoint/replay refs, and creates the deterministic branch
+`checkpoint-archive/snowcast/pr-<pr>/generation-<number>` with an empty
+expected-value lease. The branch is immutable: the same head is an idempotent
+success and any different existing head fails closed. It never closes or
+consumes the generation, creates no review or validation evidence, changes no
+PR or label, and is never read as selection, recovery, or publication authority.
+Because a lost response is resolved by observing an absent, exact, or conflicting
+archive ref, this create-only operation needs no workflow push journal.
 
 ### Durable Full Graph Discovery
 

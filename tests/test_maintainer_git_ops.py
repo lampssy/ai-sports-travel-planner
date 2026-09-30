@@ -1202,6 +1202,74 @@ def test_create_only_push_rejects_occupied_ref_before_push(tmp_path: Path) -> No
     assert not any(call[1:2] == ("push",) for call in runner.calls)
 
 
+def test_checkpoint_archive_push_is_create_only_and_uses_exact_commit(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    branch = "checkpoint-archive/snowcast/pr-42/generation-1"
+    runner = FakeRunner(
+        root,
+        responses=[
+            _completed(),
+            _completed(stdout=""),
+            _completed(),
+        ],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    assert repository.push_checkpoint_archive_create_only(branch, SHA_B) is True
+
+    push_calls = [call for call in runner.calls if call[1:2] == ("push",)]
+    assert push_calls == [
+        (
+            "git",
+            "push",
+            f"--force-with-lease=refs/heads/{branch}:",
+            "origin",
+            f"{SHA_B}:refs/heads/{branch}",
+        )
+    ]
+    assert "--force" not in push_calls[0]
+
+
+def test_checkpoint_archive_push_is_idempotent_for_the_same_head(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    branch = "checkpoint-archive/snowcast/pr-42/generation-1"
+    runner = FakeRunner(
+        root,
+        responses=[
+            _completed(),
+            _completed(stdout=f"{SHA_B}\trefs/heads/{branch}\n"),
+        ],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    assert repository.push_checkpoint_archive_create_only(branch, SHA_B) is False
+    assert not any(call[1:2] == ("push",) for call in runner.calls)
+
+
+def test_checkpoint_archive_push_rejects_an_occupied_branch(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    branch = "checkpoint-archive/snowcast/pr-42/generation-1"
+    runner = FakeRunner(
+        root,
+        responses=[
+            _completed(),
+            _completed(stdout=f"{SHA_A}\trefs/heads/{branch}\n"),
+        ],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    with pytest.raises(StaleRemoteHeadError, match="archive branch"):
+        repository.push_checkpoint_archive_create_only(branch, SHA_B)
+
+    assert not any(call[1:2] == ("push",) for call in runner.calls)
+
+
 @pytest.mark.parametrize(
     ("branch", "reviewed_head", "current_head", "message"),
     [
@@ -2133,6 +2201,49 @@ def test_generation_checkpoint_creates_exact_refs_and_restores_unchanged_head(
     assert replay.head == prepared.rebased_head
     assert (
         _git(local.checkout, "rev-parse", refs.checkpoint_ref) == prepared.rebased_head
+    )
+
+
+def test_archive_curation_checkpoint_revalidates_and_preserves_exact_head(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    generation_id = "1" * 32
+    transaction_id = "2" * 64
+    refs = repository.checkpoint_curation_generation(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+        generation_id,
+        transaction_id,
+    )
+    recovery = CurationRecoveryCheckpoint(
+        pr_number=local.pull_request.number,
+        generation_id=generation_id,
+        transaction_id=transaction_id,
+        selected_head=local.pull_request.head_sha,
+        checkpoint_head=prepared.rebased_head,
+        report_path=REPORT_PATH,
+        sync=prepared,
+        checkpoint_ref=refs.checkpoint_ref,
+        squash_ref=refs.squash_ref,
+    )
+    branch = "checkpoint-archive/snowcast/pr-42/generation-1"
+
+    assert repository.archive_curation_checkpoint(
+        local.pull_request,
+        recovery,
+        branch,
+    )
+    assert (
+        _git(local.remote, "rev-parse", f"refs/heads/{branch}") == prepared.rebased_head
+    )
+    assert not repository.archive_curation_checkpoint(
+        local.pull_request,
+        recovery,
+        branch,
     )
 
 

@@ -232,6 +232,26 @@ def test_runtime_contract_registers_exact_evidence_unavailable_outcome() -> None
     assert "evidence-unavailable" in argv
 
 
+def test_runtime_contract_registers_owner_requested_checkpoint_archive() -> None:
+    recipe = _contract()["recipes"]["publish_checkpoint_archive"]
+
+    assert recipe == {
+        "argv": [
+            "publish",
+            "checkpoint-archive",
+            "--pr",
+            "${PR}",
+            "--generation-id",
+            "${GENERATION_ID}",
+            "--head",
+            "${HEAD}",
+            "--run-id",
+            "${RUN_ID}",
+        ],
+        "returns": ["archive"],
+    }
+
+
 def test_registered_prefix_relies_on_project_cli_directory_defaults() -> None:
     parsed = _parser().parse_args(["inspect", "curation"])
 
@@ -304,6 +324,17 @@ def test_runtime_contract_freezes_the_critical_sequences() -> None:
             "lock_heartbeat_curation",
             "publish_state_adopt_body",
             "lock_heartbeat_curation",
+        ],
+        "curation_owner_requested_checkpoint_archive": [
+            "inspect_curation",
+            "inspect_discovery",
+            "lock_acquire_curation",
+            "lock_heartbeat_curation",
+            "publish_checkpoint_archive",
+            "lock_heartbeat_curation",
+            "inspect_curation",
+            "lock_heartbeat_curation",
+            "lock_release_curation",
         ],
         "curation_ci_successor_entry": [
             "lock_acquire_curation",

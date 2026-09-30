@@ -235,6 +235,11 @@ def _parser() -> argparse.ArgumentParser:
     manual_check.add_argument("--summary-file", required=True)
     manual_check.add_argument("--body-file", required=True)
     _add_run_id(manual_check)
+    checkpoint_archive = publish_commands.add_parser("checkpoint-archive")
+    checkpoint_archive.add_argument("--pr", type=int, required=True)
+    checkpoint_archive.add_argument("--generation-id", required=True)
+    checkpoint_archive.add_argument("--head", type=_sha, required=True)
+    _add_run_id(checkpoint_archive)
     recover = publish_commands.add_parser("recover")
     recover.add_argument("--work-id", required=True)
     _add_run_id(recover)
@@ -331,6 +336,7 @@ def _compose_dependencies(
         ("publish", "push"),
         ("publish", "ci-repair"),
         ("publish", "manual-check"),
+        ("publish", "checkpoint-archive"),
         ("publish", "outcome"),
         ("publish", "recover"),
         ("publish", "proposal"),

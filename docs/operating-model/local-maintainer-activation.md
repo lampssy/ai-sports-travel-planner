@@ -743,6 +743,15 @@ The installed skill must:
   never push it directly or represent it as validated; an unresolved finding,
   active residual or repeat, regression, unavailable discovery evidence,
   incomplete semantic review, or unsafe scope remains status-only blocked;
+- use `publish checkpoint-archive` only on an explicit owner request to preserve
+  the exact current generation checkpoint outside its PR branch. The helper
+  derives the immutable
+  `checkpoint-archive/snowcast/pr-<pr>/generation-<number>` branch, requires the
+  unchanged selected PR head and exact private checkpoint/replay refs, and uses
+  a create-only lease. The archive grants no review, validation, resume,
+  selection, publication, or readiness authority; it never closes or consumes
+  the generation and never changes PR state. An exact existing archive is an
+  idempotent success and a different head fails closed;
 - before any safe terminal status for an unpublished mechanically valid local
   head, retain its current generation checkpoint. A blocked or owner-hold label
   prevents scheduled resumption but does not invalidate the checkpoint;
@@ -1015,6 +1024,10 @@ For each schedule, confirm:
   valid, scope-safe, exact reviewed head and remaining findings that are only
   bounded in-model work preserves the exact reviewed generation head through
   `manual-check`; an unsafe, incomplete, or unreviewed head is not pushed;
+- an owner-requested checkpoint archive creates only the deterministic
+  non-authoritative archive branch for the current accepted generation head,
+  is idempotent for that exact head, rejects a conflicting existing branch,
+  leaves the generation unchanged, and cannot satisfy any later workflow gate;
 - each remediation runs only the two delta commands, and the reviewed final head
   runs the broad validation plus a fresh all-URL reachability sweep and semantic
   recheck of changed or graph-critical sources;
