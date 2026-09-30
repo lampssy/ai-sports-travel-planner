@@ -1,0 +1,7 @@
+interface:
+  display_name: "Snowcast Audit"
+  short_description: "Broad Snowcast domain audit"
+  default_prompt: "Use $snowcast-audit to audit Snowcast from one advisory domain."
+
+policy:
+  allow_implicit_invocation: true

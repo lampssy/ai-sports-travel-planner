@@ -1,0 +1,7 @@
+interface:
+  display_name: "Snowcast Idea"
+  short_description: "Shape Snowcast ideas before implementation"
+  default_prompt: "Use $snowcast-idea to shape a Snowcast product or technical idea."
+
+policy:
+  allow_implicit_invocation: true

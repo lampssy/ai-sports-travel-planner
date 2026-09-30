@@ -1,0 +1,4 @@
+interface:
+  display_name: "Snowcast Maintainer"
+  short_description: "Run bounded Snowcast catalog maintenance"
+  default_prompt: "Use $snowcast-maintainer to run one bounded Snowcast catalog curation or discovery cycle."

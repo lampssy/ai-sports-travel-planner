@@ -3,9 +3,10 @@
 ## Status And Authority
 
 This is the authoritative activation, operation, and rollback procedure for the
-simplified local Snowcast maintainer. Repository implementation itself does not
-install a personal skill, create schedules, provision labels, or enable
-automation.
+simplified local Snowcast maintainer. The repository owns portable skill sources
+and sanitized automation templates under `tools/codex/`, but it does not install
+a personal skill, create schedules, provision labels, or enable automation
+automatically.
 
 Repository status does not prove that the personal runtime is activated. The
 installed skill, both actual automation records, and their schedules are the
@@ -27,6 +28,34 @@ The long
 records rationale, prior decisions, and the full durable design. Do not require
 it as per-cycle input. Read it only for workflow modification or a contract
 mismatch that cannot be resolved from the concise runtime source set.
+
+## Repository-Owned Personal Runtime Templates
+
+The canonical portable skill sources are under `tools/codex/skills/`. On a new
+machine, while both schedules remain paused, install them into the active Codex
+skill directory and verify that the installed copies match:
+
+```bash
+SKILL_TARGET="${CODEX_HOME:-$HOME/.codex}/skills"
+mkdir -p "$SKILL_TARGET"
+cp -R tools/codex/skills/snowcast-* "$SKILL_TARGET/"
+for source in tools/codex/skills/snowcast-*; do
+  skill_name="${source##*/}"
+  diff -qr "$source" "$SKILL_TARGET/$skill_name"
+done
+```
+
+The sanitized automation records are:
+
+- `tools/codex/automations/snowcast-catalog-pr-maintainer/automation.toml.example`
+- `tools/codex/automations/snowcast-catalog-discovery/automation.toml.example`
+
+Use them as creation/update input through the Codex automation interface. Replace
+`REPLACE_WITH_CODEX_PROJECT_ID` and `REPLACE_WITH_SNOWCAST_CHECKOUT` with values
+from the new machine. Do not copy a template directly over an app-owned
+automation record: automation IDs and timestamps are machine-managed. Templates
+remain `PAUSED`; activation still requires the smoke checks and explicit owner
+approval below before either schedule is enabled.
 
 ## Preconditions
 
@@ -55,10 +84,11 @@ mismatch that cannot be resolved from the concise runtime source set.
 3. Snapshot the existing installed maintainer, review, and curation skills plus
    both automation prompts and records. The snapshot is rollback material, not
    workflow authority.
-4. Replace all affected shared skills and both prompts from the same merged
-   contract while schedules remain paused. Remove candidate- or PR-specific
-   migration wording; keep model, working directory, cadence, proposal cap,
-   labels, and configured active-state defaults unchanged.
+4. Replace all affected shared skills from `tools/codex/skills/` and both prompts
+   from `tools/codex/automations/` at the same merged revision while schedules
+   remain paused. Remove candidate- or PR-specific migration wording; keep model,
+   working directory, cadence, proposal cap, labels, and configured active-state
+   defaults unchanged.
 5. Inspect the exact installed artifacts. Confirm there is no active lease,
    unresolved push journal, active post-push CI continuation, or unresolved
    terminal publication. Run `migrate curation-state --archive-legacy` once,

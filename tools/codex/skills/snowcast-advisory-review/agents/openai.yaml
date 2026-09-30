@@ -1,0 +1,8 @@
+interface:
+  display_name: "Snowcast Advisory Review"
+  short_description: "Project reviewer panel for Snowcast changes"
+  brand_color: "#0B1F3A"
+  default_prompt: "Use $snowcast-advisory-review to run a focused advisory review for Snowcast."
+
+policy:
+  allow_implicit_invocation: true

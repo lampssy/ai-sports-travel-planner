@@ -1,0 +1,7 @@
+interface:
+  display_name: "Snowcast Review"
+  short_description: "Scoped Snowcast advisory review"
+  default_prompt: "Use $snowcast-review to review the current diff or a Snowcast spec."
+
+policy:
+  allow_implicit_invocation: true

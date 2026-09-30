@@ -180,8 +180,10 @@ full old-target review and unresolved handoff, not as an unrelated deletion.
 Removing `maintainer:proposal` is the owner acceptance action. Automation must
 never restore that label when its absence could represent owner acceptance.
 
-The repository code does not itself install the personal orchestration skill or
-create or enable either schedule. Initial local activation is complete; the
+The repository owns the portable Snowcast skill sources and sanitized automation
+templates under `tools/codex/`, but does not automatically install the personal
+skills or create or enable either schedule. Initial local activation is complete;
+the
 [post-merge activation checklist](docs/operating-model/local-maintainer-activation.md)
 remains the reactivation and rollback procedure. The authoritative contract is
 the

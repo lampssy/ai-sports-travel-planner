@@ -1,0 +1,4 @@
+interface:
+  display_name: "Snowcast Catalog Review"
+  short_description: "Review Snowcast curation PRs"
+  default_prompt: "Use $snowcast-catalog-review to review this Snowcast catalog curation PR for source-aware fit facts, field coverage, trust evidence, entity scope, access, terrain/pass semantics, and catalog-quality issues."
